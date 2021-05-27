@@ -1,0 +1,1 @@
+#not written (approximated by naive permuting of T/C's)
