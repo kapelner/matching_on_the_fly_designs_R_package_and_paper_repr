@@ -325,7 +325,7 @@ by an inversion of the randomization test at level alpha (this feature is incomp
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval(
   alpha = 0.05,
-  nsim_exact_test = 1000
+  nsim_exact_test = 501
 )}\if{html}{\out{</div>}}
 }
 
