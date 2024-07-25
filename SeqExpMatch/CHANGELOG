@@ -1,0 +1,7 @@
+v1.0.0
+* Support for many other response types: continuous, incidence, proportion, count (censored and uncensored), survival (censored and uncensored)
+* Support for adding responses whenever they become recorded
+* Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
+
+v0.1.0
+* Initial Release

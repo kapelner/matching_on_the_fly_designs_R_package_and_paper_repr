@@ -14,14 +14,14 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## Method `SeqDesign$new`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise")
+seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise", response_type = "continuous")
  
 
 ## ------------------------------------------------
 ## Method `SeqDesign$add_subject_to_experiment`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 
@@ -29,28 +29,31 @@ seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 ## Method `SeqDesign$print_current_subject_assignment`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$print_current_subject_assignment()
 
 
 ## ------------------------------------------------
-## Method `SeqDesign$add_current_subject_response`
+## Method `SeqDesign$add_subject_response`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21")
+seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
-seq_des$add_current_subject_response(4.71)
+seq_des$add_subject_response(4.71, 1)
+#works
+seq_des$add_subject_response(4.71, 2)
+#fails
 
 
 ## ------------------------------------------------
 ## Method `SeqDesign$add_all_subject_responses`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -66,7 +69,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 ## Method `SeqDesign$matching_statistics`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14")
+seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -84,7 +87,7 @@ seq_des$matching_statistics()
 ## Method `SeqDesign$assert_experiment_completed`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 #if run, it would throw an error since all of the covariate vectors are not yet recorded
@@ -107,7 +110,7 @@ seq_des$assert_experiment_completed() #no response means the assert is true
 ## Method `SeqDesign$check_experiment_completed`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 #returns FALSE since all of the covariate vectors are not yet recorded
@@ -132,47 +135,63 @@ seq_des$check_experiment_completed() #returns TRUE
 \describe{
 \item{\code{t}}{The current number of subjects in this sequential experiment (begins at zero).}
 
-\item{\code{design}}{The type of sequential experimental design (see constructor's documentation).}
+\item{\code{design}}{The experimenter-specified type of sequential experimental design (see constructor's documentation).}
 
 \item{\code{X}}{A numeric matrix of subject data with number of rows n (the number of subjects) and number of 
 columns p (the number of characteristics measured for each subject). This matrix is filled in
-sequentially and thus will have data present for rows 1...t (i.e. the number of subjects in the
+sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
 experiment currently) but otherwise will be missing.}
 
 \item{\code{y}}{A numeric vector of subject responses with number of entries n (the number of subjects). During
-the KK21 designs this must be filled in sequentially (similar to X) and will have data present for
-entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.
+the KK21 designs the experimenter fills these values in when they are measured.
 For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
 
+\item{\code{dead}}{A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
+vector is filled in only for \code{response_type} values "survival_censored" or "count_censored". The value
+of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
+as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
+argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
+the KK21 designs the experimenter fills these values in when they are measured.
+For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
+
+\item{\code{prob_T}}{The experimenter-specified probability a subject becomes allocated to the treatment arm.}
+
 \item{\code{w}}{A binary vector of subject assignments with number of entries n (the number of subjects). 
-This vector is filled in sequentially (similar to X) and will have assignments present for
+This vector is filled in sequentially by this package (similar to X) and will have assignments present for
 entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.}
 
-\item{\code{verbose}}{A flag that indicates whether messages should be displayed to the user}
+\item{\code{response_type}}{This is the experimenter-specified type of response value which is one of the following: 
+"continuous", 
+"incidence", 
+"proportion", 
+"count_uncensored", 
+"count_censored",
+"survival_uncensored", 
+"survival_censored"}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{SeqDesign$new()}}
-\item \href{#method-add_subject_to_experiment}{\code{SeqDesign$add_subject_to_experiment()}}
-\item \href{#method-print_current_subject_assignment}{\code{SeqDesign$print_current_subject_assignment()}}
-\item \href{#method-add_current_subject_response}{\code{SeqDesign$add_current_subject_response()}}
-\item \href{#method-add_all_subject_responses}{\code{SeqDesign$add_all_subject_responses()}}
-\item \href{#method-matching_statistics}{\code{SeqDesign$matching_statistics()}}
-\item \href{#method-assert_experiment_completed}{\code{SeqDesign$assert_experiment_completed()}}
-\item \href{#method-check_experiment_completed}{\code{SeqDesign$check_experiment_completed()}}
-\item \href{#method-clone}{\code{SeqDesign$clone()}}
+\item \href{#method-SeqDesign-new}{\code{SeqDesign$new()}}
+\item \href{#method-SeqDesign-add_subject_to_experiment}{\code{SeqDesign$add_subject_to_experiment()}}
+\item \href{#method-SeqDesign-print_current_subject_assignment}{\code{SeqDesign$print_current_subject_assignment()}}
+\item \href{#method-SeqDesign-add_subject_response}{\code{SeqDesign$add_subject_response()}}
+\item \href{#method-SeqDesign-add_all_subject_responses}{\code{SeqDesign$add_all_subject_responses()}}
+\item \href{#method-SeqDesign-matching_statistics}{\code{SeqDesign$matching_statistics()}}
+\item \href{#method-SeqDesign-assert_experiment_completed}{\code{SeqDesign$assert_experiment_completed()}}
+\item \href{#method-SeqDesign-check_experiment_completed}{\code{SeqDesign$check_experiment_completed()}}
+\item \href{#method-SeqDesign-clone}{\code{SeqDesign$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-SeqDesign-new"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a sequential experimental design
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$new(n, p, design, verbose = TRUE, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$new(n, p, design, response_type, prob_T = 0.5, verbose = TRUE, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -187,12 +206,26 @@ to L_j-1 dummies. Thus p := # of numeric variables + sum_j (L_j - 1).}
 
 \item{\code{design}}{The type of sequential experimental design. This must be one of the following
 "CRD" for the completely randomized design / Bernoulli design, 
-"BCRD" for the balanaced completely randomized design with n/2 T's and n/2 C's,
+"iBCRD" for the incomplete / balanaced completely randomized design with appropriate permuted blocks based on \code{prob_T}
+(e.g., if \code{prob_T = 2}, then this design would enforce n/2 T's and n/2 C's),
 "Efron" for Efron's (1971) Biased Coin Design
 "Atkinson" for Atkinson's (1982) Covariate-Adjusted Biased Coin Design
 "KK14" for Kapelner and Krieger's (2014) Covariate-Adjusted Matching on the Fly Design
 "KK21" for Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights Design
 "KK21stepwise" for Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights Stepwise Design}
+
+\item{\code{response_type}}{The data type of response values which must be one of the following: 
+"continuous", 
+"incidence", 
+"proportion", 
+"count_uncensored", 
+"count_censored",
+"survival_uncensored" or
+"survival_censored".
+This package will enforce that all added responses via \link{add_subject_response} will be
+of the appropriate type.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
@@ -209,7 +242,7 @@ A new `SeqDesign` object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise")
+\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise", response_type = "continuous")
  
 }
 \if{html}{\out{</div>}}
@@ -218,8 +251,8 @@ A new `SeqDesign` object.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_subject_to_experiment"></a>}}
-\if{latex}{\out{\hypertarget{method-add_subject_to_experiment}{}}}
+\if{html}{\out{<a id="method-SeqDesign-add_subject_to_experiment"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-add_subject_to_experiment}{}}}
 \subsection{Method \code{add_subject_to_experiment()}}{
 Add subject-specific measurements for the next subject entrant
 \subsection{Usage}{
@@ -235,7 +268,7 @@ Add subject-specific measurements for the next subject entrant
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 }
@@ -245,8 +278,8 @@ seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print_current_subject_assignment"></a>}}
-\if{latex}{\out{\hypertarget{method-print_current_subject_assignment}{}}}
+\if{html}{\out{<a id="method-SeqDesign-print_current_subject_assignment"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-print_current_subject_assignment}{}}}
 \subsection{Method \code{print_current_subject_assignment()}}{
 Prints the current assignment to screen. Should be called after \code{add_subject_to_experiment}.
 \subsection{Usage}{
@@ -255,7 +288,7 @@ Prints the current assignment to screen. Should be called after \code{add_subjec
 
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$print_current_subject_assignment()
@@ -267,28 +300,37 @@ seq_des$print_current_subject_assignment()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_current_subject_response"></a>}}
-\if{latex}{\out{\hypertarget{method-add_current_subject_response}{}}}
-\subsection{Method \code{add_current_subject_response()}}{
-For CARA designs, add subject response for the current subject entrant
+\if{html}{\out{<a id="method-SeqDesign-add_subject_response"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-add_subject_response}{}}}
+\subsection{Method \code{add_subject_response()}}{
+For CARA designs, add subject response for the a subject
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_current_subject_response(y)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_subject_response(t, y, dead = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{y}}{The response as a numeric scalar}
+\item{\code{t}}{The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
+for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment}}
+
+\item{\code{y}}{The response value which must be appropriate for the response_type.}
+
+\item{\code{dead}}{If the response is censored, enter 0 for this value (this is only necessary for response types 
+"count_censored" or "survival_censored" otherwise do not specify this argument as it will default to 1).}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21")
+\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
-seq_des$add_current_subject_response(4.71)
+seq_des$add_subject_response(4.71, 1)
+#works
+seq_des$add_subject_response(4.71, 2)
+#fails
 
 }
 \if{html}{\out{</div>}}
@@ -297,24 +339,30 @@ seq_des$add_current_subject_response(4.71)
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_all_subject_responses"></a>}}
-\if{latex}{\out{\hypertarget{method-add_all_subject_responses}{}}}
+\if{html}{\out{<a id="method-SeqDesign-add_all_subject_responses"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-add_all_subject_responses}{}}}
 \subsection{Method \code{add_all_subject_responses()}}{
 For non-CARA designs, add all subject responses
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_all_subject_responses(y)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{y}}{The responses as a numeric vector of length n}
+\item{\code{ys}}{The responses as a numeric vector of length n}
+
+\item{\code{deads}}{The binary vector of length n where 1 indicates the the subject 
+is dead (survival value is uncensored) and 0 indicates the subject is
+alive (survival value is censored). This is only necessary for response types 
+ "count_censored" or "survival_censored" otherwise do not specify and the value 
+will default to 1.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -332,8 +380,8 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-matching_statistics"></a>}}
-\if{latex}{\out{\hypertarget{method-matching_statistics}{}}}
+\if{html}{\out{<a id="method-SeqDesign-matching_statistics"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-matching_statistics}{}}}
 \subsection{Method \code{matching_statistics()}}{
 For KK designs only, this returns a list with useful matching statistics.
 \subsection{Usage}{
@@ -346,7 +394,7 @@ A list with the following data: \code{num_matches}, \code{prop_subjects_matched}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14")
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
 
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -366,8 +414,8 @@ seq_des$matching_statistics()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-assert_experiment_completed"></a>}}
-\if{latex}{\out{\hypertarget{method-assert_experiment_completed}{}}}
+\if{html}{\out{<a id="method-SeqDesign-assert_experiment_completed"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-assert_experiment_completed}{}}}
 \subsection{Method \code{assert_experiment_completed()}}{
 Asserts if the experiment is completed (all n assignments are assigned
 in the w vector and all n responses in the y vector are recorded), i.e. throws 
@@ -378,7 +426,7 @@ descriptive error if the experiment is incomplete.
 
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 #if run, it would throw an error since all of the covariate vectors are not yet recorded
@@ -403,8 +451,8 @@ seq_des$assert_experiment_completed() #no response means the assert is true
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-check_experiment_completed"></a>}}
-\if{latex}{\out{\hypertarget{method-check_experiment_completed}{}}}
+\if{html}{\out{<a id="method-SeqDesign-check_experiment_completed"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-check_experiment_completed}{}}}
 \subsection{Method \code{check_experiment_completed()}}{
 Checks if the experiment is completed (all n assignments are assigned
 in the w vector and all n responses in the y vector are recorded).
@@ -417,7 +465,7 @@ in the w vector and all n responses in the y vector are recorded).
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 #returns FALSE since all of the covariate vectors are not yet recorded
@@ -443,8 +491,8 @@ seq_des$check_experiment_completed() #returns TRUE
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-SeqDesign-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

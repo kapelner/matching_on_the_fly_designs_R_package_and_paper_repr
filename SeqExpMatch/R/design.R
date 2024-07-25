@@ -8,26 +8,42 @@
 #' @export
 SeqDesign = R6::R6Class("SeqDesign",
 		public = list(
-				#' @field t			The current number of subjects in this sequential experiment (begins at zero).
-				t = 0,
-				#' @field design	The type of sequential experimental design (see constructor's documentation).
-				design = NULL,
+				#' @field t			The current number of subjects in this sequential experiment (begins at zero).				
+				#' @field design	The experimenter-specified type of sequential experimental design (see constructor's documentation).				
 				#' @field X			A numeric matrix of subject data with number of rows n (the number of subjects) and number of 
 				#' 					columns p (the number of characteristics measured for each subject). This matrix is filled in
-				#' 					sequentially and thus will have data present for rows 1...t (i.e. the number of subjects in the
-				#' 					experiment currently) but otherwise will be missing.
-				X = NULL,
+				#' 					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
+				#' 					experiment currently) but otherwise will be missing.				
 				#' @field y			A numeric vector of subject responses with number of entries n (the number of subjects). During
-				#' 					the KK21 designs this must be filled in sequentially (similar to X) and will have data present for
-				#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.
-				#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).
-				y = NULL,
+				#' 					the KK21 designs the experimenter fills these values in when they are measured.
+				#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+				#' @field dead		A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
+				#' 					vector is filled in only for \code{response_type} values "survival_censored" or "count_censored". The value
+				#' 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
+				#' 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
+				#' 					argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
+				#' 					the KK21 designs the experimenter fills these values in when they are measured.
+				#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+				#' @field prob_T	The experimenter-specified probability a subject becomes allocated to the treatment arm.
 				#' @field w			A binary vector of subject assignments with number of entries n (the number of subjects). 
-				#' 					This vector is filled in sequentially (similar to X) and will have assignments present for
-				#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.			
+				#' 					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
+				#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.	
+				#' @field response_type		This is the experimenter-specified type of response value which is one of the following: 
+				#' 							"continuous", 
+				#' 							"incidence", 
+				#' 							"proportion", 
+				#' 							"count_uncensored", 
+				#' 							"count_censored",
+				#' 							"survival_uncensored", 
+				#' 							"survival_censored"		
+				t = 0,
+				design = NULL,
+				X = NULL,
+				y = NULL,	
+				dead = NULL,
+				prob_T = NULL,
 				w = NULL,
-				#' @field verbose	A flag that indicates whether messages should be displayed to the user
-				verbose = NULL,
+				response_type = NULL,
 				#' 				
 				#' @description
 				#' Initialize a sequential experimental design
@@ -39,37 +55,54 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 					to L_j-1 dummies. Thus p := # of numeric variables + sum_j (L_j - 1).
 				#' @param design	The type of sequential experimental design. This must be one of the following
 				#' 					"CRD" for the completely randomized design / Bernoulli design, 
-				#' 					"BCRD" for the balanaced completely randomized design with n/2 T's and n/2 C's,
+				#' 					"iBCRD" for the incomplete / balanaced completely randomized design with appropriate permuted blocks based on \code{prob_T}
+				#' 					(e.g., if \code{prob_T = 2}, then this design would enforce n/2 T's and n/2 C's),
 				#' 					"Efron" for Efron's (1971) Biased Coin Design
 				#' 					"Atkinson" for Atkinson's (1982) Covariate-Adjusted Biased Coin Design
 				#' 					"KK14" for Kapelner and Krieger's (2014) Covariate-Adjusted Matching on the Fly Design
 				#' 					"KK21" for Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights Design
 				#' 					"KK21stepwise" for Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights Stepwise Design
+				#' @param response_type 	The data type of response values which must be one of the following: 
+				#' 							"continuous", 
+				#' 							"incidence", 
+				#' 							"proportion", 
+				#' 							"count_uncensored", 
+				#' 							"count_censored",
+				#' 							"survival_uncensored" or
+				#' 							"survival_censored".
+				#' 							This package will enforce that all added responses via \link{add_subject_response} will be
+				#' 							of the appropriate type.
+				#' @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
 				#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
 				#' @param ...		Design-specific parameters:
 				#' 					"Efron" requires "weighted_coin_prob" which is the probability of the weighted coin for assignment. If unspecified, default is 2/3.
 				#' 					All "KK" designs require "lambda", the quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
 				#' 					All "KK" designs require "t_0_pct", the percentage of total sample size n where matching begins. If unspecified, default is 35%.
 				#' 					All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. If unspecified, default is 500.
-				#' 
 				#' @return A new `SeqDesign` object.
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise")
+				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise", response_type = "continuous")
 				#'  
-				initialize = function(n, p, design, verbose = TRUE, ...) {
+				initialize = function(n, p, design, response_type, prob_T = 0.5, verbose = TRUE, ...) {
 					assertCount(n, positive = TRUE)
 					assertCount(p, positive = TRUE)
-					assertChoice(design, c("CRD", "BCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))
+					assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+					assertChoice(design, c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))
+						
+					assertChoice(response_type, c("continuous", "incidence", "proportion", "count_uncensored", "count_censored", "survival_uncensored", "survival_censored"))
+
 					assertFlag(verbose)
 					
-					if (n %% 2 != 0 & design == "BCRD"){
-						stop("Design BCRD requires an even number of subjects.")
+					if (!all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE) & design == "iBCRD"){
+						stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
 					}
 					private$n = n
 					private$p = p
+					self$prob_T = prob_T					
+					self$response_type = response_type	
 					self$design = design
-					self$verbose = verbose
+					private$verbose = verbose
 					
 					#create data derived from n, p
 					self$X = matrix(NA, nrow = n, ncol = p)
@@ -112,7 +145,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 							}						
 						}
 					}
-					if (self$verbose){
+					if (private$verbose){
 						cat(paste0("Intialized a ", design, " design for ", n, " subjects each with ", p, " characteristics measured per subject.\n"))
 					}					
 				},
@@ -123,19 +156,19 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' @param x_vec A p-length numeric vector
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' 
 				add_subject_to_experiment = function(x_vec) {					
 					assertNumeric(x_vec, len = private$p, any.missing = FALSE)
 					
 					if (private$isKK21){
-						#we cannot add subject covariates unless the previous y was added
-						if (self$t > 0){
-							if (is.na(self$y[self$t])){
-								stop("For KK21 designs, you cannot add a new subject unless you have added the previous subject's response.\n")
-							}
-						}
+						## #we cannot add subject covariates unless the previous y was added
+						## if (self$t > 0){
+						##     if (is.na(self$y[self$t])){
+						##         stop("For KK21 designs, you cannot add a new subject unless you have added the previous subject's response.\n")
+						##     }
+						## }
 					}
 					if (self$t + 1 > private$n){
 						stop(paste("You cannot add any new subjects as all n =", private$n, "have already been added."))
@@ -153,7 +186,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' Prints the current assignment to screen. Should be called after \code{add_subject_to_experiment}.
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
+				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 				#' 
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' seq_des$print_current_subject_assignment()
@@ -163,27 +196,73 @@ SeqDesign = R6::R6Class("SeqDesign",
 				},
 				
 				#' @description
-				#' For CARA designs, add subject response for the current subject entrant
+				#' For CARA designs, add subject response for the a subject
 				#' 
-				#' @param y The response as a numeric scalar
+				#' @param t 	 The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
+				#' 				 for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment}
+				#' @param y 	 The response value which must be appropriate for the response_type. 
+				#' @param dead	 If the response is censored, enter 0 for this value (this is only necessary for response types 
+				#' 				 "count_censored" or "survival_censored" otherwise do not specify this argument as it will default to 1).
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21")
+				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 				#' 
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' 
-				#' seq_des$add_current_subject_response(4.71)
+				#' seq_des$add_subject_response(4.71, 1)
+				#' #works
+				#' seq_des$add_subject_response(4.71, 2)
+				#' #fails
 				#' 
-				add_current_subject_response = function(y) {
-					assertNumeric(y, len = 1, any.missing = FALSE)
-					self$y[self$t] = y
+				add_subject_response = function(t, y, dead = 1) {
+					assertNumeric(t, len = 1) #make sure it's length one here
+					assertNumeric(y, len = 1) #make sure it's length one here
+					assertNumeric(dead, len = 1) #make sure it's length one here
+					assertChoice(dead, c(0, 1))
+					
+					assertCount(t)
+					if (t > self$t){
+						stop(paste("You cannot add response for subject", t, "when the most recent subject added is", self$t))	
+					}
+					
+					#deal with the myriad checks on the response value based on response_type
+					if (self$response_type == "continuous"){
+						assertNumeric(y, any.missing = FALSE)	
+					} else if (self$response_type == "incidence"){
+						assertChoice(y, c(0, 1))
+					} else if (self$response_type == "proportion"){
+						assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1)
+						if (y == 0){
+							warning("0% proportion responses not allowed --- recording .Machine$double.eps as its value instead")
+							y = .Machine$double.eps
+						} else if (y == 1){
+							warning("100% proportion responses not allowed --- recording 1 - .Machine$double.eps as its value instead")
+							y = 1 - .Machine$double.eps							
+						}
+					} else if (self$response_type %in% c("count_censored", "count_uncensored")){
+						assertCount(y, na.ok = FALSE)
+					} else if (self$response_type %in% c("survival_uncensored", "survival_censored")){
+						assertNumeric(y, any.missing = FALSE, lower = 0)
+						if (y == 0){
+							warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
+							y = .Machine$double.eps
+						}						
+					}
+					#finally, record the response value
+					self$y[t] = y
+					self$dead[t] = dead
 				},
 				
 				#' @description
 				#' For non-CARA designs, add all subject responses
 				#' 
-				#' @param y The responses as a numeric vector of length n
+				#' @param ys 		The responses as a numeric vector of length n
+				#' @param deads	    The binary vector of length n where 1 indicates the the subject 
+				#' 					is dead (survival value is uncensored) and 0 indicates the subject is
+				#' 					alive (survival value is censored). This is only necessary for response types 
+				#' 				 	"count_censored" or "survival_censored" otherwise do not specify and the value 
+				#' 					will default to 1.
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 				#' 
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -194,9 +273,17 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 
 				#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				#' 				
-				add_all_subject_responses = function(y) {
-					assertNumeric(y, len = private$n, any.missing = FALSE)
-					self$y = y
+				add_all_subject_responses = function(ys, deads = NULL) {
+					if (is.null(deads)){
+						deads = rep(1, private$n)
+					}
+					assertNumeric(ys, len = private$n)
+					assertNumeric(deads, len = private$n)
+					
+					for (t in 1 : private$n){
+						assertChoice(deads[t], c(0, 1))
+						self$add_subject_response(t, ys[t], deads[t])
+					}
 				},
 				
 				#' @description
@@ -206,7 +293,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 			\code{num_subjects_remaining_in_reservoir}, \code{prop_subjects_remaining_in_reservoir}.
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14")
+				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
 				#' 
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
@@ -229,7 +316,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 					num_subjects_matched = sum(private$match_indic != 0, na.rm = TRUE)
 					num_subjects_remaining_in_reservoir = self$t - num_subjects_matched
 					list(
-						num_matches = num_subjects_matched / 2,
+						num_matches = length(unique(private$match_indic[private$match_indic != 0])) ,
 						prop_subjects_matched = num_subjects_matched / self$t,
 						num_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir,
 						prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / self$t
@@ -242,7 +329,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' descriptive error if the experiment is incomplete.
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' 
 				#' #if run, it would throw an error since all of the covariate vectors are not yet recorded
@@ -276,7 +363,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' @return	\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
 				#' 
 				#' @examples
-				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' 
 				#' #returns FALSE since all of the covariate vectors are not yet recorded
@@ -309,7 +396,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		private = list(
 			n = NULL,
-			p = NULL,
+			p = NULL,		
+			verbose = NULL,
 			
 			#design specific parameters
 			isKK = FALSE,
@@ -323,31 +411,32 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#KK21 parameters
 			num_boot = NULL,
 			
-			all_assignments_not_yet_allocated = function(){
-				self$t != private$n
-			},
 			
 			all_responses_not_yet_recorded = function(){
 				sum(!is.na(self$y)) != private$n
 			},
-
-			assign_wt_CRD = function(){
-				rbinom(1, 1, 0.5)
+			
+			all_assignments_not_yet_allocated = function(){
+				self$t != private$n
 			},
 			
-			assign_wt_BCRD = function(){
-				n_over_two = private$n / 2
+			assign_wt_CRD = function(){
+				rbinom(1, 1, self$prob_T)
+			},
+			
+			assign_wt_iBCRD = function(){
+				n_T_total = round(private$n * self$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
 				nT = sum(self$w == 1, na.rm = TRUE)
 				nC = sum(self$w == 0, na.rm = TRUE)
-				sample(c(rep(1, n_over_two - nT), rep(0, n_over_two - nC)), 1)
+				sample(c(rep(1, n_T_total - nT), rep(0, n_T_total - nC)), 1)
 			},
 			
 			assign_wt_Efron = function(){
 				n_T = sum(private$w, na.rm = TRUE)
 				n_C = private$n - n_T
-				if (n_T > n_C){
+				if (n_T * self$prob_T > n_C * (1 - self$prob_T)){
 					rbinom(1, 1, 1 - private$weighted_coin_prob)
-				} else if (n_T < n_C){
+				} else if (n_T * self$prob_T < n_C * (1 - self$prob_T)){
 					rbinom(1, 1, private$weighted_coin_prob)
 				} else {
 					private$assign_wt_CRD()

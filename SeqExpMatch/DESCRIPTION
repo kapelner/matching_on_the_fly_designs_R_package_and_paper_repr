@@ -1,7 +1,7 @@
 Package: SeqExpMatch
 Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: c(
         person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-5985-6792")),
         person("Abba", "Krieger", email = "krieger@wharton.upenn.edu", role = "aut")
@@ -25,9 +25,10 @@ Encoding: UTF-8
 Depends:
 	R6,
 	checkmate,
+	survival,
 	doParallel,
     R (>= 3.6.3)
 Imports:
     stats
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2

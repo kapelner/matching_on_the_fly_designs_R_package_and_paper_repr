@@ -20,10 +20,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		estimate_type = NULL,
 		#' @field test_type			The type of test to run (either "normal-based" or "randomization-exact").
 		test_type = NULL,
-		#' @field num_cores			The number of CPU cores to employr during sampling within randomization inference
-		num_cores = NULL,
-		#' @field verbose			A flag that indicates whether messages should be displayed to the user
-		verbose = NULL,
 		
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
@@ -66,10 +62,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$isKK = seq_des_obj$.__enclos_env__$private$isKK
 			self$estimate_type = estimate_type
 			self$test_type = test_type
-			self$num_cores = num_cores
-			self$verbose = verbose
+			private$num_cores = num_cores
+			private$verbose = verbose
 			
-			if (self$verbose){
+			if (private$verbose){
 				cat(paste0("Intialized inference methods for a ", seq_des_obj$design, " design using estimation type: ", estimate_type, " and test type: ", test_type, ".\n"))
 			}	
 		},
@@ -241,43 +237,46 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		seq_des_obj = NULL,
 		isKK = NULL,
 		rand_inf_cache = NULL,
+		num_cores = NULL,
+		verbose = NULL,
 		
 		############# TESTING HELPER FUNCTIONS
 			
 		conduct_randomization_inference = function(nsim_exact_test, num_cores){
-			cl = makeCluster(self$num_cores)
+			cl = makeCluster(private$num_cores)
 			#ensure to get all variables copied into scope (saves cycles)
 			X = private$seq_des_obj$X
 			y = private$seq_des_obj$y
 			n = private$seq_des_obj$.__enclos_env__$private$n
 			p = private$seq_des_obj$.__enclos_env__$private$p
 			design = private$seq_des_obj$design
+			response_type = private$seq_des_obj$response_type
 			estimate_type = self$estimate_type
-			if (self$num_cores == 1){
+			if (private$num_cores == 1){
 				#easier on the OS I think...
 				b_T_sims = array(NA, nsim_exact_test)
 				for (r in 1 : nsim_exact_test){
 					#cat("		r =", r, "/", nsim_exact_test, "\n")
 					#do a fake run of the experiment to come up with a different w based on the design
-					seq_des_r = SeqDesign$new(n = n, p = p, design = design, verbose = FALSE)
-					for (i in 1 : n){
-						seq_des_r$add_subject_to_experiment(X[i, ])
-						seq_des_r$add_current_subject_response(y[i])
+					seq_des_r = SeqDesign$new(n = n, p = p, design = design, response_type = response_type, verbose = FALSE)
+					for (t in 1 : n){
+						seq_des_r$add_subject_to_experiment(X[t, ])
+						seq_des_r$add_subject_response(t, y[t])
 					}				
 					b_T_sims[r] = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()
 				}
 			} else {
 				registerDoParallel(cl)			
 				#now copy them to each core's memory
-				clusterExport(cl, list("X", "y", "n", "p", "design", "estimate_type"), envir = environment())
+				clusterExport(cl, list("X", "y", "n", "p", "design", "response_type", "estimate_type"), envir = environment())
 				#now do the parallelization
 				b_T_sims = foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
 				#cat("		r =", r, "/", nsim_exact_test, "\n")
 					#do a fake run of the experiment to come up with a different w based on the design
-					seq_des_r = SeqDesign$new(n = n, p = p, design = design, verbose = FALSE)
-					for (i in 1 : n){
-						seq_des_r$add_subject_to_experiment(X[i, ])
-						seq_des_r$add_current_subject_response(y[i])
+					seq_des_r = SeqDesign$new(n = n, p = p, design = design, response_type = response_type, verbose = FALSE)
+					for (t in 1 : n){
+						seq_des_r$add_subject_to_experiment(X[t, ])
+						seq_des_r$add_subject_response(t, y[t])
 					}				
 					SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()				
 				}

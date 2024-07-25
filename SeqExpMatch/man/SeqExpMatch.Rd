@@ -2,6 +2,7 @@
 % Please edit documentation in R/SeqExpMatch.R
 \docType{package}
 \name{SeqExpMatch}
+\alias{SeqExpMatch-package}
 \alias{SeqExpMatch}
 \title{Sequential Experimental Designs via Matching On-the-Fly}
 \description{
@@ -19,6 +20,13 @@ Generates the following sequential two-arm experimental designs
 }
 \references{
 Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Arxiv 2010.05980
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr}
+}
+
 }
 \author{
 Adam Kapelner \email{kapelner@qc.cuny.edu}

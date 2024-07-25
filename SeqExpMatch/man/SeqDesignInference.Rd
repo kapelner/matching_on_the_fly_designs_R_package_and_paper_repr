@@ -109,27 +109,23 @@ seq_des_inf$compute_confidence_interval()
 \item{\code{estimate_type}}{The type of estimate to compute (either "difference-in-means" or "OLS").}
 
 \item{\code{test_type}}{The type of test to run (either "normal-based" or "randomization-exact").}
-
-\item{\code{num_cores}}{The number of CPU cores to employr during sampling within randomization inference}
-
-\item{\code{verbose}}{A flag that indicates whether messages should be displayed to the user}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{SeqDesignInference$new()}}
-\item \href{#method-compute_treatment_estimate}{\code{SeqDesignInference$compute_treatment_estimate()}}
-\item \href{#method-compute_pval_for_no_treatment_effect}{\code{SeqDesignInference$compute_pval_for_no_treatment_effect()}}
-\item \href{#method-randomization_inference_samples_for_no_treatment_effect}{\code{SeqDesignInference$randomization_inference_samples_for_no_treatment_effect()}}
-\item \href{#method-compute_confidence_interval}{\code{SeqDesignInference$compute_confidence_interval()}}
-\item \href{#method-clone}{\code{SeqDesignInference$clone()}}
+\item \href{#method-SeqDesignInference-new}{\code{SeqDesignInference$new()}}
+\item \href{#method-SeqDesignInference-compute_treatment_estimate}{\code{SeqDesignInference$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInference-compute_pval_for_no_treatment_effect}{\code{SeqDesignInference$compute_pval_for_no_treatment_effect()}}
+\item \href{#method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect}{\code{SeqDesignInference$randomization_inference_samples_for_no_treatment_effect()}}
+\item \href{#method-SeqDesignInference-compute_confidence_interval}{\code{SeqDesignInference$compute_confidence_interval()}}
+\item \href{#method-SeqDesignInference-clone}{\code{SeqDesignInference$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-new"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 \subsection{Usage}{
@@ -186,8 +182,8 @@ seq_des_inf = SeqDesignInference$new(seq_des)
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_treatment_estimate}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes either the classic different-in-means estimate of the additive treatment effect, 
 i.e. ybar_T - ybar_C or the OLS estimate of the additive treatment effect linearly i.e. 
@@ -220,8 +216,8 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_pval_for_no_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_pval_for_no_treatment_effect}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_pval_for_no_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_pval_for_no_treatment_effect}{}}}
 \subsection{Method \code{compute_pval_for_no_treatment_effect()}}{
 Computes either the classic different-in-means estimate of the additive treatment effect, 
 i.e. ybar_T - ybar_C or the OLS estimate of the additive treatment effect linearly i.e. 
@@ -262,8 +258,8 @@ seq_des_inf$compute_pval_for_no_treatment_effect()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-randomization_inference_samples_for_no_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-randomization_inference_samples_for_no_treatment_effect}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect}{}}}
 \subsection{Method \code{randomization_inference_samples_for_no_treatment_effect()}}{
 Computes many randomization samples of either the classic different-in-means estimate of 
 the additive treatment effect, i.e. ybar_T - ybar_C or the OLS estimate of the additive 
@@ -309,8 +305,8 @@ summary(samps)
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_confidence_interval}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_confidence_interval}{}}}
 \subsection{Method \code{compute_confidence_interval()}}{
 Computes either a:
 
@@ -363,8 +359,8 @@ seq_des_inf$compute_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-SeqDesignInference-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
