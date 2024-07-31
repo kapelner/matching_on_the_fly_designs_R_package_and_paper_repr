@@ -26,6 +26,8 @@ Depends:
 	R6,
 	checkmate,
 	survival,
+	controlTest,
+	betareg,
 	doParallel,
     R (>= 3.6.3)
 Imports:

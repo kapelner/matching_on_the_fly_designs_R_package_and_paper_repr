@@ -8,8 +8,8 @@ An R6 Class that estimates, tests and provides intervals for a treatment effect 
 This class takes a \code{SeqDesign} object as an input where this object
 contains data for a fully completed sequential experiment (i.e. all treatment
 assignments were allocated and all responses were collected). Then the user
-specifies the type of estimation (difference-in-means or OLS) and the type
-of sampling assumption (i.e. the superpopulation assumption leading to normal-based inference or 
+specifies the type of estimation (mean_difference-or-medians or default_regression) and the type
+of sampling assumption (i.e. the superpopulation assumption leading to MLE-or-KM-based inference or 
 the finite population assumption implying randomization-exact-based inference) and then can query the
 estimate and pval for the test. If the test is normal-theory based it is 
 testing the population H_0: beta_T = 0 and if the test is a randomization test, 
@@ -38,7 +38,7 @@ seq_des_inf = SeqDesignInference$new(seq_des)
 ## Method `SeqDesignInference$compute_treatment_estimate`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
@@ -50,41 +50,6 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInference$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 		
-
-## ------------------------------------------------
-## Method `SeqDesignInference$compute_pval_for_no_treatment_effect`
-## ------------------------------------------------
-
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInference$new(seq_des)
-seq_des_inf$compute_pval_for_no_treatment_effect()
-		
-
-## ------------------------------------------------
-## Method `SeqDesignInference$randomization_inference_samples_for_no_treatment_effect`
-## ------------------------------------------------
-
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInference$new(seq_des)
-samps = seq_des_inf$randomization_inference_samples_for_no_treatment_effect()
-summary(samps)	
-
 
 ## ------------------------------------------------
 ## Method `SeqDesignInference$compute_confidence_interval`
@@ -99,16 +64,33 @@ seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
 seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInference$new(seq_des, test_type = "normal-based")
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
+		
+
+## ------------------------------------------------
+## Method `SeqDesignInference$compute_two_sided_pval_for_treatment_effect`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
+seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
+seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des)
+seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{estimate_type}}{The type of estimate to compute (either "difference-in-means" or "OLS").}
+\item{\code{estimate_type}}{The type of estimate to compute (either "mean_difference-or-medians" or "default_regression").}
 
-\item{\code{test_type}}{The type of test to run (either "normal-based" or "randomization-exact").}
+\item{\code{test_type}}{The type of test to run (either "MLE-or-KM-based" or "randomization-exact").}
 }
 \if{html}{\out{</div>}}
 }
@@ -117,9 +99,8 @@ seq_des_inf$compute_confidence_interval()
 \itemize{
 \item \href{#method-SeqDesignInference-new}{\code{SeqDesignInference$new()}}
 \item \href{#method-SeqDesignInference-compute_treatment_estimate}{\code{SeqDesignInference$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInference-compute_pval_for_no_treatment_effect}{\code{SeqDesignInference$compute_pval_for_no_treatment_effect()}}
-\item \href{#method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect}{\code{SeqDesignInference$randomization_inference_samples_for_no_treatment_effect()}}
 \item \href{#method-SeqDesignInference-compute_confidence_interval}{\code{SeqDesignInference$compute_confidence_interval()}}
+\item \href{#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect}{\code{SeqDesignInference$compute_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInference-clone}{\code{SeqDesignInference$clone()}}
 }
 }
@@ -131,7 +112,7 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$new(
   seq_des_obj,
-  estimate_type = "OLS",
+  estimate_type = "default_regression",
   test_type = "randomization-exact",
   num_cores = 1,
   verbose = TRUE
@@ -143,17 +124,23 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{estimate_type}}{The type of estimate to compute (either "difference-in-means" or "OLS"). Default is "OLS"
-as this provided higher power in our simulations.}
+\item{\code{estimate_type}}{The type of estimate to compute (either "mean_difference", "median_difference" or "default_regression"). 
+The "mean_difference" option for response type continuous, count and proportion assumes the target parameter is the
+difference in outcome expectation between the treatment and control arms. For incidence, this is the difference in
+log odds of probability of positive class between the treatment and control arms assuming a logistic regression model additive 
+in treatment effect. For survival, this is the difference in log outcome between the treatment and control arms assuming 
+a weibull model additive in treatment effect.
+log odds of probability of positive class between the treatment and control.
+The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.}
 
-\item{\code{test_type}}{The type of test to run (either "normal-based" implying your subject entrant sampling 
+\item{\code{test_type}}{The type of test to run (either "MLE-or-KM-based" implying your subject entrant sampling 
 assumption is from a superpopulation or "randomization-exact" implying a finite sampling
 assumption). The default option is "randomization-exact" as it provided properly-sized 
 tests in our simulations.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference 
 (which is very slow). The default is 1 for serial computation. This parameter is ignored
-for \code{test_type = "normal-based"}.}
+for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }
@@ -185,19 +172,33 @@ seq_des_inf = SeqDesignInference$new(seq_des)
 \if{html}{\out{<a id="method-SeqDesignInference-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes either the classic different-in-means estimate of the additive treatment effect, 
-i.e. ybar_T - ybar_C or the OLS estimate of the additive treatment effect linearly i.e. 
-the treatment different adjusted linearly for the p covariates.
+Computes for estimate type "mean_difference-or-medians" either
+(1a) for incidence outcomes, the additive log odds treatment effect using logistic regression
+(1b) for survival outcomes, the median difference for suvival using the Kaplan-Meier estimates for both arms 
+(1c) for count outcomes, the additive treatment effect on log count using negative binomial regression
+(1d) for proportion and continous outcomes (where the latter is not under an equal allocation KK design), 
+the classic mean_difference estimate of the additive treatment effect, 
+(1e) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+classic mean_difference estimate
+
+Computes for estimte type "default_regression" either
+(2a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
+(2b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
+(2c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
+(2d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
+(2e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
+(2f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+OLS regression controlled for all other covariates
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-The numeric estimate of the treatment effect
+The setting-appropriate (see description) numeric estimate of the treatment effect
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
 seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
@@ -216,104 +217,31 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInference-compute_pval_for_no_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_pval_for_no_treatment_effect}{}}}
-\subsection{Method \code{compute_pval_for_no_treatment_effect()}}{
-Computes either the classic different-in-means estimate of the additive treatment effect, 
-i.e. ybar_T - ybar_C or the OLS estimate of the additive treatment effect linearly i.e. 
-the treatment different adjusted linearly for the p covariates.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_pval_for_no_treatment_effect(nsim_exact_test = 501)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{nsim_exact_test}}{The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
-is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The frequentist p-val for the test of nonzero treatment effect
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInference$new(seq_des)
-seq_des_inf$compute_pval_for_no_treatment_effect()
-		
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInference-randomization_inference_samples_for_no_treatment_effect}{}}}
-\subsection{Method \code{randomization_inference_samples_for_no_treatment_effect()}}{
-Computes many randomization samples of either the classic different-in-means estimate of 
-the additive treatment effect, i.e. ybar_T - ybar_C or the OLS estimate of the additive 
-treatment effect linearly i.e. the treatment different adjusted linearly for the p covariates.
-This function is useful if you wish to run your own, custom hypothesis tests.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$randomization_inference_samples_for_no_treatment_effect(
-  nsim_exact_test = 501
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{nsim_exact_test}}{The number of randomization vectors. 
-The default is 501 providing pvalue resolution to a fifth of a percent.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{nsim_exact_test} samples of the treatment effect under the null hypothesis of no treatment effect
-			where each sample is estimated from a different assignment vector for the prespecified design
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInference$new(seq_des)
-samps = seq_des_inf$randomization_inference_samples_for_no_treatment_effect()
-summary(samps)	
-
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInference-compute_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_confidence_interval}{}}}
 \subsection{Method \code{compute_confidence_interval()}}{
-Computes either a:
+Computes for estimate type "mean_difference-or-medians" either
+(1a) for incidence outcomes (ignoring the KK design structure), 
+the p-value for the test of the additive log odds treatment effect being zero using logistic regression's MLE normal approximation
+(1b) for survival outcomes (ignoring the KK design structure), the median difference for survival using the Kaplan-Meier estimates for both arms 
+(1c) for count, proportion and continous outcomes (all ignoring the KK design structure), 
+the classic mean_difference estimate of the additive treatment effect, 
+(1d) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+classic mean_difference estimate
+
+Computes for estimte type "default_regression" either
+(2a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
+(2b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
+(2c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
+(2d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
+(2e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
+(2f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+OLS regression controlled for all other covariates
 
 1. classic frequentist confidence interval (CI) of the additive treatment effect
 employing the normal theory approximation for both the
 (a) difference in means estimator i.e. [ybar_T - ybar_C +/- t_{alpha/2, n_T + n_C - 2} s_{ybar_T - ybar_C}] or
-(b) the OLS estimator i.e. [beta_hat_T +/- t_{alpha/2, n + p - 2} s_{beta_hat_T}]
+(b) the default_regression estimator i.e. [beta_hat_T +/- t_{alpha/2, n + p - 2} s_{beta_hat_T}]
 where the z approximation is employed in lieu of the t is the design is a KK design or
 
 2. a randomization-based CI of an additive shift effect of the potential outcomes under treatment and control
@@ -349,8 +277,68 @@ seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
 seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInference$new(seq_des, test_type = "normal-based")
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
+		
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_two_sided_pval_for_treatment_effect()}}{
+Computes a 2-sided p-value for all types of inferential settings written about in the initializer
+(1) estimate type "mean_difference-or-medians" and test type "MLE-or-KM-based"
+This implies the classic mean_difference estimator which means that 
+  (a) For continous and proportion outcomes, H_0: E[Y_T] - E[Y_C] = delta,
+  (b) For incidence outcomes, H_0: log(Odds(P(Y_T = 1)) - log(Odds(P(Y_C = 1) = delta,
+  (c) For count outcomes, H_0: E[ln(Y_T)] - E[ln(Y_C)] = delta or
+  (d) For survival outcomes, H_0: MED[Y_T] - MED[Y_C] = delta
+(2) Fisher's randomization test which means that H_0: y_i_T - y_i_C = delta for all subjects
+either the classic different-in-means estimate of the additive treatment effect, 
+i.e. ybar_T - ybar_C or the default_regression estimate of the additive treatment effect linearly i.e. 
+the treatment different adjusted linearly for the p covariates.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_two_sided_pval_for_treatment_effect(
+  nsim_exact_test = 501,
+  B = 501,
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{nsim_exact_test}}{The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
+is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
+
+\item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
+(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
+to a fifth of a percent.}
+
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
+seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
+seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des)
+seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		
 }
 \if{html}{\out{</div>}}

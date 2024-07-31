@@ -147,14 +147,14 @@ the KK21 designs the experimenter fills these values in when they are measured.
 For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
 
 \item{\code{dead}}{A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
-vector is filled in only for \code{response_type} values "survival_censored" or "count_censored". The value
+vector is filled in only for \code{response_type} values "survival". The value
 of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
 as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
 argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
 the KK21 designs the experimenter fills these values in when they are measured.
 For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
 
-\item{\code{prob_T}}{The experimenter-specified probability a subject becomes allocated to the treatment arm.}
+\item{\code{prob_T}}{The experimenter-specified probability a subject becomes wtated to the treatment arm.}
 
 \item{\code{w}}{A binary vector of subject assignments with number of entries n (the number of subjects). 
 This vector is filled in sequentially by this package (similar to X) and will have assignments present for
@@ -164,10 +164,8 @@ entries 1...t (i.e. the number of subjects in the experiment currently) but othe
 "continuous", 
 "incidence", 
 "proportion", 
-"count_uncensored", 
-"count_censored",
-"survival_uncensored", 
-"survival_censored"}
+"count", 
+"survival"}
 }
 \if{html}{\out{</div>}}
 }
@@ -218,10 +216,8 @@ to L_j-1 dummies. Thus p := # of numeric variables + sum_j (L_j - 1).}
 "continuous", 
 "incidence", 
 "proportion", 
-"count_uncensored", 
-"count_censored",
-"survival_uncensored" or
-"survival_censored".
+"count", 
+"survival".
 This package will enforce that all added responses via \link{add_subject_response} will be
 of the appropriate type.}
 
@@ -316,8 +312,8 @@ for subjects that have not yet been added to the experiment via \link{add_subjec
 
 \item{\code{y}}{The response value which must be appropriate for the response_type.}
 
-\item{\code{dead}}{If the response is censored, enter 0 for this value (this is only necessary for response types 
-"count_censored" or "survival_censored" otherwise do not specify this argument as it will default to 1).}
+\item{\code{dead}}{If the response is censored, enter 0 for this value. This is only necessary to specify for response type
+"survival" otherwise do not specify this argument (as it will default to 1).}
 }
 \if{html}{\out{</div>}}
 }
@@ -354,8 +350,8 @@ For non-CARA designs, add all subject responses
 
 \item{\code{deads}}{The binary vector of length n where 1 indicates the the subject 
 is dead (survival value is uncensored) and 0 indicates the subject is
-alive (survival value is censored). This is only necessary for response types 
- "count_censored" or "survival_censored" otherwise do not specify and the value 
+alive (survival value is censored). This is only necessary for response type
+ "survival" otherwise do not specify and the value 
 will default to 1.}
 }
 \if{html}{\out{</div>}}

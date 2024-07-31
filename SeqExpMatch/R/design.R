@@ -18,13 +18,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 					the KK21 designs the experimenter fills these values in when they are measured.
 				#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
 				#' @field dead		A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
-				#' 					vector is filled in only for \code{response_type} values "survival_censored" or "count_censored". The value
+				#' 					vector is filled in only for \code{response_type} values "survival". The value
 				#' 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
 				#' 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
 				#' 					argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
 				#' 					the KK21 designs the experimenter fills these values in when they are measured.
 				#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
-				#' @field prob_T	The experimenter-specified probability a subject becomes allocated to the treatment arm.
+				#' @field prob_T	The experimenter-specified probability a subject becomes wtated to the treatment arm.
 				#' @field w			A binary vector of subject assignments with number of entries n (the number of subjects). 
 				#' 					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
 				#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.	
@@ -32,10 +32,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 							"continuous", 
 				#' 							"incidence", 
 				#' 							"proportion", 
-				#' 							"count_uncensored", 
-				#' 							"count_censored",
-				#' 							"survival_uncensored", 
-				#' 							"survival_censored"		
+				#' 							"count", 
+				#' 							"survival"	
 				t = 0,
 				design = NULL,
 				X = NULL,
@@ -66,10 +64,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 							"continuous", 
 				#' 							"incidence", 
 				#' 							"proportion", 
-				#' 							"count_uncensored", 
-				#' 							"count_censored",
-				#' 							"survival_uncensored" or
-				#' 							"survival_censored".
+				#' 							"count", 
+				#' 							"survival".
 				#' 							This package will enforce that all added responses via \link{add_subject_response} will be
 				#' 							of the appropriate type.
 				#' @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
@@ -89,9 +85,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 					assertCount(p, positive = TRUE)
 					assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 					assertChoice(design, c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))
-						
-					assertChoice(response_type, c("continuous", "incidence", "proportion", "count_uncensored", "count_censored", "survival_uncensored", "survival_censored"))
-
+					assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
 					assertFlag(verbose)
 					
 					if (!all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE) & design == "iBCRD"){
@@ -113,7 +107,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 					other_params = list(...)
 					if (design == "Efron"){
 						if (is.null(other_params$weighted_coin_prob)){
-							private$weighted_coin_prob = 2 / 3
+							private$weighted_coin_prob = 2 / 3 #default Efron coin
 						} else {
 							assertNumeric(other_params$weighted_coin_prob, lower = 0, upper = 1)
 							private$weighted_coin_prob = other_params$weighted_coin_prob
@@ -123,13 +117,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 						private$isKK = TRUE
 						private$match_indic = array(NA, n)
 						if (is.null(other_params$lambda)){
-							private$lambda = 0.1
+							private$lambda = 0.1 #default
 						} else {
 							assertNumeric(other_params$lambda, lower = 0, upper = 1)
 							private$lambda = other_params$lambda
 						}
 						if (is.null(other_params$t_0_pct)){
-							private$t_0 = round(0.35 * n)
+							private$t_0 = round(0.35 * n) #default
 						} else {
 							assertNumeric(other_params$t_0_pct, lower = (p + 2) / n, upper = 1)
 							private$t_0 = round(other_params$t_0_pct * n)
@@ -179,7 +173,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 					#add subject to data frame
 					self$X[self$t, ] = x_vec
 					#now make the assignment
-					self$w[self$t] = private[[paste0("assign_wt_", self$design)]]() #do.call(what = paste0("assign_wt_", self$design), args = list())
+					self$w[self$t] = private[[paste0("assign_wt_", self$design)]]() #equivalent to do.call(what = paste0("assign_wt_", self$design), args = list())
 				},
 				
 				#' @description
@@ -201,8 +195,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' @param t 	 The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
 				#' 				 for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment}
 				#' @param y 	 The response value which must be appropriate for the response_type. 
-				#' @param dead	 If the response is censored, enter 0 for this value (this is only necessary for response types 
-				#' 				 "count_censored" or "survival_censored" otherwise do not specify this argument as it will default to 1).
+				#' @param dead	 If the response is censored, enter 0 for this value. This is only necessary to specify for response type
+				#' 				 "survival" otherwise do not specify this argument (as it will default to 1).
 				#' @examples
 				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 				#' 
@@ -238,9 +232,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 							warning("100% proportion responses not allowed --- recording 1 - .Machine$double.eps as its value instead")
 							y = 1 - .Machine$double.eps							
 						}
-					} else if (self$response_type %in% c("count_censored", "count_uncensored")){
+					} else if (self$response_type == "count"){
 						assertCount(y, na.ok = FALSE)
-					} else if (self$response_type %in% c("survival_uncensored", "survival_censored")){
+					} else if (self$response_type == "survival"){
 						assertNumeric(y, any.missing = FALSE, lower = 0)
 						if (y == 0){
 							warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
@@ -258,8 +252,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' @param ys 		The responses as a numeric vector of length n
 				#' @param deads	    The binary vector of length n where 1 indicates the the subject 
 				#' 					is dead (survival value is uncensored) and 0 indicates the subject is
-				#' 					alive (survival value is censored). This is only necessary for response types 
-				#' 				 	"count_censored" or "survival_censored" otherwise do not specify and the value 
+				#' 					alive (survival value is censored). This is only necessary for response type
+				#' 				 	"survival" otherwise do not specify and the value 
 				#' 					will default to 1.
 				#' @examples
 				#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
@@ -281,7 +275,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 					assertNumeric(deads, len = private$n)
 					
 					for (t in 1 : private$n){
-						assertChoice(deads[t], c(0, 1))
 						self$add_subject_response(t, ys[t], deads[t])
 					}
 				},
@@ -349,7 +342,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' seq_des$assert_experiment_completed() #no response means the assert is true
 				assert_experiment_completed = function(){
 					if (private$all_assignments_not_yet_allocated()){
-						stop("This experiment is incomplete as the assignments aren't all allocated yet.")
+						stop("This experiment is incomplete as the assignments aren't all wtated yet.")
 					}
 					if (private$all_responses_not_yet_recorded()){
 						stop("This experiment is incomplete as the responses aren't all recorded yet.")
@@ -448,28 +441,29 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (self$t <= private$p + 2 + 1 | length(unique(self$t)) == 1){
 					private$assign_wt_CRD()
 				} else {	
-					t_minus_1 = self$t - 1
+					(self$t - 1) = self$t - 1
 					tryCatch({
 						#this matrix is [w | 1 | X]
-						X_t_min_1 = cbind(self$w[1 : t_minus_1], 1, self$X[1 : t_minus_1, ])
+						X_t_min_1 = cbind(self$w[1 : (self$t - 1)], 1, self$X[1 : (self$t - 1), ])
 						XtX = t(X_t_min_1) %*% X_t_min_1						
-						M = t_minus_1 * solve(XtX)
+						M = (self$t - 1) * solve(XtX)
 						A = M[1, 2 : (private$p + 2)] %*% c(1, self$X[self$t, ]) 
 						s_over_A_plus_one_sq = (M[1, 1] / A + 1)^2
-						#assign the Atkinson weighted biased coin
+						#assign via the Atkinson weighted biased coin
 						rbinom(1, 1, s_over_A_plus_one_sq / (s_over_A_plus_one_sq + 1))	
-					}, error = function(e){ #sometimes XtX is still not invertible... so in that case... just randomize
+					}, error = function(e){ #sometimes XtX is still not invertible... 
+						#so in that case... just randomize
 						private$assign_wt_CRD()
 					})
 				}
 			},
 			
 			assign_wt_KK14 = function(){
-				alloc = NULL
+				wt = NULL
 				if (length(private$match_indic[private$match_indic == 0]) == 0 | self$t <= private$p | self$t <= private$t_0){
 					#we're early, so randomize
 					private$match_indic[self$t] = 0
-					alloc = private$assign_wt_CRD()
+					wt = private$assign_wt_CRD()
 				} else {
 					# cat("else\n")
 					#first calculate the threshold we're operating at
@@ -498,37 +492,87 @@ SeqDesign = R6::R6Class("SeqDesign",
 						private$match_indic[reservoir_indices[min_sqd_dist_index]] = match_num
 						private$match_indic[self$t] = match_num
 						#assign opposite
-						alloc = 1 - self$w[reservoir_indices[min_sqd_dist_index]]
+						wt = 1 - self$w[reservoir_indices[min_sqd_dist_index]]
 					} else { #otherwise, randomize and add it to the reservoir
 						private$match_indic[self$t] = 0
-						alloc = private$assign_wt_CRD()
+						wt = private$assign_wt_CRD()
 					}
 				}
 				if (is.na(private$match_indic[self$t])){
 					stop("no match data recorded")
 				}
-				alloc
+				wt
+			},
+			
+			compute_weight_KK21_continuous = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				ols_mod = lm(ys_to_date ~ xs_to_date[, j])
+				#1 - coef(summary(logistic_regr_mod))[2, 4]
+				abs(coef(summary(ols_mod))[2, 3])
+			},
+			
+			compute_weight_KK21_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
+				#1 - coef(summary(logistic_regr_mod))[2, 4]
+				abs(coef(summary(logistic_regr_mod))[2, 3])	
+			},
+			
+			compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+				#1 - coef(summary(negbin_regr_mod))[2, 4]
+				abs(coef(summary(negbin_regr_mod))[2, 3])
+			},
+			
+			compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+				#1 - coef(summary(beta_regr_mod))$mean[2, 4]
+				abs(coef(summary(beta_regr_mod))$mean[2, 3])
+			},
+			
+			compute_weight_KK21_survival = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				surv_obj = survival::Surv(ys_to_date, deaths_to_date)
+				#sometims the weibull is unstable... so try other distributions
+				for (dist in c("weibull", "lognormal", "loglogistic")){
+					weight = 	tryCatch({
+										surv_regr_mod = suppressWarnings(survival::survreg(surv_obj ~ ., data.frame(x = xs_to_date[, j]), dist = dist))
+										abs(summary(surv_regr_mod)$table[2, 3])
+									}, error = function(e){
+										NA
+									}
+								)
+					#1 - summary(weibull_regr_mod)$table[2, 4]
+					if (!is.na(weight)){
+						return(weight)
+					}
+				}
+				#if that didn't work, default to OLS and log the survival times
+				private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date), deaths_to_date, j)
 			},
 			
 			assign_wt_KK21 = function(){
-				alloc = NULL
+				wt = NULL
 				if (length(private$match_indic[private$match_indic == 0]) == 0 | self$t <= private$p | self$t <= private$t_0){
 					#we're early, so randomize
 					private$match_indic[self$t] = 0
-					alloc = private$assign_wt_CRD()
+					wt = private$assign_wt_CRD()
+					cat("    assign_wt_KK21 CRD t", self$t, "\n")
 				} else {
 					#1) need to calculate the weights
 					# (a) get old x's and y's (we assume that x's are orthogonal for now)
-					xs_to_date = self$X[1 : (self$t - 1), ]
+					xs_to_date = self$X[1 : (self$t - 1), , drop = FALSE]
 					ys_to_date = self$y[1 : (self$t - 1)]
+					deaths_to_date = self$dead[1 : (self$t - 1)]
 					# (b) run simple correlations to get Rsq's and use them as the relative weights
 					weights = array(NA, private$p)
 					for (j in 1 : private$p){
-						weights[j] = cor(xs_to_date[, j], ys_to_date)^2
+						weights[j] = private[[paste0("compute_weight_KK21_", self$response_type)]](xs_to_date, ys_to_date, deaths_to_date, j) 
 					}
-					# (c) now we need to scale them
+					if (any(is.na(weights)) | any(is.infinite(weights)) | any(is.nan(weights))){
+						stop("weight values illegal")
+					}
+					# (c) now we need to normalize the weights
+					#cat("    assign_wt_KK21 using weights t", self$t, "raw weights", weights, "\n")
 					weights = weights / sum(weights)
-					# cat("nsim", nsim, "t", t, "weights", weights, "\n")
+					cat("    assign_wt_KK21 using weights t", self$t, "sorted weights", sort(weights), "\n")
 					
 					#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
 					reservoir_indices = which(private$match_indic == 0)
@@ -561,46 +605,120 @@ SeqDesign = R6::R6Class("SeqDesign",
 						private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = match_num
 						private$match_indic[self$t] = match_num
 						#assign opposite
-						alloc = 1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
+						wt = 1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
 					# (b) otherwise, randomize and add it to the reservoir
 					} else { 
 						private$match_indic[self$t] = 0	
-						alloc = private$assign_wt_CRD()
+						wt = private$assign_wt_CRD()
 					}
 				}
 				if (is.na(private$match_indic[self$t])){
 					stop("no match data recorded")
 				}
-				alloc
+				wt
+			},
+			
+			compute_weights_KK21stepwise_continuous = function(xs_to_date, ys_to_date, deaths_to_date, j){
+				# we need to standardize the ys
+				ys_to_date = scale(ys_to_date)
+				
+				# extract out the relevant time portion and adjust for the effect of betaT for the eventual rand. test
+				ys_seen_previously_adj_for_trt = lm.fit(as.matrix(self$w[1 : (self$t - 1)]), ys_to_date)$residuals
+				xs_seen_previously = data.matrix(xs_to_date[1 : (self$t - 1), ])
+				
+				private$compute_weights_KK21stepwise_continuous_stepwise_weights(xs_seen_previously, ys_seen_previously_adj_for_trt)
+			},
+			
+			compute_weights_KK21stepwise_continuous_stepwise_weights = function(X_stepwise, y_stepwise){	
+				p = ncol(X_stepwise)
+				weights = array(NA, p)
+				
+				j_droppeds = c()
+				#initialize cols to be all cols
+				cols = setdiff(1 : p, j_droppeds)
+				
+				#iteratively add all variables and extract weights for matching later
+				repeat {
+					#now get all the Rsqs and record the highest one i.e. the "best" covariate
+					rsqs = private$compute_weights_KK21stepwise_continuous_find_rsqs(X_stepwise, y_stepwise, cols)
+					j_max = which.max(rsqs)
+					weights[j_max] = rsqs[j_max]
+					j_droppeds = c(j_droppeds, j_max)
+					
+					#register the remaining cols
+					cols = setdiff(1 : p, j_droppeds)
+					#if there's none left, we jet
+					if (length(cols) == 0){
+						break
+					}
+					
+					#we now need to adjust the other covariates for the "best" covariate
+					x_best = X_stepwise[, j_max]
+					X_st_w = cbind(1, x_best)
+					X_st_w_tr = t(X_st_w)
+					XtXinvXt_w_tr = X_st_w %*% solve(X_st_w_tr %*% X_st_w) %*% X_st_w_tr
+					for (j in cols){
+#						#predict x_j using x_best
+#						mod = lm(X_stepwise[, j] ~ x_best)
+#						#then set x_j equal to the residuals
+#						X_stepwise[, j] = summary(mod)$residuals
+						
+						#predict x_j using x_best
+						yhat_st_w_j = XtXinvXt_w_tr %*% X_stepwise[, j]
+						#then set x_j equal to the residuals
+						X_stepwise[, j] = X_stepwise[, j] - yhat_st_w_j
+					}
+				}
+				weights
+			},
+			
+			compute_weights_KK21stepwise_continuous_find_rsqs = function(X_stepwise, y_stepwise, cols){
+				p = ncol(X_stepwise)
+				Rsqs = array(NA, p)
+				for (j in cols){
+					Rsqs[j] = cor(y_stepwise, X_stepwise[, j])^2 #faster than summary(lm(y_stepwise ~ X_stepwise[, j]))$r.squared
+				}
+				Rsqs
+			},			
+			
+			compute_weights_KK21stepwise_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){	
+				stop("not implemented yet")
+			},
+			
+			compute_weights_KK21stepwise_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){	
+				stop("not implemented yet")		
+			},
+			
+			compute_weights_KK21stepwise_count = function(xs_to_date, ys_to_date, deaths_to_date, j){	
+				stop("not implemented yet")	
+			},
+			
+			compute_weights_KK21stepwise_survival = function(xs_to_date, ys_to_date, deaths_to_date, j){		
+				stop("not implemented yet")		
 			},
 			
 			assign_wt_KK21stepwise = function(){
-				alloc = NULL
+				wt = NULL
 				if (length(private$match_indic[private$match_indic == 0]) == 0 | self$t <= private$p | self$t <= private$t_0){
 					#we're early, so randomize
 					private$match_indic[self$t] = 0
-					alloc = private$assign_wt_CRD()
+					wt = private$assign_wt_CRD()
+					cat("    assign_wt_KK21stepwise CRD t", self$t, "\n")
 				} else {				
-					#1) need to calculate the weights
-					# (a) get old x's and y's (we assume that x's are orthogonal for now) 
-					t_minus_1 = self$t - 1
-					xs_to_date = self$X[1 : self$t, ]
-					ys_seen_previously = self$y[1 : t_minus_1]
+					#1) need to calculate the weights.. first get old x's and y's
+					xs_to_date = self$X[1 : self$t,  , drop = FALSE]
+					ys_to_date = self$y[1 : (self$t - 1)]
+					deaths_to_date = self$dead[1 : (self$t - 1)]
 					
-					# (b) we need to standardize the xs - puts them all on equal footing
+					# we need to standardize the xs - puts them all on equal footing
 					xs_to_date = apply(xs_to_date, 2, scale)
 					
-					# (c) we need to standardize the ys
-					ys_seen_previously = scale(ys_seen_previously)
+					#we need to now run the appropriate (based on response_type) stepwise procedure to get the weights
+					weights = private[[paste0("compute_weights_KK21stepwise_", self$response_type)]](xs_to_date, ys_to_date, deaths_to_date, j) 
+					#ensure the weights are normalized
+					weights = weights / sum(weights)
+					cat("    assign_wt_KK21stepwise using weights t", self$t, "weights", weights, "\n")
 					
-					# (d) extract out the relevant time portion and adjust for the effect of betaT for the eventual rand. test
-					ys_seen_previously_adj_for_trt = lm.fit(as.matrix(self$w[1 : t_minus_1]), ys_seen_previously)$residuals
-					xs_seen_previously = data.matrix(xs_to_date[1 : t_minus_1, ])
-					
-					# (e) we need to now run the stepwise procedure to get the weights
-					weights = private$stepwise_weights(xs_seen_previously, ys_seen_previously_adj_for_trt)
-
-					# cat("nsim", nsim, "t", t, "weights", weights, "\n")
 					#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
 					reservoir_indices = which(private$match_indic == 0)
 					x_star = xs_to_date[self$t, ]
@@ -631,71 +749,19 @@ SeqDesign = R6::R6Class("SeqDesign",
 						match_num = max(private$match_indic, na.rm = TRUE) + 1
 						private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = match_num
 						private$match_indic[self$t] = match_num
-						alloc = 1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
+						wt = 1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
 						# (b) otherwise, randomize and add it to the reservoir
 					} else { 
 						private$match_indic[self$t] = 0	
-						alloc = private$assign_wt_CRD()	
+						wt = private$assign_wt_CRD()	
 					}
 				}
 				if (is.na(private$match_indic[self$t])){
 					stop("no match data recorded")
 				}
-				alloc
-			},
-			
-			stepwise_weights = function(X_stepwise, y_stepwise){	
-				p = ncol(X_stepwise)
-				weights = array(NA, p)
-				
-				j_droppeds = c()
-				#initialize cols to be all cols
-				cols = setdiff(1 : p, j_droppeds)
-				
-				#iteratively add all variables and extract weights for matching later
-				repeat {
-					#now get all the Rsqs and record the highest one i.e. the "best" covariate
-					rsqs = private$find_rsqs(X_stepwise, y_stepwise, cols)
-					j_max = which.max(rsqs)
-					weights[j_max] = rsqs[j_max]
-					j_droppeds = c(j_droppeds, j_max)
-					
-					#register the remaining cols
-					cols = setdiff(1 : p, j_droppeds)
-					#if there's none left, we jet
-					if (length(cols) == 0){
-						break
-					}
-					
-					#we now need to adjust the other covariates for the "best" covariate
-					x_best = X_stepwise[, j_max]
-					X_st_w = cbind(1, x_best)
-					X_st_w_tr = t(X_st_w)
-					XtXinvXt_w_tr = X_st_w %*% solve(X_st_w_tr %*% X_st_w) %*% X_st_w_tr
-					for (j in cols){
-#						#predict x_j using x_best
-#						mod = lm(X_stepwise[, j] ~ x_best)
-#						#then set x_j equal to the residuals
-#						X_stepwise[, j] = summary(mod)$residuals
-						
-						#predict x_j using x_best
-						yhat_st_w_j = XtXinvXt_w_tr %*% X_stepwise[, j]
-						#then set x_j equal to the residuals
-						X_stepwise[, j] = X_stepwise[, j] - yhat_st_w_j
-					}
-				}
-				
-				#return normalized weights
-				weights / sum(weights)
-			},
-			
-			find_rsqs = function(X_stepwise, y_stepwise, cols){
-				p = ncol(X_stepwise)
-				Rsqs = array(NA, p)
-				for (j in cols){
-					Rsqs[j] = cor(y_stepwise, X_stepwise[, j])^2 #summary(lm(y_stepwise ~ X_stepwise[, j]))$r.squared
-				}
-				Rsqs
+				wt
 			}
+			
+
 		)
 )

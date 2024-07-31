@@ -14,7 +14,7 @@
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
 #' @references 	Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Arxiv 2010.05980 
 #' @keywords 	design htest
-#' @import      stats checkmate survival doParallel R6
+#' @import      stats checkmate doParallel R6
 ##### Run "library(roxygen2); roxygenise("SeqExpMatch", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file
 ##### but make sure you are in the root directory of the project
 "_PACKAGE"
