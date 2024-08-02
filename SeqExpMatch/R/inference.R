@@ -173,7 +173,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		#' @description
-		#' Computes for estimate type "mean_difference-or-medians" either
+		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+		#' 
+		#' For "mean_difference" it computes
 		#' (1a) for incidence outcomes (ignoring the KK design structure), 
 		#' the p-value for the test of the additive log odds treatment effect being zero using logistic regression's MLE normal approximation
 		#' (1b) for survival outcomes (ignoring the KK design structure), the median difference for survival using the Kaplan-Meier estimates for both arms 
@@ -182,30 +184,38 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' (1d) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
 		#' classic mean_difference estimate
 		#' 
+		#' For "medial_difference" it computes only
+		#' (2) for survival outcomes (ignoring the KK design structure), the difference of medians of the two arms
+		#' 
 		#' Computes for estimte type "default_regression" either
-		#' (2a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
-		#' (2b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
-		#' (2c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
-		#' (2d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
-		#' (2e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
-		#' (2f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+		#' (3a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
+		#' (3b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
+		#' (3c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
+		#' (3d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
+		#' (3e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
+		#' (3f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
 		#' OLS regression controlled for all other covariates
 		#' 
-		#' 1. classic frequentist confidence interval (CI) of the additive treatment effect
-		#' employing the normal theory approximation for both the
-		#' (a) difference in means estimator i.e. [ybar_T - ybar_C +/- t_{alpha/2, n_T + n_C - 2} s_{ybar_T - ybar_C}] or
-		#' (b) the default_regression estimator i.e. [beta_hat_T +/- t_{alpha/2, n + p - 2} s_{beta_hat_T}]
-		#' where the z approximation is employed in lieu of the t is the design is a KK design or
+		#' The confidence interval is computed differently for 
+		#' [I] test type "MLE-or-KM-based"
+		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
+		#' of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see \link{\code{controlTest::quantileControlTest}})
+		#' is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 		#' 
-		#' 2. a randomization-based CI of an additive shift effect of the potential outcomes under treatment and control
-		#' by an inversion of the randomization test at level alpha (this feature is incomplete).
+		#' [II] test type "randomization-exact"
+		#' Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
+		#' we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
+		#' This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
+		#' https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
 		#' 
 		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param nsim_exact_test		The number of randomization vectors. 
+		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
 		#' 								The default is 1000 providing good resolutions to confidence intervals.
 		#' @param B						Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
 		#' 								(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
 		#' 								to a fifth of a percent.
+		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
+		#' 								The default is to find a CI accurate to within a tenth of a percent.
 		#' 
 		#' @return 	A 1 - alpha sized frequentist confidence interval for the treatment effect
 		#' 
@@ -222,80 +232,55 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#' 		
-		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501, B = 501){
+		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.001, B = 501){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertCount(nsim_exact_test, positive = TRUE)
-			one_minus_alpha_over_two = 1 - alpha / 2
-			z_one_minus_alpha_over_two = qnorm(one_minus_alpha_over_two)
 			
-			if (test_type == "MLE-or-KM-based"){
-				moe = 	if (self$estimate_type == "mean_difference"){
-							if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-								z_one_minus_alpha_over_two *
-									private$post_matching_data_KK_inference_helper()$s_beta_hat_T
-							} else if (private$is_incidence){
-								z_one_minus_alpha_over_two *
-									private$compute_logistic_model_summary(use_covariates = FALSE)[2, 2]
-							} else if (private$is_count){
-								z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = FALSE)[2, 2]
-							} else if (private$is_survival){
-								z_one_minus_alpha_over_two *
-									private$compute_survival_model_summary(use_covariates = FALSE)[2, 2]
-							} else { #proportion or continuous
-								qt(one_minus_alpha_over_two, length(private$yTs) + length(private$yCs) - 2) * 
-									private$simple_t_stat_calculations_for_difference_in_means_estimate()$s_beta_hat_T
-							}											
-						} else if (self$estimate_type == "median_difference"){
-							test_obj = controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B)
-							z_one_minus_alpha_over_two *
-								test_obj$se
-						} else if (self$estimate_type == "default_regression"){
-							if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-								z_one_minus_alpha_over_two *
-									private$compute_MLE_based_inference_ols_KK()$s_beta_hat_T
-							} else if (private$is_continuous){
-								qt(one_minus_alpha_over_two, private$n - private$p - 2) * #subtract two for intercept and allocation vector 
-									private$compute_continuous_model_summary(use_covariates = TRUE)[2, 2]
-							} else if (private$is_incidence){
-								z_one_minus_alpha_over_two *
-									private$compute_logistic_model_summary(use_covariates = TRUE)[2, 2]
-							} else if (private$is_count){
-								z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
-							} else if (private$is_proportion){
-								z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
-							} else if (private$is_survival){
-								z_one_minus_alpha_over_two *
-									private$compute_survival_model_summary(use_covariates = TRUE)[2, 2]
-							}
-						}
-				#return the CI
-				private$beta_T_hat + c(-moe, moe)
+			if (self$test_type == "MLE-or-KM-based"){
+				private$compute_mle_or_km_based_confidence_interval(alpha, B)
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
-				c(
-					private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores),
-					private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores)
-				)
+				assertCount(B, positive = TRUE)
+				assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+				if (self$estimate_type == "mean_difference"){
+					if (private$is_continuous){
+						#to get bounds, temporarily look at the MLE CI
+						#a CI with two orders of magnitude more in wideness should provide for us decent bounds to run the bisection search
+						lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
+						stop("boom")
+						c(
+							private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
+							private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
+						)
+					} else if (private$is_incidence){
+						stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes")
+					} else if (private$is_count){
+						stop("Confidence intervals are not supported for randomization tests for mean difference in count outomes")
+					} else if (private$is_proportion){
+						stop("Confidence intervals are not supported for randomization tests for mean difference in proportion outomes")
+					} else if (private$is_survival){
+						stop("Confidence intervals are not supported for randomization tests for mean difference in survival outomes")
+					}									
+				} else if (self$estimate_type == "median_difference"){
+					stop("Confidence intervals are not supported for randomization tests for median difference in survival outomes")
+				} else if (self$estimate_type == "default_regression"){
+					if (private$is_continuous){
+						lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
+						stop("boom")
+						c(
+							private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
+							private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
+						)
+					} else if (private$is_incidence){
+						stop("Confidence intervals are not supported for randomization tests for regression estimates in incidence outomes")
+					} else if (private$is_count){
+						stop("Confidence intervals are not supported for randomization tests for regression estimates in count outomes")
+					} else if (private$is_proportion){
+						stop("Confidence intervals are not supported for randomization tests for regression estimates in proportion outomes")
+					} else if (private$is_survival){
+						stop("Confidence intervals are not supported for randomization tests for regression estimates in survival outomes")
+					}
+				}
 			}
-			
-#			if (self$estimate_type == "mean_difference-or-medians" & self$test_type == "MLE-or-KM-based" & private$isKK){
-#				private$common_MLE_based_ci(private$compute_MLE_or_KM_based_inference_difference_in_means_or_medians_KK(), alpha, use_Z = TRUE)
-#			} else if (self$estimate_type == "mean_difference-or-medians" & self$test_type == "MLE-or-KM-based" & !private$isKK){
-#				private$common_MLE_based_ci(private$compute_MLE_or_KM_based_inference_difference_in_means_or_medians(), alpha, use_Z = FALSE)
-#			} else if (self$estimate_type == "default_regression" & self$test_type == "MLE-or-KM-based" & private$isKK){
-#				private$common_MLE_based_ci(private$compute_MLE_based_inference_ols_KK(), alpha, use_Z = TRUE)	
-#			} else if (self$estimate_type == "default_regression" & self$test_type == "MLE-or-KM-based" & !private$isKK){
-#				private$common_MLE_based_ci(private$compute_MLE_based_inference_ols(), alpha, use_Z = FALSE)
-#			} else if (self$estimate_type == "mean_difference-or-medians" & self$test_type == "randomization-exact"){
-#				stop("This computation is not implemented yet.")
-#				#TODO
-#			} else if (self$estimate_type == "default_regression" & self$test_type == "randomization-exact"){
-#				stop("This computation is not implemented yet.")
-#				#TODO
-#			}
 		},
 		
 		#' @description
@@ -313,7 +298,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
 		#' 								is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.
 		#' @param B						Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-		#' 								(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
+		#' 								(see \link{\code{controlTest::quantileControlTest}}). The default is 501 providing pvalue resolution 
 		#' 								to a fifth of a percent.
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 
@@ -334,12 +319,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 		
 		compute_two_sided_pval_for_treatment_effect = function(nsim_exact_test = 501, B = 501, delta = 0){
 			assertNumeric(delta)
-			if (delta != 0){
-				stop("nonzero treatment effect tests not yet supported")
-			}
 			assertCount(B, positive = TRUE)
 			
-			if (test_type == "MLE-or-KM-based"){
+			if (self$test_type == "MLE-or-KM-based"){
+				if (delta != 0){
+					stop("nonzero treatment effect tests not yet supported for MLE or KM based tests")
+				}
 				if (self$estimate_type == "mean_difference"){
 					if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
 						private$post_matching_data_KK_inference_helper()$p_val	
@@ -353,7 +338,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						private$simple_t_stat_calculations_for_difference_in_means_estimate()$p_val
 					}											
 				} else if (self$estimate_type == "median_difference"){
-					controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B)$pval
+					suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B)$pval)
 				} else if (self$estimate_type == "default_regression"){
 					if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
 						private$compute_MLE_based_inference_ols_KK()$p_val
@@ -371,7 +356,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				}	
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
-				private$compute_randomization_test_p_val(nsim_exact_test, private$num_cores)				
+				private$compute_randomization_test_p_val(nsim_exact_test, private$num_cores, delta)				
 			}
 		}
 	),
@@ -389,7 +374,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		deadTs = NULL,
 		deadCs = NULL,
 		ybarT_minus_ybarC = NULL,
-#		has_censoring = NULL,
 		beta_T_hat = NULL,
 		prob_T = NULL,
 		prob_T_fifty_fifty = NULL,
@@ -403,70 +387,146 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		############# TESTING HELPER FUNCTIONS
 		
-		compute_ci_lower_by_inverting_the_randomization_test = function(nsim_exact_test, num_cores){
-			NA
-		},
-		compute_ci_upper_by_inverting_the_randomization_test = function(nsim_exact_test, num_cores){
-			NA
-		},
-			
-		compute_randomization_test_p_val = function(nsim_exact_test, num_cores, delta = 0){
-			if (is.null(private$rand_inf_b_T_sims)){
-				cl = makeCluster(private$num_cores)
-				#ensure to get all variables copied into scope (saves cycles)
-				X = private$seq_des_obj$X
-				y = private$seq_des_obj$y
-				if (delta != 0){
-					#we are testing against H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0
-					y[private$seq_des_obj$w == 1] = y[private$seq_des_obj$w == 1] - delta
+		compute_ci_lower_by_inverting_the_randomization_test = function(nsim_exact_test, num_cores, l, u, pval_th, tol){
+			return(NA)
+			pval_l = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, l)
+			pval_u = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, u)
+			repeat {
+				if (pval_u - pval_l <= tol){
+					return(l)
 				}
-				dead = private$seq_des_obj$dead
-				design = private$seq_des_obj$design
-				estimate_type = self$estimate_type
-				if (private$num_cores == 1){
-					#easier on the OS I think...
-					b_T_sims = array(NA, nsim_exact_test)
-					for (r in 1 : nsim_exact_test){
-						#cat("		r =", r, "/", nsim_exact_test, "\n")
-						#do a fake run of the experiment to come up with a different w based on the design
-						seq_des_r = SeqDesign$new(n = private$n, p = private$p, design = design, response_type = private$seq_des_obj$response_type, verbose = FALSE)
-						for (t in 1 : private$n){
-							seq_des_r$add_subject_to_experiment(X[t, ])
-							seq_des_r$add_subject_response(t, y[t])
-						}				
-						b_T_sims[r] = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()
-					}
+				m = (l + u) / 2
+				pval_m = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, m)
+				if (pval_m >= pval_th){
+					u = m
+					pval_u = pval_m
 				} else {
-					registerDoParallel(cl)			
-					#now copy them to each core's memory
-					clusterExport(cl, list("X", "y", "dead", "n", "p", "design", "response_type", "estimate_type"), envir = environment())
-					#now do the parallelization
-					b_T_sims = foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
-					#cat("		r =", r, "/", nsim_exact_test, "\n")
-						#do a fake run of the experiment to come up with a different w based on the design
-						seq_des_r = SeqDesign$new(n = n, p = p, design = design, response_type = response_type, verbose = FALSE)
-						for (t in 1 : n){
-							seq_des_r$add_subject_to_experiment(X[t, ])
-							seq_des_r$add_subject_response(t, y[t], dead[t])
-						}				
-						SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()				
-					}
-					stopCluster(cl)
+					l = m
+					pval_l = pval_m
 				}
-				private$rand_inf_b_T_sims = b_T_sims
 			}
-			sum(abs(self$compute_treatment_estimate()) < abs(private$rand_inf_b_T_sims)) / nsim_exact_test		
+		},
+		compute_ci_upper_by_inverting_the_randomization_test = function(nsim_exact_test, num_cores, l, u, pval_th, tol){	
+			return(NA)
+			pval_l = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, l)
+			pval_u = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, u)
+			repeat {
+				if (pval_l - pval_u <= tol){
+					return(u)
+				}
+				m = (l + u) / 2
+				pval_m = private$compute_randomization_test_p_val(nsim_exact_test, num_cores, m)
+				if (pval_m >= pval_th){
+					l = m
+					pval_l = pval_m
+				} else {
+					u = m
+					pval_u = pval_m
+				}
+			}
 		},
 		
-		############# CONFIDENCE INTERVALS HELPER FUNCTIONS
+		compute_randomization_test_p_val = function(nsim_exact_test, num_cores, delta){			
+			y = private$seq_des_obj$y
+			if (delta != 0){
+				if (!private$is_continuous){
+					stop("randomization tests with delta nonzero only works for continuous type!!!!")
+				}
+				#we are testing against H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so adjust the treatment responses downward by delta
+				y[private$seq_des_obj$w == 1] = y[private$seq_des_obj$w == 1] - delta
+			}
+			
+			estimate_type = self$estimate_type
+			seq_des_obj = private$seq_des_obj
+			if (private$num_cores == 1){
+				#easier on the OS I think...
+				b_T_sims = array(NA, nsim_exact_test)
+				for (r in 1 : nsim_exact_test){
+					#cat("		r =", r, "/", nsim_exact_test, "\n")
+					#make a copy of the object and then permute the allocation vector according to the design
+					seq_des_r = seq_des_obj$.__enclos_env__$private$duplicate()
+					seq_des_r$y = y #set the new responses
+					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
+					b_T_sims[r] = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()
+				}
+				print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
+			} else {	
+				cl = makeCluster(private$num_cores)
+				registerDoParallel(cl)			
+				#now copy them to each core's memory
+				clusterExport(cl, list("seq_des_obj", "y", "estimate_type"), envir = environment())
+				#now do the parallelization
+				b_T_sims = foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
+					#make a copy of the object and then permute the allocation vector according to the design
+					seq_des_r = seq_des_obj$.__enclos_env__$private$duplicate()
+					seq_des_r$y = y #set the new responses
+					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()				
+					SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()				
+				}
+				stopCluster(cl)
+				rm(cl); gc()
+			}
+			#this calculates the two-sided pval
+			beta_hat_T = self$compute_treatment_estimate()
+			#sum(abs(beta_hat_T ) < abs(private$rand_inf_b_T_sims)) / nsim_exact_test ####check this
+			2 * min(
+				sum(b_T_sims > beta_hat_T) / nsim_exact_test, 
+				sum(b_T_sims < beta_hat_T) / nsim_exact_test
+			)
+		},
 		
-#		common_MLE_based_ci = function(inference_obj, alpha, use_Z){
-#			qu = 1 - alpha / 2
-#			moe = ifelse(use_Z, qnorm(qu), qt(qu, inference_obj$t_df)) * inference_obj$s_beta_hat_T
-#			inference_obj$beta_hat_T + c(-moe, moe)
-#		},
+		######### CI HELPER FUNCTIONS	
 		
-		######### ALL INFERENCE HELPER FUNCTIONS	
+		compute_mle_or_km_based_confidence_interval = function(alpha, B = NULL){
+			one_minus_alpha_over_two = 1 - alpha / 2
+			z_one_minus_alpha_over_two = qnorm(one_minus_alpha_over_two)
+			
+			moe = 	if (self$estimate_type == "mean_difference"){
+						if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
+							z_one_minus_alpha_over_two *
+									private$post_matching_data_KK_inference_helper()$s_beta_hat_T
+						} else if (private$is_incidence){
+							z_one_minus_alpha_over_two *
+									private$compute_logistic_model_summary(use_covariates = FALSE)[2, 2]
+						} else if (private$is_count){
+							z_one_minus_alpha_over_two *
+									private$compute_count_model_summary(use_covariates = FALSE)[2, 2]
+						} else if (private$is_survival){
+							z_one_minus_alpha_over_two *
+									private$compute_survival_model_summary(use_covariates = FALSE)[2, 2]
+						} else { #proportion or continuous
+							qt(one_minus_alpha_over_two, length(private$yTs) + length(private$yCs) - 2) * 
+									private$simple_t_stat_calculations_for_difference_in_means_estimate()$s_beta_hat_T
+						}											
+					} else if (self$estimate_type == "median_difference"){
+						test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
+						z_one_minus_alpha_over_two *
+								test_obj$se
+					} else if (self$estimate_type == "default_regression"){
+						if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
+							z_one_minus_alpha_over_two *
+									private$compute_MLE_based_inference_ols_KK()$s_beta_hat_T
+						} else if (private$is_continuous){
+							qt(one_minus_alpha_over_two, private$n - private$p - 2) * #subtract two for intercept and allocation vector 
+									private$compute_continuous_model_summary(use_covariates = TRUE)[2, 2]
+						} else if (private$is_incidence){
+							z_one_minus_alpha_over_two *
+									private$compute_logistic_model_summary(use_covariates = TRUE)[2, 2]
+						} else if (private$is_count){
+							z_one_minus_alpha_over_two *
+									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
+						} else if (private$is_proportion){
+							z_one_minus_alpha_over_two *
+									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
+						} else if (private$is_survival){
+							z_one_minus_alpha_over_two *
+									private$compute_survival_model_summary(use_covariates = TRUE)[2, 2]
+						}
+					}
+			#return the CI
+			private$beta_T_hat + c(-moe, moe)
+		},
+		######### GENERAL INFERENCE HELPER FUNCTIONS	
 		
 		
 		
@@ -516,7 +576,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
 			} else {
 				negbin_regr_mod = 	if (use_covariates){
-										suppressWarnings(MASS::glm.nb(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$seq_des_obj$X)))									
+										suppressWarnings(MASS::glm.nb(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$seq_des_obj$X)))								
 									} else {
 										suppressWarnings(MASS::glm.nb(y ~ ., data = data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w)))
 									}			
@@ -540,14 +600,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_survival_model_summary = function(use_covariates, estimate_only = FALSE){
 			if (estimate_only){
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
-			} else {			
-				surv_obj = survival::Surv(private$seq_des_obj$y, private$seq_des_obj$dead)
-				#warning!!!! sometimes weibull fails to converge and blows up here!!!
+			} else {
 				surv_regr_mod = if (use_covariates){
-									suppressWarnings(survival::survreg(surv_obj ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$seq_des_obj$X), dist = "weibull"))
+									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, cbind(private$seq_des_obj$w, private$seq_des_obj$X))
 								} else {
-									suppressWarnings(survival::survreg(surv_obj ~ ., data = data.frame(w = private$seq_des_obj$w), dist = "weibull"))
+									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, private$seq_des_obj$w)
 								}
+				if (is.na(summary(surv_regr_mod)$table[2, 1])){
+					stop("NA estimate")
+				}
 				summary(surv_regr_mod)$table	
 			}
 		},
@@ -558,62 +619,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			survival_fit_res = summary(survival_fit_obj)$table
 			survival_fit_res[2, 7] - survival_fit_res[1, 7]	
 		},
-		
-		## compute_MLE_or_KM_based_inference_difference_in_means_or_medians = function(estimate_only = FALSE){
-		## 
-		##     if (private$seq_des_obj$response_type == "survival_censored"){
-		##         survival_obj = survival::Surv(private$seq_des_obj$y, private$seq_des_obj$dead)
-		##     }
-		##     beta_hat_T = 	if (private$seq_des_obj$response_type == "survival_censored"){								
-		##                         survival_fit_obj = survival::survfit2(survival_obj ~ private$seq_des_obj$w) 
-		##                         survival_fit_res = summary(survival_fit_obj)$table
-		##                         survival_fit_res[2, 7] - survival_fit_res[1, 7]
-		##                     } else {
-		##                         mean(yTs) - mean(yCs)
-		##                     }
-		## 
-		##     if (estimate_only){
-		##         list(beta_hat_T = beta_hat_T)
-		##     } else if (private$seq_des_obj$response_type == "survival_censored"){
-		##         #https://cran.r-project.org/web/packages/bpcp/index.html
-		##         list(
-		##             beta_hat_T = beta_hat_T,
-		##             s_beta_hat_T = NA,
-		##             t_df = NA,
-		##             p_val = survival::survdiff(survival_obj ~ private$seq_des_obj$w)$pvalue
-		##         )
-		##     } else {
-		##         nT = length(yTs)
-		##         nC = length(yCs)
-		##         s_beta_hat_T = sqrt(var(yTs) / nT + var(yCs) / nC)
-		##         t_df = nT + nC - 2	
-		##         list(
-		##             beta_hat_T = beta_hat_T,
-		##             s_beta_hat_T = s_beta_hat_T,
-		##             t_df = t_df,
-		##             p_val = 2 * pt(-abs(beta_hat_T / s_beta_hat_T), t_df)
-		##         )			
-		##     }			
-		## },
-		
-#		compute_MLE_based_inference_difference_in_means_KK = function(){
-#			KKstats = private$compute_post_matching_data_KK()
-#			KKstats
-#		},
-		
-#		compute_MLE_based_inference_ols = function(estimate_only = FALSE){
-#			if (estimate_only){
-#
-#			} else {
-#				mod_results = coef(summary(lm(private$seq_des_obj$y ~ ., data.frame(cbind(private$seq_des_obj$w, private$seq_des_obj$X)))))
-#				list(
-#					beta_hat_T = mod_results[2, 1],
-#					s_beta_hat_T = mod_results[2, 2],
-#					t_df = private$seq_des_obj$.__enclos_env__$private$n - private$seq_des_obj$.__enclos_env__$private$p - 1,
-#					p_val = mod_results[2, 4]
-#				)				
-#			}			
-#		},
 		
 		compute_MLE_based_inference_ols_KK = function(){
 			KKstats = private$compute_post_matching_data_KK()

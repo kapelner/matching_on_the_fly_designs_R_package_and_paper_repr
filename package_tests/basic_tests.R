@@ -1,7 +1,6 @@
-#/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.4/ SeqExpMatch/
+#/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ SeqExpMatch/
 pacman::p_load(PTE, dplyr, profvis)
 library(SeqExpMatch)
-
 options(error=recover)
 set.seed(1984)
 
@@ -18,12 +17,14 @@ X = as_tibble(continuous_example$X) %>%
 
 n = nrow(X)
 p = ncol(X)
-nsim_exact_test = 101
+nsim_exact_test = 301
+num_cores = 1
+
 
 #test all response_types and all designs
-for (response_type in c("continuous", "incidence", "proportion", "count", "survival")){
-  for (d in c("CRD", "KK21")){ #"CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"
-    cat("\n\n\n\n\nresponse_type =", response_type, "d =", d, "\n\n\n\n\n")
+for (response_type in c("survival")){ #"continuous", "incidence", "proportion", "count", "survival"
+  for (d in c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")){ #"CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"
+    cat("\n\nresponse_type =", response_type, "d =", d, "\n")
     
     seq_des_obj = SeqDesign$new(n, p, d, response_type = response_type, verbose = FALSE)
     
@@ -43,15 +44,16 @@ for (response_type in c("continuous", "incidence", "proportion", "count", "survi
             count = rep(1, n),
             survival = rbinom(n, 1, prob = 0.5)
     )
-      
+    # profvis({
     for (t in 1 : n){
-      seq_des_obj$add_subject_to_experiment(X[t, ])
-      #seq_des_obj$print_current_subject_assignment()
+      seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
+      # seq_des_obj$print_current_subject_assignment()
       if (d %in% c("KK21", "KK21stepwise")){
         seq_des_obj$add_subject_response(t, y[t], dead[t])
       }
     }    
-  
+    # })
+    
     if (!(d %in% c("KK21", "KK21stepwise"))){
       seq_des_obj$add_all_subject_responses(y, dead)
     }
@@ -67,10 +69,12 @@ for (response_type in c("continuous", "incidence", "proportion", "count", "survi
         if (estimate_type == "median_difference" & response_type != "survival"){
           next
         }
-        seq_des_inf_obj = SeqDesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 6)
+        seq_des_inf_obj = SeqDesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores)
         cat("  beta_hat_T =", seq_des_inf_obj$compute_treatment_estimate(), "\n")
-        cat("  95% CI for betaT = [", paste(seq_des_inf_obj$compute_confidence_interval(nsim_exact_test = nsim_exact_test), collapse = ", "), "]\n")
-        # cat("  pval =", seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(nsim_exact_test = nsim_exact_test), "\n")
+        # if (test_type == "MLE-or-KM-based" | (test_type == "randomization-exact" & response_type == "continuous")){
+        #   cat("  95% CI for betaT = [", paste(seq_des_inf_obj$compute_confidence_interval(nsim_exact_test = nsim_exact_test), collapse = ", "), "]\n")
+        # }
+        cat("  pval =", seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(nsim_exact_test = nsim_exact_test), "\n")
       }
     }
   }

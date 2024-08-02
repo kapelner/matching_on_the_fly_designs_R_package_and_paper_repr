@@ -28,9 +28,12 @@ Depends:
 	survival,
 	controlTest,
 	betareg,
-	doParallel,
-    R (>= 3.6.3)
+	missForest,
+	doParallel
 Imports:
-    stats
+    stats,
+    checkmate, 
+    doParallel,
+    R6
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.2

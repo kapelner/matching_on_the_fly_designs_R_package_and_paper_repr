@@ -220,7 +220,9 @@ seq_des_inf$compute_treatment_estimate()
 \if{html}{\out{<a id="method-SeqDesignInference-compute_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_confidence_interval}{}}}
 \subsection{Method \code{compute_confidence_interval()}}{
-Computes for estimate type "mean_difference-or-medians" either
+Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+
+For "mean_difference" it computes
 (1a) for incidence outcomes (ignoring the KK design structure), 
 the p-value for the test of the additive log odds treatment effect being zero using logistic regression's MLE normal approximation
 (1b) for survival outcomes (ignoring the KK design structure), the median difference for survival using the Kaplan-Meier estimates for both arms 
@@ -229,27 +231,35 @@ the classic mean_difference estimate of the additive treatment effect,
 (1d) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
 classic mean_difference estimate
 
+For "medial_difference" it computes only
+(2) for survival outcomes (ignoring the KK design structure), the difference of medians of the two arms
+
 Computes for estimte type "default_regression" either
-(2a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
-(2b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
-(2c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
-(2d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
-(2e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
-(2f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
+(3a) for incidence outcomes, the additive log odds treatment effect using logistic regression controlled for all other covariates
+(3b) for survival outcomes, the additive treatment effect on log suvival using Weibull regression controlled for all other covariates
+(3c) for count outcomes, the additive treatment effect on log count using negative binomial regression controlled for all other covariates
+(3d) for proportion outcome, the additive treatment effect on proportion using beta regression controlled for all other covariates
+(3e) for continous outcomes but not under an equal allocation KK design, the additive treatment effect using OLS regression controlled for all other covariates
+(3f) for continuous outcome, equal allocation to arms and KK designs, there's a special match-reservoir weighted 
 OLS regression controlled for all other covariates
 
-1. classic frequentist confidence interval (CI) of the additive treatment effect
-employing the normal theory approximation for both the
-(a) difference in means estimator i.e. [ybar_T - ybar_C +/- t_{alpha/2, n_T + n_C - 2} s_{ybar_T - ybar_C}] or
-(b) the default_regression estimator i.e. [beta_hat_T +/- t_{alpha/2, n + p - 2} s_{beta_hat_T}]
-where the z approximation is employed in lieu of the t is the design is a KK design or
+The confidence interval is computed differently for 
+[I] test type "MLE-or-KM-based"
+Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
+of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see \link{\code{controlTest::quantileControlTest}})
+is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 
-2. a randomization-based CI of an additive shift effect of the potential outcomes under treatment and control
-by an inversion of the randomization test at level alpha (this feature is incomplete).
+[II] test type "randomization-exact"
+Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
+we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
+This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
+https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval(
   alpha = 0.05,
-  nsim_exact_test = 501
+  nsim_exact_test = 501,
+  pval_epsilon = 0.001,
+  B = 501
 )}\if{html}{\out{</div>}}
 }
 
@@ -258,8 +268,15 @@ by an inversion of the randomization test at level alpha (this feature is incomp
 \describe{
 \item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
 
-\item{\code{nsim_exact_test}}{The number of randomization vectors. 
+\item{\code{nsim_exact_test}}{The number of randomization vectors (applicable for test type "randomization-exact" only). 
 The default is 1000 providing good resolutions to confidence intervals.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
+The default is to find a CI accurate to within a tenth of a percent.}
+
+\item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
+(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
+to a fifth of a percent.}
 }
 \if{html}{\out{</div>}}
 }
@@ -316,7 +333,7 @@ the treatment different adjusted linearly for the p covariates.
 is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
 
 \item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
+(see \link{\code{controlTest::quantileControlTest}}). The default is 501 providing pvalue resolution 
 to a fifth of a percent.}
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
