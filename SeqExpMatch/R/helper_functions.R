@@ -9,12 +9,13 @@ survreg_control_default = survival::survreg.control(
 )
 
 robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", y = NULL, num_max_iter = 50){
-	if (is.null(y)){
-		y = as.numeric(surv_object)[1 : length(surv_object)]
-	}
-	init = lm.fit(cbind(1, cov_matrix_or_vector), log(y))$coefficients
+#	if (is.null(y)){
+#		y = as.numeric(surv_object)[1 : length(surv_object)]
+#	}
+#	init = lm.fit(cbind(1, cov_matrix_or_vector), log(y))$coefficients
 	surv_reg_formula = surv_object ~ .
 	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
+	init = rep(0, ncol(cov_matrix_or_vector_data_frame) + 1)
 	num_iter = 1
 	repeat {
 		mod = suppressWarnings(survival::survreg(
@@ -26,7 +27,7 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 		))
 		if (any(is.na(mod$coefficients))){
 			if (num_iter == num_max_iter){
-				return(mod) #nothing we can do... the survival package is just badly implemented
+				break
 			}
 			#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
 			init = init + rnorm(length(init))
@@ -35,4 +36,60 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 			return(mod)
 		}
 	}
+	
+	#no more mister nice guy...
+	#now we start to eliminate columns that may be causing multicollinearity
+	j_killed = c()
+	repeat {
+		R = cor(cov_matrix_or_vector)
+		pairs_to_eliminate_one_of = which(R > .95 & R < 1, arr.ind = TRUE)
+		if (nrow(pairs_to_eliminate_one_of) == 0){
+			break
+		}
+		col_indices = c(pairs_to_eliminate_one_of)
+		col_indices = col_indices[col_indices > 1] #but we cannot eliminate the first column
+		j_kill = sample_mode(col_indices)
+		j_killed = c(j_killed, j_kill)
+		cov_matrix_or_vector = cov_matrix_or_vector[, -j_kill]
+	}
+	
+	#now we play again
+	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
+	num_iter = 1
+	repeat {
+		mod = suppressWarnings(survival::survreg(
+						surv_reg_formula, 
+						data = cov_matrix_or_vector_data_frame, 
+						dist = dist, 
+						init = init,
+						control = survreg_control_default
+				))
+		if (any(is.na(mod$coefficients))){
+			if (num_iter == num_max_iter){
+				stop("could not get survival regression to work!!!") #we give up!!!!
+			}
+			#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
+			init = init + rnorm(length(init))
+			num_iter = num_iter + 1
+		} else {
+			return(mod)
+		}
+	}	
+}
+
+robust_betareg = function(form_obj, data_obj){
+	p = ncol(data_obj)
+	repeat {
+		tryCatch({
+			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
+			return(mod)
+		}, error = function(e){})
+		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+	}
+	NA
+}
+
+#There's no standard R function for this.
+sample_mode = function(data){
+	as.numeric(names(sort(-table(data)))[1])
 }

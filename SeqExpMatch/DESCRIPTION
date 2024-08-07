@@ -25,9 +25,12 @@ Encoding: UTF-8
 Depends:
 	R6,
 	checkmate,
+	Matrix,
 	survival,
 	controlTest,
 	betareg,
+	statmod,
+	numDeriv,
 	missForest,
 	doParallel
 Imports:

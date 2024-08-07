@@ -14,15 +14,15 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## Method `SeqDesign$new`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise", response_type = "continuous")
+seq_des = SeqDesign$new(design = "KK21stepwise", response_type = "continuous")
  
 
 ## ------------------------------------------------
-## Method `SeqDesign$add_subject_to_experiment`
+## Method `SeqDesign$add_subject_to_experiment_and_assign`
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 
 ## ------------------------------------------------
@@ -31,7 +31,7 @@ seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 
 seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$print_current_subject_assignment()
 
 
@@ -41,7 +41,7 @@ seq_des$print_current_subject_assignment()
 
 seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 seq_des$add_subject_response(4.71, 1)
 #works
@@ -55,12 +55,12 @@ seq_des$add_subject_response(4.71, 2)
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				
@@ -71,12 +71,12 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
@@ -88,16 +88,16 @@ seq_des$matching_statistics()
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 #if run, it would throw an error since all of the covariate vectors are not yet recorded
 #seq_des$assert_experiment_completed() 
 
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 #if run, it would throw an error since the responses are not yet recorded
 #seq_des$assert_experiment_completed() 
@@ -111,16 +111,16 @@ seq_des$assert_experiment_completed() #no response means the assert is true
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 #returns FALSE since all of the covariate vectors are not yet recorded
 seq_des$check_experiment_completed() 
 
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 #returns FALSE since the responses are not yet recorded
 seq_des$check_experiment_completed() 
@@ -137,10 +137,14 @@ seq_des$check_experiment_completed() #returns TRUE
 
 \item{\code{design}}{The experimenter-specified type of sequential experimental design (see constructor's documentation).}
 
-\item{\code{X}}{A numeric matrix of subject data with number of rows n (the number of subjects) and number of 
-columns p (the number of characteristics measured for each subject). This matrix is filled in
+\item{\code{Xraw}}{A data frame of subject data with number of rows n (the number of subjects) and number of 
+columns p (the number of characteristics measured for each subject). This data frame is filled in
 sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
 experiment currently) but otherwise will be missing.}
+
+\item{\code{Ximp}}{Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns}
+
+\item{\code{X}}{Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns}
 
 \item{\code{y}}{A numeric vector of subject responses with number of entries n (the number of subjects). During
 the KK21 designs the experimenter fills these values in when they are measured.
@@ -166,6 +170,8 @@ entries 1...t (i.e. the number of subjects in the experiment currently) but othe
 "proportion", 
 "count", 
 "survival"}
+
+\item{\code{covariate_weights}}{The running values of the weights for each covariate}
 }
 \if{html}{\out{</div>}}
 }
@@ -173,7 +179,7 @@ entries 1...t (i.e. the number of subjects in the experiment currently) but othe
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesign-new}{\code{SeqDesign$new()}}
-\item \href{#method-SeqDesign-add_subject_to_experiment}{\code{SeqDesign$add_subject_to_experiment()}}
+\item \href{#method-SeqDesign-add_subject_to_experiment_and_assign}{\code{SeqDesign$add_subject_to_experiment_and_assign()}}
 \item \href{#method-SeqDesign-print_current_subject_assignment}{\code{SeqDesign$print_current_subject_assignment()}}
 \item \href{#method-SeqDesign-add_subject_response}{\code{SeqDesign$add_subject_response()}}
 \item \href{#method-SeqDesign-add_all_subject_responses}{\code{SeqDesign$add_all_subject_responses()}}
@@ -189,18 +195,21 @@ entries 1...t (i.e. the number of subjects in the experiment currently) but othe
 \subsection{Method \code{new()}}{
 Initialize a sequential experimental design
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$new(n, p, design, response_type, prob_T = 0.5, verbose = TRUE, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$new(
+  n,
+  design,
+  response_type,
+  prob_T = 0.5,
+  include_is_missing_as_a_new_feature = TRUE,
+  verbose = TRUE,
+  ...
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{Number of subjects fixed beforehand. A future version of this software will allow
-for sequential stopping and thus n will not need to be prespecified.}
-
-\item{\code{p}}{Number of characteristics measured for each subject. If measurement j are 
-categorical with L_j levels, you must select a reference level and convert this information
-to L_j-1 dummies. Thus p := # of numeric variables + sum_j (L_j - 1).}
+\item{\code{n}}{Number of subjects fixed beforehand.}
 
 \item{\code{design}}{The type of sequential experimental design. This must be one of the following
 "CRD" for the completely randomized design / Bernoulli design, 
@@ -223,13 +232,18 @@ of the appropriate type.}
 
 \item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
 
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable, should we include another dummy variable for its
+missingness in addition to imputing its value? If the feature is type factor, instead of creating
+a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
+
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
 \item{\code{...}}{Design-specific parameters:
 "Efron" requires "weighted_coin_prob" which is the probability of the weighted coin for assignment. If unspecified, default is 2/3.
 All "KK" designs require "lambda", the quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
 All "KK" designs require "t_0_pct", the percentage of total sample size n where matching begins. If unspecified, default is 35%.
-All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. If unspecified, default is 500.}
+All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. 
+If unspecified, default is 500.}
 }
 \if{html}{\out{</div>}}
 }
@@ -238,7 +252,7 @@ A new `SeqDesign` object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise", response_type = "continuous")
+\preformatted{seq_des = SeqDesign$new(design = "KK21stepwise", response_type = "continuous")
  
 }
 \if{html}{\out{</div>}}
@@ -247,25 +261,27 @@ A new `SeqDesign` object.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesign-add_subject_to_experiment"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesign-add_subject_to_experiment}{}}}
-\subsection{Method \code{add_subject_to_experiment()}}{
-Add subject-specific measurements for the next subject entrant
+\if{html}{\out{<a id="method-SeqDesign-add_subject_to_experiment_and_assign"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-add_subject_to_experiment_and_assign}{}}}
+\subsection{Method \code{add_subject_to_experiment_and_assign()}}{
+Add subject-specific measurements for the next subject entrant and return this new subject's treatment assignment
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_subject_to_experiment(x_vec)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_subject_to_experiment_and_assign(x_new, allow_new_cols = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x_vec}}{A p-length numeric vector}
+\item{\code{x_new}}{A p-length row of a data frame for the new subject to be added}
+
+\item{\code{allow_new_cols}}{Should we allow new/different features in the new subject's covariates? Default is \code{FALSE}}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 }
 \if{html}{\out{</div>}}
@@ -277,7 +293,7 @@ seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 \if{html}{\out{<a id="method-SeqDesign-print_current_subject_assignment"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesign-print_current_subject_assignment}{}}}
 \subsection{Method \code{print_current_subject_assignment()}}{
-Prints the current assignment to screen. Should be called after \code{add_subject_to_experiment}.
+Prints the current assignment to screen. Should be called after \code{add_subject_to_experiment_and_assign}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesign$print_current_subject_assignment()}\if{html}{\out{</div>}}
 }
@@ -286,7 +302,7 @@ Prints the current assignment to screen. Should be called after \code{add_subjec
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$print_current_subject_assignment()
 
 }
@@ -308,7 +324,7 @@ For CARA designs, add subject response for the a subject
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{t}}{The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
-for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment}}
+for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment_and_assign}}
 
 \item{\code{y}}{The response value which must be appropriate for the response_type.}
 
@@ -321,7 +337,7 @@ for subjects that have not yet been added to the experiment via \link{add_subjec
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 seq_des$add_subject_response(4.71, 1)
 #works
@@ -360,12 +376,12 @@ will default to 1.}
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				
@@ -392,12 +408,12 @@ A list with the following data: \code{num_matches}, \code{prop_subjects_matched}
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
 
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
@@ -423,16 +439,16 @@ descriptive error if the experiment is incomplete.
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 #if run, it would throw an error since all of the covariate vectors are not yet recorded
 #seq_des$assert_experiment_completed() 
 
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 #if run, it would throw an error since the responses are not yet recorded
 #seq_des$assert_experiment_completed() 
@@ -462,16 +478,16 @@ in the w vector and all n responses in the y vector are recorded).
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
 #returns FALSE since all of the covariate vectors are not yet recorded
 seq_des$check_experiment_completed() 
 
-seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 #returns FALSE since the responses are not yet recorded
 seq_des$check_experiment_completed() 

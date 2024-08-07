@@ -45,12 +45,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
@@ -69,21 +69,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$seq_des_obj = seq_des_obj
 			private$isKK = seq_des_obj$.__enclos_env__$private$isKK
 			private$n = private$seq_des_obj$.__enclos_env__$private$n
-			private$p = private$seq_des_obj$.__enclos_env__$private$p
+			private$X = private$seq_des_obj$.__enclos_env__$private$compute_all_subject_data()$X_all
 			private$yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1]
 			private$yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0]
 			private$deadTs = private$seq_des_obj$dead[private$seq_des_obj$w == 1]
 			private$deadCs = private$seq_des_obj$dead[private$seq_des_obj$w == 0]
 			private$ybarT_minus_ybarC = mean(private$yTs) - mean(private$yCs)	
-#			private$has_censoring = sum(private$seq_des_obj$dead) < private$n #if there's censoring, there'd be still some subjects alive at the close of the study
 			private$num_cores = num_cores
 			private$verbose = verbose
-#			private$response_type = private$seq_des_obj$response_type
-#			if (private$has_censoring & private$response_type == "survival"){
-#				private$response_type = "survival_censored"
-#			} else if (!private$has_censoring & private$response_type == "survival"){
-#				private$response_type = "survival_uncensored"
-#			}
 			private$prob_T = private$seq_des_obj$prob_T
 			private$prob_T_fifty_fifty = private$prob_T == 0.5 
 			
@@ -126,12 +119,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-		#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
@@ -163,7 +156,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 											} else if (private$is_count){
 												private$compute_count_model_summary(use_covariates = TRUE)[2, 1]
 											} else if (private$is_proportion){
-												private$compute_proportion_model_summary(use_covariates = TRUE)[2, 1]
+												b = private$compute_proportion_model_summary(use_covariates = TRUE)[2, 1]
+												if (is.null(b) | is.na(b) | is.nan(b) | class(b) != "numeric"){
+													stop("boom")
+												}
+												b
 											} else if (private$is_survival){
 												private$compute_survival_model_summary(use_covariates = TRUE)[2, 1]
 											}
@@ -221,12 +218,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
@@ -306,12 +303,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 27, 127, 60, 5.5, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 42, 169, 74, 5.1, 0, 1, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(0, 59, 105, 62, 5.9, 0, 0, 0, 1, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 32, 186, 66, 5.6, 1, 0, 0, 0, 0))
-		#' seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
@@ -369,6 +366,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
+		X = NULL,
 		yTs = NULL,
 		yCs = NULL,
 		deadTs = NULL,
@@ -507,7 +505,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							z_one_minus_alpha_over_two *
 									private$compute_MLE_based_inference_ols_KK()$s_beta_hat_T
 						} else if (private$is_continuous){
-							qt(one_minus_alpha_over_two, private$n - private$p - 2) * #subtract two for intercept and allocation vector 
+							qt(one_minus_alpha_over_two, private$n - ncol(private$X) - 2) * #subtract two for intercept and allocation vector 
 									private$compute_continuous_model_summary(use_covariates = TRUE)[2, 2]
 						} else if (private$is_incidence){
 							z_one_minus_alpha_over_two *
@@ -543,14 +541,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_continuous_model_summary = function(use_covariates, estimate_only = FALSE){
 			if (estimate_only){
 				ols_regr_mod = 	if (use_covariates){
-									lm.fit(cbind(1, private$seq_des_obj$w, private$seq_des_obj$X), private$seq_des_obj$y)
+									lm.fit(cbind(1, private$seq_des_obj$w, private$X), private$seq_des_obj$y)
 								} else {
 									lm.fit(cbind(1, private$seq_des_obj$w), private$seq_des_obj$y)
 								}
 				ols_regr_mod$coefficients[2]
 			} else {
 				ols_regr_mod = if (use_covariates){
-									lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$seq_des_obj$X))
+									lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
 								} else {
 									lm(private$seq_des_obj$y ~ private$seq_des_obj$w)
 								}			
@@ -563,7 +561,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
 			} else {	
 				logistic_regr_mod = if (use_covariates){
-										suppressWarnings(glm(private$seq_des_obj$y ~ cbind(private$seq_des_obj$w, private$seq_des_obj$X), family = "binomial"))
+										suppressWarnings(glm(private$seq_des_obj$y ~ cbind(private$seq_des_obj$w, private$X), family = "binomial"))
 									} else {
 										suppressWarnings(glm(private$seq_des_obj$y ~ private$seq_des_obj$w, family = "binomial"))
 									}
@@ -576,7 +574,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
 			} else {
 				negbin_regr_mod = 	if (use_covariates){
-										suppressWarnings(MASS::glm.nb(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$seq_des_obj$X)))								
+										suppressWarnings(MASS::glm.nb(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X)))								
 									} else {
 										suppressWarnings(MASS::glm.nb(y ~ ., data = data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w)))
 									}			
@@ -589,11 +587,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
 			} else {			
 				beta_regr_mod = if (use_covariates){
-									suppressWarnings(betareg::betareg(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$seq_des_obj$X)))
+									suppressWarnings(betareg::betareg(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X)))
 								} else {
 									suppressWarnings(betareg::betareg(y ~ ., data = data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w)))
 								}			
-				coef(summary(beta_regr_mod))$mean
+				summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+				if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+					summary_beta_regr_mod$mean 
+				} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+					summary_beta_regr_mod$mu
+				}
 			}
 		},
 		
@@ -602,7 +605,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				stop("this speedup is not implemented yet... use estimate_only = FALSE")
 			} else {
 				surv_regr_mod = if (use_covariates){
-									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, cbind(private$seq_des_obj$w, private$seq_des_obj$X))
+									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, cbind(private$seq_des_obj$w, private$X))
 								} else {
 									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, private$seq_des_obj$w)
 								}
@@ -615,7 +618,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		survival_diff_medians_censored_estimate = function(y, dead, w){
 			survival_obj = survival::Surv(y, dead)
-			survival_fit_obj = survival::survfit(survival_obj ~ w) 
+			survival_fit_obj = survival::survfit(survival_obj ~ w)
 			survival_fit_res = summary(survival_fit_obj)$table
 			survival_fit_res[2, 7] - survival_fit_res[1, 7]	
 		},
@@ -623,7 +626,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_MLE_based_inference_ols_KK = function(){
 			KKstats = private$compute_post_matching_data_KK()
 			
-			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= private$seq_des_obj$.__enclos_env__$private$p + 2)){
+			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= ncol(private$X) + 2)){
 				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
 				
 				KKstats$beta_hat_T = coefs_matched[1, 1]
@@ -680,21 +683,21 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				match_indic = private$seq_des_obj$.__enclos_env__$private$match_indic
 				m = max(match_indic)
 				y_matched_diffs = array(NA, m)
-				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$seq_des_obj$X))
+				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 				if (m > 0){
 					for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
 						yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1 & match_indic == match_id]
 						yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0 & match_indic == match_id]
 						y_matched_diffs[match_id] = mean(yTs) - mean(yCs)
 						
-						xmTs = private$seq_des_obj$X[private$seq_des_obj$w == 1 & match_indic == match_id, ]
-						xmCs = private$seq_des_obj$X[private$seq_des_obj$w == 0 & match_indic == match_id, ]
+						xmTs = private$X[private$seq_des_obj$w == 1 & match_indic == match_id, ]
+						xmCs = private$X[private$seq_des_obj$w == 0 & match_indic == match_id, ]
 						X_matched_diffs[match_id, ] = mean(xmTs) - mean(xmCs)
 					}
 				}			
 				
 				#get reservoir data
-				X_reservoir = 	private$seq_des_obj$X[match_indic == 0, ]
+				X_reservoir = 	private$X[match_indic == 0, ]
 				y_reservoir = 	private$seq_des_obj$y[match_indic == 0]
 				w_reservoir = 	private$seq_des_obj$w[match_indic == 0]
 				y_reservoir_T = y_reservoir[w_reservoir == 1] #get the reservoir responses from the treatment
