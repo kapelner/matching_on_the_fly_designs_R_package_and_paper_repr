@@ -447,7 +447,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					b_T_sims[r] = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()
 				}
-				print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
+				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
 				cl = makeCluster(private$num_cores)
 				registerDoParallel(cl)			

@@ -14,7 +14,7 @@ v1.0.0
 * Support for adding responses whenever they become recorded
 * Support for general data frames which include factors, characters, logical data types 
 * No need to declare factors' levels from the getgo
-* Support for missing data imputed via the missForest package
+* Support for missing data imputed via the missRanger package
 * p does not need to be declared when initializing a design (but n is required still)
 
 v0.1.0

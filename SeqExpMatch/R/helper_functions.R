@@ -78,10 +78,20 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 }
 
 robust_betareg = function(form_obj, data_obj){
-	p = ncol(data_obj)
 	repeat {
 		tryCatch({
 			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
+			return(mod)
+		}, error = function(e){})
+		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+	}
+	NA
+}
+
+robust_negbinreg = function(form_obj, data_obj){
+	repeat {
+		tryCatch({
+			mod = suppressWarnings(MASS::glm.nb(form_obj, data = data_obj))
 			return(mod)
 		}, error = function(e){})
 		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works

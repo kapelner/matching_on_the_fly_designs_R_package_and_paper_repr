@@ -233,9 +233,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 						
 						#now do the imputation here
 						self$Ximp = if (any(!is.na(self$y))){
-									suppressWarnings(missForest(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]))$ximp[, 1 : ncol(self$Ximp)])
+									suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
 								} else {
-									suppressWarnings(missForest(self$Ximp)$ximp)
+									suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
 								}
 					} else {
 						#if no missingness exists, then the imputed data frame is identical to the raw data frame
@@ -505,7 +505,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
 			d = SeqDesign$new(
 				d = self$design, 
-				resposne_type = self$response_type, 
+				response_type = self$response_type, 
 				n = private$n, 
 				prob_T = self$prob_T, 
 				include_is_missing_as_a_new_feature = private$include_is_missing_as_a_new_feature, 
@@ -802,11 +802,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-			#1 - coef(summary(negbin_regr_mod))[2, 4]
-			summary_negbin_regr_mod = coef(summary(negbin_regr_mod))
-			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), 0)
+			tryCatch({
+				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+				#1 - coef(summary(negbin_regr_mod))[2, 4]
+				summary_negbin_regr_mod = coef(summary(negbin_regr_mod))
+				#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+				ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), 0)		
+			}, error = function(e){return(0)})
 		},
 		
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
@@ -866,12 +868,14 @@ SeqDesign = R6::R6Class("SeqDesign",
 								j
 							) 
 						}
-						if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights))){
-							stop("raw weight values illegal")
+						if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
+							stop("raw weight values illegal KK21")
 						}
 						# (c) now we need to normalize the weights
 						#cat("    assign_wt_KK21 using weights t", self$t, "raw weights", weights, "\n")
 						self$covariate_weights = raw_weights / sum(raw_weights)
+						names(self$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
+
 						#cat("    assign_wt_KK21 using weights t", self$t, "sorted weights", sort(weights), "\n")
 						
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
@@ -962,7 +966,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		compute_weights_KK21stepwise_count = function(xs, ys, ws, ...){	
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-				negbin_regr_mod = suppressWarnings(MASS::glm.nb(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
+				negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
 				abs(coef(summary(negbin_regr_mod))[2, 3])
 			})	
 		},
@@ -976,7 +980,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
 							summary_beta_regr_mod$mu
 						}
-				tab[2, 3]
+				abs(tab[2, 3])
 			})
 		},
 		
@@ -1029,9 +1033,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 							all_subject_data$y_all,
 							all_subject_data$w_all_with_y_scaled, 
 							all_subject_data$dead_all
-						)
+						)						
+						if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
+							stop("raw weight values illegal KK21stepwise")
+						}
 						#ensure the weights are normalized
 						self$covariate_weights = raw_weights / sum(raw_weights)
+						names(self$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
 						#cat("    assign_wt_KK21stepwise using weights t", self$t, "weights", weights, "\n")
 						
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
