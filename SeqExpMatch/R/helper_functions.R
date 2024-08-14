@@ -84,8 +84,10 @@ robust_betareg = function(form_obj, data_obj){
 			return(mod)
 		}, error = function(e){})
 		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+		if (ncol(data_obj) == 0){
+			break
+		}
 	}
-	NA
 }
 
 robust_negbinreg = function(form_obj, data_obj){
@@ -95,6 +97,9 @@ robust_negbinreg = function(form_obj, data_obj){
 			return(mod)
 		}, error = function(e){})
 		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+		if (ncol(data_obj) == 0){
+			break
+		}
 	}
 	NA
 }

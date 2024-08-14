@@ -16,9 +16,10 @@
 #' @export
 SeqDesignInference = R6::R6Class("SeqDesignInference",
 	public = list(
-		#' @field estimate_type		The type of estimate to compute (either "mean_difference-or-medians" or "default_regression").
-		estimate_type = NULL,
-		#' @field test_type			The type of test to run (either "MLE-or-KM-based" or "randomization-exact").
+		#' @field estimate_type		The estimate type (see initializer documentation).
+		estimate_type = NULL,		
+		#' 
+		#' @field test_type			The type of test to run (see initializer documentation).
 		test_type = NULL,
 		
 		#' @description
@@ -26,12 +27,110 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param estimate_type		The type of estimate to compute (either "mean_difference", "median_difference" or "default_regression"). 
-		#' 							The "mean_difference" option for response type continuous, count and proportion assumes the target parameter is the
-		#' 							difference in outcome expectation between the treatment and control arms. For incidence, this is the difference in
-		#' 							log odds of probability of positive class between the treatment and control arms assuming a logistic regression model additive 
-		#' 							in treatment effect. For survival, this is the difference in log outcome between the treatment and control arms assuming 
-		#' 							a weibull model additive in treatment effect.
+		#' @param estimate_type		The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
+		#' 							appears after the first word, then it is
+		#' 							  * "continuous_simple_mean_difference" 		
+		#' 								assumes the treatment effect parameter is an additive treatment effect 
+		#' 								and estimates via the simple average difference
+		#' 							  * "continuous_regression_with_covariates"
+		#' 								assumes the treatment effect parameter is an additive treatment effect	
+		#' 								and the presence of linear additive covariates 
+		#' 								and estimates via OLS 
+		#' 							  * "continuous_KK_compound_mean_difference" 	
+		#' 								assumes the treatment effect parameter is an additive treatment effect	
+		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
+		#' 							  * "continuous_KK_compound_multivariate_regression"	
+		#' 								assumes the treatment effect parameter is an additive treatment effect
+		#' 								and estimates via combining an OLS estimator for bothe ther matches and the reservoir
+		#' 							  * "continuous_KK_regression_with_covariates_with_matching_dummies"
+		#' 								assumes the treatment effect parameter is an additive treatment effect 
+		#' 								and the presence of linear additive covariates treating the match ID as a factor and estimates via OLS (not recommended)	
+		#' 							  * "continuous_KK_regression_with_covariates_and_random_intercepts"	
+		#' 								assumes the treatment effect parameter is an additive treatment effect 
+		#' 								and the presence of linear additive covariates and random intercepts on the match ID 
+		#' 								and estimates via restricted maximum likelihood
+		#' 							  * "incidence_simple_mean_difference"
+		#' 								assumes the treatment effect parameter is an additive probability difference 
+		#' 								and estimates via the simple average difference	
+		#' 							  * "incidence_simple_log_odds"
+		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
+		#' 								and estimates via maximum likelihood 	
+		#' 							  * "incidence_logistic_regression"
+		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
+		#' 								and the presence of linear additive covariates also in the log odds probability of the positive class
+		#' 								and estimates via maximum likelihood
+		#' 							  * "incidence_KK_compound_multivariate_logistic_regression"	
+		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
+		#' 								and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
+		#' 								and estimates via maximum likelihood
+		#' 							  * "incidence_KK_multivariate_logistic_regression_with_matching_dummies"	
+		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
+		#' 								and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
+		#' 								and estimates via maximum likelihood
+		#' 							  * "incidence_KK_compound_multivariate_logistic_regression_and_random_intercepts_for_matches"
+		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
+		#' 								and the presence of linear additive covariates 
+		#' 								and random intercepts on the match ID also in the log odds probability of the positive class
+		#' 								and estimates via restricted maximum likelihood
+		#' 							  * "proportion_simple_mean_difference"	
+		#' 								assumes the treatment effect parameter is an additive proportion difference 
+		#' 								and estimates via the simple average difference	
+		#' 							  * "proportion_simple_logodds_regression"	
+		#' 								assumes the treatment effect parameter is additive in the log odds proportion
+		#' 								and estimates via beta regression
+		#' 							  * "proportion_beta_regression"
+		#' 								assumes the treatment effect parameter is additive in the log odds proportion
+		#' 								and the presence of linear additive covariates 
+		#' 								and estimates via beta regression 
+		#'							  * "proportion_KK_compound_univariate_beta_regression"
+		#' 								assumes the treatment effect parameter is an additive treatment effect in log odds of proportion
+		#' 								and the presence of linear additive covariates also in the log odds of proportion
+		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
+		#'							  *	"proportion_KK_compound_multivariate_beta_regression"
+		#' 								assumes the treatment effect parameter is an additive treatment effect in log odds	
+		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
+		#' 							  * "proportion_KK_multivariate_beta_regression_with_matching_dummies"
+		#' 								assumes the treatment effect parameter is additive in the log odds proportion
+		#' 								and the presence of linear additive covariates 
+		#' 								and estimates via beta regression
+		#' 							  * "count_simple_mean_difference"	
+		#' 								assumes the treatment effect parameter is an additive mean count difference 
+		#' 								and estimates via the simple average difference	
+		#' 							  * "count_univariate_negative_binomial_regression"		
+		#' 								assumes the treatment effect parameter is additive in the log count
+		#' 								and estimates via negative binomial regression
+		#' 							  * "count_multivariate_negative_binomial_regression"	
+		#' 								assumes the treatment effect parameter is additive in the log count
+		#' 								and the presence of linear additive covariates 
+		#' 								and estimates via negative binomial regression
+		#' 							  * "count_KK_compound_univariate_negative_binomial_regression"	
+		#' 								assumes the treatment effect parameter is additive in the log count
+		#' 								and treating the match ID as a factor
+		#' 								and estimates via maximum likelihood	
+		#' 							  * "count_KK_multivariate_negative_binomial_regression_with_matching_dummies"	
+		#' 								assumes the treatment effect parameter is additive in the log count
+		#' 								and the presence of linear additive covariates
+		#' 								and treating the match ID as a factor
+		#' 								and estimates via maximum likelihood
+		#' 							  * "count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches"
+		#' 								assumes the treatment effect parameter is additive in the log count
+		#' 								and the presence of linear additive covariates in the log count
+		#' 								and random intercepts on the match ID in the log count
+		#' 								and estimates via maximum likelihood							
+		#' 							  * "survival_simple_median_difference"	
+		#' 								assumes the treatment effect parameter is the difference in survival medians
+		#' 								and estimates via Kaplan-Meier
+		#' 							  * "survival_univariate_weibull_regression"	
+		#' 								assumes the treatment effect parameter is the additive mean survival difference
+		#' 								and estimates via Weibull regression
+		#' 							  * "survival_multivariate_weibull_regression"
+		#' 								assumes the treatment effect parameter is the additive mean survival difference
+		#' 								and the presence of linear additive covariates
+		#' 								and estimates via Weibull regression	
+		#' 							  * "survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies"
+		#' 								assumes the treatment effect parameter is the additive mean survival difference
+		#' 								and the presence of linear additive covariates
+		#' 								and estimates via Weibull regression	
 		#' 							log odds of probability of positive class between the treatment and control.
 		#' 							The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.
 		#' @param test_type			The type of test to run (either "MLE-or-KM-based" implying your subject entrant sampling 
@@ -59,7 +158,45 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		initialize = function(seq_des_obj, estimate_type = "default_regression", test_type = "randomization-exact", num_cores = 1, verbose = TRUE){
 			assertClass(seq_des_obj, "SeqDesign")
 			seq_des_obj$assert_experiment_completed()
-			assertChoice(estimate_type, c("mean_difference", "median_difference", "default_regression"))
+			assertChoice(estimate_type, c(
+				########################################### CONTINUOUS
+				"continuous_simple_mean_difference",
+				"continuous_regression_with_covariates",
+				"continuous_KK_compound_mean_difference",  	
+				"continuous_KK_compound_multivariate_regression",
+				"continuous_KK_regression_with_covariates_with_matching_dummies",
+				"continuous_KK_regression_with_covariates_and_random_intercepts",
+				########################################### INCIDENCE
+				"incidence_simple_mean_difference",
+				"incidence_simple_log_odds",	
+				"incidence_logistic_regression",
+				"incidence_KK_compound_univariate_logistic_regression",
+				"incidence_KK_compound_multivariate_logistic_regression",	
+				"incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
+				"incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches",
+				########################################### PROPORTION
+				"proportion_simple_mean_difference",
+				"proportion_simple_logodds_regression",
+				"proportion_beta_regression",
+				"proportion_KK_compound_univariate_beta_regression",
+				"proportion_KK_compound_multivariate_beta_regression",
+				"proportion_KK_multivariate_beta_regression_with_matching_dummies",
+				########################################### COUNT
+				"count_simple_mean_difference",
+				"count_univariate_negative_binomial_regression",
+				"count_multivariate_negative_binomial_regression",
+				"count_KK_compound_univariate_negative_binomial_regression",	
+				"count_KK_compound_multivariate_negative_binomial_regression",
+				"count_KK_multivariate_negative_binomial_regression_with_matching_dummies",
+				"count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches",
+				########################################### SURVIVAL
+				"survival_simple_median_difference",	
+				"survival_univariate_weibull_regression",	
+				"survival_multivariate_weibull_regression",
+				"survival_KK_compound_univariate_weibull_regression",	
+				"survival_KK_compound_multivariate_weibull_regression",
+				"survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies"					
+			))
 			assertChoice(test_type, c("MLE-or-KM-based", "randomization-exact"))
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
@@ -68,13 +205,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			self$test_type = test_type
 			private$seq_des_obj = seq_des_obj
 			private$isKK = seq_des_obj$.__enclos_env__$private$isKK
+			private$match_indic = private$seq_des_obj$.__enclos_env__$private$match_indic
+			if (!is.null(private$match_indic)){
+				mm = model.matrix(~ 0 + factor(private$match_indic)) 
+				mm = mm[, 2 : (ncol(mm) - 1)]
+				private$match_indic_model_matrix = mm
+			}
 			private$n = private$seq_des_obj$.__enclos_env__$private$n
 			private$X = private$seq_des_obj$.__enclos_env__$private$compute_all_subject_data()$X_all
 			private$yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1]
 			private$yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0]
 			private$deadTs = private$seq_des_obj$dead[private$seq_des_obj$w == 1]
 			private$deadCs = private$seq_des_obj$dead[private$seq_des_obj$w == 0]
-			private$ybarT_minus_ybarC = mean(private$yTs) - mean(private$yCs)	
 			private$num_cores = num_cores
 			private$verbose = verbose
 			private$prob_T = private$seq_des_obj$prob_T
@@ -86,6 +228,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$is_count = response_type == "count"
 			private$is_proportion = response_type == "proportion"
 			private$is_survival = response_type == "survival"
+			
+			if (strsplit(estimate_type, "_")[[1]][1] != response_type){
+				stop(paste(estimate_type, "cannot be estimated for response type:", response_type))
+			}
+			if (grepl("KK", estimate_type) & !private$isKK){
+				stop(paste(estimate_type, "cannot be estimated for design type", seq_des_obj$design_type), "as it is not a KK-type design")
+			}
 			
 			if (estimate_type == "median_difference" & !private$is_survival){
 				stop("estimate_type \"median_difference\" is only available for response_type \"survival\"")
@@ -131,42 +280,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 		
 		compute_treatment_estimate = function(){
-			if (is.null(private$beta_T_hat)){				
-				private$beta_T_hat = 	if (self$estimate_type == "mean_difference"){
-											if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-												private$post_matching_data_KK_inference_helper()$beta_hat_T	
-											} else if (private$is_incidence){
-												private$compute_logistic_model_summary(use_covariates = FALSE)[2, 1]
-											} else if (private$is_count){
-												private$compute_count_model_summary(use_covariates = FALSE)[2, 1]
-											} else if (private$is_survival){
-												private$compute_survival_model_summary(use_covariates = FALSE)[2, 1]
-											} else {
-												private$ybarT_minus_ybarC #faster than calling lm.fit or betareg (and equivalent)
-											}											
-										} else if (self$estimate_type == "median_difference"){
-											private$survival_diff_medians_censored_estimate(private$seq_des_obj$y, private$seq_des_obj$dead, private$seq_des_obj$w)
-										} else if (self$estimate_type == "default_regression"){
-											if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-												private$compute_MLE_based_inference_ols_KK()$beta_hat_T
-											} else if (private$is_continuous){
-												private$compute_continuous_model_summary(use_covariates = TRUE, estimate_only = TRUE)
-											} else if (private$is_incidence){
-												private$compute_logistic_model_summary(use_covariates = TRUE)[2, 1]
-											} else if (private$is_count){
-												private$compute_count_model_summary(use_covariates = TRUE)[2, 1]
-											} else if (private$is_proportion){
-												b = private$compute_proportion_model_summary(use_covariates = TRUE)[2, 1]
-												if (is.null(b) | is.na(b) | is.nan(b) | class(b) != "numeric"){
-													stop("boom")
-												}
-												b
-											} else if (private$is_survival){
-												private$compute_survival_model_summary(use_covariates = TRUE)[2, 1]
-											}
-										}
+			beta_hat_T = private$fetch_and_or_cache_inference_model()$beta_hat_T
+			if (length(beta_hat_T) == 0 | is.na(beta_hat_T) | is.null(beta_hat_T) | is.infinite(beta_hat_T) | is.nan(beta_hat_T)){
+				stop("boom")
 			}
-			private$beta_T_hat
+			beta_hat_T
 		},
 		
 		#' @description
@@ -209,8 +327,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
 		#' 								The default is 1000 providing good resolutions to confidence intervals.
 		#' @param B						Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-		#' 								(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
-		#' 								to a fifth of a percent.
+		#' 								(see \link{\code{controlTest::quantileControlTest}}. The default is NULL which corresponds to B=501 
+		#' 								providing pvalue resolution to a fifth of a percent.
 		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
 		#' 								The default is to find a CI accurate to within a tenth of a percent.
 		#' 
@@ -229,11 +347,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#' 		
-		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.001, B = 501){
+		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.001, B = NULL){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			assertCount(nsim_exact_test, positive = TRUE)
+			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			private$handle_B_for_survival_median_inference(B)
 			
 			if (self$test_type == "MLE-or-KM-based"){
-				private$compute_mle_or_km_based_confidence_interval(alpha, B)
+				one_minus_alpha_over_two = 1 - alpha / 2
+				inference_mod = private$fetch_and_or_cache_inference_model()
+				z_or_t_val = 	if (inference_mod$is_z){
+									qnorm(one_minus_alpha_over_two)
+								} else {
+									qt(one_minus_alpha_over_two, inference_mod$df)
+								}
+				moe = z_or_t_val * inference_mod$s_beta_hat_T
+				#return the CI
+				inference_mod$beta_hat_T + c(-moe, moe)
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
 				assertCount(B, positive = TRUE)
@@ -314,43 +444,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 		
-		compute_two_sided_pval_for_treatment_effect = function(nsim_exact_test = 501, B = 501, delta = 0){
+		compute_two_sided_pval_for_treatment_effect = function(nsim_exact_test = 501, B = NULL, delta = 0){
 			assertNumeric(delta)
-			assertCount(B, positive = TRUE)
+			private$handle_B_for_survival_median_inference(B)
 			
 			if (self$test_type == "MLE-or-KM-based"){
 				if (delta != 0){
 					stop("nonzero treatment effect tests not yet supported for MLE or KM based tests")
 				}
-				if (self$estimate_type == "mean_difference"){
-					if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-						private$post_matching_data_KK_inference_helper()$p_val	
-					} else if (private$is_incidence){
-						private$compute_logistic_model_summary(use_covariates = FALSE)[2, 4]
-					} else if (private$is_count){
-						private$compute_count_model_summary(use_covariates = FALSE)[2, 4]
-					} else if (private$is_survival){
-						private$compute_survival_model_summary(use_covariates = FALSE)[2, 4]
-					} else {
-						private$simple_t_stat_calculations_for_difference_in_means_estimate()$p_val
-					}											
-				} else if (self$estimate_type == "median_difference"){
-					suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B)$pval)
-				} else if (self$estimate_type == "default_regression"){
-					if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-						private$compute_MLE_based_inference_ols_KK()$p_val
-					} else if (private$is_continuous){
-						private$compute_continuous_model_summary(use_covariates = TRUE)[2, 4]
-					} else if (private$is_incidence){
-						private$compute_logistic_model_summary(use_covariates = TRUE)[2, 4]
-					} else if (private$is_count){
-						private$compute_count_model_summary(use_covariates = TRUE)[2, 4]
-					} else if (private$is_proportion){
-						private$compute_proportion_model_summary(use_covariates = TRUE)[2, 4]
-					} else if (private$is_survival){
-						private$compute_survival_model_summary(use_covariates = TRUE)[2, 4]
-					}
-				}	
+				pval = private$fetch_and_or_cache_inference_model()$p_val
+				if (length(pval) == 0 | is.na(pval) | is.null(pval) | is.infinite(pval) | is.nan(pval)){
+					stop("boom")
+				}
+				pval
+				
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
 				private$compute_randomization_test_p_val(nsim_exact_test, private$num_cores, delta)				
@@ -361,6 +468,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	private = list(
 		seq_des_obj = NULL,
 		isKK = FALSE,
+		match_indic = NULL,
+		match_indic_model_matrix = NULL,
 		rand_inf_b_T_sims = NULL,
 		num_cores = NULL,
 		verbose = FALSE,
@@ -371,19 +480,30 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		yCs = NULL,
 		deadTs = NULL,
 		deadCs = NULL,
-		ybarT_minus_ybarC = NULL,
 		beta_T_hat = NULL,
 		prob_T = NULL,
 		prob_T_fifty_fifty = NULL,
 		KKstats = NULL,
 		
+		inference_model = NULL,
+		default_B_for_median_inference = 501,
 		is_continuous = FALSE,
 		is_incidence = FALSE,
 		is_count = FALSE,
 		is_proportion = FALSE,
 		is_survival = FALSE,
 		
-		############# TESTING HELPER FUNCTIONS
+		handle_B_for_survival_median_inference = function(B){
+			if (is.null(B)){
+				B = private$default_B_for_median_inference
+			}
+			assertCount(B, positive = TRUE)
+			if (self$estimate_type == "survival_simple_median_difference" & B != private$default_B_for_median_inference){
+				private$inference_model = private$compute_survival_simple_median_inference(B) #recompute it since we now need to pass in the new B value
+			}
+		},
+		
+		############# RANDOMIZATION TEST HELPER FUNCTIONS
 		
 		compute_ci_lower_by_inverting_the_randomization_test = function(nsim_exact_test, num_cores, l, u, pval_th, tol){
 			return(NA)
@@ -473,158 +593,137 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			)
 		},
 		
-		######### CI HELPER FUNCTIONS	
+		######### MODEL INFERENCE FUNCTIONS	
 		
-		compute_mle_or_km_based_confidence_interval = function(alpha, B = NULL){
-			one_minus_alpha_over_two = 1 - alpha / 2
-			z_one_minus_alpha_over_two = qnorm(one_minus_alpha_over_two)
-			
-			moe = 	if (self$estimate_type == "mean_difference"){
-						if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-							z_one_minus_alpha_over_two *
-									private$post_matching_data_KK_inference_helper()$s_beta_hat_T
-						} else if (private$is_incidence){
-							z_one_minus_alpha_over_two *
-									private$compute_logistic_model_summary(use_covariates = FALSE)[2, 2]
-						} else if (private$is_count){
-							z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = FALSE)[2, 2]
-						} else if (private$is_survival){
-							z_one_minus_alpha_over_two *
-									private$compute_survival_model_summary(use_covariates = FALSE)[2, 2]
-						} else { #proportion or continuous
-							qt(one_minus_alpha_over_two, length(private$yTs) + length(private$yCs) - 2) * 
-									private$simple_t_stat_calculations_for_difference_in_means_estimate()$s_beta_hat_T
-						}											
-					} else if (self$estimate_type == "median_difference"){
-						test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
-						z_one_minus_alpha_over_two *
-								test_obj$se
-					} else if (self$estimate_type == "default_regression"){
-						if (private$isKK & private$prob_T_fifty_fifty & private$is_continuous){
-							z_one_minus_alpha_over_two *
-									private$compute_MLE_based_inference_ols_KK()$s_beta_hat_T
-						} else if (private$is_continuous){
-							qt(one_minus_alpha_over_two, private$n - ncol(private$X) - 2) * #subtract two for intercept and allocation vector 
-									private$compute_continuous_model_summary(use_covariates = TRUE)[2, 2]
-						} else if (private$is_incidence){
-							z_one_minus_alpha_over_two *
-									private$compute_logistic_model_summary(use_covariates = TRUE)[2, 2]
-						} else if (private$is_count){
-							z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
-						} else if (private$is_proportion){
-							z_one_minus_alpha_over_two *
-									private$compute_count_model_summary(use_covariates = TRUE)[2, 2]
-						} else if (private$is_survival){
-							z_one_minus_alpha_over_two *
-									private$compute_survival_model_summary(use_covariates = TRUE)[2, 2]
-						}
-					}
-			#return the CI
-			private$beta_T_hat + c(-moe, moe)
+		fetch_and_or_cache_inference_model = function(){
+			if (is.null(private$inference_model)){
+				private$inference_model = switch(self$estimate_type,
+					########################################### CONTINUOUS
+					"continuous_simple_mean_difference" =
+							private$compute_simple_mean_difference_inference(),
+					"continuous_regression_with_covariates" =
+							private$compute_continuous_multivariate_ols_inference(),
+					"continuous_KK_compound_mean_difference" =
+							private$compute_continuous_KK_compound_mean_difference_inference(),  	
+					"continuous_KK_compound_multivariate_regression" =
+							private$compute_continuous_KK_compound_multivariate_ols_inference(),
+					"continuous_KK_regression_with_covariates_with_matching_dummies" = 
+							private$compute_continuous_KK_multivariate_with_matching_dummies_ols_inference(),
+					"continuous_KK_regression_with_covariates_and_random_intercepts" = 
+							private$compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference(),
+					########################################### INCIDENCE
+					"incidence_simple_mean_difference" =
+							private$compute_simple_mean_difference_inference(),
+					"incidence_simple_log_odds" =
+							private$compute_incidence_univariate_logistic_regression_inference(),	
+					"incidence_logistic_regression" =
+							private$compute_incidence_multivariate_logistic_regression_inference(),
+					"incidence_KK_compound_univariate_logistic_regression" =
+							private$compute_incidence_KK_compound_univariate_logistic_regression_inference(),
+					"incidence_KK_compound_multivariate_logistic_regression" =
+							private$compute_incidence_KK_compound_multivariate_logistic_regression_inference(),	
+					"incidence_KK_multivariate_logistic_regression_with_matching_dummies" =
+							private$compute_incidence_KK_multivariate_logistic_regression_with_matching_dummies_inference(),	
+					"incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches" =
+							private$compute_incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches_inference(),
+					########################################### PROPORTION
+					"proportion_simple_mean_difference" =
+							private$compute_simple_mean_difference_inference(),
+					"proportion_simple_logodds_regression" =
+							private$compute_proportion_univariate_beta_regression_inference(),
+					"proportion_beta_regression" =
+							private$compute_proportion_multivariate_beta_regression_inference(),
+					"proportion_KK_compound_univariate_beta_regression" =
+							private$compute_proportion_KK_compound_univariate_beta_regression_inference(),
+					"proportion_KK_compound_multivariate_beta_regression" =
+							private$compute_proportion_KK_compound_multivariate_beta_regression_inference(),
+					"proportion_KK_multivariate_beta_regression_with_matching_dummies" =
+							private$compute_proportion_KK_multivariate_beta_regression_with_matching_dummies_inference(),
+					########################################### COUNT
+					"count_simple_mean_difference" =
+							private$compute_simple_mean_difference_inference(),
+					"count_univariate_negative_binomial_regression" =
+							private$compute_count_univariate_negative_binomial_inference(),
+					"count_multivariate_negative_binomial_regression" =
+							private$compute_count_multivariate_negative_binomial_inference(),
+					"count_KK_compound_univariate_negative_binomial_regression" =
+							private$compute_count_KK_compound_univariate_negative_binomial_inference(),	
+					"count_KK_compound_multivariate_negative_binomial_regression" =
+							private$compute_count_KK_compound_multivariate_negative_binomial_inference(),
+					"count_KK_multivariate_negative_binomial_regression_with_matching_dummies" =
+							private$compute_count_KK_multivariate_with_matching_dummies_negative_binomial_inference(),
+					"count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches" =
+							private$compute_count_KK_multivariate_negative_binomial_and_random_intercepts_for_matches_inference(),
+					########################################### SURVIVAL
+					"survival_simple_median_difference" =
+							private$compute_survival_simple_median_inference(),	
+					"survival_univariate_weibull_regression" =
+							private$compute_survival_univariate_weibull_regression_inference(),	
+					"survival_multivariate_weibull_regression" =
+							private$compute_survival_multivariate_weibull_regression_inference(),
+					"survival_KK_compound_univariate_weibull_regression" =
+							private$compute_survival_KK_compound_univariate_weibull_inference(),	
+					"survival_KK_compound_multivariate_weibull_regression" =
+							private$compute_survival_KK_compound_multivariate_weibull_inference(),
+					"survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies" =
+							private$compute_survival_multivariate_with_matching_dummies_weibull_regression_inference()
+				)
+			}
+			private$inference_model
 		},
-		######### GENERAL INFERENCE HELPER FUNCTIONS	
 		
-		
-		
-		simple_t_stat_calculations_for_difference_in_means_estimate = function(){
+		compute_simple_mean_difference_inference = function(){
 			nT = length(private$yTs)
 			nC = length(private$yCs)
-			s_beta_hat_T = sqrt(var(private$yTs) / nT + var(private$yCs) / nC)
+			beta_hat_T = mean(private$yTs) - mean(private$yCs)
+			s_1_sq = var(private$yTs) / nT 
+			s_2_sq = var(private$yCs) / nC
+			s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
+			df = (s_1_sq + s_2_sq)^2 / 
+					(s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)) #Welch-Satterthwaite formula
 			list(
-					s_beta_hat_T = s_beta_hat_T, 
-					p_val = 2 * pt(-abs(private$ybarT_minus_ybarC / s_beta_hat_T), nT + nC - 2)	
-			)			
+				beta_hat_T = beta_hat_T,
+				s_beta_hat_T = s_beta_hat_T, 
+				is_z = FALSE,
+				df = df,
+				p_val = 2 * pt(-abs(beta_hat_T), df)
+			)		
+		},	
+		
+		compute_continuous_multivariate_ols_inference = function(){
+			ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
+			summary_table = coef(summary(ols_regr_mod))
+			list(
+				mod = ols_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = FALSE,
+				df = private$n - nrow(summary_table),
+				p_val = summary_table[2, 4]
+			)
 		},
 		
-		compute_continuous_model_summary = function(use_covariates, estimate_only = FALSE){
-			if (estimate_only){
-				ols_regr_mod = 	if (use_covariates){
-									lm.fit(cbind(1, private$seq_des_obj$w, private$X), private$seq_des_obj$y)
-								} else {
-									lm.fit(cbind(1, private$seq_des_obj$w), private$seq_des_obj$y)
-								}
-				ols_regr_mod$coefficients[2]
+		compute_continuous_KK_compound_mean_difference_inference = function(){
+			KKstats = private$compute_continuous_post_matching_data_KK()
+			#sometimes the reservoir just isn't large enough
+			if (KKstats$nRT <= 1 || KKstats$nRC <= 1){
+				KKstats$beta_hat_T = KKstats$d_bar	
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqD_bar)
+			} else if (KKstats$m == 0){ #sometimes there's no matches
+				KKstats$beta_hat_T = KKstats$r_bar		
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR)		
 			} else {
-				ols_regr_mod = if (use_covariates){
-									lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
-								} else {
-									lm(private$seq_des_obj$y ~ private$seq_des_obj$w)
-								}			
-				coef(summary(ols_regr_mod))
-			}			
-		},
-		
-		compute_logistic_model_summary = function(use_covariates, estimate_only = FALSE){
-			if (estimate_only){
-				stop("this speedup is not implemented yet... use estimate_only = FALSE")
-			} else {	
-				logistic_regr_mod = if (use_covariates){
-										suppressWarnings(glm(private$seq_des_obj$y ~ cbind(private$seq_des_obj$w, private$X), family = "binomial"))
-									} else {
-										suppressWarnings(glm(private$seq_des_obj$y ~ private$seq_des_obj$w, family = "binomial"))
-									}
-				coef(summary(logistic_regr_mod))
+				KKstats$beta_hat_T = KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR * KKstats$ssqD_bar / (KKstats$ssqR + KKstats$ssqD_bar))
 			}
+			KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution			
+			KKstats$is_z = TRUE #see KK14 paper for details about how assuming the normal distr here may be too liberal
+			KKstats
 		},
 		
-		compute_count_model_summary = function(use_covariates, estimate_only = FALSE){
-			if (estimate_only){
-				stop("this speedup is not implemented yet... use estimate_only = FALSE")
-			} else {
-				negbin_regr_mod = 	if (use_covariates){
-										suppressWarnings(MASS::glm.nb(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X)))								
-									} else {
-										suppressWarnings(MASS::glm.nb(y ~ ., data = data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w)))
-									}			
-				coef(summary(negbin_regr_mod))
-			}
-		},
-		
-		compute_proportion_model_summary = function(use_covariates, estimate_only = FALSE){
-			if (estimate_only){
-				stop("this speedup is not implemented yet... use estimate_only = FALSE")
-			} else {			
-				beta_regr_mod = if (use_covariates){
-									suppressWarnings(betareg::betareg(y ~ ., data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X)))
-								} else {
-									suppressWarnings(betareg::betareg(y ~ ., data = data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w)))
-								}			
-				summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-				if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-					summary_beta_regr_mod$mean 
-				} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-					summary_beta_regr_mod$mu
-				}
-			}
-		},
-		
-		compute_survival_model_summary = function(use_covariates, estimate_only = FALSE){
-			if (estimate_only){
-				stop("this speedup is not implemented yet... use estimate_only = FALSE")
-			} else {
-				surv_regr_mod = if (use_covariates){
-									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, cbind(private$seq_des_obj$w, private$X))
-								} else {
-									robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, private$seq_des_obj$w)
-								}
-				if (is.na(summary(surv_regr_mod)$table[2, 1])){
-					stop("NA estimate")
-				}
-				summary(surv_regr_mod)$table	
-			}
-		},
-		
-		survival_diff_medians_censored_estimate = function(y, dead, w){
-			survival_obj = survival::Surv(y, dead)
-			survival_fit_obj = survival::survfit(survival_obj ~ w)
-			survival_fit_res = summary(survival_fit_obj)$table
-			survival_fit_res[2, 7] - survival_fit_res[1, 7]	
-		},
-		
-		compute_MLE_based_inference_ols_KK = function(){
-			KKstats = private$compute_post_matching_data_KK()
+		compute_continuous_KK_compound_multivariate_ols_inference = function(){
+			KKstats = private$compute_continuous_post_matching_data_KK()
 			
 			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= ncol(private$X) + 2)){
 				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
@@ -633,14 +732,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				KKstats$s_beta_hat_T = coefs_matched[1, 2]
 				KKstats$p_val = coefs_matched[1, 4]
 				
-			#and sometimes there's no matches	
+				#and sometimes there's no matches	
 			} else if (KKstats$m == 0){			
 				coefs_reservoir = coef(summary(lm(KKstats$y_reservoir ~ cbind(KKstats$w_reservoir, KKstats$X_reservoir))))		
 				KKstats$beta_hat_T = coefs_reservoir[2, 1]
 				KKstats$s_beta_hat_T = coefs[2, 2]
 				KKstats$p_val = coefs[2, 4]
 				
-			#but most of the time... we have matches and a nice-sized reservoir
+				#but most of the time... we have matches and a nice-sized reservoir
 			} else {
 				#compute estimator from matched pairs by regression
 				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
@@ -655,51 +754,273 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				w_star = ssqd_reservoir_regression / (ssqd_reservoir_regression + ssqd_match_regression) #just a convenience for faster runtime	
 				KKstats$beta_hat_T = w_star * beta_match_regression + (1 - w_star) * beta_reservoir_regression #proper weighting
 				KKstats$s_beta_hat_T = sqrt(ssqd_match_regression * ssqd_reservoir_regression / (ssqd_match_regression + ssqd_reservoir_regression)) #analagous eq's
-				KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution
+				KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution			
 			}
+			KKstats$is_z = TRUE #see KK14 paper for details about how assuming the normal distr here may be too liberal
 			KKstats
 		},
 		
-		post_matching_data_KK_inference_helper = function(){
-			KKstats = private$compute_post_matching_data_KK()
-			#sometimes the reservoir just isn't large enough
-			if (KKstats$nRT <= 1 || KKstats$nRC <= 1){
-				KKstats$beta_hat_T = KKstats$d_bar	
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqD_bar)
-			} else if (KKstats$m == 0){ #sometimes there's no matches
-				KKstats$beta_hat_T = KKstats$r_bar		
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR)		
-			} else {
-				KKstats$beta_hat_T = KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR * KKstats$ssqD_bar / (KKstats$ssqR + KKstats$ssqD_bar))
-			}
-			KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using real Z
-			KKstats
+		compute_continuous_KK_multivariate_with_matching_dummies_ols_inference = function(){
+			ols_regr_mod = lm(private$seq_des_obj$y ~ ., 
+					data = private$generate_data_frame_with_matching_dummies())
+			summary_table = coef(summary(ols_regr_mod))
+			list(
+				mod = ols_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = FALSE,
+				df = private$n - nrow(summary_table),
+				p_val = summary_table[2, 4]
+			)
 		},
 		
-		compute_post_matching_data_KK = function(){	
+		generate_data_frame_with_matching_dummies = function(){
+			cbind(data.frame(w = private$seq_des_obj$w), private$X, private$match_indic_model_matrix)
+		},
+		
+		compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference = function(){
+			mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
+					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+			summary_table = coef(summary(mixed_regr_mod))
+			list(
+				mod = mixed_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = FALSE,
+				df = summary_table[2, 4],
+				p_val = summary_table[2, 5]
+			)
+		},
+		
+		compute_incidence_univariate_logistic_regression_inference = function(){
+			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+					data = data.frame(w = private$seq_des_obj$w), family = "binomial"))
+			summary_table = coef(summary(logistic_regr_mod))
+			list(
+				mod = logistic_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_incidence_multivariate_logistic_regression_inference = function(){
+			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+					data = cbind(data.frame(w = private$seq_des_obj$w), private$X), family = "binomial"))
+			summary_table = coef(summary(logistic_regr_mod))
+			list(
+				mod = logistic_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_incidence_KK_compound_univariate_logistic_regression_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_incidence_KK_compound_multivariate_logistic_regression_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_incidence_KK_multivariate_logistic_regression_with_matching_dummies_inference = function(){
+			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+					data = private$generate_data_frame_with_matching_dummies(), family = "binomial"))
+			summary_table = coef(summary(logistic_regr_mod))
+			list(
+				mod = logistic_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches_inference = function(){
+			mixed_logistic_regr_mod = suppressWarnings(lme4::glmer(y ~ . - match_indic + (1 | match_indic), 
+					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
+					family = "binomial"))
+			summary_table = coef(summary(mixed_logistic_regr_mod))
+			list(
+				mod = mixed_logistic_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_proportion_univariate_beta_regression_inference = function(){
+			private$shared_beta_regression_inference(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w))
+		},
+		
+		compute_proportion_multivariate_beta_regression_inference = function(){
+			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X))
+		},
+		
+		compute_proportion_KK_multivariate_beta_regression_with_matching_dummies_inference = function(){
+			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj$y), private$generate_data_frame_with_matching_dummies()))
+		},
+		
+		compute_proportion_KK_compound_univariate_beta_regression_inference = function(){
+			stop("not implemented yet")
+		}, 
+		
+		compute_proportion_KK_compound_multivariate_beta_regression_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		shared_beta_regression_inference = function(data_obj){
+			beta_regr_mod = robust_betareg(y ~ ., data_obj)
+			beat_regr_mod_sub = coef(summary(beta_regr_mod))
+			summary_table = if (!is.null(beat_regr_mod_sub$mean)){ #beta model
+								beat_regr_mod_sub$mean 
+							} else if (!is.null(beat_regr_mod_sub$mu)){ #extended-support xbetax model
+								beat_regr_mod_sub$mu
+							}
+			list(
+				mod = beta_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_count_univariate_negative_binomial_inference = function(){
+			private$compute_count_negative_binomial_regression(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w))
+		},
+		
+		compute_count_multivariate_negative_binomial_inference = function(){
+			private$compute_count_negative_binomial_regression(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X))
+		},
+		
+		compute_count_KK_compound_univariate_negative_binomial_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_count_KK_compound_multivariate_negative_binomial_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_count_KK_multivariate_negative_binomial_and_random_intercepts_for_matches_inference = function(){
+			mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
+					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+			summary_table = coef(summary(mixed_neg_bin_regr_mod))
+			list(
+					mod = mixed_neg_bin_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_count_KK_multivariate_with_matching_dummies_negative_binomial_inference = function(){
+			private$compute_count_negative_binomial_regression(cbind(data.frame(y = private$seq_des_obj$y), private$generate_data_frame_with_matching_dummies()))
+		},
+		
+		compute_count_negative_binomial_regression = function(data_obj){
+			negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ ., data = data_obj))
+			summary_table = coef(summary(negbin_regr_mod))
+			list(
+				mod = negbin_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_survival_simple_median_inference = function(B = NULL){
+			if (is.null(B)){
+				B = private$default_B_for_median_inference
+			}
+			survival_obj = survival::Surv(private$seq_des_obj$y, private$seq_des_obj$dead)
+			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj$w)
+			survival_fit_res = summary(survival_fit_obj)$table
+			test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
+			list(
+				mod = survival_fit_obj,
+				summary_table  =survival_fit_res,
+				beta_hat_T = survival_fit_res[2, 7] - survival_fit_res[1, 7],
+				s_beta_hat_T = test_obj$se,
+				is_z = TRUE,
+				p_val = test_obj$pval
+			)
+		},
+		
+		compute_survival_univariate_weibull_regression_inference = function(){
+			private$compute_survival_weibull_regression(private$seq_des_obj$w)
+		},
+		
+		compute_survival_multivariate_weibull_regression_inference = function(){
+			private$compute_survival_weibull_regression(cbind(private$seq_des_obj$w, private$X))
+		},
+		
+		compute_survival_KK_compound_univariate_weibull_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_survival_KK_compound_multivariate_weibull_inference = function(){
+			stop("not implemented yet")
+		},
+		
+		compute_survival_multivariate_with_matching_dummies_weibull_regression_inference = function(){
+			private$compute_survival_weibull_regression(private$generate_data_frame_with_matching_dummies())
+		},
+		
+		compute_survival_weibull_regression = function(data_obj){
+			surv_regr_mod = robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, data_obj)
+			summary_table = summary(surv_regr_mod)$table
+			if (is.na(summary_table[2, 1])){
+				stop("NA estimate")
+			}
+			list(
+				mod = surv_regr_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[2, 1],
+				s_beta_hat_T = summary_table[2, 2],
+				is_z = TRUE,
+				p_val = summary_table[2, 4]
+			)
+		},
+				
+		compute_continuous_post_matching_data_KK = function(){	
 			if (is.null(private$KKstats)){
 				#get matched data
-				match_indic = private$seq_des_obj$.__enclos_env__$private$match_indic
-				m = max(match_indic)
+				
+				m = max(private$match_indic)
 				y_matched_diffs = array(NA, m)
 				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 				if (m > 0){
 					for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
-						yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1 & match_indic == match_id]
-						yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0 & match_indic == match_id]
+						yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1 & private$match_indic == match_id]
+						yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0 & private$match_indic == match_id]
 						y_matched_diffs[match_id] = mean(yTs) - mean(yCs)
 						
-						xmTs = private$X[private$seq_des_obj$w == 1 & match_indic == match_id, ]
-						xmCs = private$X[private$seq_des_obj$w == 0 & match_indic == match_id, ]
+						xmTs = private$X[private$seq_des_obj$w == 1 & private$match_indic == match_id, ]
+						xmCs = private$X[private$seq_des_obj$w == 0 & private$match_indic == match_id, ]
 						X_matched_diffs[match_id, ] = mean(xmTs) - mean(xmCs)
 					}
 				}			
 				
 				#get reservoir data
-				X_reservoir = 	private$X[match_indic == 0, ]
-				y_reservoir = 	private$seq_des_obj$y[match_indic == 0]
-				w_reservoir = 	private$seq_des_obj$w[match_indic == 0]
+				X_reservoir = 	private$X[private$match_indic == 0, ]
+				y_reservoir = 	private$seq_des_obj$y[private$match_indic == 0]
+				w_reservoir = 	private$seq_des_obj$w[private$match_indic == 0]
 				y_reservoir_T = y_reservoir[w_reservoir == 1] #get the reservoir responses from the treatment
 				y_reservoir_C = y_reservoir[w_reservoir == 0] #get the reservoir responses from the control
 				r_bar = mean(y_reservoir_T) - mean(y_reservoir_C) #compute the classic estimator from the reservoir: ybar_T - ybar_C

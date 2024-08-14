@@ -794,9 +794,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		compute_weight_KK21_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
-			#1 - coef(summary(logistic_regr_mod))[2, 4]
+			tryCatch({
+				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
+			}, error = function(e){return(0)}) #sometimes these glm's blow up and we don't really care that much
 			summary_logistic_regr_mod = coef(summary(logistic_regr_mod))
+			#1 - coef(summary(logistic_regr_mod))[2, 4]
 			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
 			ifelse(nrow(summary_logistic_regr_mod) >= 2, abs(summary_logistic_regr_mod[2, 3]), 0)
 		},
@@ -804,23 +806,31 @@ SeqDesign = R6::R6Class("SeqDesign",
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			tryCatch({
 				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-				#1 - coef(summary(negbin_regr_mod))[2, 4]
-				summary_negbin_regr_mod = coef(summary(negbin_regr_mod))
-				#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-				ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), 0)		
-			}, error = function(e){return(0)})
+			}, error = function(e){return(0)}) #sometimes these glm's blow up and we don't really care that much
+			summary_negbin_regr_mod = coef(summary(negbin_regr_mod))
+			#1 - coef(summary(negbin_regr_mod))[2, 4]
+			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+			ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), 0)		
 		},
 		
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-			#1 - coef(summary(beta_regr_mod))$mean[2, 4]
-			summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-			tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-						summary_beta_regr_mod$mean 
-					} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-						summary_beta_regr_mod$mu
-					}
-			ifelse(nrow(tab) >= 2, abs(tab[2, 3]), 0)
+			tryCatch({
+				beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+				summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+				#1 - coef(summary(beta_regr_mod))$mean[2, 4]
+				tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+							summary_beta_regr_mod$mean 
+						} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+							summary_beta_regr_mod$mu
+						}
+				if (nrow(tab) >= 2){
+					return(abs(tab[2, 3]))
+				}
+			}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
+			#if that didn't work, let's just use the continuous weights on a transformed proportion
+			ys_to_date[ys_to_date == 0] = .Machine$double.eps
+			ys_to_date[ys_to_date == 1] = 1 - .Machine$double.eps
+			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date / (1 - ys_to_date)), deaths_to_date, j)
 		},
 		
 		compute_weight_KK21_survival = function(xs_to_date, ys_to_date, deaths_to_date, j){
@@ -832,12 +842,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 				summary_surv_regr_mod = summary(surv_regr_mod)$table
 				weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 				#1 - summary(weibull_regr_mod)$table[2, 4]
-				if (!is.na(weight)){
+				if (!is.na(weight)){ #sometimes these glm's blow up and we don't really care that much
 					return(weight)
 				}
 			}
 			#if that didn't work, default to OLS and log the survival times... again... this doesn't matter since we are just trying to get weights
-			#and we are not relying on the model assumptions
+			#and we are not relying on the model assumptions being true
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date), deaths_to_date, j)
 		},
 				
@@ -972,16 +982,25 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){	
-			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-				beta_regr_mod = robust_betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
-				summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-				tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-							summary_beta_regr_mod$mean 
-						} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-							summary_beta_regr_mod$mu
-						}
-				abs(tab[2, 3])
-			})
+			tryCatch({
+				weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
+								beta_regr_mod = robust_betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
+								summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+								tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+											summary_beta_regr_mod$mean 
+										} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+											summary_beta_regr_mod$mu
+										}
+								ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+							})
+				if (!is.na(weight)){
+					return(weight)
+				}
+			}, error = function(e){})	
+			#if that didn't work, let's just use the continuous weights on a transformed proportion
+			ys[ys == 0] = .Machine$double.eps
+			ys[ys == 1] = 1 - .Machine$double.eps
+			private$compute_weights_KK21stepwise_continuous(xs, log(ys / (1 - ys)), ws, ...)
 		},
 		
 		compute_weights_KK21stepwise_survival = function(xs, ys, ws, deaths){		

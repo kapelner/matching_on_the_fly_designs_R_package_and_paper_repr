@@ -88,9 +88,9 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{estimate_type}}{The type of estimate to compute (either "mean_difference-or-medians" or "default_regression").}
+\item{\code{estimate_type}}{The estimate type (see initializer documentation).}
 
-\item{\code{test_type}}{The type of test to run (either "MLE-or-KM-based" or "randomization-exact").}
+\item{\code{test_type}}{The type of test to run (see initializer documentation).}
 }
 \if{html}{\out{</div>}}
 }
@@ -124,14 +124,106 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{estimate_type}}{The type of estimate to compute (either "mean_difference", "median_difference" or "default_regression"). 
-The "mean_difference" option for response type continuous, count and proportion assumes the target parameter is the
-difference in outcome expectation between the treatment and control arms. For incidence, this is the difference in
-log odds of probability of positive class between the treatment and control arms assuming a logistic regression model additive 
-in treatment effect. For survival, this is the difference in log outcome between the treatment and control arms assuming 
-a weibull model additive in treatment effect.
-log odds of probability of positive class between the treatment and control.
-The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.}
+\item{\code{estimate_type}}{The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
+  appears after the first word, then it is
+    * "continuous_simple_mean_difference"         
+      assumes the treatment effect parameter is an additive treatment effect 
+      and estimates via the simple average difference
+    * "continuous_regression_with_covariates"
+      assumes the treatment effect parameter is an additive treatment effect    
+      and the presence of linear additive covariates 
+      and estimates via OLS 
+    * "continuous_KK_compound_mean_difference"     
+      assumes the treatment effect parameter is an additive treatment effect    
+      and estimates via combining a simple average difference estimator for both the matches and the reservoir
+    * "continuous_KK_compound_regression"    
+      assumes the treatment effect parameter is an additive treatment effect
+      and estimates via combining an OLS estimator for bothe ther matches and the reservoir
+    * "continuous_KK_regression_with_covariates_and_matching_dummies"
+      assumes the treatment effect parameter is an additive treatment effect 
+      and the presence of linear additive covariates treating the match ID as a factor and estimates via OLS (not recommended)    
+    * "continuous_KK_regression_with_covariates_and_random_intercepts"    
+      assumes the treatment effect parameter is an additive treatment effect 
+      and the presence of linear additive covariates and random intercepts on the match ID 
+      and estimates via restricted maximum likelihood
+    * "incidence_simple_mean_difference"
+      assumes the treatment effect parameter is an additive probability difference 
+      and estimates via the simple average difference    
+    * "incidence_simple_log_odds"
+      assumes the treatment effect parameter is additive in the log odds probability of the positive class
+      and estimates via maximum likelihood     
+    * "incidence_logistic_regression"
+      assumes the treatment effect parameter is additive in the log odds probability of the positive class
+      and the presence of linear additive covariates also in the log odds probability of the positive class
+      and estimates via maximum likelihood
+    * "incidence_KK_compound_logistic_regression"    
+      assumes the treatment effect parameter is additive in the log odds probability of the positive class
+      and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
+      and estimates via maximum likelihood
+    * "incidence_KK_logistic_regression_and_matching_dummies"    
+      assumes the treatment effect parameter is additive in the log odds probability of the positive class
+      and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
+      and estimates via maximum likelihood
+    * "incidence_KK_compound_logistic_regression_and_random_effects"
+      assumes the treatment effect parameter is additive in the log odds probability of the positive class
+      and the presence of linear additive covariates and random intercepts on the match ID also in the log odds probability of the positive class
+      and estimates via restricted maximum likelihood
+    * "proportion_simple_mean_difference"    
+      assumes the treatment effect parameter is an additive proportion difference 
+      and estimates via the simple average difference    
+    * "proportion_simple_logodds_regression"    
+      assumes the treatment effect parameter is additive in the log odds proportion
+      and estimates via beta regression
+    * "proportion_beta_regression"
+      assumes the treatment effect parameter is additive in the log odds proportion
+      and the presence of linear additive covariates 
+      and estimates via beta regression 
+* "proportion_KK_compound_log_odds"
+      assumes the treatment effect parameter is an additive treatment effect in log odds of proportion
+      and the presence of linear additive covariates also in the log odds of proportion
+      and estimates via combining a simple average difference estimator for both the matches and the reservoir
+*    "proportion_KK_compound_beta_regression"
+      assumes the treatment effect parameter is an additive treatment effect in log odds    
+      and estimates via combining a simple average difference estimator for both the matches and the reservoir
+    * "proportion_KK_beta_regression_and_matching_dummies"
+      assumes the treatment effect parameter is additive in the log odds proportion
+      and the presence of linear additive covariates 
+      and estimates via beta regression
+    * "count_simple_mean_difference"    
+      assumes the treatment effect parameter is an additive mean count difference 
+      and estimates via the simple average difference    
+    * "count_simple_log_regression"        
+      assumes the treatment effect parameter is additive in the log count
+      and estimates via negative binomial regression
+    * "count_simple_log_regression_with_covariates"    
+      assumes the treatment effect parameter is additive in the log count
+      and the presence of linear additive covariates 
+      and estimates via negative binomial regression
+    * "count_KK_simple_mean_difference"    
+      assumes the treatment effect parameter is additive in the log count
+      and treating the match ID as a factor
+      and estimates via maximum likelihood    
+    * "count_KK_log_regression_with_covariates_and_matching_dummies"    
+      assumes the treatment effect parameter is additive in the log count
+      and the presence of linear additive covariates
+      and treating the match ID as a factor
+      and estimates via maximum likelihood
+    * "survival_simple_median_difference"    
+      assumes the treatment effect parameter is the difference in survival medians
+      and estimates via Kaplan-Meier
+    * "survival_log_mean_difference"    
+      assumes the treatment effect parameter is the additive mean survival difference
+      and estimates via Weibull regression
+    * "survival_log_regression_with_covariates"
+      assumes the treatment effect parameter is the additive mean survival difference
+      and the presence of linear additive covariates
+      and estimates via Weibull regression    
+    * "survival_KK_log_regression_with_covariates_and_matching_dummies"
+      assumes the treatment effect parameter is the additive mean survival difference
+      and the presence of linear additive covariates
+      and estimates via Weibull regression    
+  log odds of probability of positive class between the treatment and control.
+  The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.}
 
 \item{\code{test_type}}{The type of test to run (either "MLE-or-KM-based" implying your subject entrant sampling 
 assumption is from a superpopulation or "randomization-exact" implying a finite sampling
@@ -259,7 +351,7 @@ https://arxiv.org/abs/2405.05238). These confidence intervals are exact to withi
   alpha = 0.05,
   nsim_exact_test = 501,
   pval_epsilon = 0.001,
-  B = 501
+  B = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -275,8 +367,8 @@ The default is 1000 providing good resolutions to confidence intervals.}
 The default is to find a CI accurate to within a tenth of a percent.}
 
 \item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-(see \link{\code{controlTest::quantileControlTest}}. The default is 501 providing pvalue resolution 
-to a fifth of a percent.}
+(see \link{\code{controlTest::quantileControlTest}}. The default is NULL which corresponds to B=501 
+providing pvalue resolution to a fifth of a percent.}
 }
 \if{html}{\out{</div>}}
 }
@@ -321,7 +413,7 @@ the treatment different adjusted linearly for the p covariates.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_two_sided_pval_for_treatment_effect(
   nsim_exact_test = 501,
-  B = 501,
+  B = NULL,
   delta = 0
 )}\if{html}{\out{</div>}}
 }

@@ -1,21 +1,52 @@
 v1.1.0 (planned)
 * Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
-* Support for KK regression estimators (that use a linear combination of matches and reservoir estimators)
 * Support for inverting randomization tests to create nonparametric confidence intervals
+* Support for KK regression estimators (that use a linear combination of matches and reservoir estimators)
+* Support for the count response with censoring
 
 v1.0.0
 * Support for many other response types: 
   + incidence - uses logistic regression via glm to compute weights and the regression estimator
   + proportion - uses beta regression via betareg::betareg to compute weights and the regression estimator
   + count (uncensored) - uses negative binomial regression via MASS::glm.nb to compute weights and the regression estimator
-  + survival (censored and uncensored) - uses the Weibull model via survival::survreg to compute weights and the regression estimator also
-    uses Kaplan-Meier to compute an additional estimator: the difference in medians and uses the controlTest package to compute its sample std error
-* Weights in KK21 designs now are computed from absolute test statistic values (to generalize across the other response types)
+  + survival (censored and uncensored) - uses the Weibull model via survival::survreg to compute weights and the regression estimator 
+* Weights in KK21 designs now are computed from absolute test statistic values (in v0.1.0 it was based on Rsq which does not generalize to the other response types)
 * Support for adding responses whenever they become recorded
 * Support for general data frames which include factors, characters, logical data types 
 * No need to declare factors' levels from the getgo
 * Support for missing data imputed via the missRanger package
 * p does not need to be declared when initializing a design (but n is required still)
-
+* Support for additional parameter estimation / estimator by response types:
+  + continuous
+    - for KK designs only: additive treatment effect / OLS with covariates and dummies for reservoir and pairs
+    - for KK designs only: additive treatment effect / OLS with covariates and random effects for reservoir and pairs
+  + incidence
+    - probability difference / simple difference in means
+    - additive effect on log odds of probability of positive outcome / logistic regression estimate without covariates
+    - additive effect on log odds of probability of positive outcome / logistic regression estimate with covariates linear in log odds
+    - for KK designs only: additive effect on log odds of probability of positive outcome / OLS with covariates and dummies for reservoir and pairs
+    - for KK designs only: additive effect on log odds of probability of positive outcome / OLS with with covariates linear in log odds and random effects for reservoir and pairs
+  + proportion
+    - expected proportion difference / simple difference in means
+    - additive effect on log odds of expected proportion / beta regression estimate without covariates
+    - additive effect on log odds of expected proportion / beta regression estimate with covariates linear in log odds    
+    - for KK designs only: additive effect on log odds of proportion / beta regression estimate with covariates and dummies for reservoir and pairs
+  + count
+    - expected mean difference / simple difference in means
+    - additive effect on log expected mean difference / negative binomial regression estimate without covariates
+    - additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds    
+    - for KK designs only: additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds and random effects for reservoir and pairs
+    - for KK designs only: additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds and random effects for reservoir and pairs
+  + survival
+    - expected median difference / difference of Kaplan-Meier median estimators which uses the controlTest package to compute its sample std error
+    - additive effect on log mean survival / Weibull regression estimate without covariates
+    - additive effect on log mean survival / Weibull regression estimate with covariates linear in log mean
+    
 v0.1.0
 * Initial Release with support for continuous response type and equal allocation (50-50 treatment/control) only
+* Support for designs CRD, BCRD, Atkinson, KK14, KK21, KK21stepwise 
+* Support for the following parameter estimation / via estimator:
+    - additive treatment effect / simple difference of sample means
+    - additive treatment effect / OLS estimator with covariates
+    - for KK designs only: additive treatment effect / combined simple difference in means for reservoir and pairs
+    - for KK designs only: additive treatment effect / combined OLS for reservoir and pairs

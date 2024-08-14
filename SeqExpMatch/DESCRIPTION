@@ -31,6 +31,8 @@ Depends:
 	betareg,
 	statmod,
 	numDeriv,
+	lme4,
+	lmerTest,
 	missRanger,
 	doParallel
 Imports:
