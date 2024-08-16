@@ -18,23 +18,24 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	init = rep(0, ncol(cov_matrix_or_vector_data_frame) + 1)
 	num_iter = 1
 	repeat {
-		mod = suppressWarnings(survival::survreg(
-			surv_reg_formula, 
-			data = cov_matrix_or_vector_data_frame, 
-			dist = dist, 
-			init = init,
-			control = survreg_control_default
-		))
-		if (any(is.na(mod$coefficients))){
-			if (num_iter == num_max_iter){
-				break
-			}
-			#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
-			init = init + rnorm(length(init))
-			num_iter = num_iter + 1
-		} else {
-			return(mod)
+		tryCatch({
+			mod = suppressWarnings(survival::survreg(
+				surv_reg_formula, 
+				data = cov_matrix_or_vector_data_frame, 
+				dist = dist, 
+				init = init,
+				control = survreg_control_default
+			))
+			if (!any(is.na(mod$coefficients))){
+				return(mod)
+			}	
+		}, error = function(e){})
+		if (num_iter == num_max_iter){
+			break
 		}
+		#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
+		init = init + rnorm(length(init))
+		num_iter = num_iter + 1
 	}
 	
 	#no more mister nice guy...
@@ -57,23 +58,24 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
 	num_iter = 1
 	repeat {
-		mod = suppressWarnings(survival::survreg(
-						surv_reg_formula, 
-						data = cov_matrix_or_vector_data_frame, 
-						dist = dist, 
-						init = init,
-						control = survreg_control_default
-				))
-		if (any(is.na(mod$coefficients))){
-			if (num_iter == num_max_iter){
-				stop("could not get survival regression to work!!!") #we give up!!!!
+		tryCatch({
+			mod = suppressWarnings(survival::survreg(
+							surv_reg_formula, 
+							data = cov_matrix_or_vector_data_frame, 
+							dist = dist, 
+							init = init,
+							control = survreg_control_default
+					))
+			if (!any(is.na(mod$coefficients))){
+				return(mod)
 			}
-			#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
-			init = init + rnorm(length(init))
-			num_iter = num_iter + 1
-		} else {
-			return(mod)
+		}, error = function(e){})
+		if (num_iter == num_max_iter){
+			stop("could not get survival regression to work!!!") #we give up!!!!
 		}
+		#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
+		init = init + rnorm(length(init))
+		num_iter = num_iter + 1
 	}	
 }
 

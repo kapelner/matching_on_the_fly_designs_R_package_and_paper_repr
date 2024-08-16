@@ -1,5 +1,5 @@
 #/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ SeqExpMatch/
-pacman::p_load(PTE, dplyr, ggplot2, gridExtra, profvis, data.table)
+pacman::p_load(PTE, dplyr, ggplot2, gridExtra, profvis)
 library(SeqExpMatch)
 options(error=recover)
 set.seed(1984)
@@ -18,9 +18,9 @@ finagle_different_responses_from_continuous = function(y_cont){
 }
 datasets = list(
   pte_example = list(
-    X = continuous_example$X %>% 
+    X = data.table(continuous_example$X %>% 
       mutate(treatment = as.factor(treatment)) %>% 
-      mutate(x4 = as.character(x4)),
+      mutate(x4 = as.character(x4))),
     responses = finagle_different_responses_from_continuous(continuous_example$y),
     beta_T = list(
       continuous = 2,
@@ -31,11 +31,11 @@ datasets = list(
     )
   ),
   diamonds = list(
-    X = diamonds_subset %>% 
+    X = data.table(diamonds_subset %>% 
       select(-price) %>%
       mutate(clarity = as.character(clarity)) %>%
       mutate(color = as.character(color)) %>%
-      mutate(cut = as.character(cut)),
+      mutate(cut = as.character(cut))),
     responses = finagle_different_responses_from_continuous(diamonds$price),
     beta_T = list(
       continuous = 2,
@@ -46,7 +46,7 @@ datasets = list(
     )
   ),
   boston = list(
-    X = MASS::Boston[1 : 200, ] %>% select(-medv),
+    X = data.table(MASS::Boston[1 : 200, ] %>% select(-medv)),
     responses = finagle_different_responses_from_continuous(MASS::Boston[1 : 200, ]$medv),
     beta_T = list(
       continuous = 2,
@@ -66,6 +66,7 @@ prob_of_adding_response = 0.5
 res = data.frame()
 
 #test all response_types and all designs
+profvis({
 for (dataset_name in names(datasets)){
   Xorig = datasets[[dataset_name]]$X
   n = nrow(Xorig)
@@ -81,11 +82,15 @@ for (dataset_name in names(datasets)){
   }
   
   for (response_type in names(datasets[[dataset_name]][["responses"]])){ #"continuous", "incidence", "count", "proportion", "survival"
+    # if (response_type != "survival"){
+    #   next
+    # }
+    
     y = datasets[[dataset_name]][["responses"]][[response_type]]
     beta_T = datasets[[dataset_name]][["beta_T"]][[response_type]]
     
     importance_plots = list()
-    for (d in c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")){ #"CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"
+    for (d in c("CRD", "iBCRD", "Efron", "Atkinson")){ #"CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"
       cat("\ndataset_name =", dataset_name, "response_type =", response_type, "d =", d, "\n")
       
       seq_des_obj = SeqDesign$new(n, d, response_type = response_type, verbose = FALSE)
@@ -105,11 +110,9 @@ for (dataset_name in names(datasets)){
       }
       # })
       
-      # profvis({
       for (t in which(!response_added)){
         suppressWarnings(seq_des_obj$add_subject_response(t, y[t] + beta_T * w_t, dead = 0))
       }
-      # })
       # cat("experiment completed?", seq_des_obj$check_experiment_completed(), "\n")
       
       if (grepl("KK", d)){
@@ -137,7 +140,7 @@ for (dataset_name in names(datasets)){
           "continuous_KK_compound_mean_difference",  	
           "continuous_KK_compound_multivariate_regression",
           "continuous_KK_regression_with_covariates_with_matching_dummies",
-          "continuous_KK_regression_with_covariates_and_random_intercepts",
+          "continuous_KK_regression_with_covariates_with_random_intercepts",
           ########################################### INCIDENCE
           "incidence_simple_mean_difference",
           "incidence_simple_log_odds",	
@@ -145,14 +148,14 @@ for (dataset_name in names(datasets)){
           #"incidence_KK_compound_univariate_logistic_regression",
           #"incidence_KK_compound_multivariate_logistic_regression",	
           "incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
-          "incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches",
+          "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches",
           ########################################### PROPORTION
           "proportion_simple_mean_difference",
           "proportion_simple_logodds_regression",
-          "proportion_beta_regression",
+          #"proportion_beta_regression",
           #"proportion_KK_compound_univariate_beta_regression",
           #"proportion_KK_compound_multivariate_beta_regression",
-          "proportion_KK_multivariate_beta_regression_with_matching_dummies",
+          #"proportion_KK_multivariate_beta_regression_with_matching_dummies",
           ########################################### COUNT
           "count_simple_mean_difference",
           "count_univariate_negative_binomial_regression",
@@ -160,14 +163,19 @@ for (dataset_name in names(datasets)){
           #"count_KK_compound_univariate_negative_binomial_regression",	
           #"count_KK_compound_multivariate_negative_binomial_regression",
           "count_KK_multivariate_negative_binomial_regression_with_matching_dummies",
-          "count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches",
+          "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches",
           ########################################### SURVIVAL
-          "survival_simple_median_difference",	
+          #"survival_simple_median_difference",	
+          "survival_simple_restricted_mean_difference",
           "survival_univariate_weibull_regression",	
           "survival_multivariate_weibull_regression",
-          #"survival_KK_compound_univariate_weibull_regression",	
-          #"survival_KK_compound_multivariate_weibull_regression",
-          "survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies"							
+          # "survival_KK_compound_univariate_weibull_regression",	
+          # "survival_KK_compound_multivariate_weibull_regression",
+          #"survival_KK_multivariate_weibull_regression_with_matching_dummies",
+          "survival_univariate_coxph_regression",	
+          "survival_multivariate_coxph_regression",		
+          "survival_KK_multivariate_coxph_regression_with_matching_dummies",		
+          "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"				
         )){
           #only do inference by appropriate response type
           if (strsplit(estimate_type, "_")[[1]][1] != response_type){
@@ -204,3 +212,4 @@ for (dataset_name in names(datasets)){
     }
   }
 }
+})

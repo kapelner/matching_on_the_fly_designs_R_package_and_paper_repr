@@ -26,6 +26,7 @@ Depends:
 	R6,
 	checkmate,
 	Matrix,
+	data.table,
 	survival,
 	controlTest,
 	betareg,
@@ -33,7 +34,9 @@ Depends:
 	numDeriv,
 	lme4,
 	lmerTest,
+	coxme,
 	missRanger,
+	missForest,
 	doParallel
 Imports:
     stats,

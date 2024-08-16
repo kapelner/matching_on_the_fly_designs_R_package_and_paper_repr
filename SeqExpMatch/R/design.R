@@ -40,8 +40,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 
 			t = 0,
 			design = NULL,
-			Xraw = data.frame(),
-			Ximp = data.frame(),
+			Xraw = data.table(),
+			Ximp = data.table(),
 			X = NULL,
 			y = NULL,	
 			dead = NULL,
@@ -173,6 +173,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 
 			add_subject_to_experiment_and_assign = function(x_new, allow_new_cols = FALSE) {					
 				assertDataFrame(x_new, nrows = 1)
+				assertClass(x_new, "data.table")
 				if (self$check_experiment_completed()){
 					stop(paste("You cannot add any new subjects as all n =", private$n, "subjects have already been added."))
 				}
@@ -180,86 +181,124 @@ SeqDesign = R6::R6Class("SeqDesign",
 					stop("There cannot be any missing data in the first subject's covariate value(s).")
 				}
 				
-				if (self$t > 1){
+				xnew_data_types = sapply(x_new, class)
+				
+				if ("ordered" %in% unlist(xnew_data_types)){
+					stop("Ordered factor data type is not supported; please convert to unordered.")
+				}
+				
+				if (self$t > 0){
+					Xraw_data_types = sapply(self$Xraw, class)
 					colnames_Xraw = names(self$Xraw)
-					colnames_xnew = names(x_new)
-					unequal_cols = !all.equal(colnames_Xraw, colnames_xnew)
-					if (unequal_cols){
+					colnames_xnew = names(x_new) 
+					if (setequal(colnames_Xraw, colnames_xnew)){
+						idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
+						if (length(idx_data_types_that_changed) > 0){
+							for (e in idx_data_types_that_changed){
+								warning("You entered data type ", xnew_data_types[e], " for attribute named ", colnames_Xraw[e], " that was previously entered with data type ", Xraw_data_types[e])
+							}								
+						}
+					} else {
 						if (allow_new_cols){ #make NA's in appropriate places
-							self$Xraw[setdiff(colnames_xnew, colnames_Xraw)] = NA
-							colnames_xnew[setdiff(colnames_Xraw, colnames_xnew)] = NA					
+							new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
+							if (length(new_Xraw_cols) > 0){
+								new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
+								for (j in 1 : length(new_Xraw_cols)){
+									self$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
+										character = NA_character_,
+										factor =    NA_character_, #I think this is correct
+										numeric =   NA_real_,
+										logical =   NA_real_, #just let it be zero or one
+										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere									
+									)]
+								}
+							}
+							
+							new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
+							if (length(new_xnew_cols) > 0){
+								new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
+								for (j in 1 : length(new_xnew_cols)){
+									x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
+										character = NA_character_,
+										factor =    NA_character_, #I think this is correct
+										numeric =   NA_real_,
+										logical =   NA_real_, #just let it be zero or one
+										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere									
+									)]
+								}
+							}
+
+							
 						} else {
-							stop(paste("The new subject vector does not have the same columns as the previous subject(s) i.e.\n", paste(colnames_Xraw, collapse = ", ")))
+							stop(paste(
+								"The new subject vectorhas columns:\n  ", 
+								paste(colnames_xnew, collapse = ", "), 
+								"\nwhich are not the same as the current dataset's columns:\n  ", 
+								paste(colnames_Xrew, collapse = ", "),
+								"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
+							))
 						}					
 					}					
 				}				
 				
 				#iterate t
 				self$t = self$t + 1
-				#add new subject's measurements to the raw data frame
-				self$Xraw = rbind(self$Xraw, data.frame(x_new))
+				#add new subject's measurements to the raw data frame (there should be the same exact columns even if there are new ones introduced)
+				self$Xraw = rbind(self$Xraw, x_new)
 				
-#				#we need to convert some data into characters for the time being (we'll convert them back later)
-#				col_types = unlist(Map(function(z){z[1]}, lapply(self$Xraw, class)))
-#				for (j in 1 : ncol(self$Xraw)){
-#					if (col_types[j] %in% c("factor", "logical")){
-#						self$Xraw[, j] = as.character(self$Xraw[, j])
-#					}
-#				}
-				
-				#we only bother with imputation and model matrices if we have enough data
-				#otherwise it's a huge mess
+				#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
+				#thus, designs cannot utilize imputations nor model matrices until this condition is met
+				#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
 				if (self$t > (ncol(self$Xraw) + 2)){
-					#now deal with missingness
-					column_has_missingness = apply(self$Xraw, 2, function(xj){any(is.na(xj))})
+					#make a copy... sometimes the raw will be the same as the imputed if there are no imputations
+					self$Ximp = copy(self$Xraw)
 					
+					column_has_missingness = self$Xraw[, lapply(.SD, function(xj) sum(is.na(xj)))] > 0
 					if (any(column_has_missingness)){
-						self$Ximp = self$Xraw
 						#deal with include_is_missing_as_a_new_feature here
 						if (private$include_is_missing_as_a_new_feature){
 							for (j in which(column_has_missingness)){
-								self$Ximp = cbind(self$Ximp, ifelse(is.na(self$Ximp[, j]), 1, 0))
+								self$Ximp = cbind(self$Ximp, ifelse(is.na(self$Ximp[, .SD, .SDcols = j]), 1, 0))
 								names(self$Ximp)[ncol(self$Ximp)] = paste0(names(self$Ximp)[j], "_is_missing")
 							}
 						}
 						
 						#we need to convert characters into factor for the imputation to work
-						col_types = unlist(Map(function(z){z[1]}, lapply(self$Ximp, class)))
-						for (j in 1 : ncol(self$Ximp)){
-							if (col_types[j] == "character"){
-								self$Ximp[, j] = as.factor(self$Ximp[, j])
-							}
-						}
+						col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+						idx_cols_to_convert_to_factor = which(col_types == "character")
+						self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
 						
-						#now do the imputation here
-						self$Ximp = if (any(!is.na(self$y))){
-									suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
-								} else {
-									suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
-								}
-					} else {
-						#if no missingness exists, then the imputed data frame is identical to the raw data frame
-						self$Ximp = self$Xraw
+						#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
+						self$Ximp = tryCatch({
+										if (any(!is.na(self$y))){
+											suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
+										} else {
+											suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
+										}
+									}, error = function(e){
+										if (any(!is.na(self$y))){
+											suppressWarnings(missForest(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]))$ximp[, 1 : ncol(self$Ximp)])
+										} else {
+											suppressWarnings(missForest(self$Ximp)$ximp)
+										}
+									}
+						)
 					}
 					
 					#now let's drop any columns that don't have any variation
-					num_unique_values_per_column = apply(self$Ximp, 2, function(xj){length(unique(xj))})
-					self$Ximp = self$Ximp[, which(num_unique_values_per_column > 1)]
-					
+					num_unique_values_per_column = self$Ximp[, lapply(.SD, function(xj){uniqueN(xj)})]
+					self$Ximp = self$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 					
 					#for nonblank data frames...
-					if (length(self$Ximp) > 0){
-						#now we need to convert character features back into factors
-						col_types = unlist(Map(function(z){z[1]}, lapply(self$Ximp, class)))			
-						for (j in 1 : ncol(self$Ximp)){
-							if (col_types[j] == "character"){
-								self$Ximp[, j] = factor(self$Ximp[, j])
-							}
-						}
+					if (ncol(self$Ximp) > 0){
+						#now we need to convert character features into factors
+						col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+						idx_cols_to_convert_to_factor = which(col_types == "character")
+						self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
 						
 						#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
 						self$X = model.matrix(~ ., self$Ximp)
-						self$X = private$drop_linearly_dependent_cols(self$X)
+						self$X = private$drop_linearly_dependent_cols(self$X)$M
 	
 						if (nrow(self$X) != nrow(self$Xraw) | nrow(self$X) != nrow(self$Ximp) | nrow(self$Ximp) != nrow(self$Xraw)){
 							stop("boom")
@@ -638,7 +677,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 					Xint[is.nan(Xint)] = 0
 				}
 				
-				Xint = private$drop_linearly_dependent_cols(Xint)
+				drop_obj = private$drop_linearly_dependent_cols(Xint)
+				Xint = drop_obj$M
+				xt = xt[drop_obj$js] #make sure xt comports with Xint!
 				rank = Matrix::rankMatrix(Xint)
 				
 				if (scaled & length(is) > 1){
@@ -651,6 +692,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		drop_linearly_dependent_cols = function(M){
 			rank = Matrix::rankMatrix(M)
+			js = 1 : ncol(M)
 			#it's possible that there may be linearly dependent columns
 			if (rank != ncol(M)){
 				#kill linearly dependent column(s) via cool trick found at
@@ -659,7 +701,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				js = qrX$pivot[seq_len(qrX$rank)] #the true linearly independent column indicies
 				M = M[, js, drop = FALSE]
 			}
-			M
+			list(M = M, js = js)
 		},
 		
 		redraw_w_according_to_design = function(){
@@ -984,7 +1026,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){	
 			tryCatch({
 				weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
-								beta_regr_mod = robust_betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
+								beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
 								summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
 								tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
 											summary_beta_regr_mod$mean 

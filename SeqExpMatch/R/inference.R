@@ -28,7 +28,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param estimate_type		The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
-		#' 							appears after the first word, then it is
+		#' 							appears after the first word, then this estimate type is only applicable to KK14, KK21, KK21stepwise designs.
 		#' 							  * "continuous_simple_mean_difference" 		
 		#' 								assumes the treatment effect parameter is an additive treatment effect 
 		#' 								and estimates via the simple average difference
@@ -45,7 +45,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							  * "continuous_KK_regression_with_covariates_with_matching_dummies"
 		#' 								assumes the treatment effect parameter is an additive treatment effect 
 		#' 								and the presence of linear additive covariates treating the match ID as a factor and estimates via OLS (not recommended)	
-		#' 							  * "continuous_KK_regression_with_covariates_and_random_intercepts"	
+		#' 							  * "continuous_KK_regression_with_covariates_with_random_intercepts"	
 		#' 								assumes the treatment effect parameter is an additive treatment effect 
 		#' 								and the presence of linear additive covariates and random intercepts on the match ID 
 		#' 								and estimates via restricted maximum likelihood
@@ -67,10 +67,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
 		#' 								and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
 		#' 								and estimates via maximum likelihood
-		#' 							  * "incidence_KK_compound_multivariate_logistic_regression_and_random_intercepts_for_matches"
+		#' 							  * "incidence_KK_compound_multivariate_logistic_regression_with_random_intercepts_for_matches"
 		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
 		#' 								and the presence of linear additive covariates 
-		#' 								and random intercepts on the match ID also in the log odds probability of the positive class
+		#' 								and random intercepts on the match ID also in units of log odds probability of the positive class
 		#' 								and estimates via restricted maximum likelihood
 		#' 							  * "proportion_simple_mean_difference"	
 		#' 								assumes the treatment effect parameter is an additive proportion difference 
@@ -112,14 +112,17 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								and the presence of linear additive covariates
 		#' 								and treating the match ID as a factor
 		#' 								and estimates via maximum likelihood
-		#' 							  * "count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches"
+		#' 							  * "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches"
 		#' 								assumes the treatment effect parameter is additive in the log count
-		#' 								and the presence of linear additive covariates in the log count
+		#' 								and the presence of linear additive covariates in units of log count
 		#' 								and random intercepts on the match ID in the log count
 		#' 								and estimates via maximum likelihood							
 		#' 							  * "survival_simple_median_difference"	
 		#' 								assumes the treatment effect parameter is the difference in survival medians
 		#' 								and estimates via Kaplan-Meier
+		#' 							  * "survival_simple_restricted_mean_difference"
+		#' 								assumes the treatment effect parameter is the difference in survival means
+		#' 								and estimates via restricted means (assuming the largest survival time is the absolute limit)
 		#' 							  * "survival_univariate_weibull_regression"	
 		#' 								assumes the treatment effect parameter is the additive mean survival difference
 		#' 								and estimates via Weibull regression
@@ -127,12 +130,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								assumes the treatment effect parameter is the additive mean survival difference
 		#' 								and the presence of linear additive covariates
 		#' 								and estimates via Weibull regression	
-		#' 							  * "survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies"
+		#' 							  * "survival_KK_multivariate_weibull_regression_with_matching_dummies"
 		#' 								assumes the treatment effect parameter is the additive mean survival difference
 		#' 								and the presence of linear additive covariates
+		#' 								and treating the match ID as a factor
 		#' 								and estimates via Weibull regression	
-		#' 							log odds of probability of positive class between the treatment and control.
-		#' 							The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.
+		#'           				  * "survival_univariate_coxph_regression"
+		#' 								assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+		#' 								and estimates via maximum likelihood
+		#'  						  * "survival_multivariate_coxph_regression"
+		#' 								assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+		#' 								and the presence of linear additive covariates in log hazard
+		#' 								and estimates via maximum likelihood		
+		#'          				  * "survival_KK_multivariate_coxph_regression_with_matching_dummies"
+		#' 								assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+		#' 								and the presence of linear additive covariates in log hazard
+		#' 								and treating the match ID as a factor
+		#' 								and estimates via maximum likelihood
+		#'          				  * "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"
+		#' 								assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+		#' 								and the presence of linear additive covariates in log hazard
+		#' 								and random intercepts on the match ID in units of log hazard
+		#' 								and estimates via maximum likelihood	
 		#' @param test_type			The type of test to run (either "MLE-or-KM-based" implying your subject entrant sampling 
 		#' 							assumption is from a superpopulation or "randomization-exact" implying a finite sampling
 		#' 							assumption). The default option is "randomization-exact" as it provided properly-sized 
@@ -155,7 +174,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#'  
 		#' @return A new `SeqDesignTest` object.
-		initialize = function(seq_des_obj, estimate_type = "default_regression", test_type = "randomization-exact", num_cores = 1, verbose = TRUE){
+		initialize = function(seq_des_obj, estimate_type, test_type = "randomization-exact", num_cores = 1, verbose = TRUE){
 			assertClass(seq_des_obj, "SeqDesign")
 			seq_des_obj$assert_experiment_completed()
 			assertChoice(estimate_type, c(
@@ -165,7 +184,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				"continuous_KK_compound_mean_difference",  	
 				"continuous_KK_compound_multivariate_regression",
 				"continuous_KK_regression_with_covariates_with_matching_dummies",
-				"continuous_KK_regression_with_covariates_and_random_intercepts",
+				"continuous_KK_regression_with_covariates_with_random_intercepts",
 				########################################### INCIDENCE
 				"incidence_simple_mean_difference",
 				"incidence_simple_log_odds",	
@@ -173,7 +192,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				"incidence_KK_compound_univariate_logistic_regression",
 				"incidence_KK_compound_multivariate_logistic_regression",	
 				"incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
-				"incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches",
+				"incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches",
 				########################################### PROPORTION
 				"proportion_simple_mean_difference",
 				"proportion_simple_logodds_regression",
@@ -188,14 +207,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				"count_KK_compound_univariate_negative_binomial_regression",	
 				"count_KK_compound_multivariate_negative_binomial_regression",
 				"count_KK_multivariate_negative_binomial_regression_with_matching_dummies",
-				"count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches",
+				"count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches",
 				########################################### SURVIVAL
 				"survival_simple_median_difference",	
+				"survival_simple_restricted_mean_difference",
 				"survival_univariate_weibull_regression",	
 				"survival_multivariate_weibull_regression",
 				"survival_KK_compound_univariate_weibull_regression",	
 				"survival_KK_compound_multivariate_weibull_regression",
-				"survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies"					
+				"survival_KK_multivariate_weibull_regression_with_matching_dummies",
+				"survival_univariate_coxph_regression",	
+				"survival_multivariate_coxph_regression",		
+				"survival_KK_multivariate_coxph_regression_with_matching_dummies",		
+				"survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"	
+				
 			))
 			assertChoice(test_type, c("MLE-or-KM-based", "randomization-exact"))
 			assertCount(num_cores, positive = TRUE)
@@ -281,9 +306,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 		
 		compute_treatment_estimate = function(){
 			beta_hat_T = private$fetch_and_or_cache_inference_model()$beta_hat_T
-			if (length(beta_hat_T) == 0 | is.na(beta_hat_T) | is.null(beta_hat_T) | is.infinite(beta_hat_T) | is.nan(beta_hat_T)){
-				stop("boom")
-			}
+#			if (length(beta_hat_T) != 1 | is.na(beta_hat_T) | is.null(beta_hat_T) | is.infinite(beta_hat_T) | is.nan(beta_hat_T)){
+#				stop("boom")
+#			}
 			beta_hat_T
 		},
 		
@@ -349,11 +374,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 		
 		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.001, B = NULL){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertCount(nsim_exact_test, positive = TRUE)
-			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$handle_B_for_survival_median_inference(B)
 			
 			if (self$test_type == "MLE-or-KM-based"){
+				private$handle_B_for_survival_median_inference(B)
 				one_minus_alpha_over_two = 1 - alpha / 2
 				inference_mod = private$fetch_and_or_cache_inference_model()
 				z_or_t_val = 	if (inference_mod$is_z){
@@ -362,50 +385,31 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 									qt(one_minus_alpha_over_two, inference_mod$df)
 								}
 				moe = z_or_t_val * inference_mod$s_beta_hat_T
+#				if (length(moe) != 1 | is.na(moe) | is.null(moe) | is.infinite(moe) | is.nan(moe)){
+#					stop("boom")
+#				}
 				#return the CI
 				inference_mod$beta_hat_T + c(-moe, moe)
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
-				assertCount(B, positive = TRUE)
 				assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-				if (self$estimate_type == "mean_difference"){
-					if (private$is_continuous){
-						#to get bounds, temporarily look at the MLE CI
-						#a CI with two orders of magnitude more in wideness should provide for us decent bounds to run the bisection search
-						lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
-						stop("boom")
-						c(
-							private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
-							private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
-						)
-					} else if (private$is_incidence){
-						stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes")
-					} else if (private$is_count){
-						stop("Confidence intervals are not supported for randomization tests for mean difference in count outomes")
-					} else if (private$is_proportion){
-						stop("Confidence intervals are not supported for randomization tests for mean difference in proportion outomes")
-					} else if (private$is_survival){
-						stop("Confidence intervals are not supported for randomization tests for mean difference in survival outomes")
-					}									
-				} else if (self$estimate_type == "median_difference"){
-					stop("Confidence intervals are not supported for randomization tests for median difference in survival outomes")
-				} else if (self$estimate_type == "default_regression"){
-					if (private$is_continuous){
-						lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
-						stop("boom")
-						c(
-							private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
-							private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
-						)
-					} else if (private$is_incidence){
-						stop("Confidence intervals are not supported for randomization tests for regression estimates in incidence outomes")
-					} else if (private$is_count){
-						stop("Confidence intervals are not supported for randomization tests for regression estimates in count outomes")
-					} else if (private$is_proportion){
-						stop("Confidence intervals are not supported for randomization tests for regression estimates in proportion outomes")
-					} else if (private$is_survival){
-						stop("Confidence intervals are not supported for randomization tests for regression estimates in survival outomes")
-					}
+				if (private$is_continuous){
+					#to get bounds, temporarily look at the MLE CI
+					#a CI with two orders of magnitude more in wideness should provide for us decent bounds to run the bisection search
+					lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
+					stop("boom")
+					c(
+						private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
+						private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
+					)
+				} else if (private$is_incidence){
+					stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes")
+				} else if (private$is_count){
+					stop("Confidence intervals are not supported for randomization tests for mean difference in count outomes")
+				} else if (private$is_proportion){
+					stop("Confidence intervals are not supported for randomization tests for mean difference in proportion outomes")
+				} else if (private$is_survival){
+					stop("Confidence intervals are not supported for randomization tests for mean difference in survival outomes")
 				}
 			}
 		},
@@ -453,9 +457,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					stop("nonzero treatment effect tests not yet supported for MLE or KM based tests")
 				}
 				pval = private$fetch_and_or_cache_inference_model()$p_val
-				if (length(pval) == 0 | is.na(pval) | is.null(pval) | is.infinite(pval) | is.nan(pval)){
-					stop("boom")
-				}
+#				if (length(pval) != 1 | is.na(pval) | is.null(pval) | is.infinite(pval) | is.nan(pval)){
+#					stop("boom")
+#				}
 				pval
 				
 			} else { #randomization
@@ -609,7 +613,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							private$compute_continuous_KK_compound_multivariate_ols_inference(),
 					"continuous_KK_regression_with_covariates_with_matching_dummies" = 
 							private$compute_continuous_KK_multivariate_with_matching_dummies_ols_inference(),
-					"continuous_KK_regression_with_covariates_and_random_intercepts" = 
+					"continuous_KK_regression_with_covariates_with_random_intercepts" = 
 							private$compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference(),
 					########################################### INCIDENCE
 					"incidence_simple_mean_difference" =
@@ -624,8 +628,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							private$compute_incidence_KK_compound_multivariate_logistic_regression_inference(),	
 					"incidence_KK_multivariate_logistic_regression_with_matching_dummies" =
 							private$compute_incidence_KK_multivariate_logistic_regression_with_matching_dummies_inference(),	
-					"incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches" =
-							private$compute_incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches_inference(),
+					"incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" =
+							private$compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference(),
 					########################################### PROPORTION
 					"proportion_simple_mean_difference" =
 							private$compute_simple_mean_difference_inference(),
@@ -652,11 +656,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							private$compute_count_KK_compound_multivariate_negative_binomial_inference(),
 					"count_KK_multivariate_negative_binomial_regression_with_matching_dummies" =
 							private$compute_count_KK_multivariate_with_matching_dummies_negative_binomial_inference(),
-					"count_KK_multivariate_negative_binomial_regression_and_random_intercepts_for_matches" =
-							private$compute_count_KK_multivariate_negative_binomial_and_random_intercepts_for_matches_inference(),
+					"count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches" =
+							private$compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference(),
 					########################################### SURVIVAL
 					"survival_simple_median_difference" =
 							private$compute_survival_simple_median_inference(),	
+					"survival_simple_restricted_mean_difference" = 
+							private$compute_survival_simple_restricted_mean_inference(),
 					"survival_univariate_weibull_regression" =
 							private$compute_survival_univariate_weibull_regression_inference(),	
 					"survival_multivariate_weibull_regression" =
@@ -665,8 +671,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							private$compute_survival_KK_compound_univariate_weibull_inference(),	
 					"survival_KK_compound_multivariate_weibull_regression" =
 							private$compute_survival_KK_compound_multivariate_weibull_inference(),
-					"survival_KK_multivariate_weibull_regression_with_covariates_with_matching_dummies" =
-							private$compute_survival_multivariate_with_matching_dummies_weibull_regression_inference()
+					"survival_KK_multivariate_weibull_regression_with_matching_dummies" =
+							private$compute_survival_multivariate_with_matching_dummies_weibull_regression_inference(),					
+					"survival_univariate_coxph_regression" =
+							private$compute_survival_univariate_coxph_regression_inference(),	
+					"survival_multivariate_coxph_regression" =
+							private$compute_survival_multivariate_coxph_regression_inference(),		
+					"survival_KK_multivariate_coxph_regression_with_matching_dummies" =
+							private$compute_survival_multivariate_with_matching_dummies_coxph_regression_inference(),		
+					"survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches" =
+							private$compute_survival_multivariate_with_random_intercepts_coxph_regression_inference()	
 				)
 			}
 			private$inference_model
@@ -789,7 +803,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				beta_hat_T = summary_table[2, 1],
 				s_beta_hat_T = summary_table[2, 2],
 				is_z = FALSE,
-				df = summary_table[2, 4],
+				df = summary_table[2, 3],
 				p_val = summary_table[2, 5]
 			)
 		},
@@ -844,7 +858,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			)
 		},
 		
-		compute_incidence_KK_multivariate_logistic_regression_and_random_intercepts_for_matches_inference = function(){
+		compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference = function(){
 			mixed_logistic_regr_mod = suppressWarnings(lme4::glmer(y ~ . - match_indic + (1 | match_indic), 
 					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
 					family = "binomial"))
@@ -913,7 +927,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			stop("not implemented yet")
 		},
 		
-		compute_count_KK_multivariate_negative_binomial_and_random_intercepts_for_matches_inference = function(){
+		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){
 			mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
 					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
 			summary_table = coef(summary(mixed_neg_bin_regr_mod))
@@ -951,17 +965,47 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			survival_obj = survival::Surv(private$seq_des_obj$y, private$seq_des_obj$dead)
 			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj$w)
 			survival_fit_res = summary(survival_fit_obj)$table
-			test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
-			list(
-				mod = survival_fit_obj,
-				summary_table  =survival_fit_res,
-				beta_hat_T = survival_fit_res[2, 7] - survival_fit_res[1, 7],
-				s_beta_hat_T = test_obj$se,
-				is_z = TRUE,
-				p_val = test_obj$pval
-			)
+			beta_hat_T = survival_fit_res[2, 7] - survival_fit_res[1, 7]
+			if (is.na(beta_hat_T)){
+				list(
+					mod = survival_fit_obj,
+					summary_table = survival_fit_res,
+					beta_hat_T = beta_hat_T,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)
+			} else {
+				test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
+				list(
+					mod = survival_fit_obj,
+					summary_table = survival_fit_res,
+					beta_hat_T = beta_hat_T,
+					s_beta_hat_T = test_obj$se,
+					is_z = TRUE,
+					p_val = test_obj$pval
+				)
+			}
 		},
 		
+		compute_survival_simple_restricted_mean_inference = function(){
+			survival_obj = survival::Surv(private$seq_des_obj$y, private$seq_des_obj$dead)
+			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj$w)
+			survival_fit_res = summary(survival_fit_obj)$table
+			beta_hat_T = survival_fit_res[2, 5] - survival_fit_res[1, 5]
+			s_beta_hat_T = sqrt(survival_fit_res[2, 6]^2 + survival_fit_res[1, 6]^2)
+			z_beta_hat_T = beta_hat_T / s_beta_hat_T
+			p_val = 2 * min(pnorm(z_beta_hat_T), 1 - pnorm(z_beta_hat_T))
+			list(
+				mod = survival_fit_obj,
+				summary_table = survival_fit_res,
+				beta_hat_T = beta_hat_T,
+				s_beta_hat_T = s_beta_hat_T,
+				is_z = TRUE,
+				p_val = p_val
+			)
+		},
+				
 		compute_survival_univariate_weibull_regression_inference = function(){
 			private$compute_survival_weibull_regression(private$seq_des_obj$w)
 		},
@@ -995,6 +1039,54 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				s_beta_hat_T = summary_table[2, 2],
 				is_z = TRUE,
 				p_val = summary_table[2, 4]
+			)
+		},
+		
+		compute_survival_univariate_coxph_regression_inference = function(){
+			private$compute_cox_regression(data.frame(w = private$seq_des_obj$w))
+		},
+		
+		compute_survival_multivariate_coxph_regression_inference = function(){
+			private$compute_cox_regression(cbind(data.frame(w = private$seq_des_obj$w), private$X))
+		},
+		
+		compute_survival_multivariate_with_matching_dummies_coxph_regression_inference = function(){
+			private$compute_cox_regression(private$generate_data_frame_with_matching_dummies())
+		},
+		
+		compute_cox_regression = function(data_obj){
+			y = private$seq_des_obj$y
+			dead = private$seq_des_obj$dead
+			surv_obj = survival::Surv(y, dead)
+			coxph_mod = suppressWarnings(coxph(surv_obj ~ ., data = data_obj))
+			summary_table = coef(summary(coxph_mod))
+			list(
+				mod = coxph_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[1, 2],
+				s_beta_hat_T = summary_table[1, 3],
+				is_z = TRUE,
+				p_val = summary_table[1, 5]
+			)
+		},
+		
+		compute_survival_multivariate_with_random_intercepts_coxph_regression_inference = function(){
+			y = private$seq_des_obj$y
+			dead = private$seq_des_obj$dead
+			surv_obj = survival::Surv(y, dead)
+			X = private$X
+			colnames(X) = paste0("x", 1 : ncol(X)) #as there may be spaces in the colnames which blows the formula up... so damn annoying
+			data = cbind(data.frame(w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), X)
+			f = as.formula(paste("surv_obj ~ (1 | match_indic) + w +", paste(colnames(X), collapse = "+")))
+			coxph_mod = suppressWarnings(coxme::coxme(f, data = data)) #https://stats.oarc.ucla.edu/r/dae/mixed-effects-cox-regression/
+			summary_table = coef(summary(coxph_mod))
+			list(
+				mod = coxph_mod,
+				summary_table = summary_table,	
+				beta_hat_T = summary_table[1, 2],
+				s_beta_hat_T = summary_table[1, 3],
+				is_z = TRUE,
+				p_val = summary_table[1, 5]
 			)
 		},
 				

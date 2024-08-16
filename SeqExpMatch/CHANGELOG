@@ -3,6 +3,7 @@ v1.1.0 (planned)
 * Support for inverting randomization tests to create nonparametric confidence intervals
 * Support for KK regression estimators (that use a linear combination of matches and reservoir estimators)
 * Support for the count response with censoring
+* Support for Aalen additive regression model for censored data
 
 v1.0.0
 * Support for many other response types: 
@@ -16,7 +17,7 @@ v1.0.0
 * No need to declare factors' levels from the getgo
 * Support for missing data imputed via the missRanger package
 * p does not need to be declared when initializing a design (but n is required still)
-* Support for additional parameter estimation / estimator by response types:
+* Additional inference support for parameter / estimator by response types:
   + continuous
     - for KK designs only: additive treatment effect / OLS with covariates and dummies for reservoir and pairs
     - for KK designs only: additive treatment effect / OLS with covariates and random effects for reservoir and pairs
@@ -35,12 +36,17 @@ v1.0.0
     - expected mean difference / simple difference in means
     - additive effect on log expected mean difference / negative binomial regression estimate without covariates
     - additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds    
-    - for KK designs only: additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds and random effects for reservoir and pairs
+    - for KK designs only: additive effect on log expected mean difference / negative binomial regression estimate with covariates and and dummies for reservoir and pairs
     - for KK designs only: additive effect on log expected mean difference / negative binomial regression estimate with covariates linear in log odds and random effects for reservoir and pairs
   + survival
     - expected median difference / difference of Kaplan-Meier median estimators which uses the controlTest package to compute its sample std error
+    - expected restricted mean difference / see survival package for details
     - additive effect on log mean survival / Weibull regression estimate without covariates
     - additive effect on log mean survival / Weibull regression estimate with covariates linear in log mean
+    - additive effect on log hazard / Coxph regression estimate without covariates
+    - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean
+    - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean with covariates and dummies for reservoir and pairs
+    - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean with covariates and random effects for reservoir and pairs
     
 v0.1.0
 * Initial Release with support for continuous response type and equal allocation (50-50 treatment/control) only
