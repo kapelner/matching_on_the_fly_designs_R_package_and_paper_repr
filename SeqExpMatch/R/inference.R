@@ -226,6 +226,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
 			
+			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
+				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+			}
 			self$estimate_type = estimate_type
 			self$test_type = test_type
 			private$seq_des_obj = seq_des_obj
@@ -777,7 +780,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_continuous_KK_multivariate_with_matching_dummies_ols_inference = function(){
 			ols_regr_mod = lm(private$seq_des_obj$y ~ ., 
 					data = private$generate_data_frame_with_matching_dummies())
-			summary_table = coef(summary(ols_regr_mod))
+			summary_table = suppressWarnings(coef(summary(ols_regr_mod)))
 			list(
 				mod = ols_regr_mod,
 				summary_table = summary_table,	
@@ -811,7 +814,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_incidence_univariate_logistic_regression_inference = function(){
 			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
 					data = data.frame(w = private$seq_des_obj$w), family = "binomial"))
-			summary_table = coef(summary(logistic_regr_mod))
+			summary_table = coef(summary_glm_lean(logistic_regr_mod))
 			list(
 				mod = logistic_regr_mod,
 				summary_table = summary_table,	
@@ -825,7 +828,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_incidence_multivariate_logistic_regression_inference = function(){
 			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
 					data = cbind(data.frame(w = private$seq_des_obj$w), private$X), family = "binomial"))
-			summary_table = coef(summary(logistic_regr_mod))
+			summary_table = coef(summary_glm_lean(logistic_regr_mod))
 			list(
 				mod = logistic_regr_mod,
 				summary_table = summary_table,	
@@ -845,24 +848,36 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_incidence_KK_multivariate_logistic_regression_with_matching_dummies_inference = function(){
-			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
-					data = private$generate_data_frame_with_matching_dummies(), family = "binomial"))
-			summary_table = coef(summary(logistic_regr_mod))
-			list(
-				mod = logistic_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+						data = private$generate_data_frame_with_matching_dummies(), family = "binomial"))
+				summary_table = coef(summary_glm_lean(logistic_regr_mod))
+				list(
+					mod = logistic_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)						
+				}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+					list(
+						mod = NA,
+						summary_table = NA,	
+						beta_hat_T = NA,
+						s_beta_hat_T = NA,
+						is_z = TRUE,
+						p_val = NA
+					)				
+				})
 		},
 		
 		compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference = function(){
-			mixed_logistic_regr_mod = suppressWarnings(lme4::glmer(y ~ . - match_indic + (1 | match_indic), 
-					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
-					family = "binomial"))
-			summary_table = coef(summary(mixed_logistic_regr_mod))
+			tryCatch({
+				mixed_logistic_regr_mod = suppressWarnings(lme4::glmer(y ~ . - match_indic + (1 | match_indic), 
+						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
+						family = "binomial"))
+				summary_table = coef(summary(mixed_logistic_regr_mod))
 			list(
 				mod = mixed_logistic_regr_mod,
 				summary_table = summary_table,	
@@ -871,6 +886,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				is_z = TRUE,
 				p_val = summary_table[2, 4]
 			)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_proportion_univariate_beta_regression_inference = function(){
@@ -928,17 +953,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){
-			mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
-					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
-			summary_table = coef(summary(mixed_neg_bin_regr_mod))
-			list(
+			tryCatch({
+				mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
+								data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+				summary_table = coef(summary(mixed_neg_bin_regr_mod))
+				list(
 					mod = mixed_neg_bin_regr_mod,
 					summary_table = summary_table,	
 					beta_hat_T = summary_table[2, 1],
 					s_beta_hat_T = summary_table[2, 2],
 					is_z = TRUE,
 					p_val = summary_table[2, 4]
-			)
+				)						
+			}, error = function(e){ #very difficult to get rid of errors here due to VTV not positive definite... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_count_KK_multivariate_with_matching_dummies_negative_binomial_inference = function(){
@@ -947,7 +983,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		compute_count_negative_binomial_regression = function(data_obj){
 			negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ ., data = data_obj))
-			summary_table = coef(summary(negbin_regr_mod))
+			summary_table = coef(summary_glm_lean(negbin_regr_mod))
 			list(
 				mod = negbin_regr_mod,
 				summary_table = summary_table,	
@@ -1028,18 +1064,38 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		compute_survival_weibull_regression = function(data_obj){
 			surv_regr_mod = robust_survreg(private$seq_des_obj$y, private$seq_des_obj$dead, data_obj)
-			summary_table = summary(surv_regr_mod)$table
-			if (is.na(summary_table[2, 1])){
-				stop("NA estimate")
+			if (is.null(surv_regr_mod)){
+				list(
+					mod = surv_regr_mod,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)
+			} else {
+				summary_table = summary(surv_regr_mod)$table
+				if (is.na(summary_table[2, 1])){
+					list(
+						mod = surv_regr_mod,
+						summary_table = NA,	
+						beta_hat_T = NA,
+						s_beta_hat_T = NA,
+						is_z = TRUE,
+						p_val = NA
+					)
+				} else {
+					list(
+						mod = surv_regr_mod,
+						summary_table = summary_table,	
+						beta_hat_T = summary_table[2, 1],
+						s_beta_hat_T = summary_table[2, 2],
+						is_z = TRUE,
+						p_val = summary_table[2, 4]
+					)
+				}				
 			}
-			list(
-				mod = surv_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+
 		},
 		
 		compute_survival_univariate_coxph_regression_inference = function(){
@@ -1078,16 +1134,27 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			colnames(X) = paste0("x", 1 : ncol(X)) #as there may be spaces in the colnames which blows the formula up... so damn annoying
 			data = cbind(data.frame(w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), X)
 			f = as.formula(paste("surv_obj ~ (1 | match_indic) + w +", paste(colnames(X), collapse = "+")))
-			coxph_mod = suppressWarnings(coxme::coxme(f, data = data)) #https://stats.oarc.ucla.edu/r/dae/mixed-effects-cox-regression/
-			summary_table = coef(summary(coxph_mod))
-			list(
-				mod = coxph_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[1, 2],
-				s_beta_hat_T = summary_table[1, 3],
-				is_z = TRUE,
-				p_val = summary_table[1, 5]
-			)
+			tryCatch({
+				coxph_mod = suppressWarnings(coxme::coxme(f, data = data)) #https://stats.oarc.ucla.edu/r/dae/mixed-effects-cox-regression/
+				summary_table = coef(summary(coxph_mod))
+				list(
+					mod = coxph_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[1, 2],
+					s_beta_hat_T = summary_table[1, 3],
+					is_z = TRUE,
+					p_val = summary_table[1, 5]
+				)					
+			}, error = function(e){
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)
+			})
 		},
 				
 		compute_continuous_post_matching_data_KK = function(){	

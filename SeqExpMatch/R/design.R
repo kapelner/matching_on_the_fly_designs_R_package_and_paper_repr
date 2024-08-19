@@ -81,7 +81,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 					All "KK" designs require "lambda", the quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
 			#' 					All "KK" designs require "t_0_pct", the percentage of total sample size n where matching begins. If unspecified, default is 35%.
 			#' 					All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. 
-			#' 					If unspecified, default is 500. 
+			#' 					If unspecified, default is 500. There is an optional flag "proportion_use_speedup = TRUE" which uses a continuous regression on log(y/(1-y))
+			#' 					instead of a beta regression each time to generate the weights in KK21 designs. The default is this flag is on.
 			#' @return A new `SeqDesign` object.
 			#' 
 			#' @examples
@@ -153,6 +154,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 							private$other_params$num_boot = 500
 						} else {
 							assertCount(private$other_params$num_boot, positive = TRUE)
+						}
+						if (is.null(private$other_params$proportion_use_speedup)){
+							private$other_params$proportion_use_speedup = TRUE							
+						} else {
+							assertFlag(private$other_params$proportion_use_speedup)	
 						}
 					}
 				}
@@ -249,67 +255,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
 				#thus, designs cannot utilize imputations nor model matrices until this condition is met
 				#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
-				if (self$t > (ncol(self$Xraw) + 2)){
-					#make a copy... sometimes the raw will be the same as the imputed if there are no imputations
-					self$Ximp = copy(self$Xraw)
-					
-					column_has_missingness = self$Xraw[, lapply(.SD, function(xj) sum(is.na(xj)))] > 0
-					if (any(column_has_missingness)){
-						#deal with include_is_missing_as_a_new_feature here
-						if (private$include_is_missing_as_a_new_feature){
-							for (j in which(column_has_missingness)){
-								self$Ximp = cbind(self$Ximp, ifelse(is.na(self$Ximp[, .SD, .SDcols = j]), 1, 0))
-								names(self$Ximp)[ncol(self$Ximp)] = paste0(names(self$Ximp)[j], "_is_missing")
-							}
-						}
-						
-						#we need to convert characters into factor for the imputation to work
-						col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
-						idx_cols_to_convert_to_factor = which(col_types == "character")
-						self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
-						
-						#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
-						self$Ximp = tryCatch({
-										if (any(!is.na(self$y))){
-											suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
-										} else {
-											suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
-										}
-									}, error = function(e){
-										if (any(!is.na(self$y))){
-											suppressWarnings(missForest(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]))$ximp[, 1 : ncol(self$Ximp)])
-										} else {
-											suppressWarnings(missForest(self$Ximp)$ximp)
-										}
-									}
-						)
-					}
-					
-					#now let's drop any columns that don't have any variation
-					num_unique_values_per_column = self$Ximp[, lapply(.SD, function(xj){uniqueN(xj)})]
-					self$Ximp = self$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
-					
-					#for nonblank data frames...
-					if (ncol(self$Ximp) > 0){
-						#now we need to convert character features into factors
-						col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
-						idx_cols_to_convert_to_factor = which(col_types == "character")
-						self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
-						
-						#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-						self$X = model.matrix(~ ., self$Ximp)
-						self$X = private$drop_linearly_dependent_cols(self$X)$M
-	
-						if (nrow(self$X) != nrow(self$Xraw) | nrow(self$X) != nrow(self$Ximp) | nrow(self$Ximp) != nrow(self$Xraw)){
-							stop("boom")
-						}
-					} else {
-						#blank covariate matrix
-						self$X = matrix(NA, nrow = nrow(self$Xraw), ncol = 0)
-					}
+				if (self$t > (ncol(self$Xraw) + 2) & !(self$design %in% c("CRD", "iBCRD", "Efron"))){ #we only need to impute if we need the X's to make the allocation decisions 
+					private$covariate_impute_if_necessary_and_then_create_model_matrix()
 				}
-				
-
 				
 				#now make the assignment
 				self$w[self$t] = private[[paste0("assign_wt_", self$design)]]() #equivalent to do.call(what = paste0("assign_wt_", self$design), args = list())
@@ -543,7 +491,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		duplicate = function(){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
 			d = SeqDesign$new(
-				d = self$design, 
+				design = self$design, 
 				response_type = self$response_type, 
 				n = private$n, 
 				prob_T = self$prob_T, 
@@ -565,6 +513,66 @@ SeqDesign = R6::R6Class("SeqDesign",
 			d$.__enclos_env__$private$match_indic = private$match_indic
 			d
 		},	
+		
+		covariate_impute_if_necessary_and_then_create_model_matrix = function(){
+			#make a copy... sometimes the raw will be the same as the imputed if there are no imputations
+			self$Ximp = copy(self$Xraw)
+			
+			column_has_missingness = self$Xraw[, lapply(.SD, function(xj) sum(is.na(xj)))] > 0
+			if (any(column_has_missingness)){
+				#deal with include_is_missing_as_a_new_feature here
+				if (private$include_is_missing_as_a_new_feature){
+					for (j in which(column_has_missingness)){
+						self$Ximp = cbind(self$Ximp, ifelse(is.na(self$Ximp[, .SD, .SDcols = j]), 1, 0))
+						names(self$Ximp)[ncol(self$Ximp)] = paste0(names(self$Ximp)[j], "_is_missing")
+					}
+				}
+				
+				#we need to convert characters into factor for the imputation to work
+				col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+				idx_cols_to_convert_to_factor = which(col_types == "character")
+				self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
+				
+				#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
+				self$Ximp = tryCatch({
+							if (any(!is.na(self$y))){
+								suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
+							} else {
+								suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
+							}
+						}, error = function(e){
+							if (any(!is.na(self$y))){
+								suppressWarnings(missForest(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]))$ximp[, 1 : ncol(self$Ximp)])
+							} else {
+								suppressWarnings(missForest(self$Ximp)$ximp)
+							}
+						}
+				)
+			}
+			
+			#now let's drop any columns that don't have any variation
+			num_unique_values_per_column = self$Ximp[, lapply(.SD, function(xj){uniqueN(xj)})]
+			self$Ximp = self$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
+			
+			#for nonblank data frames...
+			if (ncol(self$Ximp) > 0){
+				#now we need to convert character features into factors
+				col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+				idx_cols_to_convert_to_factor = which(col_types == "character")
+				self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
+				
+				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
+				self$X = model.matrix(~ ., self$Ximp)
+				self$X = private$drop_linearly_dependent_cols(self$X)$M
+				
+				if (nrow(self$X) != nrow(self$Xraw) | nrow(self$X) != nrow(self$Ximp) | nrow(self$Ximp) != nrow(self$Xraw)){
+					stop("boom")
+				}
+			} else {
+				#blank covariate matrix
+				self$X = matrix(NA, nrow = nrow(self$Xraw), ncol = 0)
+			}			
+		},
 		
 		compute_all_subject_data = function(){
 			i_present_y = which(!is.na(self$y))
@@ -829,46 +837,49 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		compute_weight_KK21_continuous = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			ols_mod = lm(ys_to_date ~ xs_to_date[, j])
-			summary_ols_mod = coef(summary(ols_mod))
+			summary_ols_mod = suppressWarnings(coef(summary(ols_mod)))
 			#1 - coef(summary(logistic_regr_mod))[2, 4]
 			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_ols_mod) >= 2, abs(summary_ols_mod[2, 3]), 0)
+			ifelse(nrow(summary_ols_mod) >= 2, abs(summary_ols_mod[2, 3]), .Machine$double.eps)
 		},
 		
 		compute_weight_KK21_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			tryCatch({
 				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
-			}, error = function(e){return(0)}) #sometimes these glm's blow up and we don't really care that much
-			summary_logistic_regr_mod = coef(summary(logistic_regr_mod))
+			}, error = function(e){return(.Machine$double.eps)}) #sometimes these glm's blow up and we don't really care that much
+			summary_logistic_regr_mod = coef(summary_glm_lean(logistic_regr_mod))
 			#1 - coef(summary(logistic_regr_mod))[2, 4]
 			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_logistic_regr_mod) >= 2, abs(summary_logistic_regr_mod[2, 3]), 0)
+			ifelse(nrow(summary_logistic_regr_mod) >= 2, abs(summary_logistic_regr_mod[2, 3]), .Machine$double.eps)
 		},
 		
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			tryCatch({
 				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-			}, error = function(e){return(0)}) #sometimes these glm's blow up and we don't really care that much
-			summary_negbin_regr_mod = coef(summary(negbin_regr_mod))
-			#1 - coef(summary(negbin_regr_mod))[2, 4]
-			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), 0)		
+				summary_negbin_regr_mod = coef(summary_glm_lean(negbin_regr_mod))
+				#1 - coef(summary(negbin_regr_mod))[2, 4]
+				#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+				return(ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), .Machine$double.eps))
+			}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
+			.Machine$double.eps #otherwise weight it nada
 		},
 		
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			tryCatch({
-				beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-				summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-				#1 - coef(summary(beta_regr_mod))$mean[2, 4]
-				tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-							summary_beta_regr_mod$mean 
-						} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-							summary_beta_regr_mod$mu
-						}
-				if (nrow(tab) >= 2){
-					return(abs(tab[2, 3]))
-				}
-			}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
+			if (!private$other_params$proportion_use_speedup){
+				tryCatch({
+					beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+					summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+					#1 - coef(summary(beta_regr_mod))$mean[2, 4]
+					tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+								summary_beta_regr_mod$mean 
+							} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+								summary_beta_regr_mod$mu
+							}
+					if (nrow(tab) >= 2){
+						return(abs(tab[2, 3]))
+					}
+				}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
+			}
 			#if that didn't work, let's just use the continuous weights on a transformed proportion
 			ys_to_date[ys_to_date == 0] = .Machine$double.eps
 			ys_to_date[ys_to_date == 1] = 1 - .Machine$double.eps
@@ -881,6 +892,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#and we are not relying on the model assumptions
 			for (dist in c("weibull", "lognormal", "loglogistic")){
 				surv_regr_mod = robust_survreg_with_surv_object(surv_obj, xs_to_date[, j], dist = dist)
+				if (is.null(surv_regr_mod)){
+					break
+				}
 				summary_surv_regr_mod = summary(surv_regr_mod)$table
 				weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 				#1 - summary(weibull_regr_mod)$table[2, 4]
@@ -899,7 +913,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#cat("    assign_wt_KK21 CRD t", self$t, "\n")
 						private$match_indic[self$t] = 0
 						private$assign_wt_CRD()
-					} else if (sum(!is.na(self$y)) < 2 * (ncol(self$Xraw) + 2)){ 
+					} else if (is.null(self$X) | (sum(!is.na(self$y)) < 2 * (ncol(self$X) + 2))){ 
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
 						#for every glm regression parameter estimated (p covariates, the intercept and the coefficient of the additive treatment effect). The minimum
@@ -1005,40 +1019,42 @@ SeqDesign = R6::R6Class("SeqDesign",
 		compute_weights_KK21stepwise_continuous = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, scale(ys), ws, function(response_obj, covariate_data_matrix){
 				ols_mod = lm(response_obj ~ covariate_data_matrix)
-				abs(coef(summary(ols_mod))[2, 3])
+				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
 			})
 		},
 		
 		compute_weights_KK21stepwise_incidence = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
-				abs(coef(summary(logistic_regr_mod))[2, 3])
+				abs(coef(summary_glm_lean(logistic_regr_mod))[2, 3])
 			})
 		},
 		
 		compute_weights_KK21stepwise_count = function(xs, ys, ws, ...){	
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 				negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
-				abs(coef(summary(negbin_regr_mod))[2, 3])
+				abs(coef(summary_glm_lean(negbin_regr_mod))[2, 3])
 			})	
 		},
 		
-		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){	
-			tryCatch({
-				weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
-								beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
-								summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-								tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-											summary_beta_regr_mod$mean 
-										} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-											summary_beta_regr_mod$mu
-										}
-								ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
-							})
-				if (!is.na(weight)){
-					return(weight)
-				}
-			}, error = function(e){})	
+		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){
+			if (!private$other_params$proportion_use_speedup){
+				tryCatch({
+					weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
+									beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
+									summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+									tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+												summary_beta_regr_mod$mean 
+											} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+												summary_beta_regr_mod$mu
+											}
+									ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+								})
+					if (!is.na(weight)){
+						return(weight)
+					}
+				}, error = function(e){})
+			}
 			#if that didn't work, let's just use the continuous weights on a transformed proportion
 			ys[ys == 0] = .Machine$double.eps
 			ys[ys == 1] = 1 - .Machine$double.eps
@@ -1051,6 +1067,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#and we are not relying on the model assumptions
 				for (dist in c("weibull", "lognormal", "loglogistic")){
 					surv_regr_mod = robust_survreg_with_surv_object(response_obj, covariate_data_matrix, dist = dist)
+					if (is.null(surv_regr_mod)){
+						break
+					}
 					summary_surv_regr_mod = summary(surv_regr_mod)$table
 					weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 					#1 - summary(weibull_regr_mod)$table[2, 4]
@@ -1060,14 +1079,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				}	
 				#if that didn't work, default to OLS and log the survival times... again... this doesn't matter since we are just trying to get weights
 				#and we are not relying on the model assumptions
-				private$compute_weights_KK21stepwise_continuous(covariate_data_matrix, log(as.numeric(surv_object)[1 : length(surv_object)]), ws)	
-				
-				
-#				surv_regr_mod = robust_survreg_with_surv_object(response_obj, covariate_data_matrix)
-#				if (is.na(abs(summary(surv_regr_mod)$table[2, 3]))){
-#					stop("boom")					
-#				}
-#				abs(summary(surv_regr_mod)$table[2, 3])
+				ols_mod = lm(log(as.numeric(response_obj)[1 : length(response_obj)]) ~ covariate_data_matrix)
+				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
 			})	
 		},
 		
@@ -1077,7 +1090,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#cat("    assign_wt_KK21stepwise CRD t", self$t, "\n")
 						private$match_indic[self$t] = 0
 						private$assign_wt_CRD()
-					} else if (sum(!is.na(self$y)) < 2 * (ncol(self$Xraw) + 2)){ 
+					} else if (is.null(self$X) | (sum(!is.na(self$y)) < 2 * (ncol(self$X) + 2))){ 
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
 						#for every glm regression parameter estimated (p covariates, the intercept and the coefficient of the additive treatment effect). The minimum
@@ -1137,8 +1150,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 							private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
 							private$match_indic[self$t] = new_match_id
 							1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
-							# (b) otherwise, randomize and add it to the reservoir
-						} else { 
+						} else { # (b) otherwise, randomize and add it to the reservoir
 							private$match_indic[self$t] = 0	
 							private$assign_wt_CRD()	
 						}
