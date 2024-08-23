@@ -342,7 +342,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' The confidence interval is computed differently for 
 		#' [I] test type "MLE-or-KM-based"
 		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
-		#' of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see \link{\code{controlTest::quantileControlTest}})
+		#' of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
 		#' is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 		#' 
 		#' [II] test type "randomization-exact"
@@ -355,7 +355,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
 		#' 								The default is 1000 providing good resolutions to confidence intervals.
 		#' @param B						Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-		#' 								(see \link{\code{controlTest::quantileControlTest}}. The default is NULL which corresponds to B=501 
+		#' 								(see the \code{controlTest::quantileControlTest} method). The default is NULL which corresponds to B=501 
 		#' 								providing pvalue resolution to a fifth of a percent.
 		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
 		#' 								The default is to find a CI accurate to within a tenth of a percent.
@@ -432,7 +432,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
 		#' 								is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.
 		#' @param B						Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-		#' 								(see \link{\code{controlTest::quantileControlTest}}). The default is 501 providing pvalue resolution 
+		#' 								(see the \code{controlTest::quantileControlTest} method). The default is 501 providing pvalue resolution 
 		#' 								to a fifth of a percent.
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 

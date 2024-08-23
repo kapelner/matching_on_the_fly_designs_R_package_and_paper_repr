@@ -112,7 +112,7 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$new(
   seq_des_obj,
-  estimate_type = "default_regression",
+  estimate_type,
   test_type = "randomization-exact",
   num_cores = 1,
   verbose = TRUE
@@ -125,7 +125,7 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
 \item{\code{estimate_type}}{The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
-  appears after the first word, then it is
+  appears after the first word, then this estimate type is only applicable to KK14, KK21, KK21stepwise designs.
     * "continuous_simple_mean_difference"         
       assumes the treatment effect parameter is an additive treatment effect 
       and estimates via the simple average difference
@@ -136,13 +136,13 @@ Initialize a sequential experimental design estimation and test object after the
     * "continuous_KK_compound_mean_difference"     
       assumes the treatment effect parameter is an additive treatment effect    
       and estimates via combining a simple average difference estimator for both the matches and the reservoir
-    * "continuous_KK_compound_regression"    
+    * "continuous_KK_compound_multivariate_regression"    
       assumes the treatment effect parameter is an additive treatment effect
       and estimates via combining an OLS estimator for bothe ther matches and the reservoir
-    * "continuous_KK_regression_with_covariates_and_matching_dummies"
+    * "continuous_KK_regression_with_covariates_with_matching_dummies"
       assumes the treatment effect parameter is an additive treatment effect 
       and the presence of linear additive covariates treating the match ID as a factor and estimates via OLS (not recommended)    
-    * "continuous_KK_regression_with_covariates_and_random_intercepts"    
+    * "continuous_KK_regression_with_covariates_with_random_intercepts"    
       assumes the treatment effect parameter is an additive treatment effect 
       and the presence of linear additive covariates and random intercepts on the match ID 
       and estimates via restricted maximum likelihood
@@ -156,17 +156,18 @@ Initialize a sequential experimental design estimation and test object after the
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and the presence of linear additive covariates also in the log odds probability of the positive class
       and estimates via maximum likelihood
-    * "incidence_KK_compound_logistic_regression"    
+    * "incidence_KK_compound_multivariate_logistic_regression"    
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
       and estimates via maximum likelihood
-    * "incidence_KK_logistic_regression_and_matching_dummies"    
+    * "incidence_KK_multivariate_logistic_regression_with_matching_dummies"    
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and the presence of linear additive covariates treating the match ID as a factor also in the log odds probability of the positive class
       and estimates via maximum likelihood
-    * "incidence_KK_compound_logistic_regression_and_random_effects"
+    * "incidence_KK_compound_multivariate_logistic_regression_with_random_intercepts_for_matches"
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
-      and the presence of linear additive covariates and random intercepts on the match ID also in the log odds probability of the positive class
+      and the presence of linear additive covariates 
+      and random intercepts on the match ID also in units of log odds probability of the positive class
       and estimates via restricted maximum likelihood
     * "proportion_simple_mean_difference"    
       assumes the treatment effect parameter is an additive proportion difference 
@@ -178,52 +179,76 @@ Initialize a sequential experimental design estimation and test object after the
       assumes the treatment effect parameter is additive in the log odds proportion
       and the presence of linear additive covariates 
       and estimates via beta regression 
-* "proportion_KK_compound_log_odds"
+* "proportion_KK_compound_univariate_beta_regression"
       assumes the treatment effect parameter is an additive treatment effect in log odds of proportion
       and the presence of linear additive covariates also in the log odds of proportion
       and estimates via combining a simple average difference estimator for both the matches and the reservoir
-*    "proportion_KK_compound_beta_regression"
+*    "proportion_KK_compound_multivariate_beta_regression"
       assumes the treatment effect parameter is an additive treatment effect in log odds    
       and estimates via combining a simple average difference estimator for both the matches and the reservoir
-    * "proportion_KK_beta_regression_and_matching_dummies"
+    * "proportion_KK_multivariate_beta_regression_with_matching_dummies"
       assumes the treatment effect parameter is additive in the log odds proportion
       and the presence of linear additive covariates 
       and estimates via beta regression
     * "count_simple_mean_difference"    
       assumes the treatment effect parameter is an additive mean count difference 
       and estimates via the simple average difference    
-    * "count_simple_log_regression"        
+    * "count_univariate_negative_binomial_regression"        
       assumes the treatment effect parameter is additive in the log count
       and estimates via negative binomial regression
-    * "count_simple_log_regression_with_covariates"    
+    * "count_multivariate_negative_binomial_regression"    
       assumes the treatment effect parameter is additive in the log count
       and the presence of linear additive covariates 
       and estimates via negative binomial regression
-    * "count_KK_simple_mean_difference"    
+    * "count_KK_compound_univariate_negative_binomial_regression"    
       assumes the treatment effect parameter is additive in the log count
       and treating the match ID as a factor
       and estimates via maximum likelihood    
-    * "count_KK_log_regression_with_covariates_and_matching_dummies"    
+    * "count_KK_multivariate_negative_binomial_regression_with_matching_dummies"    
       assumes the treatment effect parameter is additive in the log count
       and the presence of linear additive covariates
       and treating the match ID as a factor
       and estimates via maximum likelihood
+    * "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches"
+      assumes the treatment effect parameter is additive in the log count
+      and the presence of linear additive covariates in units of log count
+      and random intercepts on the match ID in the log count
+      and estimates via maximum likelihood                            
     * "survival_simple_median_difference"    
       assumes the treatment effect parameter is the difference in survival medians
       and estimates via Kaplan-Meier
-    * "survival_log_mean_difference"    
+    * "survival_simple_restricted_mean_difference"
+      assumes the treatment effect parameter is the difference in survival means
+      and estimates via restricted means (assuming the largest survival time is the absolute limit)
+    * "survival_univariate_weibull_regression"    
       assumes the treatment effect parameter is the additive mean survival difference
       and estimates via Weibull regression
-    * "survival_log_regression_with_covariates"
+    * "survival_multivariate_weibull_regression"
       assumes the treatment effect parameter is the additive mean survival difference
       and the presence of linear additive covariates
       and estimates via Weibull regression    
-    * "survival_KK_log_regression_with_covariates_and_matching_dummies"
+    * "survival_KK_multivariate_weibull_regression_with_matching_dummies"
       assumes the treatment effect parameter is the additive mean survival difference
       and the presence of linear additive covariates
+      and treating the match ID as a factor
       and estimates via Weibull regression    
-  log odds of probability of positive class between the treatment and control.
-  The default is "default_regression" as this provides higher power if you feel comfortable assuming the appropriate glm.}
+  * "survival_univariate_coxph_regression"
+      assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+      and estimates via maximum likelihood
+ * "survival_multivariate_coxph_regression"
+      assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+      and the presence of linear additive covariates in log hazard
+      and estimates via maximum likelihood        
+ * "survival_KK_multivariate_coxph_regression_with_matching_dummies"
+      assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+      and the presence of linear additive covariates in log hazard
+      and treating the match ID as a factor
+      and estimates via maximum likelihood
+ * "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"
+      assumes the treatment effect is a log difference in hazard which is constant conditional on covariate values
+      and the presence of linear additive covariates in log hazard
+      and random intercepts on the match ID in units of log hazard
+      and estimates via maximum likelihood}
 
 \item{\code{test_type}}{The type of test to run (either "MLE-or-KM-based" implying your subject entrant sampling 
 assumption is from a superpopulation or "randomization-exact" implying a finite sampling
@@ -338,7 +363,7 @@ OLS regression controlled for all other covariates
 The confidence interval is computed differently for 
 [I] test type "MLE-or-KM-based"
 Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
-of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see \link{\code{controlTest::quantileControlTest}})
+of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
 is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 
 [II] test type "randomization-exact"
@@ -367,7 +392,7 @@ The default is 1000 providing good resolutions to confidence intervals.}
 The default is to find a CI accurate to within a tenth of a percent.}
 
 \item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-(see \link{\code{controlTest::quantileControlTest}}. The default is NULL which corresponds to B=501 
+(see the \code{controlTest::quantileControlTest} method). The default is NULL which corresponds to B=501 
 providing pvalue resolution to a fifth of a percent.}
 }
 \if{html}{\out{</div>}}
@@ -425,7 +450,7 @@ the treatment different adjusted linearly for the p covariates.
 is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
 
 \item{\code{B}}{Number of bootstrap samples for the survival response where \code{estimate_type} is "median_difference"
-(see \link{\code{controlTest::quantileControlTest}}). The default is 501 providing pvalue resolution 
+(see the \code{controlTest::quantileControlTest} method). The default is 501 providing pvalue resolution 
 to a fifth of a percent.}
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}

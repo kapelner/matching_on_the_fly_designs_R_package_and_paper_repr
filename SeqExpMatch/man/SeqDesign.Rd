@@ -137,14 +137,15 @@ seq_des$check_experiment_completed() #returns TRUE
 
 \item{\code{design}}{The experimenter-specified type of sequential experimental design (see constructor's documentation).}
 
-\item{\code{Xraw}}{A data frame of subject data with number of rows n (the number of subjects) and number of 
+\item{\code{Xraw}}{A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
 columns p (the number of characteristics measured for each subject). This data frame is filled in
 sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
 experiment currently) but otherwise will be missing.}
 
 \item{\code{Ximp}}{Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns}
 
-\item{\code{X}}{Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns}
+\item{\code{X}}{Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns 
+(and it is also a matrix object, not a data.table object)}
 
 \item{\code{y}}{A numeric vector of subject responses with number of entries n (the number of subjects). During
 the KK21 designs the experimenter fills these values in when they are measured.
@@ -154,7 +155,7 @@ For non-KK21 designs, this vector can be set at anytime (but must be set before 
 vector is filled in only for \code{response_type} values "survival". The value
 of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
 as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
-argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
+argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
 the KK21 designs the experimenter fills these values in when they are measured.
 For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
 
@@ -242,8 +243,10 @@ a new column, we allow missingness to be its own level. The default is \code{TRU
 "Efron" requires "weighted_coin_prob" which is the probability of the weighted coin for assignment. If unspecified, default is 2/3.
 All "KK" designs require "lambda", the quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
 All "KK" designs require "t_0_pct", the percentage of total sample size n where matching begins. If unspecified, default is 35%.
+All "KK" designs have optional flag KK_verbose with default \code{FALSE} which prints out debug messages about how the matching-on-the-fly is working.
 All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. 
-If unspecified, default is 500.}
+If unspecified, default is 500. There is an optional flag "proportion_use_speedup = TRUE" which uses a continuous regression on log(y/(1-y))
+instead of a beta regression each time to generate the weights in KK21 designs. The default is this flag is on.}
 }
 \if{html}{\out{</div>}}
 }
@@ -266,15 +269,19 @@ A new `SeqDesign` object.
 \subsection{Method \code{add_subject_to_experiment_and_assign()}}{
 Add subject-specific measurements for the next subject entrant and return this new subject's treatment assignment
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_subject_to_experiment_and_assign(x_new, allow_new_cols = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_subject_to_experiment_and_assign(x_new, allow_new_cols = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x_new}}{A p-length row of a data frame for the new subject to be added}
+\item{\code{x_new}}{A row of the data frame corresponding to the new subject to be added (must be type data.table).}
 
-\item{\code{allow_new_cols}}{Should we allow new/different features in the new subject's covariates? Default is \code{FALSE}}
+\item{\code{allow_new_cols}}{Should we allow new/different features than previously seen in previous subjects in the 
+new subject's covariates? Default is \code{TRUE}.}
+
+\item{\code{KK_verbose}}{If \code{TRUE}, we will print out messages about the KK assignment. This is useful for understanding
+how the KK assignment is working}
 }
 \if{html}{\out{</div>}}
 }

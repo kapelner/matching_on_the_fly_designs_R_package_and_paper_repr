@@ -24,7 +24,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 					vector is filled in only for \code{response_type} values "survival". The value
 			#' 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
 			#' 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
-			#' 					argument in the canonical \code{survival} package in the data constructor found here: \link{\code{survival::Surv}}. During
+			#' 					argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
 			#' 					the KK21 designs the experimenter fills these values in when they are measured.
 			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
 			#' @field prob_T	The experimenter-specified probability a subject becomes wtated to the treatment arm.
