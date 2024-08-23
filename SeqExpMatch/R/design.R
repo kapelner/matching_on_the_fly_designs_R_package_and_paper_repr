@@ -69,7 +69,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 							"proportion", 
 			#' 							"count", 
 			#' 							"survival".
-			#' 							This package will enforce that all added responses via \link{add_subject_response} will be
+			#' 							This package will enforce that all added responses via the \code{add_subject_response} method will be
 			#' 							of the appropriate type.
 			#' @param n 		Number of subjects fixed beforehand.
 			#' @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
@@ -292,7 +292,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' For CARA designs, add subject response for the a subject
 			#' 
 			#' @param t 	 The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
-			#' 				 for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment_and_assign}
+			#' 				 for subjects that have not yet been added to the experiment via the \code{add_subject_to_experiment_and_assign} method.
 			#' @param y 	 The response value which must be appropriate for the response_type. 
 			#' @param dead	 If the response is censored, enter 0 for this value. This is only necessary to specify for response type
 			#' 				 "survival" otherwise do not specify this argument (as it will default to 1).
