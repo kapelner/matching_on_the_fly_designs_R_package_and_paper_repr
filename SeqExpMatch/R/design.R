@@ -10,12 +10,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 	public = list(
 			#' @field t			The current number of subjects in this sequential experiment (begins at zero).				
 			#' @field design	The experimenter-specified type of sequential experimental design (see constructor's documentation).	
-			#' @field Xraw		A data frame of subject data with number of rows n (the number of subjects) and number of 
+			#' @field Xraw		A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
 			#' 					columns p (the number of characteristics measured for each subject). This data frame is filled in
 			#' 					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
 			#' 					experiment currently) but otherwise will be missing.					
 			#' @field Ximp		Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns
-			#' @field X			Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns
+			#' @field X			Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns 
+			#' 					(and it is also a matrix object, not a data.table object)
 			#' @field y			A numeric vector of subject responses with number of entries n (the number of subjects). During
 			#' 					the KK21 designs the experimenter fills these values in when they are measured.
 			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
@@ -80,6 +81,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 					"Efron" requires "weighted_coin_prob" which is the probability of the weighted coin for assignment. If unspecified, default is 2/3.
 			#' 					All "KK" designs require "lambda", the quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
 			#' 					All "KK" designs require "t_0_pct", the percentage of total sample size n where matching begins. If unspecified, default is 35%.
+			#' 					All "KK" designs have optional flag KK_verbose with default \code{FALSE} which prints out debug messages about how the matching-on-the-fly is working.
 			#' 					All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. 
 			#' 					If unspecified, default is 500. There is an optional flag "proportion_use_speedup = TRUE" which uses a continuous regression on log(y/(1-y))
 			#' 					instead of a beta regression each time to generate the weights in KK21 designs. The default is this flag is on.
@@ -110,9 +112,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (design == "iBCRD" & !all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE)){
 					stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
 				}
-				
-				##################dummy regression for matches
-				##################random effect for matches
 				
 				self$prob_T = prob_T
 				private$n = n				
@@ -148,6 +147,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 						assertNumeric(private$other_params$t_0_pct, lower = .Machine$double.eps, upper = 1)
 						private$t_0 = round(private$other_params$t_0_pct * n)
 					}
+					if (is.null(private$other_params$KK_verbose)){
+						private$other_params$KK_verbose = FALSE
+					} else {
+						assertFlag(private$other_params$KK_verbose)
+					}
 					if (grepl("KK21", design)){
 						private$isKK21 = TRUE
 						if (is.null(private$other_params$num_boot)){
@@ -170,27 +174,33 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' @description
 			#' Add subject-specific measurements for the next subject entrant and return this new subject's treatment assignment
 			#' 
-			#' @param x_new 			A p-length row of a data frame for the new subject to be added
-			#' @param allow_new_cols	Should we allow new/different features in the new subject's covariates? Default is \code{FALSE}
+			#' @param x_new 			A row of the data frame corresponding to the new subject to be added (must be type data.table).
+			#' @param allow_new_cols	Should we allow new/different features than previously seen in previous subjects in the 
+			#' 							new subject's covariates? Default is \code{TRUE}.
+			#' @param KK_verbose		If \code{TRUE}, we will print out messages about the KK assignment. This is useful for understanding
+			#' 							how the KK assignment is working
 			#' 
 			#' @examples
 			#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD", response_type = "continuous")
 			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 			#' 
-			add_subject_to_experiment_and_assign = function(x_new, allow_new_cols = FALSE) {					
+			add_subject_to_experiment_and_assign = function(x_new, allow_new_cols = TRUE) {					
 				assertDataFrame(x_new, nrows = 1)
 				assertClass(x_new, "data.table")
 				if (self$check_experiment_completed()){
 					stop(paste("You cannot add any new subjects as all n =", private$n, "subjects have already been added."))
 				}
 				if (any(is.na(x_new)) & self$t == 0){
-					stop("There cannot be any missing data in the first subject's covariate value(s).")
+					x_new = x_new[which(!is.na(x_new))]
+					if (!allow_new_cols){
+						warning("There is missing data in the first subject's covariate value(s). Setting the flag allow_new_cols = FALSE will disallow additional subjects")
+					}					
 				}
 				
 				xnew_data_types = sapply(x_new, class)
 				
 				if ("ordered" %in% unlist(xnew_data_types)){
-					stop("Ordered factor data type is not supported; please convert to unordered.")
+					stop("Ordered factor data type is not supported; please convert to either an unordered factor or numeric.")
 				}
 				
 				if (self$t > 0){
@@ -301,9 +311,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 				assertNumeric(y, len = 1) #make sure it's length one here
 				assertNumeric(dead, len = 1) #make sure it's length one here
 				assertChoice(dead, c(0, 1))				
-				assertCount(t)
+				assertCount(t, positive = TRUE)
 				if (t > self$t){
-					stop(paste("You cannot add response for subject", t, "when the most recent subject added is", self$t))	
+					stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", self$t))	
 				}
 				
 				if (!is.na(self$y[t])){
@@ -895,7 +905,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (is.null(surv_regr_mod)){
 					break
 				}
-				summary_surv_regr_mod = summary(surv_regr_mod)$table
+				summary_surv_regr_mod = suppressWarnings(summary(surv_regr_mod)$table)
+				if (any(is.nan(summary_surv_regr_mod))){
+					break
+				}
 				weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 				#1 - summary(weibull_regr_mod)$table[2, 4]
 				if (!is.na(weight)){ #sometimes these glm's blow up and we don't really care that much
@@ -1070,7 +1083,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 					if (is.null(surv_regr_mod)){
 						break
 					}
-					summary_surv_regr_mod = summary(surv_regr_mod)$table
+					summary_surv_regr_mod = suppressWarnings(summary(surv_regr_mod)$table)
+					if (any(is.nan(summary_surv_regr_mod))){
+						break
+					}
 					weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 					#1 - summary(weibull_regr_mod)$table[2, 4]
 					if (!is.na(weight)){

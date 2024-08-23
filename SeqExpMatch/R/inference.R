@@ -708,17 +708,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},	
 		
 		compute_continuous_multivariate_ols_inference = function(){
-			ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
-			summary_table = coef(summary(ols_regr_mod))
-			list(
-				mod = ols_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = FALSE,
-				df = private$n - nrow(summary_table),
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
+				summary_table = coef(summary(ols_regr_mod))
+				list(
+					mod = ols_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = FALSE,
+					df = private$n - nrow(summary_table),
+					p_val = summary_table[2, 4]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})				
 		},
 		
 		compute_continuous_KK_compound_mean_difference_inference = function(){
@@ -778,18 +789,29 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_continuous_KK_multivariate_with_matching_dummies_ols_inference = function(){
-			ols_regr_mod = lm(private$seq_des_obj$y ~ ., 
-					data = private$generate_data_frame_with_matching_dummies())
-			summary_table = suppressWarnings(coef(summary(ols_regr_mod)))
-			list(
-				mod = ols_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = FALSE,
-				df = private$n - nrow(summary_table),
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				ols_regr_mod = lm(private$seq_des_obj$y ~ ., 
+						data = private$generate_data_frame_with_matching_dummies())
+				summary_table = suppressWarnings(coef(summary(ols_regr_mod)))
+				list(
+					mod = ols_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = FALSE,
+					df = private$n - nrow(summary_table),
+					p_val = summary_table[2, 4]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})				
 		},
 		
 		generate_data_frame_with_matching_dummies = function(){
@@ -797,46 +819,79 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference = function(){
-			mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
-					data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
-			summary_table = coef(summary(mixed_regr_mod))
-			list(
-				mod = mixed_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = FALSE,
-				df = summary_table[2, 3],
-				p_val = summary_table[2, 5]
-			)
+			tryCatch({
+				mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
+						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+				summary_table = coef(summary(mixed_regr_mod))
+				list(
+					mod = mixed_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = FALSE,
+					df = summary_table[2, 3],
+					p_val = summary_table[2, 5]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})			
 		},
 		
 		compute_incidence_univariate_logistic_regression_inference = function(){
-			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
-					data = data.frame(w = private$seq_des_obj$w), family = "binomial"))
-			summary_table = coef(summary_glm_lean(logistic_regr_mod))
-			list(
-				mod = logistic_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+						data = data.frame(w = private$seq_des_obj$w), family = "binomial"))
+				summary_table = coef(summary_glm_lean(logistic_regr_mod))
+				list(
+					mod = logistic_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})			
 		},
 		
 		compute_incidence_multivariate_logistic_regression_inference = function(){
-			logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
-					data = cbind(data.frame(w = private$seq_des_obj$w), private$X), family = "binomial"))
-			summary_table = coef(summary_glm_lean(logistic_regr_mod))
-			list(
-				mod = logistic_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
+						data = cbind(data.frame(w = private$seq_des_obj$w), private$X), family = "binomial"))
+				summary_table = coef(summary_glm_lean(logistic_regr_mod))
+				list(
+					mod = logistic_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_incidence_KK_compound_univariate_logistic_regression_inference = function(){
@@ -860,16 +915,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					is_z = TRUE,
 					p_val = summary_table[2, 4]
 				)						
-				}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-					list(
-						mod = NA,
-						summary_table = NA,	
-						beta_hat_T = NA,
-						s_beta_hat_T = NA,
-						is_z = TRUE,
-						p_val = NA
-					)				
-				})
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference = function(){
@@ -878,14 +933,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
 						family = "binomial"))
 				summary_table = coef(summary(mixed_logistic_regr_mod))
-			list(
-				mod = mixed_logistic_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+				list(
+					mod = mixed_logistic_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)
 			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
 				list(
 					mod = NA,
@@ -919,21 +974,32 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		shared_beta_regression_inference = function(data_obj){
-			beta_regr_mod = robust_betareg(y ~ ., data_obj)
-			beat_regr_mod_sub = coef(summary(beta_regr_mod))
-			summary_table = if (!is.null(beat_regr_mod_sub$mean)){ #beta model
-								beat_regr_mod_sub$mean 
-							} else if (!is.null(beat_regr_mod_sub$mu)){ #extended-support xbetax model
-								beat_regr_mod_sub$mu
-							}
-			list(
-				mod = beta_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				beta_regr_mod = robust_betareg(y ~ ., data_obj)
+				beat_regr_mod_sub = coef(summary(beta_regr_mod))
+				summary_table = if (!is.null(beat_regr_mod_sub$mean)){ #beta model
+							beat_regr_mod_sub$mean 
+						} else if (!is.null(beat_regr_mod_sub$mu)){ #extended-support xbetax model
+							beat_regr_mod_sub$mu
+						}
+				list(
+					mod = beta_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)			
+			}, error = function(e){
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_count_univariate_negative_binomial_inference = function(){
@@ -982,16 +1048,27 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_count_negative_binomial_regression = function(data_obj){
-			negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ ., data = data_obj))
-			summary_table = coef(summary_glm_lean(negbin_regr_mod))
-			list(
-				mod = negbin_regr_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[2, 1],
-				s_beta_hat_T = summary_table[2, 2],
-				is_z = TRUE,
-				p_val = summary_table[2, 4]
-			)
+			tryCatch({
+				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ ., data = data_obj))
+				summary_table = coef(summary_glm_lean(negbin_regr_mod))
+				list(
+					mod = negbin_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = TRUE,
+					p_val = summary_table[2, 4]
+				)			
+			}, error = function(e){ #very difficult to get rid of errors here due to VTV not positive definite... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})
 		},
 		
 		compute_survival_simple_median_inference = function(B = NULL){
@@ -1113,17 +1190,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_cox_regression = function(data_obj){
 			y = private$seq_des_obj$y
 			dead = private$seq_des_obj$dead
-			surv_obj = survival::Surv(y, dead)
-			coxph_mod = suppressWarnings(coxph(surv_obj ~ ., data = data_obj))
-			summary_table = coef(summary(coxph_mod))
-			list(
-				mod = coxph_mod,
-				summary_table = summary_table,	
-				beta_hat_T = summary_table[1, 2],
-				s_beta_hat_T = summary_table[1, 3],
-				is_z = TRUE,
-				p_val = summary_table[1, 5]
-			)
+			tryCatch({
+				surv_obj = survival::Surv(y, dead)
+				coxph_mod = suppressWarnings(coxph(surv_obj ~ ., data = data_obj))
+				summary_table = coef(summary(coxph_mod))
+				list(
+					mod = coxph_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[1, 2],
+					s_beta_hat_T = summary_table[1, 3],
+					is_z = TRUE,
+					p_val = summary_table[1, 5]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to VTV not positive definite... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})			
 		},
 		
 		compute_survival_multivariate_with_random_intercepts_coxph_regression_inference = function(){

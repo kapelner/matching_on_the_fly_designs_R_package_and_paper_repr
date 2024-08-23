@@ -38,6 +38,10 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 		num_iter = num_iter + 1
 	}
 	
+	if (ncol(cov_matrix_or_vector_data_frame) == 1){ #no tricks will work...
+		return(NULL)
+	}
+	
 	#no more mister nice guy...
 	#now we start to eliminate columns that may be causing multicollinearity
 	j_killed = c()
@@ -85,7 +89,7 @@ robust_betareg = function(form_obj, data_obj){
 			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
 			return(mod)
 		}, error = function(e){})
-		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
 		if (ncol(data_obj) == 0){
 			break
 		}
@@ -98,7 +102,7 @@ robust_negbinreg = function(form_obj, data_obj){
 			mod = suppressWarnings(MASS::glm.nb(form_obj, data = data_obj))
 			return(mod)
 		}, error = function(e){})
-		data_obj = data_obj[, 1 : (ncol(data_obj) - 1)] #chop off one column at a time until it works
+		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
 		if (ncol(data_obj) == 0){
 			break
 		}

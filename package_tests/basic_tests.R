@@ -1,5 +1,5 @@
 #/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ SeqExpMatch/
-pacman::p_load(PTE, datasets, mlbench, dplyr, ggplot2, gridExtra, profvis)
+pacman::p_load(PTE, datasets, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table)
 library(SeqExpMatch)
 options(error=recover)
 options(warn=2)
@@ -8,8 +8,8 @@ options(warn=2)
 
 nsim_exact_test = 301
 num_cores = 1
-missing_data_prop = 0.000
-prob_of_adding_response = 0.3
+missing_data_prop = 0.2
+prob_of_adding_response = 0.4
 max_n_dataset = 200
 
 data(continuous_example)
@@ -17,15 +17,27 @@ data(Glass)
 data(Sonar)
 data(Soybean)
 data(BreastCancer)
-airquality_subset = rbind(airquality[1, ], airquality %>% slice_sample(n = max_n_dataset - 1, replace = TRUE))
+data(iris)
+data(Ionosphere)
+data(abalone)
+data(FuelEconomy)
+
+airquality_subset = airquality      %>% slice_sample(n = max_n_dataset, replace = TRUE)
 diamonds_subset = ggplot2::diamonds %>% slice_sample(n = max_n_dataset, replace = TRUE)
 boston_subset = MASS::Boston %>%        slice_sample(n = max_n_dataset, replace = TRUE)
 cars_subset = MASS::Cars93 %>%          slice_sample(n = max_n_dataset, replace = TRUE) %>% select(-Make, -Model)
 glass_subset = Glass %>%                slice_sample(n = max_n_dataset, replace = TRUE) %>% mutate(Type = as.numeric(Type) - 1)
 pima_subset = MASS::Pima.tr2 %>%        slice_sample(n = max_n_dataset, replace = TRUE) %>% mutate(type = ifelse(type == "Yes", 1, 0))
 sonar_subset = Sonar %>%                slice_sample(n = max_n_dataset, replace = TRUE) %>% mutate(Class = ifelse(Class == "M", 1, 0))
-soybean_subset = Soybean %>%            slice_sample(n = max_n_dataset, replace = TRUE) %>% mutate(Class = ifelse(Class == "brown-spot", 1, 0))
-cancer_subset = BreastCancer %>%        slice_sample(n = max_n_dataset, replace = TRUE) %>% select(-Id) %>% mutate(Class = ifelse(Class == "malignant", 1, 0))
+soybean_subset = Soybean %>%            slice_sample(n = max_n_dataset, replace = TRUE) %>% mutate(Class = ifelse(Class == "brown-spot", 1, 0)) %>%
+  transform(plant.stand = as.numeric(plant.stand), precip = as.numeric(precip), temp = as.numeric(temp), germ = as.numeric(germ), leaf.size = as.numeric(leaf.size))
+cancer_subset = BreastCancer %>%        slice_sample(n = max_n_dataset, replace = TRUE) %>% select(-Id) %>% mutate(Class = ifelse(Class == "malignant", 1, 0)) %>%
+  transform(Cl.thickness = as.numeric(Cl.thickness), Cell.size = factor(Cell.size, ordered = FALSE), Cell.shape = factor(Cell.shape, ordered = FALSE), Marg.adhesion = factor(Marg.adhesion, ordered = FALSE), Epith.c.size = as.numeric(Epith.c.size))
+ionosphere_subset = Ionosphere %>%      slice_sample(n = max_n_dataset, replace = TRUE) %>% select(-V1, -V2)
+abalone_subset = abalone %>%            slice_sample(n = max_n_dataset, replace = TRUE)
+fuel_subset = cars2012 %>%              slice_sample(n = max_n_dataset, replace = TRUE)
+
+
 
 finagle_different_responses_from_continuous = function(y_cont){
   list(
@@ -38,14 +50,14 @@ finagle_different_responses_from_continuous = function(y_cont){
 }
 
 datasets = list(
-  # airquality = list(
-  #   X = data.table(airquality_subset %>% select(-Wind)),
-  #   responses = finagle_different_responses_from_continuous(airquality_subset$Wind)
-  # ),
-  # cars = list(
-  #   X = data.table(cars_subset %>% select(-Price)),
-  #   responses = finagle_different_responses_from_continuous(cars_subset$Price)
-  # ),
+  airquality = list(
+    X = data.table(airquality_subset %>% select(-Wind)),
+    responses = finagle_different_responses_from_continuous(airquality_subset$Wind)
+  ),
+  cars = list(
+    X = data.table(cars_subset %>% select(-Price)),
+    responses = finagle_different_responses_from_continuous(cars_subset$Price)
+  ),
   glass = list(
     X = data.table(glass_subset %>% select(-Type)),
     responses = list(count = glass_subset$Type)
@@ -67,8 +79,8 @@ datasets = list(
     responses = list(incidence = cancer_subset$Class)
   ),
   pte_example = list(
-    X = data.table(continuous_example$X %>% 
-      mutate(treatment = as.factor(treatment)) %>% 
+    X = data.table(continuous_example$X %>%
+      mutate(treatment = as.factor(treatment)) %>%
       mutate(x4 = as.character(x4))),
     responses = finagle_different_responses_from_continuous(continuous_example$y),
     beta_T = list(
@@ -76,7 +88,7 @@ datasets = list(
       incidence =  0,
       proportion = 0,
       count =      0,
-      survival =   0      
+      survival =   0
     )
   ),
   diamonds = list(
@@ -104,9 +116,26 @@ datasets = list(
       count =      0,
       survival =   0
     )
+  ),
+  iris = list(
+    X = data.table(iris %>% select(-Sepal.Width)),
+    responses = finagle_different_responses_from_continuous(iris$Sepal.Width)
+  ),
+  ionosphere = list(
+    X = data.table(ionosphere_subset %>% select(-V3)),
+    responses = finagle_different_responses_from_continuous(ionosphere_subset$V3)
+  ),
+  abalone = list(
+    X = data.table(abalone_subset %>% select(-LongestShell)),
+    responses = finagle_different_responses_from_continuous(abalone_subset$LongestShell)
+  ),
+  fuel = list(
+    X = data.table(fuel_subset %>% select(-EngDispl)),
+    responses = finagle_different_responses_from_continuous(fuel_subset$EngDispl)
   )
 )
-
+rm(continuous_example,Glass,Sonar,Soybean,BreastCancer,Ionosphere,abalone,cars2010,cars2011,cars2012)
+rm(airquality_subset,diamonds_subset,boston_subset,cars_subset,glass_subset,pima_subset,sonar_subset,soybean_subset,cancer_subset,ionosphere_subset,abalone_subset,fuel_subset)
 
 res = data.frame()
 
@@ -169,7 +198,7 @@ for (dataset_name in names(datasets)){
       
       if (grepl("KK", d)){
         stats = seq_des_obj$matching_statistics()
-        print(paste("  KK stats: prop matches:", stats$prop_subjects_matched, "# remaining in reservoir:", stats$num_subjects_remaining_in_reservoir))
+        cat(paste("  KK stats: prop matches:", stats$prop_subjects_matched, "# remaining in reservoir:", stats$num_subjects_remaining_in_reservoir))
         if (grepl("KK21", d)){
           importance_plots[[d]] = ggplot(data.frame(x = names(seq_des_obj$covariate_weights), imp = seq_des_obj$covariate_weights)) +
             aes(x = x, y = imp) +
@@ -278,3 +307,18 @@ for (dataset_name in names(datasets)){
 #####comparisons
 ###optimal PM on covariates seeing all x's up front
 ###optimal PM on mu_i's
+
+
+
+
+res = data.table(res)
+res_summary = res[, .(
+    beta_T_hat = mean(beta_hat_T, na.rm = TRUE),
+    ci_a = mean(ci_a, na.rm = TRUE),
+    ci_b = mean(ci_b, na.rm = TRUE),
+    p_val = mean(p_val, na.rm = TRUE), 
+    size = mean(p_val < 0.05, na.rm = TRUE),
+    prop_NA = sum(is.na(p_val)) / .N
+  ), by = c("estimate_type", "design")]
+res_summary[prop_NA > 0, .(estimate_type, design, prop_NA)]
+res_summary[order(size), .(estimate_type, design, size)]

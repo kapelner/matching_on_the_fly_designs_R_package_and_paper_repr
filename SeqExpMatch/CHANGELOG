@@ -1,22 +1,23 @@
 v1.1.0 (planned)
 * Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
 * Support for inverting randomization tests to create nonparametric confidence intervals
-* Support for KK regression estimators (that use a linear combination of matches and reservoir estimators)
+* Support for KK simple and regression estimators (that use a linear combination of matches and reservoir estimators) for incidence, count, proportion and survival response types for equal and unequal allocation experiments
 * Support for the count response with censoring
 * Support for Aalen additive regression model for censored data
 
 v1.0.0
-* Support for many other response types: 
-  + incidence - uses logistic regression via glm to compute weights and the regression estimator
-  + proportion - uses beta regression via betareg::betareg to compute weights and the regression estimator
-  + count (uncensored) - uses negative binomial regression via MASS::glm.nb to compute weights and the regression estimator
-  + survival (censored and uncensored) - uses the Weibull model via survival::survreg to compute weights and the regression estimator 
+* Support for general response types: 
+  + incidence - uses logistic regression via glm to compute weights and perform inference
+  + proportion - uses beta regression via betareg::betareg to compute weights and perform inference
+  + count (uncensored) - uses negative binomial regression via MASS::glm.nb to compute weights and perform inference
+  + survival (censored and uncensored) - uses the median difference via Kaplan-Meier, the Weibull model and the coxph model via the survival package to compute weights and perform inference 
 * Weights in KK21 designs now are computed from absolute test statistic values (in v0.1.0 it was based on Rsq which does not generalize to the other response types)
 * Support for adding responses whenever they become recorded
 * Support for general data frames which include factors, characters, logical data types 
-* No need to declare factors' levels from the getgo
-* Support for missing data imputed via the missRanger package
 * p does not need to be declared when initializing a design (but n is required still)
+* No need to declare factors' levels from the getgo
+* Support for missing data imputed via the missRanger and missForest packages
+* Support for different feature sets for each subject due to this imputation support
 * Additional inference support for parameter / estimator by response types:
   + continuous
     - for KK designs only: additive treatment effect / OLS with covariates and dummies for reservoir and pairs

@@ -19,7 +19,11 @@ Description: Generates the following sequential two-arm experimental designs:
     (2) frequentist testing (via asymptotic distribution results and via employing the nonparametric randomization test) and
     (3) frequentist confidence intervals (only under the superpopulation sampling assumption currently). Details can be found
     in our publication: Kapelner and Krieger "A Matching Procedure for Sequential Experiments that Iteratively Learns which 
-    Covariates Improve Power" (2020) <arXiv:2010.05980>.
+    Covariates Improve Power" (2020) <arXiv:2010.05980>. We now offer support for incidence, count, proportion and survival 
+    (with censoring) outcome types. We also have support for adding responses whenever they become available, and we can impute
+    missing data in the subjects' covariate records (where each covariate record can thereby have different information). On 
+    the inference side, there is built-in support for many types of parametric models such as random effects for incidence 
+    outcomes and count outcomes. There is Kaplan-Meier estimation, weibull and coxph models for survival outcomes.
 License: GPL-3
 Encoding: UTF-8
 Depends:
