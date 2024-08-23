@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, future.callr, future.apply, progressr)
+pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, doSNOW, tcltk, future.callr, future.apply, progressr)
 options(cli.progress_handlers = "progressr")
 handlers(global = TRUE)
 handlers("progress")
@@ -264,7 +264,7 @@ estimands_betaT_one = list(
 rm(all_means, all_mean_diffs, res_beta_T, X, Nsum_res_beta_T)
 
 
-Nsim = 1
+Nsim = 100
 X100 = data.table(X100)
 
 exp_settings = data.table(expand.grid(
@@ -272,9 +272,9 @@ exp_settings = data.table(expand.grid(
   response_type = response_types,
   design = designs,
   test_type = test_types,
-  inference_method = inference_methods[16:20],
+  inference_method = inference_methods,
   prob_of_adding_responses = prob_of_adding_responses,
-  betaT = c(0, betaToverall)
+  betaT = 0#c(0, betaToverall)
 ))
 #now we kill illegal inference methods
 exp_settings = exp_settings[!(str_split_i(inference_method, "_", 1) != response_type), ]
