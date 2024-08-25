@@ -28,5 +28,6 @@ Rcpp::cppFunction('
 
 load_all_data_cpp(res, names_res_row, all_data_files, data.table::set)
 
-
-res_df[, .(avg_pval = mean(p_val)), by = n]
+res = res[!is.na(res$p_val), ]
+res_summ_pval = res[, .(avg_p_val = mean(p_val < 0.05), num_sim = .N), by = c("n", "design", "test_type", "inference_method", "prob_of_adding_response", "betaT")]
+res_summ_pval[, pval_test := 2 * pnorm(-abs(avg_p_val - 0.05) / sqrt(0.05 * .95 / num_sim))]
