@@ -1,27 +1,14 @@
 pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, doSNOW, tcltk, future.callr, future.apply, progressr)
-options(cli.progress_handlers = "progressr")
-handlers(global = TRUE)
-handlers("progress")
-
-
-# my_fcn <- function(xs) {
-#   p <- progressr::progressor(along = xs)
-#   max_x = max(xs)
-#   future_lapply(xs, FUN = function(x) { 
-#     p(sprintf(paste0("x = %g/", max_x), x))
-#     message("x : ", x) 
-#     Sys.sleep(0.4)
-#     sqrt(x) 
-#   })
-# }
-# res = my_fcn(1:111)
 
 prob_of_adding_responses = c(0.5, 1)
-nsim_exact_test = 501
-
 ns = c(100)
+Nsim = 100
+
 censoring_mechanism = list(q = 0.9, prob = 0.2)
 betas = c(3,-3,1,-1,0,0)
+nsim_exact_test = 501
+
+
 betaToverall = 1
 
 
@@ -264,7 +251,6 @@ estimands_betaT_one = list(
 rm(all_means, all_mean_diffs, res_beta_T, X, Nsum_res_beta_T)
 
 
-Nsim = 100
 X100 = data.table(X100)
 
 exp_settings = data.table(expand.grid(
@@ -280,25 +266,11 @@ exp_settings = data.table(expand.grid(
 exp_settings = exp_settings[!(str_split_i(inference_method, "_", 1) != response_type), ]
 exp_settings = exp_settings[!(grepl("KK", inference_method) & !grepl("KK", design)), ]
 exp_settings = exp_settings[!(grepl("random_intercepts", inference_method) & test_type == "randomization-exact"), ]
+exp_settings = exp_settings[!(!grepl("KK21", inference_method) & prob_of_adding_responses == prob_of_adding_responses[1]), ]
 exp_settings = merge(data.frame(nsims = 1 : Nsim), exp_settings, by = NULL)
 exp_settings = data.table(exp_settings)
+table(exp_settings$prob_of_adding_responses, exp_settings$design)
+
+
 rm(ns, response_types, designs, test_types, inference_methods, Nsim, Nplot)
 
-
-res = data.table(
-  idx =              1 : nrow(exp_settings),
-  nsim =             NA_real_,
-  n =                NA_real_,
-  response_type =    NA_character_, 
-  design =           NA_character_, 
-  test_type =        NA_character_, 
-  inference_method = NA_character_,
-  prob_of_adding_response = NA_real_,
-  betaT =            NA_real_,
-  estimand =         NA_real_, 
-  estimate =         NA_real_, 
-  ci_a =             NA_real_, 
-  ci_b =             NA_real_,
-  pval =             NA_real_,
-  weights =          NA_character_
-)

@@ -1,5 +1,4 @@
 rm(list = ls())
-# setwd(utils::getSrcDirectory(function(){})[1])
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source("performance_study_setup.R")
 options(error=recover)
@@ -38,7 +37,7 @@ clusterExport(cl, list(
 t_0 = as.integer(Sys.time())
 
 
-# exp_settings = exp_settings[1:1000,]
+exp_settings = exp_settings[1:10,]
 
 # profvis({
 # for (n_setting in 1 : nrow(exp_settings)){
@@ -192,8 +191,8 @@ res = foreach(
 res_datatable = data.table(Reduce(rbind, lapply(res, data.frame)))
 
 
-# stopCluster(cl)
-# rm(cl); gc()
+stopCluster(cl)
+rm(cl); gc()
 
 filename = paste0("res/perf", ".RData")
 save(res, file = filename)
