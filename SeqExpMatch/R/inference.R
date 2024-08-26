@@ -308,11 +308,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 		
 		compute_treatment_estimate = function(){
-			beta_hat_T = private$fetch_and_or_cache_inference_model()$beta_hat_T
-#			if (length(beta_hat_T) != 1 | is.na(beta_hat_T) | is.null(beta_hat_T) | is.infinite(beta_hat_T) | is.nan(beta_hat_T)){
-#				stop("boom")
-#			}
-			beta_hat_T
+			private$fetch_and_or_cache_inference_model()$beta_hat_T
 		},
 		
 		#' @description
@@ -388,9 +384,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 									qt(one_minus_alpha_over_two, inference_mod$df)
 								}
 				moe = z_or_t_val * inference_mod$s_beta_hat_T
-#				if (length(moe) != 1 | is.na(moe) | is.null(moe) | is.infinite(moe) | is.nan(moe)){
-#					stop("boom")
-#				}
 				#return the CI
 				inference_mod$beta_hat_T + c(-moe, moe)
 			} else { #randomization
@@ -459,11 +452,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (delta != 0){
 					stop("nonzero treatment effect tests not yet supported for MLE or KM based tests")
 				}
-				pval = private$fetch_and_or_cache_inference_model()$p_val
-#				if (length(pval) != 1 | is.na(pval) | is.null(pval) | is.infinite(pval) | is.nan(pval)){
-#					stop("boom")
-#				}
-				pval
+				private$fetch_and_or_cache_inference_model()$p_val
 				
 			} else { #randomization
 				assertCount(nsim_exact_test, positive = TRUE)
@@ -703,7 +692,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				s_beta_hat_T = s_beta_hat_T, 
 				is_z = FALSE,
 				df = df,
-				p_val = 2 * pt(-abs(beta_hat_T), df)
+				p_val = 2 * pt(-abs(beta_hat_T) / s_beta_hat_T, df)
 			)		
 		},	
 		
@@ -1018,7 +1007,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			stop("not implemented yet")
 		},
 		
-		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){
+		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){			
 			tryCatch({
 				mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
 								data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
@@ -1094,7 +1083,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					mod = survival_fit_obj,
 					summary_table = survival_fit_res,
 					beta_hat_T = beta_hat_T,
-					s_beta_hat_T = test_obj$se,
+					s_beta_hat_T = abs(beta_hat_T / test_obj$Z), #wtf is quantileControlTest's se field if not this??????????
 					is_z = TRUE,
 					p_val = test_obj$pval
 				)
@@ -1190,6 +1179,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_cox_regression = function(data_obj){
 			y = private$seq_des_obj$y
 			dead = private$seq_des_obj$dead
+			
+			stop("boom")
 			tryCatch({
 				surv_obj = survival::Surv(y, dead)
 				coxph_mod = suppressWarnings(coxph(surv_obj ~ ., data = data_obj))
@@ -1197,7 +1188,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				list(
 					mod = coxph_mod,
 					summary_table = summary_table,	
-					beta_hat_T = summary_table[1, 2],
+					beta_hat_T = summary_table[1, 1],
 					s_beta_hat_T = summary_table[1, 3],
 					is_z = TRUE,
 					p_val = summary_table[1, 5]

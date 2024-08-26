@@ -7,15 +7,18 @@ options(error=recover)
 nC = 5
 
 
-# cl = makeCluster(nC)
-# registerDoSEQ()
-# progress=NULL
+cl = makeCluster(nC)
+registerDoSEQ()
 
-cl <- makeSOCKcluster(nC)
-registerDoSNOW(cl)
-pb <- tkProgressBar(max=nrow(exp_settings))
-progress <- function(i) setTkProgressBar(pb, i, label =
-                          paste0(i, " of ", nrow(exp_settings), " i.e., ", round(i / nrow(exp_settings) * 100, 1), "%"))
+# cl <- makeSOCKcluster(nC)
+# registerDoSNOW(cl)
+# progress =  if (Sys.info()['sysname'] == "Windows"){
+#               pb <- tkProgressBar(max=nrow(exp_settings))
+#               function(i) setTkProgressBar(pb, i, label = paste0(i, " of ", nrow(exp_settings), " i.e., ", round(i / nrow(exp_settings) * 100, 1), "%"))
+#             } else {
+#               NULL
+#             }
+
 
 clusterExport(cl, list(
   "exp_settings",
@@ -32,13 +35,12 @@ clusterExport(cl, list(
   "nsim_exact_test"
 ), envir = environment())
 
-
-
 t_0 = as.integer(Sys.time())
 
 
-exp_settings = exp_settings[1:10,]
+exp_settings = exp_settings[inference_method == "survival_univariate_coxph_regression",]
 
+# all_pvals = array(NA, nrow(exp_settings))
 # profvis({
 # for (n_setting in 1 : nrow(exp_settings)){
 res = foreach(
@@ -47,29 +49,7 @@ res = foreach(
     .combine = rbind,
     .packages = 'SeqExpMatch',
     .options.snow = list(progress = progress)) %dopar% {
-      
-# plan(multisession, workers = nC, gc = TRUE)
-# run_all_simulations = function(n_settings) {
-#   progress_bar = progressr::progressor(along = n_settings)
-#   total_number_of_iterations = max(n_settings)
-#   future_lapply(n_settings,
-#               future.seed = TRUE,
-#               future.packages = 'SeqExpMatch',
-#               future.globals = c(
-#                 "exp_settings",
-#                 "X100",
-#                 "linear_mean_function",
-#                 "response_functions",
-#                 "estimands_betaT_one",
-#                 "betas",
-#                 "betaToverall",
-#                 "censoring_mechanism",
-#                 "survival_mu_multiple",
-#                 "survival_k",
-#                 "mu_survival_max_to_be_observed",
-#                 "nsim_exact_test"
-#               ),
-#               FUN = function(n_setting) {
+
     #get this run's settings
     n =                exp_settings$n[n_setting]
     response_type =    as.character(exp_settings$response_type[n_setting])
@@ -83,8 +63,6 @@ res = foreach(
     estimand = ifelse(betaT == 0, 0, estimands_betaT_one[[inference_method]])
     
     tryCatch({
-      # progress_bar(sprintf(paste0("n_setting = %g/", total_number_of_iterations), n_setting))
-      
       seq_des_obj = SeqDesign$new(n, design, response_type, verbose = FALSE)
       
       #now we add the subjects and sometimes assign y_t values
@@ -123,15 +101,6 @@ res = foreach(
       # if (n_setting %% 37 == 0){
       #   cat("run", n_setting, "of", nrow(exp_settings), "\n")
       # }
-      # progress_bar(sprintf(paste0("n_setting = %g/", total_number_of_iterations), n_setting),
-      #  message = paste0(
-      #    "#", stringr::str_pad(n_setting, 6, side = "left", "0"),
-      #    "\n  response_type: ", response_type,
-      #    "\n  design:", design,
-      #    "\n  test_type:", test_type,
-      #    "\n  inference_method:", inference_method,
-      #    "\n"
-      #  ))
       weights = seq_des_obj$covariate_weights
       res_row = list(
         idx =              n_setting,
@@ -152,26 +121,19 @@ res = foreach(
       )
     
     }, error = function(e){
-      
-      # progress_bar(sprintf(paste0("n_setting = %g/", total_number_of_iterations), n_setting),
-      #              message = paste0(
-      #                "#", stringr::str_pad(n_setting, 6, side = "left", "0"),
-      #                "\n  ERRROOOOOR",
-      #                "\n"
-      #              ))
       res_row = list(
         idx =              n_setting,
         nsim =             exp_settings$nsims[n_setting],
         n =                n,
-        response_type =    response_type, 
-        design =           design, 
-        test_type =        test_type, 
+        response_type =    response_type,
+        design =           design,
+        test_type =        test_type,
         inference_method = inference_method,
         prob_of_adding_response = prob_of_adding_response,
         betaT =            betaT,
-        estimand =         estimand, 
+        estimand =         estimand,
         estimate =         NA,
-        ci_a =             NA, 
+        ci_a =             NA,
         ci_b =             NA,
         p_val =            NA,
         weights =          NA
@@ -182,13 +144,12 @@ res = foreach(
     save(res_row, file = paste0("res/result_", stringr::str_pad(n_setting, side = "left", 7, pad = "0")))
     # res_row
   # })
+    # all_pvals[n_setting] = res_row$p_val
 }
-# res = run_all_simulations(1 : nrow(exp_settings))
 
 #total time
 (as.integer(Sys.time()) - t_0) / 60
 
-res_datatable = data.table(Reduce(rbind, lapply(res, data.frame)))
 
 
 stopCluster(cl)
