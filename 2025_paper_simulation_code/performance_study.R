@@ -7,17 +7,17 @@ options(error=recover)
 nC = 5
 
 
-cl = makeCluster(nC)
-registerDoSEQ()
+# cl = makeCluster(nC)
+# registerDoSEQ()
 
-# cl <- makeSOCKcluster(nC)
-# registerDoSNOW(cl)
-# progress =  if (Sys.info()['sysname'] == "Windows"){
-#               pb <- tkProgressBar(max=nrow(exp_settings))
-#               function(i) setTkProgressBar(pb, i, label = paste0(i, " of ", nrow(exp_settings), " i.e., ", round(i / nrow(exp_settings) * 100, 1), "%"))
-#             } else {
-#               NULL
-#             }
+cl <- makeSOCKcluster(nC)
+registerDoSNOW(cl)
+progress =  if (Sys.info()['sysname'] == "Windows"){
+              pb <- tkProgressBar(max=nrow(exp_settings))
+              function(i) setTkProgressBar(pb, i, label = paste0(i, " of ", nrow(exp_settings), " i.e., ", round(i / nrow(exp_settings) * 100, 1), "%"))
+            } else {
+              NULL
+            }
 
 
 clusterExport(cl, list(
@@ -117,8 +117,7 @@ for (n_setting in 1 : nrow(exp_settings)){
           n =                n,
           response_type =    response_type, 
           design =           design, 
-          test_type =        test_type, 
-          inference_method = inference_method,
+          test_type =        test_type,
           prob_of_adding_response = prob_of_adding_response,
           betaT =            betaT,
           estimand =         estimand, 
@@ -136,7 +135,6 @@ for (n_setting in 1 : nrow(exp_settings)){
           response_type =    response_type,
           design =           design,
           test_type =        test_type,
-          inference_method = NA,
           prob_of_adding_response = prob_of_adding_response,
           betaT =            betaT,
           estimand =         estimand,
@@ -149,22 +147,12 @@ for (n_setting in 1 : nrow(exp_settings)){
       })
       #much faster
       # data.table::set(res, n_setting, names(res), res_row)
-      save(res_row, file = paste0("res/result_", stringr::str_pad(n_setting, side = "left", 7, pad = "0")))
+      save(res_row, file = paste0("res/result_", stringr::str_pad(n_setting, side = "left", 7, pad = "0"), "_", inference_method))
     }
 }
 
 #total time
 (as.integer(Sys.time()) - t_0) / 60
 
-
-
 stopCluster(cl)
 rm(cl); gc()
-
-
-####sequential in for loop
-#102.1min
-####doSNOW 5 cores
-#32.8min
-####future_apply
-#53.4min

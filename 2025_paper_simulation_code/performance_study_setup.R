@@ -6,7 +6,7 @@ betaTs = 0#c(0, betaToverall)
 ns = c(100)
 Nsim = 500
 
-censoring_mechanism = list(q = 0.9, prob = 0.2)
+censoring_mechanism = list(q = 0.8, prob = 0.2)
 betas = c(3,-3,1,-1,0,0)
 nsim_exact_test = 501
 
@@ -16,50 +16,6 @@ nsim_exact_test = 501
 response_types = c("continuous", "incidence", "proportion", "count", "survival")
 designs = c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")
 test_types = c("MLE-or-KM-based", "randomization-exact")
-inference_methods = c(
-  ########################################### CONTINUOUS
-  "continuous_simple_mean_difference",
-  "continuous_regression_with_covariates",
-  "continuous_KK_compound_mean_difference",  	
-  "continuous_KK_compound_multivariate_regression",
-  # "continuous_KK_regression_with_covariates_with_matching_dummies",
-  # "continuous_KK_regression_with_covariates_with_random_intercepts",
-  ########################################### INCIDENCE
-  "incidence_simple_mean_difference",
-  "incidence_simple_log_odds",	
-  "incidence_logistic_regression",
-  #"incidence_KK_compound_univariate_logistic_regression",
-  #"incidence_KK_compound_multivariate_logistic_regression",	
-  # "incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
-  # "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches",
-  ########################################### PROPORTION
-  "proportion_simple_mean_difference",
-  "proportion_simple_logodds_regression",
-  #"proportion_beta_regression",
-  #"proportion_KK_compound_univariate_beta_regression",
-  #"proportion_KK_compound_multivariate_beta_regression",
-  #"proportion_KK_multivariate_beta_regression_with_matching_dummies",
-  ########################################### COUNT
-  "count_simple_mean_difference",
-  "count_univariate_negative_binomial_regression",
-  "count_multivariate_negative_binomial_regression",
-  #"count_KK_compound_univariate_negative_binomial_regression",	
-  #"count_KK_compound_multivariate_negative_binomial_regression",
-  # "count_KK_multivariate_negative_binomial_regression_with_matching_dummies",
-  # "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches",
-  ########################################### SURVIVAL
-  "survival_simple_median_difference",	
-  "survival_simple_restricted_mean_difference",
-  "survival_univariate_weibull_regression",	
-  "survival_multivariate_weibull_regression",
-  # "survival_KK_compound_univariate_weibull_regression",	
-  # "survival_KK_compound_multivariate_weibull_regression",
-  #"survival_KK_multivariate_weibull_regression_with_matching_dummies",
-  "survival_univariate_coxph_regression",	
-  "survival_multivariate_coxph_regression"
-  # "survival_KK_multivariate_coxph_regression_with_matching_dummies",		
-  # "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"				
-)
 # covariate_distributions = c("unif")
 
 
@@ -117,8 +73,8 @@ response_functions = list(
   dead = function(y_surv){
     if (y_surv > mu_survival_max_to_be_observed){
       0
-    } else if (runif(1) < censoring_mechanism$prob){
-      0
+    # } else if (runif(1) < censoring_mechanism$prob){
+    #   0
     } else {
       1
     }
@@ -202,7 +158,7 @@ if (!setequal(betaTs, 0)){
     ))
   }
   
-  all_means = as.numeric(res_beta_T[, lapply(.SD, mean), .SDcols=colnames(res_beta_T)])
+  all_means = as.numeric(res_beta_T[, lapply(.SD, mean), .SDcols = colnames(res_beta_T)])
   all_mean_diffs = all_means[seq(1, length(all_means), by = 2)] - all_means[seq(2, length(all_means), by = 2)]
   rm(all_means)
 } else {
@@ -215,9 +171,9 @@ estimands_betaT_one = list(
     simple_mean_difference = betaToverall,
     KK_compound_mean_difference = betaToverall,
     "continuous_regression_with_covariates" = betaToverall,	
-    "continuous_KK_compound_multivariate_regression" = betaToverall,
-    "continuous_KK_regression_with_covariates_with_matching_dummies" = betaToverall,
-    "continuous_KK_regression_with_covariates_with_random_intercepts" = betaToverall
+    "continuous_KK_compound_multivariate_regression" = betaToverall
+    # "continuous_KK_regression_with_covariates_with_matching_dummies" = betaToverall,
+    # "continuous_KK_regression_with_covariates_with_random_intercepts" = betaToverall
   ),
   incidence = list(
     simple_mean_difference = all_mean_diffs[2],
@@ -225,9 +181,9 @@ estimands_betaT_one = list(
     "incidence_simple_log_odds" = betaToverall,	
     "incidence_logistic_regression" = betaToverall,
     "incidence_KK_compound_univariate_logistic_regression" = betaToverall,
-    "incidence_KK_compound_multivariate_logistic_regression" = betaToverall,
-    "incidence_KK_multivariate_logistic_regression_with_matching_dummies" = betaToverall,	
-    "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" = betaToverall
+    "incidence_KK_compound_multivariate_logistic_regression" = betaToverall
+    # "incidence_KK_multivariate_logistic_regression_with_matching_dummies" = betaToverall,	
+    # "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" = betaToverall
   ),
   proportion = list(
     simple_mean_difference = all_mean_diffs[3],
@@ -242,11 +198,11 @@ estimands_betaT_one = list(
     simple_mean_difference = all_mean_diffs[4],
     KK_compound_mean_difference = all_mean_diffs[4],
     "count_univariate_negative_binomial_regression" = betaToverall,
-    "count_multivariate_negative_binomial_regression" = betaToverall,
+    "count_multivariate_negative_binomial_regression" = betaToverall
     #"count_KK_compound_univariate_negative_binomial_regression",	
     #"count_KK_compound_multivariate_negative_binomial_regression",
-    "count_KK_multivariate_negative_binomial_regression_with_matching_dummies" = betaToverall,
-    "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches" = betaToverall
+    # "count_KK_multivariate_negative_binomial_regression_with_matching_dummies" = betaToverall,
+    # "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches" = betaToverall
     
   ),
   survival = list(
@@ -258,9 +214,9 @@ estimands_betaT_one = list(
     #"survival_KK_compound_multivariate_weibull_regression",
     #"survival_KK_multivariate_weibull_regression_with_matching_dummies",
     "survival_univariate_coxph_regression" = survival_k * betaToverall,	
-    "survival_multivariate_coxph_regression" = survival_k * betaToverall,			
-    "survival_KK_multivariate_coxph_regression_with_matching_dummies" = survival_k * betaToverall,			
-    "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches" = survival_k * betaToverall
+    "survival_multivariate_coxph_regression" = survival_k * betaToverall	
+    # "survival_KK_multivariate_coxph_regression_with_matching_dummies" = survival_k * betaToverall,			
+    # "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches" = survival_k * betaToverall
   )
 )
 
