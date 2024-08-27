@@ -1,5 +1,6 @@
 pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, doSNOW, tcltk, future.callr, future.apply, progressr)
 
+betaToverall = 1
 prob_of_adding_responses = c(0.5, 1)
 betaTs = 0#c(0, betaToverall)
 ns = c(100)
@@ -10,7 +11,6 @@ betas = c(3,-3,1,-1,0,0)
 nsim_exact_test = 501
 
 
-betaToverall = 1
 
 
 response_types = c("continuous", "incidence", "proportion", "count", "survival")
@@ -56,7 +56,7 @@ inference_methods = c(
   # "survival_KK_compound_multivariate_weibull_regression",
   #"survival_KK_multivariate_weibull_regression_with_matching_dummies",
   "survival_univariate_coxph_regression",	
-  "survival_multivariate_coxph_regression",		
+  "survival_multivariate_coxph_regression"
   # "survival_KK_multivariate_coxph_regression_with_matching_dummies",		
   # "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches"				
 )
@@ -130,9 +130,9 @@ response_functions = list(
 X100 = X[1:100, ]
 rm(X)
 
+Nsum_res_beta_T = 5000
+res_beta_T = data.table()
 if (!setequal(betaTs, 0)){
-  Nsum_res_beta_T = 5000
-  res_beta_T = data.table()
   for (nsim_res in 1 : Nsum_res_beta_T){
     res_beta_T = rbind(res_beta_T, data.table(
       # y_cont_T_beta_T_zero = apply(X100, 1, function(xi){
@@ -204,58 +204,67 @@ if (!setequal(betaTs, 0)){
   
   all_means = as.numeric(res_beta_T[, lapply(.SD, mean), .SDcols=colnames(res_beta_T)])
   all_mean_diffs = all_means[seq(1, length(all_means), by = 2)] - all_means[seq(2, length(all_means), by = 2)]
-  
-  
-  #now calculate estimands
-  estimands_betaT_one = list(
-    ########################################### CONTINUOUS
-    "continuous_simple_mean_difference" = betaToverall,
-    "continuous_regression_with_covariates" = betaToverall,
-    "continuous_KK_compound_mean_difference" = betaToverall,  	
+  rm(all_means)
+} else {
+  all_mean_diffs = rep(NA, 5)
+}
+
+#now calculate estimands
+estimands_betaT_one = list(
+  continuous = list(
+    simple_mean_difference = betaToverall,
+    KK_compound_mean_difference = betaToverall,
+    "continuous_regression_with_covariates" = betaToverall,	
     "continuous_KK_compound_multivariate_regression" = betaToverall,
     "continuous_KK_regression_with_covariates_with_matching_dummies" = betaToverall,
-    "continuous_KK_regression_with_covariates_with_random_intercepts" = betaToverall,
-    ########################################### INCIDENCE
-    "incidence_simple_mean_difference" = all_mean_diffs[2],
+    "continuous_KK_regression_with_covariates_with_random_intercepts" = betaToverall
+  ),
+  incidence = list(
+    simple_mean_difference = all_mean_diffs[2],
+    KK_compound_mean_difference = all_mean_diffs[2],
     "incidence_simple_log_odds" = betaToverall,	
     "incidence_logistic_regression" = betaToverall,
     "incidence_KK_compound_univariate_logistic_regression" = betaToverall,
     "incidence_KK_compound_multivariate_logistic_regression" = betaToverall,
     "incidence_KK_multivariate_logistic_regression_with_matching_dummies" = betaToverall,	
-    "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" = betaToverall,
-    ########################################### PROPORTION
-    "proportion_simple_mean_difference" = all_mean_diffs[3],
+    "incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" = betaToverall
+  ),
+  proportion = list(
+    simple_mean_difference = all_mean_diffs[3],
+    KK_compound_mean_difference = all_mean_diffs[3],
     "proportion_simple_logodds_regression" = betaToverall,
-    "proportion_beta_regression" = betaToverall,
+    "proportion_beta_regression" = betaToverall
     #"proportion_KK_compound_univariate_beta_regression",
     #"proportion_KK_compound_multivariate_beta_regression",
     #"proportion_KK_multivariate_beta_regression_with_matching_dummies",
-    ########################################### COUNT
-    "count_simple_mean_difference" = all_mean_diffs[4],
+  ),
+  count = list(
+    simple_mean_difference = all_mean_diffs[4],
+    KK_compound_mean_difference = all_mean_diffs[4],
     "count_univariate_negative_binomial_regression" = betaToverall,
     "count_multivariate_negative_binomial_regression" = betaToverall,
     #"count_KK_compound_univariate_negative_binomial_regression",	
     #"count_KK_compound_multivariate_negative_binomial_regression",
     "count_KK_multivariate_negative_binomial_regression_with_matching_dummies" = betaToverall,
-    "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches" = betaToverall,
-    ########################################### SURVIVAL
+    "count_KK_multivariate_negative_binomial_regression_with_random_intercepts_for_matches" = betaToverall
+    
+  ),
+  survival = list(
     "survival_simple_median_difference" = median(res_beta_T$y_surv_T_beta_T_one) - median(res_beta_T$y_surv_C_beta_T_one),
     "survival_simple_restricted_mean_difference" = all_mean_diffs[5],
     "survival_univariate_weibull_regression" = betaToverall,
     "survival_multivariate_weibull_regression" = betaToverall,
-    # "survival_KK_compound_univariate_weibull_regression",	
-    # "survival_KK_compound_multivariate_weibull_regression",
+    #"survival_KK_compound_univariate_weibull_regression",	
+    #"survival_KK_compound_multivariate_weibull_regression",
     #"survival_KK_multivariate_weibull_regression_with_matching_dummies",
     "survival_univariate_coxph_regression" = survival_k * betaToverall,	
     "survival_multivariate_coxph_regression" = survival_k * betaToverall,			
     "survival_KK_multivariate_coxph_regression_with_matching_dummies" = survival_k * betaToverall,			
-    "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches" = survival_k * betaToverall				
+    "survival_KK_multivariate_coxph_regression_with_random_intercepts_for_matches" = survival_k * betaToverall
   )
-  
-  rm(all_means, all_mean_diffs, res_beta_T, Nsum_res_beta_T)
-} else {
-  estimands_betaT_one = NULL
-}
+)
+
+rm(all_mean_diffs, res_beta_T, Nsum_res_beta_T)
 
 X100 = data.table(X100)
 
@@ -264,14 +273,10 @@ exp_settings = data.table(expand.grid(
   response_type = response_types,
   design = designs,
   test_type = test_types,
-  inference_method = inference_methods,
   prob_of_adding_responses = prob_of_adding_responses,
   betaT = betaTs
 ))
 #now we kill illegal inference methods
-exp_settings = exp_settings[!(str_split_i(inference_method, "_", 1) != response_type), ]
-exp_settings = exp_settings[!(grepl("KK", inference_method) & !grepl("KK", design)), ]
-exp_settings = exp_settings[!(grepl("random_intercepts", inference_method) & test_type == "randomization-exact"), ]
 exp_settings = exp_settings[!(!grepl("KK21", design) & prob_of_adding_responses != 0.5), ]
 exp_settings = merge(data.frame(nsims = 1 : Nsim), exp_settings, by = NULL)
 exp_settings = data.table(exp_settings)

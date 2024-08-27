@@ -27,18 +27,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param estimate_type		The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
+		#' @param estimate_type		The type of estimate to compute of which there are many and identified by the response type as its first word (except
+		#' 							\code{simple_mean_difference} and \code{KK_compound_mean_difference} which are available for all response types except
+		#' 							survival when there are any censored observations). If the string "KK" 
 		#' 							appears after the first word, then this estimate type is only applicable to KK14, KK21, KK21stepwise designs.
-		#' 							  * "continuous_simple_mean_difference" 		
+		#' 							  * "simple_mean_difference"
 		#' 								assumes the treatment effect parameter is an additive treatment effect 
+		#' 							  * "KK_compound_mean_difference" 	
+		#' 								assumes the treatment effect parameter is an additive treatment effect	
+		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
 		#' 								and estimates via the simple average difference
 		#' 							  * "continuous_regression_with_covariates"
 		#' 								assumes the treatment effect parameter is an additive treatment effect	
 		#' 								and the presence of linear additive covariates 
 		#' 								and estimates via OLS 
-		#' 							  * "continuous_KK_compound_mean_difference" 	
-		#' 								assumes the treatment effect parameter is an additive treatment effect	
-		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
 		#' 							  * "continuous_KK_compound_multivariate_regression"	
 		#' 								assumes the treatment effect parameter is an additive treatment effect
 		#' 								and estimates via combining an OLS estimator for bothe ther matches and the reservoir
@@ -49,9 +51,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								assumes the treatment effect parameter is an additive treatment effect 
 		#' 								and the presence of linear additive covariates and random intercepts on the match ID 
 		#' 								and estimates via restricted maximum likelihood
-		#' 							  * "incidence_simple_mean_difference"
-		#' 								assumes the treatment effect parameter is an additive probability difference 
-		#' 								and estimates via the simple average difference	
 		#' 							  * "incidence_simple_log_odds"
 		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
 		#' 								and estimates via maximum likelihood 	
@@ -72,9 +71,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								and the presence of linear additive covariates 
 		#' 								and random intercepts on the match ID also in units of log odds probability of the positive class
 		#' 								and estimates via restricted maximum likelihood
-		#' 							  * "proportion_simple_mean_difference"	
-		#' 								assumes the treatment effect parameter is an additive proportion difference 
-		#' 								and estimates via the simple average difference	
 		#' 							  * "proportion_simple_logodds_regression"	
 		#' 								assumes the treatment effect parameter is additive in the log odds proportion
 		#' 								and estimates via beta regression
@@ -93,9 +89,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								assumes the treatment effect parameter is additive in the log odds proportion
 		#' 								and the presence of linear additive covariates 
 		#' 								and estimates via beta regression
-		#' 							  * "count_simple_mean_difference"	
-		#' 								assumes the treatment effect parameter is an additive mean count difference 
-		#' 								and estimates via the simple average difference	
 		#' 							  * "count_univariate_negative_binomial_regression"		
 		#' 								assumes the treatment effect parameter is additive in the log count
 		#' 								and estimates via negative binomial regression
@@ -178,15 +171,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertClass(seq_des_obj, "SeqDesign")
 			seq_des_obj$assert_experiment_completed()
 			assertChoice(estimate_type, c(
+				########################################### ALL RESPONSE TYPES
+				"simple_mean_difference",				
+				"KK_compound_mean_difference",  	
 				########################################### CONTINUOUS
-				"continuous_simple_mean_difference",
 				"continuous_regression_with_covariates",
-				"continuous_KK_compound_mean_difference",  	
 				"continuous_KK_compound_multivariate_regression",
 				"continuous_KK_regression_with_covariates_with_matching_dummies",
 				"continuous_KK_regression_with_covariates_with_random_intercepts",
 				########################################### INCIDENCE
-				"incidence_simple_mean_difference",
 				"incidence_simple_log_odds",	
 				"incidence_logistic_regression",
 				"incidence_KK_compound_univariate_logistic_regression",
@@ -194,14 +187,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				"incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
 				"incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches",
 				########################################### PROPORTION
-				"proportion_simple_mean_difference",
 				"proportion_simple_logodds_regression",
 				"proportion_beta_regression",
 				"proportion_KK_compound_univariate_beta_regression",
 				"proportion_KK_compound_multivariate_beta_regression",
 				"proportion_KK_multivariate_beta_regression_with_matching_dummies",
 				########################################### COUNT
-				"count_simple_mean_difference",
 				"count_univariate_negative_binomial_regression",
 				"count_multivariate_negative_binomial_regression",
 				"count_KK_compound_univariate_negative_binomial_regression",	
@@ -257,15 +248,21 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$is_proportion = response_type == "proportion"
 			private$is_survival = response_type == "survival"
 			
-			if (strsplit(estimate_type, "_")[[1]][1] != response_type){
+			#now run more checks
+			if (!(estimate_type %in% c("simple_mean_difference", "KK_compound_mean_difference")) & strsplit(estimate_type, "_")[[1]][1] != response_type){
 				stop(paste(estimate_type, "cannot be estimated for response type:", response_type))
 			}
-			if (grepl("KK", estimate_type) & !private$isKK){
-				stop(paste(estimate_type, "cannot be estimated for design type", seq_des_obj$design_type), "as it is not a KK-type design")
+			if (estimate_type == "simple_mean_difference" & private$is_survival & any(private$seq_des_obj$dead == 0)){
+				stop("estimate type \"simple_mean_difference\" cannot be estimated when there is censoring")
 			}
-			
+			if (estimate_type == "KK_compound_mean_difference" & private$is_survival & any(private$seq_des_obj$dead == 0)){
+				stop("estimate type \"KK_compound_mean_difference\" cannot be estimated when there is censoring")
+			}
+			if (grepl("KK", estimate_type) & !private$isKK){
+				stop(paste("estimate type", estimate_type, "cannot be estimated for design type", seq_des_obj$design_type), "(as it is not a KK-type design)")
+			}			
 			if (estimate_type == "median_difference" & !private$is_survival){
-				stop("estimate_type \"median_difference\" is only available for response_type \"survival\"")
+				stop("estimate type \"median_difference\" is only available for response_type \"survival\"")
 			}
 			
 			if (private$verbose){
@@ -594,13 +591,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		fetch_and_or_cache_inference_model = function(){
 			if (is.null(private$inference_model)){
 				private$inference_model = switch(self$estimate_type,
-					########################################### CONTINUOUS
-					"continuous_simple_mean_difference" =
+					########################################### ALL RESPONSE TYPES
+					"simple_mean_difference" =
 							private$compute_simple_mean_difference_inference(),
+					"KK_compound_mean_difference" =
+							private$compute_KK_compound_mean_difference_inference(),  
+					########################################### CONTINUOUS
 					"continuous_regression_with_covariates" =
-							private$compute_continuous_multivariate_ols_inference(),
-					"continuous_KK_compound_mean_difference" =
-							private$compute_continuous_KK_compound_mean_difference_inference(),  	
+							private$compute_continuous_multivariate_ols_inference(),	
 					"continuous_KK_compound_multivariate_regression" =
 							private$compute_continuous_KK_compound_multivariate_ols_inference(),
 					"continuous_KK_regression_with_covariates_with_matching_dummies" = 
@@ -608,8 +606,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					"continuous_KK_regression_with_covariates_with_random_intercepts" = 
 							private$compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference(),
 					########################################### INCIDENCE
-					"incidence_simple_mean_difference" =
-							private$compute_simple_mean_difference_inference(),
 					"incidence_simple_log_odds" =
 							private$compute_incidence_univariate_logistic_regression_inference(),	
 					"incidence_logistic_regression" =
@@ -623,8 +619,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					"incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches" =
 							private$compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference(),
 					########################################### PROPORTION
-					"proportion_simple_mean_difference" =
-							private$compute_simple_mean_difference_inference(),
 					"proportion_simple_logodds_regression" =
 							private$compute_proportion_univariate_beta_regression_inference(),
 					"proportion_beta_regression" =
@@ -636,8 +630,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					"proportion_KK_multivariate_beta_regression_with_matching_dummies" =
 							private$compute_proportion_KK_multivariate_beta_regression_with_matching_dummies_inference(),
 					########################################### COUNT
-					"count_simple_mean_difference" =
-							private$compute_simple_mean_difference_inference(),
 					"count_univariate_negative_binomial_regression" =
 							private$compute_count_univariate_negative_binomial_inference(),
 					"count_multivariate_negative_binomial_regression" =
@@ -696,6 +688,24 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			)		
 		},	
 		
+		compute_KK_compound_mean_difference_inference = function(){
+			KKstats = private$compute_continuous_post_matching_data_KK()
+			#sometimes the reservoir just isn't large enough
+			if (KKstats$nRT <= 1 || KKstats$nRC <= 1){
+				KKstats$beta_hat_T = KKstats$d_bar	
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqD_bar)
+			} else if (KKstats$m == 0){ #sometimes there's no matches
+				KKstats$beta_hat_T = KKstats$r_bar		
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR)		
+			} else {
+				KKstats$beta_hat_T = KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
+				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR * KKstats$ssqD_bar / (KKstats$ssqR + KKstats$ssqD_bar))
+			}
+			KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution			
+			KKstats$is_z = TRUE #see KK14 paper for details about how assuming the normal distr here may be too liberal
+			KKstats
+		},
+		
 		compute_continuous_multivariate_ols_inference = function(){
 			tryCatch({
 				ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
@@ -719,24 +729,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					p_val = NA
 				)				
 			})				
-		},
-		
-		compute_continuous_KK_compound_mean_difference_inference = function(){
-			KKstats = private$compute_continuous_post_matching_data_KK()
-			#sometimes the reservoir just isn't large enough
-			if (KKstats$nRT <= 1 || KKstats$nRC <= 1){
-				KKstats$beta_hat_T = KKstats$d_bar	
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqD_bar)
-			} else if (KKstats$m == 0){ #sometimes there's no matches
-				KKstats$beta_hat_T = KKstats$r_bar		
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR)		
-			} else {
-				KKstats$beta_hat_T = KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
-				KKstats$s_beta_hat_T = sqrt(KKstats$ssqR * KKstats$ssqD_bar / (KKstats$ssqR + KKstats$ssqD_bar))
-			}
-			KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution			
-			KKstats$is_z = TRUE #see KK14 paper for details about how assuming the normal distr here may be too liberal
-			KKstats
 		},
 		
 		compute_continuous_KK_compound_multivariate_ols_inference = function(){

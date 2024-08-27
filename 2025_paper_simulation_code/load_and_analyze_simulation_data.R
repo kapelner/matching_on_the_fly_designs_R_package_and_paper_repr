@@ -11,8 +11,7 @@ res = data.table(data.frame(list_to_turn_to_df))
 
 Rcpp::cppFunction('
 	void load_all_data_cpp(SEXP res, CharacterVector fields, CharacterVector all_data_files, Rcpp::Function func) {
-	  Function R_load("load"); 
-	  //Function DT_set("data.table::set");
+	  Function R_load("load");
 	  Environment env = Environment::global_env();
 		for (int i = 0; i < all_data_files.length(); i++){
   		if (i % 1000 == 0){
