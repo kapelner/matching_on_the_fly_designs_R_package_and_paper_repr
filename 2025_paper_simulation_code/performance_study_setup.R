@@ -2,7 +2,7 @@ pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, prof
 
 betaToverall = 1
 prob_of_adding_responses = c(0.5, 1)
-betaTs = 0#c(0, betaToverall)
+betaTs = c(0, betaToverall)
 ns = c(100)
 Nsim = 500
 

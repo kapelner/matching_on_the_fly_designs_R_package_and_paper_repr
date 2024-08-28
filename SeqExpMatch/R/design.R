@@ -804,7 +804,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		assign_wt_KK14 = function(){
-			wt = 	if (length(private$match_indic[private$match_indic == 0]) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
 						#we're early, so randomize
 						private$match_indic[self$t] = 0
 						private$assign_wt_CRD()
@@ -921,7 +921,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 				
 		assign_wt_KK21 = function(){
-			wt = 	if (length(private$match_indic[private$match_indic == 0]) == 0 | (self$t <= ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | (self$t <= ncol(self$Xraw) + 2) | self$t <= private$t_0){
 						#we're early or the reservoir is empty, so randomize
 						#cat("    assign_wt_KK21 CRD t", self$t, "\n")
 						private$match_indic[self$t] = 0
@@ -1101,7 +1101,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		assign_wt_KK21stepwise = function(){
-			wt = 	if (length(private$match_indic[private$match_indic == 0]) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
 						#we're early or the reservoir is empty, so randomize
 						#cat("    assign_wt_KK21stepwise CRD t", self$t, "\n")
 						private$match_indic[self$t] = 0
