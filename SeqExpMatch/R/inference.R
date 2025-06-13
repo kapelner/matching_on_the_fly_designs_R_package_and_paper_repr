@@ -1172,7 +1172,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			y = private$seq_des_obj$y
 			dead = private$seq_des_obj$dead
 			
-			stop("boom")
 			tryCatch({
 				surv_obj = survival::Surv(y, dead)
 				coxph_mod = suppressWarnings(coxph(surv_obj ~ ., data = data_obj))
