@@ -216,16 +216,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertChoice(test_type, c("MLE-or-KM-based", "randomization-exact"))
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
-			
-			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
-				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			}
 			self$estimate_type = estimate_type
 			self$test_type = test_type
 			private$seq_des_obj = seq_des_obj
 			private$isKK = seq_des_obj$.__enclos_env__$private$isKK
 			private$match_indic = private$seq_des_obj$.__enclos_env__$private$match_indic
-			if (!is.null(private$match_indic)){
+			
+			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
+				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+			}
+			if (private$isKK & uniqueN(private$match_indic) == 1){ #imputations were never done yet either
+				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+			}		
+			if (!is.null(private$match_indic) & uniqueN(private$match_indic) > 1){
 				mm = model.matrix(~ 0 + factor(private$match_indic)) 
 				mm = mm[, 2 : (ncol(mm) - 1)]
 				private$match_indic_model_matrix = mm
@@ -745,8 +748,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			} else if (KKstats$m == 0){			
 				coefs_reservoir = coef(summary(lm(KKstats$y_reservoir ~ cbind(KKstats$w_reservoir, KKstats$X_reservoir))))		
 				KKstats$beta_hat_T = coefs_reservoir[2, 1]
-				KKstats$s_beta_hat_T = coefs[2, 2]
-				KKstats$p_val = coefs[2, 4]
+				KKstats$s_beta_hat_T = coefs_reservoir[2, 2]
+				KKstats$p_val = coefs_reservoir[2, 4]
 				
 				#but most of the time... we have matches and a nice-sized reservoir
 			} else {

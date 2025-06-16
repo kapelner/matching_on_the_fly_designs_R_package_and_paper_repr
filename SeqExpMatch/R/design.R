@@ -811,8 +811,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 					} else {
 						all_subject_data = private$compute_all_subject_data()
 						# cat("else\n")
-						#first calculate the threshold we're operating at				
-						S_xs_inv = solve(var(all_subject_data$X_prev), tol = .Machine$double.xmin)
+						#first calculate the threshold we're operating at	
+						#when inverting, ensure full rank by adding eps * I			
+						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
 						F_crit =  qf(private$other_params$lambda, all_subject_data$rank_prev, self$t - all_subject_data$rank_prev)
 						T_cutoff_sq = all_subject_data$rank_prev * (private$n - 1) / (private$n - all_subject_data$rank_prev) * F_crit
 						#now iterate over all items in reservoir and take the minimum distance x
