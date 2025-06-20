@@ -124,18 +124,20 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{estimate_type}}{The type of estimate to compute of which there are many and identified by the response type as its first word. If the string "KK" 
+\item{\code{estimate_type}}{The type of estimate to compute of which there are many and identified by the response type as its first word (except
+  \code{simple_mean_difference} and \code{KK_compound_mean_difference} which are available for all response types except
+  survival when there are any censored observations). If the string "KK" 
   appears after the first word, then this estimate type is only applicable to KK14, KK21, KK21stepwise designs.
-    * "continuous_simple_mean_difference"         
+    * "simple_mean_difference"
       assumes the treatment effect parameter is an additive treatment effect 
+    * "KK_compound_mean_difference"     
+      assumes the treatment effect parameter is an additive treatment effect    
+      and estimates via combining a simple average difference estimator for both the matches and the reservoir
       and estimates via the simple average difference
     * "continuous_regression_with_covariates"
       assumes the treatment effect parameter is an additive treatment effect    
       and the presence of linear additive covariates 
       and estimates via OLS 
-    * "continuous_KK_compound_mean_difference"     
-      assumes the treatment effect parameter is an additive treatment effect    
-      and estimates via combining a simple average difference estimator for both the matches and the reservoir
     * "continuous_KK_compound_multivariate_regression"    
       assumes the treatment effect parameter is an additive treatment effect
       and estimates via combining an OLS estimator for bothe ther matches and the reservoir
@@ -146,9 +148,6 @@ Initialize a sequential experimental design estimation and test object after the
       assumes the treatment effect parameter is an additive treatment effect 
       and the presence of linear additive covariates and random intercepts on the match ID 
       and estimates via restricted maximum likelihood
-    * "incidence_simple_mean_difference"
-      assumes the treatment effect parameter is an additive probability difference 
-      and estimates via the simple average difference    
     * "incidence_simple_log_odds"
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and estimates via maximum likelihood     
@@ -169,9 +168,6 @@ Initialize a sequential experimental design estimation and test object after the
       and the presence of linear additive covariates 
       and random intercepts on the match ID also in units of log odds probability of the positive class
       and estimates via restricted maximum likelihood
-    * "proportion_simple_mean_difference"    
-      assumes the treatment effect parameter is an additive proportion difference 
-      and estimates via the simple average difference    
     * "proportion_simple_logodds_regression"    
       assumes the treatment effect parameter is additive in the log odds proportion
       and estimates via beta regression
@@ -190,9 +186,6 @@ Initialize a sequential experimental design estimation and test object after the
       assumes the treatment effect parameter is additive in the log odds proportion
       and the presence of linear additive covariates 
       and estimates via beta regression
-    * "count_simple_mean_difference"    
-      assumes the treatment effect parameter is an additive mean count difference 
-      and estimates via the simple average difference    
     * "count_univariate_negative_binomial_regression"        
       assumes the treatment effect parameter is additive in the log count
       and estimates via negative binomial regression

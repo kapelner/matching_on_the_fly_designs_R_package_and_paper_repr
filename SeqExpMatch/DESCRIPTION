@@ -29,6 +29,7 @@ Encoding: UTF-8
 Depends:
 	R6,
 	checkmate,
+	Rcpp,
 	Matrix,
 	data.table,
 	survival,
@@ -42,6 +43,7 @@ Depends:
 	missRanger,
 	missForest,
 	doParallel
+LinkingTo: Rcpp
 Imports:
     stats,
     checkmate, 

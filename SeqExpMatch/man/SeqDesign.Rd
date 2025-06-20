@@ -228,7 +228,7 @@ Initialize a sequential experimental design
 "proportion", 
 "count", 
 "survival".
-This package will enforce that all added responses via \link{add_subject_response} will be
+This package will enforce that all added responses via the \code{add_subject_response} method will be
 of the appropriate type.}
 
 \item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
@@ -331,7 +331,7 @@ For CARA designs, add subject response for the a subject
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{t}}{The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
-for subjects that have not yet been added to the experiment via \link{add_subject_to_experiment_and_assign}}
+for subjects that have not yet been added to the experiment via the \code{add_subject_to_experiment_and_assign} method.}
 
 \item{\code{y}}{The response value which must be appropriate for the response_type.}
 

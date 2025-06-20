@@ -221,20 +221,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$seq_des_obj = seq_des_obj
 			private$isKK = seq_des_obj$.__enclos_env__$private$isKK
 			private$match_indic = private$seq_des_obj$.__enclos_env__$private$match_indic
-			
-			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
-				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			}
-			if (private$isKK & uniqueN(private$match_indic) == 1){ #imputations were never done yet either
-				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			}		
-			if (!is.null(private$match_indic) & uniqueN(private$match_indic) > 1){
-				mm = model.matrix(~ 0 + factor(private$match_indic)) 
-				mm = mm[, 2 : (ncol(mm) - 1)]
-				private$match_indic_model_matrix = mm
-			}
 			private$n = private$seq_des_obj$.__enclos_env__$private$n
-			private$X = private$seq_des_obj$.__enclos_env__$private$compute_all_subject_data()$X_all
 			private$yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1]
 			private$yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0]
 			private$deadTs = private$seq_des_obj$dead[private$seq_des_obj$w == 1]
@@ -561,7 +548,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_des_r = seq_des_obj$.__enclos_env__$private$duplicate()
 					seq_des_r$y = y #set the new responses
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
-					b_T_sims[r] = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()
+					seq_inf_r = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)
+					seq_inf_r$.__enclos_env__$private$X = private$X					
+					b_T_sims[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
@@ -575,7 +564,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_des_r = seq_des_obj$.__enclos_env__$private$duplicate()
 					seq_des_r$y = y #set the new responses
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()				
-					SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)$compute_treatment_estimate()				
+					seq_inf_r = SeqDesignInference$new(seq_des_r, estimate_type = estimate_type, verbose = FALSE)
+					seq_inf_r$.__enclos_env__$private$X = private$X
+					seq_inf_r$compute_treatment_estimate()			
 				}
 				stopCluster(cl)
 				rm(cl); gc()
@@ -709,9 +700,25 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			KKstats
 		},
 		
+		getX = function(){
+			if (is.null(private$X)){
+				if (is.null(private$seq_des_obj$.__enclos_env__$private$X)){
+					private$seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+				}
+	#			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
+	#				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+	#			}
+	#			if (private$isKK & uniqueN(private$match_indic) == 1){ #imputations were never done yet either
+	#				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
+	#			}	
+				private$X = private$seq_des_obj$.__enclos_env__$private$compute_all_subject_data()$X_all
+			}
+			private$X
+		},
+		
 		compute_continuous_multivariate_ols_inference = function(){
 			tryCatch({
-				ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$X))
+				ols_regr_mod = lm(private$seq_des_obj$y ~ ., data = cbind(data.frame(w = private$seq_des_obj$w), private$getX()))
 				summary_table = coef(summary(ols_regr_mod))
 				list(
 					mod = ols_regr_mod,
@@ -737,7 +744,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_continuous_KK_compound_multivariate_ols_inference = function(){
 			KKstats = private$compute_continuous_post_matching_data_KK()
 			
-			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= ncol(private$X) + 2)){
+			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= ncol(private$getX()) + 2)){
 				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
 				
 				KKstats$beta_hat_T = coefs_matched[1, 1]
@@ -799,13 +806,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		generate_data_frame_with_matching_dummies = function(){
-			cbind(data.frame(w = private$seq_des_obj$w), private$X, private$match_indic_model_matrix)
+			if (!is.null(private$match_indic_model_matrix)){
+				if (!is.null(private$match_indic) & uniqueN(private$match_indic) > 1){
+					mm = model.matrix(~ 0 + factor(private$match_indic)) 
+					mm = mm[, 2 : (ncol(mm) - 1)]
+					private$match_indic_model_matrix = mm
+				}
+			}
+			cbind(data.frame(w = private$seq_des_obj$w), private$getX(), private$match_indic_model_matrix)
 		},
 		
 		compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference = function(){
 			tryCatch({
 				mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
-						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$getX())))
 				summary_table = coef(summary(mixed_regr_mod))
 				list(
 					mod = mixed_regr_mod,
@@ -856,7 +870,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_incidence_multivariate_logistic_regression_inference = function(){
 			tryCatch({
 				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj$y ~ ., 
-						data = cbind(data.frame(w = private$seq_des_obj$w), private$X), family = "binomial"))
+						data = cbind(data.frame(w = private$seq_des_obj$w), private$getX()), family = "binomial"))
 				summary_table = coef(summary_glm_lean(logistic_regr_mod))
 				list(
 					mod = logistic_regr_mod,
@@ -914,7 +928,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches_inference = function(){
 			tryCatch({
 				mixed_logistic_regr_mod = suppressWarnings(lme4::glmer(y ~ . - match_indic + (1 | match_indic), 
-						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X),
+						data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$getX()),
 						family = "binomial"))
 				summary_table = coef(summary(mixed_logistic_regr_mod))
 				list(
@@ -942,7 +956,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_proportion_multivariate_beta_regression_inference = function(){
-			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X))
+			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$getX()))
 		},
 		
 		compute_proportion_KK_multivariate_beta_regression_with_matching_dummies_inference = function(){
@@ -991,7 +1005,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_count_multivariate_negative_binomial_inference = function(){
-			private$compute_count_negative_binomial_regression(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$X))
+			private$compute_count_negative_binomial_regression(cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w), private$getX()))
 		},
 		
 		compute_count_KK_compound_univariate_negative_binomial_inference = function(){
@@ -1005,7 +1019,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){			
 			tryCatch({
 				mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
-								data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$X)))
+								data = cbind(data.frame(y = private$seq_des_obj$y, w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), private$getX())))
 				summary_table = coef(summary(mixed_neg_bin_regr_mod))
 				list(
 					mod = mixed_neg_bin_regr_mod,
@@ -1108,7 +1122,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_survival_multivariate_weibull_regression_inference = function(){
-			private$compute_survival_weibull_regression(cbind(private$seq_des_obj$w, private$X))
+			private$compute_survival_weibull_regression(cbind(private$seq_des_obj$w, private$getX()))
 		},
 		
 		compute_survival_KK_compound_univariate_weibull_inference = function(){
@@ -1164,7 +1178,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 		
 		compute_survival_multivariate_coxph_regression_inference = function(){
-			private$compute_cox_regression(cbind(data.frame(w = private$seq_des_obj$w), private$X))
+			private$compute_cox_regression(cbind(data.frame(w = private$seq_des_obj$w), private$getX()))
 		},
 		
 		compute_survival_multivariate_with_matching_dummies_coxph_regression_inference = function(){
@@ -1203,7 +1217,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			y = private$seq_des_obj$y
 			dead = private$seq_des_obj$dead
 			surv_obj = survival::Surv(y, dead)
-			X = private$X
+			X = private$getX()
 			colnames(X) = paste0("x", 1 : ncol(X)) #as there may be spaces in the colnames which blows the formula up... so damn annoying
 			data = cbind(data.frame(w = private$seq_des_obj$w, match_indic = factor(private$match_indic)), X)
 			f = as.formula(paste("surv_obj ~ (1 | match_indic) + w +", paste(colnames(X), collapse = "+")))
@@ -1236,21 +1250,21 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				
 				m = max(private$match_indic)
 				y_matched_diffs = array(NA, m)
-				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
+				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$getX()))
 				if (m > 0){
 					for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
 						yTs = private$seq_des_obj$y[private$seq_des_obj$w == 1 & private$match_indic == match_id]
 						yCs = private$seq_des_obj$y[private$seq_des_obj$w == 0 & private$match_indic == match_id]
 						y_matched_diffs[match_id] = mean(yTs) - mean(yCs)
 						
-						xmTs = private$X[private$seq_des_obj$w == 1 & private$match_indic == match_id, ]
-						xmCs = private$X[private$seq_des_obj$w == 0 & private$match_indic == match_id, ]
+						xmTs = private$getX()[private$seq_des_obj$w == 1 & private$match_indic == match_id, ]
+						xmCs = private$getX()[private$seq_des_obj$w == 0 & private$match_indic == match_id, ]
 						X_matched_diffs[match_id, ] = mean(xmTs) - mean(xmCs)
 					}
 				}			
 				
 				#get reservoir data
-				X_reservoir = 	private$X[private$match_indic == 0, ]
+				X_reservoir = 	private$getX()[private$match_indic == 0, ]
 				y_reservoir = 	private$seq_des_obj$y[private$match_indic == 0]
 				w_reservoir = 	private$seq_des_obj$w[private$match_indic == 0]
 				y_reservoir_T = y_reservoir[w_reservoir == 1] #get the reservoir responses from the treatment

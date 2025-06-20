@@ -438,10 +438,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' seq_des$assert_experiment_completed() #no response means the assert is true
 			assert_experiment_completed = function(){
 				if (private$all_assignments_not_yet_allocated()){
-					stop("This experiment is incomplete as the assignments aren't all wtated yet.")
+					stop("This experiment is incomplete as all n assignments aren't administered yet.")
 				}
 				if (private$all_responses_not_yet_recorded()){
-					stop("This experiment is incomplete as the responses aren't all recorded yet.")
+					stop("This experiment is incomplete as all n responses aren't recorded yet.")
 				}
 			},
 			
@@ -682,8 +682,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				Xint = self$X[is, , drop = FALSE]
 				
 				#we first kill columns that have no variation
-				num_unique_values_per_column = apply(Xint, 2, function(xj){length(unique(xj))})
-				js = which(num_unique_values_per_column > 1)
+				js = which_cols_vary_cpp(Xint)
 				Xint = Xint[, js]
 				xt = self$X[self$t, js]
 				
@@ -1032,8 +1031,21 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		compute_weights_KK21stepwise_continuous = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, scale(ys), ws, function(response_obj, covariate_data_matrix){
-				ols_mod = lm(response_obj ~ covariate_data_matrix)
-				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
+				
+#				ols_mod = lm(response_obj ~ covariate_data_matrix)
+#				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
+				
+				#25% SPEEDUP
+			    Xmat = cbind(1, covariate_data_matrix)
+			    qr_decomp = qr(Xmat)
+			    Qmat = qr.Q(qr_decomp)
+			    Rmat = qr.R(qr_decomp)
+			    Qmatt = t(Qmat)
+			    Rmatt = t(Rmat)
+			    RtRinv = solve(Rmatt %*% Rmat)
+			    b = (RtRinv %*% Rmatt %*% Qmatt %*% response_obj)
+			    s_sq_e = sum((response_obj - Xmat %*% b)^2) / (length(response_obj) - ncol(Qmat))
+			    abs(b[2]) / sqrt(s_sq_e * RtRinv[2, 2])
 			})
 		},
 		
