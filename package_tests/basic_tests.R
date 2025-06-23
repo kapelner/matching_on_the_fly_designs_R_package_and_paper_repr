@@ -382,7 +382,7 @@ res = foreach(
     for (estimate_type in c(
       ########################################### CONTINUOUS
       "continuous_simple_mean_difference",
-      "continuous_regression_with_covariates",
+      "continuous_multivariate_regression",
       "continuous_KK_compound_mean_difference",
       "continuous_KK_compound_multivariate_regression",
       # "continuous_KK_regression_with_covariates_with_matching_dummies",
@@ -390,7 +390,7 @@ res = foreach(
       ########################################### INCIDENCE
       "incidence_simple_mean_difference",
       "incidence_simple_log_odds",	
-      "incidence_logistic_regression",
+      "incidence_multivariate_logistic_regression",
       # "incidence_KK_compound_univariate_logistic_regression",
       # "incidence_KK_compound_multivariate_logistic_regression",
       # "incidence_KK_multivariate_logistic_regression_with_matching_dummies",
@@ -398,7 +398,7 @@ res = foreach(
       ########################################### PROPORTION
       "proportion_simple_mean_difference",
       "proportion_simple_logodds_regression",
-      "proportion_beta_regression",
+      "proportion_multivariate_beta_regression",
       # "proportion_KK_compound_univariate_beta_regression",
       # "proportion_KK_compound_multivariate_beta_regression",
       # "proportion_KK_multivariate_beta_regression_with_matching_dummies",
@@ -548,7 +548,7 @@ fwrite(res, file = paste0("seq_exp_match_sims.csv"))
 # )
 
 rm(list = ls())
-pacman::p_load(ggplot2, data.table, magrittr)
+pacman::p_load(ggplot2, data.table, magrittr, stringi)
 filenames = dir(pattern = "*.RData")
 load(filenames[1])
 res$prop_subjects_matched = NA_real_
@@ -568,12 +568,26 @@ gc()
 table(all_res$n_rep)
 
 
+all_res[, design := factor(design, levels = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD"))]
 all_res[abs(beta_hat_T) > 100, beta_hat_T := NA]
 all_res[is.na(beta_hat_T), ci_a := NA]
 all_res[is.na(beta_hat_T) > 100, ci_b := NA]
 all_res[, covers := as.numeric(ci_a <= beta_T & beta_T <= ci_b)]
 all_res[, design := factor(design, levels = rev(c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD")))]
 
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "continuous_regression_with_covariates", "continuous_multivariate_regression")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "incidence_logistic_regression", "incidence_multivariate_logistic_regression")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "proportion_beta_regression", "proportion_multivariate_beta_regression")]
+
+
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "continuous_", "")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "incidence_", "")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "count_", "")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "proportion_", "")]
+all_res[, estimate_type := stri_replace_all_regex(estimate_type, "survival_", "")]
+all_res[, resp_and_est := paste0(response_type, "_", estimate_type)]
+
+table(all_res$resp_and_est)
 all_res[, .(
   avg_assignment_time = mean(assignment_time, na.rm = TRUE)
 ), by = c("n", "design", "response_type")][order(design, response_type)]
@@ -582,8 +596,10 @@ all_res[, .(
   avg_inference_time = mean(inference_time, na.rm = TRUE)
 ), by = c("n", "test_type", "estimate_type", "response_type")]
 
-res_summary = all_res[test_type == "MLE-or-KM-based", .(
+res_summary_mle = all_res[test_type == "MLE-or-KM-based", .(
   dataset = first(dataset_name),
+  estimate_type = first(estimate_type),
+  response_type = first(response_type),
   beta_T_hat = mean(beta_hat_T, na.rm = TRUE),
   ase = mean((beta_hat_T - beta_T)^2, na.rm = TRUE),
   coverage = mean(ci_a <= beta_T & beta_T <= ci_b, na.rm = TRUE),
@@ -592,23 +608,28 @@ res_summary = all_res[test_type == "MLE-or-KM-based", .(
   p_val_prop_test = prop.test(x = sum(p_val < 0.05, na.rm = TRUE), n = sum(!is.na(p_val)), p = 0.05)$p.value,
   prop_NA = sum(is.na(p_val)) / .N,
   nrep = .N
-), by = c("dataset_name", "design", "n", "estimate_type", "response_type", "beta_T")]
+), by = c("dataset_name", "design", "n", "resp_and_est", "beta_T")]
+res_summary_mle[, is_KK := grepl("KK", estimate_type)]
+res_summary_mle[, is_multi := grepl("multivariate", estimate_type)]
 
-res_summary_no_effect = res_summary[beta_T == 0]
-res_summary_tx_effect = res_summary[beta_T > 0]
+res_summary_no_effect = res_summary_mle[beta_T == 0]
+res_summary_tx_effect = res_summary_mle[beta_T > 0]
 res_summary_tx_effect[, p_val_prop_test := NULL]
 res_summary_no_effect[, p_val_prop_test := p_val_prop_test < 0.05 / .N]
 res_summary_no_effect[p_val_prop_test == TRUE]
 sum(res_summary_no_effect$p_val_prop_test) / nrow(res_summary_no_effect)
 
-summary(lm(avg_pow ~ design + response_type * dataset_name, res_summary_tx_effect))
-summary(lm(avg_pow ~ design, res_summary_tx_effect))
 
-res_summary_tx_effect[, design := factor(design, levels = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD"))]
+summary(lm(avg_pow ~ design + response_type + dataset_name, res_summary_tx_effect))
+summary(lm(avg_pow ~ design + estimate_type + dataset_name, res_summary_tx_effect))
+summary(lm(avg_pow ~ design * resp_and_est + dataset_name, res_summary_tx_effect))
+summary(lm(avg_pow ~ design + (is_KK + is_multi) + dataset_name, res_summary_tx_effect))
+summary(lm(avg_pow ~ design * (is_KK + is_multi) + dataset_name, res_summary_tx_effect))
+
 res_summary_tx_effect[order(dataset_name, estimate_type, design)][response_type == "incidence"][dataset_name == "boston"]
 
 
-res_summary = all_res[test_type == "randomization-exact", .(
+res_summary_rand = all_res[test_type == "randomization-exact", .(
   dataset = first(dataset_name),
   beta_T_hat = mean(beta_hat_T, na.rm = TRUE),
   p_val = mean(p_val, na.rm = TRUE), 
@@ -616,21 +637,27 @@ res_summary = all_res[test_type == "randomization-exact", .(
   p_val_prop_test = prop.test(x = sum(p_val < 0.05, na.rm = TRUE), n = length(!is.na(p_val)), p = 0.05)$p.value,
   prop_NA = sum(is.na(p_val)) / .N,
   nrep = .N
-), by = c("dataset_name", "design", "n", "estimate_type", "response_type", "beta_T")]
+), by = c("dataset_name", "design", "n", "resp_and_est", "estimate_type", "response_type", "beta_T")]
 
-res_summary_no_effect = res_summary[beta_T == 0][, beta_T := NULL]
-res_summary_tx_effect = res_summary[beta_T > 0][, beta_T := NULL]
+
+
+
+res_summary_no_effect = res_summary_rand[beta_T == 0][, beta_T := NULL]
+res_summary_tx_effect = res_summary_rand[beta_T > 0][, beta_T := NULL]
 res_summary_tx_effect[, p_val_prop_test := NULL]
 res_summary_no_effect[, p_val_prop_test := p_val_prop_test < 0.05 / .N]
 res_summary_no_effect[p_val_prop_test == TRUE]
 sum(res_summary_no_effect$p_val_prop_test) / nrow(res_summary_no_effect)
 
 
-res_summary_tx_effect[order(dataset_name, estimate_type, design)][response_type == "continuous"][dataset_name == "boston"]
+res_summary_tx_effect[order(dataset_name, estimate_type, design)][response_type == "survival"][dataset_name == "boston"]
+res_summary_no_effect[order(dataset_name, estimate_type, design)][response_type == "survival"][dataset_name == "boston"]
+res_summary_tx_effect[order(dataset_name, estimate_type, design)][response_type == "continuous"][dataset_name == "ionosphere"]
+res_summary_no_effect[order(dataset_name, estimate_type, design)][response_type == "continuous"][dataset_name == "ionosphere"]
 res_summary_tx_effect[, .(avg_power = mean(avg_pow), nrep = sum(nrep)), by = c("response_type", "estimate_type", "design")][order(response_type, estimate_type, design)] %>% data.frame
 
 summary(lm(avg_pow ~ design + response_type + dataset_name, res_summary_tx_effect))
-summary(lm(avg_pow ~ design + response_type * dataset_name, res_summary_tx_effect))
+summary(lm(avg_pow ~ design + resp_and_est, res_summary_tx_effect))
 
 summary(lm(avg_pow ~ design + estimate_type + dataset_name, res_summary_tx_effect))
 

@@ -134,7 +134,7 @@ Initialize a sequential experimental design estimation and test object after the
       assumes the treatment effect parameter is an additive treatment effect    
       and estimates via combining a simple average difference estimator for both the matches and the reservoir
       and estimates via the simple average difference
-    * "continuous_regression_with_covariates"
+    * "continuous_multivariate_regression"
       assumes the treatment effect parameter is an additive treatment effect    
       and the presence of linear additive covariates 
       and estimates via OLS 
@@ -151,7 +151,7 @@ Initialize a sequential experimental design estimation and test object after the
     * "incidence_simple_log_odds"
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and estimates via maximum likelihood     
-    * "incidence_logistic_regression"
+    * "incidence_multivariate_logistic_regression"
       assumes the treatment effect parameter is additive in the log odds probability of the positive class
       and the presence of linear additive covariates also in the log odds probability of the positive class
       and estimates via maximum likelihood
@@ -171,7 +171,7 @@ Initialize a sequential experimental design estimation and test object after the
     * "proportion_simple_logodds_regression"    
       assumes the treatment effect parameter is additive in the log odds proportion
       and estimates via beta regression
-    * "proportion_beta_regression"
+    * "proportion_multivariate_beta_regression"
       assumes the treatment effect parameter is additive in the log odds proportion
       and the presence of linear additive covariates 
       and estimates via beta regression 

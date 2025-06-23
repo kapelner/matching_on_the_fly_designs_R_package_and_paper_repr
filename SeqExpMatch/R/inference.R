@@ -37,7 +37,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 								assumes the treatment effect parameter is an additive treatment effect	
 		#' 								and estimates via combining a simple average difference estimator for both the matches and the reservoir
 		#' 								and estimates via the simple average difference
-		#' 							  * "continuous_regression_with_covariates"
+		#' 							  * "continuous_multivariate_regression"
 		#' 								assumes the treatment effect parameter is an additive treatment effect	
 		#' 								and the presence of linear additive covariates 
 		#' 								and estimates via OLS 
@@ -54,7 +54,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							  * "incidence_simple_log_odds"
 		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
 		#' 								and estimates via maximum likelihood 	
-		#' 							  * "incidence_logistic_regression"
+		#' 							  * "incidence_multivariate_logistic_regression"
 		#' 								assumes the treatment effect parameter is additive in the log odds probability of the positive class
 		#' 								and the presence of linear additive covariates also in the log odds probability of the positive class
 		#' 								and estimates via maximum likelihood
@@ -74,7 +74,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							  * "proportion_simple_logodds_regression"	
 		#' 								assumes the treatment effect parameter is additive in the log odds proportion
 		#' 								and estimates via beta regression
-		#' 							  * "proportion_beta_regression"
+		#' 							  * "proportion_multivariate_beta_regression"
 		#' 								assumes the treatment effect parameter is additive in the log odds proportion
 		#' 								and the presence of linear additive covariates 
 		#' 								and estimates via beta regression 
@@ -175,20 +175,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				"simple_mean_difference",				
 				"KK_compound_mean_difference",  	
 				########################################### CONTINUOUS
-				"continuous_regression_with_covariates",
+				"continuous_multivariate_regression",
 				"continuous_KK_compound_multivariate_regression",
 				"continuous_KK_regression_with_covariates_with_matching_dummies",
 				"continuous_KK_regression_with_covariates_with_random_intercepts",
 				########################################### INCIDENCE
 				"incidence_simple_log_odds",	
-				"incidence_logistic_regression",
+				"incidence_multivariate_logistic_regression",
 				"incidence_KK_compound_univariate_logistic_regression",
 				"incidence_KK_compound_multivariate_logistic_regression",	
 				"incidence_KK_multivariate_logistic_regression_with_matching_dummies",	
 				"incidence_KK_multivariate_logistic_regression_with_random_intercepts_for_matches",
 				########################################### PROPORTION
 				"proportion_simple_logodds_regression",
-				"proportion_beta_regression",
+				"proportion_multivariate_beta_regression",
 				"proportion_KK_compound_univariate_beta_regression",
 				"proportion_KK_compound_multivariate_beta_regression",
 				"proportion_KK_multivariate_beta_regression_with_matching_dummies",
@@ -591,7 +591,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					"KK_compound_mean_difference" =
 							private$compute_KK_compound_mean_difference_inference(),  
 					########################################### CONTINUOUS
-					"continuous_regression_with_covariates" =
+					"continuous_multivariate_regression" =
 							private$compute_continuous_multivariate_ols_inference(),	
 					"continuous_KK_compound_multivariate_regression" =
 							private$compute_continuous_KK_compound_multivariate_ols_inference(),
@@ -602,7 +602,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					########################################### INCIDENCE
 					"incidence_simple_log_odds" =
 							private$compute_incidence_univariate_logistic_regression_inference(),	
-					"incidence_logistic_regression" =
+					"incidence_multivariate_logistic_regression" =
 							private$compute_incidence_multivariate_logistic_regression_inference(),
 					"incidence_KK_compound_univariate_logistic_regression" =
 							private$compute_incidence_KK_compound_univariate_logistic_regression_inference(),
@@ -615,7 +615,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					########################################### PROPORTION
 					"proportion_simple_logodds_regression" =
 							private$compute_proportion_univariate_beta_regression_inference(),
-					"proportion_beta_regression" =
+					"proportion_multivariate_beta_regression" =
 							private$compute_proportion_multivariate_beta_regression_inference(),
 					"proportion_KK_compound_univariate_beta_regression" =
 							private$compute_proportion_KK_compound_univariate_beta_regression_inference(),
@@ -1094,7 +1094,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					beta_hat_T = beta_hat_T,
 					s_beta_hat_T = abs(beta_hat_T / test_obj$Z), #wtf is quantileControlTest's se field if not this??????????
 					is_z = TRUE,
-					p_val = test_obj$pval
+					p_val = test_obj$pval #switch to log rank test... something is busted in quantileControlTest's calculation
 				)
 			}
 		},

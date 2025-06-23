@@ -170,7 +170,7 @@ estimands_betaT_one = list(
   continuous = list(
     simple_mean_difference = betaToverall,
     KK_compound_mean_difference = betaToverall,
-    "continuous_regression_with_covariates" = betaToverall,	
+    "continuous_multivariate_regression" = betaToverall,	
     "continuous_KK_compound_multivariate_regression" = betaToverall
     # "continuous_KK_regression_with_covariates_with_matching_dummies" = betaToverall,
     # "continuous_KK_regression_with_covariates_with_random_intercepts" = betaToverall
@@ -179,7 +179,7 @@ estimands_betaT_one = list(
     simple_mean_difference = all_mean_diffs[2],
     KK_compound_mean_difference = all_mean_diffs[2],
     "incidence_simple_log_odds" = betaToverall,	
-    "incidence_logistic_regression" = betaToverall,
+    "incidence_multivariate_logistic_regression" = betaToverall,
     "incidence_KK_compound_univariate_logistic_regression" = betaToverall,
     "incidence_KK_compound_multivariate_logistic_regression" = betaToverall
     # "incidence_KK_multivariate_logistic_regression_with_matching_dummies" = betaToverall,	
@@ -189,7 +189,7 @@ estimands_betaT_one = list(
     simple_mean_difference = all_mean_diffs[3],
     KK_compound_mean_difference = all_mean_diffs[3],
     "proportion_simple_logodds_regression" = betaToverall,
-    "proportion_beta_regression" = betaToverall
+    "proportion_multivariate_beta_regression" = betaToverall
     #"proportion_KK_compound_univariate_beta_regression",
     #"proportion_KK_compound_multivariate_beta_regression",
     #"proportion_KK_multivariate_beta_regression_with_matching_dummies",
