@@ -1,7 +1,7 @@
 Package: SeqExpMatch
 Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly
-Version: 1.0.0
+Version: 2.0.0
 Authors@R: c(
         person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-5985-6792")),
         person("Abba", "Krieger", email = "krieger@wharton.upenn.edu", role = "aut")
@@ -45,9 +45,20 @@ Depends:
 	doParallel
 LinkingTo: Rcpp
 Imports:
+	Rcpp (>= 1.0.14),
     stats,
-    checkmate, 
-    doParallel,
-    R6
-URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
+    checkmate    
+URL: https://github.com/kapelnematching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.2
+Collate: 
+    'RcppExports.R'
+    'SeqExpMatch.R'
+    'design.R'
+    'helper_functions.R'
+    'abstract_inference.R'
+    'abstract_inference_mle_or_KM.R'
+    'abstract_inference_mle_or_KM_KK.R'
+    'helper_for_inference_KK.R'
+    'inference_KK_compound_mean_diff_MLE.R'
+    'inference_simple_mean_diff_MLE.R'
+    'zzz.R'

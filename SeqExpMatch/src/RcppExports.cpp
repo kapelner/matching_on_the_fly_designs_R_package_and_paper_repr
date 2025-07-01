@@ -10,6 +10,57 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// compute_weighted_sqd_distances_cpp
+NumericVector compute_weighted_sqd_distances_cpp(NumericVector x_new, NumericMatrix X_all_scaled_col_subset, IntegerVector reservoir_indices, NumericVector covariate_weights);
+RcppExport SEXP _SeqExpMatch_compute_weighted_sqd_distances_cpp(SEXP x_newSEXP, SEXP X_all_scaled_col_subsetSEXP, SEXP reservoir_indicesSEXP, SEXP covariate_weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x_new(x_newSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_all_scaled_col_subset(X_all_scaled_col_subsetSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type reservoir_indices(reservoir_indicesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type covariate_weights(covariate_weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_weighted_sqd_distances_cpp(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_int_replace_cpp
+IntegerVector sample_int_replace_cpp(int n, int size);
+RcppExport SEXP _SeqExpMatch_sample_int_replace_cpp(SEXP nSEXP, SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_int_replace_cpp(n, size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// shuffle_cpp
+NumericVector shuffle_cpp(NumericVector w);
+RcppExport SEXP _SeqExpMatch_shuffle_cpp(SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(shuffle_cpp(w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_bootstrapped_weighted_sqd_distances_cpp
+NumericVector compute_bootstrapped_weighted_sqd_distances_cpp(NumericMatrix X_all_scaled_col_subset, NumericVector covariate_weights, int t, int B);
+RcppExport SEXP _SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp(SEXP X_all_scaled_col_subsetSEXP, SEXP covariate_weightsSEXP, SEXP tSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_all_scaled_col_subset(X_all_scaled_col_subsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type covariate_weights(covariate_weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type t(tSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_bootstrapped_weighted_sqd_distances_cpp(X_all_scaled_col_subset, covariate_weights, t, B));
+    return rcpp_result_gen;
+END_RCPP
+}
 // which_cols_vary_cpp
 LogicalVector which_cols_vary_cpp(NumericMatrix X);
 RcppExport SEXP _SeqExpMatch_which_cols_vary_cpp(SEXP XSEXP) {
@@ -23,6 +74,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
+    {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
+    {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},
+    {"_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
     {"_SeqExpMatch_which_cols_vary_cpp", (DL_FUNC) &_SeqExpMatch_which_cols_vary_cpp, 1},
     {NULL, NULL, 0}
 };

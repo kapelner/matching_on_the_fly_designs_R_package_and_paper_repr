@@ -129,52 +129,32 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$check_experiment_completed() #returns TRUE
 
-}
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{t}}{The current number of subjects in this sequential experiment (begins at zero).}
 
-\item{\code{design}}{The experimenter-specified type of sequential experimental design (see constructor's documentation).}
+## ------------------------------------------------
+## Method `SeqDesign$any_censoring`
+## ------------------------------------------------
 
-\item{\code{Xraw}}{A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
-columns p (the number of characteristics measured for each subject). This data frame is filled in
-sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
-experiment currently) but otherwise will be missing.}
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 
-\item{\code{Ximp}}{Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns}
+#returns FALSE since all of the covariate vectors are not yet recorded
+seq_des$check_experiment_completed() 
 
-\item{\code{X}}{Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns 
-(and it is also a matrix object, not a data.table object)}
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
-\item{\code{y}}{A numeric vector of subject responses with number of entries n (the number of subjects). During
-the KK21 designs the experimenter fills these values in when they are measured.
-For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
+#returns FALSE since the responses are not yet recorded
+seq_des$check_experiment_completed() 
 
-\item{\code{dead}}{A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
-vector is filled in only for \code{response_type} values "survival". The value
-of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
-as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
-argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
-the KK21 designs the experimenter fills these values in when they are measured.
-For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).}
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-\item{\code{prob_T}}{The experimenter-specified probability a subject becomes wtated to the treatment arm.}
+seq_des$any_censoring() #returns FALSE
+			
+Get t
 
-\item{\code{w}}{A binary vector of subject assignments with number of entries n (the number of subjects). 
-This vector is filled in sequentially by this package (similar to X) and will have assignments present for
-entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.}
-
-\item{\code{response_type}}{This is the experimenter-specified type of response value which is one of the following: 
-"continuous", 
-"incidence", 
-"proportion", 
-"count", 
-"survival"}
-
-\item{\code{covariate_weights}}{The running values of the weights for each covariate}
-}
-\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -187,6 +167,17 @@ entries 1...t (i.e. the number of subjects in the experiment currently) but othe
 \item \href{#method-SeqDesign-matching_statistics}{\code{SeqDesign$matching_statistics()}}
 \item \href{#method-SeqDesign-assert_experiment_completed}{\code{SeqDesign$assert_experiment_completed()}}
 \item \href{#method-SeqDesign-check_experiment_completed}{\code{SeqDesign$check_experiment_completed()}}
+\item \href{#method-SeqDesign-any_censoring}{\code{SeqDesign$any_censoring()}}
+\item \href{#method-SeqDesign-get_t}{\code{SeqDesign$get_t()}}
+\item \href{#method-SeqDesign-get_design}{\code{SeqDesign$get_design()}}
+\item \href{#method-SeqDesign-get_X_raw}{\code{SeqDesign$get_X_raw()}}
+\item \href{#method-SeqDesign-get_X_imp}{\code{SeqDesign$get_X_imp()}}
+\item \href{#method-SeqDesign-get_y}{\code{SeqDesign$get_y()}}
+\item \href{#method-SeqDesign-get_w}{\code{SeqDesign$get_w()}}
+\item \href{#method-SeqDesign-get_dead}{\code{SeqDesign$get_dead()}}
+\item \href{#method-SeqDesign-get_prob_T}{\code{SeqDesign$get_prob_T()}}
+\item \href{#method-SeqDesign-get_response_type}{\code{SeqDesign$get_response_type()}}
+\item \href{#method-SeqDesign-get_covariate_weights}{\code{SeqDesign$get_covariate_weights()}}
 \item \href{#method-SeqDesign-clone}{\code{SeqDesign$clone()}}
 }
 }
@@ -508,6 +499,193 @@ seq_des$check_experiment_completed() #returns TRUE
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-any_censoring"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-any_censoring}{}}}
+\subsection{Method \code{any_censoring()}}{
+Checks if the experiment has any censored responses
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$any_censoring()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+\code{TRUE} if there are any censored responses, \code{FALSE} otherwise.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+
+#returns FALSE since all of the covariate vectors are not yet recorded
+seq_des$check_experiment_completed() 
+
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+
+#returns FALSE since the responses are not yet recorded
+seq_des$check_experiment_completed() 
+
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des$any_censoring() #returns FALSE
+			
+Get t
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_t"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_t}{}}}
+\subsection{Method \code{get_t()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_t()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The current number of subjects in this sequential experiment (begins at zero).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_design"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_design}{}}}
+\subsection{Method \code{get_design()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_design()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The experimenter-specified type of sequential experimental design (see constructor's documentation).	
+Get raw X information
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_X_raw"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_X_raw}{}}}
+\subsection{Method \code{get_X_raw()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_X_raw()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
+					columns p (the number of characteristics measured for each subject). This data frame is filled in
+					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
+					experiment currently) but otherwise will be missing.					
+Get imputed X information
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_X_imp"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_X_imp}{}}}
+\subsection{Method \code{get_X_imp()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_X_imp()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns					
+Get y
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_y"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_y}{}}}
+\subsection{Method \code{get_y()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_y()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A numeric vector of subject responses with number of entries n (the number of subjects). During
+					the KK21 designs the experimenter fills these values in when they are measured.
+					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+Get w
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_w"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_w}{}}}
+\subsection{Method \code{get_w()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_w()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A binary vector of subject assignments with number of entries n (the number of subjects). 
+					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
+					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.	
+Get dead
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_dead"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_dead}{}}}
+\subsection{Method \code{get_dead()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_dead()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
+					vector is filled in only for \code{response_type} values "survival". The value
+					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
+					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
+					argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
+					the KK21 designs the experimenter fills these values in when they are measured.
+					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+Get probability of treatment
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_prob_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_prob_T}{}}}
+\subsection{Method \code{get_prob_T()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_prob_T()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The experimenter-specified probability a subject becomes wtated to the treatment arm.		
+Get response type
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_response_type"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_response_type}{}}}
+\subsection{Method \code{get_response_type()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_response_type()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The experimenter-specified response type which is one of the following: 
+							"continuous", 
+							"incidence", 
+							"proportion", 
+							"count", 
+							"survival"			
+Get covariate weights
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-get_covariate_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-get_covariate_weights}{}}}
+\subsection{Method \code{get_covariate_weights()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_covariate_weights()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+For KK21 designs, the running values of the weights for each covariate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesign-clone"></a>}}

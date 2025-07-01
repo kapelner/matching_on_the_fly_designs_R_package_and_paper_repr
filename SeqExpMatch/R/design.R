@@ -8,48 +8,6 @@
 #' @export
 SeqDesign = R6::R6Class("SeqDesign",
 	public = list(
-			#' @field t			The current number of subjects in this sequential experiment (begins at zero).				
-			#' @field design	The experimenter-specified type of sequential experimental design (see constructor's documentation).	
-			#' @field Xraw		A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
-			#' 					columns p (the number of characteristics measured for each subject). This data frame is filled in
-			#' 					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
-			#' 					experiment currently) but otherwise will be missing.					
-			#' @field Ximp		Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns
-			#' @field X			Same as \code{Ximp} except turned into a model matrix (i.e. all numeric with factors dummified) with no linearly dependent columns 
-			#' 					(and it is also a matrix object, not a data.table object)
-			#' @field y			A numeric vector of subject responses with number of entries n (the number of subjects). During
-			#' 					the KK21 designs the experimenter fills these values in when they are measured.
-			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
-			#' @field dead		A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
-			#' 					vector is filled in only for \code{response_type} values "survival". The value
-			#' 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
-			#' 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
-			#' 					argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
-			#' 					the KK21 designs the experimenter fills these values in when they are measured.
-			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
-			#' @field prob_T	The experimenter-specified probability a subject becomes wtated to the treatment arm.
-			#' @field w			A binary vector of subject assignments with number of entries n (the number of subjects). 
-			#' 					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
-			#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.	
-			#' @field response_type		This is the experimenter-specified type of response value which is one of the following: 
-			#' 							"continuous", 
-			#' 							"incidence", 
-			#' 							"proportion", 
-			#' 							"count", 
-			#' 							"survival"	
-			#' @field covariate_weights		The running values of the weights for each covariate
-			#' 
-			t = 0,
-			design = NULL,
-			Xraw = data.table(),
-			Ximp = data.table(),
-			X = NULL,
-			y = NULL,	
-			dead = NULL,
-			prob_T = NULL,
-			w = NULL,
-			response_type = NULL,
-			covariate_weights = NULL,
 			#' 				
 			#' @description
 			#' Initialize a sequential experimental design
@@ -113,16 +71,16 @@ SeqDesign = R6::R6Class("SeqDesign",
 					stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
 				}
 				
-				self$prob_T = prob_T
+				private$prob_T = prob_T
 				private$n = n				
-				self$response_type = response_type	
-				self$design = design
+				private$response_type = response_type	
+				private$design = design
 				private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
 				private$verbose = verbose
 				
-				self$y = 	array(NA, n)
-				self$w = 	array(NA, n)
-				self$dead = array(NA, n)
+				private$y = 	array(NA, n)
+				private$w = 	array(NA, n)
+				private$dead = array(NA, n)
 				
 				#now deal with design-specific hyperparameters
 				private$other_params = list(...)
@@ -187,25 +145,25 @@ SeqDesign = R6::R6Class("SeqDesign",
 			add_subject_to_experiment_and_assign = function(x_new, allow_new_cols = TRUE) {					
 				assertDataFrame(x_new, nrows = 1)
 				assertClass(x_new, "data.table")
-				if (self$check_experiment_completed()){
+				if (private$all_assignments_allocated()){
 					stop(paste("You cannot add any new subjects as all n =", private$n, "subjects have already been added."))
 				}
-				if (any(is.na(x_new)) & self$t == 0){
-					x_new = x_new[which(!is.na(x_new))]
+				j_with_NAs = is.na(unlist(x_new))
+				if (any(j_with_NAs) & private$t == 0){
+					x_new = x_new[which(!j_with_NAs)]
 					if (!allow_new_cols){
 						warning("There is missing data in the first subject's covariate value(s). Setting the flag allow_new_cols = FALSE will disallow additional subjects")
 					}					
 				}
 				
-				xnew_data_types = sapply(x_new, class)
-				
-				if ("ordered" %in% unlist(xnew_data_types)){
-					stop("Ordered factor data type is not supported; please convert to either an unordered factor or numeric.")
+				xnew_data_types = sapply(x_new, function(xj) class(xj)[1])
+				if ("ordered" %in% xnew_data_types | "Date" %in% xnew_data_types){
+					stop("Ordered factor and Date data type is not supported; please convert to either an unordered factor or numeric.")
 				}
 				
-				if (self$t > 0){
-					Xraw_data_types = sapply(self$Xraw, class)
-					colnames_Xraw = names(self$Xraw)
+				if (private$t > 0){
+					Xraw_data_types = sapply(private$Xraw, function(xj) class(xj)[1]) #sapply(private$Xraw, class)
+					colnames_Xraw = names(private$Xraw)
 					colnames_xnew = names(x_new) 
 					if (setequal(colnames_Xraw, colnames_xnew)){
 						idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
@@ -220,7 +178,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 							if (length(new_Xraw_cols) > 0){
 								new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
 								for (j in 1 : length(new_Xraw_cols)){
-									self$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
+									private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
 										character = NA_character_,
 										factor =    NA_character_, #I think this is correct
 										numeric =   NA_real_,
@@ -256,23 +214,23 @@ SeqDesign = R6::R6Class("SeqDesign",
 						}					
 					}					
 				}				
-				
-				#iterate t
-				self$t = self$t + 1
 				#add new subject's measurements to the raw data frame (there should be the same exact columns even if there are new ones introduced)
-				self$Xraw = rbind(self$Xraw, x_new)
-				
+				private$Xraw = rbindlist(list(private$Xraw, x_new))				
+								
+				#iterate t
+				private$t = private$t + 1L #t must be an integer for data.table's fast "set" function below to work
+								
 				#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
 				#thus, designs cannot utilize imputations nor model matrices until this condition is met
 				#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
-				if (self$t > (ncol(self$Xraw) + 2) & !(self$design %in% c("CRD", "iBCRD", "Efron"))){ #we only need to impute if we need the X's to make the allocation decisions 
+				if (private$t > (ncol(private$Xraw) + 2) & !(private$design %in% c("CRD", "iBCRD", "Efron"))){ #we only need to impute if we need the X's to make the allocation decisions 
 					private$covariate_impute_if_necessary_and_then_create_model_matrix()
 				}
 				
 				#now make the assignment
-				self$w[self$t] = private[[paste0("assign_wt_", self$design)]]() #equivalent to do.call(what = paste0("assign_wt_", self$design), args = list())
+				private$w[private$t] = private[[paste0("assign_wt_", private$design)]]() #equivalent to do.call(what = paste0("assign_wt_", private$design), args = list())
 				#and return the new assignment
-				self$w[self$t]
+				private$w[private$t]
 			},
 			
 			#' @description
@@ -285,7 +243,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' seq_des$print_current_subject_assignment()
 			#' 
 			print_current_subject_assignment = function(){
-				cat("Subject number", self$t, "is assigned to", ifelse(self$w[self$t] == 1, "TREATMENT", "CONTROL"), "via design", self$design, "\n")
+				cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", private$design, "\n")
 			},
 			
 			#' @description
@@ -312,24 +270,24 @@ SeqDesign = R6::R6Class("SeqDesign",
 				assertNumeric(dead, len = 1) #make sure it's length one here
 				assertChoice(dead, c(0, 1))				
 				assertCount(t, positive = TRUE)
-				if (t > self$t){
-					stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", self$t))	
+				if (t > private$t){
+					stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", private$t))	
 				}
 				
-				if (!is.na(self$y[t])){
-					warning(paste("Overwriting previous response for t =", t, "y[t] =", self$y[t]))
+				if (!is.na(private$y[t])){
+					warning(paste("Overwriting previous response for t =", t, "y[t] =", private$y[t]))
 				}
 				
 				#deal with the myriad checks on the response value based on response_type
-				if (self$response_type == "continuous"){
+				if (private$response_type == "continuous"){
 					assertNumeric(y, any.missing = FALSE)	
-				} else if (self$response_type == "incidence"){
+				} else if (private$response_type == "incidence"){
 					assertChoice(y, c(0, 1))
-				} else if (self$response_type == "proportion"){
+				} else if (private$response_type == "proportion"){
 					assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1) #the betareg package can handle 0's and 1's exactly (see their documentation) this seems to be why the statmod / numDeriv packages is also required 
-				} else if (self$response_type == "count"){
+				} else if (private$response_type == "count"){
 					assertCount(y, na.ok = FALSE)
-				} else if (self$response_type == "survival"){
+				} else if (private$response_type == "survival"){
 					assertNumeric(y, any.missing = FALSE, lower = 0)
 					if (y == 0){
 						warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
@@ -337,9 +295,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 					}						
 				}
 				#finally, record the response value and the time at which it was recorded
-				self$y[t] = y
-				self$dead[t] = dead
-				private$y_i_t_i[[t]] = self$t
+				private$y[t] = y
+				private$dead[t] = dead
+				private$y_i_t_i[[t]] = private$t
 			},
 			
 			#' @description
@@ -365,12 +323,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#' 				
 			add_all_subject_responses = function(ys, deads = NULL) {
 				if (is.null(deads)){
-					deads = rep(1, self$t)
+					deads = rep(1, private$t)
 				}
-				assertNumeric(ys, len = self$t)
-				assertNumeric(deads, len = self$t)
+				assertNumeric(ys, len = private$t)
+				assertNumeric(deads, len = private$t)
 				
-				for (t in 1 : self$t){
+				for (t in 1 : private$t){
 					self$add_subject_response(t, ys[t], deads[t])
 				}
 			},
@@ -399,16 +357,16 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (!private$isKK){
 					stop("Matching statistics are only available for KK designs")
 				}
-				if (self$t == 0){
+				if (private$t == 0){
 					stop("The experiment has not begun yet")
 				}
 				num_subjects_matched = sum(private$match_indic != 0, na.rm = TRUE)
-				num_subjects_remaining_in_reservoir = self$t - num_subjects_matched
+				num_subjects_remaining_in_reservoir = private$t - num_subjects_matched
 				list(
 					num_matches = length(unique(private$match_indic[private$match_indic != 0])) ,
-					prop_subjects_matched = num_subjects_matched / self$t,
+					prop_subjects_matched = num_subjects_matched / private$t,
 					num_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir,
-					prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / self$t
+					prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / private$t
 				)					
 			},
 			
@@ -479,11 +437,153 @@ SeqDesign = R6::R6Class("SeqDesign",
 				} else {
 					TRUE
 				}
+			},
+			
+			#' @description
+			#' Checks if the experiment has any censored responses
+			#' 
+			#' @return	\code{TRUE} if there are any censored responses, \code{FALSE} otherwise.
+			#' 
+			#' @examples
+			#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+			#' 
+			#' #returns FALSE since all of the covariate vectors are not yet recorded
+			#' seq_des$check_experiment_completed() 
+			#' 
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+			#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+			#' 
+			#' #returns FALSE since the responses are not yet recorded
+			#' seq_des$check_experiment_completed() 
+			#' 
+			#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+			#' 
+			#' seq_des$any_censoring() #returns FALSE
+			#' 			
+			any_censoring = function(){
+				sum(private$dead) < sum(private$n)
+			},
+			
+			#' Get t
+			#'
+			#' @return 			The current number of subjects in this sequential experiment (begins at zero).				
+			#' @return dead						
+			#' @return prob_T	
+			#' @return w				
+			#' @return response_type		This is the experimenter-specified type of response value which is one of the following: 
+			#' 							"continuous", 
+			#' 							"incidence", 
+			#' 							"proportion", 
+			#' 							"count", 
+			#' 							"survival"	
+			#' @return covariate_weights		
+			#' 			
+			get_t = function(){
+				private$t
+			},
+			
+			#' Get design
+			#'
+			#' @return 			The experimenter-specified type of sequential experimental design (see constructor's documentation).	
+			get_design = function(){
+				private$design
+			},
+			
+			#' Get raw X information
+			#'
+			#' @return 			A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
+			#' 					columns p (the number of characteristics measured for each subject). This data frame is filled in
+			#' 					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
+			#' 					experiment currently) but otherwise will be missing.					
+			get_X_raw = function(){
+				private$Xraw
+			},
+			
+			#' Get imputed X information
+			#'
+			#' @return 		Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns					
+			get_X_imp = function(){
+				private$Ximp
+			},
+			
+			#' Get y
+			#'
+			#' @return 			A numeric vector of subject responses with number of entries n (the number of subjects). During
+			#' 					the KK21 designs the experimenter fills these values in when they are measured.
+			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+			get_y = function(){
+				private$y
+			},
+			
+			#' Get w
+			#'
+			#' @return 			A binary vector of subject assignments with number of entries n (the number of subjects). 
+			#' 					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
+			#' 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.	
+			get_w = function(){
+				private$w
+			},
+			
+			#' Get dead
+			#'
+			#' @return 			A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
+			#' 					vector is filled in only for \code{response_type} values "survival". The value
+			#' 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored 
+			#' 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event} 
+			#' 					argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
+			#' 					the KK21 designs the experimenter fills these values in when they are measured.
+			#' 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).				
+			get_dead = function(){
+				private$dead
+			},
+			
+			#' Get probability of treatment
+			#'
+			#' @return 			The experimenter-specified probability a subject becomes wtated to the treatment arm.		
+			get_prob_T = function(){
+				private$prob_T
+			},
+
+			#' Get response type
+			#'
+			#' @return 			The experimenter-specified response type which is one of the following: 
+			#' 							"continuous", 
+			#' 							"incidence", 
+			#' 							"proportion", 
+			#' 							"count", 
+			#' 							"survival"			
+			get_response_type = function(){
+				private$response_type
+			},
+			
+			
+			#' Get covariate weights
+			#'
+			#' @return 			For KK21 designs, the running values of the weights for each covariate.
+			get_covariate_weights = function(){
+				private$covariate_weights
 			}
 	),
 	
 	
 	private = list(
+
+		t = 0L,
+		design = NULL,
+		Xraw = data.table(),
+		Ximp = data.table(),
+		X = NULL,
+		y = NULL,	
+		dead = NULL,
+		prob_T = NULL,
+		w = NULL,
+		response_type = NULL,
+		covariate_weights = NULL,
+				
 		n = NULL,	
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,
@@ -501,20 +601,21 @@ SeqDesign = R6::R6Class("SeqDesign",
 		duplicate = function(){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
 			d = SeqDesign$new(
-				design = self$design, 
-				response_type = self$response_type, 
+				design = private$design, 
+				response_type = private$response_type, 
 				n = private$n, 
-				prob_T = self$prob_T, 
+				prob_T = private$prob_T, 
 				include_is_missing_as_a_new_feature = private$include_is_missing_as_a_new_feature, 
 				verbose = FALSE
 			)
-			#we are assuming the experiment is complete so we have self$t = 0 initialized
-			d$Xraw = self$Xraw
-			d$Ximp = self$Ximp
-			d$y = self$y
-			d$dead = self$dead
-			d$w = self$w		
-			d$X = self$X		
+			#we are assuming the experiment is complete so we have private$t = 0 initialized
+			d$.__enclos_env__$private$Xraw = private$Xraw
+			d$.__enclos_env__$private$Ximp = private$Ximp
+			d$.__enclos_env__$private$y = private$y
+			d$.__enclos_env__$private$dead = private$dead
+			d$.__enclos_env__$private$w = private$w		
+			d$.__enclos_env__$private$t = private$t	
+			d$.__enclos_env__$private$X = private$X		
 			d$.__enclos_env__$private$y_i_t_i = private$y_i_t_i
 			d$.__enclos_env__$private$isKK = private$isKK
 			d$.__enclos_env__$private$isKK21 = private$isKK21
@@ -526,77 +627,77 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		covariate_impute_if_necessary_and_then_create_model_matrix = function(){
 			#make a copy... sometimes the raw will be the same as the imputed if there are no imputations
-			self$Ximp = copy(self$Xraw)
+			private$Ximp = copy(private$Xraw)
 			
-			column_has_missingness = self$Xraw[, lapply(.SD, function(xj) sum(is.na(xj)))] > 0
+			column_has_missingness = private$Xraw[, lapply(.SD, function(xj) sum(is.na(xj)))] > 0
 			if (any(column_has_missingness)){
 				#deal with include_is_missing_as_a_new_feature here
 				if (private$include_is_missing_as_a_new_feature){
 					for (j in which(column_has_missingness)){
-						self$Ximp = cbind(self$Ximp, ifelse(is.na(self$Ximp[, .SD, .SDcols = j]), 1, 0))
-						names(self$Ximp)[ncol(self$Ximp)] = paste0(names(self$Ximp)[j], "_is_missing")
+						private$Ximp = cbind(private$Ximp, ifelse(is.na(private$Ximp[, .SD, .SDcols = j]), 1, 0))
+						names(private$Ximp)[ncol(private$Ximp)] = paste0(names(private$Ximp)[j], "_is_missing")
 					}
 				}
 				
 				#we need to convert characters into factor for the imputation to work
-				col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+				col_types = private$Ximp[, lapply(.SD, function(xj){class(xj)})]
 				idx_cols_to_convert_to_factor = which(col_types == "character")
-				self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
+				private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
 				
 				#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
-				self$Ximp = tryCatch({
-							if (any(!is.na(self$y))){
-								suppressWarnings(missRanger(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]), verbose = FALSE)[, 1 : ncol(self$Ximp)])
+				private$Ximp = tryCatch({
+							if (any(!is.na(private$y))){
+								suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE)[, 1 : ncol(private$Ximp)])
 							} else {
-								suppressWarnings(missRanger(self$Ximp, verbose = FALSE))
+								suppressWarnings(missRanger(private$Ximp, verbose = FALSE))
 							}
 						}, error = function(e){
-							if (any(!is.na(self$y))){
-								suppressWarnings(missForest(cbind(self$Ximp, self$y[1 : nrow(self$Ximp)]))$ximp[, 1 : ncol(self$Ximp)])
+							if (any(!is.na(private$y))){
+								suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]))$ximp[, 1 : ncol(private$Ximp)])
 							} else {
-								suppressWarnings(missForest(self$Ximp)$ximp)
+								suppressWarnings(missForest(private$Ximp)$ximp)
 							}
 						}
 				)
 			}
 			
 			#now let's drop any columns that don't have any variation
-			num_unique_values_per_column = self$Ximp[, lapply(.SD, function(xj){uniqueN(xj)})]
-			self$Ximp = self$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
+			num_unique_values_per_column = private$Ximp[, lapply(.SD, function(xj){uniqueN(xj)})]
+			private$Ximp = private$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 			
 			#for nonblank data frames...
-			if (ncol(self$Ximp) > 0){
+			if (ncol(private$Ximp) > 0){
 				#now we need to convert character features into factors
-				col_types = self$Ximp[, lapply(.SD, function(xj){class(xj)})]
+				col_types = private$Ximp[, lapply(.SD, function(xj){class(xj)})]
 				idx_cols_to_convert_to_factor = which(col_types == "character")
-				self$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
+				private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
 				
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				self$X = model.matrix(~ ., self$Ximp)
-				self$X = private$drop_linearly_dependent_cols(self$X)$M
+				private$X = model.matrix(~ ., private$Ximp)
+				private$X = private$drop_linearly_dependent_cols(private$X)$M
 				
-				if (nrow(self$X) != nrow(self$Xraw) | nrow(self$X) != nrow(self$Ximp) | nrow(self$Ximp) != nrow(self$Xraw)){
+				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
 					stop("boom")
 				}
 			} else {
 				#blank covariate matrix
-				self$X = matrix(NA, nrow = nrow(self$Xraw), ncol = 0)
+				private$X = matrix(NA, nrow = nrow(private$Xraw), ncol = 0)
 			}			
 		},
 		
 		compute_all_subject_data = function(){
-			i_present_y = which(!is.na(self$y))
-			i_all = 1 : self$t
-			i_past = 	if (self$t == 1){
+			i_present_y = which(!is.na(private$y))
+			i_all = 1 : private$t
+			i_past = 	if (private$t == 1){
 							c()
 						} else {
-							1 : (self$t - 1)
+							1 : (private$t - 1)
 						}
 			i_past_y_present = intersect(i_past, i_present_y)
 			i_all_y_present = intersect(i_all, i_present_y)
 			
-			if (self$t == 1){
-				xt = self$X[self$t, ]
+			if (private$t == 1){
+				xt = private$X[private$t, ]
 				Xall = matrix(xt, nrow = 1)
 				Xall_with_y = Xall[i_all_y_present, , drop = FALSE]
 				list(
@@ -613,18 +714,18 @@ SeqDesign = R6::R6Class("SeqDesign",
 					Xall = Xall,
 					rank_all = length(xt),
 					xt_all = xt,
-					w_all = self$w[self$t],
+					w_all = private$w[private$t],
 					
 					Xall_with_y = Xall_with_y,
 					rank_all_with_y = ifelse(nrow(Xall_with_y) == 1, length(xt), NA),
 					xt_all = ifelse(nrow(Xall_with_y) == 1, xt, NA),
-					w_all = self$w[self$t],
+					w_all = private$w[private$t],
 					
 					y_previous = NA,
-					y_all = self$y[i_all_y_present],
+					y_all = private$y[i_all_y_present],
 					
 					dead_previous = NA,
-					dead_all = self$dead[i_all_y_present]
+					dead_all = private$dead[i_all_y_present]
 				)	
 			} else {
 				past_info = 				private$remove_linearly_dependent_covariates_and_compute_info(i_past)
@@ -639,38 +740,38 @@ SeqDesign = R6::R6Class("SeqDesign",
 					X_prev = past_info$Xint, 
 					rank_prev = past_info$rank,
 					xt_prev = past_info$xt,
-					w_prev = self$w[i_past],
+					w_prev = private$w[i_past],
 					
 					X_prev_with_y = past_info_with_y$Xint,
 					rank_prev_with_y = past_info_with_y$rank,
 					xt_prev_with_y = past_info_with_y$xt,
-					w_prev_with_y = self$w[i_past_y_present],
+					w_prev_with_y = private$w[i_past_y_present],
 					
 					X_all = all_info$Xint,
 					rank_all = all_info$rank,
 					xt_all = all_info$xt,
-					w_all = self$w[i_all],
+					w_all = private$w[i_all],
 					
 					X_all_with_y = all_info_with_y$Xint,
 					rank_all_with_y = all_info_with_y$rank,
 					xt_all_with_y = all_info_with_y$xt,
-					w_all_with_y = self$w[i_all_y_present],
+					w_all_with_y = private$w[i_all_y_present],
 					
 					X_all_scaled = all_info_scaled$Xint,
 					rank_all_scaled = all_info_scaled$rank,
 					xt_all_scaled = all_info_scaled$xt,
-					w_all_scaled = self$w[i_all],
+					w_all_scaled = private$w[i_all],
 					
 					X_all_with_y_scaled = all_info_with_y_scaled$Xint,
 					rank_all_with_y_scaled = all_info_with_y_scaled$rank,
 					xt_all_with_y_scaled = all_info_with_y_scaled$xt,
-					w_all_with_y_scaled = self$w[i_all_y_present],
+					w_all_with_y_scaled = private$w[i_all_y_present],
 					
-					y_prev = self$y[i_past_y_present],
-					y_all = self$y[i_all_y_present],
+					y_prev = private$y[i_past_y_present],
+					y_all = private$y[i_all_y_present],
 					
-					dead_prev = self$dead[i_past_y_present],
-					dead_all = self$dead[i_all_y_present]
+					dead_prev = private$dead[i_past_y_present],
+					dead_all = private$dead[i_all_y_present]
 				)
 			}		
 		},
@@ -679,12 +780,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 			if (length(is) == 0){				
 				list(Xint = NA, rank = NA, xt = NA)
 			} else {
-				Xint = self$X[is, , drop = FALSE]
+				Xint = private$X[is, , drop = FALSE]
 				
 				#we first kill columns that have no variation
 				js = which_cols_vary_cpp(Xint)
 				Xint = Xint[, js]
-				xt = self$X[self$t, js]
+				xt = private$X[private$t, js]
 				
 				if (scaled & length(is) > 1){
 					#we need to scale all data including the tth
@@ -723,56 +824,60 @@ SeqDesign = R6::R6Class("SeqDesign",
 		
 		redraw_w_according_to_design = function(){
 			#the designs are implemented here for all n for speed
-			if (self$design == "CRD"){
-				self$w = rbinom(private$n, 1, self$prob_T)
-			} else if (self$design == "iBCRD"){
-				n_T_total = round(private$n * self$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
-				self$w = sample(c(rep(1, n_T_total), rep(0, private$n - n_T_total)))
-			} else if (self$design == "Efron"){
+			if (private$design == "CRD"){
+				private$w = rbinom(private$n, 1, private$prob_T)
+			} else if (private$design == "iBCRD"){
+				n_T_total = round(private$n * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
+				private$w = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$n - n_T_total)))
+			} else if (private$design == "Efron"){
 				for (t in 1 : private$n){
-					self$w[t] = private$assign_wt_Efron()
+					private$w[t] = private$assign_wt_Efron()
 				}
-			} else if (self$design == "Atkinson"){
-				self$t = 0 #reset
+			} else if (private$design == "Atkinson"){
+				private$t = 0 #reset
 				for (t in 1 : private$n){
-					self$t = self$t + 1
-					self$w[t] = private$assign_wt_Atkinson()
+					private$t = private$t + 1
+					private$w[t] = private$assign_wt_Atkinson()
 				}				
 			} else { #KK design
 				m_vec = private$match_indic
 				#we now rearrange within each match set (and the reservoir)
 				for (m in 0 : max(m_vec)){
-					self$w[m_vec == m] = sample(self$w[m_vec == m]) 
+					private$w[m_vec == m] = shuffle_cpp(private$w[m_vec == m]) 
 				}
 			}				
-			self$t = private$n #mark the experiment as complete
+			private$t = private$n #mark the experiment as complete
 		},
 		
 		all_responses_not_yet_recorded = function(){
-			sum(!is.na(self$y)) != private$n
+			sum(!is.na(private$y)) != private$n
 		},
 		
+		all_assignments_allocated = function(){
+			private$t >= private$n
+		},
+				
 		all_assignments_not_yet_allocated = function(){
-			self$t != private$n
+			private$t != private$n
 		},
 		
 		assign_wt_CRD = function(){
-			rbinom(1, 1, self$prob_T)
+			rbinom(1, 1, private$prob_T)
 		},
 		
 		assign_wt_iBCRD = function(){
-			n_T_total = round(private$n * self$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
-			nT = sum(self$w == 1, na.rm = TRUE)
-			nC = sum(self$w == 0, na.rm = TRUE)
+			n_T_total = round(private$n * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
+			nT = sum(private$w == 1, na.rm = TRUE)
+			nC = sum(private$w == 0, na.rm = TRUE)
 			sample(c(rep(1, n_T_total - nT), rep(0, n_T_total - nC)), 1)
 		},
 		
 		assign_wt_Efron = function(){
 			n_T = sum(private$w, na.rm = TRUE)
 			n_C = private$n - n_T
-			if (n_T * self$prob_T > n_C * (1 - self$prob_T)){
+			if (n_T * private$prob_T > n_C * (1 - private$prob_T)){
 				rbinom(1, 1, 1 - private$other_params$weighted_coin_prob)
-			} else if (n_T * self$prob_T < n_C * (1 - self$prob_T)){
+			} else if (n_T * private$prob_T < n_C * (1 - private$prob_T)){
 				rbinom(1, 1, private$other_params$weighted_coin_prob)
 			} else {
 				private$assign_wt_CRD()
@@ -782,15 +887,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 		assign_wt_Atkinson = function(){
 			
 			#if it's too early in the trial or if all the assignments are the same, then randomize
-			if (self$t <= ncol(self$Xraw) + 2 + 1 | length(unique(self$t)) == 1){
+			if (private$t <= ncol(private$Xraw) + 2 + 1 | length(unique(private$t)) == 1){
 				private$assign_wt_CRD()
 			} else {
 				all_subject_data = private$compute_all_subject_data()
 				#this matrix is [w | 1 | X]
-				Xprev_with_w = cbind(self$w[1 : (self$t - 1)], 1, all_subject_data$X_prev)
+				Xprev_with_w = cbind(private$w[1 : (private$t - 1)], 1, all_subject_data$X_prev)
 				XwtXw = t(Xprev_with_w) %*% Xprev_with_w	
 				tryCatch({										
-					M = (self$t - 1) * solve(XwtXw, tol = .Machine$double.xmin)
+					M = (private$t - 1) * solve(XwtXw, tol = .Machine$double.xmin)
 					A = M[1, 2 : (all_subject_data$rank_prev + 2)] %*% c(1, all_subject_data$xt_prev) 
 					s_over_A_plus_one_sq = (M[1, 1] / A + 1)^2
 					#assign via the Atkinson weighted biased coin
@@ -803,9 +908,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		assign_wt_KK14 = function(){
-			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) | private$t <= private$t_0){
 						#we're early, so randomize
-						private$match_indic[self$t] = 0
+						private$match_indic[private$t] = 0
 						private$assign_wt_CRD()
 					} else {
 						all_subject_data = private$compute_all_subject_data()
@@ -813,7 +918,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#first calculate the threshold we're operating at	
 						#when inverting, ensure full rank by adding eps * I			
 						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
-						F_crit =  qf(private$other_params$lambda, all_subject_data$rank_prev, self$t - all_subject_data$rank_prev)
+						F_crit =  qf(private$other_params$lambda, all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						T_cutoff_sq = all_subject_data$rank_prev * (private$n - 1) / (private$n - all_subject_data$rank_prev) * F_crit
 						#now iterate over all items in reservoir and take the minimum distance x
 						reservoir_indices = which(private$match_indic == 0)
@@ -831,15 +936,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
 							match_num = max(private$match_indic, na.rm = TRUE) + 1
 							private$match_indic[reservoir_indices[min_sqd_dist_index]] = match_num
-							private$match_indic[self$t] = match_num
+							private$match_indic[private$t] = match_num
 							#assign opposite
-							1 - self$w[reservoir_indices[min_sqd_dist_index]]
+							1 - private$w[reservoir_indices[min_sqd_dist_index]]
 						} else { #otherwise, randomize and add it to the reservoir
-							private$match_indic[self$t] = 0
+							private$match_indic[private$t] = 0
 							private$assign_wt_CRD()
 						}
 					}
-			if (is.na(private$match_indic[self$t])){
+			if (is.na(private$match_indic[private$t])){
 				stop("no match data recorded")
 			}
 			wt
@@ -921,12 +1026,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 				
 		assign_wt_KK21 = function(){
-			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | (self$t <= ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | (private$t <= ncol(private$Xraw) + 2) | private$t <= private$t_0){
 						#we're early or the reservoir is empty, so randomize
-						#cat("    assign_wt_KK21 CRD t", self$t, "\n")
-						private$match_indic[self$t] = 0
+						#cat("    assign_wt_KK21 CRD t", private$t, "\n")
+						private$match_indic[private$t] = 0
 						private$assign_wt_CRD()
-					} else if (is.null(self$X) | (sum(!is.na(self$y)) < 2 * (ncol(self$X) + 2))){ 
+					} else if (is.null(private$X) | (sum(!is.na(private$y)) < 2 * (ncol(private$X) + 2))){ 
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
 						#for every glm regression parameter estimated (p covariates, the intercept and the coefficient of the additive treatment effect). The minimum
@@ -940,7 +1045,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#and we only calculate with those subjects that actually have y values
 						raw_weights = array(NA, all_subject_data$rank_all_with_y_scaled)
 						for (j in 1 : all_subject_data$rank_all_with_y_scaled){
-							raw_weights[j] = private[[paste0("compute_weight_KK21_", self$response_type)]](
+							raw_weights[j] = private[[paste0("compute_weight_KK21_", private$response_type)]](
 								all_subject_data$X_all_with_y_scaled, 
 								all_subject_data$y_all, 
 								all_subject_data$dead_all, 
@@ -951,11 +1056,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 							stop("raw weight values illegal KK21")
 						}
 						# (c) now we need to normalize the weights
-						#cat("    assign_wt_KK21 using weights t", self$t, "raw weights", weights, "\n")
-						self$covariate_weights = raw_weights / sum(raw_weights)
-						names(self$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
+						#cat("    assign_wt_KK21 using weights t", private$t, "raw weights", weights, "\n")
+						private$covariate_weights = raw_weights / sum(raw_weights)
+						names(private$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
 
-						#cat("    assign_wt_KK21 using weights t", self$t, "sorted weights", sort(weights), "\n")
+						#cat("    assign_wt_KK21 using weights t", private$t, "sorted weights", sort(weights), "\n")
 						
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
 						reservoir_indices = which(private$match_indic == 0)
@@ -963,20 +1068,26 @@ SeqDesign = R6::R6Class("SeqDesign",
 						x_new = all_subject_data$xt_all_scaled[weighted_features]
 						X_all_scaled_col_subset = all_subject_data$X_all_scaled[, weighted_features, drop = FALSE]
 						
-						weighted_sqd_distances = array(NA, length(reservoir_indices))
-						for (r in 1 : length(reservoir_indices)){
-							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ]
-							weighted_sqd_distances[r] = x_r_x_new_delta^2 %*% self$covariate_weights
-						}
+#						weighted_sqd_distances = array(NA, length(reservoir_indices))
+#						for (r in 1 : length(reservoir_indices)){
+#							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ]
+#							weighted_sqd_distances[r] = x_r_x_new_delta^2 %*% private$covariate_weights
+#						}
+						weighted_sqd_distances = compute_weighted_sqd_distances_cpp(
+													x_new,
+												    X_all_scaled_col_subset,
+												    reservoir_indices,
+												    private$covariate_weights
+												 )
 						#3) find minimum weighted sqd distiance index
 						min_weighted_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
 						
 						#generate a cutoff for the weighted minimum distance squared based on bootstrap
 						bootstrapped_weighted_sqd_distances = array(NA, private$other_params$num_boot)
 						for (b in 1 : private$other_params$num_boot){
-							two_xs  = X_all_scaled_col_subset[sample.int(self$t, 2), ] #self$X[sample_int_ccrank(self$t, 2, rep(1, (self$t))), ] #
+							two_xs  = X_all_scaled_col_subset[sample.int(private$t, 2), ] #private$X[sample_int_ccrank(private$t, 2, rep(1, (private$t))), ] #
 							delta_x = two_xs[1, ] - two_xs[2, ]
-							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% self$covariate_weights
+							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% private$covariate_weights
 						}
 						
 						min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$other_params$lambda)
@@ -989,16 +1100,16 @@ SeqDesign = R6::R6Class("SeqDesign",
 						if (weighted_sqd_distances[min_weighted_sqd_dist_index] < min_weighted_dsqd_cutoff_sq){
 							match_num = max(private$match_indic, na.rm = TRUE) + 1
 							private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = match_num
-							private$match_indic[self$t] = match_num
+							private$match_indic[private$t] = match_num
 							#assign opposite
-							1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
+							1 - private$w[reservoir_indices[min_weighted_sqd_dist_index]]
 						# (b) otherwise, randomize and add it to the reservoir
 						} else { 
-							private$match_indic[self$t] = 0	
+							private$match_indic[private$t] = 0	
 							private$assign_wt_CRD()
 						}
 					}
-			if (is.na(private$match_indic[self$t])){
+			if (is.na(private$match_indic[private$t])){
 				stop("no match data recorded")
 			}
 			wt
@@ -1114,12 +1225,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		assign_wt_KK21stepwise = function(){
-			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | self$t <= (ncol(self$Xraw) + 2) | self$t <= private$t_0){
+			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) | private$t <= private$t_0){
 						#we're early or the reservoir is empty, so randomize
-						#cat("    assign_wt_KK21stepwise CRD t", self$t, "\n")
-						private$match_indic[self$t] = 0
+						#cat("    assign_wt_KK21stepwise CRD t", private$t, "\n")
+						private$match_indic[private$t] = 0
 						private$assign_wt_CRD()
-					} else if (is.null(self$X) | (sum(!is.na(self$y)) < 2 * (ncol(self$X) + 2))){ 
+					} else if (is.null(private$X) | (sum(!is.na(private$y)) < 2 * (ncol(private$X) + 2))){ 
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
 						#for every glm regression parameter estimated (p covariates, the intercept and the coefficient of the additive treatment effect). The minimum
@@ -1131,7 +1242,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#1) need to calculate the weights...
 						
 						#we need to now run the appropriate (based on response_type) stepwise procedure to get the weights
-						raw_weights = private[[paste0("compute_weights_KK21stepwise_", self$response_type)]](
+						raw_weights = private[[paste0("compute_weights_KK21stepwise_", private$response_type)]](
 							all_subject_data$X_all_with_y_scaled, #to calculate weights, we need to use only the data that has y's!
 							all_subject_data$y_all,
 							all_subject_data$w_all_with_y_scaled, 
@@ -1141,9 +1252,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 							stop("raw weight values illegal KK21stepwise")
 						}
 						#ensure the weights are normalized
-						self$covariate_weights = raw_weights / sum(raw_weights)
-						names(self$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
-						#cat("    assign_wt_KK21stepwise using weights t", self$t, "weights", weights, "\n")
+						private$covariate_weights = raw_weights / sum(raw_weights)
+						names(private$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
+						#cat("    assign_wt_KK21stepwise using weights t", private$t, "weights", weights, "\n")
 						
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
 						reservoir_indices = which(private$match_indic == 0)
@@ -1151,22 +1262,35 @@ SeqDesign = R6::R6Class("SeqDesign",
 						x_new = all_subject_data$xt_all_scaled[weighted_features]
 						X_all_scaled_col_subset = all_subject_data$X_all_scaled[, weighted_features, drop = FALSE]
 						
-						weighted_sqd_distances = array(NA, length(reservoir_indices))
-						for (r in 1 : length(reservoir_indices)){
-							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ] #we have to use all data here
-							weighted_sqd_distances[r] = x_r_x_new_delta^2 %*% self$covariate_weights			
-						}
+#						weighted_sqd_distances = array(NA, length(reservoir_indices))
+#						for (r in 1 : length(reservoir_indices)){
+#							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ] #we have to use all data here
+#							weighted_sqd_distances[r] = x_r_x_new_delta^2 %*% private$covariate_weights			
+#						}
+						weighted_sqd_distances = compute_weighted_sqd_distances_cpp(
+													x_new,
+												    X_all_scaled_col_subset,
+												    reservoir_indices,
+												    private$covariate_weights
+												 )						
 						#3) find minimum weighted sqd distiance index
 						min_weighted_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
 						
 						#generate a cutoff for the weighted minimum distance squared based on bootstrap
-						bootstrapped_weighted_sqd_distances = array(NA, private$other_params$num_boot)
-						for (b in 1 : private$other_params$num_boot){
-							two_xs  = X_all_scaled_col_subset[sample.int(self$t, 2), ] #self$X[sample_int_ccrank(self$t, 2, rep(1, (self$t))), ] 
-							delta_x = two_xs[1, ] - two_xs[2, ]
-							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% self$covariate_weights
-						}
+#						bootstrapped_weighted_sqd_distances = array(NA, private$other_params$num_boot)
+#						for (b in 1 : private$other_params$num_boot){
+#							two_xs  = X_all_scaled_col_subset[sample.int(private$t, 2), ] #private$X[sample_int_ccrank(private$t, 2, rep(1, (private$t))), ] 
+#							delta_x = two_xs[1, ] - two_xs[2, ]
+#							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% private$covariate_weights
+#						}
 						
+						bootstrapped_weighted_sqd_distances = compute_bootstrapped_weighted_sqd_distances_cpp(
+															    X_all_scaled_col_subset,
+															    private$covariate_weights,
+															    private$t,
+															    private$other_params$num_boot
+															  )
+							
 						min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$other_params$lambda)
 						
 						#5) Now, does the minimum make the cut?
@@ -1177,14 +1301,14 @@ SeqDesign = R6::R6Class("SeqDesign",
 						if (weighted_sqd_distances[min_weighted_sqd_dist_index] < min_weighted_dsqd_cutoff_sq){
 							new_match_id = max(private$match_indic, na.rm = TRUE) + 1 #the ID of a new match
 							private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
-							private$match_indic[self$t] = new_match_id
-							1 - self$w[reservoir_indices[min_weighted_sqd_dist_index]]
+							private$match_indic[private$t] = new_match_id
+							1 - private$w[reservoir_indices[min_weighted_sqd_dist_index]]
 						} else { # (b) otherwise, randomize and add it to the reservoir
-							private$match_indic[self$t] = 0	
+							private$match_indic[private$t] = 0	
 							private$assign_wt_CRD()	
 						}
 					}
-			if (is.na(private$match_indic[self$t])){ #this should never happen
+			if (is.na(private$match_indic[private$t])){ #this should never happen
 				stop("no match data recorded")
 			}
 			wt
