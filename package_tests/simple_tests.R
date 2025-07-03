@@ -14,52 +14,87 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-seq_des_obj = SeqDesign$new(n = n, design = "KK14", response_type = "continuous")
+seq_des_obj = SeqDesign$new(n = n, design = "KK14", response_type = "proportion")
 
 # profvis({
   for (t in 1 : n){
     w_t = seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-    seq_des_obj$add_subject_response(t, D$y_original$continuous[t])
+    seq_des_obj$add_subject_response(t, D$y_original$incidence[t])
   }
 # })
 
-# seq_des_inf = SeqDesignInferenceSimpleMeanDiff$new(seq_des_obj)
+seq_des_inf = SeqDesignInferenceSimpleMeanDiff$new(seq_des_obj)
+seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_mle_confidence_interval(0.05)
+seq_des_inf$compute_bootstrap_confidence_interval()
+# profvis({
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
+
+seq_des_inf = SeqDesignInferencePropUniBetaRegr$new(seq_des_obj)
+seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_mle_confidence_interval()
+# profvis({
+seq_des_inf$compute_bootstrap_confidence_interval()
+# })
+# profvis({
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
+
+seq_des_inf = SeqDesignInferencePropMultiBetaRegr$new(seq_des_obj)
+seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_mle_confidence_interval()
+# profvis({
+seq_des_inf$compute_bootstrap_confidence_interval()
+# })
+# profvis({
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
+
+seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des_obj)
+seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_mle_confidence_interval()
+# profvis({
+seq_des_inf$compute_bootstrap_confidence_interval()
+# })
+# profvis({
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
+
+# seq_des_inf = SeqDesignInferenceIncUnivLogRegr$new(seq_des_obj)
 # seq_des_inf$compute_treatment_estimate()
 # seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 # seq_des_inf$compute_mle_confidence_interval(0.05)
+# profvis({
 # seq_des_inf$compute_bootstrap_confidence_interval()
+# })
 # profvis({
 # seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
 
-# seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des_obj)
+# seq_des_inf = SeqDesignInferenceIncMultiLogRegr$new(seq_des_obj)
 # seq_des_inf$compute_treatment_estimate()
 # seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 # seq_des_inf$compute_mle_confidence_interval(0.05)
-# seq_des_inf$compute_bootstrap_confidence_interval()
 # profvis({
-# seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-# })
-
-# seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des_obj)
-# seq_des_inf$compute_treatment_estimate()
-# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
-# seq_des_inf$compute_mle_confidence_interval()
-# profvis({
-# seq_des_inf$compute_bootstrap_confidence_interval()
+#   seq_des_inf$compute_bootstrap_confidence_interval()
 # })
 # profvis({
 #   seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
 
 
-seq_des_inf = SeqDesignInferenceContMultOLSKK$new(seq_des_obj)
-seq_des_inf$compute_treatment_estimate()
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
-seq_des_inf$compute_mle_confidence_interval()
-profvis({
-  seq_des_inf$compute_bootstrap_confidence_interval()
-})
-profvis({
-  seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-})
+# seq_des_inf = SeqDesignInferenceContMultOLSKK$new(seq_des_obj)
+# seq_des_inf$compute_treatment_estimate()
+# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+# seq_des_inf$compute_mle_confidence_interval()
+# profvis({
+#   seq_des_inf$compute_bootstrap_confidence_interval()
+# })
+# profvis({
+#   seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })

@@ -164,3 +164,62 @@
 				
 			))
 	
+	
+	
+	
+		compute_continuous_KK_multivariate_with_matching_dummies_ols_inference = function(){
+			tryCatch({
+				ols_regr_mod = lm(private$seq_des_obj_priv_int$y ~ ., 
+						data = private$generate_data_frame_with_matching_dummies())
+				summary_table = suppressWarnings(coef(summary(ols_regr_mod)))
+				list(
+					mod = ols_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = FALSE,
+					df = private$n - nrow(summary_table),
+					p_val = summary_table[2, 4]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})				
+		},
+		
+		
+		
+		
+		
+		
+				compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference = function(){
+			tryCatch({
+				mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
+						data = cbind(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w, match_indic = factor(private$match_indic)), private$get_X())))
+				summary_table = coef(summary(mixed_regr_mod))
+				list(
+					mod = mixed_regr_mod,
+					summary_table = summary_table,	
+					beta_hat_T = summary_table[2, 1],
+					s_beta_hat_T = summary_table[2, 2],
+					is_z = FALSE,
+					df = summary_table[2, 3],
+					p_val = summary_table[2, 5]
+				)
+			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
+				list(
+					mod = NA,
+					summary_table = NA,	
+					beta_hat_T = NA,
+					s_beta_hat_T = NA,
+					is_z = TRUE,
+					p_val = NA
+				)				
+			})			
+		},

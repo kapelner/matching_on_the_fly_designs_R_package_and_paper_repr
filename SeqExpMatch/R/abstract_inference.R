@@ -264,12 +264,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					"continuous_KK_regression_with_covariates_with_random_intercepts" = 
 							private$compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference(compute_ci, compute_pval),
 					########################################### INCIDENCE
-					"incidence_simple_log_odds" =
-							private$compute_incidence_univariate_logistic_regression_inference(compute_ci, compute_pval),	
-					"incidence_multivariate_logistic_regression" =
-							private$compute_incidence_multivariate_logistic_regression_inference(compute_ci, compute_pval),
-					"incidence_KK_compound_univariate_logistic_regression" =
-							private$compute_incidence_KK_compound_univariate_logistic_regression_inference(compute_ci, compute_pval),
+#					"incidence_simple_log_odds" =
+#							private$compute_incidence_univariate_logistic_regression_inference(compute_ci, compute_pval),	
+#					"incidence_multivariate_logistic_regression" =
+#							private$compute_incidence_multivariate_logistic_regression_inference(compute_ci, compute_pval),
+#					"incidence_KK_compound_univariate_logistic_regression" =
+#							private$compute_incidence_KK_compound_univariate_logistic_regression_inference(compute_ci, compute_pval),
 					"incidence_KK_compound_multivariate_logistic_regression" =
 							private$compute_incidence_KK_compound_multivariate_logistic_regression_inference(compute_ci, compute_pval),	
 					"incidence_KK_multivariate_logistic_regression_with_matching_dummies" =
@@ -393,107 +393,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 
 		
-		compute_continuous_KK_multivariate_with_matching_dummies_ols_inference = function(){
-			tryCatch({
-				ols_regr_mod = lm(private$seq_des_obj_priv_int$y ~ ., 
-						data = private$generate_data_frame_with_matching_dummies())
-				summary_table = suppressWarnings(coef(summary(ols_regr_mod)))
-				list(
-					mod = ols_regr_mod,
-					summary_table = summary_table,	
-					beta_hat_T = summary_table[2, 1],
-					s_beta_hat_T = summary_table[2, 2],
-					is_z = FALSE,
-					df = private$n - nrow(summary_table),
-					p_val = summary_table[2, 4]
-				)
-			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-				list(
-					mod = NA,
-					summary_table = NA,	
-					beta_hat_T = NA,
-					s_beta_hat_T = NA,
-					is_z = TRUE,
-					p_val = NA
-				)				
-			})				
-		},
+
 		
-		compute_continuous_KK_multivariate_and_matching_random_intercepts_regression_inference = function(){
-			tryCatch({
-				mixed_regr_mod = suppressWarnings(lmerTest::lmer(y ~ . - match_indic + (1 | match_indic), 
-						data = cbind(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w, match_indic = factor(private$match_indic)), private$get_X())))
-				summary_table = coef(summary(mixed_regr_mod))
-				list(
-					mod = mixed_regr_mod,
-					summary_table = summary_table,	
-					beta_hat_T = summary_table[2, 1],
-					s_beta_hat_T = summary_table[2, 2],
-					is_z = FALSE,
-					df = summary_table[2, 3],
-					p_val = summary_table[2, 5]
-				)
-			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-				list(
-					mod = NA,
-					summary_table = NA,	
-					beta_hat_T = NA,
-					s_beta_hat_T = NA,
-					is_z = TRUE,
-					p_val = NA
-				)				
-			})			
-		},
+
 		
-		compute_incidence_univariate_logistic_regression_inference = function(){
-			tryCatch({
-				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj_priv_int$y ~ ., 
-						data = data.frame(w = private$seq_des_obj_priv_int$w), family = "binomial"))
-				summary_table = coef(summary_glm_lean(logistic_regr_mod))
-				list(
-					mod = logistic_regr_mod,
-					summary_table = summary_table,	
-					beta_hat_T = summary_table[2, 1],
-					s_beta_hat_T = summary_table[2, 2],
-					is_z = TRUE,
-					p_val = summary_table[2, 4]
-				)
-			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-				list(
-					mod = NA,
-					summary_table = NA,	
-					beta_hat_T = NA,
-					s_beta_hat_T = NA,
-					is_z = TRUE,
-					p_val = NA
-				)				
-			})			
-		},
+
 		
-		compute_incidence_multivariate_logistic_regression_inference = function(){
-			tryCatch({
-				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj_priv_int$y ~ ., 
-						data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()), family = "binomial"))
-				summary_table = coef(summary_glm_lean(logistic_regr_mod))
-				list(
-					mod = logistic_regr_mod,
-					summary_table = summary_table,	
-					beta_hat_T = summary_table[2, 1],
-					s_beta_hat_T = summary_table[2, 2],
-					is_z = TRUE,
-					p_val = summary_table[2, 4]
-				)
-			}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-				list(
-					mod = NA,
-					summary_table = NA,	
-					beta_hat_T = NA,
-					s_beta_hat_T = NA,
-					is_z = TRUE,
-					p_val = NA
-				)				
-			})
-		},
+
 		
 		compute_incidence_KK_compound_univariate_logistic_regression_inference = function(){
 			stop("not implemented yet")
@@ -554,54 +460,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			})
 		},
 		
-		compute_proportion_univariate_beta_regression_inference = function(){
-			private$shared_beta_regression_inference(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w))
-		},
-		
-		compute_proportion_multivariate_beta_regression_inference = function(){
-			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w), private$get_X()))
-		},
-		
 		compute_proportion_KK_multivariate_beta_regression_with_matching_dummies_inference = function(){
 			private$shared_beta_regression_inference(cbind(data.frame(y = private$seq_des_obj_priv_int$y), private$generate_data_frame_with_matching_dummies()))
 		},
-		
-		compute_proportion_KK_compound_univariate_beta_regression_inference = function(){
-			stop("not implemented yet")
-		}, 
-		
-		compute_proportion_KK_compound_multivariate_beta_regression_inference = function(){
-			stop("not implemented yet")
-		},
-		
-		shared_beta_regression_inference = function(data_obj){
-			tryCatch({
-				beta_regr_mod = robust_betareg(y ~ ., data_obj)
-				beat_regr_mod_sub = coef(summary(beta_regr_mod))
-				summary_table = if (!is.null(beat_regr_mod_sub$mean)){ #beta model
-							beat_regr_mod_sub$mean 
-						} else if (!is.null(beat_regr_mod_sub$mu)){ #extended-support xbetax model
-							beat_regr_mod_sub$mu
-						}
-				list(
-					mod = beta_regr_mod,
-					summary_table = summary_table,	
-					beta_hat_T = summary_table[2, 1],
-					s_beta_hat_T = summary_table[2, 2],
-					is_z = TRUE,
-					p_val = summary_table[2, 4]
-				)			
-			}, error = function(e){
-				list(
-					mod = NA,
-					summary_table = NA,	
-					beta_hat_T = NA,
-					s_beta_hat_T = NA,
-					is_z = TRUE,
-					p_val = NA
-				)				
-			})
-		},
+
+
 		
 		compute_count_univariate_negative_binomial_inference = function(){
 			private$compute_count_negative_binomial_regression(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w))

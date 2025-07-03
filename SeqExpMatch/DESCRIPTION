@@ -53,8 +53,8 @@ RoxygenNote: 7.3.2
 Collate: 
     'RcppExports.R'
     'SeqExpMatch.R'
-    'design.R'
     'helper_functions.R'
+    'design.R'
     'abstract_inference.R'
     'abstract_inference_mle_or_KM.R'
     'abstract_inference_mle_or_KM_KK.R'
@@ -63,4 +63,8 @@ Collate:
     'inference_simple_mean_diff.R'
     'inference_continuous_multivariate_ols.R'
     'inference_continuous_KK_compound_multivariate_ols.R'
+    'inference_incidence_univariate_log_regr.R'
+    'inference_incidence_multivariate_log_regr.R'
+    'inference_proportion_univiariate_beta_regr.R'
+    'inference_proportion_multivariate_beta_regr.R'
     'zzz.R'

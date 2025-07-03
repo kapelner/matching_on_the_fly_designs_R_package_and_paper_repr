@@ -45,7 +45,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' 	
 		compute_treatment_estimate = function(){			
 			if (is.null(private$cached_values$beta_T)){
-				private$cached_values$beta_hat_T = 
+				private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
 			}			
 			private$cached_values$beta_hat_T
 		},
@@ -79,13 +79,16 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$ols_regr_mod_summary_table)){
+			if (is.null(private$cached_values$summary_table)){
 				private$shared()
-			}			
-			if (is.null(private$cached_values$beta_T)){
-				private$cached_values$beta_hat_T = private$cached_values$ols_regr_mod_summary_table[2, 1]
 			}
-
+			if (is.null(private$cached_values$beta_T)){
+				private$cached_values$beta_hat_T = self$compute_treatment_estimate()
+			}
+			private$cached_values$s_beta_hat_T = private$cached_values$summary_table[2, 2]
+			private$cached_values$is_z = FALSE 
+			private$cached_values$df = private$n - nrow(private$cached_values$summary_table)			
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
 		#' Compute p-value
@@ -112,7 +115,12 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			
+
+			if (delta == 0){
+				private$cached_values$summary_table[2, 4]
+			} else {
+				stop("TO-DO")
+			}
 		}
 	),
 	

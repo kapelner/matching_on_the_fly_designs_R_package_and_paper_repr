@@ -169,7 +169,6 @@ SeqDesignInferenceContMultOLSKK = R6::R6Class("SeqDesignInferenceContMultOLSKK",
 				private$cached_values$coefs_reservoir = coef(summary(lm(private$KKstats$y_reservoir ~ cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir))))
 				private$cached_values$ssqd_reservoir_regression = private$cached_values$coefs_reservoir[2, 2]^2 #lin mod returns SE not VAR, so square it
 			}
-		}
-		
+		}		
 	)		
 )

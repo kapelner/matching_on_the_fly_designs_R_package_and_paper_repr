@@ -6,7 +6,7 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
+SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRegr",
 	inherit = SeqDesignInferenceMLEorKM,
 	public = list(
 		
@@ -19,7 +19,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")			
+			assertResponseType(seq_des_obj$get_response_type(), "proportion")			
 			super$initialize(seq_des_obj, num_cores, verbose)	
 			assertNoCensoring(private$any_censoring)
 			private$cached_values = super$get_cached_values()
@@ -43,13 +43,13 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}			
+		compute_treatment_estimate = function(){			
 			if (is.null(private$cached_values$beta_T)){
 				private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
-			}			
+			}
+			if (is.null(private$cached_values$beta_T)){
+				stop("boom")
+			}				
 			private$cached_values$beta_hat_T
 		},
 		
@@ -84,13 +84,12 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
 			if (is.null(private$cached_values$summary_table)){
 				private$shared()
-			}			
+			}
 			if (is.null(private$cached_values$beta_T)){
 				private$cached_values$beta_hat_T = self$compute_treatment_estimate()
 			}
 			private$cached_values$s_beta_hat_T = private$cached_values$summary_table[2, 2]
-			private$cached_values$is_z = FALSE 
-			private$cached_values$df = private$n - nrow(private$cached_values$summary_table)			
+			private$cached_values$is_z = TRUE			
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
@@ -118,15 +117,12 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}
+
 			if (delta == 0){
 				private$cached_values$summary_table[2, 4]
 			} else {
 				stop("TO-DO")
 			}
-			
 		}
 	),
 	
@@ -134,10 +130,26 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		cached_values = list(),
 		
 		shared = function(){
-			private$cached_values$summary_table = 
-				coef(summary(lm(private$seq_des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()))))
-
-		}
+			private$shared_beta_regression_inference(
+				data_obj = data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w)
+			)
+		},
 		
+		shared_beta_regression_inference = function(data_obj){
+			tryCatch({
+				beta_regr_mod = robust_betareg(y ~ ., data_obj)
+				beat_regr_mod_sub = coef(summary(beta_regr_mod))
+				private$cached_values$summary_table = 	if (!is.null(beat_regr_mod_sub$mean)){ #beta model
+															beat_regr_mod_sub$mean 
+														} else if (!is.null(beat_regr_mod_sub$mu)){ #extended-support xbetax model
+															beat_regr_mod_sub$mu
+														} else {
+															matrix(NA, nrow = 2, ncol = 4)
+														}		
+			}, error = function(e){
+				matrix(NA, nrow = 2, ncol = 4)				
+			})
+		}		
 	)		
-)
+)		
+		
