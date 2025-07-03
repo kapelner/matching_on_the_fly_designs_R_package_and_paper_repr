@@ -1,3 +1,15 @@
+assertResponseType = function(response_type, needed_response_type){
+	if (response_type != needed_response_type){
+		stop("This type of inference is only available for ", needed_response_type, " responses.")
+	}
+}
+
+assertNoCensoring = function(any_censoring){
+	if (any_censoring){
+		stop("This type of inference is only available for uncensored responses.")
+	}
+}
+
 robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, y = y, num_max_iter = num_max_iter)
 }

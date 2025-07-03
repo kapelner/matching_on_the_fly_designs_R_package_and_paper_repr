@@ -103,7 +103,9 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 								qt(one_minus_alpha_over_two, super$get_cached_values()$df)
 							}
 			moe = z_or_t_val * super$get_cached_values()$s_beta_hat_T
-			super$get_cached_values()$beta_hat_T + c(-moe, moe)
+			ci = super$get_cached_values()$beta_hat_T + c(-moe, moe)
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, sep = "%")
+			ci
 		}	
 	)
 )

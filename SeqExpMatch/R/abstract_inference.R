@@ -144,6 +144,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 			seq_inf_class_constructor = get(class(self)[1])$new 		
 			y = private$seq_des_obj_priv_int$y
+			X = private$X	
 			if (delta != 0){
 				if (private$seq_des_obj_priv_int$response_type != "continous"){
 					stop("randomization tests with delta nonzero only works for continuous type!!!!")
@@ -161,17 +162,17 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					#make a copy of the object and then permute the allocation vector according to the design
 					seq_des_r = seq_des_obj_priv_int$duplicate()
 					seq_des_r$.__enclos_env__$private$y = y #set the new responses
+					seq_des_r$.__enclos_env__$private$X = X	
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					#now initialize a new inference object and compute beta_T_hat
 					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
-					seq_inf_r$.__enclos_env__$private$X = private$X					
+					seq_inf_r$.__enclos_env__$private$X = X					
 					b_T_sims[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
 				cl = doParallel::makeCluster(private$num_cores)
-				doParallel::registerDoParallel(cl)
-				X = private$X		
+				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
 				doParallel::clusterExport(cl, list("seq_des_obj_priv_int", "y", "seq_inf_class_constructor", "X"), envir = environment())
 				#now do the parallelization
@@ -179,6 +180,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					#make a copy of the object and then permute the allocation vector according to the design
 					seq_des_r = seq_des_obj_priv_int$duplicate()
 					seq_des_r$.__enclos_env__$private$y = y #set the new responses
+					seq_des_r$.__enclos_env__$private$X = X
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()				
 					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
 					seq_inf_r$.__enclos_env__$private$X = X
@@ -370,96 +372,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			}
 		},
 
-
-		
-		compute_continuous_multivariate_ols_inference_shared = function(){
-			private$cached_values$ols_regr_mod_summary_table = 
-				coef(summary(lm(private$seq_des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()))))
-		},		
-		
-		compute_continuous_multivariate_ols_inference_estimate = function(){
-			#this can be sped up
-			if (is.null(private$cached_values$ols_regr_mod_summary_table)){
-				private$compute_continuous_multivariate_ols_inference_shared()
-			}
-			private$cached_values$beta_hat_T = private$cached_values$ols_regr_mod_summary_table[2, 1]
-		},
-		
-		
-		compute_continuous_multivariate_ols_inference_ci = function(alpha, B){
-			if (is.null(private$cached_values$beta_hat_T)){
-				private$compute_continuous_multivariate_ols_inference_estimate()
-			}
-			private$cached_values$s_beta_hat_T = private$cached_values$ols_regr_mod_summary_table[2, 2]
-			private$cached_values$is_z = FALSE 
-			private$cached_values$df = private$n - nrow(private$cached_values$ols_regr_mod_summary_table)
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		
-		
-		compute_continuous_multivariate_ols_inference_test = function(){
-			if (is.null(private$cached_values$ols_regr_mod_summary_table)){
-				private$compute_continuous_multivariate_ols_inference_shared()
-			}	
-			private$cached_values$p_val = private$cached_values$ols_regr_mod_summary_table[2, 4]		
-		},
-		
-		
-		compute_continuous_KK_compound_multivariate_ols_shared = function(){
-			
-		},
-		
-		compute_continuous_KK_compound_multivariate_ols_estimate = function(){
-			
-		},
-		
-		compute_continuous_KK_compound_multivariate_ols_ci = function(alpha, B){
-			
-		},
-		
-		compute_continuous_KK_compound_multivariate_ols_test = function(){
-			
-		},
-		
-		compute_continuous_KK_compound_multivariate_ols_inference = function(){
-			KKstats = private$compute_continuous_post_matching_data_KK()
-			
-			if (KKstats$nRT <= 2 || KKstats$nRC <= 2 || (KKstats$nRT + KKstats$nRC <= ncol(private$get_X()) + 2)){
-				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
-				
-				KKstats$beta_hat_T = coefs_matched[1, 1]
-				KKstats$s_beta_hat_T = coefs_matched[1, 2]
-				KKstats$p_val = coefs_matched[1, 4]
-				
-				#and sometimes there's no matches	
-			} else if (KKstats$m == 0){			
-				coefs_reservoir = coef(summary(lm(KKstats$y_reservoir ~ cbind(KKstats$w_reservoir, KKstats$X_reservoir))))		
-				KKstats$beta_hat_T = coefs_reservoir[2, 1]
-				KKstats$s_beta_hat_T = coefs_reservoir[2, 2]
-				KKstats$p_val = coefs_reservoir[2, 4]
-				
-				#but most of the time... we have matches and a nice-sized reservoir
-			} else {
-				#compute estimator from matched pairs by regression
-				coefs_matched = coef(summary(lm(KKstats$y_matched_diffs ~ KKstats$X_matched_diffs)))
-				beta_match_regression = coefs_matched[1, 1]
-				ssqd_match_regression = coefs_matched[1, 2]^2 #lin mod returns SE not VAR, so square it				
-				
-				#compute estimator reservoir sample std error
-				coefs_reservoir = coef(summary(lm(KKstats$y_reservoir ~ cbind(KKstats$w_reservoir, KKstats$X_reservoir))))
-				beta_reservoir_regression = coefs_reservoir[2, 1]
-				ssqd_reservoir_regression = coefs_reservoir[2, 2]^2 #lin mod returns SE not VAR, so square it
-				
-				w_star = ssqd_reservoir_regression / (ssqd_reservoir_regression + ssqd_match_regression) #just a convenience for faster runtime	
-				KKstats$beta_hat_T = w_star * beta_match_regression + (1 - w_star) * beta_reservoir_regression #proper weighting
-				KKstats$s_beta_hat_T = sqrt(ssqd_match_regression * ssqd_reservoir_regression / (ssqd_match_regression + ssqd_reservoir_regression)) #analagous eq's
-				KKstats$p_val = 2 * (pnorm(-abs(KKstats$beta_hat_T / KKstats$s_beta_hat_T))) #approximate by using N(0, 1) distribution			
-			}
-			KKstats$is_z = TRUE #see KK14 paper for details about how assuming the normal distr here may be too liberal
-			KKstats
-		},		
-			
-		
 		
 		
 		

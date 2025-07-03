@@ -470,17 +470,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			
 			#' Get t
 			#'
-			#' @return 			The current number of subjects in this sequential experiment (begins at zero).				
-			#' @return dead						
-			#' @return prob_T	
-			#' @return w				
-			#' @return response_type		This is the experimenter-specified type of response value which is one of the following: 
-			#' 							"continuous", 
-			#' 							"incidence", 
-			#' 							"proportion", 
-			#' 							"count", 
-			#' 							"survival"	
-			#' @return covariate_weights		
+			#' @return 			The current number of subjects in this sequential experiment (begins at zero).					
 			#' 			
 			get_t = function(){
 				private$t
@@ -910,7 +900,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		assign_wt_KK14 = function(){
 			wt = 	if (sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) | private$t <= private$t_0){
 						#we're early, so randomize
-						private$match_indic[private$t] = 0
+						private$match_indic[private$t] = 0 #zero means "reservoir", >0 means match number 
 						private$assign_wt_CRD()
 					} else {
 						all_subject_data = private$compute_all_subject_data()

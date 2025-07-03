@@ -1,6 +1,10 @@
 # History files
+res/**.*
 .Rhistory
 .Rapp.history
+
+#res files from 2025 paper simulation
+2025_paper_simulation_code/res/
 
 # Session Data files
 .RData

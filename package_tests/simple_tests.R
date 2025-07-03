@@ -23,7 +23,7 @@ seq_des_obj = SeqDesign$new(n = n, design = "KK14", response_type = "continuous"
   }
 # })
 
-# seq_des_inf = SeqDesignInferenceSimpleMeanDiffMLE$new(seq_des_obj)
+# seq_des_inf = SeqDesignInferenceSimpleMeanDiff$new(seq_des_obj)
 # seq_des_inf$compute_treatment_estimate()
 # seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 # seq_des_inf$compute_mle_confidence_interval(0.05)
@@ -32,12 +32,34 @@ seq_des_obj = SeqDesign$new(n = n, design = "KK14", response_type = "continuous"
 # seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
 
+# seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des_obj)
+# seq_des_inf$compute_treatment_estimate()
+# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+# seq_des_inf$compute_mle_confidence_interval(0.05)
+# seq_des_inf$compute_bootstrap_confidence_interval()
+# profvis({
+# seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
 
-seq_des_inf = SeqDesignInferenceKKCompoundMeanDiffMLE$new(seq_des_obj)
+# seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des_obj)
+# seq_des_inf$compute_treatment_estimate()
+# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+# seq_des_inf$compute_mle_confidence_interval()
+# profvis({
+# seq_des_inf$compute_bootstrap_confidence_interval()
+# })
+# profvis({
+#   seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+# })
+
+
+seq_des_inf = SeqDesignInferenceContMultOLSKK$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval()
-seq_des_inf$compute_bootstrap_confidence_interval()
+profvis({
+  seq_des_inf$compute_bootstrap_confidence_interval()
+})
 profvis({
   seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 })

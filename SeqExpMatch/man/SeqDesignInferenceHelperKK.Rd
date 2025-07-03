@@ -12,6 +12,8 @@ Initialize a helper object
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceHelperKK-new}{\code{SeqDesignInferenceHelperKK$new()}}
+\item \href{#method-SeqDesignInferenceHelperKK-get_post_matching_data}{\code{SeqDesignInferenceHelperKK$get_post_matching_data()}}
+\item \href{#method-SeqDesignInferenceHelperKK-get_data_frame_with_matching_dummies}{\code{SeqDesignInferenceHelperKK$get_data_frame_with_matching_dummies()}}
 \item \href{#method-SeqDesignInferenceHelperKK-clone}{\code{SeqDesignInferenceHelperKK$clone()}}
 }
 }
@@ -29,10 +31,32 @@ Initialize a helper object
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{X}}{A data.table object of the subjects' covariates in the study}
+\item{\code{X}}{A data.table object of the subjects' covariates in the study
+Compute matching statistics}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceHelperKK-get_post_matching_data"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceHelperKK-get_post_matching_data}{}}}
+\subsection{Method \code{get_post_matching_data()}}{
+Compute matching statistics for KK designs	
+Compute model matrix
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceHelperKK$get_post_matching_data()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceHelperKK-get_data_frame_with_matching_dummies"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceHelperKK-get_data_frame_with_matching_dummies}{}}}
+\subsection{Method \code{get_data_frame_with_matching_dummies()}}{
+Compute model matrix with assignment and match indicies
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceHelperKK$get_data_frame_with_matching_dummies()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceHelperKK-clone"></a>}}

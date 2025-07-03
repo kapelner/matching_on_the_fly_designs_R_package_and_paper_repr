@@ -6,6 +6,25 @@
 \description{
 An abstract class
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_confidence_interval()
+					
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKM} -> \code{SeqDesignInferenceMLEorKMKK}
 }
@@ -13,6 +32,7 @@ An abstract class
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceMLEorKMKK-new}{\code{SeqDesignInferenceMLEorKMKK$new()}}
+\item \href{#method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceMLEorKMKK-clone}{\code{SeqDesignInferenceMLEorKMKK$clone()}}
 }
 }
@@ -21,7 +41,6 @@ An abstract class
 <ul>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -46,6 +65,50 @@ for \code{test_type = "MLE-or-KM-based"}.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Computes a 1-alpha level frequentist bootstrap confidence interval for KK tests
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 501
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_confidence_interval()
+					
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-clone"></a>}}

@@ -550,7 +550,9 @@ Get t
 }
 
 \subsection{Returns}{
-The current number of subjects in this sequential experiment (begins at zero).
+The current number of subjects in this sequential experiment (begins at zero).					
+			
+Get design
 }
 }
 \if{html}{\out{<hr>}}
