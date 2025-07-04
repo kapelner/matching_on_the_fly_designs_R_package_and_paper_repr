@@ -32,4 +32,4 @@ Useful links:
 Adam Kapelner \email{kapelner@qc.cuny.edu}
 }
 \keyword{design}
-\keyword{htest}
+\keyword{pair-matching}

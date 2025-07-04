@@ -1,12 +1,13 @@
-#' Inference based on Maximum Likelihood for KK designs  
+#' Simple Mean Difference Inference based on Maximum Likelihood  
 #'
 #' @description
-#' Inference for mean difference
+#' The methods that support confidence intervals and testing for the mean difference
+#' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 #' 
 #'
 #' @export
-SeqDesignInferenceKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceKKCompoundMeanDiff",
-	inherit = SeqDesignInferenceMLEorKMKK,
+SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMeanDiff",
+	inherit = SeqDesignInferenceMLEorKM,
 	public = list(
 		
 		#' @description
@@ -16,17 +17,15 @@ SeqDesignInferenceKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceKKCompound
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' 
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){		
-			super$initialize(seq_des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)	
-			
+		#'
+		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){						
+			super$initialize(seq_des_obj, num_cores, verbose)	
+			assertNoCensoring(private$any_censoring)
+			private$cached_values = super$get_cached_values()			
 		},
 		
-		#' Compute treatment effect
-		#'	
 		#' @description
-		#' Computes the appropriate estimate for compound mean difference across pairs and reservoir
+		#' Computes the appropriate estimate for mean difference
 		#' 
 		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#' 
@@ -40,28 +39,25 @@ SeqDesignInferenceKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceKKCompound
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiffMLE$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){			
-			private$cached_values$beta_hat_T = 	if (private$KKstats$nRT <= 1 || private$KKstats$nRC <= 1){
-													private$KKstats$d_bar	
-												} else if (private$KKstats$m == 0){ #sometimes there's no matches
-													private$KKstats$r_bar			
-												} else {
-													private$KKstats$w_star * private$KKstats$d_bar + (1 - private$KKstats$w_star) * private$KKstats$r_bar #proper weighting
-												}
+		compute_treatment_estimate = function(){
+			if (is.null(private$cached_values$beta_hat_T)){
+				private$cached_values$beta_hat_T = mean(super$get_yTs()) - mean(super$get_yCs())
+			}			
 			private$cached_values$beta_hat_T
 		},
+		
+		
 		
 		#' Compute confidence interval
 		#'
 		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
+		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
 		#' 
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
-		#' of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
-		#' is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
+		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
+		#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 		#' 
 		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		#' 
@@ -77,25 +73,24 @@ SeqDesignInferenceKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceKKCompound
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des, test_type = "MLE-or-KM-based")
+		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiffMLE$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
-		#'	
+		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
-			}		
-			private$cached_values$is_z = TRUE
+			}
+			
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
 		#' Compute p-value
 		#'
 		#' @description
-		#' Computes a 2-sided p-value
+		#' Computes a 2-sided p-value for all types of inferential settings written about in the initializer
 		#'
-		#' @param delta	The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 
 		#' @return 	The approximate frequentist p-value
 		#' 
@@ -109,36 +104,40 @@ SeqDesignInferenceKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceKKCompound
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiffMLE$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
-		#' 		
+		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			if (is.null(private$cached_values$s_beta_hat_T)){
+			if (is.null(private$cached_values$df)){
 				private$shared()
-			}			
-			2 * pnorm(
-					-abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
-				) #approximate by using N(0, 1) distribution
-
+			}
+			
+			2 * pt(
+					-abs(private$cached_values$beta_hat_T - delta) / private$cached_values$s_beta_hat_T, 
+						private$cached_values$df
+				)
 		}
 	),
 	
-	private = list(
-					
+	private = list(		
+		cached_values = list(),
+		
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
-				private$compute_KK_compound_mean_difference_estimate()
-			}			
+				self$compute_treatment_estimate()
+			}
 			
-			private$cached_values$s_beta_hat_T =
-				if (private$KKstats$nRT <= 1 || private$KKstats$nRC <= 1){	
-					sqrt(private$KKstats$ssqD_bar)
-				} else if (private$KKstats$m == 0){ #sometimes there's no matches
-					sqrt(private$KKstats$ssqR)		
-				} else {
-					sqrt(private$KKstats$ssqR * private$KKstats$ssqD_bar / (private$KKstats$ssqR + private$KKstats$ssqD_bar))
-				}			
-		}		
+			nT = length(super$get_yTs())
+			nC = length(super$get_yCs())
+			s_1_sq = var(super$get_yTs()) / nT 
+			s_2_sq = var(super$get_yCs()) / nC
+			private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
+			private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
+											s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)
+										) #Welch-Satterthwaite formula
+			private$cached_values$is_z = FALSE
+		}
+		
 	)		
 )

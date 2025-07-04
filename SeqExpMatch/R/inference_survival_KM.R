@@ -6,7 +6,7 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
+SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff",
 	inherit = SeqDesignInferenceMLEorKM,
 	public = list(
 		
@@ -19,9 +19,8 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")			
-			super$initialize(seq_des_obj, num_cores, verbose)	
-			assertNoCensoring(private$any_censoring)
+			assertResponseType(seq_des_obj$get_response_type(), "survival")			
+			super$initialize(seq_des_obj, num_cores, verbose)
 			private$cached_values = super$get_cached_values()
 		},
 		
@@ -40,17 +39,15 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){			
-			if (is.null(private$cached_values$beta_hat_T)){
-				private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
-			}			
-			private$cached_values$beta_hat_T
+		compute_treatment_estimate = function(){	
+			survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
+			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj_priv_int$w)
+			survival_fit_res = summary(survival_fit_obj)$table	
+			survival_fit_res[2, 7] - survival_fit_res[1, 7]
 		},
-		
-		
 		
 		#' Compute confidence interval
 		#'
@@ -74,27 +71,19 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
+		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}
-			if (is.null(private$cached_values$beta_hat_T)){
-				private$cached_values$beta_hat_T = self$compute_treatment_estimate()
-			}
-			private$cached_values$s_beta_hat_T = private$cached_values$summary_table[2, 2]
-			private$cached_values$is_z = FALSE 
-			private$cached_values$df = private$n - nrow(private$cached_values$summary_table)			
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
+			stop("TO-DO using the km.ci package... for now, use the bootstrap CI function")
+			#https://stats.stackexchange.com/questions/566613/kaplan-meier-using-survfit-confidence-interval-of-the-median
 		},
 		
 		#' Compute p-value
 		#'
 		#' @description
-		#' Computes a 2-sided p-value
+		#' Computes a 2-sided p-value via the log rank test
 		#'
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 
@@ -110,14 +99,16 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 
 			if (delta == 0){
-				private$cached_values$summary_table[2, 4]
+				survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
+				surv_diff = survdiff(survival_obj ~ private$seq_des_obj_priv_int$w)
+				surv_diff$pvalue
 			} else {
 				stop("TO-DO")
 			}
@@ -133,3 +124,12 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		
 	)		
 )
+
+#					test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
+#					list(
+#						mod = survival_fit_obj,
+#						summary_table = survival_fit_res,
+#						beta_hat_T = beta_hat_T,
+#						s_beta_hat_T = abs(beta_hat_T / test_obj$Z), #what is quantileControlTest's se field if not this??????????
+#						is_z = TRUE
+#					)

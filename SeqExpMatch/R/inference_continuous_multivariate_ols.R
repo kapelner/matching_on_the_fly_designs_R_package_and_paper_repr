@@ -6,8 +6,8 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
-	inherit = SeqDesignInferenceMLEorKM,
+SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
+	inherit = SeqDesignInferenceMLEorKMSummaryTable,
 	public = list(
 		
 		#' @description
@@ -24,35 +24,6 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 			assertNoCensoring(private$any_censoring)
 			private$cached_values = super$get_cached_values()
 		},
-		
-		#' @description
-		#' Computes the appropriate estimate for mean difference
-		#' 
-		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
-		#' 	
-		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}			
-			if (is.null(private$cached_values$beta_T)){
-				private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
-			}			
-			private$cached_values$beta_hat_T
-		},
-		
 		
 		
 		#' Compute confidence interval
@@ -92,41 +63,6 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 			private$cached_values$is_z = FALSE 
 			private$cached_values$df = private$n - nrow(private$cached_values$summary_table)			
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		
-		#' Compute p-value
-		#'
-		#' @description
-		#' Computes a 2-sided p-value
-		#'
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' 
-		#' @return 	The approximate frequentist p-value
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
-		#' 				
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}
-			if (delta == 0){
-				private$cached_values$summary_table[2, 4]
-			} else {
-				stop("TO-DO")
-			}
-			
 		}
 	),
 	

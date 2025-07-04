@@ -6,8 +6,8 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceIncMultiLogRegr = R6::R6Class("SeqDesignInferenceIncMultiLogRegr",
-	inherit = SeqDesignInferenceIncUnivLogRegr,
+SeqDesignInferenceIncidMultiLogRegr = R6::R6Class("SeqDesignInferenceIncidMultiLogRegr",
+	inherit = SeqDesignInferenceIncidUnivLogRegr,
 	public = list(
 		
 		#' @description
