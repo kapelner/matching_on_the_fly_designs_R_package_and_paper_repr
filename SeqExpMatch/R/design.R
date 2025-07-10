@@ -94,10 +94,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (private$isKK){
 					private$match_indic = array(NA, n)
 					
-					if (is.null(private$other_params$lambda)){
-						private$other_params$lambda = 0.1 #default
+					if (!is.null(private$other_params$morrison_big_T)){
+					  private$other_params$lambda = (private$n) ^ (-1/(2 * private$other_params$p)) #big T morrison lambda
+					} else if (is.null(private$other_params$lambda)){
+					  private$other_params$lambda = 0.1 #default
 					} else {
-						assertNumeric(private$other_params$lambda, lower = 0, upper = 1)
+					  assertNumeric(private$other_params$lambda, lower = 0, upper = 1)
 					}
 					if (is.null(private$other_params$t_0_pct)){
 						private$t_0 = round(0.35 * n) #default
@@ -908,6 +910,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 						#first calculate the threshold we're operating at	
 						#when inverting, ensure full rank by adding eps * I			
 						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
+						
+						if(!is.null(private$other_params$morrison_little_t)){
+						  private$other_params$lambda = self$t ^ (-1/(2 * private$other_params$p)) #morrison lambda
+						}
 						F_crit =  qf(private$other_params$lambda, all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						T_cutoff_sq = all_subject_data$rank_prev * (private$n - 1) / (private$n - all_subject_data$rank_prev) * F_crit
 						#now iterate over all items in reservoir and take the minimum distance x
@@ -1080,6 +1086,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% private$covariate_weights
 						}
 						
+						if(!is.null(private$other_params$morrison_little_t)){
+						  private$other_params$lambda = self$t ^ (-1/(2 * private$other_params$p)) #morrison lambda
+						}
 						min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$other_params$lambda)
 						
 						#5) Now, does the minimum make the cut?
@@ -1281,6 +1290,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 															    private$other_params$num_boot
 															  )
 							
+						if(!is.null(private$other_params$morrison_little_t)){
+						  private$other_params$lambda = self$t ^ (-1/(2 * private$other_params$p)) #morrison lambda
+						}
 						min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$other_params$lambda)
 						
 						#5) Now, does the minimum make the cut?
