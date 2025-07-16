@@ -6,7 +6,7 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff",
+SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSurvivalRestrictedMeanDiff",
 	inherit = SeqDesignInferenceMLEorKM,
 	public = list(
 		
@@ -18,10 +18,10 @@ SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){						
-			super$initialize(seq_des_obj, num_cores, verbose)	
-			assertNoCensoring(private$any_censoring)
-			private$cached_values = super$get_cached_values()			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+			assertResponseType(seq_des_obj$get_response_type(), "survival")			
+			super$initialize(seq_des_obj, num_cores, verbose)
+			private$cached_values = super$get_cached_values()
 		},
 		
 		#' @description
@@ -39,17 +39,19 @@ SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceSimpleMeanDiffMLE$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$beta_T)){
-				private$cached_values$beta_hat_T = mean(super$get_yTs()) - mean(super$get_yCs())
-			}			
+			if (is.null(private$cached_values$survival_fit_res)){
+				private$shared()
+			}
+			if (is.null(private$cached_values$beta_hat_T)){
+				private$cached_values$beta_hat_T = 
+					private$cached_values$survival_fit_res[2, 5] - private$cached_values$survival_fit_res[1, 5]
+			}
 			private$cached_values$beta_hat_T
 		},
-		
-		
 		
 		#' Compute confidence interval
 		#'
@@ -73,22 +75,25 @@ SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceSimpleMeanDiffMLE$new(seq_des, test_type = "MLE-or-KM-based")
+		#' seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$s_beta_hat_T)){
-				private$shared()
+			if (is.null(private$cached_values$beta_hat_T)){
+				self$compute_treatment_estimate()
 			}
-			
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
+			if (is.null(private$cached_values$s_beta_hat_T)){
+				private$compute_s_beta_hat_T()
+			}
+			private$cached_values$is_z = TRUE
+			private$compute_z_or_t_ci_from_s_and_df(alpha)			
 		},
 		
 		#' Compute p-value
 		#'
 		#' @description
-		#' Computes a 2-sided p-value for all types of inferential settings written about in the initializer
+		#' Computes a 2-sided p-value via the log rank test
 		#'
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 
@@ -104,19 +109,21 @@ SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceSimpleMeanDiffMLE$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			if (is.null(private$cached_values$df)){
-				private$shared()
+
+			if (delta == 0){
+				if (is.null(private$cached_values$s_beta_hat_T)){
+					private$compute_s_beta_hat_T()
+				}
+				z_beta_hat_T = private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T
+				2 * min(pnorm(z_beta_hat_T), 1 - pnorm(z_beta_hat_T))				
+			} else {
+				stop("TO-DO")
 			}
-			
-			2 * pt(
-					-abs(private$cached_values$beta_hat_T - delta) / private$cached_values$s_beta_hat_T, 
-						private$cached_values$df
-				)
 		}
 	),
 	
@@ -124,19 +131,17 @@ SeqDesignInferenceSimpleMeanDiff = R6::R6Class("SeqDesignInferenceSimpleMeanDiff
 		cached_values = list(),
 		
 		shared = function(){
-			if (is.null(private$cached_values$beta_hat_T)){
-				self$compute_treatment_estimate()
+			survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
+			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj_priv_int$w)
+			private$cached_values$survival_fit_res = summary(survival_fit_obj)$table
+		},
+		
+		compute_s_beta_hat_T = function(){
+			if (is.null(private$cached_values$survival_fit_res)){
+				private$shared()
 			}
-			
-			nT = length(super$get_yTs())
-			nC = length(super$get_yCs())
-			s_1_sq = var(super$get_yTs()) / nT 
-			s_2_sq = var(super$get_yCs()) / nC
-			private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
-			private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
-											s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)
-										) #Welch-Satterthwaite formula
-			private$cached_values$is_z = FALSE
+			private$cached_values$s_beta_hat_T = 
+				sqrt(private$cached_values$survival_fit_res[2, 6]^2 + private$cached_values$survival_fit_res[1, 6]^2)
 		}
 		
 	)		

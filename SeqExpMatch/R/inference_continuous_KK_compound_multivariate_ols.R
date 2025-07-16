@@ -5,7 +5,7 @@
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 #' 
 #' @export
-SeqDesignInferenceContMultOLSKK = R6::R6Class("SeqDesignInferenceContMultOLSKK",
+SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLSKK",
 	inherit = SeqDesignInferenceMLEorKMKK,
 	public = list(
 		
@@ -45,7 +45,7 @@ SeqDesignInferenceContMultOLSKK = R6::R6Class("SeqDesignInferenceContMultOLSKK",
 			if (is.null(private$cached_values$private$cached_values$coefs_matched) & is.null(private$cached_values$private$cached_values$coefs_reservoir)){
 				private$shared()
 			}		
-			if (is.null(private$cached_values$beta_T)){ 
+			if (is.null(private$cached_values$beta_hat_T)){ 
 				#no reservoir
 				if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
 					private$cached_values$beta_hat_T = private$cached_values$coefs_matched[1, 1]
@@ -92,7 +92,7 @@ SeqDesignInferenceContMultOLSKK = R6::R6Class("SeqDesignInferenceContMultOLSKK",
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$beta_T)){ 
+			if (is.null(private$cached_values$beta_hat_T)){ 
 				self$compute_treatment_estimate()
 			}
 			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
@@ -131,7 +131,7 @@ SeqDesignInferenceContMultOLSKK = R6::R6Class("SeqDesignInferenceContMultOLSKK",
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			if (is.null(private$cached_values$beta_T)){ 
+			if (is.null(private$cached_values$beta_hat_T)){ 
 				self$compute_treatment_estimate()
 			}
 			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){

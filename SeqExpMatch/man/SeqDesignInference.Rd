@@ -53,6 +53,23 @@ seq_des_inf$compute_confidence_interval()
 		
 
 ## ------------------------------------------------
+## Method `SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des)
+beta_hat_T_diff_ws = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null()
+ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + geom_histogram(aes(x = beta_hat_T_diff_ws))
+
+## ------------------------------------------------
 ## Method `SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand`
 ## ------------------------------------------------
 
@@ -74,6 +91,7 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 \itemize{
 \item \href{#method-SeqDesignInference-new}{\code{SeqDesignInference$new()}}
 \item \href{#method-SeqDesignInference-compute_confidence_interval_rand}{\code{SeqDesignInference$compute_confidence_interval_rand()}}
+\item \href{#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null}{\code{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()}}
 \item \href{#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand}{\code{SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-SeqDesignInference-clone}{\code{SeqDesignInference$clone()}}
 }
@@ -178,6 +196,52 @@ seq_des_inf$compute_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null}{}}}
+\subsection{Method \code{compute_beta_hat_T_randomization_distr_under_sharp_null()}}{
+Under the sharp null of 
+forall i H_0: y_i_T - y_i_C = delta 
+there will be a distribution of the estimates of the treatment effect (over many realizations of assignments)
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null(
+  nsim_exact_test = 501,
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{nsim_exact_test}}{The number of randomization vectors to use. The default is 501.}
+
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des)
+beta_hat_T_diff_ws = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null()
+ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + geom_histogram(aes(x = beta_hat_T_diff_ws))
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand}{}}}
 \subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
@@ -188,7 +252,8 @@ the treatment different adjusted linearly for the p covariates.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand(
   nsim_exact_test = 501,
-  delta = 0
+  delta = 0,
+  na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -199,6 +264,8 @@ the treatment different adjusted linearly for the p covariates.
 is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

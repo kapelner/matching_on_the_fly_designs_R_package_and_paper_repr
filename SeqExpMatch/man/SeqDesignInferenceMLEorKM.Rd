@@ -9,6 +9,24 @@ An abstract R6 Class that provides MLE-based tests and intervals for a treatment
 \examples{
 
 ## ------------------------------------------------
+## Method `SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
+
+## ------------------------------------------------
 ## Method `SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval`
 ## ------------------------------------------------
 
@@ -32,6 +50,7 @@ seq_des_inf$compute_confidence_interval()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceMLEorKM-new}{\code{SeqDesignInferenceMLEorKM$new()}}
+\item \href{#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()}}
 \item \href{#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceMLEorKM-clone}{\code{SeqDesignInferenceMLEorKM$clone()}}
 }
@@ -39,6 +58,7 @@ seq_des_inf$compute_confidence_interval()
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 </ul>
@@ -68,6 +88,46 @@ for \code{test_type = "MLE-or-KM-based"}.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_boostrap_distribution_beta_hat_T()}}{
+Creates the boostrap distribution of the estimate for the treatment effect
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T(B = 501)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bootstrap_confidence_interval()}}{
@@ -75,7 +135,8 @@ Computes a 1-alpha level frequentist bootstrap confidence interval differently f
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval(
   alpha = 0.05,
-  B = 501
+  B = 501,
+  na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -85,6 +146,8 @@ Computes a 1-alpha level frequentist bootstrap confidence interval differently f
 \item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
 
 \item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

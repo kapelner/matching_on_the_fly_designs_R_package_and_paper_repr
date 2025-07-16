@@ -10,21 +10,34 @@ assertNoCensoring = function(any_censoring){
 	}
 }
 
+#' Robust Survival Regression
+#'
+#' Performs Survival regression from the original response and censoring vectors 
+#' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+#'
+#' @param y						The response vector
+#' @param dead					The censoring vector (1 if dead/uncensored and 0 if censored)
+#' @param cov_matrix_or_vector  The model matrix
+#' @param dist  				The parametric distribution form (default is Weibull)
+#' @param num_max_iter			Maximum # of iterations to repeat (default is 50)
+#' @return						The Survival regression model object
+#' @export
 robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
-	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, y = y, num_max_iter = num_max_iter)
+	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, num_max_iter = num_max_iter)
 }
 
-survreg_control_default = survival::survreg.control(
-	maxiter = 100,			#default
-	rel.tolerance = 1e-9, 	#default
-	outer.max = 10			#default
-)
-
-robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", y = NULL, num_max_iter = 50){
-#	if (is.null(y)){
-#		y = as.numeric(surv_object)[1 : length(surv_object)]
-#	}
-#	init = lm.fit(cbind(1, cov_matrix_or_vector), log(y))$coefficients
+#' Robust Survival Regression
+#'
+#' Performs Survival regression from a survival::Surv object 
+#' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+#'
+#' @param surv_object			The survival object (built from the response vector and censoring vector)
+#' @param cov_matrix_or_vector  The model matrix
+#' @param dist  				The parametric distribution form (default is Weibull)
+#' @param num_max_iter			Maximum # of iterations to repeat (default is 50)
+#' @return						The Survival regression model object
+#' @export
+robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	surv_reg_formula = surv_object ~ .
 	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
 	init = rep(0, ncol(cov_matrix_or_vector_data_frame) + 1)
@@ -36,7 +49,11 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 				data = cov_matrix_or_vector_data_frame, 
 				dist = dist, 
 				init = init,
-				control = survreg_control_default
+				control = 	survival::survreg.control(
+								maxiter = 100,			#default
+								rel.tolerance = 1e-9, 	#default
+								outer.max = 10			#default
+							)
 			))
 			if (!any(is.na(mod$coefficients))){
 				return(mod)
@@ -95,6 +112,15 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	}	
 }
 
+
+#' Robust Beta Regression
+#'
+#' Performs Beta regression that if it fails, keeps dropping one column from the model matrix until it works
+#'
+#' @param form_obj	The formula
+#' @param data_obj  The data frame to run beta regression on 
+#' @return			The Beta regression model object
+#' @export
 robust_betareg = function(form_obj, data_obj){
 	repeat {
 		tryCatch({
@@ -102,12 +128,21 @@ robust_betareg = function(form_obj, data_obj){
 			return(mod)
 		}, error = function(e){})
 		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
-		if (ncol(data_obj) == 0){
+		if (ncol(data_obj) == 1){
 			break
 		}
 	}
+	NULL
 }
 
+#' Robust Negative Binomial Regression
+#'
+#' Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
+#'
+#' @param form_obj	The formula
+#' @param data_obj  The data frame to run Negative Binomial regression on 
+#' @return			The Negative Binomial regression model object
+#' @export
 robust_negbinreg = function(form_obj, data_obj){
 	repeat {
 		tryCatch({
@@ -122,12 +157,28 @@ robust_negbinreg = function(form_obj, data_obj){
 	NA
 }
 
-#There's no standard R function for this.
+#' Sample Mode from an array
+#'
+#' Compute sample mode from an array of numbers
+#'
+#' @param data	The array of numbers
+#' @return		The sample mode
+#' @export
 sample_mode = function(data){
 	as.numeric(names(sort(-table(data)))[1])
 }
 
-#same as summary.glm except it doesn't calculate the residuals as this takes a long time
+#' Lean GLM Summary
+#'
+#' Same as summary.glm except it doesn't calculate the residuals as this takes a long time
+#'
+#' @param object		The GLM object
+#' @param dispersion	See GLM documentation 
+#' @param correlation	See GLM documentation 
+#' @param symbolic.cor	See GLM documentation 
+#' @param ...			Other parameters (currently unused)
+#' @return				The summary of the GLM
+#' @export
 summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, symbolic.cor = FALSE, ...){
 	est.disp <- FALSE
 	df.r <- object$df.residual
