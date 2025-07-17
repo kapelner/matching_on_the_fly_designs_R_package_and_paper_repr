@@ -36,13 +36,10 @@ SeqDesignKK14abstract = R6::R6Class("SeqDesignKK14abstract",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
 			verbose = TRUE,
-			n = NULL,
-			lambda = NULL,
-			t_0_pct = NULL
+			n = NULL
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
-			self$assert_even_allocation()
-			self$assert_fixed_sample()		
+			self$assert_even_allocation()	
 		},
 		
 		#' @description
@@ -80,7 +77,50 @@ SeqDesignKK14abstract = R6::R6Class("SeqDesignKK14abstract",
 		}
 	),
 	private = list(
-		t_0 = NULL,		
-		match_indic = NA #works for Morrison and non-Morrison		
+		compute_lambda = NULL,	
+		match_indic = NA, #works for Morrison and non-Morrison,	
+		
+		assign_wt = function(){
+			wt = 	if (private$too_early_to_match()){
+						#we're early, so randomize
+						private$match_indic[private$t] = 0 #zero means "reservoir", >0 means match number 
+						private$assign_wt_CRD()
+					} else {
+						all_subject_data = private$compute_all_subject_data()
+						# cat("else\n")
+						#first calculate the threshold we're operating at	
+						#when inverting, ensure full rank by adding eps * I			
+						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
+						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
+						T_cutoff_sq = all_subject_data$rank_prev * (private$n - 1) / (private$n - all_subject_data$rank_prev) * F_crit
+						#now iterate over all items in reservoir and take the minimum distance x
+						reservoir_indices = which(private$match_indic == 0)
+						sqd_distances_times_two = array(NA, length(reservoir_indices))
+						for (r in 1 : length(reservoir_indices)){
+							x_r_x_new_delta = all_subject_data$xt_prev - all_subject_data$X_prev[reservoir_indices[r], ]
+							sqd_distances_times_two[r] = t(x_r_x_new_delta) %*% S_xs_inv %*% x_r_x_new_delta		
+						}					
+						#find minimum distance index
+						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))
+						if (length(sqd_distances_times_two[min_sqd_dist_index]) > 1 || length(T_cutoff_sq) > 1){
+							min_sqd_dist_index = min_sqd_dist_index[1] #if there's a tie, just take the first one
+						}
+						#if it's smaller than the threshold, we're in business: match it
+						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
+							match_num = max(private$match_indic, na.rm = TRUE) + 1
+							private$match_indic[reservoir_indices[min_sqd_dist_index]] = match_num
+							private$match_indic[private$t] = match_num
+							#assign opposite
+							1 - private$w[reservoir_indices[min_sqd_dist_index]]
+						} else { #otherwise, randomize and add it to the reservoir
+							private$match_indic[private$t] = 0
+							private$assign_wt_CRD()
+						}
+					}
+			if (is.na(private$match_indic[private$t])){
+				stop("no match data recorded")
+			}
+			wt
+		}	
 	)
 )

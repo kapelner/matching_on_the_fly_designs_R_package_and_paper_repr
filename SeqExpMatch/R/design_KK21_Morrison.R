@@ -6,10 +6,10 @@
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 #' @export
-SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
-	inherit = SeqDesignKK14abstract,
+SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
+	inherit = SeqDesignKK21abstract,
 	public = list(
-		#' 				
+		#' 
 		#' @description
 		#' Initialize a sequential experimental design
 		#' 
@@ -26,9 +26,8 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' 												missingness in addition to imputing its value? If the feature is type factor, instead of creating
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (must be fixed).
+		#' @param p			The number of covariate measurements. Must be specified.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified, default is 10%.
-		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified, default is 35%.
 		#' @return 			A new `SeqDesign` object of the specific type
 		#' 
 		#' @examples
@@ -39,35 +38,24 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
 			verbose = TRUE,
-			n,
-			lambda = NULL,
-			t_0_pct = NULL
+			n = NULL,
+			p
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
-			self$assert_fixed_sample()
-			private$match_indic = array(NA, n)
+			assert_count(p)
+			private$p = p
 			
-			if (is.null(lambda)){
-				lambda = 0.1 #default
+			if (super$is_fixed_sample()){
+				private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
 			} else {
-				assertNumeric(lambda, lower = 0, upper = 1)
-			}			
-			private$lambda = lambda	
-			private$compute_lambda = function(){private$lambda}
-			if (is.null(t_0_pct)){
-				private$t_0 = round(0.35 * n) #default
-			} else {
-				assertNumeric(t_0_pct, lower = .Machine$double.eps, upper = 1)
-				private$t_0 = round(t_0_pct * n)
+				private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
 			}	
-		}
 	),
 	private = list(
-		t_0 = NULL,	
-		lambda = NULL,
-		
+		p = NULL,
+				
 		too_early_to_match = function(){
-			sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) | private$t <= private$t_0
+			sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2)
 		}
 	)
 )

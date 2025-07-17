@@ -59,9 +59,9 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			n_T = sum(private$w, na.rm = TRUE)
 			n_C = private$n - n_T
 			if (n_T * private$prob_T > n_C * (1 - private$prob_T)){
-				rbinom(1, 1, 1 - private$other_params$weighted_coin_prob)
+				rbinom(1, 1, 1 - private$weighted_coin_prob)
 			} else if (n_T * private$prob_T < n_C * (1 - private$prob_T)){
-				rbinom(1, 1, private$other_params$weighted_coin_prob)
+				rbinom(1, 1, private$weighted_coin_prob)
 			} else {
 				private$assign_wt_CRD()
 			}				
