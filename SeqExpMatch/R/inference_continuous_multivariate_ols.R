@@ -73,7 +73,6 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 			private$cached_values$summary_table = 
 				coef(summary(lm(private$seq_des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()))))
 
-		}
-		
+		}		
 	)		
 )

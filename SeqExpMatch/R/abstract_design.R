@@ -245,6 +245,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 					y = .Machine$double.eps
 				}						
 			}
+			if (dead == 0 & private$response_type %in% c("continuous", "incidence", "proportion")){
+				stop("censored observations are only available for count or survival response types")
+			}
 			#finally, record the response value and the time at which it was recorded
 			if (private$fixed_sample){
 				private$y[t] = y
@@ -257,7 +260,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		#' @description
-		#' For non-CARA designs, add all subject responses
+		#' For non-CARA designs, add all subject responses (usually done at the end of the study)
 		#' 
 		#' @param ys 		The responses as a numeric vector of length n
 		#' @param deads	    The binary vector of length n where 1 indicates the the subject 
@@ -473,6 +476,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$w
 		},
 		
+		#' Get n, the sample size
+		#'
+		#' If n is fixed, it returns n, if n is not fixed, it returns the current number of subjects, t
+		#'
+		#' @return 			The number of subjects
+		get_n = function(){
+			ifelse(self$is_fixed_sample, self$n, self$t)
+		},
+		
 		#' Get dead
 		#'
 		#' @return 			A binary vector of whether the subject is dead with number of entries n (the number of subjects). This 
@@ -527,16 +539,53 @@ SeqDesign = R6::R6Class("SeqDesign",
 		prob_T = NULL,
 		w = NULL,
 		response_type = NULL,
-				
-		fixed_sample_helper = NULL,	
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
-		verbose = NULL,
-		
-		#when during the experiment the subjects recorded
-		y_i_t_i = list(),			
-		#design specific parameters
+		verbose = NULL,		
+		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?		
 
+		duplicate = function(){
+			self$assert_experiment_completed() #can't duplicate without the experiment being done
+			
+			design_class_constructor = get(class(self)[1])$new 
+			d = do.call(design_class_constructor, args = list(
+				design = 								private$design, 
+				response_type = 						private$response_type,  
+				prob_T = 								private$prob_T, 
+				include_is_missing_as_a_new_feature = 	private$include_is_missing_as_a_new_feature, 
+				verbose = 								FALSE
+			))
+			#we are assuming the experiment is complete so we have private$t = 0 initialized
+			d$.__enclos_env__$private$Xraw = 					private$Xraw
+			d$.__enclos_env__$private$Ximp = 					private$Ximp
+			d$.__enclos_env__$private$y = 						private$y
+			d$.__enclos_env__$private$dead = 					private$dead
+			d$.__enclos_env__$private$w = 						private$w		
+			d$.__enclos_env__$private$t = 						private$t	
+			d$.__enclos_env__$private$X = 						private$X	
+			d$.__enclos_env__$private$fixed_sample = 			private$fixed_sample
+			d$.__enclos_env__$private$y_i_t_i = 				private$y_i_t_i
+			d
+		},
+		
+		redraw_w_according_to_design = function(){
+			for (t in 1 : private$t){
+				private$w[t] = private$assign_wt()
+			}			
+			#the designs are implemented here for all n for speed
+			if (private$design == "CRD"){
+				
+			} else if (private$design == "iBCRD"){
+				
+			} else if (private$design == "Efron"){
+
+			} else if (private$design == "Atkinson"){
+
+			} else { #KK design
+
+			}				
+			private$t = private$n #mark the experiment as complete
+		},		
 		
 		all_assignments_allocated = function(){
 			if (private$fixed_sample_size){
@@ -553,33 +602,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		all_responses_not_yet_recorded = function(){
 			sum(!is.na(private$y)) != length(private$w)
 		},
-		
-		duplicate = function(){
-			self$assert_experiment_completed() #can't duplicate without the experiment being done
-			d = SeqDesign$new(
-				design = 								private$design, 
-				response_type = 						private$response_type,  
-				prob_T = 								private$prob_T, 
-				include_is_missing_as_a_new_feature = 	private$include_is_missing_as_a_new_feature, 
-				verbose = 								FALSE
-			)
-			#we are assuming the experiment is complete so we have private$t = 0 initialized
-			d$.__enclos_env__$private$Xraw = 					private$Xraw
-			d$.__enclos_env__$private$Ximp = 					private$Ximp
-			d$.__enclos_env__$private$y = 						private$y
-			d$.__enclos_env__$private$dead = 					private$dead
-			d$.__enclos_env__$private$w = 						private$w		
-			d$.__enclos_env__$private$t = 						private$t	
-			d$.__enclos_env__$private$X = 						private$X	
-			d$.__enclos_env__$private$fixed_sample = 			private$fixed_sample
-			d$.__enclos_env__$private$fixed_sample_helper = 	private$fixed_sample_helper	
-			d$.__enclos_env__$private$y_i_t_i = 				private$y_i_t_i
-			d$.__enclos_env__$private$isKK = 					private$isKK
-			d$.__enclos_env__$private$isKK21 = 					private$isKK21
-			d$.__enclos_env__$private$t_0 = 					private$t_0
-			d$.__enclos_env__$private$match_indic = 			private$match_indic
-			d
-		},	
 		
 		covariate_impute_if_necessary_and_then_create_model_matrix = function(){
 			#make a copy... sometimes the raw will be the same as the imputed if there are no imputations
@@ -778,32 +800,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 			list(M = M, js = js)
 		},
 		
-		redraw_w_according_to_design = function(){
-			#the designs are implemented here for all n for speed
-			if (private$design == "CRD"){
-				private$w = rbinom(private$n, 1, private$prob_T)
-			} else if (private$design == "iBCRD"){
-				n_T_total = round(private$n * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
-				private$w = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$n - n_T_total)))
-			} else if (private$design == "Efron"){
-				for (t in 1 : private$n){
-					private$w[t] = private$assign_wt_Efron()
-				}
-			} else if (private$design == "Atkinson"){
-				private$t = 0 #reset
-				for (t in 1 : private$n){
-					private$t = private$t + 1
-					private$w[t] = private$assign_wt_Atkinson()
-				}
-			} else { #KK design
-				m_vec = private$match_indic
-				#we now rearrange within each match set (and the reservoir)
-				for (m in 0 : max(m_vec)){
-					private$w[m_vec == m] = shuffle_cpp(private$w[m_vec == m]) 
-				}
-			}				
-			private$t = private$n #mark the experiment as complete
-		},
 		
 		assign_wt_CRD = function(){
 			rbinom(1, 1, private$prob_T)

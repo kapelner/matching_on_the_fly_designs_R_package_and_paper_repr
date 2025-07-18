@@ -45,6 +45,10 @@ SeqDesignCRD = R6::R6Class("SeqDesignCRD",
 	private = list(
 		assign_wt = function(){
 			private$assign_wt_CRD()
+		},
+		
+		redraw_w_according_to_design = function(){
+			private$w = rbinom(private$t, 1, private$prob_T)
 		}
 	)
 )

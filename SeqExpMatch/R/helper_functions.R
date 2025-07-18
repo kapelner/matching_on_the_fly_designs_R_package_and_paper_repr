@@ -1,3 +1,4 @@
+
 assertResponseType = function(response_type, needed_response_type){
 	if (response_type != needed_response_type){
 		stop("This type of inference is only available for ", needed_response_type, " responses.")

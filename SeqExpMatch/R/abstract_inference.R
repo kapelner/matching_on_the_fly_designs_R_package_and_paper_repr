@@ -47,7 +47,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			
 			private$any_censoring = seq_des_obj$any_censoring()
 			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
-			private$n = private$seq_des_obj_priv_int$n
+			private$n = seq_des_obj$get_n()
 			private$yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
 			private$yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
 			private$deadTs = private$seq_des_obj_priv_int$dead[private$seq_des_obj_priv_int$w == 1]

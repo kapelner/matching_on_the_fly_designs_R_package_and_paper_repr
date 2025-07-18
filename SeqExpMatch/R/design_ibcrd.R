@@ -52,5 +52,10 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 			nC = sum(private$w == 0, na.rm = TRUE)
 			sample(c(rep(1, n_T_total - nT), rep(0, n_T_total - nC)), 1)
 		},
+		
+		redraw_w_according_to_design = function(){
+			n_T_total = round(private$t * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
+			private$w = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$t - n_T_total)))
+		}
 	)
 )
