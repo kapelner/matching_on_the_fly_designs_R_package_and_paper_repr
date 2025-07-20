@@ -11,9 +11,9 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 	public = list(
 		#' 				
 		#' @description
-		#' Initialize a sequential experimental design
-		#' 
-  		#' @param response_type 	The data type of response values which must be one of the following: 
+		#' Initialize an Efron's weighted coin sequential experimental design
+		#'
+		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous", 
 		#' 							"incidence", 
 		#' 							"proportion", 
@@ -28,10 +28,10 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
 		#' @param weighted_coin_prob The probability of Efron's weighted coin. Defualt is \code{NULL} for Efron's default of 2/3.
-		#' @return 			A new `SeqDesign` object of the specific type
+		#' @return 			A new `SeqDesignEfron` object
 		#' 
 		#' @examples
-		#' seq_des = SeqDesignKK14$new(response_type = "continuous")
+		#' seq_des = SeqDesignEfron$new(response_type = "continuous")
 		#'  
 		initialize = function(
 			response_type, 

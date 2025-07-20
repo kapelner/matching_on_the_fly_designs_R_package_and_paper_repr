@@ -35,7 +35,6 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
 
 
-<<<<<<< HEAD
 seq_des_inf = SeqDesignInferenceKKCompoundMeanDiff$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
@@ -46,9 +45,8 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
 
 seq_des_inf = SeqDesignInferencePropUniBetaRegr$new(seq_des_obj)
-=======
+
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
->>>>>>> a19de01be310c7acc97b33cde055dab400cea0da
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval()

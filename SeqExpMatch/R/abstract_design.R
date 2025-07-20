@@ -11,7 +11,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' @description
 		#' Initialize a sequential experimental design
 		#' 
-  		#' @param response_type 	The data type of response values which must be one of the following: 
+		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous", 
 		#' 							"incidence", 
 		#' 							"proportion", 
@@ -25,6 +25,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
+		#'
 		#' @return 			A new `SeqDesign` object of the specific type
 		#' 
 		#' @examples
@@ -75,7 +76,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 			}
 
 			if (private$verbose){
-				cat(paste0("Intialized a ", design, " experiment with response type ", response_type, " and ", ifelse(private$fixed_sample, " fixed sample", " not fixed sample") ".\n"))
+				cat(paste0("Intialized a ", 
+				design, 
+				" experiment with response type ", 
+				response_type, 
+				" and ", 
+				ifelse(private$fixed_sample, " fixed sample", " not fixed sample"),
+				 ".\n"))
 			}					
 		},
 		
@@ -291,7 +298,16 @@ SeqDesign = R6::R6Class("SeqDesign",
 				self$add_subject_response(t, ys[t], deads[t])
 			}
 		},
-		
+
+		#' @description
+		#' Check if this design was initialized with a fixed sample size n
+		#' 
+		#' @examples
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+		#' seq_des$is_fixed_sample_size() #returns TRUE
+		#' seq_des = SeqDesignCRD$new(response_type = "continuous")
+		#' seq_des$is_fixed_sample_size() #returns FALSE
+		#' 
 		is_fixed_sample_size = function(){
 			private$fixed_sample_size
 		},

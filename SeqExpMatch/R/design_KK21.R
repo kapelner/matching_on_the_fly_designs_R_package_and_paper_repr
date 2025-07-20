@@ -11,9 +11,10 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 	public = list(
 		#' 
 		#' @description
-		#' Initialize a sequential experimental design
-		#' 
-  		#' @param response_type 	The data type of response values which must be one of the following: 
+		#' Initialize a matching-on-the-fly sequential experimental design which matches based on Kapelner and Krieger (2021) with
+		#' option to use matching parameters of Morrison and Owen (2025)
+		#'
+		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous", 
 		#' 							"incidence", 
 		#' 							"proportion", 
@@ -27,13 +28,20 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35%.
+		#' @param morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
+		#'					If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
+		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
+		#' @param p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
 		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
 		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y/(1-y))
 		#' 									instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
-		#' @return 			A new `SeqDesign` object of the specific type instantiated
+
+		#' @return 			A new `SeqDesignKK21` object
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(response_type = "continuous")
+		#' seq_des = SeqDesignKK21$new(response_type = "continuous")
 		#'  
 		initialize = function(
 			response_type, 

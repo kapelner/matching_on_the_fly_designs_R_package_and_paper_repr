@@ -1,5 +1,0 @@
-export(SeqDesign)
-export(SeqDesignInferenceSimpleMeanDiffMLE)
-import(checkmate)
-import(stats)
-useDynLib(SeqExpMatch)

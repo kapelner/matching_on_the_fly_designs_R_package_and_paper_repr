@@ -7,13 +7,13 @@
 #' 
 #' @export
 SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
-	inherits = SeqDesign,
+	inherit = SeqDesign,
 	public = list(
 		#' 				
 		#' @description
 		#' Initialize a sequential experimental design
-		#' 
-  		#' @param response_type 	The data type of response values which must be one of the following: 
+		#'
+		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous", 
 		#' 							"incidence", 
 		#' 							"proportion", 

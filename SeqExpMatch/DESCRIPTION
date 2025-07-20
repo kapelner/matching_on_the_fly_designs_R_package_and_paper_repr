@@ -45,11 +45,18 @@ Imports:
     checkmate    
 URL: https://github.com/kapelnematching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.2
-Collate: 
+Collate:
     'RcppExports.R'
     'SeqExpMatch.R'
     'helper_functions.R'
-    'design.R'
+    'abstract_design.R'
+    'design_crd.R'
+    'design_ibcrd.R'
+    'design_Atkinson.R'
+    'design_Efron.R'
+    'design_KK14.R'
+    'design_KK21.R'
+    'design_KK21_stepwise.R'
     'abstract_inference.R'
     'abstract_inference_mle_or_KM.R'
     'abstract_inference_mle_or_KM_summary_table.R'

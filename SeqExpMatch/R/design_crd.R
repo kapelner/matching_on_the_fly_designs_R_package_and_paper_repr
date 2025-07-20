@@ -7,13 +7,13 @@
 #' 
 #' @export
 SeqDesignCRD = R6::R6Class("SeqDesignCRD",
-	inherits = SeqDesign,
+	inherit = SeqDesign,
 	public = list(
 		#' 				
 		#' @description
-		#' Initialize a sequential experimental design
-		#' 
-  		#' @param response_type 	The data type of response values which must be one of the following: 
+		#' Initialize a completely randomized sequential experimental design
+		#'
+		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous", 
 		#' 							"incidence", 
 		#' 							"proportion", 
@@ -27,10 +27,10 @@ SeqDesignCRD = R6::R6Class("SeqDesignCRD",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @return 			A new `SeqDesign` object of the specific type
+		#' @return 			A new `SeqDesignCRD` object
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(response_type = "continuous")
+		#' seq_des = SeqDesignCRD$new(response_type = "continuous")
 		#'  
 		initialize = function(
 						response_type, 
