@@ -17,7 +17,7 @@ if (!exists("atkinson_assignment")){
 				tryCatch({
 					XtX = t(X_t_min_1) %*% X_t_min_1
 					
-	#				if (Matrix::rankMatrix(XtX) < t - 1){
+	#				if (matrix_rank_cpp(XtX) < t - 1){
 	#					print(length(unique(X_t_min_1[1, ])))
 	#					print(X_t_min_1)
 	#				}

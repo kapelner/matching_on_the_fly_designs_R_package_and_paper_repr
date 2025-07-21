@@ -35,7 +35,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				response_type, 
 				prob_T = 0.5, 
 				include_is_missing_as_a_new_feature = TRUE, 
-				verbose = TRUE,
+				verbose = FALSE,
 				n = NULL
 			) {
 			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
@@ -52,16 +52,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$fixed_sample = TRUE
 			}
 			
-			
-			private$isKK = grepl("KK", design)				
-
-			if (design == "iBCRD" & !all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE)){
-				stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
-			}
-			
 			private$prob_T = prob_T			
-			private$response_type = response_type	
-			private$design = design
+			private$response_type = response_type
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
 			private$verbose = verbose
 			
@@ -69,19 +61,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$y = 	array(NA, n)
 				private$w = 	array(NA, n)
 				private$dead =  array(NA, n)
-			} else {
-				private$y = 	NA
-				private$w = 	NA
-				private$dead =  NA					
 			}
 
 			if (private$verbose){
 				cat(paste0("Intialized a ", 
-				design, 
+				class(self)[1], 
 				" experiment with response type ", 
 				response_type, 
 				" and ", 
-				ifelse(private$fixed_sample, " fixed sample", " not fixed sample"),
+				ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
 				 ".\n"))
 			}					
 		},
@@ -100,7 +88,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		add_subject_to_experiment_and_assign = function(x_new, allow_new_cols = TRUE) {					
 			assertDataFrame(x_new, nrows = 1)
 			assertClass(x_new, "data.table")
-			if (private$fixed_size & private$all_assignments_allocated()){
+			if (private$fixed_sample & private$all_assignments_allocated()){
 				stop(paste("You cannot add any new subjects as all n =", private$n, "subjects have already been added."))
 			}
 			j_with_NAs = is.na(unlist(x_new))
@@ -178,7 +166,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
 			#thus, designs cannot utilize imputations nor model matrices until this condition is met
 			#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
-			if (private$t > (ncol(private$Xraw) + 2) & !(private$design %in% c("CRD", "iBCRD", "Efron"))){ #we only need to impute if we need the X's to make the allocation decisions 
+			if (private$t > (ncol(private$Xraw) + 2) & private$uses_covariates){ #we only need to impute if we need the X's to make the allocation decisions 
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			}
 			
@@ -201,7 +189,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' seq_des$print_current_subject_assignment()
 		#' 
 		print_current_subject_assignment = function(){
-			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", private$design, "\n")
+			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
 		},
 		
 		#' @description
@@ -232,7 +220,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", private$t))	
 			}
 			
-			if (!is.na(private$y[t])){
+			if (length(private$y) >= t & !is.na(private$y[t])){
 				warning(paste("Overwriting previous response for t =", t, "y[t] =", private$y[t]))
 			}
 			
@@ -256,12 +244,14 @@ SeqDesign = R6::R6Class("SeqDesign",
 				stop("censored observations are only available for count or survival response types")
 			}
 			#finally, record the response value and the time at which it was recorded
-			if (private$fixed_sample){
+			if (private$fixed_sample | t <= length(private$y)){
 				private$y[t] = y
 				private$dead[t] = dead
-			} else {
+			} else if (t == length(private$y) + 1){
 				private$y = c(private$y, y)
 				private$dead = c(private$dead, dead)
+			} else {
+				stop("You cannot add a response for a subject that has not yet arrived when the sample size is not fixed in advance.")
 			}
 			private$y_i_t_i[[t]] = private$t
 		},
@@ -309,7 +299,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' seq_des$is_fixed_sample_size() #returns FALSE
 		#' 
 		is_fixed_sample_size = function(){
-			private$fixed_sample_size
+			private$fixed_sample
 		},
 		
 		#' @description
@@ -337,7 +327,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' 
 		#' seq_des$assert_experiment_completed() #no response means the assert is true
 		assert_experiment_completed = function(){
-			if (private$fixed_sample_size & self$all_assignments_not_yet_allocated()){
+			#cat("SeqDesign assert_experiment_completed\n")
+			if (private$fixed_sample & private$all_assignments_not_yet_allocated()){
 				stop("This experiment is incomplete as all n assignments aren't administered yet.")
 			}
 			if (private$all_responses_not_yet_recorded()){
@@ -372,7 +363,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' seq_des$check_experiment_completed() #returns TRUE
 		#' 
 		check_experiment_completed = function(){
-			if (private$fixed_sample_size & private$fixed_sample_helper$all_assignments_not_yet_allocated(self$t)){
+			if (private$fixed_sample & private$all_assignments_not_yet_allocated(self$t)){
 				FALSE
 			} else if (private$all_responses_not_yet_recorded()){
 				FALSE
@@ -450,13 +441,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$t
 		},
 		
-		#' Get design
-		#'
-		#' @return 			The experimenter-specified type of sequential experimental design (see constructor's documentation).	
-		get_design = function(){
-			private$design
-		},
-		
 		#' Get raw X information
 		#'
 		#' @return 			A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of 
@@ -498,7 +482,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#'
 		#' @return 			The number of subjects
 		get_n = function(){
-			ifelse(self$is_fixed_sample, self$n, self$t)
+			ifelse(private$fixed_sample, private$n, private$t)
 		},
 		
 		#' Get dead
@@ -546,14 +530,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 	private = list(
 		t = 0L,
 		n = NULL,
-		design = NULL,
 		Xraw = data.table(),
 		Ximp = data.table(),
 		X = NULL,
-		y = NULL,	
-		dead = NULL,
+		w = numeric(),
+		y = numeric(),	
+		dead = numeric(),
 		prob_T = NULL,
-		w = NULL,
 		response_type = NULL,
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
@@ -562,14 +545,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 
 		duplicate = function(){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
-			
-			design_class_constructor = get(class(self)[1])$new 
-			d = do.call(design_class_constructor, args = list(
-				design = 								private$design, 
+			seq_design_class_constructor = get(class(self)[1])$new
+			d = do.call(seq_design_class_constructor, args = list(
 				response_type = 						private$response_type,  
 				prob_T = 								private$prob_T, 
 				include_is_missing_as_a_new_feature = 	private$include_is_missing_as_a_new_feature, 
-				verbose = 								FALSE
+				verbose = 								FALSE, #when we're duplicating, we want messages to be off
+				n = 									private$n
 			))
 			#we are assuming the experiment is complete so we have private$t = 0 initialized
 			d$.__enclos_env__$private$Xraw = 					private$Xraw
@@ -587,24 +569,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 		redraw_w_according_to_design = function(){
 			for (t in 1 : private$t){
 				private$w[t] = private$assign_wt()
-			}			
-			#the designs are implemented here for all n for speed
-			if (private$design == "CRD"){
-				
-			} else if (private$design == "iBCRD"){
-				
-			} else if (private$design == "Efron"){
-
-			} else if (private$design == "Atkinson"){
-
-			} else { #KK design
-
-			}				
-			private$t = private$n #mark the experiment as complete
+			}
 		},		
 		
 		all_assignments_allocated = function(){
-			if (private$fixed_sample_size){
+			#cat("SeqDesign all_assignments_allocated\n")
+			if (private$fixed_sample){
 				private$t >= private$n
 			} else {
 				FALSE
@@ -612,10 +582,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 
 		all_assignments_not_yet_allocated = function(){
-			!self$all_assignments_not_yet_allocated()
+			!private$all_assignments_allocated()
 		},
 		
 		all_responses_not_yet_recorded = function(){
+			#cat("SeqDesign all_responses_not_yet_recorded\n")
 			sum(!is.na(private$y)) != length(private$w)
 		},
 		
@@ -784,7 +755,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (scaled & length(is) > 1){
 					#we need to scale all data including the tth
 					Xint = rbind(Xint, xt)
-					Xint = apply(Xint, 2, scale)
+					Xint_colnames = colnames(Xint)
+					Xint = scale_columns_cpp(Xint)
+					colnames(Xint) = Xint_colnames
 					#if the column is all one unique value, it goes NaN after scaling, so we have to patch that up
 					Xint[is.nan(Xint)] = 0
 				}
@@ -792,7 +765,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				drop_obj = private$drop_linearly_dependent_cols(Xint)
 				Xint = drop_obj$M
 				xt = xt[drop_obj$js] #make sure xt comports with Xint!
-				rank = Matrix::rankMatrix(Xint)
+				rank = matrix_rank_cpp(Xint)
 				
 				if (scaled & length(is) > 1){
 					list(Xint = Xint[1 : (nrow(Xint) - 1), , drop = FALSE], rank = rank, xt = Xint[nrow(Xint), ])
@@ -803,7 +776,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 		
 		drop_linearly_dependent_cols = function(M){
-			rank = Matrix::rankMatrix(M)
+			rank = matrix_rank_cpp(M)
 			js = 1 : ncol(M)
 			#it's possible that there may be linearly dependent columns
 			if (rank != ncol(M)){

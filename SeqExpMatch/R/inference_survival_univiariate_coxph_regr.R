@@ -18,16 +18,13 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			assertResponseType(seq_des_obj$get_response_type(), "survival")			
 			super$initialize(seq_des_obj, num_cores, verbose)
-			private$cached_values = super$get_cached_values()
 		}
 	),
 	
-	private = list(		
-		cached_values = list(),
-		
+	private = list(
 		shared = function(){
 			private$compute_cox_regression(
 				data_obj = data.frame(w = private$seq_des_obj_priv_int$w)

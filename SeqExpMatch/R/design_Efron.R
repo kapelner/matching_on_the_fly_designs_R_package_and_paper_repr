@@ -37,11 +37,12 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			response_type, 
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
-			verbose = TRUE,
+			verbose = FALSE,
 			n,
 			weighted_coin_prob = NULL
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
+			self$assert_fixed_sample()
 
 			if (is.null(weighted_coin_prob)){
 				weighted_coin_prob = 2 / 3 #default Efron coin
@@ -53,6 +54,7 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		
 	),
 	private = list(
+		uses_covariates = FALSE,
 		weighted_coin_prob = NULL,
 		
 		duplicate = function(){

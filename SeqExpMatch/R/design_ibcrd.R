@@ -38,14 +38,19 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 						response_type, 
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE, 
-						verbose = TRUE,
+						verbose = FALSE,
 						n = NULL
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
 			self$assert_fixed_sample()
+			if (!all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE)){
+				stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
+			}
 		}
 	),
 	private = list(
+		uses_covariates = FALSE,
+		
 		assign_wt = function(){
 			n_T_total = round(private$n * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
 			nT = sum(private$w == 1, na.rm = TRUE)

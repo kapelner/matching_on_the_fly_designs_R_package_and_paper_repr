@@ -27,8 +27,8 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10%.
-		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35%.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.
 		#' @param morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
 		#'					If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
@@ -46,7 +46,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			response_type, 
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
-			verbose = TRUE,
+			verbose = FALSE,
 			n = NULL,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -60,7 +60,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 	),
 	private = list(
 		
-		compute_weights = function(){ #stepwise function
+		compute_weights = function(all_subject_data){ #stepwise function
 			private[[paste0("compute_weights_KK21stepwise_", private$response_type)]](
 				all_subject_data$X_all_with_y_scaled, #to calculate weights, we need to use only the data that has y's!
 				all_subject_data$y_all,
@@ -95,22 +95,12 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		},
 		
 		compute_weights_KK21stepwise_continuous = function(xs, ys, ws, ...){
-			private$compute_weights_KK21stepwise(xs, scale(ys), ws, function(response_obj, covariate_data_matrix){
-				
+			private$compute_weights_KK21stepwise(xs, scale(ys), ws, function(response_obj, covariate_data_matrix){				
 #				ols_mod = lm(response_obj ~ covariate_data_matrix)
 #				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
 				
-				#25% SPEEDUP
-			    Xmat = cbind(1, covariate_data_matrix)
-			    qr_decomp = qr(Xmat)
-			    Qmat = qr.Q(qr_decomp)
-			    Rmat = qr.R(qr_decomp)
-			    Qmatt = t(Qmat)
-			    Rmatt = t(Rmat)
-			    RtRinv = solve(Rmatt %*% Rmat)
-			    b = (RtRinv %*% Rmatt %*% Qmatt %*% response_obj)
-			    s_sq_e = sum((response_obj - Xmat %*% b)^2) / (length(response_obj) - ncol(Qmat))
-			    abs(b[2]) / sqrt(s_sq_e * RtRinv[2, 2])
+				mod = fast_ols_with_sd_cpp(cbind(1, covariate_data_matrix), response_obj)
+				abs(mod$b[2] / mod$s_b[2])
 			})
 		},
 		
@@ -118,6 +108,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
 				abs(coef(summary_glm_lean(logistic_regr_mod))[2, 3])
+
+#				mod = fast_logistic_regression_with_sd_cpp(covariate_data_matrix, response_obj)
+#				abs(mod$b[1] / mod$s_b[1])
 			})
 		},
 		

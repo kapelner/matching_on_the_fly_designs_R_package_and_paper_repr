@@ -114,9 +114,9 @@ a new column, we allow missingness to be its own level. The default is \code{TRU
 
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
-\item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10%.}
+\item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
 
-\item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35%.}
+\item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.}
 
 \item{\code{morrison}}{Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
 If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n

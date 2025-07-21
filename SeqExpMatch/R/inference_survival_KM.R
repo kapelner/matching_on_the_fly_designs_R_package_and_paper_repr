@@ -18,10 +18,9 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			assertResponseType(seq_des_obj$get_response_type(), "survival")			
 			super$initialize(seq_des_obj, num_cores, verbose)
-			private$cached_values = super$get_cached_values()
 		},
 		
 		#' @description
@@ -115,14 +114,7 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		}
 	),
 	
-	private = list(		
-		cached_values = list(),
-		
-		shared = function(){
-
-		}
-		
-	)		
+	private = list()		
 )
 
 #					test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))

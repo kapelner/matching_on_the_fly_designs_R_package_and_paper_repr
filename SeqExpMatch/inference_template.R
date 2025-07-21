@@ -18,11 +18,10 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")			
 			super$initialize(seq_des_obj, num_cores, verbose)	
 			assertNoCensoring(private$any_censoring)
-			private$cached_values = super$get_cached_values()
 		},
 		
 		#' @description
@@ -124,8 +123,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		}
 	),
 	
-	private = list(		
-		cached_values = list(),
+	private = list(
 		
 		shared = function(){
 

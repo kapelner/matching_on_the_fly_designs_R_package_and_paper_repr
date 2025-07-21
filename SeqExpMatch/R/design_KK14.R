@@ -27,8 +27,8 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10%.
-		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35%.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.
 		#' @param morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
 		#'					If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
@@ -42,7 +42,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			response_type, 
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
-			verbose = TRUE,
+			verbose = FALSE,
 			n = NULL,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -104,6 +104,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		}
 	),
 	private = list(
+		uses_covariates = TRUE,
 		morrison = NULL,
 		t_0 = NULL,	
 		lambda = NULL,

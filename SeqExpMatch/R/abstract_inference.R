@@ -25,21 +25,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#'  
 		#' @return A new `SeqDesignTest` object.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){	
 			assertClass(seq_des_obj, "SeqDesign")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
@@ -54,9 +41,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$deadCs = private$seq_des_obj_priv_int$dead[private$seq_des_obj_priv_int$w == 0]
 			private$num_cores = num_cores
 			private$verbose = verbose			
-#			if (private$verbose){
-#				cat(paste0("Intialized inference methods for a ", seq_des_obj$design, " design, response type ", response_type, ", estimation type ", estimate_type, " and test type: ", test_type, ".\n"))
-#			}	
+			if (private$verbose){
+				cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
+			}
 		},		
 		
 		#' @description
@@ -237,30 +224,24 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	),
 	
 	private = list(
-		seq_des_obj_priv_int = NULL, 			seq_des_obj_priv_int_obj = function(){private$seq_des_obj_priv_int},
-		any_censoring = NULL,					get_any_censoring = function(){private$any_censoring},
-		num_cores = NULL,		 				get_num_cores = function(){private$num_cores},
-		verbose = FALSE,		 				get_verbose = function(){private$verbose},
-		n = NULL,		 						get_n = function(){private$n},
-		p = NULL,		 						get_p = function(){private$p},
+		seq_des_obj_priv_int = NULL, 			#seq_des_obj_priv_int_obj = function(){private$seq_des_obj_priv_int},
+		any_censoring = NULL,					#get_any_censoring = function(){private$any_censoring},
+		num_cores = NULL,		 				#get_num_cores = function(){private$num_cores},
+		verbose = FALSE,		 				#get_verbose = function(){private$verbose},
+		n = NULL,		 						#get_n = function(){private$n},
+		p = NULL,		 						#get_p = function(){private$p},
 		X = NULL,								#get_X is defined later as it needs some logic dependent on the design type
-		yTs = NULL,		 						get_yTs = function(){private$yTs},
-		yCs = NULL,		 						get_yCs = function(){private$yCs},
-		deadTs = NULL,							get_deadTs = function(){private$deadTs},
-		deadCs = NULL,							get_deadCs = function(){private$deadCs},
-		cached_values = list(),					get_cached_values = function(){private$cached_values},
+		yTs = NULL,		 						#get_yTs = function(){private$yTs},
+		yCs = NULL,		 						#get_yCs = function(){private$yCs},
+		deadTs = NULL,							#get_deadTs = function(){private$deadTs},
+		deadCs = NULL,							#get_deadCs = function(){private$deadCs},
+		cached_values = list(),					#get_cached_values = function(){private$cached_values},
 		
 		get_X = function(){
 			if (is.null(private$X)){
 				if (is.null(private$seq_des_obj_priv_int$X)){
 					private$seq_des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
-				}
-	#			if (seq_des_obj$design %in% c("CRD", "iBCRD", "Efron")){ #imputations were never done yet
-	#				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
-	#			}
-	#			if (private$isKK & uniqueN(private$match_indic) == 1){ #imputations were never done yet either
-	#				seq_des_obj$.__enclos_env__$private$covariate_impute_if_necessary_and_then_create_model_matrix()
-	#			}	
+				}	
 				private$X = private$seq_des_obj_priv_int$compute_all_subject_data()$X_all
 			}
 			private$X

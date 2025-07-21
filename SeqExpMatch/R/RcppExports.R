@@ -5,8 +5,32 @@ compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, r
     .Call(`_SeqExpMatch_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
+fast_logistic_regression_cpp <- function(X, y, max_iter = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, max_iter, tol)
+}
+
+fast_logistic_regression_with_sd_cpp <- function(X, y, max_iter = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_logistic_regression_with_sd_cpp`, X, y, max_iter, tol)
+}
+
+matrix_rank_cpp <- function(A, tol = 1e-12) {
+    .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
+}
+
+fast_ols_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
+}
+
+fast_ols_with_sd_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ols_with_sd_cpp`, X, y)
+}
+
 sample_int_replace_cpp <- function(n, size) {
     .Call(`_SeqExpMatch_sample_int_replace_cpp`, n, size)
+}
+
+scale_columns_cpp <- function(X) {
+    .Call(`_SeqExpMatch_scale_columns_cpp`, X)
 }
 
 shuffle_cpp <- function(w) {

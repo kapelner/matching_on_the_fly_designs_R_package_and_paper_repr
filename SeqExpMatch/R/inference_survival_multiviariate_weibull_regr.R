@@ -18,7 +18,7 @@ SeqDesignInferenceSurvivalMultiWeibullRegr = R6::R6Class("SeqDesignInferenceSurv
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			super$initialize(seq_des_obj, num_cores, verbose)
 		}
 	),

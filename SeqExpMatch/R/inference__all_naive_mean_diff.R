@@ -18,10 +18,9 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){						
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			super$initialize(seq_des_obj, num_cores, verbose)	
 			assertNoCensoring(private$any_censoring)
-			private$cached_values = super$get_cached_values()			
 		},
 		
 		#' @description
@@ -44,7 +43,7 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' 	
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
-				private$cached_values$beta_hat_T = mean(super$get_yTs()) - mean(super$get_yCs())
+				private$cached_values$beta_hat_T = mean(private$yTs) - mean(private$yCs)
 			}			
 			private$cached_values$beta_hat_T
 		},
@@ -121,23 +120,22 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 	),
 	
 	private = list(		
-		cached_values = list(),
-		
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
 			}
 			
-			nT = length(super$get_yTs())
-			nC = length(super$get_yCs())
-			s_1_sq = var(super$get_yTs()) / nT 
-			s_2_sq = var(super$get_yCs()) / nC
+			yTs = private$yTs
+			yCs = private$yCs
+			nT = length(yTs)
+			nC = length(yCs)
+			s_1_sq = var(yTs) / nT 
+			s_2_sq = var(yCs) / nC
 			private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
 			private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
 											s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)
 										) #Welch-Satterthwaite formula
 			private$cached_values$is_z = FALSE
-		}
-		
+		}		
 	)		
 )

@@ -16,9 +16,8 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'				
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){
-			super$initialize(seq_des_obj, num_cores, verbose)	
-			private$cached_values = super$get_cached_values()
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 		
 		#' @description
@@ -126,9 +125,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 			
 		}		
 	),
-	private = list(
-		cached_values = list()	
-	)
+	private = list()
 )
 		
 		

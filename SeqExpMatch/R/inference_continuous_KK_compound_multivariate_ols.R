@@ -16,11 +16,10 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' 							or bootstrap inference.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)				
-			private$cached_values = super$get_cached_values()
+			assertNoCensoring(private$any_censoring)
 		},
 		
 		#' @description
@@ -153,8 +152,6 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 	),
 	
 	private = list(		
-		cached_values = list(),
-		
 		shared = function(){
 			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
 				private$cached_values$coefs_matched = coef(summary(lm(private$KKstats$y_matched_diffs ~ private$KKstats$X_matched_diffs)))

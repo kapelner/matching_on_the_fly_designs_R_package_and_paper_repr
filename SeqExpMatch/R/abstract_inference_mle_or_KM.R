@@ -15,14 +15,14 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'				
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){
-			super$initialize(seq_des_obj, num_cores, verbose)	
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 		
 		#' @description
 		#' Creates the boostrap distribution of the estimate for the treatment effect
 		#' 
-		#' @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
+		#' @param B						Number of bootstrap samples. The default is 501.
 		#' 
 		#' @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
 		#' 
@@ -50,7 +50,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			X = private$get_X()
 			seq_inf_class_constructor = get(class(self)[1])$new 
 			
-			if (super$get_num_cores() == 1){ #easier on the OS I think...
+			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_bs = array(NA, B)
 				for (r in 1 : B){
 					#draw a bootstrap sample
@@ -67,7 +67,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_bs)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
-				cl = doParallel::makeCluster(super$get_num_cores())
+				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
 				doParallel::clusterExport(cl, list("seq_des_obj", "n", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())
@@ -87,7 +87,8 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				}
 				doParallel::stopCluster(cl)
 				rm(cl); gc()
-			}			
+			}
+			beta_hat_T_bs		
 		},
 			
 		#' @description
@@ -122,16 +123,16 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			quantile(beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
 		}	
 	),
-	private = list(					
+	private = list(
 		compute_z_or_t_ci_from_s_and_df = function(alpha){
 			one_minus_alpha_over_two = 1 - alpha / 2
-			z_or_t_val = 	if (super$get_cached_values()$is_z){
+			z_or_t_val = 	if (private$cached_values$is_z){
 								qnorm(one_minus_alpha_over_two)
 							} else {
-								qt(one_minus_alpha_over_two, super$get_cached_values()$df)
+								qt(one_minus_alpha_over_two, private$cached_values$df)
 							}
-			moe = z_or_t_val * super$get_cached_values()$s_beta_hat_T
-			ci = super$get_cached_values()$beta_hat_T + c(-moe, moe)
+			moe = z_or_t_val * private$cached_values$s_beta_hat_T
+			ci = private$cached_values$beta_hat_T + c(-moe, moe)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, sep = "%")
 			ci
 		}	

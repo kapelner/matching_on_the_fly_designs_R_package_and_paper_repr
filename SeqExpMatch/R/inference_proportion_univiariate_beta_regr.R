@@ -18,17 +18,14 @@ SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRe
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			assertResponseType(seq_des_obj$get_response_type(), "proportion")			
 			super$initialize(seq_des_obj, num_cores, verbose)	
 			assertNoCensoring(private$any_censoring)
-			private$cached_values = super$get_cached_values()
 		}
 	),
 	
 	private = list(		
-		cached_values = list(),
-		
 		shared = function(){
 			private$shared_beta_regression_inference(
 				data_obj = data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w)

@@ -36,13 +36,15 @@ SeqDesignCRD = R6::R6Class("SeqDesignCRD",
 						response_type, 
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE, 
-						verbose = TRUE,
+						verbose = FALSE,
 						n = NULL
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
 		}
 	),
 	private = list(
+		uses_covariates = FALSE,
+		
 		assign_wt = function(){
 			private$assign_wt_CRD()
 		},

@@ -30,7 +30,8 @@ Depends:
 	R6,
 	checkmate,
 	Rcpp,
-	Matrix,
+	RcppArmadillo, 
+	RcppEigen,
 	data.table,
 	survival,
 	betareg,
@@ -39,7 +40,10 @@ Depends:
 	missRanger,
 	missForest,
 	doParallel
-LinkingTo: Rcpp
+LinkingTo:	
+	RcppArmadillo, 
+	RcppEigen,
+	Rcpp
 Imports:
 	Rcpp (>= 1.0.14),
     checkmate    

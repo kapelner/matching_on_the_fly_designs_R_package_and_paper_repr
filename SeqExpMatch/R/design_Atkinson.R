@@ -36,13 +36,15 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 						response_type, 
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE, 
-						verbose = TRUE,
+						verbose = FALSE,
 						n = NULL
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
 		}
 	),
 	private = list(
+		uses_covariates = TRUE,
+		
 		assign_wt = function(){			
 			#if it's too early in the trial or if all the assignments are the same, then randomize
 			if (private$t <= ncol(private$Xraw) + 2 + 1 | length(unique(private$t)) == 1){

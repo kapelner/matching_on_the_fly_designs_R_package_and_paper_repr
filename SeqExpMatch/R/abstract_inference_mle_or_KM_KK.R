@@ -14,10 +14,8 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE){
-			if (!seq_des_obj$.__enclos_env__$private$isKK){
-				stop("This type of inference is only available for KK designs.")
-			}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			assertClass(seq_des_obj, "SeqDesignKK14")
 			super$initialize(seq_des_obj, num_cores, verbose)	
 			private$helper = SeqDesignInferenceHelperKK$new(seq_des_obj, private$get_X())
 			private$KKstats = private$helper$get_post_matching_data()
@@ -61,7 +59,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			seq_inf_class_constructor = get(class(self)[1])$new 
 			match_indic_b = c(rep(0, n_reservoir), rep(1 : m, each = 2))
 			
-			if (super$get_num_cores() == 1){ #easier on the OS I think...
+			if (private$num_cores == 1){ #easier on the OS I think...
 				b_T_sims = array(NA, B)
 				for (r in 1 : B){
 					#draw a bootstrap sample of the reservoir
@@ -87,7 +85,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 				}
 				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
-				cl = doParallel::makeCluster(super$get_num_cores())
+				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)			
 				#now copy them to each core's memory
 				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())

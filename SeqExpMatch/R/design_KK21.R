@@ -28,8 +28,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10%.
-		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35%.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.
 		#' @param morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
 		#'					If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
@@ -47,7 +47,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			response_type, 
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
-			verbose = TRUE,
+			verbose = FALSE,
 			n = NULL,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -96,7 +96,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 					} else {
 						all_subject_data = private$compute_all_subject_data()
 						#1) need to calculate the weights - this is different between KK21 and KK21stepwise
-						raw_weights = private$compute_weights()						
+						raw_weights = private$compute_weights(all_subject_data)						
 
 						if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
 							stop("raw weight values illegal in design ", class(self)[1])
@@ -166,7 +166,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			wt
 		},
 		
-		compute_weights = function(){
+		compute_weights = function(all_subject_data){
 			raw_weights = array(NA, all_subject_data$rank_all_with_y_scaled)
 			for (j in 1 : all_subject_data$rank_all_with_y_scaled){
 				raw_weights[j] = private[[paste0("compute_weight_KK21_", private$response_type)]](
@@ -180,21 +180,35 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		},
 		
 		compute_weight_KK21_continuous = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			ols_mod = lm(ys_to_date ~ xs_to_date[, j])
-			summary_ols_mod = suppressWarnings(coef(summary(ols_mod)))
-			#1 - coef(summary(logistic_regr_mod))[2, 4]
-			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_ols_mod) >= 2, abs(summary_ols_mod[2, 3]), .Machine$double.eps)
+			if (nrow(xs_to_date) == 1){
+				.Machine$double.eps
+			} else {
+				mod = fast_ols_with_sd_cpp(xs_to_date[, j, drop = FALSE], ys_to_date)
+				abs(mod$b[1] / mod$s_b[1])
+			}
+#			ols_mod = lm(ys_to_date ~ xs_to_date[, j])
+#			summary_ols_mod = suppressWarnings(coef(summary(ols_mod)))
+#			
+#			
+#			#1 - coef(summary(logistic_regr_mod))[2, 4]
+#			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+#			ifelse(nrow(summary_ols_mod) >= 2, abs(summary_ols_mod[2, 3]), )
 		},
 		
 		compute_weight_KK21_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			tryCatch({
-				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
-			}, error = function(e){return(.Machine$double.eps)}) #sometimes these glm's blow up and we don't really care that much
-			summary_logistic_regr_mod = coef(summary_glm_lean(logistic_regr_mod))
-			#1 - coef(summary(logistic_regr_mod))[2, 4]
-			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-			ifelse(nrow(summary_logistic_regr_mod) >= 2, abs(summary_logistic_regr_mod[2, 3]), .Machine$double.eps)
+			if (nrow(xs_to_date) == 1){
+				.Machine$double.eps
+			} else {
+				mod = fast_logistic_regression_with_sd_cpp(xs_to_date[, j, drop = FALSE], ys_to_date)
+				abs(mod$b[1] / mod$s_b[1])
+			}			
+#			tryCatch({
+#				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))
+#			}, error = function(e){return(.Machine$double.eps)}) #sometimes these glm's blow up and we don't really care that much
+#			summary_logistic_regr_mod = coef(summary_glm_lean(logistic_regr_mod))
+#			#1 - coef(summary(logistic_regr_mod))[2, 4]
+#			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+#			ifelse(nrow(summary_logistic_regr_mod) >= 2, abs(summary_logistic_regr_mod[2, 3]), .Machine$double.eps)
 		},
 		
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
