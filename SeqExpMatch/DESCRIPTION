@@ -32,6 +32,7 @@ Depends:
 	Rcpp,
 	RcppArmadillo, 
 	RcppEigen,
+	RcppNumerical,
 	data.table,
 	survival,
 	betareg,
@@ -43,6 +44,7 @@ Depends:
 LinkingTo:	
 	RcppArmadillo, 
 	RcppEigen,
+	RcppNumerical,
 	Rcpp
 Imports:
 	Rcpp (>= 1.0.14),

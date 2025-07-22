@@ -1,4 +1,17 @@
 
+fast_logistic_regression = function(X, y){
+	Xmm = cbind(1, X)
+	mod = glm.fit(Xmm, y, family = binomial())
+	list(b = mod$coefficients, w = mod$weights, Xmm = Xmm)
+}
+
+fast_logistic_regression_with_sd = function(X, y){
+	mod = fast_logistic_regression(X, y)
+	XtWX = eigen_Xt_times_diag_w_times_X_cpp(mod$Xmm, mod$w)	
+	mod$s_b_2 = sqrt(eigen_compute_single_entry_of_diagonal_matrix_cpp(XtWX, 2))
+	mod
+}
+
 assertResponseType = function(response_type, needed_response_type){
 	if (response_type != needed_response_type){
 		stop("This type of inference is only available for ", needed_response_type, " responses.")

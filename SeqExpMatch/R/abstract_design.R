@@ -58,9 +58,9 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$verbose = verbose
 			
 			if (private$fixed_sample){
-				private$y = 	array(NA, n)
-				private$w = 	array(NA, n)
-				private$dead =  array(NA, n)
+				private$y = 	rep(NA_real_, n)
+				private$w = 	rep(NA_real_, n)
+				private$dead =  rep(NA_real_, n)
 			}
 
 			if (private$verbose){

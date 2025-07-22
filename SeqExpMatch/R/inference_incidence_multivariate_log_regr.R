@@ -25,8 +25,13 @@ SeqDesignInferenceIncidMultiLogRegr = R6::R6Class("SeqDesignInferenceIncidMultiL
 	
 	private = list(		
 		compute_summary_table = function(){
-			coef(summary_glm_lean(suppressWarnings(glm(private$seq_des_obj_priv_int$y ~ ., 
-						data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()), family = "binomial"))))
+#			coef(summary_glm_lean(suppressWarnings(glm(private$seq_des_obj_priv_int$y ~ ., 
+#						data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()), family = "binomial"))))
+			summary_table = matrix(NA, nrow = 2, ncol = 4)
+			mod = fast_logistic_regression_with_sd(cbind(private$seq_des_obj_priv_int$w, private$get_X()), private$seq_des_obj_priv_int$y)
+			summary_table[, 1] = mod$b
+			summary_table[2, 2] = mod$s_b_2
+			summary_table
 		}	
 	)		
 )

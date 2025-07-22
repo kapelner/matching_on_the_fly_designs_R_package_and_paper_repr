@@ -1,35 +1,32 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-#include <RcppArmadillo.h>
+#include "_helper_functions.h"
 using namespace Rcpp;
 
-
-
 // [[Rcpp::export]]
-List fast_ols_cpp(const arma::mat& X, const arma::vec& y) {
-  arma::mat XtX = X.t() * X;
-  arma::vec Xty = X.t() * y;
+List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
+  Eigen::MatrixXd XtX = X.transpose() * X;
+  Eigen::VectorXd Xty = X.transpose() * y;
+
+  // Solve XtX * beta = Xty
+  Eigen::VectorXd beta = XtX.ldlt().solve(Xty);  // LDLT is stable and fast
+
   return List::create(
-    Named("b") = solve(XtX, Xty),
+    Named("b") = beta,
     Named("XtX") = XtX
   );
 }
 
 // [[Rcpp::export]]
-List fast_ols_with_sd_cpp(const arma::mat& X, const arma::vec& y) {
-  int n = X.n_rows;
-  int p = X.n_cols;
+List fast_ols_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
+  int n = X.rows();
+  int p = X.cols();
   List mod = fast_ols_cpp(X, y);
-  arma::vec beta = mod["b"];
+  Eigen::VectorXd beta = mod["b"];
 
-  // Residuals and SSE
-  arma::vec residuals = y - X * beta;
-  double rss = arma::dot(residuals, residuals); // Residual Sum of Squares
-  double sigma2_hat = rss / (n - p);            // Residual variance estimate
+  // Residuals and RSS
+  Eigen::VectorXd residuals = y - X * beta;
+  double rss = residuals.squaredNorm();     // == residuals.dot(residuals)
+  double sigma2_hat = rss / (n - p);        // Estimated residual variance
 
-  // Variance-covariance matrix of beta
-  arma::mat XtX = mod["XtX"];
-  arma::mat XtX_inv = inv_sympd(XtX);           // Use inv_sympd for speed/safety
-  mod["s_b"] = arma::sqrt(sigma2_hat * XtX_inv.diag());
-
+  mod["s_b_2"] = sqrt(sigma2_hat * eigen_compute_single_entry_of_diagonal_matrix_cpp(mod["XtX"], 2));
   return mod;
 }

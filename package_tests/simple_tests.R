@@ -49,18 +49,18 @@ seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
 seq_des_inf$compute_bootstrap_confidence_interval()
-# profvis({
+profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-# })
+})
 
 seq_des_inf = SeqDesignInferenceIncidMultiLogRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
 seq_des_inf$compute_bootstrap_confidence_interval()
-# profvis({
+profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-# })
+})
 
 seq_des_inf = SeqDesignInferencePropUniBetaRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
