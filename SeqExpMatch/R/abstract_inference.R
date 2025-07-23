@@ -219,8 +219,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				sum(beta_hat_T_diff_ws > beta_hat_T, na.rm = na.rm) / nsim_exact_test, 
 				sum(beta_hat_T_diff_ws < beta_hat_T, na.rm = na.rm) / nsim_exact_test
 			)
-		}		
-
+		}
 	),
 	
 	private = list(
@@ -246,7 +245,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			}
 			private$X
 		},		
-		
 		
 		compute_ci_lower_by_inverting_the_randomization_test = function(nsim_exact_test, l, u, pval_th, tol){
 			return(NA) #not implemented yet!!!!

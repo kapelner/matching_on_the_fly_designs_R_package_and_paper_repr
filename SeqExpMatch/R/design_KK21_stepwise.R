@@ -99,18 +99,18 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 #				ols_mod = lm(response_obj ~ covariate_data_matrix)
 #				abs(coef(suppressWarnings(summary(ols_mod)))[2, 3])
 				
-				mod = fast_ols_with_sd_cpp(cbind(1, covariate_data_matrix), response_obj)
-				abs(mod$b[2] / mod$s_b[2])
+				mod = fast_ols_with_var_cpp(cbind(1, covariate_data_matrix), response_obj)
+				abs(mod$b[2] / sqrt(mod$ssq_b_j))
 			})
 		},
 		
 		compute_weights_KK21stepwise_incidence = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
-				abs(coef(summary_glm_lean(logistic_regr_mod))[2, 3])
+#				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
+#				abs(coef(summary_glm_lean(logistic_regr_mod))[2, 3])
 
-#				mod = fast_logistic_regression_with_sd_cpp(covariate_data_matrix, response_obj)
-#				abs(mod$b[1] / mod$s_b[1])
+				mod = fast_logistic_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
+				abs(mod$b[2] / sqrt(mod$ssq_b_2))
 			})
 		},
 		

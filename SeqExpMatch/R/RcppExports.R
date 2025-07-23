@@ -25,8 +25,8 @@ fast_ols_cpp <- function(X, y) {
     .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
-fast_ols_with_sd_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ols_with_sd_cpp`, X, y)
+fast_ols_with_var_cpp <- function(X, y, j = 2L) {
+    .Call(`_SeqExpMatch_fast_ols_with_var_cpp`, X, y, j)
 }
 
 sample_int_replace_cpp <- function(n, size) {

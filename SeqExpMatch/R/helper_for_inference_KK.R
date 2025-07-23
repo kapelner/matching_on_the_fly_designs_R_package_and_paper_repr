@@ -28,13 +28,13 @@ SeqDesignInferenceHelperKK = R6::R6Class("SeqDesignInferenceHelperKK",
 				X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 				if (m > 0){
 					for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
-						yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id]
-						yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id]
-						y_matched_diffs[match_id] = mean(yTs) - mean(yCs)
+						yT = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id]
+						yC = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id]
+						y_matched_diffs[match_id] = yT - yC
 						
-						xmTs = private$X[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id, ]
-						xmCs = private$X[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id, ]
-						X_matched_diffs[match_id, ] = mean(xmTs) - mean(xmCs)
+						xmTvec = private$X[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id, ]
+						xmCvec = private$X[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id, ]
+						X_matched_diffs[match_id, ] = xmTvec - xmCvec
 					}
 				}			
 				

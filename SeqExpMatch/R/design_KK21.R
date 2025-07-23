@@ -183,8 +183,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			if (nrow(xs_to_date) == 1){
 				.Machine$double.eps
 			} else {
-				mod = fast_ols_with_sd_cpp(xs_to_date[, j, drop = FALSE], ys_to_date)
-				abs(mod$b[2] / mod$s_b[2])
+				mod = fast_ols_with_var_cpp(cbind(1, xs_to_date[, j, drop = FALSE]), ys_to_date)
+				abs(mod$b[2] / sqrt(mod$ssq_b_j))
 			}
 #			ols_mod = lm(ys_to_date ~ xs_to_date[, j])
 #			summary_ols_mod = suppressWarnings(coef(summary(ols_mod)))
@@ -199,8 +199,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			if (nrow(xs_to_date) == 1){
 				.Machine$double.eps
 			} else {
-				mod = fast_logistic_regression_with_sd(xs_to_date[, j, drop = FALSE], ys_to_date)
-				abs(mod$b[2] / mod$s_b_2)
+				mod = fast_logistic_regression_with_var(cbind(1, xs_to_date[, j, drop = FALSE]), ys_to_date)
+				abs(mod$b[2] / sqrt(mod$ssq_b_2))
 			}			
 #			tryCatch({
 #				logistic_regr_mod = suppressWarnings(glm(ys_to_date ~ xs_to_date[, j], family = "binomial"))

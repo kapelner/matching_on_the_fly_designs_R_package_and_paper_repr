@@ -16,7 +16,7 @@ List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
 }
 
 // [[Rcpp::export]]
-List fast_ols_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
+List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2) {
   int n = X.rows();
   int p = X.cols();
   List mod = fast_ols_cpp(X, y);
@@ -27,6 +27,6 @@ List fast_ols_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
   double rss = residuals.squaredNorm();     // == residuals.dot(residuals)
   double sigma2_hat = rss / (n - p);        // Estimated residual variance
 
-  mod["s_b_2"] = sqrt(sigma2_hat * eigen_compute_single_entry_of_diagonal_matrix_cpp(mod["XtX"], 2));
+  mod["ssq_b_j"] = sigma2_hat * eigen_compute_single_entry_of_diagonal_matrix_cpp(mod["XtX"], j);
   return mod;
 }

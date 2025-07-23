@@ -1,14 +1,13 @@
 
-fast_logistic_regression = function(X, y){
-	Xmm = cbind(1, X)
+fast_logistic_regression = function(Xmm, y){
 	mod = glm.fit(Xmm, y, family = binomial())
-	list(b = mod$coefficients, w = mod$weights, Xmm = Xmm)
+	list(b = mod$coefficients, w = mod$weights)
 }
 
-fast_logistic_regression_with_sd = function(X, y){
-	mod = fast_logistic_regression(X, y)
-	XtWX = eigen_Xt_times_diag_w_times_X_cpp(mod$Xmm, mod$w)	
-	mod$s_b_2 = sqrt(eigen_compute_single_entry_of_diagonal_matrix_cpp(XtWX, 2))
+fast_logistic_regression_with_var = function(Xmm, y){
+	mod = fast_logistic_regression(Xmm, y)
+	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)	
+	mod$ssq_b_2 = eigen_compute_single_entry_of_diagonal_matrix_cpp(XtWX, 2)
 	mod
 }
 

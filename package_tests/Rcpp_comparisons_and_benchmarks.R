@@ -27,13 +27,13 @@ X = as.matrix(MASS::Boston[, 1:13])
 y = MASS::Boston$medv
 Rcpp::sourceCpp("../SeqExpMatch/src/fast_ols.cpp")
 
-mod = fast_ols_with_sd_cpp(cbind(1, X), y); abs(mod$b[2] / mod$s_b_2)
+mod = fast_ols_with_var_cpp(cbind(1, X), y); abs(mod$b[2] / sqrt(mod$ssq_b_j))
 mod$b
 mod = lm(y ~ X); abs(coef(summary(mod))[2, 3])
 mod$coefficients
 microbenchmark(
   Rcpp_opt = {mod = fast_ols_cpp(cbind(1, X), y); abs(mod$b[2] / mod$s_b[2])},
-  Rcpp = {mod = fast_ols_with_sd_cpp(cbind(1, X), y); abs(mod$b[2] / mod$s_b_2)},
+  Rcpp = {mod = fast_ols_with_var_cpp(cbind(1, X), y); abs(mod$b[2] / sqrt(mod$ssq_b_j))},
   Rcppeigen = {mod = fastLm(cbind(1, X), y); mod$coefficients[2] / mod$stderr[2]},
   R = {mod = lm(y ~ X); abs(coef(summary(mod))[2, 3])},
   times = 100

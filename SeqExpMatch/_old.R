@@ -307,24 +307,7 @@
 			}
 			private$inference_model
 		},
-		
-		
-		
-		
-		#takes care of aliases without duplication
-		simplified_estimate_type = function(){
-		  	if (grepl("simple_mean_difference", self$estimate_type)){
-		    	"simple_mean_difference"
-		  	} else if (grepl("KK_compound_mean_difference", self$estimate_type)){
-		    	"KK_compound_mean_difference"
-		  	} else {
-				self$estimate_type
-			}
-		},
-		
-		
-		
-		
+	
 		compute_incidence_KK_multivariate_logistic_regression_with_matching_dummies_inference = function(){
 			tryCatch({
 				logistic_regr_mod = suppressWarnings(glm(private$seq_des_obj_priv_int$y ~ ., 
@@ -377,7 +360,7 @@
 		},
 		
 		
-						compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){			
+		compute_count_KK_multivariate_negative_binomial_with_random_intercepts_for_matches_inference = function(){			
 			tryCatch({
 				mixed_neg_bin_regr_mod = suppressWarnings(lme4::glmer.nb(y ~ . - match_indic + (1 | match_indic), 
 								data = cbind(data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w, match_indic = factor(private$match_indic)), private$get_X())))

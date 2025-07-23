@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 
+
 #include <RcppArmadillo.h>
 #include <RcppEigen.h>
 #include <Rcpp.h>
@@ -9,6 +10,7 @@
 typedef Eigen::Map<Eigen::MatrixXd> MapMat;
 typedef Eigen::Map<Eigen::VectorXd> MapVec;
 using namespace Rcpp;
+
 
 #ifdef RCPP_USE_GLOBAL_ROSTREAM
 Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
@@ -93,15 +95,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_ols_with_sd_cpp
-List fast_ols_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ols_with_sd_cpp(SEXP XSEXP, SEXP ySEXP) {
+// fast_ols_with_var_cpp
+List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j);
+RcppExport SEXP _SeqExpMatch_fast_ols_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ols_with_sd_cpp(X, y));
+    Rcpp::traits::input_parameter< int >::type j(jSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ols_with_var_cpp(X, y, j));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -172,7 +175,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 6},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
-    {"_SeqExpMatch_fast_ols_with_sd_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_sd_cpp, 2},
+    {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
     {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
     {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
     {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},

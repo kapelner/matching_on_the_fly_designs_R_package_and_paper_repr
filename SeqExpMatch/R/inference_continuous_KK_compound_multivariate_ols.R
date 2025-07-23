@@ -23,7 +23,7 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		},
 		
 		#' @description
-		#' Computes the appropriate estimate for mean difference
+		#' Computes the appropriate estimate
 		#' 
 		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#' 
@@ -41,24 +41,20 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){	
-			if (is.null(private$cached_values$private$cached_values$coefs_matched) & is.null(private$cached_values$private$cached_values$coefs_reservoir)){
-				private$shared()
+			if (is.null(private$cached_values$coefs_matched) & is.null(private$cached_values$coefs_reservoir)){
+				private$shared_for_compute_estimate()
 			}		
-			if (is.null(private$cached_values$beta_hat_T)){ 
-				#no reservoir
-				if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
-					private$cached_values$beta_hat_T = private$cached_values$coefs_matched[1, 1]
-				#and sometimes there's no matches	
-				} else if (private$KKstats$m == 0){	 		
-					private$cached_values$beta_hat_T = private$cached_values$coefs_reservoir[2, 1]
-				#but most of the time... we have matches and a nice-sized reservoir
-				} else { 
-					beta_match_regression = private$cached_values$coefs_matched[1, 1]			
-					beta_reservoir_regression = private$cached_values$coefs_reservoir[2, 1]
-					w_star = private$cached_values$ssqd_reservoir_regression / (private$cached_values$ssqd_reservoir_regression + private$cached_values$ssqd_match_regression) #just a convenience for faster runtime	
-					private$cached_values$beta_hat_T = w_star * beta_match_regression + (1 - w_star) * beta_reservoir_regression #proper weighting				}
-				}
-			}
+			private$cached_values$beta_hat_T = if (is.null(private$cached_values$beta_hat_T)){ 
+													if (private$only_matches()){
+														private$beta_T_matched
+													} else if (private$only_reservoir()){	 		
+														private$cached_values$beta_T_reservoir
+													} else {
+														w_star = private$cached_values$ssq_beta_T_reservoir / 
+																	(private$cached_values$ssq_beta_T_reservoir + private$cached_values$ssq_beta_T_matched)	
+														w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
+													}
+												}
 			private$cached_values$beta_hat_T
 		},
 		
@@ -91,18 +87,7 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$beta_hat_T)){ 
-				self$compute_treatment_estimate()
-			}
-			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
-				private$cached_values$s_beta_hat_T = private$cached_values$coefs_matched[1, 2]	
-			} else if (private$KKstats$m == 0){			
-				private$cached_values$s_beta_hat_T = coefs_reservoir[2, 2]
-			} else {
-				private$cached_values$s_beta_hat_T = sqrt(private$cached_values$ssqd_match_regression * private$cached_values$ssqd_reservoir_regression / 
-					(private$cached_values$ssqd_match_regression + private$cached_values$ssqd_reservoir_regression)) #analagous eq's
-			}
-			private$cached_values$is_z = TRUE #TO-DO: linear combination of degrees of freedom of t's
+			private$shared_for_inference()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
@@ -129,43 +114,60 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (is.null(private$cached_values$beta_hat_T)){ 
-				self$compute_treatment_estimate()
-			}
-			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
-				if (delta == 0){
-					stop("TO-DO")
-				}
-				private$cached_values$coefs_matched[1, 4]
-			} else if (private$KKstats$m == 0){			
-				if (delta == 0){
-					stop("TO-DO")
-				}
-				private$cached_values$coefs_reservoir[2, 4]
-			} else {
-				s_beta_hat_T = sqrt(private$cached_values$ssqd_match_regression * private$cached_values$ssqd_reservoir_regression / 
-					(private$cached_values$ssqd_match_regression + private$cached_values$ssqd_reservoir_regression)) #analagous eq's
-				2 * (pnorm(-abs((private$cached_values$beta_hat_T - delta) / s_beta_hat_T))) #approximate by using N(0, 1) distribution			
-			}
+			assertNumeric(delta)	
+			private$shared_for_inference()
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	
 	private = list(		
-		shared = function(){
-			if (private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)){
-				private$cached_values$coefs_matched = coef(summary(lm(private$KKstats$y_matched_diffs ~ private$KKstats$X_matched_diffs)))
-			} else if (private$KKstats$m == 0){			
-				private$cached_values$coefs_reservoir = coef(summary(lm(private$KKstats$y_reservoir ~ cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir))))		
+		shared_for_compute_estimate = function(){
+			if (private$only_matches()){
+				private$ols_for_matched_pairs() 
+			} else if (private$only_reservoir()){			
+				private$ols_for_reservoir()		
 			} else {
-				#compute estimator from matched pairs by regression
-				private$cached_values$coefs_matched = coef(summary(lm(private$KKstats$y_matched_diffs ~ private$KKstats$X_matched_diffs)))
-				private$cached_values$ssqd_match_regression = private$cached_values$coefs_matched[1, 2]^2 #lin mod returns SE not VAR, so square it				
-				
-				#compute estimator reservoir sample std error
-				private$cached_values$coefs_reservoir = coef(summary(lm(private$KKstats$y_reservoir ~ cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir))))
-				private$cached_values$ssqd_reservoir_regression = private$cached_values$coefs_reservoir[2, 2]^2 #lin mod returns SE not VAR, so square it
+				private$ols_for_matched_pairs() 		
+				private$ols_for_reservoir()
 			}
-		}		
+		},
+		
+		shared_for_inference = function(){
+			if (is.null(private$cached_values$beta_hat_T)){ 
+				self$compute_treatment_estimate()
+			}
+			ssq_beta_hat_T = 	if (private$only_matches()){
+									private$cached_values$ssq_beta_T_matched
+								} else if (private$only_reservoir()){			
+									private$cached_values$ssq_beta_T_reservoir
+								} else {
+									private$cached_values$ssq_beta_T_matched * private$cached_values$ssq_beta_T_reservoir / 
+										(private$cached_values$ssq_beta_T_matched + private$cached_values$ssq_beta_T_reservoir) #analagous eq's
+								}
+			private$cached_values$s_beta_hat_T = sqrt(ssq_beta_hat_T)
+			private$cached_values$is_z = TRUE #TO-DO: linear combination of degrees of freedom of t's
+		},
+		
+		only_matches = function(){
+			private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)
+		},
+		
+		only_reservoir = function(){
+			private$KKstats$m == 0
+		},
+		
+		ols_for_matched_pairs = function(){
+			# coef(summary(lm(private$KKstats$y_matched_diffs ~ private$KKstats$X_matched_diffs)))
+			mod = fast_ols_with_var_cpp(private$KKstats$X_matched_diffs, private$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
+			private$cached_values$beta_T_matched =     mod$b[1]
+			private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
+		},
+		
+		ols_for_reservoir = function(){
+			# coef(summary(lm(private$KKstats$y_reservoir ~ cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir))))
+			mod = fast_ols_with_var_cpp(cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir), private$KKstats$y_reservoir)
+			private$cached_values$beta_T_reservoir =     mod$b[1]
+			private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j
+		}
 	)		
 )

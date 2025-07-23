@@ -55,7 +55,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				for (r in 1 : B){
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r = private$seq_des_obj_priv_int$duplicate()
+					seq_des_r = private$seq_des_obj_priv_int$duplicate() #TO-DO make this leaner
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
@@ -135,6 +135,17 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			ci = private$cached_values$beta_hat_T + c(-moe, moe)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, sep = "%")
 			ci
+		},
+		
+		compute_z_or_t_two_sided_pval_from_s_and_df = function(delta){
+			z_or_t_stat = (private$cached_values$beta_hat_T - delta) / private$cached_values$s_beta_hat_T
+			z_or_t_stats = c(-z_or_t_stat, z_or_t_stat)
+			probs = if (private$cached_values$is_z){ 
+						pnorm(z_or_t_stats)
+					} else {
+						pt(z_or_t_stats, private$cached_values$df)
+					}
+			2 * min(probs)
 		}	
 	)
 )

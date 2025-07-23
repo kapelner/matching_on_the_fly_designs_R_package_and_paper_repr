@@ -79,8 +79,7 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
-			}
-			
+			}			
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
@@ -111,11 +110,7 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 			if (is.null(private$cached_values$df)){
 				private$shared()
 			}
-			
-			2 * pt(
-					-abs(private$cached_values$beta_hat_T - delta) / private$cached_values$s_beta_hat_T, 
-						private$cached_values$df
-				)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	
