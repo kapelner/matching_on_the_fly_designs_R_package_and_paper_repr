@@ -13,12 +13,14 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertClass(seq_des_obj, "SeqDesignKK14")
-			super$initialize(seq_des_obj, num_cores, verbose)	
-			private$helper = SeqDesignInferenceHelperKK$new(seq_des_obj, private$get_X())
-			private$KKstats = private$helper$get_post_matching_data()
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){
+			if (!thin){
+				assertClass(seq_des_obj, "SeqDesignKK14")
+				super$initialize(seq_des_obj, num_cores, verbose)
+				private$setup_matching_data(seq_des_obj, private$get_X())				
+			}
 		},
 		
 			
@@ -56,13 +58,12 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			i_reservoir = which(match_indic == 0)
 			n_reservoir = length(i_reservoir)
 			m = private$KKstats$m
-			seq_inf_class_constructor = get(class(self)[1])$new 
 			match_indic_b = c(rep(0, n_reservoir), rep(1 : m, each = 2))
 			
 			if (private$num_cores == 1){ #easier on the OS I think...
 				b_T_sims = array(NA, B)
 				for (r in 1 : B){
-					#draw a bootstrap sample of the reservoir
+					#draw a bootstrap sample of the reservoir TO-DO: Rcpp this!
 					i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 					ms_b = sample_int_replace_cpp(m, m)
 					i_b = c(i_reservoir_b, array(NA, m * 2))
@@ -72,15 +73,16 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 						i_b_idx = i_b_idx + 2
 					}
 					
-					seq_des_r = private$seq_des_obj_priv_int$duplicate()
+					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
 					#compute beta_T_hat					
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
+					seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)					
 					b_T_sims[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
@@ -88,7 +90,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)			
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())
+				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w"), envir = environment())
 				#now do the parallelization
 				b_T_sims = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap sample of the reservoir
@@ -101,15 +103,17 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 						i_b_idx = i_b_idx + 2
 					}
 					
-					seq_des_r = private$seq_des_obj_priv_int$duplicate()
+					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
 					#compute beta_T_hat					
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
+					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
+					seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
 					seq_inf_r$compute_treatment_estimate()			
 				}
 				doParallel::stopCluster(cl)
@@ -125,6 +129,18 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 	private = list(
 		helper = NULL,
 		KKstats = NULL,
+		
+		setup_matching_data = function(d, X){
+			private$helper = SeqDesignInferenceHelperKK$new(d, X)
+			private$KKstats = private$helper$get_post_matching_data()	
+		},
+		
+		thin_duplicate = function(){
+			i = super$thin_duplicate()
+			h = SeqDesignInferenceHelperKK$new(seq_des_obj, private$get_X()) 
+			i$.__enclos_env__$private$KKstats = h$get_post_matching_data()
+			i
+		},
 		
 		compute_model_matrix_with_matching_dummies = function(){
 			private$helper$data_frame_with_matching_dummies()

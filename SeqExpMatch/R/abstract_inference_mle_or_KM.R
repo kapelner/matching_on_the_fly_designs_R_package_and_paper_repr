@@ -14,9 +14,12 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'				
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){
+			if (!thin){
+				super$initialize(seq_des_obj, num_cores, verbose)
+			}
 		},
 		
 		#' @description
@@ -61,7 +64,8 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					#compute beta_T_hat					
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
 					beta_hat_T_bs[r] = seq_inf_r$compute_treatment_estimate()
 				}
@@ -81,7 +85,8 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					#compute beta_T_hat
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
 					seq_inf_r$compute_treatment_estimate()			
 				}

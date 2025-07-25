@@ -1,6 +1,7 @@
+binomial_link_cache = binomial()
 
 fast_logistic_regression = function(Xmm, y){
-	mod = glm.fit(Xmm, y, family = binomial())
+	mod = glm.fit(Xmm, y, family = binomial_link_cache)
 	list(b = mod$coefficients, w = mod$weights)
 }
 

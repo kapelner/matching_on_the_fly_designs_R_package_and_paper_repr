@@ -15,7 +15,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' option to use matching parameters of Morrison and Owen (2025)
 		#'
 		#' @param response_type 	The data type of response values which must be one of the following: 
-		#' 							"continuous", 
+		#' 							"continuous"(the default), 
 		#' 							"incidence", 
 		#' 							"proportion", 
 		#' 							"count", 
@@ -37,6 +37,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
 		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y/(1-y))
 		#' 									instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 
 		#' @return 			A new `SeqDesignKK21` object
 		#' 
@@ -44,27 +45,30 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' seq_des = SeqDesignKK21$new(response_type = "continuous")
 		#'  
 		initialize = function(
-			response_type, 
+			response_type = "continuous",  
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE, 
-			verbose = FALSE,
 			n = NULL,
+			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
 			morrison = FALSE,
 			p = NULL,
 			num_boot = NULL,
-			proportion_use_speedup = TRUE
+			proportion_use_speedup = TRUE,
+			thin = FALSE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n, lambda, t_0_pct, morrison, p)
-			if (is.null(num_boot)){
-				num_boot = 500
-			} else {
-				assertCount(num_boot, positive = TRUE)
+			if (!thin){
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p)
+				if (is.null(num_boot)){
+					num_boot = 500
+				} else {
+					assertCount(num_boot, positive = TRUE)
+				}
+				private$num_boot = num_boot
+				assertFlag(proportion_use_speedup)	
+				private$proportion_use_speedup = proportion_use_speedup						
 			}
-			private$num_boot = num_boot
-			assertFlag(proportion_use_speedup)	
-			private$proportion_use_speedup = proportion_use_speedup		
 		}
 	),
 	private = list(

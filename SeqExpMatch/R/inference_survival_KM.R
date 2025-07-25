@@ -17,10 +17,13 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
-			assertResponseType(seq_des_obj$get_response_type(), "survival")			
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
+			if (!thin){		
+				assertResponseType(seq_des_obj$get_response_type(), "survival")			
+				super$initialize(seq_des_obj, num_cores, verbose)
+			}
 		},
 		
 		#' @description
@@ -116,12 +119,3 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 	
 	private = list()		
 )
-
-#					test_obj = suppressWarnings(controlTest::quantileControlTest(private$yTs, private$deadTs, private$yCs, private$deadCs, B = B))
-#					list(
-#						mod = survival_fit_obj,
-#						summary_table = survival_fit_res,
-#						beta_hat_T = beta_hat_T,
-#						s_beta_hat_T = abs(beta_hat_T / test_obj$Z), #what is quantileControlTest's se field if not this??????????
-#						is_z = TRUE
-#					)

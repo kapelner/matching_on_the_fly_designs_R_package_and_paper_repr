@@ -17,10 +17,13 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
-			super$initialize(seq_des_obj, num_cores, verbose)	
-			assertNoCensoring(private$any_censoring)
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
+			if (!thin){		
+				super$initialize(seq_des_obj, num_cores, verbose)	
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 		
 		#' @description
@@ -42,9 +45,11 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$beta_hat_T)){
+			if (is.null(private$cached_values$beta_hat_T)){	
+				private$yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+				private$yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
 				private$cached_values$beta_hat_T = mean(private$yTs) - mean(private$yCs)
-			}			
+			}
 			private$cached_values$beta_hat_T
 		},
 		
@@ -114,18 +119,18 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		}
 	),
 	
-	private = list(		
+	private = list(	
+		yTs = NULL,
+		yCs = NULL,
+			
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
 			}
-			
-			yTs = private$yTs
-			yCs = private$yCs
-			nT = length(yTs)
-			nC = length(yCs)
-			s_1_sq = var(yTs) / nT 
-			s_2_sq = var(yCs) / nC
+			nT = length(private$yTs)
+			nC = length(private$yCs)
+			s_1_sq = var(private$yTs) / nT 
+			s_2_sq = var(private$yCs) / nC
 			private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
 			private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
 											s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)

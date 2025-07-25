@@ -12,7 +12,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' Initialize a sequential experimental design
 		#' 
 		#' @param response_type 	The data type of response values which must be one of the following: 
-		#' 							"continuous", 
+		#' 							"continuous" (the default),  
 		#' 							"incidence", 
 		#' 							"proportion", 
 		#' 							"count", 
@@ -25,53 +25,54 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
 		#' @return 			A new `SeqDesign` object of the specific type
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(response_type = "continuous")
 		#'  
 		initialize = function(
-				response_type, 
+				response_type = "continuous", 
 				prob_T = 0.5, 
 				include_is_missing_as_a_new_feature = TRUE, 
+				n = NULL,
 				verbose = FALSE,
-				n = NULL
+				thin = FALSE
 			) {
-			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
-			assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			assertFlag(include_is_missing_as_a_new_feature)
-			assertFlag(verbose)
-			assertCount(n, null.ok = TRUE)
-			
-			if (is.null(n)){
-				private$fixed_sample = FALSE
-			} else {
-				n = as.integer(n)
-				private$n = n
-				private$fixed_sample = TRUE
-			}
-			
-			private$prob_T = prob_T			
-			private$response_type = response_type
-			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
-			private$verbose = verbose
-			
-			if (private$fixed_sample){
-				private$y = 	rep(NA_real_, n)
-				private$w = 	rep(NA_real_, n)
-				private$dead =  rep(NA_real_, n)
-			}
-
-			if (private$verbose){
-				cat(paste0("Intialized a ", 
-				class(self)[1], 
-				" experiment with response type ", 
-				response_type, 
-				" and ", 
-				ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
-				 ".\n"))
-			}					
+			if (!thin){
+				assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
+				assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+				assertFlag(include_is_missing_as_a_new_feature)
+				assertFlag(verbose)
+				assertCount(n, null.ok = TRUE)
+				
+				if (is.null(n)){
+					private$fixed_sample = FALSE
+				} else {
+					n = as.integer(n)
+					private$n = n
+					private$fixed_sample = TRUE
+				}
+				
+				private$prob_T = prob_T			
+				private$response_type = response_type
+				private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
+				private$verbose = verbose
+				
+				if (private$fixed_sample){
+					private$y = 	rep(NA_real_, n)
+					private$w = 	rep(NA_real_, n)
+					private$dead =  rep(NA_real_, n)
+				}
+	
+				if (private$verbose){
+					cat(paste0("Intialized a ", 
+					class(self)[1], 
+					" experiment with response type ", 
+					response_type, 
+					" and ", 
+					ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
+					 ".\n"))
+				}
+			}				
 		},
 		
 		#' @description
@@ -541,7 +542,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,		
-		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?		
+		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?	
+		
+		thin_duplicate = function(){
+			do.call(get(class(self)[1])$new, args = list(thin = TRUE))		
+		},
 
 		duplicate = function(){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done

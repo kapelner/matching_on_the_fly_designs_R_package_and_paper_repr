@@ -15,11 +15,14 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
 		#' 							or bootstrap inference.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
-			super$initialize(seq_des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){
+			if (!thin){			
+				assertResponseType(seq_des_obj$get_response_type(), "continuous")
+				super$initialize(seq_des_obj, num_cores, verbose)
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 		
 		#' @description
@@ -41,12 +44,12 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){	
-			if (is.null(private$cached_values$coefs_matched) & is.null(private$cached_values$coefs_reservoir)){
+			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$shared_for_compute_estimate()
 			}		
-			private$cached_values$beta_hat_T = if (is.null(private$cached_values$beta_hat_T)){ 
-													if (private$only_matches()){
-														private$beta_T_matched
+			if (is.null(private$cached_values$beta_hat_T)){ 
+				private$cached_values$beta_hat_T =  if (private$only_matches()){
+														private$cached_values$beta_T_matched
 													} else if (private$only_reservoir()){	 		
 														private$cached_values$beta_T_reservoir
 													} else {
@@ -54,7 +57,8 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 																	(private$cached_values$ssq_beta_T_reservoir + private$cached_values$ssq_beta_T_matched)	
 														w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
 													}
-												}
+			}
+			if (is.null(private$cached_values$beta_hat_T)){stop("boom")}
 			private$cached_values$beta_hat_T
 		},
 		

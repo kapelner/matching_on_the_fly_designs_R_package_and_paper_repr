@@ -25,24 +25,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#' @return A new `SeqDesignTest` object.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){	
-			assertClass(seq_des_obj, "SeqDesign")
-			assertCount(num_cores, positive = TRUE)
-			assertFlag(verbose)
-			seq_des_obj$assert_experiment_completed()
-			
-			private$any_censoring = seq_des_obj$any_censoring()
-			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
-			private$n = seq_des_obj$get_n()
-			private$yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-			private$yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
-			private$deadTs = private$seq_des_obj_priv_int$dead[private$seq_des_obj_priv_int$w == 1]
-			private$deadCs = private$seq_des_obj_priv_int$dead[private$seq_des_obj_priv_int$w == 0]
-			private$num_cores = num_cores
-			private$verbose = verbose			
-			if (private$verbose){
-				cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
+			if (!thin){
+				assertClass(seq_des_obj, "SeqDesign")
+				assertCount(num_cores, positive = TRUE)
+				assertFlag(verbose)
+				seq_des_obj$assert_experiment_completed()
+				
+				private$any_censoring = seq_des_obj$any_censoring()
+				private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
+				private$n = seq_des_obj$get_n()
+				private$num_cores = num_cores
+				private$verbose = verbose
+				if (private$verbose){
+					cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
+				}
 			}
 		},		
 		
@@ -138,6 +137,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			} else {
 				y = private$seq_des_obj_priv_int$y #no need for copy as we are not mutating
 			}
+			dead = private$seq_des_obj_priv_int$dead
+			w = private$seq_des_obj_priv_int$w
 			
 			seq_des_obj_priv_int = private$seq_des_obj_priv_int
 			if (private$num_cores == 1){
@@ -146,13 +147,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				for (r in 1 : nsim_exact_test){
 					#cat("		r =", r, "/", nsim_exact_test, "\n")
 					#make a copy of the object and then permute the allocation vector according to the design
-					seq_des_r = seq_des_obj_priv_int$duplicate()
+					seq_des_r = seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y #set the new responses
 					seq_des_r$.__enclos_env__$private$X = X	
+					seq_des_r$.__enclos_env__$private$dead = dead
+					seq_des_r$.__enclos_env__$private$w = w
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					#now initialize a new inference object and compute beta_T_hat
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
-					seq_inf_r$.__enclos_env__$private$X = X					
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
+					seq_inf_r$.__enclos_env__$private$X = X	
+					if (is(self, "SeqDesignInferenceMLEorKMKK")){
+						seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
+					}						
 					beta_hat_T_diff_ws[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_diff_ws)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
@@ -164,12 +171,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				#now do the parallelization
 				beta_hat_T_diff_ws = doParallel::foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
 					#make a copy of the object and then permute the allocation vector according to the design
-					seq_des_r = seq_des_obj_priv_int$duplicate()
+					seq_des_r = seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y #set the new responses
 					seq_des_r$.__enclos_env__$private$X = X
+					seq_des_r$.__enclos_env__$private$dead = dead
+					seq_des_r$.__enclos_env__$private$w = w
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()				
-					seq_inf_r = do.call(seq_inf_class_constructor, args = list(seq_des = seq_des_r, verbose = FALSE))
-					seq_inf_r$.__enclos_env__$private$X = X
+					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
+					seq_inf_r$.__enclos_env__$private$X = X	
+					if (is(self, "SeqDesignInferenceMLEorKMKK")){
+						seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
+					}						
 					seq_inf_r$compute_treatment_estimate()
 				}
 				doParallel::stopCluster(cl)
@@ -207,9 +220,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 		
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, na.rm = FALSE){
 			assertLogical(na.rm)
-			
+			#approximate the null distribution by computing estimates on many draws of w
 			beta_hat_T_diff_ws = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta)
-			#this calculates the two-sided pval
+			#this calculates the actual estimate to compare against the null distribution
 			beta_hat_T = self$compute_treatment_estimate()
 			#finally compute the p-value
 			if (na.rm){
@@ -230,11 +243,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		n = NULL,		 						#get_n = function(){private$n},
 		p = NULL,		 						#get_p = function(){private$p},
 		X = NULL,								#get_X is defined later as it needs some logic dependent on the design type
-		yTs = NULL,		 						#get_yTs = function(){private$yTs},
-		yCs = NULL,		 						#get_yCs = function(){private$yCs},
-		deadTs = NULL,							#get_deadTs = function(){private$deadTs},
-		deadCs = NULL,							#get_deadCs = function(){private$deadCs},
 		cached_values = list(),					#get_cached_values = function(){private$cached_values},
+				
+		thin_duplicate = function(){
+			do.call(get(class(self)[1])$new, args = list(thin = TRUE))		
+		},
 		
 		get_X = function(){
 			if (is.null(private$X)){

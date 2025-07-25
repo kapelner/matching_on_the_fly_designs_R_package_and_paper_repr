@@ -12,7 +12,6 @@ SeqDesignInferenceHelperKK = R6::R6Class("SeqDesignInferenceHelperKK",
 		#' @param seq_des_obj	A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param X				A data.table object of the subjects' covariates in the study
 		initialize = function(seq_des_obj, X){
-			assertClass(seq_des_obj, "SeqDesignKK14")
 			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
 			private$X = X
 		},
