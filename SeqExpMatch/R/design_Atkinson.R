@@ -42,7 +42,7 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 						thin = FALSE
 					) {
 			if (!thin){						
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, verbose, n)
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			}
 		}
 	),
@@ -72,11 +72,11 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 		},
 		
 		redraw_w_according_to_design = function(){
-			n = private$t
+			n_sample = private$t
 			private$t = 0 #reset
-			for (t in 1 : n){
+			for (t in 1 : n_sample){
 				private$t = private$t + 1
-				private$w[t] = private$assign_wt_Atkinson()
+				private$w[t] = private$assign_wt()
 			}
 		}
 	)

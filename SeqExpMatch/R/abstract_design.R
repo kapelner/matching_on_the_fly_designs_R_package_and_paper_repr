@@ -159,7 +159,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 				}					
 			}				
 			#add new subject's measurements to the raw data frame (there should be the same exact columns even if there are new ones introduced)
-			private$Xraw = rbindlist(list(private$Xraw, x_new))				
+			private$Xraw = rbindlist(list(private$Xraw, x_new))	
+			private$p_raw_t = ncol(private$Xraw)			
 							
 			#iterate t
 			private$t = private$t + 1L #t must be an integer for data.table's fast "set" function below to work
@@ -532,6 +533,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		t = 0L,
 		n = NULL,
 		Xraw = data.table(),
+		p_raw_t = NULL,
 		Ximp = data.table(),
 		X = NULL,
 		w = numeric(),

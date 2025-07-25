@@ -14,9 +14,9 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-response_type = "survival"
+response_type = "incidence"
 y = D$y_original[[response_type]]
-seq_des_obj = SeqDesignKK14$new(response_type = response_type, n = n)
+seq_des_obj = SeqDesignAtkinson$new(response_type = response_type, n = n)
 
 # profvis({
   for (t in 1 : n){
