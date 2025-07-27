@@ -25,12 +25,11 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 		
 			
 		#' @description
-		#' Computes a 1-alpha level frequentist bootstrap confidence interval for KK tests
+		#' Creates the boostrap distribution of the estimate for the treatment effect
 		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
+		#' @param B						Number of bootstrap samples. The default is 501.
 		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+		#' @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
@@ -43,10 +42,10 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-		#' seq_des_inf$compute_confidence_interval()
-		#' 					
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		#' beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+		#' ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+		#' 			
+		approximate_boostrap_distribution_beta_hat_T = function(B = 501){
 			assertCount(B, positive = TRUE)
 
 			n = private$seq_des_obj_priv_int$n	
@@ -61,7 +60,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			match_indic_b = c(rep(0, n_reservoir), rep(1 : m, each = 2))
 			
 			if (private$num_cores == 1){ #easier on the OS I think...
-				b_T_sims = array(NA, B)
+				beta_hat_T_bs = array(NA, B)
 				for (r in 1 : B){
 					#draw a bootstrap of both the reservoir and matches - first create index vector					
 					i_b = array(NA, n_reservoir + 2 * m)
@@ -78,7 +77,6 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 #						i_b_idx = i_b_idx + 2
 #					}
 					fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
-
 					
 					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
@@ -90,16 +88,15 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 					seq_inf_r = private$thin_duplicate()
 					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
 					seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)					
-					b_T_sims[r] = seq_inf_r$compute_treatment_estimate()
+					beta_hat_T_bs[r] = seq_inf_r$compute_treatment_estimate()
 				}
-				#print(ggplot2::ggplot(data.frame(sims = b_T_sims)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)			
 				#now copy them to each core's memory
 				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w"), envir = environment())
 				#now do the parallelization
-				b_T_sims = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
+				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap of both the reservoir and matches - first create index vector					
 					i_b = array(NA, n_reservoir + 2 * m)
 					#draw a bootstrap sample of the reservoir
@@ -133,11 +130,8 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 				rm(cl); gc()
 			}
 			
-			#this finally computes the ci
-			quantile(b_T_sims, c(alpha / 2, 1 - alpha / 2))
-		}			
-		
-		
+			beta_hat_T_bs
+		}
 	),
 	private = list(
 		helper = NULL,

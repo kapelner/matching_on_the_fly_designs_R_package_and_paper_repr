@@ -22,8 +22,8 @@ seq_des_obj = SeqDesignCRD$new(response_type = response_type, n = n)
 seq_des_obj = SeqDesigniBCRD$new(response_type = response_type, n = n)
 seq_des_obj = SeqDesignEfron$new(response_type = response_type, n = n)
 seq_des_obj = SeqDesignKK14$new(response_type = response_type, n = n)
-seq_des_obj = SeqDesignKK21$new(response_type = response_type, n = n)
-seq_des_obj = SeqDesignKK21stepwise$new(response_type = response_type, n = n)
+# seq_des_obj = SeqDesignKK21$new(response_type = response_type, n = n)
+# seq_des_obj = SeqDesignKK21stepwise$new(response_type = response_type, n = n)
 
 # profvis({
   for (t in 1 : n){
@@ -66,7 +66,7 @@ seq_des_inf$compute_mle_confidence_interval(0.05)
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
 })
-seq_des_inf$compute_bootstrap_two_sided_pval()
+seq_des_inf$compute_bootstrap_two_sided_pval(B = 601)
 # profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 # })
