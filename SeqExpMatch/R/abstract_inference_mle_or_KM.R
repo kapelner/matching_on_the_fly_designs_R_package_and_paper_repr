@@ -45,7 +45,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		#' 			
 		approximate_boostrap_distribution_beta_hat_T = function(B = 501){
 			assertCount(B, positive = TRUE)
-						
+									
 			n = private$seq_des_obj_priv_int$n	
 			y = private$seq_des_obj_priv_int$y
 			dead = private$seq_des_obj_priv_int$dead
@@ -121,14 +121,66 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, na.rm = FALSE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertLogical(na.rm)
-
-			beta_hat_T_bs = self$approximate_boostrap_distribution_beta_hat_T(B)
 			
-			#this finally computes the ci
-			quantile(beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
-		}	
+			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
+			
+			quantile(private$beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
+		},
+			
+		#' @description
+		#' Computes a bootstrap two-sided p-value for H_0: betaT = delta. 
+		#' It does so differently for all response types, estimate types and test types.
+		#' 
+		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
+		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
+		#'
+		#' @return 	The approximate frequentist p-value
+		#' 
+		#' @examples
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#' 
+		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+		#' seq_des_inf$compute_bootstrap_two_sided_pval()
+		#' 					
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
+			assertNumeric(delta)
+			assertLogical(na.rm)
+
+			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
+			
+			2 * min(
+				mean(delta < beta_hat_T_bs, na.rm = na.rm), 
+				mean(delta > beta_hat_T_bs, na.rm = na.rm)
+			)
+		}		
 	),
 	private = list(
+		beta_hat_T_bs = NULL,
+		
+		get_or_cache_bootstrap_samples = function(B){
+			
+			if (is.null(private$beta_hat_T_bs)){
+				private$beta_hat_T_bs = self$approximate_boostrap_distribution_beta_hat_T(B)
+			} else {
+				B_0 = length(private$beta_hat_T_bs)
+				if (B_0 > B){
+					return (private$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
+				} else if (B_0 < B){ 
+					private$beta_hat_T_bs = c(private$beta_hat_T_bs, #go get more and add them to the cache in case we need them later
+						self$approximate_boostrap_distribution_beta_hat_T(B - B_0))
+				}
+			}
+			private$beta_hat_T_bs			
+		},
+		
 		compute_z_or_t_ci_from_s_and_df = function(alpha){
 			one_minus_alpha_over_two = 1 - alpha / 2
 			z_or_t_val = 	if (private$cached_values$is_z){

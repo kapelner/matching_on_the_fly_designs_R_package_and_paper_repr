@@ -8,63 +8,63 @@ typedef Eigen::Map<Eigen::VectorXd> MapVec;
 
 //see https://github.com/yixuan/RcppNumerical/blob/6ad26382a3414c248c9562c92985bb9e82fa1f04/src/fastLR.cpp
 class LogisticReg: public MFuncGrad {
-private:
-   const MapMat X;
-   const MapVec Y;
-   const int n;
-   Eigen::VectorXd xbeta;  // contains X*beta
-   Eigen::VectorXd prob;   // contains log(1+exp(X*beta)) and 1/(1+exp(-X*beta))
-public:
-   LogisticReg(const MapMat x_, const MapVec y_) :
-       X(x_),
-       Y(y_),
-       n(X.rows()),
-       xbeta(n),
-       prob(n)
-   {}
-
-   double f_grad(Constvec& beta, Refvec grad){
-       // Negative log likelihood
-       //   sum(log(1 + exp(X * beta))) - y' * X * beta
-       xbeta.noalias() = X * beta;
-       const double yxbeta = Y.dot(xbeta);
-       // Calculate log(1 + exp(X * beta)), avoiding overflow
-       for(int i = 0; i < n; i++)
-           prob[i] = R::log1pexp(xbeta[i]);
-       const double f = prob.sum() - yxbeta;
-
-       // Gradient
-       //   X' * (p - y), p = exp(X * beta) / (1 + exp(X * beta))
-       //                   = exp(X * beta - log(1 + exp(X * beta)))
-       prob = (xbeta - prob).array().exp();
-       grad.noalias() = X.transpose() * (prob - Y);
-
-       return f;
-   }
-
-   Eigen::VectorXd current_xb() const { return xbeta; }
-   Eigen::VectorXd current_p()  const { return prob; }
+	private:
+	   const MapMat X;
+	   const MapVec Y;
+	   const int n;
+	   Eigen::VectorXd xbeta;  // contains X*beta
+	   Eigen::VectorXd prob;   // contains log(1+exp(X*beta)) and 1/(1+exp(-X*beta))
+	public:
+	   LogisticReg(const MapMat x_, const MapVec y_) :
+	       X(x_),
+	       Y(y_),
+	       n(X.rows()),
+	       xbeta(n),
+	       prob(n)
+	   {}
+	
+	   double f_grad(Constvec& beta, Refvec grad){
+	       // Negative log likelihood
+	       //   sum(log(1 + exp(X * beta))) - y' * X * beta
+	       xbeta.noalias() = X * beta;
+	       const double yxbeta = Y.dot(xbeta);
+	       // Calculate log(1 + exp(X * beta)), avoiding overflow
+	       for(int i = 0; i < n; i++)
+	           prob[i] = R::log1pexp(xbeta[i]);
+	       const double f = prob.sum() - yxbeta;
+	
+	       // Gradient
+	       //   X' * (p - y), p = exp(X * beta) / (1 + exp(X * beta))
+	       //                   = exp(X * beta - log(1 + exp(X * beta)))
+	       prob = (xbeta - prob).array().exp();
+	       grad.noalias() = X.transpose() * (prob - Y);
+	
+	       return f;
+	   }
+	
+	   Eigen::VectorXd current_xb() const { return xbeta; }
+	   Eigen::VectorXd current_p()  const { return prob; }
 };
 
 
 // [[Rcpp::export]]
-List fast_logistic_regression_cpp(Rcpp::NumericMatrix X, Rcpp::NumericVector y, Rcpp::NumericVector start, double eps_f = 1e-8, double eps_g = 1e-5, int maxit = 300) {
+List fast_logistic_regression_cpp(NumericMatrix X, NumericVector y, NumericVector start, double eps_f = 1e-8, double eps_g = 1e-5, int maxit = 300) {
    const MapMat xx = Rcpp::as<MapMat>(X);
    const MapVec yy = Rcpp::as<MapVec>(y);
    // Negative log likelihood
    LogisticReg nll(xx, yy);
    // Initial guess
-   Rcpp::NumericVector b = Rcpp::clone(start);
+   NumericVector b = Rcpp::clone(start);
    MapVec beta(b.begin(), b.length());
 
    double fopt;
    int status = optim_lbfgs(nll, beta, fopt, maxit, eps_f, eps_g);
 
    return Rcpp::List::create(
-       Rcpp::Named("b")      				  = b,
-       Rcpp::Named("converged")       = (status >= 0),
-       Rcpp::Named("xx")         			= xx,
-       Rcpp::Named("yy")         			= yy
+       Named("b")      		= b,
+       Named("converged")   = (status >= 0),
+       Named("xx")         	= xx,
+       Named("yy")         	= yy
    );
 }
 

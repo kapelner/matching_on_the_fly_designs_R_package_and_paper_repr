@@ -66,6 +66,17 @@ microbenchmark(
   times = 100
 )
 rm(list = ls())
+rm(list = ls())
+
+
+X = as.matrix(MASS::Boston[MASS::Boston$medv < 50, 1:13])
+y = round(MASS::Boston$medv[MASS::Boston$medv < 50])
+table(y)
+Rcpp::sourceCpp("../SeqExpMatch/src/fast_negbin_regression.cpp")
+mod = MASS::glm.nb(y ~ X)
+coef(mod)
+
+
 
 
 

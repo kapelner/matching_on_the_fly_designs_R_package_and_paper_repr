@@ -63,15 +63,22 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			if (private$num_cores == 1){ #easier on the OS I think...
 				b_T_sims = array(NA, B)
 				for (r in 1 : B){
-					#draw a bootstrap sample of the reservoir TO-DO: Rcpp this!
-					i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+					#draw a bootstrap of both the reservoir and matches - first create index vector					
+					i_b = array(NA, n_reservoir + 2 * m)
+					#draw a bootstrap sample of the reservoir
+					i_reservoir_b_i = sample_int_replace_cpp(n_reservoir, n_reservoir)
+					#load it into the index vector
+					i_b[1 : n_reservoir] = i_reservoir[i_reservoir_b_i]
+					#draw a bootstrap sample of the matches
 					ms_b = sample_int_replace_cpp(m, m)
-					i_b = c(i_reservoir_b, array(NA, m * 2))
-					i_b_idx = n_reservoir
-					for (m0 in 1 : m){
-						i_b[(i_b_idx + 1) : (i_b_idx + 2)] = which(match_indic == ms_b[m0])
-						i_b_idx = i_b_idx + 2
-					}
+					#load it into the index vector 2 by 2
+#					i_b_idx = n_reservoir
+#					for (m0 in 1 : m){
+#						i_b[(i_b_idx + 1) : (i_b_idx + 2)] = which(match_indic == ms_b[m0])
+#						i_b_idx = i_b_idx + 2
+#					}
+					fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
+
 					
 					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
@@ -93,15 +100,21 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w"), envir = environment())
 				#now do the parallelization
 				b_T_sims = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
+					#draw a bootstrap of both the reservoir and matches - first create index vector					
+					i_b = array(NA, n_reservoir + 2 * m)
 					#draw a bootstrap sample of the reservoir
-					i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+					i_reservoir_b_i = sample_int_replace_cpp(n_reservoir, n_reservoir)
+					#load it into the index vector
+					i_b[1 : n_reservoir] = i_reservoir[i_reservoir_b_i]
+					#draw a bootstrap sample of the matches
 					ms_b = sample_int_replace_cpp(m, m)
-					i_b = c(i_reservoir_b, array(NA, m * 2))
-					i_b_idx = n_reservoir
-					for (m0 in 1 : m){
-						i_b[(i_b_idx + 1) : (i_b_idx + 2)] = which(match_indic == ms_b[m0])
-						i_b_idx = i_b_idx + 2
-					}
+					#load it into the index vector 2 by 2
+#					i_b_idx = n_reservoir
+#					for (m0 in 1 : m){
+#						i_b[(i_b_idx + 1) : (i_b_idx + 2)] = which(match_indic == ms_b[m0])
+#						i_b_idx = i_b_idx + 2
+#					}
+					fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
 					
 					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
