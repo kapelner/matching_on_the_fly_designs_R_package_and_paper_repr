@@ -42,9 +42,26 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
 					
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_bootstrap_two_sided_pval()
+					
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceMLEorKM}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceMLEorKM}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -52,6 +69,7 @@ seq_des_inf$compute_confidence_interval()
 \item \href{#method-SeqDesignInferenceMLEorKM-new}{\code{SeqDesignInferenceMLEorKM$new()}}
 \item \href{#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()}}
 \item \href{#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval}{\code{SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInferenceMLEorKM-clone}{\code{SeqDesignInferenceMLEorKM$clone()}}
 }
 }
@@ -70,7 +88,12 @@ seq_des_inf$compute_confidence_interval()
 \subsection{Method \code{new()}}{
 Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$new(seq_des_obj, num_cores = 1, verbose = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$new(
+  seq_des_obj,
+  num_cores = 1,
+  verbose = FALSE,
+  thin = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -83,6 +106,8 @@ Initialize a sequential experimental design estimation and test object after the
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
@@ -99,7 +124,7 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+\item{\code{B}}{Number of bootstrap samples. The default is 501.}
 }
 \if{html}{\out{</div>}}
 }
@@ -167,6 +192,54 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
+					
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Computes a bootstrap two-sided p-value for H_0: betaT = delta. 
+It does so differently for all response types, estimate types and test types.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  na.rm = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+
+\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_bootstrap_two_sided_pval()
 					
 }
 \if{html}{\out{</div>}}

@@ -7,13 +7,33 @@
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceIncidMultiLogRegr$compute_treatment_estimate`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+seq_des_inf$compute_treatment_estimate()
+	
+}
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKM} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable} -> \code{SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr} -> \code{SeqDesignInferenceIncidMultiLogRegr}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKM]{SeqExpMatch::SeqDesignInferenceMLEorKM}} -> \code{\link[SeqExpMatch:SeqDesignInferenceIncidUnivLogRegr]{SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr}} -> \code{SeqDesignInferenceIncidMultiLogRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidMultiLogRegr-new}{\code{SeqDesignInferenceIncidMultiLogRegr$new()}}
+\item \href{#method-SeqDesignInferenceIncidMultiLogRegr-compute_treatment_estimate}{\code{SeqDesignInferenceIncidMultiLogRegr$compute_treatment_estimate()}}
 \item \href{#method-SeqDesignInferenceIncidMultiLogRegr-clone}{\code{SeqDesignInferenceIncidMultiLogRegr$clone()}}
 }
 }
@@ -25,9 +45,9 @@ in all response types (except Weibull with censoring) sequential experimental de
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidUnivLogRegr" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidUnivLogRegr.html#method-SeqDesignInferenceIncidUnivLogRegr-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr$compute_mle_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidUnivLogRegr" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidUnivLogRegr.html#method-SeqDesignInferenceIncidUnivLogRegr-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -40,7 +60,8 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiLogRegr$new(
   seq_des_obj,
   num_cores = 1,
-  verbose = TRUE
+  verbose = FALSE,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -54,9 +75,43 @@ Initialize a sequential experimental design estimation and test object after the
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiLogRegr-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidMultiLogRegr-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Computes the appropriate estimate
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiLogRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+seq_des_inf$compute_treatment_estimate()
+	
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiLogRegr-clone"></a>}}

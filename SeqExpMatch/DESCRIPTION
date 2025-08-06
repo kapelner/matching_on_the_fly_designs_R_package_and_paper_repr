@@ -40,7 +40,8 @@ Depends:
 	numDeriv,
 	missRanger,
 	missForest,
-	doParallel
+	doParallel,
+	nbpMatching
 LinkingTo:	
 	RcppArmadillo, 
 	RcppEigen,
@@ -70,6 +71,10 @@ Collate:
     'helper_for_inference_KK.R'
     'inference__all_naive_mean_diff.R'
     'inference__all_KK_compound_mean_diff.R'
+    'abstract_inference_bai_et_al.R'
+    'inference_bai_et_al_KK14.R'
+    'inference_bai_et_al_KK21.R'
+    'inference_bai_et_al_KK21stepwise.R'
     'inference_continuous_multivariate_ols.R'
     'inference_continuous_KK_compound_multivariate_ols.R'
     'inference_incidence_univariate_log_regr.R'

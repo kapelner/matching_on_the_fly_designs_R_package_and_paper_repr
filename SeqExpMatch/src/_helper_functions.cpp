@@ -1,12 +1,13 @@
-#include <RcppEigen.h>
+//#include <RcppEigen.h>
+#include "_helper_functions.h"
 using namespace Rcpp;
 
 
-typedef Eigen::Map<Eigen::MatrixXd> MapMat;
-typedef Eigen::Map<Eigen::VectorXd> MapVec;
+//typedef Eigen::Map<Eigen::MatrixXd> MapMat;
+//typedef Eigen::Map<Eigen::VectorXd> MapVec;
 
 // [[Rcpp::export]]
-double eigen_compute_single_entry_of_diagonal_matrix_cpp(MapMat M, int j) {
+double eigen_compute_single_entry_of_diagonal_matrix_cpp(Eigen::Map<Eigen::MatrixXd> M, int j) {
   Eigen::VectorXd b;
   b.resize(M.rows());
   b.setZero();
@@ -20,6 +21,6 @@ double eigen_compute_single_entry_of_diagonal_matrix_cpp(MapMat M, int j) {
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(MapMat X, MapVec w) {
+Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::VectorXd> w) {
   return X.transpose() * w.asDiagonal() * X;
 }

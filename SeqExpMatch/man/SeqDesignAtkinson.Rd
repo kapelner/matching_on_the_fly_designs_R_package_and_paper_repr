@@ -18,7 +18,7 @@ seq_des = SeqDesign$new(response_type = "continuous")
  
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignAtkinson}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -42,7 +42,6 @@ seq_des = SeqDesign$new(response_type = "continuous")
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_design'><code>SeqExpMatch::SeqDesign$get_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_response_type'><code>SeqExpMatch::SeqDesign$get_response_type()</code></a></span></li>
@@ -61,11 +60,12 @@ seq_des = SeqDesign$new(response_type = "continuous")
 Initialize a sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignAtkinson$new(
-  response_type,
+  response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
-  verbose = TRUE,
-  n = NULL
+  n = NULL,
+  verbose = FALSE,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -73,7 +73,7 @@ Initialize a sequential experimental design
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous", 
+"continuous"(the default),  
 "incidence", 
 "proportion", 
 "count", 
@@ -87,9 +87,11 @@ of the appropriate type.}
 missingness in addition to imputing its value? If the feature is type factor, instead of creating
 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
