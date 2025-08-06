@@ -120,8 +120,10 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		
 		compute_weights_KK21stepwise_count = function(xs, ys, ws, ...){	
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-				negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
-				abs(coef(summary_glm_lean(negbin_regr_mod))[2, 3])
+#				negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
+#				abs(coef(summary_glm_lean(negbin_regr_mod))[2, 3])
+				mod = fast_negbin_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
+				abs(mod$b[2] / sqrt(mod$ssq_b_2))
 			})	
 		},
 		

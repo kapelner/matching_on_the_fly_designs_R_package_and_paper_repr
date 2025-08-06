@@ -1,28 +1,24 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-#include <RcppArmadillo.h>
-using namespace Rcpp;
+#include <RcppEigen.h>
 
+// [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::export]]
-arma::mat scale_columns_cpp(const arma::mat& X) {
-  arma::mat scaled = X;
-  arma::uword n_cols = X.n_cols;
-
-  for (arma::uword j = 0; j < n_cols; ++j) {
-    arma::vec col = X.col(j);
-
-    if (!col.is_finite()) {
-      stop("Column %d contains NA/NaN/Inf values", j + 1);
-    }
-
-    double mu = arma::mean(col);
-    double sigma = arma::stddev(col, 0);  // sample std dev
-
-    if (std::isfinite(sigma) && sigma > 0) {
-      scaled.col(j) = (col - mu) / sigma;
+Eigen::MatrixXd scale_columns_cpp(const Eigen::MatrixXd& X) {
+  Eigen::Index n = X.rows();
+  Eigen::Index p = X.cols();
+  
+  Eigen::MatrixXd X_scaled(n, p);
+  
+  for (Eigen::Index j = 0; j < p; ++j) {
+    double mean = X.col(j).mean();
+    double sd = std::sqrt((X.col(j).array() - mean).square().sum() / (n - 1));
+    
+    if (sd > 0) {
+      X_scaled.col(j) = (X.col(j).array() - mean) / sd;
     } else {
-      scaled.col(j).zeros();  // constant or invalid column
+      // If standard deviation is 0, just subtract mean (constant column)
+      X_scaled.col(j) = X.col(j).array() - mean;
     }
   }
 
-  return scaled;
+  return X_scaled;
 }

@@ -22,8 +22,7 @@ SeqDesignInferenceCountUnivNegBinRegr = R6::R6Class("SeqDesignInferenceCountUniv
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){		
 			if (!thin){	
 				assertResponseType(seq_des_obj$get_response_type(), "count")			
-				super$initialize(seq_des_obj, num_cores, verbose)	
-				assertNoCensoring(private$any_censoring)
+				super$initialize(seq_des_obj, num_cores, verbose)
 			}
 		}
 	),

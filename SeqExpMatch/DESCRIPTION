@@ -30,9 +30,9 @@ Depends:
 	R6,
 	checkmate,
 	Rcpp,
-	RcppArmadillo, 
 	RcppEigen,
 	RcppNumerical,
+	StanHeaders,
 	data.table,
 	survival,
 	betareg,
@@ -41,10 +41,10 @@ Depends:
 	missRanger,
 	missForest,
 	doParallel
-LinkingTo:	
-	RcppArmadillo, 
+LinkingTo: 
 	RcppEigen,
 	RcppNumerical,
+	StanHeaders,
 	Rcpp
 Imports:
 	Rcpp (>= 1.0.14),

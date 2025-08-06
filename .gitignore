@@ -1,3 +1,7 @@
+cpp_compile.txt
+*.o
+*.dll
+
 # History files
 res/**.*
 .Rhistory

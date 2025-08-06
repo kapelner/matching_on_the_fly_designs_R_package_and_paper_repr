@@ -5,12 +5,16 @@ fill_i_b_with_matches_loop_cpp <- function(i_b, match_indic, ms_b, i_b_idx) {
     invisible(.Call(`_SeqExpMatch_fill_i_b_with_matches_loop_cpp`, i_b, match_indic, ms_b, i_b_idx))
 }
 
-eigen_compute_single_entry_of_diagonal_matrix_cpp <- function(M, j) {
-    .Call(`_SeqExpMatch_eigen_compute_single_entry_of_diagonal_matrix_cpp`, M, j)
+eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp <- function(M, j) {
+    .Call(`_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp`, M, j)
 }
 
 eigen_Xt_times_diag_w_times_X_cpp <- function(X, w) {
     .Call(`_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp`, X, w)
+}
+
+fast_ols_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
 compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights) {
@@ -23,14 +27,6 @@ fast_logistic_regression_cpp <- function(X, y, start, eps_f = 1e-8, eps_g = 1e-5
 
 matrix_rank_cpp <- function(A, tol = 1e-12) {
     .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
-}
-
-fast_neg_bin_with_censoring_cpp <- function(X, y, dead, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
-    .Call(`_SeqExpMatch_fast_neg_bin_with_censoring_cpp`, X, y, dead, maxit, eps_f, eps_g)
-}
-
-fast_ols_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
 fast_ols_with_var_cpp <- function(X, y, j = 2L) {
