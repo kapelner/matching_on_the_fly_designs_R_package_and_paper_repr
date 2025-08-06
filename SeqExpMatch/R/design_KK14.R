@@ -57,21 +57,20 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 				self$assert_even_allocation()
 				private$assert_KK_and_morrison_parameters_corrrect(lambda, t_0_pct, morrison, p)
 				private$morrison = morrison
-				
 				if (morrison){
-					private$p = p				
-					private$compute_lambda = 	if (super$is_fixed_sample()){
-													function(){private$n^(-1 / (2 * private$p))}
-												} else {
-													function(){private$t^(-1 / (2 * private$p))}
-												}				
+					private$p = p
+					if (super$is_fixed_sample_size()){
+              private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
+              } else {
+              private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
+              }
 				} else {
 					private$match_indic = array(NA, n)		
 					private$lambda = ifelse(is.null(lambda), 0.1, lambda) #10% is the default	
 					private$compute_lambda = function(){private$lambda}
 					private$t_0 = round(ifelse(is.null(t_0_pct), 0.35, t_0_pct) * n) #35% is the default			
 				}
-			}			
+			}
 		},
 		
 		#' @description
@@ -106,12 +105,16 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 				num_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir,
 				prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / private$t
 			)					
+		},
+		
+		get_match_indic = function(){ # this function is simply here to record the reservoir size in the power simulations
+	    private$match_indic
 		}
 	),
 	private = list(
 		uses_covariates = TRUE,
 		morrison = NULL,
-		t_0 = NULL,	
+		t_0 = 0, # not null for function consistency when not defined
 		lambda = NULL,
 		p = NULL,
 		compute_lambda = NULL,	

@@ -36,7 +36,7 @@ seq_des$matching_statistics()
 
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -61,7 +61,6 @@ seq_des$matching_statistics()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_design'><code>SeqExpMatch::SeqDesign$get_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_response_type'><code>SeqExpMatch::SeqDesign$get_response_type()</code></a></span></li>
@@ -80,15 +79,16 @@ seq_des$matching_statistics()
 Initialize a matching-on-the-fly sequential experimental design which matches based on Kapelner and Krieger (2014) or Morrison and Owen (2025)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$new(
-  response_type,
+  response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
-  verbose = TRUE,
   n = NULL,
+  verbose = FALSE,
   lambda = NULL,
   t_0_pct = NULL,
   morrison = FALSE,
-  p = NULL
+  p = NULL,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -96,7 +96,7 @@ Initialize a matching-on-the-fly sequential experimental design which matches ba
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous", 
+"continuous" (the default), 
 "incidence", 
 "proportion", 
 "count", 
@@ -110,9 +110,9 @@ of the appropriate type.}
 missingness in addition to imputing its value? If the feature is type factor, instead of creating
 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
-
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
 \item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
 
@@ -123,6 +123,8 @@ If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} whic
 settings and matching begins immediately with no wait for a certain reservoir size like in KK14.}
 
 \item{\code{p}}{The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

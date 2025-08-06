@@ -9,7 +9,7 @@ An abstract class
 \examples{
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval`
+## Method `SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T`
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
@@ -22,17 +22,18 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-seq_des_inf$compute_confidence_interval()
-					
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKM} -> \code{SeqDesignInferenceMLEorKMKK}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKM]{SeqExpMatch::SeqDesignInferenceMLEorKM}} -> \code{SeqDesignInferenceMLEorKMKK}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceMLEorKMKK-new}{\code{SeqDesignInferenceMLEorKMKK$new()}}
-\item \href{#method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T()}}
 \item \href{#method-SeqDesignInferenceMLEorKMKK-clone}{\code{SeqDesignInferenceMLEorKMKK$clone()}}
 }
 }
@@ -42,7 +43,8 @@ seq_des_inf$compute_confidence_interval()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -51,7 +53,12 @@ seq_des_inf$compute_confidence_interval()
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$new(seq_des_obj, num_cores = 1, verbose = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$new(
+  seq_des_obj,
+  num_cores = 1,
+  verbose = FALSE,
+  thin = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -64,18 +71,19 @@ seq_des_inf$compute_confidence_interval()
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Computes a 1-alpha level frequentist bootstrap confidence interval for KK tests
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_boostrap_distribution_beta_hat_T()}}{
+Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval(
-  alpha = 0.05,
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T(
   B = 501
 )}\if{html}{\out{</div>}}
 }
@@ -83,14 +91,12 @@ Computes a 1-alpha level frequentist bootstrap confidence interval for KK tests
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
-
-\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+\item{\code{B}}{Number of bootstrap samples. The default is 501.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -104,8 +110,9 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-seq_des_inf$compute_confidence_interval()
-					
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
 }
 \if{html}{\out{</div>}}
 
