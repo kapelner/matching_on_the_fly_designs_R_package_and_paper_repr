@@ -53,7 +53,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
         if (is.null(private$cached_values$s_beta_hat_T)){
           private$shared()
         }
-        w_star_bai = private$KKstats$ssqR / (private$KKstats$ssqR + private$cached_values$s_beta_hat_T)
+        w_star_bai = private$KKstats$ssqR / (private$KKstats$ssqR + private$bai_var_d_bar)
         private$cached_values$beta_hat_T = w_star_bai * private$KKstats$d_bar + (1 - w_star_bai) * private$KKstats$r_bar #proper weighting
       }
       private$cached_values$beta_hat_T
@@ -140,6 +140,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
   
   private = list(
     convex_flag = NULL,
+    bai_var_d_bar = NULL,
     
     shared = function(){
       m = private$KKstats$m
@@ -147,18 +148,14 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
         private$cached_values$s_beta_hat_T = if (private$convex_flag) sqrt(private$KKstats$ssqR) else 0
         return()
       }
+      private$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
       
-      v_sq = private$compute_bai_variance_for_pairs()
-      
-      var_d_bar = v_sq / m
-      
-      if (private$convex_flag && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
-        var_r_bar = private$KKstats$ssqR
-        combined_var = (var_d_bar * var_r_bar) / (var_d_bar + var_r_bar) # convex estimator
-        private$cached_values$s_beta_hat_T = sqrt(combined_var)
-      } else {
-        private$cached_values$s_beta_hat_T = sqrt(var_d_bar) # just bai estimator
-      }
+      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
+                                              sqrt((private$bai_var_d_bar * private$KKstats$ssqR) /
+                                                  (private$bai_var_d_bar + private$KKstats$ssqR)) # convex estimator
+                                            } else {
+                                              sqrt(private$bai_var_d_bar) # just bai estimator
+                                            }
     },
     
     compute_bai_variance_for_pairs = function(){
