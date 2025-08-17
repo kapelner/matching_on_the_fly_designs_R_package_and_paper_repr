@@ -57,7 +57,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
         if (is.null(private$cached_values$s_beta_hat_T)){
           private$shared()
         }
-        w_star_bai = private$KKstats$ssqR / (private$KKstats$ssqR + private$cached_values$s_beta_hat_T)
+        w_star_bai = private$KKstats$ssqR / (private$KKstats$ssqR + private$bai_var_d_bar)
         private$cached_values$beta_hat_T = w_star_bai * private$KKstats$d_bar + (1 - w_star_bai) * private$KKstats$r_bar #proper weighting
       }
       private$cached_values$beta_hat_T
@@ -139,50 +139,44 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
   ),
   
   private = list(
-    convex = NULL,
+    convex_flag = NULL,
+    bai_var_d_bar = NULL,
     
     shared = function(){
       m = private$KKstats$m
       if (m == 0){
-        private$cached_values$s_beta_hat_T = if (private$convex) sqrt(private$KKstats$ssqR) else 0
-        return()
-      }
-      
-      v_sq = private$compute_bai_variance_for_pairs()
-      
-      var_d_bar = v_sq / m
-      
-      if (private$convex && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
-        var_r_bar = private$KKstats$ssqR
-        combined_var = (var_d_bar * var_r_bar) / (var_d_bar + var_r_bar) # convex estimator
-        private$cached_values$s_beta_hat_T = sqrt(combined_var)
+        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$KKstats$ssqR, 0)
       } else {
-        private$cached_values$s_beta_hat_T = sqrt(var_d_bar) # just bai estimator
-      }
+	      private$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
+	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
+	                                              sqrt(
+													private$bai_var_d_bar * private$KKstats$ssqR /
+	                                                  (private$bai_var_d_bar + private$KKstats$ssqR)
+	                                              ) # convex estimator
+	                                            } else {
+	                                              sqrt(private$bai_var_d_bar) # just bai estimator
+	                                            }		
+	  }
     },
     
     compute_bai_variance_for_pairs = function(){
-      match_indic = private$seq_des_obj_priv_int$match_indic
-      m = private$KKstats$m
-      full_y = private$seq_des_obj_priv_int$y
-      full_w = private$seq_des_obj_priv_int$w
-      
+      w = private$seq_des_obj_priv_int$w
+      y = private$seq_des_obj_priv_int$y
+      m = private$KKstats$m      
       yT_for_pairs = numeric(m)
       yC_for_pairs = numeric(m)
       
-      for (i in 1:m) {
-        current_pair_id = i
+      for (i_m in 1:m) {        
+        indices_in_pair = which(private$seq_des_obj_priv_int$match_indic == i_m)
+        i_T = indices_in_pair[w[indices_in_pair] == 1]
+        i_C = indices_in_pair[w[indices_in_pair] == 0]
         
-        indices_in_pair = which(match_indic == current_pair_id)
-        treated_index = indices_in_pair[full_w[indices_in_pair] == 1]
-        control_index = indices_in_pair[full_w[indices_in_pair] == 0]
-        
-        yT_for_pairs[i] = full_y[treated_index]
-        yC_for_pairs[i] = full_y[control_index]
+        yT_for_pairs[i_m] = y[i_T]
+        yC_for_pairs[i_m] = y[i_C]
       }
       
       pairs_df = data.frame(
-        pair_id = 1:m,
+        pair_id = 1 : m,
         yT = yT_for_pairs,
         yC = yC_for_pairs,
         d_i = yT_for_pairs - yC_for_pairs
@@ -195,8 +189,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       
       # lambda_squ^2 term
       lambda_squ = 0
-      if(nrow(halves) > 0){
-        for (i in 1:nrow(halves)){
+      if (nrow(halves) > 0){
+        for (i in 1 : nrow(halves)){
           pair1_id = as.numeric(as.character(halves[i, 1]))
           pair2_id = as.numeric(as.character(halves[i, 3]))
           
@@ -243,7 +237,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       ######################################################################################
       
       # The variance cannot be negative.
-      return(max(v_sq, 1e-8))
+      max(v_sq, 1e-8)
     },
     
     compute_halves = function(){
