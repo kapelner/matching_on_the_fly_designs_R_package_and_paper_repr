@@ -670,7 +670,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$X = private$drop_linearly_dependent_cols(private$X)$M
 				
 				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
-					stop("boom")
+					stop("improper sizing for the internal X representation")
 				}
 			} else {
 				#blank covariate matrix

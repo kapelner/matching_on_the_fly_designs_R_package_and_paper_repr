@@ -180,7 +180,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
-    {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 6},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
     {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
     {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},

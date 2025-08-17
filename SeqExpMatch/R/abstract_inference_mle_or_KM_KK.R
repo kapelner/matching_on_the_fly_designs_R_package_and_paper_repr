@@ -153,31 +153,40 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 		data_frame_with_matching_dummies = NULL,
 		
 		compute_basic_match_data = function(){
-			#get matched data				
-			m = max(private$seq_des_obj_priv_int$match_indic)
+			#cache data for speed	
+			match_indic = private$seq_des_obj_priv_int$match_indic			
+			m = max(match_indic)
+			y = private$seq_des_obj_priv_int$y
+			w = private$seq_des_obj_priv_int$w
+			
+			yTs_matched = array(NA, m)
+			yCs_matched = array(NA, m)
 			y_matched_diffs = array(NA, m)
 			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 			if (m > 0){
 				for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
-					yT = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id]
-					yC = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id]
-					y_matched_diffs[match_id] = yT - yC
+					yTs_matched[match_id] = y[w == 1 & match_indic == match_id]
+					yCs_matched[match_id] = y[w == 0 & match_indic == match_id]
 					
-					xmTvec = private$X[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id, ]
-					xmCvec = private$X[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id, ]
+					xmTvec = private$X[w == 1 & match_indic == match_id, ]
+					xmCvec = private$X[w == 0 & match_indic == match_id, ]
 					X_matched_diffs[match_id, ] = xmTvec - xmCvec
 				}
+				y_matched_diffs = yTs_matched - yCs_matched
 			}
+			w_reservoir = w[match_indic == 0]
 
 			private$KKstats = list(
 				X_matched_diffs = X_matched_diffs,
+				yTs_matched = yTs_matched,
+				yCs_matched = yCs_matched,
 				y_matched_diffs = y_matched_diffs,
-				X_reservoir = private$X[private$seq_des_obj_priv_int$match_indic == 0, ],
-				y_reservoir = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$match_indic == 0],
-				w_reservoir = private$seq_des_obj_priv_int$w[private$seq_des_obj_priv_int$match_indic == 0],
+				X_reservoir = private$X[match_indic == 0, ],
+				y_reservoir = y[match_indic == 0],
+				w_reservoir = w_reservoir,
 				nRT = sum(w_reservoir), #how many treatment observations are there in the reservoir?
 				nRC = sum(w_reservoir == 0), #how many control observations are there in the reservoir?
-				m = m,
+				m = m
 			)
 		},
 		

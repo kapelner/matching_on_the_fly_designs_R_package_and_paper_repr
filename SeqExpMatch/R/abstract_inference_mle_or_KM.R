@@ -58,7 +58,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				for (r in 1 : B){
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r = private$seq_des_obj_priv_int$duplicate() #TO-DO make this leaner
+					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate() #TO-DO make this leaner
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
@@ -79,7 +79,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r = seq_des_obj$.__enclos_env__$private$duplicate()
+					seq_des_r = seq_des_obj$.__enclos_env__$private$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]

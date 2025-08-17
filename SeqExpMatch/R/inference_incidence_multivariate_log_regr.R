@@ -45,7 +45,6 @@ SeqDesignInferenceIncidMultiLogRegr = R6::R6Class("SeqDesignInferenceIncidMultiL
 		#' 	
 		compute_treatment_estimate = function(){
 			fast_logistic_regression(cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), private$seq_des_obj_priv_int$y)$b[2]
-			stop("boom")
 		}
 	),
 	

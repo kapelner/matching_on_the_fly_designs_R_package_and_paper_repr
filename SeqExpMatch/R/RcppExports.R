@@ -25,10 +25,6 @@ compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, r
     .Call(`_SeqExpMatch_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
-fast_logistic_regression_cpp <- function(X, y, start, eps_f = 1e-8, eps_g = 1e-5, maxit = 300L) {
-    .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, start, eps_f, eps_g, maxit)
-}
-
 matrix_rank_cpp <- function(A, tol = 1e-12) {
     .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
 }

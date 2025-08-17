@@ -163,7 +163,6 @@ binomial_link_cache = binomial()
 
 fast_logistic_regression_with_var = function(Xmm, y){
 	mod = glm.fit(Xmm, y, family = binomial_link_cache)
-	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$weights)	
-	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
-	mod
+	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$weights)
+	list(b = mod$coefficients, ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2))
 }

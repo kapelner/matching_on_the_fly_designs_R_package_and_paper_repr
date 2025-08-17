@@ -145,7 +145,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     shared = function(){
       m = private$KKstats$m
       if (m == 0){
-        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$KKstats$ssqR, 0)
+        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$KKstats$ssqR), 0)
       } else {
 	      private$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
 	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
@@ -159,27 +159,12 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	  }
     },
     
-    compute_bai_variance_for_pairs = function(){
-      w = private$seq_des_obj_priv_int$w
-      y = private$seq_des_obj_priv_int$y
-      m = private$KKstats$m      
-      yT_for_pairs = numeric(m)
-      yC_for_pairs = numeric(m)
-      
-      for (i_m in 1:m) {        
-        indices_in_pair = which(private$seq_des_obj_priv_int$match_indic == i_m)
-        i_T = indices_in_pair[w[indices_in_pair] == 1]
-        i_C = indices_in_pair[w[indices_in_pair] == 0]
-        
-        yT_for_pairs[i_m] = y[i_T]
-        yC_for_pairs[i_m] = y[i_C]
-      }
-      
+    compute_bai_variance_for_pairs = function(){  
       pairs_df = data.frame(
-        pair_id = 1 : m,
-        yT = yT_for_pairs,
-        yC = yC_for_pairs,
-        d_i = yT_for_pairs - yC_for_pairs
+        pair_id = 1 : private$KKstats$m,
+        yT = private$KKstats$yTs_matched,
+        yC = private$KKstats$yCs_matched,
+        d_i = private$KKstats$y_matched_diff
       )
       
       halves = private$compute_halves()

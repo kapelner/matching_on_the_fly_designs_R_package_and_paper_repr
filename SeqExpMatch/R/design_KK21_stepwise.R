@@ -112,6 +112,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 #				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
 #				abs(coef(summary_glm_lean(logistic_regr_mod))[2, 3])
+				
 
 				mod = fast_logistic_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
 				abs(mod$b[2] / sqrt(mod$ssq_b_2))

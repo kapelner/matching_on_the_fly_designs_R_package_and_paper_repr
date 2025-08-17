@@ -154,7 +154,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 			
-			is_KK =    is(self, "SeqDesignInferenceMLEorKMKK")
+			is_KK =          is(self, "SeqDesignInferenceMLEorKMKK")
+			is_KK_compound = is(self, "SeqDesignInferenceAllKKCompoundMeanDiff")
 			is_Efron = !is.null(private$seq_des_obj_priv_int$weighted_coin_prob)
 
 			X = private$X	
@@ -212,7 +213,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_inf_r$.__enclos_env__$private$X = X	
 					if (is_KK){
 						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
-					}						
+					}	
+					if (is_KK_compound){
+						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+					}					
 					beta_hat_T_diff_ws[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_diff_ws)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
@@ -220,7 +224,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("is_KK", "is_Efron", "seq_des_obj_priv_int", "y", "X", "dead", "w", "t", "prob_T", "p_raw_t", "weighted_coin_prob"), envir = environment())
+				doParallel::clusterExport(cl, list("is_KK", "is_KK_compound", "is_Efron", "seq_des_obj_priv_int", "y", "X", "dead", "w", "t", "prob_T", "p_raw_t", "weighted_coin_prob"), envir = environment())
 				#now do the parallelization
 				beta_hat_T_diff_ws = doParallel::foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
 					#make a copy of the object and then permute the allocation vector according to the design
@@ -241,7 +245,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_inf_r$.__enclos_env__$private$X = X	
 					if (is_KK){ #for matching-on-the-fly there is some more data required for inference
 						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
-					}						
+					}		
+					if (is_KK_compound){
+						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+					}					
 					seq_inf_r$compute_treatment_estimate()
 				}
 				doParallel::stopCluster(cl)

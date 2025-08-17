@@ -14,7 +14,7 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-response_type = "incidence"
+response_type = "continuous"
 y = D$y_original[[response_type]]
 
 #all current designs
@@ -67,6 +67,6 @@ profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
 })
 seq_des_inf$compute_bootstrap_two_sided_pval()
-# profvis({
+profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-# })
+})
