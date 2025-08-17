@@ -79,13 +79,14 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 }
 }
 \if{html}{\out{
-<details open><summary>Inherited methods</summary>
+<details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMKK" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMKK.html#method-SeqDesignInferenceMLEorKMKK-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKMKK$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMKK" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMKK.html#method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -98,7 +99,8 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKK$new(
   seq_des_obj,
   num_cores = 1,
-  verbose = TRUE
+  verbose = FALSE,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -111,6 +113,8 @@ Initialize a sequential experimental design estimation and test object after the
 or bootstrap inference.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
@@ -119,7 +123,7 @@ or bootstrap inference.}
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKK-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKK-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate for mean difference
+Computes the appropriate estimate
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKK$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }

@@ -52,7 +52,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
 		#' This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
 		#' https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-		#' As far as we know, this only works for response type continuous.
+		#' As far as we know, this only works for response type continuous and survival uncensored (where the CI is on log mean).
 		#' 
 		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
@@ -79,21 +79,50 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			
+						
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
-					#####TO-DO
-					lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100)
+					lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100) #ensure a wider CI to be the starting position then pare down
 					c(
-						private$compute_ci_lower_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, self$compute_treatment_estimate(), lower_upper_ci_bounds[2], alpha / 2, pval_epsilon),
-						private$compute_ci_upper_by_inverting_the_randomization_test(nsim_exact_test, private$num_cores, lower_upper_ci_bounds[1], self$compute_treatment_estimate(), alpha / 2, pval_epsilon)
+						private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
+							l = lower_upper_ci_bounds[1], 
+							u = self$compute_treatment_estimate(), 
+							pval_th = alpha / 2, 
+							tol = pval_epsilon, 
+							log_responses = FALSE, 
+							lower = TRUE),
+						private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
+							l = self$compute_treatment_estimate(), 
+							u = lower_upper_ci_bounds[2],  
+							pval_th = alpha / 2, 
+							tol = pval_epsilon, 
+							log_responses = FALSE, 
+							lower = FALSE)
 					)					
 				},
 				incidence =  stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes"),
 				count =      stop("Confidence intervals are not supported for randomization tests for mean difference in count outomes"),
 				proportion = stop("Confidence intervals are not supported for randomization tests for mean difference in proportion outomes"),
-				survival =   stop("Confidence intervals are not supported for randomization tests for mean difference in survival outomes")
-			
+				survival =   {
+					assertNoCensoring(private$any_censoring)
+					lower_upper_ci_bounds = private$compute_mle_or_km_based_confidence_interval(alpha / 100) #ensure a wider CI to be the starting position then pare down
+					c(
+						private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
+							l = lower_upper_ci_bounds[1], 
+							u = self$compute_treatment_estimate(), 
+							pval_th = alpha / 2, 
+							tol = pval_epsilon,
+							log_responses = TRUE, 
+							lower = TRUE),
+						private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
+							l = self$compute_treatment_estimate(), 
+							u = lower_upper_ci_bounds[2], 
+							pval_th = alpha / 2, 
+							tol = pval_epsilon, 
+							log_responses = TRUE, 
+							lower = FALSE)
+					)						
+				} #compute_ci_by_inverting_the_randomization_test_iteratively = function(nsim_exact_test, num_cores, l, u, pval_th, tol, log_responses, lower)			
 			)
 		},		
 		
@@ -104,6 +133,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'
 		#' @param nsim_exact_test		The number of randomization vectors to use. The default is 501.
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param log_responses			Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.
 		#' 
 		#' @return 	A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
 		#' 
@@ -120,7 +150,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' beta_hat_T_diff_ws = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null()
 		#' ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + geom_histogram(aes(x = beta_hat_T_diff_ws))
-		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0){
+		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0, log_responses = FALSE){
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 			
@@ -132,12 +162,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (private$seq_des_obj_priv_int$response_type != "continous"){
 					stop("randomization tests with delta nonzero only works for continuous type!!!!")
 				}
-				y = copy(private$seq_des_obj_priv_int$y) #copy to ensure we don't edit it
+				y = if (log_responses){
+						log(copy(private$seq_des_obj_priv_int$y)) #copy to ensure we don't edit it
+					} else {
+						copy(private$seq_des_obj_priv_int$y) #copy to ensure we don't edit it
+					}
 				#we are testing against H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 
 				#so adjust the treatment responses downward by delta
 				y[private$seq_des_obj_priv_int$w == 1] = y[private$seq_des_obj_priv_int$w == 1] - delta
 			} else {
-				y = private$seq_des_obj_priv_int$y #no need for copy as we are not mutating
+				y = if (log_responses){
+						log(private$seq_des_obj_priv_int$y) #no need for copy as we are not mutating
+					} else {
+						private$seq_des_obj_priv_int$y #no need for copy as we are not mutating
+					}				
 			}
 			dead = private$seq_des_obj_priv_int$dead
 			w = private$seq_des_obj_priv_int$w
@@ -173,7 +211,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = X	
 					if (is_KK){
-						seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
+						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
 					}						
 					beta_hat_T_diff_ws[r] = seq_inf_r$compute_treatment_estimate()
 				}
@@ -202,7 +240,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = X	
 					if (is_KK){ #for matching-on-the-fly there is some more data required for inference
-						seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
+						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
 					}						
 					seq_inf_r$compute_treatment_estimate()
 				}
@@ -222,6 +260,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
 		#' 								is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param log_responses			Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.
 		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
 		#' 
 		#' @return 	The approximate frequentist p-value
@@ -239,10 +278,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 		
-		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, na.rm = FALSE){
+		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, log_responses = FALSE, na.rm = FALSE){
 			assertLogical(na.rm)
 			#approximate the null distribution by computing estimates on many draws of w
-			beta_hat_T_diff_ws = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta)
+			beta_hat_T_diff_ws = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta ,log_responses)
 			#this calculates the actual estimate to compare against the null distribution
 			beta_hat_T = self$compute_treatment_estimate()
 			#finally compute the p-value
@@ -250,7 +289,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				nsim_exact_test = sum(!is.na(beta_hat_T))
 			}
 			2 * min(
-				sum(beta_hat_T_diff_ws > beta_hat_T, na.rm = na.rm) / nsim_exact_test, 
+				sum(beta_hat_T_diff_ws > beta_hat_T, na.rm = na.rm) / nsim_exact_test, #na.rm is because some runs produce NA... TO-DO is to trace these down
 				sum(beta_hat_T_diff_ws < beta_hat_T, na.rm = na.rm) / nsim_exact_test
 			)
 		}
@@ -280,42 +319,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$X
 		},		
 		
-		compute_ci_lower_by_inverting_the_randomization_test = function(nsim_exact_test, l, u, pval_th, tol){
-			return(NA) #not implemented yet!!!!
-			################################################################################################
-			pval_l = private$compute_randomization_test_p_val(nsim_exact_test, l)
-			pval_u = private$compute_randomization_test_p_val(nsim_exact_test, u)
+		compute_ci_by_inverting_the_randomization_test_iteratively = function(nsim_exact_test, l, u, pval_th, tol, log_responses, lower){
+			pval_l = private$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = l, log_responses)
+			pval_u = private$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = u, log_responses)
 			repeat {
-				if (pval_u - pval_l <= tol){
+				if (pval_u - pval_l <= tol & lower){
 					return(l)
 				}
+				if (pval_u - pval_l <= tol & !lower){
+					return(u)
+				}				
 				m = (l + u) / 2
-				pval_m = private$compute_randomization_test_p_val(nsim_exact_test, m)
-				if (pval_m >= pval_th){
+				pval_m = private$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = m, log_responses)
+				if (pval_m >= pval_th & lower){
 					u = m
 					pval_u = pval_m
-				} else {
+				} else if (pval_m >= pval_th & !lower){
 					l = m
 					pval_l = pval_m
-				}
-			}
-		},
-		
-		compute_ci_upper_by_inverting_the_randomization_test = function(nsim_exact_test, l, u, pval_th, tol){
-			return(NA) #not implemented yet!!!!
-			################################################################################################
-			pval_l = private$compute_randomization_test_p_val(nsim_exact_test, l)
-			pval_u = private$compute_randomization_test_p_val(nsim_exact_test, u)
-			repeat {
-				if (pval_l - pval_u <= tol){
-					return(u)
-				}
-				m = (l + u) / 2
-				pval_m = private$compute_randomization_test_p_val(nsim_exact_test, m)
-				if (pval_m >= pval_th){
+				} else if (lower){
 					l = m
 					pval_l = pval_m
-				} else {
+				} else if (upper){
 					u = m
 					pval_u = pval_m
 				}

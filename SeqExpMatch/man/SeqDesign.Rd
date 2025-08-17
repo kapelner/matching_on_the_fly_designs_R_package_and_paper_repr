@@ -11,13 +11,6 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \examples{
 
 ## ------------------------------------------------
-## Method `SeqDesign$new`
-## ------------------------------------------------
-
-seq_des = SeqDesign$new(response_type = "continuous")
- 
-
-## ------------------------------------------------
 ## Method `SeqDesign$add_subject_to_experiment_and_assign`
 ## ------------------------------------------------
 
@@ -181,7 +174,6 @@ Get t
 \item \href{#method-SeqDesign-assert_fixed_sample}{\code{SeqDesign$assert_fixed_sample()}}
 \item \href{#method-SeqDesign-any_censoring}{\code{SeqDesign$any_censoring()}}
 \item \href{#method-SeqDesign-get_t}{\code{SeqDesign$get_t()}}
-\item \href{#method-SeqDesign-get_design}{\code{SeqDesign$get_design()}}
 \item \href{#method-SeqDesign-get_X_raw}{\code{SeqDesign$get_X_raw()}}
 \item \href{#method-SeqDesign-get_X_imp}{\code{SeqDesign$get_X_imp()}}
 \item \href{#method-SeqDesign-get_y}{\code{SeqDesign$get_y()}}
@@ -201,11 +193,12 @@ Get t
 Initialize a sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesign$new(
-  response_type,
+  response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
-  verbose = TRUE,
-  n = NULL
+  n = NULL,
+  verbose = FALSE,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -213,7 +206,7 @@ Initialize a sequential experimental design
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous", 
+"continuous" (the default),  
 "incidence", 
 "proportion", 
 "count", 
@@ -227,24 +220,17 @@ of the appropriate type.}
 missingness in addition to imputing its value? If the feature is type factor, instead of creating
 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A new `SeqDesign` object of the specific type
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(response_type = "continuous")
- 
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesign-add_subject_to_experiment_and_assign"></a>}}
@@ -577,19 +563,6 @@ Get t
 \subsection{Returns}{
 The current number of subjects in this sequential experiment (begins at zero).					
 			
-Get design
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesign-get_design"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesign-get_design}{}}}
-\subsection{Method \code{get_design()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$get_design()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The experimenter-specified type of sequential experimental design (see constructor's documentation).	
 Get raw X information
 }
 }

@@ -32,19 +32,19 @@ Depends:
 	Rcpp,
 	RcppEigen,
 	RcppNumerical,
-	StanHeaders,
 	data.table,
+	glmnet,
 	survival,
 	betareg,
 	statmod,
 	numDeriv,
 	missRanger,
 	missForest,
-	doParallel
+	nbpMatching
 LinkingTo: 
+	doParallel,	
 	RcppEigen,
-	RcppNumerical,
-	StanHeaders,
+	RcppNumerical,	
 	Rcpp
 Imports:
 	Rcpp (>= 1.0.14),
@@ -55,6 +55,7 @@ Collate:
     'RcppExports.R'
     'SeqExpMatch.R'
     'helper_functions.R'
+    'model_fit_helpers.R'
     'abstract_design.R'
     'design_crd.R'
     'design_ibcrd.R'
@@ -67,9 +68,12 @@ Collate:
     'abstract_inference_mle_or_KM.R'
     'abstract_inference_mle_or_KM_summary_table.R'
     'abstract_inference_mle_or_KM_KK.R'
-    'helper_for_inference_KK.R'
     'inference__all_naive_mean_diff.R'
     'inference__all_KK_compound_mean_diff.R'
+    'abstract_inference_bai_et_al.R'
+    'inference_bai_et_al_KK14.R'
+    'inference_bai_et_al_KK21.R'
+    'inference_bai_et_al_KK21stepwise.R'
     'inference_continuous_multivariate_ols.R'
     'inference_continuous_KK_compound_multivariate_ols.R'
     'inference_incidence_univariate_log_regr.R'

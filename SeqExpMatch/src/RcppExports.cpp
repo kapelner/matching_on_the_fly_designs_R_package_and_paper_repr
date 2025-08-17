@@ -60,6 +60,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_proportional_mahal_distances_cpp
+Eigen::VectorXd compute_proportional_mahal_distances_cpp(const Eigen::VectorXd& xt_prev, const Eigen::MatrixXd& X_prev, const Eigen::VectorXi& reservoir_indices, const Eigen::MatrixXd& S_xs_inv);
+RcppExport SEXP _SeqExpMatch_compute_proportional_mahal_distances_cpp(SEXP xt_prevSEXP, SEXP X_prevSEXP, SEXP reservoir_indicesSEXP, SEXP S_xs_invSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type xt_prev(xt_prevSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_prev(X_prevSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type reservoir_indices(reservoir_indicesSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type S_xs_inv(S_xs_invSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_proportional_mahal_distances_cpp(xt_prev, X_prev, reservoir_indices, S_xs_inv));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_weighted_sqd_distances_cpp
 NumericVector compute_weighted_sqd_distances_cpp(NumericVector x_new, NumericMatrix X_all_scaled_col_subset, IntegerVector reservoir_indices, NumericVector covariate_weights);
 RcppExport SEXP _SeqExpMatch_compute_weighted_sqd_distances_cpp(SEXP x_newSEXP, SEXP X_all_scaled_col_subsetSEXP, SEXP reservoir_indicesSEXP, SEXP covariate_weightsSEXP) {
@@ -71,22 +85,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type reservoir_indices(reservoir_indicesSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type covariate_weights(covariate_weightsSEXP);
     rcpp_result_gen = Rcpp::wrap(compute_weighted_sqd_distances_cpp(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fast_logistic_regression_cpp
-List fast_logistic_regression_cpp(NumericMatrix X, NumericVector y, NumericVector start, double eps_f, double eps_g, int maxit);
-RcppExport SEXP _SeqExpMatch_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP startSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP, SEXP maxitSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type start(startSEXP);
-    Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
-    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_cpp(X, y, start, eps_f, eps_g, maxit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -180,6 +178,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp", (DL_FUNC) &_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp, 2},
     {"_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp", (DL_FUNC) &_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp, 2},
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
+    {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 6},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},

@@ -57,25 +57,24 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 				self$assert_even_allocation()
 				private$assert_KK_and_morrison_parameters_corrrect(lambda, t_0_pct, morrison, p)
 				private$morrison = morrison
-				
 				if (morrison){
-					private$p = p				
-					private$compute_lambda = 	if (super$is_fixed_sample()){
-													function(){private$n^(-1 / (2 * private$p))}
-												} else {
-													function(){private$t^(-1 / (2 * private$p))}
-												}				
+					private$p = p
+					if (super$is_fixed_sample_size()){
+		              	private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
+		            } else {
+		              	private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
+		            }
 				} else {
 					private$match_indic = array(NA, n)		
 					private$lambda = ifelse(is.null(lambda), 0.1, lambda) #10% is the default	
 					private$compute_lambda = function(){private$lambda}
 					private$t_0 = round(ifelse(is.null(t_0_pct), 0.35, t_0_pct) * n) #35% is the default			
 				}
-			}			
+			}
 		},
 		
 		#' @description
-		#' For KK designs only, this returns a list with useful matching statistics.
+		#' This returns a list with useful matching statistics.
 		#' 
 		#' @return 	A list with the following data: \code{num_matches}, \code{prop_subjects_matched}, 
 		#' 			\code{num_subjects_remaining_in_reservoir}, \code{prop_subjects_remaining_in_reservoir}.
@@ -106,12 +105,36 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 				num_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir,
 				prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / private$t
 			)					
+		},
+		
+		#' @description
+		#' Returns information about the matched pairs and reservoir
+		#' 
+		#' @return 	An array in the order in which the subject entered with the match number or zero if the subject 
+		#'			belonged to the reservoir at the end of the study.
+		#' 
+		#' @examples
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+		#' 
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' 
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#' 
+		#' seq_des$get_match_indic()
+		#'
+		get_match_indic = function(){
+	    	private$match_indic
 		}
 	),
 	private = list(
 		uses_covariates = TRUE,
 		morrison = NULL,
-		t_0 = NULL,	
+		t_0 = 0, # not null for function consistency when not defined
 		lambda = NULL,
 		p = NULL,
 		compute_lambda = NULL,	
@@ -164,16 +187,25 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 						#first calculate the threshold we're operating at	
 						#when inverting, ensure full rank by adding eps * I			
 						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
+
+						#now iterate over all items in reservoir and take the minimum distance x
+						reservoir_indices = which(private$match_indic == 0)
+#						sqd_distances_times_two = array(NA, length(reservoir_indices))
+#						for (r in 1 : length(reservoir_indices)){
+#							x_r_x_new_delta = all_subject_data$xt_prev - all_subject_data$X_prev[reservoir_indices[r], ]
+#							sqd_distances_times_two[r] = t(x_r_x_new_delta) %*% S_xs_inv %*% x_r_x_new_delta		
+#						}						
+						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
+						    all_subject_data$xt_prev,
+						    all_subject_data$X_prev,
+						    reservoir_indices,
+						    S_xs_inv
+						) 		
+						cat("assign_wt t =", private$t, "\n")
+						#comput cutoff threshold
 						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						n = self$get_n()
 						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
-						#now iterate over all items in reservoir and take the minimum distance x
-						reservoir_indices = which(private$match_indic == 0)
-						sqd_distances_times_two = array(NA, length(reservoir_indices))
-						for (r in 1 : length(reservoir_indices)){
-							x_r_x_new_delta = all_subject_data$xt_prev - all_subject_data$X_prev[reservoir_indices[r], ]
-							sqd_distances_times_two[r] = t(x_r_x_new_delta) %*% S_xs_inv %*% x_r_x_new_delta		
-						}					
 						#find minimum distance index
 						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))
 						if (length(sqd_distances_times_two[min_sqd_dist_index]) > 1 || length(T_cutoff_sq) > 1){

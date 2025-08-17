@@ -145,16 +145,25 @@ fast_negbin_regression_with_var = function(Xmm, y){
 
 
 
-binomial_link_cache = binomial()
 
 fast_logistic_regression = function(Xmm, y){
-	mod = glm.fit(Xmm, y, family = binomial_link_cache)
-	list(b = mod$coefficients, w = mod$weights)
+	mod = glmnet::glmnet(
+	    x = Xmm,
+	    y = y,
+	    family = "binomial",
+	    alpha = 0,
+	    lambda = 0,
+	    standardize = FALSE,
+	    intercept = FALSE
+	)	
+	list(b = mod$beta)
 }
 
+binomial_link_cache = binomial()
+
 fast_logistic_regression_with_var = function(Xmm, y){
-	mod = fast_logistic_regression(Xmm, y)
-	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)	
+	mod = glm.fit(Xmm, y, family = binomial_link_cache)
+	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$weights)	
 	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
 	mod
 }

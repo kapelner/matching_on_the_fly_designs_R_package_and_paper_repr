@@ -19,7 +19,8 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			if (!thin){
 				assertClass(seq_des_obj, "SeqDesignKK14")
 				super$initialize(seq_des_obj, num_cores, verbose)
-				private$setup_matching_data(seq_des_obj, private$get_X())				
+				private$get_X()
+				private$compute_basic_match_data()				
 			}
 		},
 		
@@ -53,11 +54,14 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			dead = private$seq_des_obj_priv_int$dead
 			w = private$seq_des_obj_priv_int$w
 			X = private$get_X()
-			match_indic = private$KKstats$match_indic
+			match_indic = private$seq_des_obj_priv_int$match_indic
 			i_reservoir = which(match_indic == 0)
 			n_reservoir = length(i_reservoir)
 			m = private$KKstats$m
 			match_indic_b = c(rep(0, n_reservoir), rep(1 : m, each = 2))
+			
+			needs_reservoir_and_match_statistics = is(self, "SeqDesignInferenceAllKKCompoundMeanDiff") | 
+				is(self, "SeqDesignInferenceBaiAdjustedT")
 			
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_bs = array(NA, B)
@@ -86,15 +90,22 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 					seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
 					#compute beta_T_hat					
 					seq_inf_r = private$thin_duplicate()
+					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
-					seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)					
+					seq_inf_r$.__enclos_env__$private$compute_basic_match_data()	
+					if (needs_reservoir_and_match_statistics){
+						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+					}		
 					beta_hat_T_bs[r] = seq_inf_r$compute_treatment_estimate()
 				}
 			} else {	
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)			
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w"), envir = environment())
+				doParallel::clusterExport(cl, 
+					list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w" ,"needs_reservoir_and_match_statistics"), 
+					envir = environment()
+				)
 				#now do the parallelization
 				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap of both the reservoir and matches - first create index vector					
@@ -123,7 +134,10 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 					seq_inf_r = private$thin_duplicate()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
-					seq_inf_r$.__enclos_env__$private$setup_matching_data(seq_des_r, seq_des_r$.__enclos_env__$private$X)
+					seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
+					if (needs_reservoir_and_match_statistics){
+						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+					}	
 					seq_inf_r$compute_treatment_estimate()			
 				}
 				doParallel::stopCluster(cl)
@@ -135,22 +149,67 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 	),
 	private = list(
 		helper = NULL,
-		KKstats = NULL,
+		KKstats = NULL,	
+		data_frame_with_matching_dummies = NULL,
 		
-		setup_matching_data = function(d, X){
-			private$helper = SeqDesignInferenceHelperKK$new(d, X)
-			private$KKstats = private$helper$get_post_matching_data()	
+		compute_basic_match_data = function(){
+			#get matched data				
+			m = max(private$seq_des_obj_priv_int$match_indic)
+			y_matched_diffs = array(NA, m)
+			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
+			if (m > 0){
+				for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
+					yT = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id]
+					yC = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id]
+					y_matched_diffs[match_id] = yT - yC
+					
+					xmTvec = private$X[private$seq_des_obj_priv_int$w == 1 & private$seq_des_obj_priv_int$match_indic == match_id, ]
+					xmCvec = private$X[private$seq_des_obj_priv_int$w == 0 & private$seq_des_obj_priv_int$match_indic == match_id, ]
+					X_matched_diffs[match_id, ] = xmTvec - xmCvec
+				}
+			}
+
+			private$KKstats = list(
+				X_matched_diffs = X_matched_diffs,
+				y_matched_diffs = y_matched_diffs,
+				X_reservoir = private$X[private$seq_des_obj_priv_int$match_indic == 0, ],
+				y_reservoir = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$match_indic == 0],
+				w_reservoir = private$seq_des_obj_priv_int$w[private$seq_des_obj_priv_int$match_indic == 0],
+				nRT = sum(w_reservoir), #how many treatment observations are there in the reservoir?
+				nRC = sum(w_reservoir == 0), #how many control observations are there in the reservoir?
+				m = m,
+			)
 		},
 		
-		thin_duplicate = function(){
-			i = super$thin_duplicate()
-			h = SeqDesignInferenceHelperKK$new(seq_des_obj, private$get_X()) 
-			i$.__enclos_env__$private$KKstats = h$get_post_matching_data()
-			i
+		compute_reservoir_and_match_statistics = function(){	
+			nRC = private$KKstats$nRC
+			nRT = private$KKstats$nRT		
+			nR = nRT + nRC #how many observations are there in the reservoir?
+					
+			y_reservoir_T = private$KKstats$y_reservoir[private$KKstats$w_reservoir == 1] #get the reservoir responses from the treatment
+			y_reservoir_C = private$KKstats$y_reservoir[private$KKstats$w_reservoir == 0] #get the reservoir responses from the control
+			
+			ssqD_bar = var(private$KKstats$y_matched_diffs) / private$KKstats$m
+			ssqR = (var(y_reservoir_T) * (nRT - 1) + var(y_reservoir_C) * (nRC - 1)) / 
+						(nR - 2) * (1 / nRT + 1 / nRC)
+			private$KKstats$d_bar = mean(private$KKstats$y_matched_diffs)			
+			private$KKstats$ssqD_bar = ssqD_bar
+			private$KKstats$r_bar = mean(y_reservoir_T) - mean(y_reservoir_C) #compute the classic estimator from the reservoir: ybar_T - ybar_C
+			private$KKstats$ssqR = ssqR
+			private$KKstats$w_star = ssqR / (ssqR + ssqD_bar)
 		},
 		
 		compute_model_matrix_with_matching_dummies = function(){
-			private$helper$data_frame_with_matching_dummies()
-		}	
+			if (is.null(private$data_frame_with_matching_dummies)){
+				if (!is.null(private$seq_des_obj_priv_int$match_indic) & uniqueN(private$seq_des_obj_priv_int$match_indic) > 1){
+					mm = model.matrix(~ 0 + factor(private$seq_des_obj_priv_int$match_indic)) 
+					mm = mm[, 2 : (ncol(mm) - 1)]
+				} else {
+					mm = NULL
+				}
+				private$data_frame_with_matching_dummies = 	cbind(data.frame(w = private$seq_des_obj_priv_int$w), mm)
+			}
+			private$data_frame_with_matching_dummies
+		}
 	)
 )

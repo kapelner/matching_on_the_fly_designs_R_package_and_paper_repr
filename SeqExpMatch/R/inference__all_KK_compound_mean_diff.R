@@ -21,6 +21,7 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
 			if (!thin){	
 				super$initialize(seq_des_obj, num_cores, verbose)
+				private$compute_reservoir_and_match_statistics()
 				assertNoCensoring(private$any_censoring)	
 			}		
 		},

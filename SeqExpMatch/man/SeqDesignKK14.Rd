@@ -34,6 +34,24 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$matching_statistics()
 
+
+## ------------------------------------------------
+## Method `SeqDesignKK14$get_match_indic`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des$get_match_indic()
+
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
@@ -43,6 +61,7 @@ seq_des$matching_statistics()
 \itemize{
 \item \href{#method-SeqDesignKK14-new}{\code{SeqDesignKK14$new()}}
 \item \href{#method-SeqDesignKK14-matching_statistics}{\code{SeqDesignKK14$matching_statistics()}}
+\item \href{#method-SeqDesignKK14-get_match_indic}{\code{SeqDesignKK14$get_match_indic()}}
 \item \href{#method-SeqDesignKK14-clone}{\code{SeqDesignKK14$clone()}}
 }
 }
@@ -61,7 +80,6 @@ seq_des$matching_statistics()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_design'><code>SeqExpMatch::SeqDesign$get_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_response_type'><code>SeqExpMatch::SeqDesign$get_response_type()</code></a></span></li>
@@ -80,15 +98,16 @@ seq_des$matching_statistics()
 Initialize a matching-on-the-fly sequential experimental design which matches based on Kapelner and Krieger (2014) or Morrison and Owen (2025)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$new(
-  response_type,
+  response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
-  verbose = TRUE,
   n = NULL,
+  verbose = FALSE,
   lambda = NULL,
   t_0_pct = NULL,
   morrison = FALSE,
-  p = NULL
+  p = NULL,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -96,7 +115,7 @@ Initialize a matching-on-the-fly sequential experimental design which matches ba
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous", 
+"continuous" (the default), 
 "incidence", 
 "proportion", 
 "count", 
@@ -110,9 +129,9 @@ of the appropriate type.}
 missingness in addition to imputing its value? If the feature is type factor, instead of creating
 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
-
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
 \item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
 
@@ -123,6 +142,8 @@ If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} whic
 settings and matching begins immediately with no wait for a certain reservoir size like in KK14.}
 
 \item{\code{p}}{The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }
@@ -143,7 +164,7 @@ A new `SeqDesignKK14` object
 \if{html}{\out{<a id="method-SeqDesignKK14-matching_statistics"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK14-matching_statistics}{}}}
 \subsection{Method \code{matching_statistics()}}{
-For KK designs only, this returns a list with useful matching statistics.
+This returns a list with useful matching statistics.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$matching_statistics()}\if{html}{\out{</div>}}
 }
@@ -166,6 +187,40 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$matching_statistics()
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignKK14-get_match_indic"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK14-get_match_indic}{}}}
+\subsection{Method \code{get_match_indic()}}{
+Returns information about the matched pairs and reservoir
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$get_match_indic()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+An array in the order in which the subject entered with the match number or zero if the subject 
+		belonged to the reservoir at the end of the study.
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des$get_match_indic()
 
 }
 \if{html}{\out{</div>}}

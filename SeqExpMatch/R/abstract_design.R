@@ -290,6 +290,27 @@ SeqDesign = R6::R6Class("SeqDesign",
 				self$add_subject_response(t, ys[t], deads[t])
 			}
 		},
+		
+		#' @description
+		#' For those who wish to use this package for analysis on already-completed experimental data
+		#' 
+		#' @param w 		The binary responses as a numeric vector of length equal to the number of subjects in the study
+		#' @examples
+		#' seq_des = SeqDesignCRD$new(response_type = "continuous")
+		#' 
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' 
+		#' seq_des$add_all_subject_assignments(c(0, 1, 0, 1, 0, 1))
+		#' 				
+		add_all_subject_assignments = function(w) {
+			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			private$w = w
+		},
 
 		#' @description
 		#' Check if this design was initialized with a fixed sample size n

@@ -25,6 +25,7 @@ in all response types (except Weibull with censoring) sequential experimental de
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_mle_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMSummaryTable" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMSummaryTable.html#method-SeqDesignInferenceMLEorKMSummaryTable-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable$compute_treatment_estimate()</code></a></span></li>
@@ -40,7 +41,8 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalUniCoxPHRegr$new(
   seq_des_obj,
   num_cores = 1,
-  verbose = TRUE
+  verbose = FALSE,
+  thin = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -54,6 +56,8 @@ Initialize a sequential experimental design estimation and test object after the
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+
+\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

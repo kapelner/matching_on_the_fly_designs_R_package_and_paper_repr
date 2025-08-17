@@ -1,9 +1,10 @@
-#include <RcppEigen.h>
+//#include <RcppEigen.h>
+#include "_helper_functions.h"
 using namespace Rcpp;
 
 
-typedef Eigen::Map<Eigen::MatrixXd> MapMat;
-typedef Eigen::Map<Eigen::VectorXd> MapVec;
+//typedef Eigen::Map<Eigen::MatrixXd> MapMat;
+//typedef Eigen::Map<Eigen::VectorXd> MapVec;
 
 // [[Rcpp::export]]
 double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j) {

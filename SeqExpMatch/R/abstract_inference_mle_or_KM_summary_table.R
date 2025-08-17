@@ -130,5 +130,3 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 	),
 	private = list()
 )
-		
-		

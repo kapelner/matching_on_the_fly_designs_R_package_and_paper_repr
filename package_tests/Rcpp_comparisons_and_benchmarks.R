@@ -40,10 +40,11 @@ microbenchmark(
 )
 rm(list = ls())
 
-
-X = as.matrix(MASS::Boston[, 1:13])
-y = as.numeric(MASS::Boston$medv > median(MASS::Boston$medv))
-Rcpp::sourceCpp("../SeqExpMatch/src/fast_logistic_regression.cpp")
+Bsub = MASS::Boston[1:200, ]
+X = as.matrix(Bsub[, 1:13])
+y = as.numeric(Bsub$medv > median(Bsub$medv))
+Rcpp::sourceCpp("../SeqExpMatch/src/_helper_functions.cpp")
+# Rcpp::sourceCpp("../SeqExpMatch/src/fast_logistic_regression.cpp")
 
 # mod = fast_logistic_regression_cpp(cbind(1, X), y, start = rep(0, ncol(X) + 1))
 # mod$b
@@ -51,21 +52,65 @@ mod = glm(y ~ X, family="binomial")
 mod$coefficients
 mod = glm.fit(cbind(1, X), y, family=binomial())
 mod$coefficients
-W <- diag(mod$weights)
-XtWX <- eigen_Xt_times_diag_w_times_X_cpp(cbind(1, X), mod$weights)
-XtWX_inv <- solve(t(cbind(1, X)) %*% W %*% cbind(1, X))
-sqrt(diag(XtWX_inv))[2]
-sqrt(eigen_compute_single_entry_of_diagonal_matrix(XtWX, 2))
+# W <- diag(mod$weights)
+# XtWX <- eigen_Xt_times_diag_w_times_X_cpp(cbind(1, X), mod$weights)
+# XtWX_inv <- solve(t(cbind(1, X)) %*% W %*% cbind(1, X))
+# sqrt(diag(XtWX_inv))[2]
+# sqrt(eigen_compute_single_entry_of_diagonal_matrix(XtWX, 2))
 
+pacman::p_load(glmnet, speedglm)
+mod <- speedglm(y ~ X, family = binomial())
+mod$coefficients
 
-microbenchmark(
-  Rcpp = {mod = fast_logistic_regression_cpp(cbind(1, X), y, start = rep(0, ncol(X) + 1)); abs(mod$b[1] / mod$s_b[1])},
-  fastLogisticRegressionWrap = {mod = fastLogisticRegressionWrap::fast_logistic_regression(cbind(1, X), y)},
-  R = {mod = glm(y ~ X, family="binomial"); abs(coef(summary(mod))[2, 3])},
-  Ropt = {mod = glm.fit(cbind(1, X), y, family=binomial()); XtWX <- eigen_Xt_times_diag_w_times_X_cpp(cbind(1, X), mod$weights); sqrt(eigen_compute_single_entry_of_diagonal_matrix(XtWX, 2))},
+mod = glmnet(
+  x = X,
+  y = y,
+  family = "binomial",
+  alpha = 0,      # ridge penalty (alpha=1 would be lasso)
+  lambda = 0,     # no penalty → close to unpenalized MLE
+  standardize = FALSE,
+  intercept = TRUE
+)
+mod$beta
+
+microbenchmark::microbenchmark(
+  # Rcpp = {mod = fast_logistic_regression_cpp(cbind(1, X), y, start = rep(0, ncol(X) + 1))},
+  # fastLogisticRegressionWrap = {mod = fastLogisticRegressionWrap::fast_logistic_regression(cbind(1, X), y)},
+  Rglm = {mod = glm(y ~ X, family="binomial")},
+  Rglmfit = {mod = glm.fit(cbind(1, X), y, family=binomial())},
+  Rspeedglm = {mod = speedglm(y ~ X, family = binomial())},
+  Rglmnet = {mod = glmnet(
+    x = X,
+    y = y,
+    family = "binomial",
+    alpha = 0,      # ridge penalty (alpha=1 would be lasso)
+    lambda = 0,     # no penalty → close to unpenalized MLE
+    standardize = FALSE,
+    intercept = TRUE
+  )
+  mod$beta},
+  Rglmnetopt = {mod = glmnet(
+    x = X,
+    y = y,
+    family = "binomial",
+    alpha = 0,      # ridge penalty (alpha=1 would be lasso)
+    lambda = 0,     # no penalty → close to unpenalized MLE
+    standardize = FALSE,
+    intercept = TRUE,
+    type.logistic = "modified.Newton"
+  )
+  mod$beta},
+  times = 500
+)
+
+microbenchmark::microbenchmark(
+  # Rcpp = {mod = fast_logistic_regression_cpp(cbind(1, X), y, start = rep(0, ncol(X) + 1)); abs(mod$b[1] / mod$s_b[1])},
+  fastLogisticRegressionWrap = {mod = fastLogisticRegressionWrap::fast_logistic_regression(cbind(1, X), y, do_inference_on_var = 2); mod$se[2]},
+  Rglm = {mod = glm(y ~ X, family="binomial"); abs(coef(summary(mod))[2, 3])},
+  Rglmfit = {mod = glm.fit(cbind(1, X), y, family=binomial()); XtWX <- eigen_Xt_times_diag_w_times_X_cpp(cbind(1, X), mod$weights); sqrt(eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2))},
+  Rspeedglm = {mod = speedglm(y ~ X, family = binomial()); coef(summary(mod))[2,2]},
   times = 100
 )
-rm(list = ls())
 rm(list = ls())
 
 

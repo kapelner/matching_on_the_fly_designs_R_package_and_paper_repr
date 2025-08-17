@@ -17,6 +17,10 @@ fast_ols_cpp <- function(X, y) {
     .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
+compute_proportional_mahal_distances_cpp <- function(xt_prev, X_prev, reservoir_indices, S_xs_inv) {
+    .Call(`_SeqExpMatch_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
+}
+
 compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights) {
     .Call(`_SeqExpMatch_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
