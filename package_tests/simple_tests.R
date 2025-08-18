@@ -14,7 +14,7 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-response_type = "continuous"
+response_type = "count"
 y = D$y_original[[response_type]]
 
 #all current designs

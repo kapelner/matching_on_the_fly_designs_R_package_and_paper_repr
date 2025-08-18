@@ -231,9 +231,18 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		
 		redraw_w_according_to_design = function(){
 			#we rearrange within each match set (and the reservoir which is when m = 0)
-			for (m in 0 : max(private$match_indic)){
-				private$w[private$match_indic == m] = shuffle_cpp(private$w[private$match_indic == m]) 
+			m = max(private$match_indic)
+			if (m > 0){
+				rands = runif(m)
+				for (i_m in 1 : m){
+					private$w[private$match_indic == i_m] = if (rands[i_m] < 0.5){
+																c(0, 1)
+															} else {
+																c(1, 0)
+															}
+				}				
 			}
+			private$w[private$match_indic == 0] = shuffle_cpp(private$w[private$match_indic == 0]) 
 		}	
 	)
 )

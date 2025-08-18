@@ -34,7 +34,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
 		#' @param p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
 		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
-		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y/(1-y))
+		#' @param count_use_speedup 		Should we speed up the estimation of the weights in the response = count case via a continuous regression on log(y + 1).
+		#' 									instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 		#' 									instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		
@@ -54,11 +56,12 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			morrison = FALSE,
 			p = NULL,
 			num_boot = NULL,
+			count_use_speedup = TRUE,
 			proportion_use_speedup = TRUE,
 			thin = FALSE
 		){
 			if (!thin){
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, proportion_use_speedup)	
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup)	
 			}			
 		}
 	),
@@ -120,12 +123,18 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		},
 		
 		compute_weights_KK21stepwise_count = function(xs, ys, ws, ...){	
-			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-#				negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
-#				abs(coef(summary_glm_lean(negbin_regr_mod))[2, 3])
-				mod = fast_negbin_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
-				abs(mod$b[2] / sqrt(mod$ssq_b_2))
-			})	
+			if (!private$count_use_speedup){
+				weight = private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
+							negbin_regr_mod = robust_negbinreg(response_obj ~ ., cbind(data.frame(response_obj = response_obj), covariate_data_matrix))
+							abs(coef(summary_glm_lean(negbin_regr_mod))[2, 3])
+			#				mod = fast_negbin_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
+			#				abs(mod$b[2] / sqrt(mod$ssq_b_2))
+						})
+				if (!is.na(weight)){
+					return(weight)
+				}							
+			}
+			private$compute_weights_KK21stepwise_continuous(xs, log(ys + 1), ws, ...)
 		},
 		
 		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){

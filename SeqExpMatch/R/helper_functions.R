@@ -145,19 +145,19 @@ robust_betareg = function(form_obj, data_obj){
 ##' @param data_obj  The data frame to run Negative Binomial regression on 
 ##' @return			The Negative Binomial regression model object
 ## @export
-#robust_negbinreg = function(form_obj, data_obj){
-#	repeat {
-#		tryCatch({
-#			mod = suppressWarnings(MASS::glm.nb(form_obj, data = data_obj))
-#			return(mod)
-#		}, error = function(e){})
-#		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
-#		if (ncol(data_obj) == 0){
-#			break
-#		}
-#	}
-#	NA
-#}
+robust_negbinreg = function(form_obj, data_obj){
+	repeat {
+		tryCatch({
+			mod = suppressWarnings(MASS::glm.nb(form_obj, data = data_obj))
+			return(mod)
+		}, error = function(e){})
+		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
+		if (ncol(data_obj) == 0){
+			break
+		}
+	}
+	NA
+}
 
 #' Sample Mode from an array
 #'

@@ -114,38 +114,26 @@ microbenchmark::microbenchmark(
 rm(list = ls())
 
 
-pacman::p_load(Rcpp, RcppEigen, RcppNumerical, RcppParallel, StanHeaders, microbenchmark)
+pacman::p_load(Rcpp, RcppEigen, RcppNumerical, RcppParallel, StanHeaders, microbenchmark, glmmTMB)
 
 X = as.matrix(MASS::Boston[MASS::Boston$medv < 50, 1:13])
 y = as.integer(round(MASS::Boston$medv[MASS::Boston$medv < 50])) #count response
 
-Rcpp::sourceCpp("../SeqExpMatch/src/fast_negbin_regression.cpp")
+# Rcpp::sourceCpp("../SeqExpMatch/src/log_lik_nb.cpp")
 # Rcpp::sourceCpp("../SeqExpMatch/src/fast_negbin_regression_stan.cpp")
 mod = MASS::glm.nb(y ~ X)
-modopt = fast_negbin_regression_with_var(cbind(1, X), y)
-modfast = fast_neg_bin_with_censoring_with_sd_cpp(cbind(1, X), y, rep(1, length(y)))
-plot(log(abs(coef(mod))), log(abs(modopt$b))); abline(0,1)
-coef(summary(mod))
-modopt$b
-coef(summary(mod))[2,2]
-sqrt(modopt$ssq_b_2)
-sqrt(modfast$ssq_b_2)
+# source("../SeqExpMatch/R/model_fit_helpers.R")
+modfast = suppressWarnings(glmmTMB(y ~ X, family = nbinom2))
+coef(summary(modfast))$cond[2, 2]
 
-#censoring tests
-modfast = fast_neg_bin_with_censoring_with_sd_cpp(cbind(1, X), y, rep(1, length(y)))
-modfast$b
-modfast = fast_neg_bin_with_censoring_with_sd_cpp(cbind(1, X), y, rbinom(length(y), 1, 0.8))
-modfast$b
-
-microbenchmark(
-  Rcpp = {mod = fast_neg_bin_with_censoring_cpp(cbind(1, X), y, rep(1, length(y))); mod$b[2]},
-  R_fast = {mod = fast_negbin_regression(cbind(1, X), y); mod$b[2]},
+microbenchmark::microbenchmark(
+  R_fast = {mod = glmmTMB(y ~ X, family = nbinom2); coef(summary(modfast))$cond[2, 1]},
   R = {mod = MASS::glm.nb(y ~ X); coef(mod)[2]},
   times = 100
 )
 
-microbenchmark(
-  R_fast = {mod = fast_negbin_regression_with_var(cbind(1, X), y); sqrt(mod$ssq_b_2)},
+microbenchmark::microbenchmark(
+  R_fast = {mod = fast_glm_nb(cbind(1, X), y); mod$b[2]},
   R = {mod = MASS::glm.nb(y ~ X); abs(coef(summary(mod))[2, 3])},
   times = 100
 )

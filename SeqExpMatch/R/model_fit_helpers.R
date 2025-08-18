@@ -1,21 +1,54 @@
 
-fast_glm_with_var = function(Xmm, y, glm_function){
-	mod = glm_function(Xmm, y)
-	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)	
-	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
-	mod	
-}
-
-negative_binomial_link_cache = MASS::negative.binomial(theta = 1)
-
-fast_negbin_regression = function(Xmm, y){
-	mod = glm.fit(Xmm, y, family = negative_binomial_link_cache)
-	list(b = mod$coefficients, w = mod$weights)
-}
-
-fast_negbin_regression_with_var = function(Xmm, y){
-	fast_glm_with_var(Xmm, y, fast_negbin_regression)
-}
+#fast_glm_with_var = function(Xmm, y, glm_function){
+#	mod = glm_function(Xmm, y)
+#	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)	
+#	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
+#	mod	
+#}
+#
+#fast_glm_nb <- function(X, y, maxit = 50, tol = 1e-8, trace = FALSE) {
+#  stopifnot(is.matrix(X), is.numeric(y), length(y) == nrow(X))
+#
+#  n <- length(y)
+#  p <- ncol(X)
+#
+#  beta <- rep(0, p)
+#  avg_y = mean(y)
+#  theta <- avg_y^2  / (var(y) - avg_y) #method of moments estimate to start
+#  for (i in 1 : maxit) {
+#    mu <- exp(X %*% beta)
+#    W <- mu / (1 + mu / theta)
+#    z <- X %*% beta + (y - mu) / mu
+#    fit <- lm.wfit(X, z, w = as.vector(W))
+#    beta_new <- fit$coefficients
+#
+#    if (any(is.na(beta_new))) stop("NA in coefficients; possibly singular matrix")
+#	
+#	opt <- optim(par = theta, fn = neg_loglik_nb_cpp, beta = beta_new, X = X, y = y, method = "L-BFGS-B", lower = 1e-8)
+#    theta_new <- opt$par
+#
+#    if (trace) cat(sprintf("Iter %d: logLik=%.4f  theta=%.4f\n", i, loglik_nb(beta_new, theta_new), theta_new))
+#
+#    if (max(abs(beta_new - beta)) < tol && abs(theta_new - theta) < tol)
+#      break
+#
+#    beta <- beta_new
+#    theta <- theta_new
+#  }
+#
+#  eta <- as.vector(X %*% beta)
+#  mu <- exp(eta)
+#
+#  # Standard errors via observed information
+#  W <- mu / (1 + mu / theta)
+##  cov_beta <- tryCatch(solve(crossprod(X, X * W)), error = function(e) matrix(NA, p, p))
+##  se <- sqrt(diag(cov_beta))
+#
+#  list(
+#    b = beta,
+#    ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(crossprod(X, X * W), 2)
+#  )
+#}
 
 	
 #	loglik <- function(n, th, mu, y, w) sum(w * (lgamma(th + 

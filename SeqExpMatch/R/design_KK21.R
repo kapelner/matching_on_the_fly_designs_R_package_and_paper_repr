@@ -35,7 +35,9 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
 		#' @param p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
 		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
-		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y/(1-y))
+		#' @param count_use_speedup 		Should we speed up the estimation of the weights in the response = count case via a continuous regression on log(y + 1).
+		#' 									instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 		#' 									instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 
@@ -55,6 +57,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			morrison = FALSE,
 			p = NULL,
 			num_boot = NULL,
+			count_use_speedup = TRUE,
 			proportion_use_speedup = TRUE,
 			thin = FALSE
 		){
@@ -66,7 +69,9 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 					assertCount(num_boot, positive = TRUE)
 				}
 				private$num_boot = num_boot
-				assertFlag(proportion_use_speedup)	
+				assertFlag(count_use_speedup)	
+				assertFlag(proportion_use_speedup)				
+				private$count_use_speedup = count_use_speedup	
 				private$proportion_use_speedup = proportion_use_speedup						
 			}
 		}
@@ -74,12 +79,14 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 	private = list(
 		covariate_weights = NULL,
 		num_boot = NULL,
+		count_use_speedup = NULL,
 		proportion_use_speedup = NULL,
 		
 		duplicate = function(){
 			d = super$duplicate()
 			d$.__enclos_env__$private$covariate_weights = private$covariate_weights
 			d$.__enclos_env__$private$num_boot = private$num_boot
+			d$.__enclos_env__$private$count_use_speedup = private$count_use_speedup
 			d$.__enclos_env__$private$proportion_use_speedup = private$proportion_use_speedup
 			d
 		},
@@ -216,14 +223,17 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		},
 		
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
-			tryCatch({
-				negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-				summary_negbin_regr_mod = coef(summary_glm_lean(negbin_regr_mod))
-				#1 - coef(summary(negbin_regr_mod))[2, 4]
-				#if there was only one row, then this feature was all one unique value... so send back a weight of nada
-				return(ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), .Machine$double.eps))
-			}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
-			.Machine$double.eps #otherwise weight it nada
+			if (!private$count_use_speedup){
+				tryCatch({
+					negbin_regr_mod = suppressWarnings(MASS::glm.nb(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+					summary_negbin_regr_mod = coef(summary_glm_lean(negbin_regr_mod))
+					#1 - coef(summary(negbin_regr_mod))[2, 4]
+					#if there was only one row, then this feature was all one unique value... so send back a weight of nada
+					return(ifelse(nrow(summary_negbin_regr_mod) >= 2, abs(summary_negbin_regr_mod[2, 3]), .Machine$double.eps))
+				}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
+			}
+			#if that didn't work, let's just use the continuous weights on a transformed proportion
+			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date + 1), deaths_to_date, j)
 		},
 		
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
