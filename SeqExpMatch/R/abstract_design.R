@@ -232,7 +232,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			} else if (private$response_type == "incidence"){
 				assertChoice(y, c(0, 1))
 			} else if (private$response_type == "proportion"){
-				assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1) #the betareg package can handle 0's and 1's exactly (see their documentation) this seems to be why the statmod / numDeriv packages is also required 
+				assertNumeric(y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps) #ones and zeroes not allowed
 			} else if (private$response_type == "count"){
 				assertCount(y, na.ok = FALSE)
 			} else if (private$response_type == "survival"){
@@ -242,8 +242,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 					y = .Machine$double.eps
 				}						
 			}
-			if (dead == 0 & private$response_type %in% c("continuous", "incidence", "proportion")){
-				stop("censored observations are only available for count or survival response types")
+			if (dead == 0 & private$response_type != "survival"){
+				stop("censored observations are only available for survival response types")
 			}
 			#finally, record the response value and the time at which it was recorded
 			if (private$fixed_sample | t <= length(private$y)){

@@ -239,37 +239,37 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			if (!private$proportion_use_speedup){
 				tryCatch({
-					beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
-					summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-					#1 - coef(summary(beta_regr_mod))$mean[2, 4]
-					tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-								summary_beta_regr_mod$mean 
-							} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-								summary_beta_regr_mod$mu
-							}
-					if (nrow(tab) >= 2){
-						return(abs(tab[2, 3]))
-					}
+#					beta_regr_mod = suppressWarnings(betareg::betareg(y ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date)))
+#					summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+#					#1 - coef(summary(beta_regr_mod))$mean[2, 4]
+#					tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+#								summary_beta_regr_mod$mean 
+#							} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+#								summary_beta_regr_mod$mu
+#							}
+#					if (nrow(tab) >= 2){
+#						return(abs(tab[2, 3]))
+#					}
+					mod = fast_beta_regression_with_var(Xmm = cbind(1, xs_to_date[, j]), y = ys_to_date)
+					mod$b[2] / sqrt(mod$ssq_b_2)
 				}, error = function(e){}) #sometimes these glm's blow up and we don't really care that much
 			}
 			#if that didn't work, let's just use the continuous weights on a transformed proportion
-			ys_to_date[ys_to_date == 0] = .Machine$double.eps
-			ys_to_date[ys_to_date == 1] = 1 - .Machine$double.eps
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date / (1 - ys_to_date)), deaths_to_date, j)
 		},
 		
 		compute_weight_KK21_survival = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			surv_obj = survival::Surv(ys_to_date, deaths_to_date)
-			#sometims the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
+			#sometimes the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
 			#and we are not relying on the model assumptions
 			for (dist in c("weibull", "lognormal", "loglogistic")){
 				surv_regr_mod = robust_survreg_with_surv_object(surv_obj, xs_to_date[, j], dist = dist)
 				if (is.null(surv_regr_mod)){
-					break
+					next
 				}
 				summary_surv_regr_mod = suppressWarnings(summary(surv_regr_mod)$table)
 				if (any(is.nan(summary_surv_regr_mod))){
-					break
+					next
 				}
 				weight = ifelse(nrow(summary_surv_regr_mod) >= 2, abs(summary_surv_regr_mod[2, 3]), NA)
 				#1 - summary(weibull_regr_mod)$table[2, 4]
@@ -278,7 +278,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 				}
 			}
 			#if that didn't work, default to OLS and log the survival times... again... this doesn't matter since we are just trying to get weights
-			#and we are not relying on the model assumptions being true
+			#and we are not relying on the model assumptions being true, this ignores censoring
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date), deaths_to_date, j)
 		}	
 		

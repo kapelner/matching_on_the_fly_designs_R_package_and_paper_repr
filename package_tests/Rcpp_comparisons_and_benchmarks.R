@@ -138,5 +138,42 @@ microbenchmark::microbenchmark(
   times = 100
 )
 
+pacman::p_load(betareg, microbenchmark)
+
+
+source(file = "../SeqExpMatch/R/model_fit_helpers.R")
+Rcpp::sourceCpp("../SeqExpMatch/src/_helper_functions.cpp")
+Rcpp::sourceCpp("../SeqExpMatch/src/beta_regression_helpers.cpp")
+
+X = as.matrix(MASS::Boston[, 1:13])
+y = (MASS::Boston$medv - min(MASS::Boston$medv) + 0.01) / (max(MASS::Boston$medv) - min(MASS::Boston$medv) + 0.02)
+
+mod = betareg(y ~ ., data.frame(X))
+coef(mod)
+coef(summary(mod))$mean[2,2]
+
+mod = fast_beta_regression(Xmm = cbind(1, X), y = y)
+mod$b
+mod = fast_beta_regression_with_var(Xmm = cbind(1, X), y = y)
+sqrt(mod$ssq_b_2)
+
+profvis::profvis({
+  for (i in 1 : 100){
+    fast_beta_regression(Xmm = cbind(1, X), y = y)$b[1]
+  }
+})
+microbenchmark::microbenchmark(
+  R = {mod = betareg(y ~ ., data.frame(X)); coef(mod)[2]},
+  R_fast = {fast_beta_regression(Xmm = cbind(1, X), y = y)$b[1]},
+  times = 50
+)
+
+microbenchmark::microbenchmark(
+  R = {mod = betareg(y ~ ., data.frame(X)); coef(summary(mod))$mean[2,2]},
+  R_fast = {mod = fast_beta_regression_with_var(Xmm = cbind(1, X), y = y); sqrt(mod$ssq_b_2)},
+  times = 50
+)
+rm(list = ls())
+
 
 

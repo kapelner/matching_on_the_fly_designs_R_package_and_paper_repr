@@ -14,7 +14,7 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-response_type = "count"
+response_type = "proportion"
 y = D$y_original[[response_type]]
 
 #all current designs
@@ -63,10 +63,13 @@ seq_des_inf = SeqDesignInferenceSurvivalMultiCoxPHRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
+seq_des_inf$compute_bootstrap_confidence_interval()
+seq_des_inf$compute_bootstrap_two_sided_pval()
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
 })
-seq_des_inf$compute_bootstrap_two_sided_pval()
 profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 })

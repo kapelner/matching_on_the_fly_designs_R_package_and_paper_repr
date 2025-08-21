@@ -141,14 +141,17 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			if (!private$proportion_use_speedup){
 				tryCatch({
 					weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
-									beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
-									summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-									tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-												summary_beta_regr_mod$mean 
-											} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-												summary_beta_regr_mod$mu
-											}
-									ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+#									beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
+#									summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+#									tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+#												summary_beta_regr_mod$mean 
+#											} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+#												summary_beta_regr_mod$mu
+#											}
+#									ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+
+									mod = fast_beta_regression_with_var(Xmm = cbind(1, covariate_data_matrix), y = response_obj)
+									mod$b[2] / sqrt(mod$ssq_b_2)
 								})
 					if (!is.na(weight)){
 						return(weight)

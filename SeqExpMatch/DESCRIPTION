@@ -29,13 +29,11 @@ Encoding: UTF-8
 Depends:
 	R6,
 	checkmate,
-	Rcpp,
+	Rcpp (>= 1.0.14),
 	RcppEigen,
-	RcppNumerical,
 	data.table,
 	glmnet,
 	survival,
-	betareg,
 	statmod,
 	numDeriv,
 	missRanger,
@@ -44,10 +42,8 @@ Depends:
 LinkingTo: 
 	doParallel,	
 	RcppEigen,
-	RcppNumerical,	
 	Rcpp
 Imports:
-	Rcpp (>= 1.0.14),
     checkmate    
 URL: https://github.com/kapelnematching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.2
@@ -66,6 +62,7 @@ Collate:
     'design_KK21_stepwise.R'
     'abstract_inference.R'
     'abstract_inference_mle_or_KM.R'
+    'abstract_inference_mle_or_KM_for_GLMs.R'
     'abstract_inference_mle_or_KM_summary_table.R'
     'abstract_inference_mle_or_KM_KK.R'
     'inference__all_naive_mean_diff.R'

@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRegr",
-	inherit = SeqDesignInferenceMLEorKMSummaryTable,
+	inherit = SeqDesignInferenceMLEorKMforGLMs,
 	public = list(
 		
 		#' @description
@@ -22,33 +22,37 @@ SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRe
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
 			if (!thin){		
 				assertResponseType(seq_des_obj$get_response_type(), "proportion")			
-				super$initialize(seq_des_obj, num_cores, verbose)	
-				assertNoCensoring(private$any_censoring)
+				super$initialize(seq_des_obj, num_cores, verbose)
 			}
+		},
+		
+		
+		#' @description
+		#' Computes the appropriate estimate
+		#' 
+		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' 
+		#' @examples
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#' 
+		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+		#' seq_des_inf$compute_treatment_estimate()
+		#' 	
+		compute_treatment_estimate = function(){
+			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)$b[2]
 		}
 	),
 	
 	private = list(		
-		shared = function(){
-			private$shared_beta_regression_inference(
-				data_obj = data.frame(y = private$seq_des_obj_priv_int$y, w = private$seq_des_obj_priv_int$w)
-			)
-		},
-		
-		shared_beta_regression_inference = function(data_obj){
-			tryCatch({
-				beta_regr_mod = robust_betareg(y ~ ., data_obj)
-				beta_regr_mod_sub = coef(summary(beta_regr_mod))
-				private$cached_values$summary_table = 	if (!is.null(beta_regr_mod_sub$mean)){ #beta model
-															beta_regr_mod_sub$mean 
-														} else if (!is.null(beta_regr_mod_sub$mu)){ #extended-support xbetax model
-															beta_regr_mod_sub$mu
-														} else {
-															matrix(NA, nrow = 2, ncol = 4)
-														}		
-			}, error = function(e){
-				private$cached_values$summary_table = matrix(NA, nrow = 2, ncol = 4)				
-			})
+		generate_mod = function(){
+			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)
 		}		
 	)		
 )		

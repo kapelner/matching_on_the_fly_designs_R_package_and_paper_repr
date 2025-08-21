@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLogRegr",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInferenceMLEorKMforGLMs,
 	public = list(
 		
 		#' @description
@@ -21,9 +21,8 @@ SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLog
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
 			if (!thin){		
-				assertResponseType(seq_des_obj$get_response_type(), "incidence")			
-				super$initialize(seq_des_obj, num_cores, verbose)	
-				assertNoCensoring(private$any_censoring)
+				assertResponseType(seq_des_obj$get_response_type(), "incidence")
+				super$initialize(seq_des_obj, num_cores, verbose)
 			}
 		},
 		
@@ -47,90 +46,12 @@ SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLog
 		#' 	
 		compute_treatment_estimate = function(){
 			fast_logistic_regression(cbind(1, private$seq_des_obj_priv_int$w), private$seq_des_obj_priv_int$y)$b[2]
-		},
-		
-		
-		#' Compute confidence interval
-		#'
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
-		#' 
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
-		#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
-		#' seq_des_inf$compute_confidence_interval()
-		#'		
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},		
-		
-		
-		#' Compute p-value
-		#'
-		#' @description
-		#' Computes a 2-sided p-value
-		#'
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' 
-		#' @return 	The approximate frequentist p-value
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
-		#' 				
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			private$shared()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
-			}			
 		}
 	),
 	
 	private = list(		
-		shared = function(){
-#			private$cached_values$summary_table = tryCatch({
-#					private$compute_summary_table()
-#				}, error = function(e){ #very difficult to get rid of errors here due to Error in vcov.merMod(object, use.hessian = use.hessian)... tried to write a robust function but it didn't work
-#					matrix(NA, nrow = 2, ncol = 4)
-#				})
-			mod = private$generate_mod()
-			private$cached_values$beta_hat_T = mod$b[2]			
-			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_2)
-			private$cached_values$is_z = TRUE
-		},
-		
 		generate_mod = function(){
 			fast_logistic_regression_with_var(cbind(1, private$seq_des_obj_priv_int$w), private$seq_des_obj_priv_int$y)
-		}
-		
+		}		
 	)		
 )
