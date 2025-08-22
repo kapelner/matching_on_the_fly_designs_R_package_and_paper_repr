@@ -46,8 +46,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' 	
 		compute_treatment_estimate = function(){	
 			survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
-			survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj_priv_int$w)
-			survival_fit_res = summary(survival_fit_obj)$table	
+			private$cached_values$survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj_priv_int$w)
+			survival_fit_res = summary(private$cached_values$survival_fit_obj)$table	
 			survival_fit_res[2, 7] - survival_fit_res[1, 7]
 		},
 		
@@ -77,9 +77,7 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des_inf$compute_confidence_interval()
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			stop("TO-DO using the km.ci package... for now, use the bootstrap CI function")
-			#https://stats.stackexchange.com/questions/566613/kaplan-meier-using-survfit-confidence-interval-of-the-median
+			stop("not implemented --- use the bootstrap instead")
 		},
 		
 		#' Compute p-value

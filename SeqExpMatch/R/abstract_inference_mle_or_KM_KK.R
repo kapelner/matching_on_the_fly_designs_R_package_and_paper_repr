@@ -63,6 +63,9 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			needs_reservoir_and_match_statistics = is(self, "SeqDesignInferenceAllKKCompoundMeanDiff") | 
 				is(self, "SeqDesignInferenceBaiAdjustedT")
 			
+			seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
+			seq_inf_r = private$thin_duplicate()
+			seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_bs = array(NA, B)
 				for (r in 1 : B){
@@ -82,16 +85,14 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 #					}
 					fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
 					
-					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
 					#compute beta_T_hat					
-					seq_inf_r = private$thin_duplicate()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					seq_inf_r$.__enclos_env__$private$compute_basic_match_data()	
 					if (needs_reservoir_and_match_statistics){
 						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
@@ -103,7 +104,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 				doParallel::registerDoParallel(cl)			
 				#now copy them to each core's memory
 				doParallel::clusterExport(cl, 
-					list("seq_des_obj", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w" ,"needs_reservoir_and_match_statistics"), 
+					list("seq_des_r", "seq_inf_r", "n", "match_indic", "i_reservoir", "n_reservoir", "match_indic_b", "m", "y", "dead", "X", "w" ,"needs_reservoir_and_match_statistics"), 
 					envir = environment()
 				)
 				#now do the parallelization
@@ -124,16 +125,14 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 #					}
 					fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
 					
-					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
-					#compute beta_T_hat					
-					seq_inf_r = private$thin_duplicate()
+					#compute beta_T_hat
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
 					if (needs_reservoir_and_match_statistics){
 						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
@@ -208,6 +207,7 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 			private$KKstats$w_star = ssqR / (ssqR + ssqD_bar)
 		},
 		
+		#not used now, but could be used for random effects models in the future
 		compute_model_matrix_with_matching_dummies = function(){
 			if (is.null(private$data_frame_with_matching_dummies)){
 				if (!is.null(private$seq_des_obj_priv_int$match_indic) & uniqueN(private$seq_des_obj_priv_int$match_indic) > 1){

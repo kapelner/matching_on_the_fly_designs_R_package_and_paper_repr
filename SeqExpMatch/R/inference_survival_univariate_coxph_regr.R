@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvivalUniCoxPHRegr",
-	inherit = SeqDesignInferenceMLEorKMSummaryTable,
+	inherit = SeqDesignInferenceMLEorKMforGLMs,
 	public = list(
 		
 		#' @description
@@ -24,29 +24,46 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 				assertResponseType(seq_des_obj$get_response_type(), "survival")			
 				super$initialize(seq_des_obj, num_cores, verbose)
 			}
+		},
+		
+		#' @description
+		#' Computes the appropriate estimate
+		#' 
+		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' 
+		#' @examples
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#' 
+		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
+		#' seq_des_inf$compute_treatment_estimate()
+		#' 	
+		compute_treatment_estimate = function(){
+			fast_coxph_regression(cbind(1, private$seq_des_obj_priv_int$w), private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)$b[2]
 		}
 	),
 	
 	private = list(
-		shared = function(){
-			private$compute_cox_regression(
-				data_obj = data.frame(w = private$seq_des_obj_priv_int$w)
-			)
-		},
-		
-		compute_cox_regression = function(data_obj){
+		generate_mod = function(){
 			surv_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)			
 			tryCatch({
-				private$cached_values$coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ ., data = data_obj))
-				private$cached_values$orig_summary_table = coef(summary(private$cached_values$coxph_mod))	
-				private$cached_values$summary_table = matrix(NA, nrow = 2, ncol = 4)
-				#convert to canonical form (dirty, but probably worth it)
-				private$cached_values$summary_table[2, 1] = private$cached_values$orig_summary_table[1, 1]
-				private$cached_values$summary_table[2, 2] = private$cached_values$orig_summary_table[1, 3]
-				private$cached_values$summary_table[2, 4] = private$cached_values$orig_summary_table[1, 5]				
+				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ private$seq_des_obj_priv_int$w))
+				list(
+					b = cbind(0, coef(coxph_mod)),
+					ssq_b_2 = coef(summary(coxph_mod))[1, 3]^2
+				)			
 			}, error = function(e){
-				private$cached_values$summary_table = matrix(NA, nrow = 2, ncol = 4)				
+				list(
+					b = c(NA, NA),
+					ssq_b_2 = NA
+				)			
 			})
-		}		
-	)		
+		}
+	)
 )

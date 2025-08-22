@@ -137,6 +137,7 @@ microbenchmark::microbenchmark(
   R = {mod = MASS::glm.nb(y ~ X); abs(coef(summary(mod))[2, 3])},
   times = 100
 )
+rm(list = ls())
 
 pacman::p_load(betareg, microbenchmark)
 
@@ -175,5 +176,69 @@ microbenchmark::microbenchmark(
 )
 rm(list = ls())
 
+pacman::p_load(survival, km.ci, glmnet, microbenchmark)
 
+
+X = as.matrix(MASS::Boston[, 1:13])
+y = MASS::Boston$medv - min(MASS::Boston$medv) + 0.001
+
+prob_censoring = 0.3
+dead = rep(1, length(y))
+for (i in 1 : length(y)){
+  if (runif(1) < prob_censoring){
+    y[i] = runif(1, 0, y[i])
+    dead[i] = 0
+  }
+}
+rm(prob_censoring)
+
+loglik_weibull_aft <- function(par, X, time, status) {
+  # par = c(log_alpha, beta) with alpha = shape = 1/sigma
+  # status: 1 = event, 0 = right-censored
+  # X must include an intercept column if you want one
+  time <- pmax(time, 1e-12)      # guard against log(0)
+  log_alpha <- par[1]
+  beta <- par[-1]
+  
+  alpha <- exp(log_alpha)
+  eta <- as.vector(X %*% beta)   # μ + Xβ
+  z <- log(time) - eta
+  
+  logS <- -exp(alpha * z)                           # log S(t|x)
+  ll   <- sum(status * (log_alpha + alpha*z - log(time)) + logS) # log f + log S combo
+  
+  return(-ll)  # negative log-lik for optim()
+}
+
+mysurvreg = function(par0, X, y, dead){
+  optim(par0, loglik_weibull_aft,
+        X = X, time = y, status = dead,
+        method = "BFGS", hessian = TRUE, control = list(maxit = 1000))
+}
+
+mod = survreg(Surv(y, dead) ~ ., data.frame(X))
+coef(mod); mod$scale
+mod=survfit(Surv(y, dead) ~ ., data.frame(X))
+km.ci(mod, conf.level = 0.95, method = "hall")
+
+mod = mysurvreg(rep(0, 15), model.matrix(~.,data.frame(X)), y, dead)
+mod$par
+
+microbenchmark::microbenchmark(
+  R_survival = {mod = survreg(Surv(y, dead) ~ X); coef(mod)[2]},
+  R_flexsurv = {mod = mysurvreg(rep(0, 15), model.matrix(~.,data.frame(X)), y, dead); mod$par[3]},
+  times = 50
+)
+
+mod = coxph(Surv(y, dead) ~ X)
+coef(mod)
+mod = glmnet(X, Surv(time, status), family = "cox", lambda = 0)
+as.numeric(coef(mod))
+
+
+microbenchmark::microbenchmark(
+  R_survival = {mod = coxph(Surv(y, dead) ~ X); coef(mod)[2]},
+  R_glmnet = {mod = glmnet(X, Surv(time, status), family = "cox", lambda = 0); coef(mod)[2]},
+  times = 50
+)
 

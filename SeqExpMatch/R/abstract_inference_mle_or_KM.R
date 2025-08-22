@@ -52,21 +52,22 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			w = private$seq_des_obj_priv_int$w
 			X = private$get_X()
 			seq_inf_class_constructor = get(class(self)[1])$new 
+			seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()				
+			seq_inf_r = private$thin_duplicate()
+			seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
 			
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_bs = array(NA, B)
 				for (r in 1 : B){
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r = private$seq_des_obj_priv_int$thin_duplicate() #TO-DO make this leaner
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
-					#compute beta_T_hat					
-					seq_inf_r = private$thin_duplicate()
+					#compute beta_T_hat
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					beta_hat_T_bs[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_bs)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
@@ -74,20 +75,18 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("seq_des_obj", "n", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())
+				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r", "n", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())
 				#now do the parallelization
 				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r = seq_des_obj$.__enclos_env__$private$thin_duplicate()
 					seq_des_r$.__enclos_env__$private$y = y[i_b]
 					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
 					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
 					seq_des_r$.__enclos_env__$private$w = w[i_b]
 					#compute beta_T_hat
-					seq_inf_r = private$thin_duplicate()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X		
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					seq_inf_r$compute_treatment_estimate()			
 				}
 				doParallel::stopCluster(cl)

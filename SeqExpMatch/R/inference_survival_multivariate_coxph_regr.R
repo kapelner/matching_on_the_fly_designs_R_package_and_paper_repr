@@ -6,8 +6,8 @@
 #' 
 #'
 #' @export
-SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRegr",
-	inherit = SeqDesignInferenceMLEorKMforGLMs,
+SeqDesignInferenceSurvivalMultiCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvivalMultiCoxPHRegr",
+	inherit = SeqDesignInferenceSurvivalUniCoxPHRegr,
 	public = list(
 		
 		#' @description
@@ -19,13 +19,11 @@ SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRe
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
-			if (!thin){		
-				assertResponseType(seq_des_obj$get_response_type(), "proportion")			
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){		
+			if (!thin){
 				super$initialize(seq_des_obj, num_cores, verbose)
 			}
 		},
-		
 		
 		#' @description
 		#' Computes the appropriate estimate
@@ -46,14 +44,25 @@ SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRe
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)$b[2]
+			fast_coxph_regression(cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)$b[2]
 		}
 	),
 	
 	private = list(		
 		generate_mod = function(){
-			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)
+			surv_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)			
+			tryCatch({
+				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ cbind(private$seq_des_obj_priv_int$w, private$get_X())))
+				list(
+					b = cbind(0, coef(coxph_mod)),
+					ssq_b_2 = coef(summary(coxph_mod))[1, 3]^2
+				)			
+			}, error = function(e){
+				list(
+					b = c(NA, NA),
+					ssq_b_2 = NA
+				)			
+			})
 		}		
 	)		
-)		
-		
+)

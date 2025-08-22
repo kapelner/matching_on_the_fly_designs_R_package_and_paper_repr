@@ -187,30 +187,34 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				weighted_coin_prob = private$seq_des_obj_priv_int$weighted_coin_prob
 			}
 			
-			seq_des_obj_priv_int = private$seq_des_obj_priv_int				
+			seq_des_obj_priv_int = private$seq_des_obj_priv_int	
+			#make a copy of the object and then permute the allocation vector according to the design
+			seq_des_r = seq_des_obj_priv_int$thin_duplicate()
+			#set only the data we need for all designs
+			seq_des_r$.__enclos_env__$private$y = y #set the new responses
+			seq_des_r$.__enclos_env__$private$X = X	
+			seq_des_r$.__enclos_env__$private$dead = dead
+			seq_des_r$.__enclos_env__$private$w = w
+			seq_des_r$.__enclos_env__$private$t = t
+			seq_des_r$.__enclos_env__$private$prob_T = prob_T
+			seq_des_r$.__enclos_env__$private$p_raw_t = p_raw_t
+			if (is_Efron){ #for Efron, one more piece of data is needed
+				seq_des_r$.__enclos_env__$private$weighted_coin_prob = weighted_coin_prob
+			}
+			#now initialize a new inference object and compute beta_T_hat
+			seq_inf_r = private$thin_duplicate()	
+			seq_inf_r$.__enclos_env__$private$X = X			
+										
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_diff_ws = array(NA, nsim_exact_test)
+				
 				for (r in 1 : nsim_exact_test){
-					#cat("		r =", r, "/", nsim_exact_test, "\n")
-					#make a copy of the object and then permute the allocation vector according to the design
-					seq_des_r = seq_des_obj_priv_int$thin_duplicate()
-					#set only the data we need for all designs
-					seq_des_r$.__enclos_env__$private$y = y #set the new responses
-					seq_des_r$.__enclos_env__$private$X = X	
-					seq_des_r$.__enclos_env__$private$dead = dead
-					seq_des_r$.__enclos_env__$private$w = w
-					seq_des_r$.__enclos_env__$private$t = t
-					seq_des_r$.__enclos_env__$private$prob_T = prob_T
-					seq_des_r$.__enclos_env__$private$p_raw_t = p_raw_t
-					if (is_Efron){ #for Efron, one more piece of data is needed
-						seq_des_r$.__enclos_env__$private$weighted_coin_prob = weighted_coin_prob
-					}
-					#then scramble the allocation vector based on the design algorithm
+					#cat("		r =", r, "/", nsim_exact_test, "\n")	
+					#scramble the allocation vector based on the design algorithm
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
-					#now initialize a new inference object and compute beta_T_hat
-					seq_inf_r = private$thin_duplicate()
+					#set the internals of the design data to the inference object
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = X	
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					if (is_KK){
 						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
 					}	
@@ -224,25 +228,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("is_KK", "is_KK_compound", "is_Efron", "seq_des_obj_priv_int", "y", "X", "dead", "w", "t", "prob_T", "p_raw_t", "weighted_coin_prob"), envir = environment())
+				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r", "is_KK", "is_KK_compound", "is_Efron", "seq_des_obj_priv_int", "y", "X", "dead", "w", "t", "prob_T", "p_raw_t", "weighted_coin_prob"), envir = environment())
 				#now do the parallelization
 				beta_hat_T_diff_ws = doParallel::foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
-					#make a copy of the object and then permute the allocation vector according to the design
-					seq_des_r = seq_des_obj_priv_int$thin_duplicate()
-					seq_des_r$.__enclos_env__$private$y = y #set the new responses
-					seq_des_r$.__enclos_env__$private$X = X
-					seq_des_r$.__enclos_env__$private$dead = dead
-					seq_des_r$.__enclos_env__$private$w = w
-					seq_des_r$.__enclos_env__$private$t = t
-					seq_des_r$.__enclos_env__$private$prob_T = prob_T
-					seq_des_r$.__enclos_env__$private$p_raw_t = p_raw_t
-					if (is_Efron){ #for Efron, one more piece of data is needed
-						seq_des_r$.__enclos_env__$private$weighted_coin_prob = weighted_coin_prob
-					}
-					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()				
-					seq_inf_r = private$thin_duplicate()
+					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$X = X	
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
 					if (is_KK){ #for matching-on-the-fly there is some more data required for inference
 						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
 					}		

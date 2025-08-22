@@ -30,6 +30,7 @@ seq_des = SeqDesignKK21stepwise$new(response_type = "continuous")
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_assignments'><code>SeqExpMatch::SeqDesign$add_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_responses'><code>SeqExpMatch::SeqDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_response'><code>SeqExpMatch::SeqDesign$add_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
@@ -73,6 +74,7 @@ Kapelner and Krieger (2021) with option to use matching parameters of Morrison a
   morrison = FALSE,
   p = NULL,
   num_boot = NULL,
+  count_use_speedup = TRUE,
   proportion_use_speedup = TRUE,
   thin = FALSE
 )}\if{html}{\out{</div>}}
@@ -112,7 +114,10 @@ settings and matching begins immediately with no wait for a certain reservoir si
 
 \item{\code{num_boot}}{the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.}
 
-\item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y/(1-y))
+\item{\code{count_use_speedup}}{Should we speed up the estimation of the weights in the response = count case via a continuous regression on log(y + 1).
+instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
+
+\item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
 
 \item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}

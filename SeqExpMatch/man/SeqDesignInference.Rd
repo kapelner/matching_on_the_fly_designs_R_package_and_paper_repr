@@ -123,7 +123,7 @@ Here we invert the randomization test that tests the strong null H_0: y_T_i - y_
 we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
 This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
 https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-As far as we know, this only works for response type continuous.
+As far as we know, this only works for response type continuous and survival uncensored (where the CI is on log mean).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
   alpha = 0.05,
@@ -178,7 +178,8 @@ there will be a distribution of the estimates of the treatment effect (over many
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null(
   nsim_exact_test = 501,
-  delta = 0
+  delta = 0,
+  log_responses = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -188,6 +189,8 @@ there will be a distribution of the estimates of the treatment effect (over many
 \item{\code{nsim_exact_test}}{The number of randomization vectors to use. The default is 501.}
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+
+\item{\code{log_responses}}{Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.}
 }
 \if{html}{\out{</div>}}
 }
@@ -226,6 +229,7 @@ the treatment different adjusted linearly for the p covariates.
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand(
   nsim_exact_test = 501,
   delta = 0,
+  log_responses = FALSE,
   na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -237,6 +241,8 @@ the treatment different adjusted linearly for the p covariates.
 is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.}
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+
+\item{\code{log_responses}}{Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.}
 
 \item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
 }

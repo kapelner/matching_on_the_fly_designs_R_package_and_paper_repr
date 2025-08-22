@@ -59,6 +59,22 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				
 
 ## ------------------------------------------------
+## Method `SeqDesign$add_all_subject_assignments`
+## ------------------------------------------------
+
+seq_des = SeqDesignCRD$new(response_type = "continuous")
+
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+
+seq_des$add_all_subject_assignments(c(0, 1, 0, 1, 0, 1))
+				
+
+## ------------------------------------------------
 ## Method `SeqDesign$is_fixed_sample_size`
 ## ------------------------------------------------
 
@@ -167,6 +183,7 @@ Get t
 \item \href{#method-SeqDesign-print_current_subject_assignment}{\code{SeqDesign$print_current_subject_assignment()}}
 \item \href{#method-SeqDesign-add_subject_response}{\code{SeqDesign$add_subject_response()}}
 \item \href{#method-SeqDesign-add_all_subject_responses}{\code{SeqDesign$add_all_subject_responses()}}
+\item \href{#method-SeqDesign-add_all_subject_assignments}{\code{SeqDesign$add_all_subject_assignments()}}
 \item \href{#method-SeqDesign-is_fixed_sample_size}{\code{SeqDesign$is_fixed_sample_size()}}
 \item \href{#method-SeqDesign-assert_experiment_completed}{\code{SeqDesign$assert_experiment_completed()}}
 \item \href{#method-SeqDesign-check_experiment_completed}{\code{SeqDesign$check_experiment_completed()}}
@@ -357,6 +374,41 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+				
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesign-add_all_subject_assignments"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesign-add_all_subject_assignments}{}}}
+\subsection{Method \code{add_all_subject_assignments()}}{
+For those who wish to use this package for analysis on already-completed experimental data
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesign$add_all_subject_assignments(w)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w}}{The binary responses as a numeric vector of length equal to the number of subjects in the study}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesignCRD$new(response_type = "continuous")
+
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+
+seq_des$add_all_subject_assignments(c(0, 1, 0, 1, 0, 1))
 				
 }
 \if{html}{\out{</div>}}

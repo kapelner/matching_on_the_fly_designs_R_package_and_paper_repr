@@ -19,8 +19,7 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
 			if (!thin){			
-				super$initialize(seq_des_obj, num_cores, verbose)	
-				assertNoCensoring(private$any_censoring)
+				super$initialize(seq_des_obj, num_cores, verbose)
 			}
 		},
 		
@@ -92,7 +91,7 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 	
 	private = list(		
 		shared = function(){
-			mod = private$generate_mod()
+			mod = private$generate_mod() #abstract function implemented by daughter classes
 			private$cached_values$beta_hat_T = mod$b[2]			
 			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_2)
 			private$cached_values$is_z = TRUE

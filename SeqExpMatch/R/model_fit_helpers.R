@@ -1,3 +1,9 @@
+fast_coxph_regression = function(Xmm, y, dead){
+	mod = glmnet(Xmm, Surv(y, dead), family = "cox", lambda = 0)
+	list(b = coef(mod))
+}
+
+
 beta_family <- function(link = "logit", phi = 10) {
   linkobj <- make.link(link)
   

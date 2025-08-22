@@ -58,7 +58,6 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 														w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
 													}
 			}
-			if (is.null(private$cached_values$beta_hat_T)){stop("boom")}
 			private$cached_values$beta_hat_T
 		},
 		

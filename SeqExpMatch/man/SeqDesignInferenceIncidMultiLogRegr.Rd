@@ -27,7 +27,7 @@ seq_des_inf$compute_treatment_estimate()
 	
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKM} -> \code{SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr} -> \code{SeqDesignInferenceIncidMultiLogRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKM} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs} -> \code{SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr} -> \code{SeqDesignInferenceIncidMultiLogRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -46,8 +46,8 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="approximate_boostrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-approximate_boostrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$approximate_boostrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKM" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKM.html#method-SeqDesignInferenceMLEorKM-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceMLEorKM$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidUnivLogRegr" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidUnivLogRegr.html#method-SeqDesignInferenceIncidUnivLogRegr-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidUnivLogRegr" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidUnivLogRegr.html#method-SeqDesignInferenceIncidUnivLogRegr-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceIncidUnivLogRegr$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMforGLMs" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMforGLMs.html#method-SeqDesignInferenceMLEorKMforGLMs-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs$compute_mle_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMforGLMs" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMforGLMs.html#method-SeqDesignInferenceMLEorKMforGLMs-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>
 </details>
 }}

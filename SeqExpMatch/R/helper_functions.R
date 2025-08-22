@@ -115,27 +115,27 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 }
 
 
-#' Robust Beta Regression
-#'
-#' Performs Beta regression that if it fails, keeps dropping one column from the model matrix until it works
-#'
-#' @param form_obj	The formula
-#' @param data_obj  The data frame to run beta regression on 
-#' @return			The Beta regression model object
-#' @export
-robust_betareg = function(form_obj, data_obj){
-	repeat {
-		tryCatch({
-			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
-			return(mod)
-		}, error = function(e){})
-		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
-		if (ncol(data_obj) == 1){
-			break
-		}
-	}
-	NULL
-}
+##' Robust Beta Regression
+##'
+##' Performs Beta regression that if it fails, keeps dropping one column from the model matrix until it works
+##'
+##' @param form_obj	The formula
+##' @param data_obj  The data frame to run beta regression on 
+##' @return			The Beta regression model object
+## @export
+#robust_betareg = function(form_obj, data_obj){
+#	repeat {
+#		tryCatch({
+#			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
+#			return(mod)
+#		}, error = function(e){})
+#		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
+#		if (ncol(data_obj) == 1){
+#			break
+#		}
+#	}
+#	NULL
+#}
 
 ##' Robust Negative Binomial Regression
 ##'

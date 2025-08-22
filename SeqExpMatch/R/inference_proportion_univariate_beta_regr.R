@@ -6,7 +6,7 @@
 #' 
 #'
 #' @export
-SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLogRegr",
+SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRegr",
 	inherit = SeqDesignInferenceMLEorKMforGLMs,
 	public = list(
 		
@@ -21,11 +21,12 @@ SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLog
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
 			if (!thin){		
-				assertResponseType(seq_des_obj$get_response_type(), "incidence")
+				assertResponseType(seq_des_obj$get_response_type(), "proportion")			
 				super$initialize(seq_des_obj, num_cores, verbose)
 				assertNoCensoring(private$any_censoring)
 			}
 		},
+		
 		
 		#' @description
 		#' Computes the appropriate estimate
@@ -46,13 +47,14 @@ SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLog
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_logistic_regression(cbind(1, private$seq_des_obj_priv_int$w), private$seq_des_obj_priv_int$y)$b[2]
+			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)$b[2]
 		}
 	),
 	
 	private = list(		
 		generate_mod = function(){
-			fast_logistic_regression_with_var(cbind(1, private$seq_des_obj_priv_int$w), private$seq_des_obj_priv_int$y)
+			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)
 		}		
 	)		
-)
+)		
+		
