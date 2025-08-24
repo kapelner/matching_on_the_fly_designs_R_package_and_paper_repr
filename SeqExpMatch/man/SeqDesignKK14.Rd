@@ -107,8 +107,7 @@ Initialize a matching-on-the-fly sequential experimental design which matches ba
   lambda = NULL,
   t_0_pct = NULL,
   morrison = FALSE,
-  p = NULL,
-  thin = FALSE
+  p = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -143,8 +142,6 @@ If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} whic
 settings and matching begins immediately with no wait for a certain reservoir size like in KK14.}
 
 \item{\code{p}}{The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

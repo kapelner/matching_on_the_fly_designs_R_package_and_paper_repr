@@ -60,6 +60,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mean_cpp
+double mean_cpp(const Eigen::VectorXd& x);
+RcppExport SEXP _SeqExpMatch_mean_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(mean_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// var_cpp
+double var_cpp(const Eigen::VectorXd& x);
+RcppExport SEXP _SeqExpMatch_var_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(var_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // beta_loglik_cpp
 double beta_loglik_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& mu, const double phi, const Eigen::VectorXd& wt);
 RcppExport SEXP _SeqExpMatch_beta_loglik_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
@@ -203,6 +225,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// match_diffs_cpp
+List match_diffs_cpp(const Eigen::VectorXi& w, const Eigen::VectorXi& match_indic, const Eigen::VectorXd& y, const Eigen::MatrixXd& X, int m);
+RcppExport SEXP _SeqExpMatch_match_diffs_cpp(SEXP wSEXP, SEXP match_indicSEXP, SEXP ySEXP, SEXP XSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type match_indic(match_indicSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(match_diffs_cpp(w, match_indic, y, X, m));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_bootstrapped_weighted_sqd_distances_cpp
 NumericVector compute_bootstrapped_weighted_sqd_distances_cpp(NumericMatrix X_all_scaled_col_subset, NumericVector covariate_weights, int t, int B);
 RcppExport SEXP _SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp(SEXP X_all_scaled_col_subsetSEXP, SEXP covariate_weightsSEXP, SEXP tSEXP, SEXP BSEXP) {
@@ -234,6 +271,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp", (DL_FUNC) &_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp, 2},
     {"_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp", (DL_FUNC) &_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp, 2},
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
+    {"_SeqExpMatch_mean_cpp", (DL_FUNC) &_SeqExpMatch_mean_cpp, 1},
+    {"_SeqExpMatch_var_cpp", (DL_FUNC) &_SeqExpMatch_var_cpp, 1},
     {"_SeqExpMatch_beta_loglik_cpp", (DL_FUNC) &_SeqExpMatch_beta_loglik_cpp, 4},
     {"_SeqExpMatch_beta_dev_resids_cpp", (DL_FUNC) &_SeqExpMatch_beta_dev_resids_cpp, 4},
     {"_SeqExpMatch_beta_aic_cpp", (DL_FUNC) &_SeqExpMatch_beta_aic_cpp, 4},
@@ -245,6 +284,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
     {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},
     {"_SeqExpMatch_neg_loglik_nb_cpp", (DL_FUNC) &_SeqExpMatch_neg_loglik_nb_cpp, 4},
+    {"_SeqExpMatch_match_diffs_cpp", (DL_FUNC) &_SeqExpMatch_match_diffs_cpp, 5},
     {"_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
     {"_SeqExpMatch_which_cols_vary_cpp", (DL_FUNC) &_SeqExpMatch_which_cols_vary_cpp, 1},
     {NULL, NULL, 0}

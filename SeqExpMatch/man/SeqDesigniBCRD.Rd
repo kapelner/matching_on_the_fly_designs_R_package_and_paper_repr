@@ -67,8 +67,7 @@ Initialize a balanced completely randomized sequential experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  verbose = FALSE,
-  thin = FALSE
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -93,8 +92,6 @@ a new column, we allow missingness to be its own level. The default is \code{TRU
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

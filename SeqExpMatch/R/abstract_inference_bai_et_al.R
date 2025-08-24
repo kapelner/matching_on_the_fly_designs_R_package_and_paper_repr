@@ -15,17 +15,13 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
     #' 							for \code{test_type = "MLE-or-KM-based"}.
     #' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-    #' @param convex      A flag indicating whether the estimator should use a convex combination of the Bai et al
-    #'                    matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
-	#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
+    #' @param convex_flag       A flag indicating whether the estimator should use a convex combination of the Bai et al
+    #'                    		matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
     #' 
-    initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex = FALSE, thin = FALSE){
-		if (!thin){
-	      super$initialize(seq_des_obj, num_cores, verbose)
-	      private$convex = convex
-		  private$compute_reservoir_and_match_statistics()
-	      assertNoCensoring(private$any_censoring)
-		}
+    initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+      super$initialize(seq_des_obj, num_cores, verbose)
+      private$convex_flag = convex_flag
+      assertNoCensoring(private$any_censoring)
     },
     
     #' Compute treatment effect
@@ -49,16 +45,23 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' seq_des_inf$compute_treatment_estimate()
     #' 	
     compute_treatment_estimate = function(){
-      if (!private$convex || private$KKstats$nRT <= 1 || private$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
-        private$cached_values$beta_hat_T = private$KKstats$d_bar	
-      } else if (private$KKstats$m == 0){ #sometimes there's no matches
-        private$cached_values$beta_hat_T = private$KKstats$r_bar			
+		if (is.null(private$cached_values$KKstats)){
+			private$compute_basic_match_data()
+		}		
+		if (is.null(private$cached_values$KKstats$d_bar)){
+			private$compute_reservoir_and_match_statistics()
+		}
+					
+      if (!private$convex || private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
+        private$cached_values$beta_hat_T = private$cached_values$KKstats$d_bar	
+      } else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
+        private$cached_values$beta_hat_T = private$cached_values$KKstats$r_bar			
       } else {
         if (is.null(private$cached_values$s_beta_hat_T)){
           private$shared()
         }
-        w_star_bai = private$KKstats$ssqR / (private$KKstats$ssqR + private$bai_var_d_bar)
-        private$cached_values$beta_hat_T = w_star_bai * private$KKstats$d_bar + (1 - w_star_bai) * private$KKstats$r_bar #proper weighting
+        w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$bai_var_d_bar)
+        private$cached_values$beta_hat_T = w_star_bai * private$cached_values$KKstats$d_bar + (1 - w_star_bai) * private$cached_values$KKstats$r_bar #proper weighting
       }
       private$cached_values$beta_hat_T
     },
@@ -140,31 +143,36 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
   
   private = list(
     convex_flag = NULL,
-    bai_var_d_bar = NULL,
-    
+				
+	duplicate = function(){
+		i = super$duplicate()
+		i$.__enclos_env__$private$convex_flag = private$convex_flag
+		i
+	},
+	
     shared = function(){
-      m = private$KKstats$m
+      m = private$cached_values$KKstats$m
       if (m == 0){
-        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$KKstats$ssqR), 0)
+        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$cached_values$KKstats$ssqR), 0)
       } else {
-	      private$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
-	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$KKstats$nRT > 1 && private$KKstats$nRC > 1){
+	      private$cached_values$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
+	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$cached_values$KKstats$nRT > 1 && private$cached_values$KKstats$nRC > 1){
 	                                              sqrt(
-													private$bai_var_d_bar * private$KKstats$ssqR /
-	                                                  (private$bai_var_d_bar + private$KKstats$ssqR)
+													private$cached_values$bai_var_d_bar * private$cached_values$KKstats$ssqR /
+	                                                  (private$cached_values$bai_var_d_bar + private$cached_values$KKstats$ssqR)
 	                                              ) # convex estimator
 	                                            } else {
-	                                              sqrt(private$bai_var_d_bar) # just bai estimator
+	                                              sqrt(private$cached_values$bai_var_d_bar) # just bai estimator
 	                                            }		
 	  }
     },
     
     compute_bai_variance_for_pairs = function(){  
       pairs_df = data.frame(
-        pair_id = 1 : private$KKstats$m,
-        yT = private$KKstats$yTs_matched,
-        yC = private$KKstats$yCs_matched,
-        d_i = private$KKstats$y_matched_diff
+        pair_id = 1 : private$cached_values$KKstats$m,
+        yT = private$cached_values$KKstats$yTs_matched,
+        yC = private$cached_values$KKstats$yCs_matched,
+        d_i = private$cached_values$KKstats$y_matched_diff
       )
       
       halves = private$compute_halves()
@@ -226,7 +234,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     },
     
     compute_halves = function(){
-      m = private$KKstats$m
+      m = private$cached_values$KKstats$m
       if (m < 2) return(data.frame()) # Cannot make pairs of pairs if there's < 2 pairs
       
       X = private$get_X()
@@ -238,11 +246,11 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       # Create a distance matrix between the pair-average covariates
       dist_mat = matrix(data = 0, nrow = m, ncol = m)
       dist_mat = dist_mat + diag(Inf, nrow = m, ncol = m) #set diag equal to inf
-      for(i in 1:(m-1)){
-        for(j in (i+1):m){
-          d = private$distance(pair_avg[i,], pair_avg[j,]) # distance formulas are defined in the daughter classes
-          dist_mat[i,j] = d
-          dist_mat[j,i] = d
+      for (i in 1 : (m - 1)){
+        for (j in (i + 1) : m){
+          d = private$distance(pair_avg[i, ], pair_avg[j, ]) # distance formulas are defined in the daughter classes
+          dist_mat[i, j] = d
+          dist_mat[j, i] = d
         }
       }
       
@@ -253,8 +261,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       halves = match_obj$halves
       # If there's an odd number of pairs, remove the "ghost" match
       if (m %% 2 == 1){
-        ghost_row = which(halves[,3] == "ghost")
-        if(length(ghost_row) > 0) halves = halves[-ghost_row, ]
+        ghost_row = which(halves[, 3] == "ghost")
+        if (length(ghost_row) > 0) halves = halves[-ghost_row, ]
       }
       halves
     }

@@ -41,8 +41,7 @@ Initialize a sequential experimental design estimation and test object after the
   seq_des_obj,
   num_cores = 1,
   verbose = TRUE,
-  convex = FALSE,
-  thin = FALSE
+  convex = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -59,8 +58,6 @@ for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{convex}}{A flag indicating whether the estimator should use a convex combination of the Bai et all
 matched pairs estimate with the reservoir estimate, or just the Bai et all estimate on by its self.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

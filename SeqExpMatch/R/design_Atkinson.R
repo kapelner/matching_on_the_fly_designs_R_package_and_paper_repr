@@ -27,7 +27,6 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#' @return 			A new `SeqDesign` object of the specific type
 		#' 
 		#' @examples
@@ -38,17 +37,13 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE, 
 						n = NULL,
-						verbose = FALSE,
-						thin = FALSE
-					) {
-			if (!thin){						
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
-			}
+						verbose = FALSE
+					) {				
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			private$uses_covariates = TRUE
 		}
 	),
 	private = list(
-		uses_covariates = TRUE,
-		
 		assign_wt = function(){			
 			#if it's too early in the trial or if all the assignments are the same, then randomize
 			if (private$t <= ncol(private$Xraw) + 2 + 1 | length(unique(private$t)) == 1){

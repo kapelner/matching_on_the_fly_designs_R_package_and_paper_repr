@@ -98,8 +98,7 @@ Initialize a sequential experimental design estimation and test object after the
   seq_des_obj,
   num_cores = 1,
   verbose = TRUE,
-  convex = FALSE,
-  thin = FALSE
+  convex_flag = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -114,10 +113,8 @@ for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 
-\item{\code{convex}}{A flag indicating whether the estimator should use a convex combination of the Bai et al
-matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
+\item{\code{convex_flag}}{A flag indicating whether the estimator should use a convex combination of the Bai et al
+                           matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 
 Compute treatment effect}
 }

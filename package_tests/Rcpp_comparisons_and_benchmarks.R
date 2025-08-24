@@ -218,9 +218,12 @@ mysurvreg = function(par0, X, y, dead){
 
 mod = survreg(Surv(y, dead) ~ ., data.frame(X))
 coef(mod); mod$scale
-mod=survfit(Surv(y, dead) ~ ., data.frame(X))
-km.ci(mod, conf.level = 0.95, method = "hall")
-
+w = rbinom(length(y), 1, .5)
+kmmod=survfit(Surv(y, dead) ~ w)
+quantile(kmmod, probs = c(.025, .975))
+diff_ci <- km.ci(fit, p = 0.5, conf.level = 0.95, method = "log")
+km_obj = km.ci(kmmod, p = 0.5, conf.level = 0.95, method = "log")
+km_obj$lower
 mod = mysurvreg(rep(0, 15), model.matrix(~.,data.frame(X)), y, dead)
 mod$par
 

@@ -66,8 +66,7 @@ Initialize an Efron's weighted coin sequential experimental design
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
   verbose = FALSE,
-  weighted_coin_prob = NULL,
-  thin = FALSE
+  weighted_coin_prob = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -94,8 +93,6 @@ a new column, we allow missingness to be its own level. The default is \code{TRU
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
 
 \item{\code{weighted_coin_prob}}{The probability of Efron's weighted coin. Defualt is \code{NULL} for Efron's default of 2/3.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

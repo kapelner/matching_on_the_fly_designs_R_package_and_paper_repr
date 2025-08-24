@@ -29,7 +29,6 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#' @return 			A new `SeqDesigniBCRD` object
 		#' 
 		#' @examples
@@ -40,21 +39,16 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL, 
-						verbose = FALSE,
-						thin = FALSE
-					) {
-			if (!thin){						
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
-				self$assert_fixed_sample()
-				if (!all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE)){
-					stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
-				}
+						verbose = FALSE
+					) {					
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			self$assert_fixed_sample()
+			if (!all.equal(n * prob_T, as.integer(n * prob_T), check.attributes = FALSE)){
+				stop("Design iBCRD requires that the fraction of treatments of the total sample size must be a natural number.")
 			}
 		}
 	),
-	private = list(
-		uses_covariates = FALSE,
-		
+	private = list(		
 		assign_wt = function(){
 			n_T_total = round(private$n * private$prob_T) #this quantity should never be a fraction anyway as it was checked during initialization
 			nT = sum(private$w == 1, na.rm = TRUE)

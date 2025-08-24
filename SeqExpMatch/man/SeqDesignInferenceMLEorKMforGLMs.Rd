@@ -78,8 +78,7 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMforGLMs$new(
   seq_des_obj,
   num_cores = 1,
-  verbose = FALSE,
-  thin = FALSE
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -92,9 +91,7 @@ Initialize a sequential experimental design estimation and test object after the
 (which is very slow). The default is 1 for serial computation. This parameter is ignored
 for \code{test_type = "MLE-or-KM-based"}.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
+\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 
 Compute confidence interval}
 }

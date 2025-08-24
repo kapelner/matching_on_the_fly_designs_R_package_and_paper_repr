@@ -27,7 +27,6 @@ SeqDesignCRD = R6::R6Class("SeqDesignCRD",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#' @return 			A new `SeqDesignCRD` object
 		#' 
 		#' @examples
@@ -38,17 +37,12 @@ SeqDesignCRD = R6::R6Class("SeqDesignCRD",
 						prob_T = 0.5, 
 						include_is_missing_as_a_new_feature = TRUE, 
 						n = NULL,
-						verbose = FALSE,
-						thin = FALSE
+						verbose = FALSE
 					) {
-			if (!thin){
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
-			}
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 		}
 	),
-	private = list(
-		uses_covariates = FALSE,
-		
+	private = list(				
 		assign_wt = function(){
 			private$assign_wt_CRD()
 		},

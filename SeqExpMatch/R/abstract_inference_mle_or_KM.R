@@ -14,12 +14,9 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'				
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){
-			if (!thin){
-				super$initialize(seq_des_obj, num_cores, verbose)
-			}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 		
 		#' @description
@@ -51,10 +48,9 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			dead = private$seq_des_obj_priv_int$dead
 			w = private$seq_des_obj_priv_int$w
 			X = private$get_X()
-			seq_inf_class_constructor = get(class(self)[1])$new 
-			seq_des_r = private$seq_des_obj_priv_int$thin_duplicate()				
-			seq_inf_r = private$thin_duplicate()
-			seq_inf_r$.__enclos_env__$private$X = seq_des_r$.__enclos_env__$private$X
+			#now duplicate the design and the inference objects so we can set new data within them for each iteration
+			seq_des_r = private$seq_des_obj_priv_int$duplicate()				
+			seq_inf_r = private$duplicate()
 			
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_bs = array(NA, B)
@@ -73,9 +69,9 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_bs)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
 				cl = doParallel::makeCluster(private$num_cores)
-				doParallel::registerDoParallel(cl)	
+				doParallel::registerDoParallel(cl)
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r", "n", "y", "dead", "X", "w", "seq_inf_class_constructor"), envir = environment())
+				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r", "n", "y", "dead", "X", "w"), envir = environment())
 				#now do the parallelization
 				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap sample
@@ -120,10 +116,7 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, na.rm = FALSE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertLogical(na.rm)
-			
-			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
-			
-			quantile(private$beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
+			quantile(private$get_or_cache_bootstrap_samples(B), c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
 		},
 			
 		#' @description
@@ -161,23 +154,20 @@ SeqDesignInferenceMLEorKM = R6::R6Class("SeqDesignInferenceMLEorKM",
 			)
 		}		
 	),
-	private = list(
-		beta_hat_T_bs = NULL,
-		
-		get_or_cache_bootstrap_samples = function(B){
-			
-			if (is.null(private$beta_hat_T_bs)){
-				private$beta_hat_T_bs = self$approximate_boostrap_distribution_beta_hat_T(B)
+	private = list(		
+		get_or_cache_bootstrap_samples = function(B){			
+			if (is.null(private$cached_values$beta_hat_T_bs)){
+				private$cached_values$beta_hat_T_bs = self$approximate_boostrap_distribution_beta_hat_T(B)
 			} else {
-				B_0 = length(private$beta_hat_T_bs)
+				B_0 = length(private$cached_values$beta_hat_T_bs)
 				if (B_0 > B){
-					return (private$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
+					return (private$cached_values$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
 				} else if (B_0 < B){ 
-					private$beta_hat_T_bs = c(private$beta_hat_T_bs, #go get more and add them to the cache in case we need them later
+					private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, #go get more and add them to the cache in case we need them later
 						self$approximate_boostrap_distribution_beta_hat_T(B - B_0))
 				}
 			}
-			private$beta_hat_T_bs			
+			private$cached_values$beta_hat_T_bs			
 		},
 		
 		compute_z_or_t_ci_from_s_and_df = function(alpha){

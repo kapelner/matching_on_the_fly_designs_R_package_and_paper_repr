@@ -25,23 +25,22 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
+		#'
 		#' @return A new `SeqDesignTest` object.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
-			if (!thin){
-				assertClass(seq_des_obj, "SeqDesign")
-				assertCount(num_cores, positive = TRUE)
-				assertFlag(verbose)
-				seq_des_obj$assert_experiment_completed()
-				
-				private$any_censoring = seq_des_obj$any_censoring()
-				private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
-				private$n = seq_des_obj$get_n()
-				private$num_cores = num_cores
-				private$verbose = verbose
-				if (private$verbose){
-					cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
-				}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			assertClass(seq_des_obj, "SeqDesign")
+			assertCount(num_cores, positive = TRUE)
+			assertFlag(verbose)
+			seq_des_obj$assert_experiment_completed()
+			
+			private$any_censoring = seq_des_obj$any_censoring()
+			private$seq_des_obj = seq_des_obj
+			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
+			private$n = seq_des_obj$get_n()
+			private$num_cores = num_cores
+			private$verbose = verbose
+			if (private$verbose){
+				cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
 			}
 		},		
 		
@@ -154,73 +153,36 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 			
-			is_KK =          is(self, "SeqDesignInferenceMLEorKMKK")
-			is_KK_compound = is(self, "SeqDesignInferenceAllKKCompoundMeanDiff")
-			is_Efron = !is.null(private$seq_des_obj_priv_int$weighted_coin_prob)
-
-			X = private$X	
+			#make a copy of the object and then permute the allocation vector according to the design
+			seq_des_r = private$seq_des_obj_priv_int$duplicate()
+			#y now changes possibly
 			if (delta != 0){
 				if (private$seq_des_obj_priv_int$response_type != "continous"){
 					stop("randomization tests with delta nonzero only works for continuous type!!!!")
 				}
-				y = if (log_responses){
-						log(copy(private$seq_des_obj_priv_int$y)) #copy to ensure we don't edit it
-					} else {
-						copy(private$seq_des_obj_priv_int$y) #copy to ensure we don't edit it
-					}
+				if (log_responses){
+					seq_des_r$.__enclos_env__$private$y = log(copy(private$seq_des_obj_priv_int$y)) #copy to ensure we don't edit it
+				}
 				#we are testing against H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 
 				#so adjust the treatment responses downward by delta
-				y[private$seq_des_obj_priv_int$w == 1] = y[private$seq_des_obj_priv_int$w == 1] - delta
+				seq_des_r$.__enclos_env__$private$y[private$seq_des_obj_priv_int$w == 1] = 
+					seq_des_r$.__enclos_env__$private$y[private$seq_des_obj_priv_int$w == 1] - delta
 			} else {
-				y = if (log_responses){
-						log(private$seq_des_obj_priv_int$y) #no need for copy as we are not mutating
-					} else {
-						private$seq_des_obj_priv_int$y #no need for copy as we are not mutating
-					}				
-			}
-			dead = private$seq_des_obj_priv_int$dead
-			w = private$seq_des_obj_priv_int$w
-			t = private$seq_des_obj_priv_int$t
-			prob_T = private$seq_des_obj_priv_int$prob_T
-			p_raw_t = private$seq_des_obj_priv_int$p_raw_t
-			if (is_Efron){
-				weighted_coin_prob = private$seq_des_obj_priv_int$weighted_coin_prob
-			}
-			
-			seq_des_obj_priv_int = private$seq_des_obj_priv_int	
-			#make a copy of the object and then permute the allocation vector according to the design
-			seq_des_r = seq_des_obj_priv_int$thin_duplicate()
-			#set only the data we need for all designs
-			seq_des_r$.__enclos_env__$private$y = y #set the new responses
-			seq_des_r$.__enclos_env__$private$X = X	
-			seq_des_r$.__enclos_env__$private$dead = dead
-			seq_des_r$.__enclos_env__$private$w = w
-			seq_des_r$.__enclos_env__$private$t = t
-			seq_des_r$.__enclos_env__$private$prob_T = prob_T
-			seq_des_r$.__enclos_env__$private$p_raw_t = p_raw_t
-			if (is_Efron){ #for Efron, one more piece of data is needed
-				seq_des_r$.__enclos_env__$private$weighted_coin_prob = weighted_coin_prob
+				if (log_responses){
+					seq_des_r$.__enclos_env__$private$y = log(private$seq_des_obj_priv_int$y) #no need for copy as we are not mutating
+				}			
 			}
 			#now initialize a new inference object and compute beta_T_hat
-			seq_inf_r = private$thin_duplicate()	
-			seq_inf_r$.__enclos_env__$private$X = X			
+			seq_inf_r = private$duplicate()	
 										
 			if (private$num_cores == 1){ #easier on the OS I think...
 				beta_hat_T_diff_ws = array(NA, nsim_exact_test)
 				
 				for (r in 1 : nsim_exact_test){
 					#cat("		r =", r, "/", nsim_exact_test, "\n")	
-					#scramble the allocation vector based on the design algorithm
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
-					#set the internals of the design data to the inference object
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
-					if (is_KK){
-						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
-					}	
-					if (is_KK_compound){
-						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-					}					
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations				
 					beta_hat_T_diff_ws[r] = seq_inf_r$compute_treatment_estimate()
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_diff_ws)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
@@ -228,18 +190,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				cl = doParallel::makeCluster(private$num_cores)
 				doParallel::registerDoParallel(cl)	
 				#now copy them to each core's memory
-				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r", "is_KK", "is_KK_compound", "is_Efron", "seq_des_obj_priv_int", "y", "X", "dead", "w", "t", "prob_T", "p_raw_t", "weighted_coin_prob"), envir = environment())
+				doParallel::clusterExport(cl, list("seq_des_r", "seq_inf_r"), envir = environment())
 				#now do the parallelization
 				beta_hat_T_diff_ws = doParallel::foreach(r = 1 : nsim_exact_test, .inorder = FALSE, .combine = c) %dopar% {
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
-					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
-					if (is_KK){ #for matching-on-the-fly there is some more data required for inference
-						seq_inf_r$.__enclos_env__$private$compute_basic_match_data()
-					}		
-					if (is_KK_compound){
-						seq_inf_r$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-					}					
+					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations				
 					seq_inf_r$compute_treatment_estimate()
 				}
 				doParallel::stopCluster(cl)
@@ -294,17 +250,28 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	),
 	
 	private = list(
-		seq_des_obj_priv_int = NULL, 			#seq_des_obj_priv_int_obj = function(){private$seq_des_obj_priv_int},
-		any_censoring = NULL,					#get_any_censoring = function(){private$any_censoring},
-		num_cores = NULL,		 				#get_num_cores = function(){private$num_cores},
-		verbose = FALSE,		 				#get_verbose = function(){private$verbose},
-		n = NULL,		 						#get_n = function(){private$n},
-		p = NULL,		 						#get_p = function(){private$p},
-		X = NULL,								#get_X is defined later as it needs some logic dependent on the design type
-		cached_values = list(),					#get_cached_values = function(){private$cached_values},
+		seq_des_obj = NULL,
+		seq_des_obj_priv_int = NULL, 
+		any_censoring = NULL,
+		num_cores = NULL,
+		verbose = FALSE,
+		n = NULL,
+		p = NULL,
+		X = NULL, #get_X is defined later as it needs some logic dependent on the design type
+		cached_values = list(),
 				
-		thin_duplicate = function(){
-			do.call(get(class(self)[1])$new, args = list(thin = TRUE))		
+		duplicate = function(){
+			i = do.call(get(class(self)[1])$new, args = list(
+				seq_des_obj = private$seq_des_obj,
+				num_cores = private$num_cores,
+				verbose = FALSE
+			))
+			i$.__enclos_env__$private$seq_des_obj_priv_int = 	private$seq_des_obj_priv_int
+			i$.__enclos_env__$private$any_censoring = 			private$any_censoring
+			i$.__enclos_env__$private$n = 						private$n
+			i$.__enclos_env__$private$p = 						private$p
+			i$.__enclos_env__$private$X = 						private$X
+			i
 		},
 		
 		get_X = function(){

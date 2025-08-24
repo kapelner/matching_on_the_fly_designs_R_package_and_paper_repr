@@ -88,12 +88,7 @@ seq_des_inf$compute_bootstrap_two_sided_pval()
 \subsection{Method \code{new()}}{
 Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$new(
-  seq_des_obj,
-  num_cores = 1,
-  verbose = FALSE,
-  thin = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKM$new(seq_des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -106,8 +101,6 @@ Initialize a sequential experimental design estimation and test object after the
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

@@ -15,14 +15,11 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
 		#' 							or bootstrap inference.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){
-			if (!thin){			
-				assertResponseType(seq_des_obj$get_response_type(), "continuous")
-				super$initialize(seq_des_obj, num_cores, verbose)
-				assertNoCensoring(private$any_censoring)
-			}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){		
+			assertResponseType(seq_des_obj$get_response_type(), "continuous")
+			super$initialize(seq_des_obj, num_cores, verbose)
+			assertNoCensoring(private$any_censoring)
 		},
 		
 		#' @description
@@ -43,7 +40,10 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){	
+		compute_treatment_estimate = function(){
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}			
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$shared_for_compute_estimate()
 			}		
@@ -152,23 +152,23 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		},
 		
 		only_matches = function(){
-			private$KKstats$nRT <= 2 || private$KKstats$nRC <= 2 || (private$KKstats$nRT + private$KKstats$nRC <= ncol(private$get_X()) + 2)
+			private$cached_values$KKstats$nRT <= 2 || private$cached_values$KKstats$nRC <= 2 || (private$cached_values$KKstats$nRT + private$cached_values$KKstats$nRC <= ncol(private$get_X()) + 2)
 		},
 		
 		only_reservoir = function(){
-			private$KKstats$m == 0
+			private$cached_values$KKstats$m == 0
 		},
 		
 		ols_for_matched_pairs = function(){
-			# coef(summary(lm(private$KKstats$y_matched_diffs ~ private$KKstats$X_matched_diffs)))
-			mod = fast_ols_with_var_cpp(private$KKstats$X_matched_diffs, private$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
+			# coef(summary(lm(private$cached_values$KKstats$y_matched_diffs ~ private$cached_values$KKstats$X_matched_diffs)))
+			mod = fast_ols_with_var_cpp(private$cached_values$KKstats$X_matched_diffs, private$cached_values$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
 			private$cached_values$beta_T_matched =     mod$b[1]
 			private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
 		},
 		
 		ols_for_reservoir = function(){
-			# coef(summary(lm(private$KKstats$y_reservoir ~ cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir))))
-			mod = fast_ols_with_var_cpp(cbind(private$KKstats$w_reservoir, private$KKstats$X_reservoir), private$KKstats$y_reservoir)
+			# coef(summary(lm(private$cached_values$KKstats$y_reservoir ~ cbind(private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir))))
+			mod = fast_ols_with_var_cpp(cbind(private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir), private$cached_values$KKstats$y_reservoir)
 			private$cached_values$beta_T_reservoir =     mod$b[1]
 			private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j
 		}

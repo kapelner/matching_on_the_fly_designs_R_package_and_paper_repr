@@ -41,8 +41,7 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceCountUnivNegBinRegr$new(
   seq_des_obj,
   num_cores = 1,
-  verbose = FALSE,
-  thin = FALSE
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -56,8 +55,6 @@ Initialize a sequential experimental design estimation and test object after the
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

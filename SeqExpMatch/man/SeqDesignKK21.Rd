@@ -75,8 +75,7 @@ option to use matching parameters of Morrison and Owen (2025)
   p = NULL,
   num_boot = NULL,
   count_use_speedup = TRUE,
-  proportion_use_speedup = TRUE,
-  thin = FALSE
+  proportion_use_speedup = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -119,8 +118,6 @@ instead of a negative binomial regression each time? This is at the expense of t
 
 \item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

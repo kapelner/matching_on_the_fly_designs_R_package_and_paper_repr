@@ -17,6 +17,14 @@ fast_ols_cpp <- function(X, y) {
     .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
+mean_cpp <- function(x) {
+    .Call(`_SeqExpMatch_mean_cpp`, x)
+}
+
+var_cpp <- function(x) {
+    .Call(`_SeqExpMatch_var_cpp`, x)
+}
+
 beta_loglik_cpp <- function(y, mu, phi, wt) {
     .Call(`_SeqExpMatch_beta_loglik_cpp`, y, mu, phi, wt)
 }
@@ -59,6 +67,10 @@ shuffle_cpp <- function(w) {
 
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
     .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
+}
+
+match_diffs_cpp <- function(w, match_indic, y, X, m) {
+    .Call(`_SeqExpMatch_match_diffs_cpp`, w, match_indic, y, X, m)
 }
 
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {
