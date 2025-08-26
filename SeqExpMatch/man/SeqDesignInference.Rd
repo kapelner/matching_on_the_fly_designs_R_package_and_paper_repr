@@ -20,7 +20,25 @@ Begin Inference
 \examples{
 
 ## ------------------------------------------------
-## Method `SeqDesignInference$compute_confidence_interval_rand`
+## Method `SeqDesignInference$approximate_boostrap_distribution_beta_hat_T`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
+
+## ------------------------------------------------
+## Method `SeqDesignInference$compute_bootstrap_confidence_interval`
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
@@ -34,7 +52,24 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
-		
+					
+
+## ------------------------------------------------
+## Method `SeqDesignInference$compute_bootstrap_two_sided_pval`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_bootstrap_two_sided_pval()
+					
 
 ## ------------------------------------------------
 ## Method `SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null`
@@ -69,14 +104,34 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInference$new(seq_des)
 seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		
+
+## ------------------------------------------------
+## Method `SeqDesignInference$compute_confidence_interval_rand`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_confidence_interval()
+		
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInference-new}{\code{SeqDesignInference$new()}}
-\item \href{#method-SeqDesignInference-compute_confidence_interval_rand}{\code{SeqDesignInference$compute_confidence_interval_rand()}}
+\item \href{#method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInference$approximate_boostrap_distribution_beta_hat_T()}}
+\item \href{#method-SeqDesignInference-compute_bootstrap_confidence_interval}{\code{SeqDesignInference$compute_bootstrap_confidence_interval()}}
+\item \href{#method-SeqDesignInference-compute_bootstrap_two_sided_pval}{\code{SeqDesignInference$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null}{\code{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()}}
 \item \href{#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand}{\code{SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()}}
+\item \href{#method-SeqDesignInference-compute_confidence_interval_rand}{\code{SeqDesignInference$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInference-clone}{\code{SeqDesignInference$clone()}}
 }
 }
@@ -107,21 +162,55 @@ A new `SeqDesignTest` object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInference-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
-Computes a 1-alpha level frequentist confidence interval for the randomization test
-
-Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
-we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
-This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
-https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-As far as we know, this only works for response type continuous and survival uncensored (where the CI is on log mean).
+\if{html}{\out{<a id="method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_boostrap_distribution_beta_hat_T()}}{
+Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$approximate_boostrap_distribution_beta_hat_T(B = 501)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples. The default is 501.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+			
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_bootstrap_confidence_interval(
   alpha = 0.05,
-  nsim_exact_test = 501,
-  pval_epsilon = 0.001
+  B = 501,
+  na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -130,16 +219,14 @@ As far as we know, this only works for response type continuous and survival unc
 \describe{
 \item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
 
-\item{\code{nsim_exact_test}}{The number of randomization vectors (applicable for test type "randomization-exact" only). 
-The default is 1000 providing good resolutions to confidence intervals.}
+\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
 
-\item{\code{pval_epsilon}}{The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
-The default is to find a CI accurate to within a tenth of a percent.}
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A 1 - alpha sized frequentist confidence interval for the treatment effect
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -154,7 +241,55 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
 seq_des_inf$compute_confidence_interval()
-		
+					
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Computes a bootstrap two-sided p-value for H_0: betaT = delta. 
+It does so differently for all response types, estimate types and test types.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  na.rm = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+
+\item{\code{B}}{Number of bootstrap samples. The default is NA which corresponds to B=501.}
+
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_bootstrap_two_sided_pval()
+					
 }
 \if{html}{\out{</div>}}
 
@@ -257,6 +392,61 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des)
 seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+		
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-compute_confidence_interval_rand}{}}}
+\subsection{Method \code{compute_confidence_interval_rand()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test
+
+Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
+we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
+This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
+https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
+As far as we know, this only works for response type continuous and survival uncensored (where the CI is on log mean).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
+  alpha = 0.05,
+  nsim_exact_test = 501,
+  pval_epsilon = 0.001
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{nsim_exact_test}}{The number of randomization vectors (applicable for test type "randomization-exact" only). 
+The default is 1000 providing good resolutions to confidence intervals.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
+The default is to find a CI accurate to within a tenth of a percent.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval for the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
+seq_des_inf$compute_confidence_interval()
 		
 }
 \if{html}{\out{</div>}}

@@ -192,7 +192,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 						    reservoir_indices,
 						    S_xs_inv
 						) 		
-						cat("assign_wt t =", private$t, "\n")
+#						cat("assign_wt t =", private$t, "\n")
 						#comput cutoff threshold
 						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						n = self$get_n()

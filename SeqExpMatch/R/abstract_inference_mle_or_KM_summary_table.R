@@ -5,7 +5,7 @@
 #' where the common denominator is a summary table from a glm.
 #' 
 SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSummaryTable",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description
@@ -39,15 +39,8 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}			
-			if (is.null(private$cached_values$beta_hat_T)){
-				private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
-			}
-			if (is.null(private$cached_values$beta_hat_T)){
-				warning("The treatment estimate could not be computed for inference type ", class(self)[1])
-			}
+			private$shared()			
+			private$cached_values$beta_hat_T = private$cached_values$summary_table[2, 1]
 			private$cached_values$beta_hat_T
 		},
 		
@@ -78,12 +71,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			if (is.null(private$cached_values$summary_table)){
-				private$shared()
-			}	
-			if (is.null(private$cached_values$beta_hat_T)){
-				private$cached_values$beta_hat_T = self$compute_treatment_estimate()
-			}
+			private$cached_values$beta_hat_T = self$compute_treatment_estimate()
 			private$cached_values$s_beta_hat_T = private$cached_values$summary_table[2, 2]
 			private$cached_values$is_z = TRUE			
 			private$compute_z_or_t_ci_from_s_and_df(alpha)			

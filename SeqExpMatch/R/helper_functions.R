@@ -1,4 +1,10 @@
+logit = function(p){
+	log(p / (1 - p))
+}
 
+inv_logit = function(x){
+	1 / (1 + exp(-x))
+}
 
 assertResponseType = function(response_type, needed_response_type){
 	if (response_type != needed_response_type){

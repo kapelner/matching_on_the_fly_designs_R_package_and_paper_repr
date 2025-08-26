@@ -5,7 +5,7 @@
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 #' 
 SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description

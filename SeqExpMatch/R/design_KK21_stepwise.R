@@ -90,9 +90,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 				j_droppeds = c(j_droppeds, j_max)
 				X_stepwise = cbind(X_stepwise, Xfull[, j_max])
 			}
-			if (any(is.na(weights))){
-				stop("boom")					
-			}
+#			if (any(is.na(weights))){
+#				stop("boom")					
+#			}
 			weights
 		},
 		

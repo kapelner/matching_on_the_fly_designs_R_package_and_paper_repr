@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description

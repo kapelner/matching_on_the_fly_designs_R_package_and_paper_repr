@@ -5,7 +5,7 @@
 #' 
 #'
 SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
         #' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
@@ -90,9 +90,9 @@ SeqDesignInferenceMLEorKMKK = R6::R6Class("SeqDesignInferenceMLEorKMKK",
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations		
 					beta_hat_T_bs[r] = seq_inf_r$compute_treatment_estimate()
-					if (is.nan(beta_hat_T_bs[r])){
-						stop("boom")
-					}
+#					if (is.nan(beta_hat_T_bs[r])){
+#						stop("boom")
+#					}
 				}
 			} else {	
 				cl = doParallel::makeCluster(private$num_cores)

@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMeanDiff",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description

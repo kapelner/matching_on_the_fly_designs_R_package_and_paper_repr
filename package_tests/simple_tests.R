@@ -15,7 +15,7 @@ D = datasets_and_response_models$boston
 #try to create a CRD design
 n = nrow(D$X)
 dead = rep(1, n)
-response_type = "continuous"
+response_type = "survival"
 y = D$y_original[[response_type]]
 
 #add some censoring if it's survival
@@ -81,10 +81,14 @@ seq_des_inf$compute_bootstrap_confidence_interval()
 seq_des_inf$compute_bootstrap_two_sided_pval()
 head(seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null())
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
 
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
 })
 profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+})
+profvis({
+  seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
 })

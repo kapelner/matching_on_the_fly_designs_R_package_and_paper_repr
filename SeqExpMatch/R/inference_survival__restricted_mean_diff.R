@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSurvivalRestrictedMeanDiff",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description
