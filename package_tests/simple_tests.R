@@ -76,12 +76,12 @@ seq_des_inf = SeqDesignInferenceSurvivalMultiCoxPHRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
-head(seq_des_inf$approximate_boostrap_distribution_beta_hat_T())
+# head(seq_des_inf$approximate_boostrap_distribution_beta_hat_T())
 seq_des_inf$compute_bootstrap_confidence_interval()
 seq_des_inf$compute_bootstrap_two_sided_pval()
-head(seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null())
+# head(seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null())
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
-seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
+seq_des_inf$compute_confidence_interval_rand()
 
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
@@ -90,5 +90,5 @@ profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 })
 profvis({
-  seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
+  seq_des_inf$compute_confidence_interval_rand()
 })

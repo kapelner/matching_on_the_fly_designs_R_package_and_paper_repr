@@ -396,7 +396,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					ci = inv_logit(ci)								
 				},
 				survival =   {
-					assertNoCensoring(private$any_censoring)
 					lower_upper_ci_bounds = self$compute_bootstrap_confidence_interval(alpha / 100) #ensure a wider CI to be the starting position then pare down	
 					#the bootstrap may give a negative lower bound which cannot be logged, so correct it
 					if (lower_upper_ci_bounds[1] < 0){
