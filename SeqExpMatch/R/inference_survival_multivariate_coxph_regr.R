@@ -6,8 +6,8 @@
 #' 
 #'
 #' @export
-SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBetaRegr",
-	inherit = SeqDesignInferencePropUniBetaRegr,
+SeqDesignInferenceSurvivalMultiCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvivalMultiCoxPHRegr",
+	inherit = SeqDesignInferenceSurvivalUniCoxPHRegr,
 	public = list(
 		
 		#' @description
@@ -21,7 +21,6 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
-		
 		
 		#' @description
 		#' Computes the appropriate estimate
@@ -42,14 +41,25 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), y = private$seq_des_obj_priv_int$y)$b[2]
+			fast_coxph_regression(cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)$b[2]
 		}
 	),
 	
-	private = list(
+	private = list(		
 		generate_mod = function(){
-			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), y = private$seq_des_obj_priv_int$y)
-		}			
+			surv_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)			
+			tryCatch({
+				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ cbind(private$seq_des_obj_priv_int$w, private$get_X())))
+				list(
+					b = cbind(0, coef(coxph_mod)),
+					ssq_b_2 = coef(summary(coxph_mod))[1, 3]^2
+				)			
+			}, error = function(e){
+				list(
+					b = c(NA, NA),
+					ssq_b_2 = NA
+				)			
+			})
+		}		
 	)		
-)		
-		
+)

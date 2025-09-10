@@ -31,7 +31,7 @@ finagle_different_responses_from_continuous = function(y_cont){
   list(
     continuous = y_scaled,
     incidence =  ifelse(y_cont > median(y_cont), 1, 0),
-    proportion = (y_cont - min(y_cont) + .Machine$double.eps) / max(y_cont - min(y_cont) + 2 * .Machine$double.eps),
+    proportion = (y_cont - min(y_cont) + 1e-6) / max(y_cont - min(y_cont) + 2e-6),
     count =      round(y_cont - min(y_cont)),
     survival =   y_scaled - min(y_scaled) + 0.1
   )

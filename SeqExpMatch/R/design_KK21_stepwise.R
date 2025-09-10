@@ -38,8 +38,6 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#' 									instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 		#' 									instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
-		
   		#' @return 			A new `SeqDesignKK21stepwise` object
 		#' 
 		#' @examples
@@ -57,12 +55,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			p = NULL,
 			num_boot = NULL,
 			count_use_speedup = TRUE,
-			proportion_use_speedup = TRUE,
-			thin = FALSE
+			proportion_use_speedup = TRUE
 		){
-			if (!thin){
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup)	
-			}			
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup)		
 		}
 	),
 	private = list(
@@ -95,9 +90,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 				j_droppeds = c(j_droppeds, j_max)
 				X_stepwise = cbind(X_stepwise, Xfull[, j_max])
 			}
-			if (any(is.na(weights))){
-				stop("boom")					
-			}
+#			if (any(is.na(weights))){
+#				stop("boom")					
+#			}
 			weights
 		},
 		
@@ -141,14 +136,17 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			if (!private$proportion_use_speedup){
 				tryCatch({
 					weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){					
-									beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
-									summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
-									tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
-												summary_beta_regr_mod$mean 
-											} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
-												summary_beta_regr_mod$mu
-											}
-									ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+#									beta_regr_mod = suppressWarnings(betareg::betareg(response_obj ~ ., data = cbind(data.frame(response_obj = response_obj), covariate_data_matrix)))
+#									summary_beta_regr_mod = coef(summary(beta_regr_mod)) 
+#									tab = 	if (!is.null(summary_beta_regr_mod$mean)){ #beta model
+#												summary_beta_regr_mod$mean 
+#											} else if (!is.null(summary_beta_regr_mod$mu)){ #extended-support xbetax model
+#												summary_beta_regr_mod$mu
+#											}
+#									ifelse(nrow(tab) >= 2, abs(tab[2, 3]), NA)
+
+									mod = fast_beta_regression_with_var(Xmm = cbind(1, covariate_data_matrix), y = response_obj)
+									mod$b[2] / sqrt(mod$ssq_b_2)
 								})
 					if (!is.na(weight)){
 						return(weight)

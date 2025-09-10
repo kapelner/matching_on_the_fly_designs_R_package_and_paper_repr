@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
-	inherit = SeqDesignInferenceMLEorKM,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description

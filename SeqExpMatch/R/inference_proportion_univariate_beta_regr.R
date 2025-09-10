@@ -6,8 +6,8 @@
 #' 
 #'
 #' @export
-SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBetaRegr",
-	inherit = SeqDesignInferencePropUniBetaRegr,
+SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRegr",
+	inherit = SeqDesignInferenceMLEorKMforGLMs,
 	public = list(
 		
 		#' @description
@@ -19,7 +19,9 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(seq_des_obj$get_response_type(), "proportion")			
 			super$initialize(seq_des_obj, num_cores, verbose)
+			assertNoCensoring(private$any_censoring)
 		},
 		
 		
@@ -42,14 +44,14 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), y = private$seq_des_obj_priv_int$y)$b[2]
+			fast_beta_regression(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)$b[2]
 		}
 	),
 	
-	private = list(
+	private = list(		
 		generate_mod = function(){
-			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w, private$get_X()), y = private$seq_des_obj_priv_int$y)
-		}			
+			fast_beta_regression_with_var(Xmm = cbind(1, private$seq_des_obj_priv_int$w), y = private$seq_des_obj_priv_int$y)
+		}		
 	)		
 )		
 		

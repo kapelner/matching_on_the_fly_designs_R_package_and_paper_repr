@@ -30,6 +30,7 @@ seq_des = SeqDesignCRD$new(response_type = "continuous")
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_assignments'><code>SeqExpMatch::SeqDesign$add_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_responses'><code>SeqExpMatch::SeqDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_response'><code>SeqExpMatch::SeqDesign$add_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
@@ -64,8 +65,7 @@ Initialize a completely randomized sequential experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  verbose = FALSE,
-  thin = FALSE
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -90,8 +90,6 @@ a new column, we allow missingness to be its own level. The default is \code{TRU
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

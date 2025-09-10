@@ -16,14 +16,10 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#' 
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
-			if (!thin){	
-				super$initialize(seq_des_obj, num_cores, verbose)
-				private$compute_reservoir_and_match_statistics()
-				assertNoCensoring(private$any_censoring)	
-			}		
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
+			assertNoCensoring(private$any_censoring)		
 		},
 		
 		#' Compute treatment effect
@@ -46,13 +42,19 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){			
-			private$cached_values$beta_hat_T = 	if (private$KKstats$nRT <= 1 || private$KKstats$nRC <= 1){
-													private$KKstats$d_bar	
-												} else if (private$KKstats$m == 0){ #sometimes there's no matches
-													private$KKstats$r_bar			
+		compute_treatment_estimate = function(){	
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}		
+			if (is.null(private$cached_values$KKstats$d_bar)){
+				private$compute_reservoir_and_match_statistics()
+			}				
+			private$cached_values$beta_hat_T = 	if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
+													private$cached_values$KKstats$d_bar	
+												} else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
+													private$cached_values$KKstats$r_bar			
 												} else {
-													private$KKstats$w_star * private$KKstats$d_bar + (1 - private$KKstats$w_star) * private$KKstats$r_bar #proper weighting
+													private$cached_values$KKstats$w_star * private$cached_values$KKstats$d_bar + (1 - private$cached_values$KKstats$w_star) * private$cached_values$KKstats$r_bar #proper weighting
 												}
 			private$cached_values$beta_hat_T
 		},
@@ -119,7 +121,7 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 			assertNumeric(delta)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
-			}			
+			}						
 			2 * pnorm(
 					-abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
 				) #approximate by using N(0, 1) distribution
@@ -127,20 +129,19 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		}
 	),
 	
-	private = list(
-					
+	private = list(					
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
-				private$compute_KK_compound_mean_difference_estimate()
+				self$compute_treatment_estimate()
 			}			
 			
 			private$cached_values$s_beta_hat_T =
-				if (private$KKstats$nRT <= 1 || private$KKstats$nRC <= 1){	
-					sqrt(private$KKstats$ssqD_bar)
-				} else if (private$KKstats$m == 0){ #sometimes there's no matches
-					sqrt(private$KKstats$ssqR)		
+				if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){	
+					sqrt(private$cached_values$KKstats$ssqD_bar)
+				} else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
+					sqrt(private$cached_values$KKstats$ssqR)		
 				} else {
-					sqrt(private$KKstats$ssqR * private$KKstats$ssqD_bar / (private$KKstats$ssqR + private$KKstats$ssqD_bar))
+					sqrt(private$cached_values$KKstats$ssqR * private$cached_values$KKstats$ssqD_bar / (private$cached_values$KKstats$ssqR + private$cached_values$KKstats$ssqD_bar))
 				}			
 		}		
 	)		

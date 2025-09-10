@@ -68,6 +68,7 @@ seq_des$get_match_indic()
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_assignments'><code>SeqExpMatch::SeqDesign$add_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_responses'><code>SeqExpMatch::SeqDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_response'><code>SeqExpMatch::SeqDesign$add_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
@@ -106,8 +107,7 @@ Initialize a matching-on-the-fly sequential experimental design which matches ba
   lambda = NULL,
   t_0_pct = NULL,
   morrison = FALSE,
-  p = NULL,
-  thin = FALSE
+  p = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -142,8 +142,6 @@ If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} whic
 settings and matching begins immediately with no wait for a certain reservoir size like in KK14.}
 
 \item{\code{p}}{The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.}
-
-\item{\code{thin}}{For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.}
 }
 \if{html}{\out{</div>}}
 }

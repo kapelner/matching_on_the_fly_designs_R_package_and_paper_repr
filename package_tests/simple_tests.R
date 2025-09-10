@@ -14,8 +14,21 @@ D = datasets_and_response_models$boston
 
 #try to create a CRD design
 n = nrow(D$X)
-response_type = "count"
+dead = rep(1, n)
+response_type = "survival"
 y = D$y_original[[response_type]]
+
+#add some censoring if it's survival
+if (response_type == "survival"){
+  prob_censoring = 0.3
+  for (i in 1 : n){
+    if (runif(1) < prob_censoring){
+      y[i] = runif(1, 0, y[i])
+      dead[i] = 0
+    }
+  }  
+}
+
 
 #all current designs
 seq_des_obj = SeqDesignCRD$new(response_type = response_type, n = n)
@@ -28,7 +41,7 @@ seq_des_obj = SeqDesignKK21stepwise$new(response_type = response_type, n = n)
 # profvis({
   for (t in 1 : n){
     seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-    seq_des_obj$add_subject_response(t, y[t])
+    seq_des_obj$add_subject_response(t, y[t], dead[t])
   }
 # })
 
@@ -63,10 +76,19 @@ seq_des_inf = SeqDesignInferenceSurvivalMultiCoxPHRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
+head(seq_des_inf$approximate_boostrap_distribution_beta_hat_T())
+seq_des_inf$compute_bootstrap_confidence_interval()
+seq_des_inf$compute_bootstrap_two_sided_pval()
+head(seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null())
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
+
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
 })
-seq_des_inf$compute_bootstrap_two_sided_pval()
 profvis({
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+})
+profvis({
+  seq_des_inf$compute_confidence_interval_rand(pval_epsilon = 0.005)
 })

@@ -4,9 +4,7 @@
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 #' 
-#'
-#' @export
-SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff",
+SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs",
 	inherit = SeqDesignInference,
 	public = list(
 		
@@ -18,35 +16,10 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){		
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			super$initialize(seq_des_obj, num_cores, verbose)
-			assertResponseType(seq_des_obj$get_response_type(), "survival")	
 		},
 		
-		#' @description
-		#' Computes the appropriate estimate for mean difference
-		#' 
-		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#' 
-		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
-		#' 	
-		compute_treatment_estimate = function(){	
-			survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
-			private$cached_values$survival_fit_obj = survival::survfit(survival_obj ~ private$seq_des_obj_priv_int$w)
-			survival_fit_res = summary(private$cached_values$survival_fit_obj)$table	
-			survival_fit_res[2, 7] - survival_fit_res[1, 7]
-		},
 		
 		#' Compute confidence interval
 		#'
@@ -70,17 +43,20 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des, test_type = "MLE-or-KM-based")
+		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
-			stop("not implemented --- use the bootstrap instead")
-		},
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			private$shared()
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},		
+		
 		
 		#' Compute p-value
 		#'
 		#' @description
-		#' Computes a 2-sided p-value via the log rank test
+		#' Computes a 2-sided p-value
 		#'
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#' 
@@ -96,21 +72,26 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-
+			private$shared()
 			if (delta == 0){
-				survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
-				surv_diff = survdiff(survival_obj ~ private$seq_des_obj_priv_int$w)
-				surv_diff$pvalue
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
 				stop("TO-DO")
-			}
+			}			
 		}
 	),
 	
-	private = list()		
+	private = list(		
+		shared = function(){
+			mod = private$generate_mod() #abstract function implemented by daughter classes
+			private$cached_values$beta_hat_T = mod$b[2]			
+			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_2)
+			private$cached_values$is_z = TRUE
+		}	
+	)		
 )

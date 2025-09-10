@@ -17,12 +17,9 @@ SeqDesignInferenceSurvivalMultiWeibullRegr = R6::R6Class("SeqDesignInferenceSurv
 		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 							for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, thin = FALSE){	
-			if (!thin){		
-				super$initialize(seq_des_obj, num_cores, verbose)
-			}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
 		}
 	),
 	

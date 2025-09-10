@@ -25,7 +25,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
 		#' @return 			A new `SeqDesign` object of the specific type
 		#'  
@@ -34,45 +33,42 @@ SeqDesign = R6::R6Class("SeqDesign",
 				prob_T = 0.5, 
 				include_is_missing_as_a_new_feature = TRUE, 
 				n = NULL,
-				verbose = FALSE,
-				thin = FALSE
+				verbose = FALSE
 			) {
-			if (!thin){
-				assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
-				assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-				assertFlag(include_is_missing_as_a_new_feature)
-				assertFlag(verbose)
-				assertCount(n, null.ok = TRUE)
-				
-				if (is.null(n)){
-					private$fixed_sample = FALSE
-				} else {
-					n = as.integer(n)
-					private$n = n
-					private$fixed_sample = TRUE
-				}
-				
-				private$prob_T = prob_T			
-				private$response_type = response_type
-				private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
-				private$verbose = verbose
-				
-				if (private$fixed_sample){
-					private$y = 	rep(NA_real_, n)
-					private$w = 	rep(NA_real_, n)
-					private$dead =  rep(NA_real_, n)
-				}
-	
-				if (private$verbose){
-					cat(paste0("Intialized a ", 
-					class(self)[1], 
-					" experiment with response type ", 
-					response_type, 
-					" and ", 
-					ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
-					 ".\n"))
-				}
-			}				
+			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
+			assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			assertFlag(include_is_missing_as_a_new_feature)
+			assertFlag(verbose)
+			assertCount(n, null.ok = TRUE)
+			
+			if (is.null(n)){
+				private$fixed_sample = FALSE
+			} else {
+				n = as.integer(n)
+				private$n = n
+				private$fixed_sample = TRUE
+			}
+			
+			private$prob_T = prob_T			
+			private$response_type = response_type
+			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
+			private$verbose = verbose
+			
+			if (private$fixed_sample){
+				private$y = 	rep(NA_real_, n)
+				private$w = 	rep(NA_real_, n)
+				private$dead =  rep(NA_real_, n)
+			}
+
+			if (private$verbose){
+				cat(paste0("Intialized a ", 
+				class(self)[1], 
+				" experiment with response type ", 
+				response_type, 
+				" and ", 
+				ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
+				 ".\n"))
+			}		
 		},
 		
 		#' @description
@@ -232,7 +228,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			} else if (private$response_type == "incidence"){
 				assertChoice(y, c(0, 1))
 			} else if (private$response_type == "proportion"){
-				assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1) #the betareg package can handle 0's and 1's exactly (see their documentation) this seems to be why the statmod / numDeriv packages is also required 
+				assertNumeric(y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps) #ones and zeroes not allowed
 			} else if (private$response_type == "count"){
 				assertCount(y, na.ok = FALSE)
 			} else if (private$response_type == "survival"){
@@ -242,8 +238,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 					y = .Machine$double.eps
 				}						
 			}
-			if (dead == 0 & private$response_type %in% c("continuous", "incidence", "proportion")){
-				stop("censored observations are only available for count or survival response types")
+			if (dead == 0 & private$response_type != "survival"){
+				stop("censored observations are only available for survival response types")
 			}
 			#finally, record the response value and the time at which it was recorded
 			if (private$fixed_sample | t <= length(private$y)){
@@ -566,10 +562,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,		
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?	
-		
-		thin_duplicate = function(){
-			do.call(get(class(self)[1])$new, args = list(thin = TRUE))		
-		},
+		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
 
 		duplicate = function(){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
@@ -582,15 +575,17 @@ SeqDesign = R6::R6Class("SeqDesign",
 				n = 									private$n
 			))
 			#we are assuming the experiment is complete so we have private$t = 0 initialized
+			d$.__enclos_env__$private$p_raw_t = 				private$p_raw_t
 			d$.__enclos_env__$private$Xraw = 					private$Xraw
-			d$.__enclos_env__$private$Ximp = 					private$Ximp
+			d$.__enclos_env__$private$Ximp = 					private$Ximp	
+			d$.__enclos_env__$private$X = 						private$X
 			d$.__enclos_env__$private$y = 						private$y
 			d$.__enclos_env__$private$dead = 					private$dead
 			d$.__enclos_env__$private$w = 						private$w		
 			d$.__enclos_env__$private$t = 						private$t	
-			d$.__enclos_env__$private$X = 						private$X	
 			d$.__enclos_env__$private$fixed_sample = 			private$fixed_sample
 			d$.__enclos_env__$private$y_i_t_i = 				private$y_i_t_i
+			d$.__enclos_env__$private$uses_covariates = 		private$uses_covariates
 			d
 		},
 		
@@ -666,7 +661,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
 				
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				private$X = model.matrix(~ ., private$Ximp)
+				private$X = as.matrix(private$Ximp) #model.matrix(~ ., private$Ximp)
 				private$X = private$drop_linearly_dependent_cols(private$X)$M
 				
 				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){

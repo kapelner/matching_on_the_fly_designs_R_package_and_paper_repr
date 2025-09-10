@@ -2,25 +2,16 @@
 % Please edit documentation in R/helper_functions.R
 \name{sample_mode}
 \alias{sample_mode}
-\title{Robust Negative Binomial Regression}
+\title{Sample Mode from an array}
 \usage{
 sample_mode(data)
 }
 \arguments{
 \item{data}{The array of numbers}
-
-\item{form_obj}{The formula}
-
-\item{data_obj}{The data frame to run Negative Binomial regression on}
 }
 \value{
-The Negative Binomial regression model object
-Sample Mode from an array
-
-Compute sample mode from an array of numbers
-
 The sample mode
 }
 \description{
-Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
+Compute sample mode from an array of numbers
 }

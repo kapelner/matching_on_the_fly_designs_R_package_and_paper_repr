@@ -137,6 +137,111 @@ microbenchmark::microbenchmark(
   R = {mod = MASS::glm.nb(y ~ X); abs(coef(summary(mod))[2, 3])},
   times = 100
 )
+rm(list = ls())
+
+pacman::p_load(betareg, microbenchmark)
 
 
+source(file = "../SeqExpMatch/R/model_fit_helpers.R")
+Rcpp::sourceCpp("../SeqExpMatch/src/_helper_functions.cpp")
+Rcpp::sourceCpp("../SeqExpMatch/src/beta_regression_helpers.cpp")
+
+X = as.matrix(MASS::Boston[, 1:13])
+y = (MASS::Boston$medv - min(MASS::Boston$medv) + 0.01) / (max(MASS::Boston$medv) - min(MASS::Boston$medv) + 0.02)
+
+mod = betareg(y ~ ., data.frame(X))
+coef(mod)
+coef(summary(mod))$mean[2,2]
+
+mod = fast_beta_regression(Xmm = cbind(1, X), y = y)
+mod$b
+mod = fast_beta_regression_with_var(Xmm = cbind(1, X), y = y)
+sqrt(mod$ssq_b_2)
+
+profvis::profvis({
+  for (i in 1 : 100){
+    fast_beta_regression(Xmm = cbind(1, X), y = y)$b[1]
+  }
+})
+microbenchmark::microbenchmark(
+  R = {mod = betareg(y ~ ., data.frame(X)); coef(mod)[2]},
+  R_fast = {fast_beta_regression(Xmm = cbind(1, X), y = y)$b[1]},
+  times = 50
+)
+
+microbenchmark::microbenchmark(
+  R = {mod = betareg(y ~ ., data.frame(X)); coef(summary(mod))$mean[2,2]},
+  R_fast = {mod = fast_beta_regression_with_var(Xmm = cbind(1, X), y = y); sqrt(mod$ssq_b_2)},
+  times = 50
+)
+rm(list = ls())
+
+pacman::p_load(survival, km.ci, glmnet, microbenchmark)
+
+
+X = as.matrix(MASS::Boston[, 1:13])
+y = MASS::Boston$medv - min(MASS::Boston$medv) + 0.001
+
+prob_censoring = 0.3
+dead = rep(1, length(y))
+for (i in 1 : length(y)){
+  if (runif(1) < prob_censoring){
+    y[i] = runif(1, 0, y[i])
+    dead[i] = 0
+  }
+}
+rm(prob_censoring)
+
+loglik_weibull_aft <- function(par, X, time, status) {
+  # par = c(log_alpha, beta) with alpha = shape = 1/sigma
+  # status: 1 = event, 0 = right-censored
+  # X must include an intercept column if you want one
+  time <- pmax(time, 1e-12)      # guard against log(0)
+  log_alpha <- par[1]
+  beta <- par[-1]
+  
+  alpha <- exp(log_alpha)
+  eta <- as.vector(X %*% beta)   # μ + Xβ
+  z <- log(time) - eta
+  
+  logS <- -exp(alpha * z)                           # log S(t|x)
+  ll   <- sum(status * (log_alpha + alpha*z - log(time)) + logS) # log f + log S combo
+  
+  return(-ll)  # negative log-lik for optim()
+}
+
+mysurvreg = function(par0, X, y, dead){
+  optim(par0, loglik_weibull_aft,
+        X = X, time = y, status = dead,
+        method = "BFGS", hessian = TRUE, control = list(maxit = 1000))
+}
+
+mod = survreg(Surv(y, dead) ~ ., data.frame(X))
+coef(mod); mod$scale
+w = rbinom(length(y), 1, .5)
+kmmod=survfit(Surv(y, dead) ~ w)
+quantile(kmmod, probs = c(.025, .975))
+diff_ci <- km.ci(fit, p = 0.5, conf.level = 0.95, method = "log")
+km_obj = km.ci(kmmod, p = 0.5, conf.level = 0.95, method = "log")
+km_obj$lower
+mod = mysurvreg(rep(0, 15), model.matrix(~.,data.frame(X)), y, dead)
+mod$par
+
+microbenchmark::microbenchmark(
+  R_survival = {mod = survreg(Surv(y, dead) ~ X); coef(mod)[2]},
+  R_flexsurv = {mod = mysurvreg(rep(0, 15), model.matrix(~.,data.frame(X)), y, dead); mod$par[3]},
+  times = 50
+)
+
+mod = coxph(Surv(y, dead) ~ X)
+coef(mod)
+mod = glmnet(X, Surv(time, status), family = "cox", lambda = 0)
+as.numeric(coef(mod))
+
+
+microbenchmark::microbenchmark(
+  R_survival = {mod = coxph(Surv(y, dead) ~ X); coef(mod)[2]},
+  R_glmnet = {mod = glmnet(X, Surv(time, status), family = "cox", lambda = 0); coef(mod)[2]},
+  times = 50
+)
 

@@ -1,3 +1,107 @@
+fast_coxph_regression = function(Xmm, y, dead){
+	mod = glmnet(Xmm, Surv(y, dead), family = "cox", lambda = 0)
+	list(b = coef(mod))
+}
+
+
+beta_family <- function(link = "logit", phi = 10) {
+  linkobj <- make.link(link)
+  
+  variance <- function(mu) {
+    mu * (1 - mu) / (1 + phi)
+  }
+  
+  dev.resids <- function(y, mu, wt) {
+    # negative twice log-likelihood contribution
+#    2 * wt * (lbeta(mu * phi, (1 - mu) * phi) -
+#              (mu * phi - 1) * log(y) -
+#              ((1 - mu) * phi - 1) * log(1 - y))
+	beta_dev_resids_cpp(y, mu, phi, wt)
+  }
+  
+  aic <- function(y, n, mu, wt, dev) {
+    # -2*logLik + 2*edf
+#    -2 * sum(wt * (
+#      lgamma(phi) - lgamma(mu * phi) - lgamma((1 - mu) * phi) +
+#      (mu * phi - 1) * log(y) + ((1 - mu) * phi - 1) * log(1 - y)
+#    )) + 2 * (length(mu) + 1)
+    beta_aic_cpp(y, mu, phi, wt)
+  }
+  
+  mu.eta <- linkobj$mu.eta
+  
+  structure(
+    list(
+      family = "Beta",
+      link = linkobj$name,
+      linkfun = linkobj$linkfun,
+      linkinv = linkobj$linkinv,
+      variance = variance,
+      dev.resids = dev.resids,
+      aic = aic,
+      mu.eta = mu.eta,
+      initialize = expression({
+        if (any(y <= 0 | y >= 1))
+          stop("y values must be in (0,1) for beta regression")
+        mustart <- (y + 0.5) / 2  # crude initialization
+      })
+    ),
+    class = "family"
+  )
+}
+
+#beta_loglik <- function(y, mu, phi, wt = 1) {
+#  sum(wt * (
+#    lgamma(phi) - lgamma(mu * phi) - lgamma((1 - mu) * phi) +
+#      (mu * phi - 1) * log(y) + ((1 - mu) * phi - 1) * log1p(-y)
+#  ))
+#}
+
+fast_beta_regression <- function(Xmm, y,
+                             start_phi = 10,
+                             bounds_logphi = c(log(1e-3), log(1e4)),
+                             control = glm.control(epsilon=1e-8, maxit=100)) {
+   
+  weights <- rep(1, nrow(Xmm))
+
+  # objective: negative log-likelihood profiled over beta
+  obj <- function(logphi) {
+    phi = exp(logphi)
+    family = beta_family(phi = phi)
+    fit <- glm.fit(x = Xmm, y = y, weights = weights, family = family, start = NULL, control = control)
+    mu  <- family$linkinv(drop(Xmm %*% fit$coefficients))
+    # guard against numerical drift to 0/1
+    mu <- pmin(pmax(mu, 1e-12), 1 - 1e-12)
+    # return NEGATIVE log-likelihood
+    -beta_loglik_cpp(y, mu, phi, wt = weights)
+  }
+
+  opt <- nlminb(start = log(start_phi), objective = obj,
+                lower = bounds_logphi[1], upper = bounds_logphi[2])
+
+  phi_hat <- as.numeric(exp(opt$par))
+  # refit one more time at the optimal phi_hat to get beta_hat 
+  fit_hat <- glm.fit(x = Xmm, y = y, weights = weights, family = beta_family(phi = phi_hat), start = NULL, control = control)
+
+  out <- list(
+    b = fit_hat$coefficients,
+    phi = phi_hat,
+    converged_inner = isTRUE(fit_hat$converged),
+    w = fit_hat$weights
+  )
+  class(out) <- "beta_glm_profile"
+  out
+}
+
+fast_beta_regression_with_var <- function(Xmm, y,
+                             start_phi = 10,
+                             bounds_logphi = c(log(1e-3), log(1e4)),
+                             control = glm.control(epsilon=1e-8, maxit=100)) {
+	  fit_hat = fast_beta_regression(Xmm, y, start_phi = start_phi, bounds_logphi = bounds_logphi, control = control) 
+	  XtWX <- crossprod(sqrt(fit_hat$w) * Xmm)
+	  fit_hat$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
+	  fit_hat
+}
 
 #fast_glm_with_var = function(Xmm, y, glm_function){
 #	mod = glm_function(Xmm, y)

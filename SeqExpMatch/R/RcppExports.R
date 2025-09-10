@@ -17,6 +17,26 @@ fast_ols_cpp <- function(X, y) {
     .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
+mean_cpp <- function(x) {
+    .Call(`_SeqExpMatch_mean_cpp`, x)
+}
+
+var_cpp <- function(x) {
+    .Call(`_SeqExpMatch_var_cpp`, x)
+}
+
+beta_loglik_cpp <- function(y, mu, phi, wt) {
+    .Call(`_SeqExpMatch_beta_loglik_cpp`, y, mu, phi, wt)
+}
+
+beta_dev_resids_cpp <- function(y, mu, phi, wt) {
+    .Call(`_SeqExpMatch_beta_dev_resids_cpp`, y, mu, phi, wt)
+}
+
+beta_aic_cpp <- function(y, mu, phi, wt) {
+    .Call(`_SeqExpMatch_beta_aic_cpp`, y, mu, phi, wt)
+}
+
 compute_proportional_mahal_distances_cpp <- function(xt_prev, X_prev, reservoir_indices, S_xs_inv) {
     .Call(`_SeqExpMatch_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
 }
@@ -43,6 +63,14 @@ scale_columns_cpp <- function(X) {
 
 shuffle_cpp <- function(w) {
     .Call(`_SeqExpMatch_shuffle_cpp`, w)
+}
+
+neg_loglik_nb_cpp <- function(theta, beta, X, y) {
+    .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
+}
+
+match_diffs_cpp <- function(w, match_indic, y, X, m) {
+    .Call(`_SeqExpMatch_match_diffs_cpp`, w, match_indic, y, X, m)
 }
 
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {

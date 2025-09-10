@@ -39,3 +39,13 @@ List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
     Named("XtX") = XtX
   );
 }
+
+// [[Rcpp::export]]
+double mean_cpp(const Eigen::VectorXd& x) {
+  return x.mean();
+}
+
+// [[Rcpp::export]]
+double var_cpp(const Eigen::VectorXd& x) {
+  return (x.array() - x.mean()).square().sum() / (x.size() - 1);
+}

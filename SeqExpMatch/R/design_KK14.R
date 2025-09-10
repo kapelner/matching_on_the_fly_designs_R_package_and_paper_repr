@@ -33,7 +33,6 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#'					If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
 		#'					settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
 		#' @param p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
-  		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
 		#' @return 			A new `SeqDesignKK14` object 
 		#' 
@@ -49,27 +48,25 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			lambda = NULL,
 			t_0_pct = NULL,
 			morrison = FALSE,
-			p = NULL,
-			thin = FALSE
+			p = NULL
 		){
-			if (!thin){
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
-				self$assert_even_allocation()
-				private$assert_KK_and_morrison_parameters_corrrect(lambda, t_0_pct, morrison, p)
-				private$morrison = morrison
-				if (morrison){
-					private$p = p
-					if (super$is_fixed_sample_size()){
-		              	private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
-		            } else {
-		              	private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
-		            }
-				} else {
-					private$match_indic = array(NA, n)		
-					private$lambda = ifelse(is.null(lambda), 0.1, lambda) #10% is the default	
-					private$compute_lambda = function(){private$lambda}
-					private$t_0 = round(ifelse(is.null(t_0_pct), 0.35, t_0_pct) * n) #35% is the default			
-				}
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			self$assert_even_allocation()
+			private$assert_KK_and_morrison_parameters_corrrect(lambda, t_0_pct, morrison, p)
+			private$morrison = morrison
+			private$uses_covariates = TRUE
+			if (morrison){
+				private$p = p
+				if (super$is_fixed_sample_size()){
+	              	private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
+	            } else {
+	              	private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
+	            }
+			} else {
+				private$match_indic = array(NA, n)		
+				private$lambda = ifelse(is.null(lambda), 0.1, lambda) #10% is the default	
+				private$compute_lambda = function(){private$lambda}
+				private$t_0 = round(ifelse(is.null(t_0_pct), 0.35, t_0_pct) * n) #35% is the default			
 			}
 		},
 		
@@ -140,20 +137,14 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		compute_lambda = NULL,	
 		match_indic = NA, #works for Morrison and non-Morrison
 		
-		thin_duplicate = function(){
-			d = super$thin_duplicate()
-			d$.__enclos_env__$private$match_indic = private$match_indic
-			d
-		},
-		
 		duplicate = function(){
 			d = super$duplicate()
-			d$.__enclos_env__$private$morrison = private$morrison
-			d$.__enclos_env__$private$t_0 = private$t_0
-			d$.__enclos_env__$private$lambda = private$lambda
-			d$.__enclos_env__$private$p = private$p
-			d$.__enclos_env__$private$compute_lambda = private$compute_lambda
-			d$.__enclos_env__$private$match_indic = private$match_indic
+			d$.__enclos_env__$private$morrison = 		private$morrison
+			d$.__enclos_env__$private$t_0 = 			private$t_0
+			d$.__enclos_env__$private$lambda = 			private$lambda
+			d$.__enclos_env__$private$p = 				private$p
+			d$.__enclos_env__$private$compute_lambda = 	private$compute_lambda
+			d$.__enclos_env__$private$match_indic = 	private$match_indic
 			d
 		},
 	
@@ -201,7 +192,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 						    reservoir_indices,
 						    S_xs_inv
 						) 		
-						cat("assign_wt t =", private$t, "\n")
+#						cat("assign_wt t =", private$t, "\n")
 						#comput cutoff threshold
 						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						n = self$get_n()

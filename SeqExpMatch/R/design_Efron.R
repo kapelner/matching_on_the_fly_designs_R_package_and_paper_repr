@@ -28,7 +28,6 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
 		#' @param weighted_coin_prob The probability of Efron's weighted coin. Defualt is \code{NULL} for Efron's default of 2/3.
-		#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
 		#'
 		#' @return 			A new `SeqDesignEfron` object
 		#' 
@@ -41,25 +40,21 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			include_is_missing_as_a_new_feature = TRUE, 
 			n = NULL,
 			verbose = FALSE,
-			weighted_coin_prob = NULL,
-			thin = FALSE
+			weighted_coin_prob = NULL
 		){
-			if (!thin){
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
-				self$assert_fixed_sample()
-	
-				if (is.null(weighted_coin_prob)){
-					weighted_coin_prob = 2 / 3 #default Efron coin
-				} else {
-					assertNumeric(weighted_coin_prob, lower = 0, upper = 1)
-				}
-				private$weighted_coin_prob = weighted_coin_prob					
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			self$assert_fixed_sample()
+
+			if (is.null(weighted_coin_prob)){
+				weighted_coin_prob = 2 / 3 #default Efron coin
+			} else {
+				assertNumeric(weighted_coin_prob, lower = 0, upper = 1)
 			}
+			private$weighted_coin_prob = weighted_coin_prob
 		}
 		
 	),
 	private = list(
-		uses_covariates = FALSE,
 		weighted_coin_prob = NULL,
 		
 		duplicate = function(){

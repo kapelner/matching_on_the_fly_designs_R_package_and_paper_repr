@@ -18,14 +18,11 @@ SeqDesignInferenceBaiAdjustedTKK21stepwise = R6::R6Class("SeqDesignInferenceBaiA
     #' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
     #' @param convex      A flag indicating whether the estimator should use a convex combination of the Bai et all
     #'                    matched pairs estimate with the reservoir estimate, or just the Bai et all estimate on by its self.
-	#' @param thin		For internal use only. Do not specify. You can thank R6's single constructor-only for this coding noise.
     #' 
-    initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex = FALSE, thin = FALSE){
-		if (!thin){
-	      super$initialize(seq_des_obj, num_cores, verbose, convex = convex)
-	      assertNoCensoring(private$any_censoring)
-	      assert_class(seq_des_obj, "SeqDesignKK21stepwise")
-      	}
+    initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex = FALSE){
+      super$initialize(seq_des_obj, num_cores, verbose, convex = convex)
+      assertNoCensoring(private$any_censoring)
+      assert_class(seq_des_obj, "SeqDesignKK21stepwise")
     }
   ),
   
