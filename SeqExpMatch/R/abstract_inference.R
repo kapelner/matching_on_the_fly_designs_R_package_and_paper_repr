@@ -58,7 +58,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
 		#' 								The default is 1000 providing good resolutions to confidence intervals.
 		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
-		#' 								The default is to find a CI accurate to within a tenth of a percent.
+		#' 								The default (NULL) is to find a CI accurate to within a tenth of \code{alpha}.
 		#' 
 		#' @return 	A 1 - alpha sized frequentist confidence interval for the treatment effect
 		#' 
@@ -78,7 +78,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.001){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
-			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1, null.ok = TRUE)
+			
+			if (is.null(pval_epsilon)){
+				pval_epsilon = alpha / 10
+			}
 						
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
