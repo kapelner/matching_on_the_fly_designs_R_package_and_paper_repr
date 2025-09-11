@@ -52,7 +52,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 			private$compute_reservoir_and_match_statistics()
 		}
 					
-      if (!private$convex || private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
+      if (!private$convex_flag || private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
         private$cached_values$beta_hat_T = private$cached_values$KKstats$d_bar	
       } else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
         private$cached_values$beta_hat_T = private$cached_values$KKstats$r_bar			
@@ -60,7 +60,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
         if (is.null(private$cached_values$s_beta_hat_T)){
           private$shared()
         }
-        w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$bai_var_d_bar)
+        w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$cached_values$bai_var_d_bar)
         private$cached_values$beta_hat_T = w_star_bai * private$cached_values$KKstats$d_bar + (1 - w_star_bai) * private$cached_values$KKstats$r_bar #proper weighting
       }
       private$cached_values$beta_hat_T
@@ -153,7 +153,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     shared = function(){
       m = private$cached_values$KKstats$m
       if (m == 0){
-        private$cached_values$s_beta_hat_T = ifelse(private$convex, sqrt(private$cached_values$KKstats$ssqR), 0)
+        private$cached_values$s_beta_hat_T = ifelse(private$convex_flag, sqrt(private$cached_values$KKstats$ssqR), 0)
       } else {
 	      private$cached_values$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
 	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$cached_values$KKstats$nRT > 1 && private$cached_values$KKstats$nRC > 1){
