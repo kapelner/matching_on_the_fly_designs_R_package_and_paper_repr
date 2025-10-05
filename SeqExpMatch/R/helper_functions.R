@@ -1,7 +1,21 @@
+#' Logit
+#'
+#' Calculates the logit i.e., log(p / (1 - p))
+#'
+#' @param p		The value between 0 and 1 non inclusive
+#' @return		Its corresponding logit value as a real number
+#' @export
 logit = function(p){
 	log(p / (1 - p))
 }
 
+#' Inverse Logit
+#'
+#' Calculates the inverse logit i.e., 1 / (1 + exp(-x))
+#'
+#' @param x		Any real number
+#' @return		Its corresponding inverse logit value between 0 and 1 non inclusive
+#' @export
 inv_logit = function(x){
 	1 / (1 + exp(-x))
 }
