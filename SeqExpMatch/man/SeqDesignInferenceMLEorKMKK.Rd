@@ -9,7 +9,7 @@ An abstract class
 \examples{
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T`
+## Method `SeqDesignInferenceMLEorKMKK$approximate_bootstrap_distribution_beta_hat_T`
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
@@ -22,7 +22,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
 ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
 			
 }
@@ -33,18 +33,19 @@ ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceMLEorKMKK-new}{\code{SeqDesignInferenceMLEorKMKK$new()}}
-\item \href{#method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T()}}
+\item \href{#method-SeqDesignInferenceMLEorKMKK-approximate_bootstrap_distribution_beta_hat_T}{\code{SeqDesignInferenceMLEorKMKK$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-SeqDesignInferenceMLEorKMKK-clone}{\code{SeqDesignInferenceMLEorKMKK$clone()}}
 }
 }
 \if{html}{\out{
-<details open><summary>Inherited methods</summary>
+<details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -71,12 +72,12 @@ for \code{test_type = "MLE-or-KM-based"}.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-approximate_boostrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_boostrap_distribution_beta_hat_T()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMKK-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMKK-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
 Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$approximate_boostrap_distribution_beta_hat_T(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMKK$approximate_bootstrap_distribution_beta_hat_T(
   B = 501
 )}\if{html}{\out{</div>}}
 }
@@ -103,7 +104,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
 ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
 			
 }

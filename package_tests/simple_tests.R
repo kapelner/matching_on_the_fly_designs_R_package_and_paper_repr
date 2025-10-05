@@ -15,7 +15,7 @@ D = datasets_and_response_models$boston
 #try to create a CRD design
 n = nrow(D$X)
 dead = rep(1, n)
-response_type = "survival"
+response_type = "continuous"
 y = D$y_original[[response_type]]
 
 #add some censoring if it's survival
@@ -76,12 +76,20 @@ seq_des_inf = SeqDesignInferenceSurvivalMultiCoxPHRegr$new(seq_des_obj)
 seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 seq_des_inf$compute_mle_confidence_interval(0.05)
-# head(seq_des_inf$approximate_boostrap_distribution_beta_hat_T())
+# head(seq_des_inf$approximate_bootstrap_distribution_beta_hat_T())
 seq_des_inf$compute_bootstrap_confidence_interval()
 seq_des_inf$compute_bootstrap_two_sided_pval()
 # head(seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null())
 seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
 seq_des_inf$compute_confidence_interval_rand()
+seq_des_inf$set_custom_randomization_statistic_function(function(){
+  yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+})
+seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand()
+seq_des_inf$compute_confidence_interval_rand()
+seq_des_inf$set_custom_randomization_statistic_function(NULL)
 
 profvis({
 seq_des_inf$compute_bootstrap_confidence_interval()
