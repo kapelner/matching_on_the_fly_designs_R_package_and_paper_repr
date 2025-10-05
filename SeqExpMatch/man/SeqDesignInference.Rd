@@ -20,7 +20,29 @@ Begin Inference
 \examples{
 
 ## ------------------------------------------------
-## Method `SeqDesignInference$approximate_boostrap_distribution_beta_hat_T`
+## Method `SeqDesignInference$set_custom_randomization_statistic_function`
+## ------------------------------------------------
+
+seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+#now let's set the statistic during randomization tests and intervals to the 
+#studentized average difference (the t stat). 
+seq_des_inf$set_custom_randomization_statistic_function(function(){
+   yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+})
+
+## ------------------------------------------------
+## Method `SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T`
 ## ------------------------------------------------
 
 seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
@@ -33,7 +55,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
 ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
 			
 
@@ -126,7 +148,8 @@ seq_des_inf$compute_confidence_interval()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInference-new}{\code{SeqDesignInference$new()}}
-\item \href{#method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T}{\code{SeqDesignInference$approximate_boostrap_distribution_beta_hat_T()}}
+\item \href{#method-SeqDesignInference-set_custom_randomization_statistic_function}{\code{SeqDesignInference$set_custom_randomization_statistic_function()}}
+\item \href{#method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T}{\code{SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-SeqDesignInference-compute_bootstrap_confidence_interval}{\code{SeqDesignInference$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInference-compute_bootstrap_two_sided_pval}{\code{SeqDesignInference$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null}{\code{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()}}
@@ -159,15 +182,68 @@ for \code{test_type = "MLE-or-KM-based"}.}
 }
 \subsection{Returns}{
 A new `SeqDesignTest` object.
+Set Custom Randomization Statistic Computation
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInference-approximate_boostrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_boostrap_distribution_beta_hat_T()}}{
+\if{html}{\out{<a id="method-SeqDesignInference-set_custom_randomization_statistic_function"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-set_custom_randomization_statistic_function}{}}}
+\subsection{Method \code{set_custom_randomization_statistic_function()}}{
+For advanced users only. This allows changing the default estimate inside randomization tests and interval construction.
+For example, when the response is continuous, instead of using ybarT - ybarC, you may want to use the studentized version
+i.e., (ybarT - ybarC) / sqrt(s^2_T / n_T + s^2_C / n_C). Work by Chung & Romano (2013, Annals of Statistics), 
+Janssen (1997), and others shows that studentized permutation tests are asymptotically valid and often asymptotically optimal.
+In finite samples, the studentized test often approximates a pivotal distribution better, leading to higher power.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$set_custom_randomization_statistic_function(
+  custom_randomization_statistic_function
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{custom_randomization_statistic_function}}{A function that is run that returns a scalar value representing the statistic of interest
+which is computed during each iteration sampling from the null distribution as w is drawn
+drawn from the design. This function is embedded into this class and has write access to all of 
+its data and functions (both public and private) so be careful! Setting this to NULL removes 
+whatever function was set previously essentially. When there is no custom function, the default 
+\code{self$compute_treatment_estimate()} will be run.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+#now let's set the statistic during randomization tests and intervals to the 
+#studentized average difference (the t stat). 
+seq_des_inf$set_custom_randomization_statistic_function(function(){
+   yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+})
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
 Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$approximate_boostrap_distribution_beta_hat_T(B = 501)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T(B = 501)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -192,7 +268,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
 ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
 			
 }
@@ -307,7 +383,7 @@ there will be a distribution of the estimates of the treatment effect (over many
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null(
   nsim_exact_test = 501,
   delta = 0,
-  log_responses = FALSE
+  transform_responses = "none"
 )}\if{html}{\out{</div>}}
 }
 
@@ -318,7 +394,10 @@ there will be a distribution of the estimates of the treatment effect (over many
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
 
-\item{\code{log_responses}}{Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.}
+\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log (your option when response type is survival) and 
+"logit" for logit (your option when response type is proportion). This is mostly an 
+internal parameter set to something besides "none" when computing randomization confidence intervals
+for survival and proportion response types.}
 }
 \if{html}{\out{</div>}}
 }
@@ -357,7 +436,7 @@ the treatment different adjusted linearly for the p covariates.
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand(
   nsim_exact_test = 501,
   delta = 0,
-  log_responses = FALSE,
+  transform_responses = "none",
   na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -370,7 +449,9 @@ is not "randomization-exact"). The default is 501 providing pvalue resolution to
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
 
-\item{\code{log_responses}}{Work in the log space of the responses. This is mostly an internal parameter set to TRUE only if inferring a survival response.}
+\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log and "logit" for logit. This is mostly an 
+internal parameter set something besides "none" when computing randomization confidence intervals
+for non-continuous responses.}
 
 \item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
 }
@@ -409,12 +490,13 @@ Here we invert the randomization test that tests the strong null H_0: y_T_i - y_
 we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
 This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
 https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-As far as we know, this only works for response type continuous and survival uncensored (where the CI is on log mean).
+As far as we know, this only works for response type continuous, uncensored survival (where we work in log-time and then
+return to natural time when finished) and proportion (where we work in logit-rate and return to rate when finished).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
   alpha = 0.05,
   nsim_exact_test = 501,
-  pval_epsilon = 0.001
+  pval_epsilon = 0.005
 )}\if{html}{\out{</div>}}
 }
 
@@ -427,7 +509,7 @@ As far as we know, this only works for response type continuous and survival unc
 The default is 1000 providing good resolutions to confidence intervals.}
 
 \item{\code{pval_epsilon}}{The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
-The default is to find a CI accurate to within a tenth of a percent.}
+The default is to find a CI accurate to within 0.005.}
 }
 \if{html}{\out{</div>}}
 }

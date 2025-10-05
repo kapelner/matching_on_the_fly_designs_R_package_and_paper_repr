@@ -36,14 +36,58 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$any_censoring = seq_des_obj$any_censoring()
 			private$seq_des_obj = seq_des_obj
 			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
+			private$is_KK = is(seq_des_obj, "SeqDesignKK14") #SeqDesignKK14 is the base class of all KK designs
 			private$n = seq_des_obj$get_n()
 			private$num_cores = num_cores
 			private$verbose = verbose
 			if (private$verbose){
 				cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
 			}
-		},	
-
+		},
+		
+		#' Set Custom Randomization Statistic Computation
+		#'
+		#' @description
+		#' For advanced users only. This allows changing the default estimate inside randomization tests and interval construction.
+		#' For example, when the response is continuous, instead of using ybarT - ybarC, you may want to use the studentized version
+		#' i.e., (ybarT - ybarC) / sqrt(s^2_T / n_T + s^2_C / n_C). Work by Chung & Romano (2013, Annals of Statistics), 
+		#' Janssen (1997), and others shows that studentized permutation tests are asymptotically valid and often asymptotically optimal.
+		#' In finite samples, the studentized test often approximates a pivotal distribution better, leading to higher power.
+		#' 
+		#' 
+		#' @param custom_randomization_statistic_function	A function that is run that returns a scalar value representing the statistic of interest
+		#'													which is computed during each iteration sampling from the null distribution as w is drawn
+		#'													drawn from the design. This function is embedded into this class and has write access to all of 
+		#'													its data and functions (both public and private) so be careful! Setting this to NULL removes 
+		#'													whatever function was set previously essentially. When there is no custom function, the default 
+		#'													\code{self$compute_treatment_estimate()} will be run.
+		#' @examples
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#' 
+		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+		#' #now let's set the statistic during randomization tests and intervals to the 
+		#' #studentized average difference (the t stat). 
+		#' seq_des_inf$set_custom_randomization_statistic_function(function(){
+		#'    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+		#'	  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+		#'	  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+		#' })
+		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
+			assertFunction(custom_randomization_statistic_function, null.ok = TRUE)			
+			# Embed the function into this class as a private function
+		    private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
+		    if (!is.null(custom_randomization_statistic_function)){
+		   	 	# Make sure the function's environment is the class instance so it can access all the data
+				environment(private[["custom_randomization_statistic_function"]]) = environment(self$initialize)
+			}		    						
+		},
 		
 		#' @description
 		#' Creates the boostrap distribution of the estimate for the treatment effect
@@ -63,10 +107,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-		#' beta_hat_T_bs = seq_des_inf$approximate_boostrap_distribution_beta_hat_T()
+		#' beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
 		#' ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
 		#' 			
-		approximate_boostrap_distribution_beta_hat_T = function(B = 501){
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501){
 			assertCount(B, positive = TRUE)
 									
 			n = private$seq_des_obj_priv_int$n	
@@ -240,7 +284,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations				
-					beta_hat_T_diff_ws[r] = seq_inf_r$compute_treatment_estimate()
+					beta_hat_T_diff_ws[r] = seq_inf_r$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference()
+					stop("boom")
 				}
 				#print(ggplot2::ggplot(data.frame(sims = beta_hat_T_diff_ws)) + ggplot2::geom_histogram(ggplot2::aes(x = sims), bins = 50))
 			} else {	
@@ -253,7 +298,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					seq_des_r$.__enclos_env__$private$redraw_w_according_to_design()
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations				
-					seq_inf_r$compute_treatment_estimate()
+					seq_inf_r$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference()
 				}
 				doParallel::stopCluster(cl)
 				rm(cl); gc()
@@ -294,16 +339,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = FALSE){
 			assertLogical(na.rm)
 			#approximate the null distribution by computing estimates on many draws of w
-			beta_hat_T_diff_ws = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta, transform_responses)
+			t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta, transform_responses)
 			#this calculates the actual estimate to compare against the null distribution
-			beta_hat_T = self$compute_treatment_estimate()
+			t = private$compute_treatment_estimate_during_randomization_inference()
 			#finally compute the p-value
 			if (na.rm){
-				nsim_exact_test = sum(!is.na(beta_hat_T))
+				nsim_exact_test = sum(!is.na(t))
 			}
 			2 * min(
-				sum(beta_hat_T_diff_ws > beta_hat_T, na.rm = na.rm) / nsim_exact_test, #na.rm is because some runs produce NA... TO-DO is to trace these down
-				sum(beta_hat_T_diff_ws < beta_hat_T, na.rm = na.rm) / nsim_exact_test
+				sum(t0s > t, na.rm = na.rm) / nsim_exact_test, #na.rm is because some runs produce NA... TO-DO is to trace these down
+				sum(t0s < t, na.rm = na.rm) / nsim_exact_test
 			)
 		},
 		
@@ -396,7 +441,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					ci = inv_logit(ci)								
 				},
 				survival =   {
-					assertNoCensoring(private$any_censoring)
 					lower_upper_ci_bounds = self$compute_bootstrap_confidence_interval(alpha / 100) #ensure a wider CI to be the starting position then pare down	
 					#the bootstrap may give a negative lower bound which cannot be logged, so correct it
 					if (lower_upper_ci_bounds[1] < 0){
@@ -432,13 +476,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	private = list(
 		seq_des_obj = NULL,
 		seq_des_obj_priv_int = NULL, 
+		is_KK = NULL,
 		any_censoring = NULL,
 		num_cores = NULL,
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
 		X = NULL, #get_X is defined later as it needs some logic dependent on the design type
+		custom_randomization_statistic_function = NULL,
 		cached_values = list(),
+		
+		compute_treatment_estimate_during_randomization_inference = function(){
+			if (is.null(private$custom_randomization_statistic_function)){ #i.e., the default
+				self$compute_treatment_estimate()
+			} else {
+				private$custom_randomization_statistic_function()
+			}
+		},
 				
 		duplicate = function(){
 			i = do.call(get(class(self)[1])$new, args = list(
@@ -446,11 +500,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				num_cores = private$num_cores,
 				verbose = FALSE
 			))
-			i$.__enclos_env__$private$seq_des_obj_priv_int = 	private$seq_des_obj_priv_int
-			i$.__enclos_env__$private$any_censoring = 			private$any_censoring
-			i$.__enclos_env__$private$n = 						private$n
-			i$.__enclos_env__$private$p = 						private$p
-			i$.__enclos_env__$private$X = 						private$X
+			i$.__enclos_env__$private$seq_des_obj_priv_int = 					private$seq_des_obj_priv_int
+			i$.__enclos_env__$private$any_censoring = 							private$any_censoring
+			i$.__enclos_env__$private$n = 										private$n
+			i$.__enclos_env__$private$p = 										private$p
+			i$.__enclos_env__$private$X = 										private$X
+			i$.__enclos_env__$private$custom_randomization_statistic_function = private$custom_randomization_statistic_function
 			i
 		},
 		
@@ -466,14 +521,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		get_or_cache_bootstrap_samples = function(B){			
 			if (is.null(private$cached_values$beta_hat_T_bs)){
-				private$cached_values$beta_hat_T_bs = self$approximate_boostrap_distribution_beta_hat_T(B)
+				private$cached_values$beta_hat_T_bs = self$approximate_bootstrap_distribution_beta_hat_T(B)
 			} else {
 				B_0 = length(private$cached_values$beta_hat_T_bs)
 				if (B_0 > B){
 					return (private$cached_values$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
 				} else if (B_0 < B){ 
 					private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, #go get more and add them to the cache in case we need them later
-						self$approximate_boostrap_distribution_beta_hat_T(B - B_0))
+						self$approximate_bootstrap_distribution_beta_hat_T(B - B_0))
 				}
 			}
 			private$cached_values$beta_hat_T_bs			
