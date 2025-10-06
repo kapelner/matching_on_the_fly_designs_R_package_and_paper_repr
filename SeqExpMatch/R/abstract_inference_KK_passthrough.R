@@ -200,24 +200,6 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 			private$cached_values$KKstats$w_conc = private$seq_des_obj_priv_int$w[i_conc, ]
 		},
 		
-		compute_reservoir_and_match_statistics = function(){	
-			nRC = private$cached_values$KKstats$nRC
-			nRT = private$cached_values$KKstats$nRT		
-			nR = nRT + nRC #how many observations are there in the reservoir?
-					
-			y_reservoir_T = private$cached_values$KKstats$y_reservoir[private$cached_values$KKstats$w_reservoir == 1] #get the reservoir responses from the treatment
-			y_reservoir_C = private$cached_values$KKstats$y_reservoir[private$cached_values$KKstats$w_reservoir == 0] #get the reservoir responses from the control
-			
-			ssqD_bar = var_cpp(private$cached_values$KKstats$y_matched_diffs) / private$cached_values$KKstats$m
-			ssqR = (var_cpp(y_reservoir_T) * (nRT - 1) + var_cpp(y_reservoir_C) * (nRC - 1)) / 
-						(nR - 2) * (1 / nRT + 1 / nRC)
-			private$cached_values$KKstats$d_bar = mean_cpp(private$cached_values$KKstats$y_matched_diffs)			
-			private$cached_values$KKstats$ssqD_bar = ssqD_bar
-			private$cached_values$KKstats$r_bar = mean_cpp(y_reservoir_T) - mean_cpp(y_reservoir_C) #compute the classic estimator from the reservoir: ybar_T - ybar_C
-			private$cached_values$KKstats$ssqR = ssqR
-			private$cached_values$KKstats$w_star = ssqR / (ssqR + ssqD_bar)
-		},
-		
 		#not used now, but could be used for random effects models in the future
 		compute_model_matrix_with_matching_dummies = function(){
 			if (is.null(private$cached_values$data_frame_with_matching_dummies)){

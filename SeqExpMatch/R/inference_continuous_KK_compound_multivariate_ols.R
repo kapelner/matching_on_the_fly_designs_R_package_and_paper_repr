@@ -6,7 +6,7 @@
 #' 
 #' @export
 SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLSKK",
-	inherit = SeqDesignInferenceMLEorKMKK,
+	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 		
 		#' @description
@@ -40,10 +40,7 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}			
+		compute_treatment_estimate = function(){			
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$shared_for_compute_estimate()
 			}		

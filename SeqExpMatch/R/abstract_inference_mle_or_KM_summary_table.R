@@ -5,7 +5,7 @@
 #' where the common denominator is a summary table from a glm.
 #' 
 SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSummaryTable",
-	inherit = SeqDesignInference,
+	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 		
 		#' @description

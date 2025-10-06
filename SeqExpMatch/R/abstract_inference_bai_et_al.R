@@ -5,7 +5,7 @@
 #' 
 #'
 SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
-  inherit = SeqDesignInferenceMLEorKMKK,
+  inherit = SeqDesignInferenceKKPassThroughCompound,
   public = list(
     
     #' @description
@@ -44,14 +44,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
     #' seq_des_inf$compute_treatment_estimate()
     #' 	
-    compute_treatment_estimate = function(){
-		if (is.null(private$cached_values$KKstats)){
-			private$compute_basic_match_data()
-		}		
-		if (is.null(private$cached_values$KKstats$d_bar)){
-			private$compute_reservoir_and_match_statistics()
-		}
-					
+    compute_treatment_estimate = function(){	
       if (!private$convex_flag || private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
         private$cached_values$beta_hat_T = private$cached_values$KKstats$d_bar	
       } else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches

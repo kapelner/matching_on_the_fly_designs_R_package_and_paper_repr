@@ -4,7 +4,7 @@
 \alias{SeqDesignInference}
 \title{Inference for A Sequential Design}
 \description{
-An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a sequential design.
+The base abstract R6 class that estimates, tests and provides intervals for a treatment effect in a sequential design.
 This class takes a \code{SeqDesign} object as an input where this object
 contains data for a fully completed sequential experiment (i.e. all treatment
 assignments were allocated and all responses were collected). Then the user

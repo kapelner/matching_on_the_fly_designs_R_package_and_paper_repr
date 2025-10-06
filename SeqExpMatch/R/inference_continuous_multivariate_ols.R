@@ -7,7 +7,7 @@
 #'
 #' @export
 SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
-	inherit = SeqDesignInference,
+	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 		
 		#' @description

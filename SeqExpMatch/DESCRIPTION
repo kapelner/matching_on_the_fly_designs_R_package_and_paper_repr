@@ -62,6 +62,7 @@ Collate:
     'design_KK21_stepwise.R'
     'abstract_inference.R'
     'abstract_inference_KK_passthrough.R'
+    'abstract_inference_KK_passthrough_compound.R'
     'abstract_inference_mle_or_KM_for_GLMs.R'
     'abstract_inference_mle_or_KM_summary_table.R'
     'inference__all_naive_mean_diff.R'
