@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 #' @export
@@ -11,7 +11,7 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 	public = list(
 		#' 				
 		#' @description
-		#' Initialize a sequential experimental design
+		#' Initialize an Atkinson sequential experimental design
 		#'
 		#' @param response_type 	The data type of response values which must be one of the following: 
 		#' 							"continuous"(the default),  
@@ -27,7 +27,7 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @return 			A new `SeqDesign` object of the specific type
+		#' @return 			A new `SeqDesignAtkinson` object
 		#' 
 		#' @examples
 		#' seq_des = SeqDesign$new(response_type = "continuous")

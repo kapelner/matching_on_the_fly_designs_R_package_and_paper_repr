@@ -1,10 +1,10 @@
-#' An incomplete / balanaced completely randomized Sequential Design
+#' An incomplete / balanced completely randomized Sequential Design
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
-#' for the  with appropriate permuted blocks based on \code{prob_T}
+#' It implements appropriate permuted blocks based on \code{prob_T}
 #' 					(e.g., if \code{prob_T = 2}, then this design would enforce n/2 T's and n/2 C's),
 #' 
 #' @export

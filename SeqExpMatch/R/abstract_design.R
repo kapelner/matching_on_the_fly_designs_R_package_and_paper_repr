@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 SeqDesign = R6::R6Class("SeqDesign",
@@ -61,7 +61,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			}
 
 			if (private$verbose){
-				cat(paste0("Intialized a ", 
+				cat(paste0("Initialized a ", 
 				class(self)[1], 
 				" experiment with response type ", 
 				response_type, 
@@ -145,10 +145,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 						
 					} else {
 						stop(paste(
-							"The new subject vectorhas columns:\n  ", 
+							"The new subject vector has columns:\n  ", 
 							paste(colnames_xnew, collapse = ", "), 
 							"\nwhich are not the same as the current dataset's columns:\n  ", 
-							paste(colnames_Xrew, collapse = ", "),
+							paste(colnames_Xraw, collapse = ", "),
 							"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
 						))
 					}					

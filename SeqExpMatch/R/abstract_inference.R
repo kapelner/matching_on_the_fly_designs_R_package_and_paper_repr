@@ -36,12 +36,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$any_censoring = seq_des_obj$any_censoring()
 			private$seq_des_obj = seq_des_obj
 			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
+			private$y = seq_des_r$.__enclos_env__$private$y
+			private$y_temp = private$y
+			private$w = seq_des_r$.__enclos_env__$private$w
+			private$dead = seq_des_r$.__enclos_env__$private$dead
 			private$is_KK = is(seq_des_obj, "SeqDesignKK14") #SeqDesignKK14 is the base class of all KK designs
 			private$n = seq_des_obj$get_n()
 			private$num_cores = num_cores
 			private$verbose = verbose
 			if (private$verbose){
-				cat(paste0("Intialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
+				cat(paste0("Initialized inference methods for a ", class(seq_des_obj), " design and response type ", response_type, ".\n"))
 			}
 		},
 		
@@ -127,10 +131,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				for (r in 1 : B){
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r$.__enclos_env__$private$y = y[i_b]
-					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
-					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
-					seq_des_r$.__enclos_env__$private$w = w[i_b]
+					seq_inf_r$.__enclos_env__$private$y = y[i_b]
+					seq_inf_r$.__enclos_env__$private$dead = dead[i_b]
+					seq_inf_r$.__enclos_env__$private$X = X[i_b, ]
+					seq_inf_r$.__enclos_env__$private$w = w[i_b]
 					#compute beta_T_hat
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
@@ -146,10 +150,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				beta_hat_T_bs = doParallel::foreach(r = 1 : B, .inorder = FALSE, .combine = c) %dopar% {
 					#draw a bootstrap sample
 					i_b = sample_int_replace_cpp(n, n)
-					seq_des_r$.__enclos_env__$private$y = y[i_b]
-					seq_des_r$.__enclos_env__$private$dead = dead[i_b]
-					seq_des_r$.__enclos_env__$private$X = X[i_b, ]
-					seq_des_r$.__enclos_env__$private$w = w[i_b]
+					seq_inf_r$.__enclos_env__$private$y = y[i_b]
+					seq_inf_r$.__enclos_env__$private$dead = dead[i_b]
+					seq_inf_r$.__enclos_env__$private$X = X[i_b, ]
+					seq_inf_r$.__enclos_env__$private$w = w[i_b]
 					#compute beta_T_hat
 					seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 					seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations
@@ -265,7 +269,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			#y now changes possibly
 			if (delta != 0){
 				if (private$seq_des_obj_priv_int$response_type %in% c("count", "incidence")){
-					stop("randomization tests with delta nonzero are not supported for count or incidence repsonse types")
+					stop("randomization tests with delta nonzero are not supported for count or incidence response types")
 				}
 				#the y is now in the space (-\infty, +\infty)
 				#we are testing against H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 
@@ -482,6 +486,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
+		y = NULL,
+		w = NULL,
+		dead = NULL,
+		y_temp = NULL,
 		X = NULL, #get_X is defined later as it needs some logic dependent on the design type
 		custom_randomization_statistic_function = NULL,
 		cached_values = list(),

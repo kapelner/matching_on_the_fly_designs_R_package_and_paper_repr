@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 #' @export
@@ -52,7 +52,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			self$assert_even_allocation()
-			private$assert_KK_and_morrison_parameters_corrrect(lambda, t_0_pct, morrison, p)
+			private$assert_KK_and_morrison_parameters_correct(lambda, t_0_pct, morrison, p)
 			private$morrison = morrison
 			private$uses_covariates = TRUE
 			if (morrison){
@@ -148,7 +148,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			d
 		},
 	
-		assert_KK_and_morrison_parameters_corrrect = function(lambda, t_0_pct, morrison, p){
+		assert_KK_and_morrison_parameters_correct = function(lambda, t_0_pct, morrison, p){
 			if (morrison){
 				assert_count(p)				
 			} else {

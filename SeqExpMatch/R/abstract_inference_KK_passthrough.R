@@ -17,6 +17,7 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 			
 			#there is no situation where we don't need the basic match data, so hit it right away
 			if (private$is_KK){
+				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
 				private$compute_basic_match_data()
 			}
 		},
@@ -82,11 +83,11 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 	#					}
 						fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
 						
-						seq_des_r$.__enclos_env__$private$y = y[i_b]
-						seq_des_r$.__enclos_env__$private$dead = dead[i_b]
-						seq_des_r$.__enclos_env__$private$X = X[i_b, ]
-						seq_des_r$.__enclos_env__$private$w = w[i_b]
-						seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
+						seq_inf_r$.__enclos_env__$private$y_temp = y[i_b]
+						seq_inf_r$.__enclos_env__$private$dead = dead[i_b]
+						seq_inf_r$.__enclos_env__$private$X = X[i_b, ]
+						seq_inf_r$.__enclos_env__$private$w = w[i_b]
+						seq_inf_r$.__enclos_env__$private$match_indic = match_indic_b
 						#compute beta_T_hat					
 						seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 						seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations		
@@ -121,11 +122,11 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 	#					}
 						fill_i_b_with_matches_loop_cpp(i_b, match_indic, ms_b, n_reservoir)
 						
-						seq_des_r$.__enclos_env__$private$y = y[i_b]
-						seq_des_r$.__enclos_env__$private$dead = dead[i_b]
-						seq_des_r$.__enclos_env__$private$X = X[i_b, ]
-						seq_des_r$.__enclos_env__$private$w = w[i_b]
-						seq_des_r$.__enclos_env__$private$match_indic = match_indic_b
+						seq_inf_r$.__enclos_env__$private$y = y[i_b]
+						seq_inf_r$.__enclos_env__$private$dead = dead[i_b]
+						seq_inf_r$.__enclos_env__$private$X = X[i_b, ]
+						seq_inf_r$.__enclos_env__$private$w = w[i_b]
+						seq_inf_r$.__enclos_env__$private$match_indic = match_indic_b
 						#compute beta_T_hat
 						seq_inf_r$.__enclos_env__$private$seq_des_obj_priv_int = seq_des_r$.__enclos_env__$private
 						seq_inf_r$.__enclos_env__$private$cached_values = list() #ensure nothing is kept between iterations	
@@ -140,6 +141,8 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 		}
 	),
 	private = list(		
+		match_indic = NULL,
+		
 		compute_basic_match_data = function(){
 			if (is.null(private$X)){
 				private$X = private$get_X()

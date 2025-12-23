@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 #' @export
@@ -27,7 +27,7 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param weighted_coin_prob The probability of Efron's weighted coin. Defualt is \code{NULL} for Efron's default of 2/3.
+		#' @param weighted_coin_prob The probability of Efron's weighted coin. Default is \code{NULL} for Efron's default of 2/3.
 		#'
 		#' @return 			A new `SeqDesignEfron` object
 		#' 

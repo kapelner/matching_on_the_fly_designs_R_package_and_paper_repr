@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data intialization and sequential assignments. The class object
+#' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
 #' @export
@@ -161,7 +161,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		
 		compute_weights_KK21stepwise_survival = function(xs, ys, ws, deaths){		
 			private$compute_weights_KK21stepwise(xs, survival::Surv(ys, deaths), ws, function(response_obj, covariate_data_matrix){
-				#sometims the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
+				#sometimes the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
 				#and we are not relying on the model assumptions
 				for (dist in c("weibull", "lognormal", "loglogistic")){
 					surv_regr_mod = robust_survreg_with_surv_object(response_obj, covariate_data_matrix, dist = dist)
