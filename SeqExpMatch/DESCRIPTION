@@ -3,8 +3,8 @@ Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly
 Version: 2.0.0
 Authors@R: c(
-        person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-5985-6792")),
-        person("Abba", "Krieger", email = "krieger@wharton.upenn.edu", role = "aut")
+        person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0001-5985-6792")),
+        person("Abba", "Krieger", email = "krieger@wharton.upenn.edu", role = "ctb")
     )
 Description: Generates the following sequential two-arm experimental designs:
     (1) completely randomized (Bernoulli)
@@ -18,8 +18,7 @@ Description: Generates the following sequential two-arm experimental designs:
     (1) estimation (with both Z-style estimators and OLS estimators), 
     (2) frequentist testing (via asymptotic distribution results and via employing the nonparametric randomization test) and
     (3) frequentist confidence intervals (only under the superpopulation sampling assumption currently). Details can be found
-    in our publication: Kapelner and Krieger "A Matching Procedure for Sequential Experiments that Iteratively Learns which 
-    Covariates Improve Power" (2020) <arXiv:2010.05980>. We now offer support for incidence, count, proportion and survival 
+    in our publication: Kapelner, Adam, and Abba Krieger. "A matching procedure for sequential experiments that iteratively learns which covariates improve power." Biometrics 79.1 (2023): 216-229 <doi:10.1111/biom.13561>. We now offer support for incidence, count, proportion and survival 
     (with censoring) outcome types. We also have support for adding responses whenever they become available, and we can impute
     missing data in the subjects' covariate records (where each covariate record can thereby have different information). On 
     the inference side, there is built-in support for many types of parametric models such as random effects for incidence 
@@ -27,31 +26,34 @@ Description: Generates the following sequential two-arm experimental designs:
 License: GPL-3
 Encoding: UTF-8
 Depends:
-	R6,
-	checkmate,
-	Rcpp (>= 1.0.14),
-	RcppEigen,
-	data.table,
-	glmnet,
-	survival,
-	statmod,
-	numDeriv,
-	missRanger,
-	missForest,
-	nbpMatching
-LinkingTo: 
-	doParallel,	
-	RcppEigen,
-	Rcpp
+    R (>= 3.5.0)
+LinkingTo:
+	Rcpp,
+    RcppEigen	
 Imports:
-    checkmate    
+    R6,
+    checkmate,
+    Rcpp,
+    data.table,
+    glmnet,
+    fastLogisticRegressionWrap,
+    survival,
+    missRanger,
+    missForest,
+    nbpMatching,
+    methods
+Suggests:
+    MASS,
+    betareg,
+    doParallel,
+    testthat
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Collate:
     'RcppExports.R'
     'SeqExpMatch.R'
     'helper_functions.R'
-    'model_fit_helpers.R'
+    'glm_fit_helpers.R'
     'abstract_design.R'
     'design_crd.R'
     'design_ibcrd.R'
@@ -70,7 +72,6 @@ Collate:
     'abstract_inference_bai_et_al.R'
     'inference_bai_et_al_KK14.R'
     'inference_bai_et_al_KK21.R'
-    'inference_bai_et_al_KK21stepwise.R'
     'inference_continuous_multivariate_ols.R'
     'inference_continuous_KK_compound_multivariate_ols.R'
     'inference_incidence_univariate_log_regr.R'

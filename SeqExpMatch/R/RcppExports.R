@@ -25,6 +25,18 @@ var_cpp <- function(x) {
     .Call(`_SeqExpMatch_var_cpp`, x)
 }
 
+atkinson_assign_weight_cpp <- function(w_prev, X_prev, xt_prev, rank_prev, t) {
+    .Call(`_SeqExpMatch_atkinson_assign_weight_cpp`, w_prev, X_prev, xt_prev, rank_prev, t)
+}
+
+atkinson_redraw_batch_cpp <- function(X, n, p_raw, prob_T = 0.5) {
+    .Call(`_SeqExpMatch_atkinson_redraw_batch_cpp`, X, n, p_raw, prob_T)
+}
+
+base_bootstrap_loop_cpp <- function(indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
+    .Call(`_SeqExpMatch_base_bootstrap_loop_cpp`, indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores)
+}
+
 beta_loglik_cpp <- function(y, mu, phi, wt) {
     .Call(`_SeqExpMatch_beta_loglik_cpp`, y, mu, phi, wt)
 }
@@ -37,6 +49,76 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
     .Call(`_SeqExpMatch_beta_aic_cpp`, y, mu, phi, wt)
 }
 
+#' Bisection loop for computing confidence interval bounds by inverting randomization tests
+#'
+#' This function implements the bisection algorithm to find CI bounds by inverting
+#' the randomization test. It repeatedly calls the p-value computation function
+#' until convergence.
+#'
+#' @param pval_fn R function that computes two-sided p-value given delta
+#' @param nsim_exact_test Number of randomization iterations
+#' @param l Initial lower bound
+#' @param u Initial upper bound
+#' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
+#' @param tol Tolerance for convergence (in p-value space)
+#' @param transform_responses String: "none", "log", or "logit"
+#' @param lower Logical: TRUE for lower CI bound, FALSE for upper
+#'
+#' @return The CI bound value
+#'
+#' @export
+bisection_ci_loop_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower) {
+    .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower)
+}
+
+#' Parallel computation of both CI bounds by inverting randomization tests
+#'
+#' This function computes both the lower and upper confidence interval bounds
+#' in parallel using OpenMP. Each bound uses the bisection algorithm.
+#'
+#' @param pval_fn R function that computes two-sided p-value given delta
+#' @param nsim_exact_test Number of randomization iterations
+#' @param l_lower Initial lower bound for lower CI bound search
+#' @param u_lower Initial upper bound for lower CI bound search (typically the estimate)
+#' @param l_upper Initial lower bound for upper CI bound search (typically the estimate)
+#' @param u_upper Initial upper bound for upper CI bound search
+#' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
+#' @param tol Tolerance for convergence (in p-value space)
+#' @param transform_responses String: "none", "log", or "logit"
+#' @param num_cores Number of cores to use (0 = auto-detect, 1 = no parallelization)
+#'
+#' @return Numeric vector of length 2: [lower_bound, upper_bound]
+#'
+#' @export
+bisection_ci_parallel_cpp <- function(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 0L) {
+    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
+}
+
+#' Single-threaded helper for computing one CI bound
+#'
+#' Helper function that computes a single CI bound. Used internally.
+#'
+#' @keywords internal
+bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
+    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores)
+}
+
+bootstrap_indices_cpp <- function(n, B) {
+    .Call(`_SeqExpMatch_bootstrap_indices_cpp`, n, B)
+}
+
+bootstrap_match_indices_cpp <- function(match_indic, i_reservoir, n_reservoir, m, B) {
+    .Call(`_SeqExpMatch_bootstrap_match_indices_cpp`, match_indic, i_reservoir, n_reservoir, m, B)
+}
+
+match_stats_from_indices_cpp <- function(y, w, X, match_indic_b, i_b, m) {
+    .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, match_indic_b, i_b, m)
+}
+
+compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {
+    .Call(`_SeqExpMatch_compute_all_subject_data_cpp`, X, t, i_all_y_present_R, rank_tol)
+}
+
 compute_proportional_mahal_distances_cpp <- function(xt_prev, X_prev, reservoir_indices, S_xs_inv) {
     .Call(`_SeqExpMatch_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
 }
@@ -45,8 +127,70 @@ compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, r
     .Call(`_SeqExpMatch_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
+efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
+    .Call(`_SeqExpMatch_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
+}
+
+#' Fast Beta Regression using Rcpp and L-BFGS for joint MLE
+#'
+#' @param y Numeric vector of proportions (0 < y < 1).
+#' @param X Model matrix.
+#' @param start_beta Optional starting values for beta coefficients.
+#' @param start_phi Optional starting value for phi.
+#' @param compute_std_errs Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).
+#' @return A list with coefficients, phi, and other optimization details.
+#' @export
+fast_beta_regression_mle <- function(y, X, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
+    .Call(`_SeqExpMatch_fast_beta_regression_mle`, y, X, start_beta, start_phi, compute_std_errs)
+}
+
+#' Fast Beta Regression with variance using Rcpp and L-BFGS
+#'
+#' @param y Numeric vector of proportions (0 < y < 1).
+#' @param X Model matrix.
+#' @param start_beta Optional starting values for beta coefficients.
+#' @param start_phi Optional starting value for phi.
+#' @param compute_std_errs Logical, whether to compute and return standard errors.
+#' @return A list with coefficients, phi, std_errs, vcov, etc.
+#' @export
+fast_beta_regression_mle_with_var_cpp <- function(y, X, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
+    .Call(`_SeqExpMatch_fast_beta_regression_mle_with_var_cpp`, y, X, start_beta, start_phi, compute_std_errs)
+}
+
+fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, maxit, tol)
+}
+
+#' Fast Logistic Regression with variance using Rcpp and IRLS
+#'
+#' @param Xmm Design matrix.
+#' @param y Response vector.
+#' @return A list with coefficients and specific treatment variance.
+#' @export
+fast_logistic_regression_with_var_cpp <- function(Xmm, y) {
+    .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y)
+}
+
 matrix_rank_cpp <- function(A, tol = 1e-12) {
     .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
+}
+
+fast_neg_bin_with_censoring_cpp <- function(X, y, dead, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+    .Call(`_SeqExpMatch_fast_neg_bin_with_censoring_cpp`, X, y, dead, maxit, eps_f, eps_g)
+}
+
+#' Fast Negative Binomial Regression with censoring and standard deviations using Rcpp and L-BFGS
+#'
+#' @param X Design matrix.
+#' @param y Response vector.
+#' @param dead Censoring indicator (1=event, 0=censored).
+#' @param maxit Maximum iterations.
+#' @param eps_f Convergence tolerance for function value.
+#' @param eps_g Convergence tolerance for gradient.
+#' @return A list with coefficients, theta, log-likelihood, and Hessian.
+#' @export
+fast_neg_bin_with_censoring_with_sd_cpp <- function(X, y, dead, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+    .Call(`_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp`, X, y, dead, maxit, eps_f, eps_g)
 }
 
 fast_ols_with_var_cpp <- function(X, y, j = 2L) {
@@ -65,6 +209,141 @@ shuffle_cpp <- function(w) {
     .Call(`_SeqExpMatch_shuffle_cpp`, w)
 }
 
+#' Calculates the median or restricted mean survival time for a single group.
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param requested_stat A string, either "median" or "restricted_mean".
+#' @return The calculated statistic.
+#' @keywords internal
+get_survival_stat_for_group <- function(y, dead, requested_stat) {
+    .Call(`_SeqExpMatch_get_survival_stat_for_group`, y, dead, requested_stat)
+}
+
+#' Calculates the difference in a survival statistic (median or restricted mean)
+#' between two groups (treatment vs. control).
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param w Integer vector of treatment assignments (1=treatment, 0=control).
+#' @param requested_stat A string, either "median" or "restricted_mean".
+#' @return The difference in the statistic (treatment - control).
+#' @keywords internal
+get_survival_stat_diff <- function(y, dead, w, requested_stat) {
+    .Call(`_SeqExpMatch_get_survival_stat_diff`, y, dead, w, requested_stat)
+}
+
+#' Calculates the standard error of the restricted mean survival time for a single group.
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @return The standard error of the restricted mean.
+#' @keywords internal
+get_restricted_mean_se_for_group <- function(y, dead) {
+    .Call(`_SeqExpMatch_get_restricted_mean_se_for_group`, y, dead)
+}
+
+#' Calculates the standard error of the difference in restricted mean survival times.
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param w Integer vector of treatment assignments (1=treatment, 0=control).
+#' @return The standard error of the difference.
+#' @keywords internal
+get_restricted_mean_se_diff <- function(y, dead, w) {
+    .Call(`_SeqExpMatch_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+#' Fast Weibull Regression using Rcpp and Newton-Raphson
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param X Model matrix.
+#' @return A list with coefficients, log(sigma), standard errors, vcov, etc.
+#' @export
+fast_weibull_regression <- function(y, dead, X) {
+    .Call(`_SeqExpMatch_fast_weibull_regression`, y, dead, X)
+}
+
+#' Fast Weibull Regression with variance using Rcpp and Newton-Raphson
+#'
+#' @param y Numeric vector of survival times.
+#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param X Model matrix.
+#' @return A list with coefficients, log(sigma), standard errors, vcov, etc.
+#' @export
+fast_weibull_regression_with_var_cpp <- function(y, dead, X) {
+    .Call(`_SeqExpMatch_fast_weibull_regression_with_var_cpp`, y, dead, X)
+}
+
+get_column_types_cpp <- function(df) {
+    .Call(`_SeqExpMatch_get_column_types_cpp`, df)
+}
+
+columns_have_missingness_cpp <- function(df) {
+    .Call(`_SeqExpMatch_columns_have_missingness_cpp`, df)
+}
+
+create_missingness_indicators_cpp <- function(df, col_indices) {
+    .Call(`_SeqExpMatch_create_missingness_indicators_cpp`, df, col_indices)
+}
+
+count_unique_values_cpp <- function(df) {
+    .Call(`_SeqExpMatch_count_unique_values_cpp`, df)
+}
+
+redraw_w_kk14_cpp <- function(match_indic, w) {
+    .Call(`_SeqExpMatch_redraw_w_kk14_cpp`, match_indic, w)
+}
+
+kk21_stepwise_survival_weights_cpp <- function(X, y, delta, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_survival_weights_cpp`, X, y, delta, w)
+}
+
+kk21_continuous_weights_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_kk21_continuous_weights_cpp`, X, y)
+}
+
+kk21_logistic_weights_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_kk21_logistic_weights_cpp`, X, y, maxit, tol)
+}
+
+kk21_stepwise_continuous_weights_cpp <- function(X, y, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_continuous_weights_cpp`, X, y, w)
+}
+
+kk21_stepwise_logistic_weights_cpp <- function(X, y, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_logistic_weights_cpp`, X, y, w)
+}
+
+kk21_beta_weights_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_kk21_beta_weights_cpp`, X, y)
+}
+
+kk21_negbin_weights_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_kk21_negbin_weights_cpp`, X, y)
+}
+
+kk21_survival_weights_cpp <- function(X, y, delta) {
+    .Call(`_SeqExpMatch_kk21_survival_weights_cpp`, X, y, delta)
+}
+
+kk21_stepwise_beta_weights_cpp <- function(X, y, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_beta_weights_cpp`, X, y, w)
+}
+
+kk21_stepwise_negbin_weights_cpp <- function(X, y, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_negbin_weights_cpp`, X, y, w)
+}
+
+kk_bootstrap_loop_cpp <- function(indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
+    .Call(`_SeqExpMatch_kk_bootstrap_loop_cpp`, indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
+}
+
+compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {
+    .Call(`_SeqExpMatch_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
+}
+
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
     .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
 }
@@ -73,8 +352,28 @@ match_diffs_cpp <- function(w, match_indic, y, X, m) {
     .Call(`_SeqExpMatch_match_diffs_cpp`, w, match_indic, y, X, m)
 }
 
+compute_pair_averages_cpp <- function(X, match_indic, m) {
+    .Call(`_SeqExpMatch_compute_pair_averages_cpp`, X, match_indic, m)
+}
+
+compute_pair_distance_matrix_cpp <- function(pair_avg, weights) {
+    .Call(`_SeqExpMatch_compute_pair_distance_matrix_cpp`, pair_avg, weights)
+}
+
+compute_lambda_squ_cpp <- function(d_i, halves) {
+    .Call(`_SeqExpMatch_compute_lambda_squ_cpp`, d_i, halves)
+}
+
+randomization_loop_cpp <- function(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
+    .Call(`_SeqExpMatch_randomization_loop_cpp`, nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+}
+
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {
     .Call(`_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp`, X_all_scaled_col_subset, covariate_weights, t, B)
+}
+
+sample_mode_cpp <- function(data) {
+    .Call(`_SeqExpMatch_sample_mode_cpp`, data)
 }
 
 which_cols_vary_cpp <- function(X) {

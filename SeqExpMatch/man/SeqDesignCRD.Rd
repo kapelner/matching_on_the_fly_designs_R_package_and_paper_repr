@@ -5,7 +5,7 @@
 \title{A completely randomized / Bernoulli Sequential Design}
 \description{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
-This class takes care of data intialization and sequential assignments. The class object
+This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \examples{
@@ -39,9 +39,9 @@ seq_des = SeqDesignCRD$new(response_type = "continuous")
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_experiment_completed'><code>SeqExpMatch::SeqDesign$assert_experiment_completed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_fixed_sample'><code>SeqExpMatch::SeqDesign$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-check_experiment_completed'><code>SeqExpMatch::SeqDesign$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-duplicate'><code>SeqExpMatch::SeqDesign$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_imp'><code>SeqExpMatch::SeqDesign$get_X_imp()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
@@ -72,11 +72,11 @@ Initialize a completely randomized sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous"(the default),  
-"incidence", 
-"proportion", 
-"count", 
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+"continuous" (the default),
+"incidence",
+"proportion",
+"count",
 "survival".
 This package will enforce that all added responses via the \code{add_subject_response} method will be
 of the appropriate type.}

@@ -12,7 +12,8 @@ An abstract class
 ## Method `SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -21,9 +22,10 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
+beta_hat_T_bs
+}
 			
 }
 \section{Super class}{
@@ -45,6 +47,7 @@ ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 </ul>
 </details>
@@ -66,7 +69,7 @@ ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference 
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
 (which is very slow). The default is 1 for serial computation. This parameter is ignored
 for \code{test_type = "MLE-or-KM-based"}.}
 
@@ -98,7 +101,8 @@ A vector of length \code{B} with the bootstrap values of the estimates of the tr
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -107,9 +111,10 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInference$new(seq_des, test_type = "MLE-or-KM-based")
-beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + geom_histogram(aes(x = beta_hat_T_bs))
+seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
+beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
+beta_hat_T_bs
+}
 			
 }
 \if{html}{\out{</div>}}

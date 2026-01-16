@@ -1,7 +1,7 @@
 pacman::p_load(Rcpp, RcppEigen, microbenchmark, fastLogisticRegressionWrap)
 
 
-sourceCpp(file = "../SeqExpMatch/src/fast_matrix_rank.cpp")
+sourceCpp(file = "SeqExpMatch/src/fast_matrix_rank.cpp")
 
 X = matrix(rnorm(100^2), nrow = 100, ncol = 100)
 
@@ -15,7 +15,7 @@ rm(list = ls())
 
 X = matrix(rnorm(10000*100), nrow = 100, ncol = 10000)
 
-Rcpp::sourceCpp("../SeqExpMatch/src/fast_scale_cols.cpp")
+Rcpp::sourceCpp("SeqExpMatch/src/fast_scale_cols.cpp")
 microbenchmark(
   Rcpp = scale_columns_cpp(X),
   R = apply(X, 2, scale),
@@ -25,7 +25,7 @@ rm(list = ls())
 
 X = as.matrix(MASS::Boston[, 1:13])
 y = MASS::Boston$medv
-Rcpp::sourceCpp("../SeqExpMatch/src/fast_ols.cpp")
+Rcpp::sourceCpp("SeqExpMatch/src/fast_ols.cpp")
 
 mod = fast_ols_with_var_cpp(cbind(1, X), y); abs(mod$b[2] / sqrt(mod$ssq_b_j))
 mod$b
@@ -43,8 +43,8 @@ rm(list = ls())
 Bsub = MASS::Boston[1:200, ]
 X = as.matrix(Bsub[, 1:13])
 y = as.numeric(Bsub$medv > median(Bsub$medv))
-Rcpp::sourceCpp("../SeqExpMatch/src/_helper_functions.cpp")
-# Rcpp::sourceCpp("../SeqExpMatch/src/fast_logistic_regression.cpp")
+Rcpp::sourceCpp("SeqExpMatch/src/_helper_functions.cpp")
+# Rcpp::sourceCpp("SeqExpMatch/src/fast_logistic_regression.cpp")
 
 # mod = fast_logistic_regression_cpp(cbind(1, X), y, start = rep(0, ncol(X) + 1))
 # mod$b
@@ -119,10 +119,10 @@ pacman::p_load(Rcpp, RcppEigen, RcppNumerical, RcppParallel, StanHeaders, microb
 X = as.matrix(MASS::Boston[MASS::Boston$medv < 50, 1:13])
 y = as.integer(round(MASS::Boston$medv[MASS::Boston$medv < 50])) #count response
 
-# Rcpp::sourceCpp("../SeqExpMatch/src/log_lik_nb.cpp")
-# Rcpp::sourceCpp("../SeqExpMatch/src/fast_negbin_regression_stan.cpp")
+# Rcpp::sourceCpp("SeqExpMatch/src/log_lik_nb.cpp")
+# Rcpp::sourceCpp("SeqExpMatch/src/fast_negbin_regression_stan.cpp")
 mod = MASS::glm.nb(y ~ X)
-# source("../SeqExpMatch/R/model_fit_helpers.R")
+# source("SeqExpMatch/R/model_fit_helpers.R")
 modfast = suppressWarnings(glmmTMB(y ~ X, family = nbinom2))
 coef(summary(modfast))$cond[2, 2]
 
@@ -142,9 +142,9 @@ rm(list = ls())
 pacman::p_load(betareg, microbenchmark)
 
 
-source(file = "../SeqExpMatch/R/model_fit_helpers.R")
-Rcpp::sourceCpp("../SeqExpMatch/src/_helper_functions.cpp")
-Rcpp::sourceCpp("../SeqExpMatch/src/beta_regression_helpers.cpp")
+source(file = "SeqExpMatch/R/model_fit_helpers.R")
+Rcpp::sourceCpp("SeqExpMatch/src/_helper_functions.cpp")
+Rcpp::sourceCpp("SeqExpMatch/src/beta_regression_helpers.cpp")
 
 X = as.matrix(MASS::Boston[, 1:13])
 y = (MASS::Boston$medv - min(MASS::Boston$medv) + 0.01) / (max(MASS::Boston$medv) - min(MASS::Boston$medv) + 0.02)

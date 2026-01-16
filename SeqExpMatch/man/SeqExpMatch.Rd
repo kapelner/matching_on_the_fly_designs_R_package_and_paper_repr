@@ -24,7 +24,7 @@ Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments t
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/kapelnematching_on_the_fly_designs_R_package_and_paper_repr}
+  \item \url{https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr}
 }
 
 }

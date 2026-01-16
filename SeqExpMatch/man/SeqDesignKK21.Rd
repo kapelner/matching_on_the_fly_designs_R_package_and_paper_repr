@@ -5,7 +5,7 @@
 \title{A Sequential Design}
 \description{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
-This class takes care of data intialization and sequential assignments. The class object
+This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \examples{
@@ -14,7 +14,9 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## Method `SeqDesignKK21$new`
 ## ------------------------------------------------
 
+\dontrun{
 seq_des = SeqDesignKK21$new(response_type = "continuous")
+}
  
 }
 \section{Super classes}{
@@ -24,6 +26,8 @@ seq_des = SeqDesignKK21$new(response_type = "continuous")
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignKK21-new}{\code{SeqDesignKK21$new()}}
+\item \href{#method-SeqDesignKK21-get_iteration_weights}{\code{SeqDesignKK21$get_iteration_weights()}}
+\item \href{#method-SeqDesignKK21-get_covariate_weights}{\code{SeqDesignKK21$get_covariate_weights()}}
 \item \href{#method-SeqDesignKK21-clone}{\code{SeqDesignKK21$clone()}}
 }
 }
@@ -39,9 +43,9 @@ seq_des = SeqDesignKK21$new(response_type = "continuous")
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_experiment_completed'><code>SeqExpMatch::SeqDesign$assert_experiment_completed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_fixed_sample'><code>SeqExpMatch::SeqDesign$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-check_experiment_completed'><code>SeqExpMatch::SeqDesign$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-duplicate'><code>SeqExpMatch::SeqDesign$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_imp'><code>SeqExpMatch::SeqDesign$get_X_imp()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
@@ -82,11 +86,11 @@ option to use matching parameters of Morrison and Owen (2025)
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous"(the default), 
-"incidence", 
-"proportion", 
-"count", 
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+"continuous" (the default),
+"incidence",
+"proportion",
+"count",
 "survival".
 This package will enforce that all added responses via the \code{add_subject_response} method will be
 of the appropriate type.}
@@ -126,13 +130,41 @@ A new `SeqDesignKK21` object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesignKK21$new(response_type = "continuous")
+\preformatted{\dontrun{
+seq_des = SeqDesignKK21$new(response_type = "continuous")
+}
  
 }
 \if{html}{\out{</div>}}
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignKK21-get_iteration_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK21-get_iteration_weights}{}}}
+\subsection{Method \code{get_iteration_weights()}}{
+Returns the weights calculated at each iteration.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK21$get_iteration_weights()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A list of weights.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignKK21-get_covariate_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK21-get_covariate_weights}{}}}
+\subsection{Method \code{get_covariate_weights()}}{
+Get covariate weights
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK21$get_covariate_weights()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+For KK21 designs, the running values of the weights for each covariate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK21-clone"></a>}}

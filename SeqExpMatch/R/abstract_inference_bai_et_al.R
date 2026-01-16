@@ -10,13 +10,13 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     
     #' @description
     #' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-    #' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-    #' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
-    #' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
-    #' 							for \code{test_type = "MLE-or-KM-based"}.
-    #' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
+		#' 								for \code{test_type = "MLE-or-KM-based"}.
+		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
     #' @param convex_flag       A flag indicating whether the estimator should use a convex combination of the Bai et al
-    #'                    		matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
+    #' 					matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
     #' 
     initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
       super$initialize(seq_des_obj, num_cores, verbose)
@@ -24,7 +24,6 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       assertNoCensoring(private$any_censoring)
     },
     
-    #' Compute treatment effect
     #'	
     #' @description
     #' Computes the appropriate estimate for compound mean difference across pairs and reservoir
@@ -32,7 +31,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
     #' 
     #' @examples
-    #' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+    #' \dontrun{
+    #' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -43,25 +43,36 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' 
     #' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
     #' seq_des_inf$compute_treatment_estimate()
+    #' }
     #' 	
     compute_treatment_estimate = function(){	
-      if (!private$convex_flag || private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){ #if er are not using the res in the test, only use the match pairs
+      nRT = private$cached_values$KKstats$nRT
+      nRC = private$cached_values$KKstats$nRC
+      m = private$cached_values$KKstats$m
+      #cat("DEBUG: convex_flag:", private$convex_flag, "nRT:", nRT, "nRC:", nRC, "m:", m, "\n")
+      
+      cond1 = is.null(private$convex_flag) || is.null(nRT) || is.null(nRC) || !private$convex_flag || nRT <= 1 || nRC <= 1
+      
+      if (cond1){ #if we are not using the res in the test, only use the match pairs
         private$cached_values$beta_hat_T = private$cached_values$KKstats$d_bar	
-      } else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
-        private$cached_values$beta_hat_T = private$cached_values$KKstats$r_bar			
       } else {
-        if (is.null(private$cached_values$s_beta_hat_T)){
-          private$shared()
+        cond2 = isTRUE(m == 0)
+        if (cond2){ #sometimes there's no matches
+          private$cached_values$beta_hat_T = private$cached_values$KKstats$r_bar			
+        } else {
+          if (is.null(private$cached_values$s_beta_hat_T)){
+            private$shared()
+          }
+          w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$cached_values$bai_var_d_bar)
+          private$cached_values$beta_hat_T = w_star_bai * private$cached_values$KKstats$d_bar + (1 - w_star_bai) * private$cached_values$KKstats$r_bar #proper weighting
         }
-        w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$cached_values$bai_var_d_bar)
-        private$cached_values$beta_hat_T = w_star_bai * private$cached_values$KKstats$d_bar + (1 - w_star_bai) * private$cached_values$KKstats$r_bar #proper weighting
       }
       private$cached_values$beta_hat_T
     },
     
-    #' Compute confidence interval
-    #'
     #' @description
+
+    
     #' Computes a 1-alpha level frequentist confidence interval
     #' 
     #' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
@@ -73,7 +84,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
     #' 
     #' @examples
-    #' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+    #' \dontrun{
+    #' seq_des = SeqDesignCRD$new(n = 6)
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -82,8 +94,9 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
     #' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
     #' 
-    #' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des, test_type = "MLE-or-KM-based")
-    #' seq_des_inf$compute_confidence_interval()
+    #' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
+    #' seq_des_inf$compute_mle_confidence_interval()
+    #' }
     #'	
     compute_mle_confidence_interval = function(alpha = 0.05){
       assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -97,9 +110,9 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       private$compute_z_or_t_ci_from_s_and_df(alpha)
     },
     
-    #' Compute p-value
-    #'
     #' @description
+
+    
     #' Computes a 2-sided p-value
     #'
     #' @param delta	The null difference to test against. For any treatment effect at all this is set to zero (the default).
@@ -107,7 +120,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' @return 	The approximate frequentist p-value
     #' 
     #' @examples
-    #' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+    #' \dontrun{
+    #' seq_des = SeqDesignCRD$new(n = 6)
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
     #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -117,7 +131,8 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
     #' 
     #' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-    #' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+    #' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+    #' }
     #' 		
     compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
       assertNumeric(delta)
@@ -127,7 +142,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       if (is.null(private$cached_values$s_beta_hat_T)){
         private$shared()
       }
-      2 * pnorm(
+      2 * stats::pnorm(
        -abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
       ) #approximate by using N(0, 1) distribution
       
@@ -145,11 +160,13 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	
     shared = function(){
       m = private$cached_values$KKstats$m
-      if (m == 0){
-        private$cached_values$s_beta_hat_T = ifelse(private$convex_flag, sqrt(private$cached_values$KKstats$ssqR), 0)
+      nRT = private$cached_values$KKstats$nRT
+      nRC = private$cached_values$KKstats$nRC
+      if (isTRUE(m == 0)){
+        private$cached_values$s_beta_hat_T = ifelse(isTRUE(private$convex_flag), sqrt(private$cached_values$KKstats$ssqR), 0)
       } else {
 	      private$cached_values$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
-	      private$cached_values$s_beta_hat_T = if (private$convex_flag && private$cached_values$KKstats$nRT > 1 && private$cached_values$KKstats$nRC > 1){
+	      private$cached_values$s_beta_hat_T = if (isTRUE(private$convex_flag) && isTRUE(nRT > 1) && isTRUE(nRC > 1)){
 	                                              sqrt(
 													private$cached_values$bai_var_d_bar * private$cached_values$KKstats$ssqR /
 	                                                  (private$cached_values$bai_var_d_bar + private$cached_values$KKstats$ssqR)
@@ -165,7 +182,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
         pair_id = 1 : private$cached_values$KKstats$m,
         yT = private$cached_values$KKstats$yTs_matched,
         yC = private$cached_values$KKstats$yCs_matched,
-        d_i = private$cached_values$KKstats$y_matched_diff
+        d_i = private$cached_values$KKstats$y_matched_diffs
       )
       
       halves = private$compute_halves()
@@ -176,16 +193,11 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       # lambda_squ^2 term
       lambda_squ = 0
       if (nrow(halves) > 0){
-        for (i in 1 : nrow(halves)){
-          pair1_id = as.numeric(as.character(halves[i, 1]))
-          pair2_id = as.numeric(as.character(halves[i, 3]))
-          
-          d1 = pairs_df$d_i[pairs_df$pair_id == pair1_id]
-          d2 = pairs_df$d_i[pairs_df$pair_id == pair2_id]
-          
-          lambda_squ = lambda_squ + (d1 * d2)
+        halves_idx = suppressWarnings(matrix(as.integer(as.matrix(halves[, c(1, 3)])), ncol = 2))
+        halves_idx = halves_idx[complete.cases(halves_idx), , drop = FALSE]
+        if (nrow(halves_idx) > 0){
+          lambda_squ = compute_lambda_squ_cpp(pairs_df$d_i, halves_idx)
         }
-        lambda_squ = lambda_squ / nrow(halves)
       }
       v_sq = tau_sq - (lambda_squ + delta_sq) / 2
       
@@ -232,20 +244,13 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
       
       X = private$get_X()
       
-      # Compute the average covariate vector for each pair ## can be rcpp'ed for sure
-      pair_avg = do.call(rbind, lapply(split(1:nrow(X), private$seq_des_obj_priv_int$match_indic), 
-                                       function(i) colMeans(X[i, , drop = FALSE])))
+      pair_avg = compute_pair_averages_cpp(X, private$seq_des_obj_priv_int$match_indic, m)
       
-      # Create a distance matrix between the pair-average covariates
-      dist_mat = matrix(data = 0, nrow = m, ncol = m)
-      dist_mat = dist_mat + diag(Inf, nrow = m, ncol = m) #set diag equal to inf
-      for (i in 1 : (m - 1)){
-        for (j in (i + 1) : m){
-          d = private$distance(pair_avg[i, ], pair_avg[j, ]) # distance formulas are defined in the daughter classes
-          dist_mat[i, j] = d
-          dist_mat[j, i] = d
-        }
+      weights = private$seq_des_obj_priv_int$covariate_weights
+      if (is.null(weights) || length(weights) != ncol(pair_avg)){
+        weights = numeric()
       }
+      dist_mat = compute_pair_distance_matrix_cpp(pair_avg, weights)
       
       # Use nbpMatching to find the optimal pairing of the pairs to minimize total distance
       dist_obj = suppressWarnings(nbpMatching::distancematrix(dist_mat))

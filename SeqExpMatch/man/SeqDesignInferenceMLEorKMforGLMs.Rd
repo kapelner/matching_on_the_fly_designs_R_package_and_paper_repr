@@ -13,7 +13,8 @@ in all response types (except Weibull with censoring) sequential experimental de
 ## Method `SeqDesignInferenceMLEorKMforGLMs$compute_mle_confidence_interval`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\dontrun{
+seq_des = SeqDesignCRD$new(n = 6)
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -22,17 +23,17 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
-seq_des_inf$compute_confidence_interval()
+seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+seq_des_inf$compute_mle_confidence_interval()
+}
 	
-Compute p-value
-
 
 ## ------------------------------------------------
 ## Method `SeqDesignInferenceMLEorKMforGLMs$compute_mle_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\dontrun{
+seq_des = SeqDesignCRD$new(n = 6)
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -41,8 +42,9 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+}
 				
 }
 \section{Super classes}{
@@ -65,6 +67,7 @@ seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
@@ -88,13 +91,11 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference 
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
 (which is very slow). The default is 1 for serial computation. This parameter is ignored
 for \code{test_type = "MLE-or-KM-based"}.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-
-Compute confidence interval}
+\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }
 \if{html}{\out{</div>}}
 }
@@ -123,7 +124,8 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{\dontrun{
+seq_des = SeqDesignCRD$new(n = 6)
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -132,11 +134,10 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
-seq_des_inf$compute_confidence_interval()
+seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+seq_des_inf$compute_mle_confidence_interval()
+}
 	
-Compute p-value
-
 }
 \if{html}{\out{</div>}}
 
@@ -166,7 +167,8 @@ The approximate frequentist p-value
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+\preformatted{\dontrun{
+seq_des = SeqDesignCRD$new(n = 6)
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -175,8 +177,9 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+}
 				
 }
 \if{html}{\out{</div>}}

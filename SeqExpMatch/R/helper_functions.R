@@ -6,6 +6,9 @@
 #' @return		Its corresponding logit value as a real number
 #' @export
 logit = function(p){
+	if (any(p <= 0 | p >= 1, na.rm = TRUE)){
+		stop("p must be between 0 and 1 non-inclusive")
+	}
 	log(p / (1 - p))
 }
 
@@ -61,7 +64,61 @@ robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_m
 #' @export
 robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	surv_reg_formula = surv_object ~ .
-	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
+	X_mat = as.matrix(cov_matrix_or_vector)
+	
+	# Eliminate columns that may be causing multicollinearity before attempting model fit
+	if (ncol(X_mat) > 1){
+		repeat {
+			# Use a slightly lower threshold for better robustness
+			R = suppressWarnings(stats::cor(X_mat))
+			R[is.na(R)] = 1 # Treat constant columns as collinear
+
+			pairs_to_eliminate_one_of = which(abs(R) > .99, arr.ind = TRUE)
+			# Filter out diagonal
+			pairs_to_eliminate_one_of = pairs_to_eliminate_one_of[pairs_to_eliminate_one_of[,1] < pairs_to_eliminate_one_of[,2], , drop=FALSE]
+
+			if (nrow(pairs_to_eliminate_one_of) == 0){
+				break
+			}
+			# Drop one from each pair, prefer higher index
+			j_kill = unique(pairs_to_eliminate_one_of[, 2])
+			X_mat = X_mat[, -j_kill, drop = FALSE]
+			if (ncol(X_mat) <= 1) break
+		}
+	}
+	
+	cov_matrix_or_vector_data_frame = data.frame(X_mat)
+	
+	# Optimization: Use fast_weibull_regression for initialization if applicable
+	if (dist == "weibull") {
+		y = surv_object[, 1]
+		dead = surv_object[, 2]
+		
+		# fast_weibull_regression expects X without intercept (it adds it)
+		# BUT robust_survreg might already have intercept-like cols? 
+		# No, the formula ~ . adds intercept.
+		
+		res = tryCatch(fast_weibull_regression(y, dead, X_mat), error = function(e) NULL)
+		
+		if (!is.null(res) && is.finite(res$neg_log_lik)) {
+			init_vals = c(res$coefficients, res$log_sigma)
+			
+			mod = tryCatch({
+				suppressWarnings(survival::survreg(
+					surv_reg_formula, 
+					data = cov_matrix_or_vector_data_frame, 
+					dist = dist, 
+					init = init_vals,
+					control = survival::survreg.control(maxiter = 100, rel.tolerance = 1e-9, outer.max = 10)
+				))
+			}, error = function(e) NULL)
+			
+			if (!is.null(mod) && !any(is.na(mod$coefficients))){
+				return(mod)
+			}
+		}
+	}
+
 	init = rep(0, ncol(cov_matrix_or_vector_data_frame) + 1)
 	num_iter = 1
 	repeat {
@@ -81,90 +138,24 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 				return(mod)
 			}	
 		}, error = function(e){})
-		if (num_iter == num_max_iter){
+		if (num_iter >= num_max_iter){
 			break
 		}
-		#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
-		init = init + rnorm(length(init))
+		init = init + stats::rnorm(length(init))
 		num_iter = num_iter + 1
 	}
 	
-	if (ncol(cov_matrix_or_vector_data_frame) == 1){ #no tricks will work...
-		return(NULL)
-	}
-	
-	#no more mister nice guy...
-	#now we start to eliminate columns that may be causing multicollinearity
-	j_killed = c()
-	repeat {
-		R = cor(cov_matrix_or_vector)
-		pairs_to_eliminate_one_of = which(abs(R) > .95 & R < 1, arr.ind = TRUE)
-		if (nrow(pairs_to_eliminate_one_of) == 0){
-			break
-		}
-		col_indices = c(pairs_to_eliminate_one_of)
-		col_indices = col_indices[col_indices > 1] #but we cannot eliminate the first column
-		j_kill = sample_mode(col_indices)
-		j_killed = c(j_killed, j_kill)
-		cov_matrix_or_vector = cov_matrix_or_vector[, -j_kill]
-	}
-	
-	#now we play again
-	cov_matrix_or_vector_data_frame = data.frame(cov_matrix_or_vector)
-	num_iter = 1
-	repeat {
-		tryCatch({
-			mod = suppressWarnings(survival::survreg(
-							surv_reg_formula, 
-							data = cov_matrix_or_vector_data_frame, 
-							dist = dist, 
-							init = init,
-							control = survreg_control_default
-					))
-			if (!any(is.na(mod$coefficients))){
-				return(mod)
-			}
-		}, error = function(e){})
-		if (num_iter == num_max_iter){
-			return(NULL)
-		}
-		#cat(paste("  robust survreg num_iter", num_iter, "init", paste(round(init, 3), collapse = ", "), "\n"))
-		init = init + rnorm(length(init))
-		num_iter = num_iter + 1
-	}	
+	return(NULL)
 }
 
-
-##' Robust Beta Regression
-##'
-##' Performs Beta regression that if it fails, keeps dropping one column from the model matrix until it works
-##'
-##' @param form_obj	The formula
-##' @param data_obj  The data frame to run beta regression on 
-##' @return			The Beta regression model object
-## @export
-#robust_betareg = function(form_obj, data_obj){
-#	repeat {
-#		tryCatch({
-#			mod = suppressWarnings(betareg::betareg(form_obj, data = data_obj))
-#			return(mod)
-#		}, error = function(e){})
-#		data_obj = data_obj[, 1 : (ncol(data_obj) - 1), drop = FALSE] #chop off one column at a time until it works
-#		if (ncol(data_obj) == 1){
-#			break
-#		}
-#	}
-#	NULL
-#}
-
-##' Robust Negative Binomial Regression
-##'
-##' Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
-##'
-##' @param form_obj	The formula
-##' @param data_obj  The data frame to run Negative Binomial regression on 
-##' @return			The Negative Binomial regression model object
-## @export
+#' Robust Negative Binomial Regression
+#'
+#' Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
+#'
+#' @param form_obj	The formula
+#' @param data_obj  The data frame to run Negative Binomial regression on 
+#' @return			The Negative Binomial regression model object
+#' @export
 robust_negbinreg = function(form_obj, data_obj){
 	repeat {
 		tryCatch({
@@ -187,7 +178,7 @@ robust_negbinreg = function(form_obj, data_obj){
 #' @return		The sample mode
 #' @export
 sample_mode = function(data){
-	as.numeric(names(sort(-table(data)))[1])
+	sample_mode_cpp(data)
 }
 
 #' Lean GLM Summary
@@ -222,11 +213,11 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 					NaN
 				}
 	}
-	aliased <- is.na(coef(object))
+	aliased <- is.na(stats::coef(object))
 	p <- object$rank
 	if (p > 0) {
 		p1 <- 1L:p
-		Qr <- stats:::qr.lm(object)
+		Qr <- object$qr
 		coef.p <- object$coefficients[Qr$pivot[p1]]
 		covmat.unscaled <- chol2inv(Qr$qr[p1, p1, drop = FALSE])
 		dimnames(covmat.unscaled) <- list(names(coef.p), names(coef.p))
@@ -236,13 +227,13 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 		tvalue <- coef.p/s.err
 		dn <- c("Estimate", "Std. Error")
 		if (!est.disp) {
-			pvalue <- 2 * pnorm(-abs(tvalue))
+			pvalue <- 2 * stats::pnorm(-abs(tvalue))
 			coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
 			dimnames(coef.table) <- list(names(coef.p), c(dn, 
 							"z value", "Pr(>|z|)"))
 		}
 		else if (df.r > 0) {
-			pvalue <- 2 * pt(-abs(tvalue), df.r)
+			pvalue <- 2 * stats::pt(-abs(tvalue), df.r)
 			coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
 			dimnames(coef.table) <- list(names(coef.p), c(dn, 
 							"t value", "Pr(>|t|)"))
@@ -255,10 +246,10 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 		df.f <- NCOL(Qr$qr)
 	}
 	else {
-		coef.table <- matrix(, 0L, 4L)
+		coef.table <- matrix( 0L, 4L)
 		dimnames(coef.table) <- list(NULL, c("Estimate", "Std. Error", 
 						"t value", "Pr(>|t|)"))
-		covmat.unscaled <- covmat <- matrix(, 0L, 0L)
+		covmat.unscaled <- covmat <- matrix( 0L, 0L)
 		df.f <- length(aliased)
 	}
 	keep <- match(c("call", "terms", "family", "deviance", "aic", 

@@ -24,6 +24,7 @@ Inference for mean difference
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceBaiAdjustedT" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceBaiAdjustedT.html#method-SeqDesignInferenceBaiAdjustedT-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceBaiAdjustedT$compute_mle_confidence_interval()</code></a></span></li>
@@ -42,7 +43,7 @@ Initialize a sequential experimental design estimation and test object after the
   seq_des_obj,
   num_cores = 1,
   verbose = TRUE,
-  convex = FALSE
+  convex_flag = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -51,14 +52,14 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference 
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
 (which is very slow). The default is 1 for serial computation. This parameter is ignored
 for \code{test_type = "MLE-or-KM-based"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 
-\item{\code{convex}}{A flag indicating whether the estimator should use a convex combination of the Bai et all
-matched pairs estimate with the reservoir estimate, or just the Bai et all estimate on by its self.}
+\item{\code{convex_flag}}{A flag indicating whether the estimator should use a convex combination of the Bai et al
+matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.}
 }
 \if{html}{\out{</div>}}
 }

@@ -13,18 +13,18 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' @description
 		#' Initialize an Efron's weighted coin sequential experimental design
 		#'
-		#' @param response_type 	The data type of response values which must be one of the following: 
-		#' 							"continuous"(the default),  
-		#' 							"incidence", 
-		#' 							"proportion", 
-		#' 							"count", 
-		#' 							"survival".
-		#' 							This package will enforce that all added responses via the \code{add_subject_response} method will be
-		#' 							of the appropriate type.
+		#' @param response_type 	The data type of response values which must be one of the following:
+		#' 								"continuous" (the default),
+		#' 								"incidence",
+		#' 								"proportion",
+		#' 								"count",
+		#' 								"survival".
+		#' 								This package will enforce that all added responses via the \code{add_subject_response} method will be
+		#' 								of the appropriate type.
 		#' @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
 		#' @param include_is_missing_as_a_new_feature	If missing data is present in a variable, should we include another dummy variable for its
-		#' 												missingness in addition to imputing its value? If the feature is type factor, instead of creating
-		#' 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
+		#' 								missingness in addition to imputing its value? If the feature is type factor, instead of creating
+		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
 		#' @param weighted_coin_prob The probability of Efron's weighted coin. Default is \code{NULL} for Efron's default of 2/3.
@@ -32,7 +32,9 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' @return 			A new `SeqDesignEfron` object
 		#' 
 		#' @examples
+		#' \dontrun{
 		#' seq_des = SeqDesignEfron$new(response_type = "continuous")
+		#' }
 		#'  
 		initialize = function(
 			response_type = "continuous",  
@@ -56,13 +58,13 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 	),
 	private = list(
 		weighted_coin_prob = NULL,
-		
+
 		duplicate = function(){
 			d = super$duplicate()
 			d$.__enclos_env__$private$weighted_coin_prob = private$weighted_coin_prob
 			d
 		},
-		
+
 		assign_wt = function(){
 			n_T = sum(private$w, na.rm = TRUE)
 			n_C = private$t - n_T
@@ -72,7 +74,12 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 				rbinom(1, 1, private$weighted_coin_prob)
 			} else {
 				private$assign_wt_CRD()
-			}				
+			}
+		},
+
+		redraw_w_according_to_design = function(){
+			# Use C++ implementation for efficiency
+			private$w[1:private$t] = efron_redraw_cpp(private$t, private$prob_T, private$weighted_coin_prob)
 		}
 	)
 )

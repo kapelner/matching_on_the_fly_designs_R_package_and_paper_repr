@@ -4,7 +4,7 @@ Code for the R package `SeqExpMatch` and the code to reproduce the simulations i
 
 To cite please use
 
-Kapelner, A., & Krieger, A. (2021). A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power. Biometrics. https://doi.org/10.1111/biom.13561
+Kapelner, A., & Krieger, A. (2023). A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power. Biometrics. https://doi.org/10.1111/biom.13561
 
-Kapelner, A. (2024). A Sequential Experiment Design for General Response Type and Unequal Allocation that Iteratively Learns Important Covariates. working paper
+Kapelner, A. (2026). A Sequential Experiment Design for General Response Type and Unequal Allocation that Iteratively Learns Important Covariates. working paper
 

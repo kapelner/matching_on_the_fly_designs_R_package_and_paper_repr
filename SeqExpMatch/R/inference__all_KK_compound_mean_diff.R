@@ -11,18 +11,16 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-        #' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
-		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 							for \code{test_type = "MLE-or-KM-based"}.
+		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
+		#' 								for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#' 
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)		
 		},
 		
-		#' Compute treatment effect
 		#'	
 		#' @description
 		#' Computes the appropriate estimate for compound mean difference across pairs and reservoir
@@ -30,7 +28,8 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+		#' \dontrun{
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -41,6 +40,7 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' 
 		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
+		#' }
 		#' 	
 		compute_treatment_estimate = function(){			
 			private$cached_values$beta_hat_T = 	if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
@@ -53,9 +53,9 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 			private$cached_values$beta_hat_T
 		},
 		
-		#' Compute confidence interval
-		#'
 		#' @description
+
+		
 		#' Computes a 1-alpha level frequentist confidence interval
 		#' 
 		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
@@ -67,7 +67,8 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' \dontrun{
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -76,8 +77,9 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des, test_type = "MLE-or-KM-based")
-		#' seq_des_inf$compute_confidence_interval()
+		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
+		#' seq_des_inf$compute_mle_confidence_interval()
+		#' }
 		#'	
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -89,9 +91,9 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		
-		#' Compute p-value
-		#'
 		#' @description
+
+		
 		#' Computes a 2-sided p-value
 		#'
 		#' @param delta	The null difference to test against. For any treatment effect at all this is set to zero (the default).
@@ -99,7 +101,8 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' @return 	The approximate frequentist p-value
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' \dontrun{
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -109,14 +112,15 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
 		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+		#' }
 		#' 		
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}						
-			2 * pnorm(
+			2 * stats::pnorm(
 					-abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
 				) #approximate by using N(0, 1) distribution
 

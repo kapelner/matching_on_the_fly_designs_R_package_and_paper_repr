@@ -5,7 +5,7 @@
 \title{A Sequential Design}
 \description{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
-This class takes care of data intialization and sequential assignments. The class object
+This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \examples{
@@ -14,14 +14,17 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## Method `SeqDesignKK14$new`
 ## ------------------------------------------------
 
+\dontrun{
 seq_des = SeqDesignKK14$new(response_type = "continuous")
+}
  
 
 ## ------------------------------------------------
 ## Method `SeqDesignKK14$matching_statistics`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
@@ -33,13 +36,15 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$matching_statistics()
+}
 
 
 ## ------------------------------------------------
 ## Method `SeqDesignKK14$get_match_indic`
 ## ------------------------------------------------
 
-seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
@@ -51,6 +56,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$get_match_indic()
+}
 
 }
 \section{Super class}{
@@ -77,9 +83,9 @@ seq_des$get_match_indic()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_experiment_completed'><code>SeqExpMatch::SeqDesign$assert_experiment_completed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_fixed_sample'><code>SeqExpMatch::SeqDesign$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-check_experiment_completed'><code>SeqExpMatch::SeqDesign$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-duplicate'><code>SeqExpMatch::SeqDesign$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_imp'><code>SeqExpMatch::SeqDesign$get_X_imp()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_covariate_weights'><code>SeqExpMatch::SeqDesign$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
@@ -114,11 +120,11 @@ Initialize a matching-on-the-fly sequential experimental design which matches ba
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{The data type of response values which must be one of the following: 
-"continuous" (the default), 
-"incidence", 
-"proportion", 
-"count", 
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+"continuous" (the default),
+"incidence",
+"proportion",
+"count",
 "survival".
 This package will enforce that all added responses via the \code{add_subject_response} method will be
 of the appropriate type.}
@@ -150,7 +156,9 @@ A new `SeqDesignKK14` object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesignKK14$new(response_type = "continuous")
+\preformatted{\dontrun{
+seq_des = SeqDesignKK14$new(response_type = "continuous")
+}
  
 }
 \if{html}{\out{</div>}}
@@ -173,7 +181,8 @@ A list with the following data: \code{num_matches}, \code{prop_subjects_matched}
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+\preformatted{\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
@@ -185,6 +194,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$matching_statistics()
+}
 
 }
 \if{html}{\out{</div>}}
@@ -207,7 +217,8 @@ An array in the order in which the subject entered with the match number or zero
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = SeqDesign$new(n = 6, p = 10, design = "KK14", response_type = "continuous")
+\preformatted{\dontrun{
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
@@ -219,6 +230,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des$get_match_indic()
+}
 
 }
 \if{html}{\out{</div>}}

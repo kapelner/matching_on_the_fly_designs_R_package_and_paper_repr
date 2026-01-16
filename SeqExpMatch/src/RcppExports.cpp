@@ -82,6 +82,53 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// atkinson_assign_weight_cpp
+double atkinson_assign_weight_cpp(const NumericVector& w_prev, const NumericMatrix& X_prev, const NumericVector& xt_prev, int rank_prev, int t);
+RcppExport SEXP _SeqExpMatch_atkinson_assign_weight_cpp(SEXP w_prevSEXP, SEXP X_prevSEXP, SEXP xt_prevSEXP, SEXP rank_prevSEXP, SEXP tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type w_prev(w_prevSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X_prev(X_prevSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type xt_prev(xt_prevSEXP);
+    Rcpp::traits::input_parameter< int >::type rank_prev(rank_prevSEXP);
+    Rcpp::traits::input_parameter< int >::type t(tSEXP);
+    rcpp_result_gen = Rcpp::wrap(atkinson_assign_weight_cpp(w_prev, X_prev, xt_prev, rank_prev, t));
+    return rcpp_result_gen;
+END_RCPP
+}
+// atkinson_redraw_batch_cpp
+NumericVector atkinson_redraw_batch_cpp(const Eigen::MatrixXd& X, int n, int p_raw, double prob_T);
+RcppExport SEXP _SeqExpMatch_atkinson_redraw_batch_cpp(SEXP XSEXP, SEXP nSEXP, SEXP p_rawSEXP, SEXP prob_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type p_raw(p_rawSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_T(prob_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(atkinson_redraw_batch_cpp(X, n, p_raw, prob_T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// base_bootstrap_loop_cpp
+NumericVector base_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& dead, const NumericMatrix& X, const NumericVector& w, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
+RcppExport SEXP _SeqExpMatch_base_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP wSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< Function >::type duplicate_inference_fn(duplicate_inference_fnSEXP);
+    Rcpp::traits::input_parameter< Function >::type compute_estimate_fn(compute_estimate_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(base_bootstrap_loop_cpp(indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // beta_loglik_cpp
 double beta_loglik_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& mu, const double phi, const Eigen::VectorXd& wt);
 RcppExport SEXP _SeqExpMatch_beta_loglik_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
@@ -124,6 +171,120 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// bisection_ci_loop_cpp
+double bisection_ci_loop_cpp(Function pval_fn, int nsim_exact_test, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower);
+RcppExport SEXP _SeqExpMatch_bisection_ci_loop_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< double >::type l(lSEXP);
+    Rcpp::traits::input_parameter< double >::type u(uSEXP);
+    Rcpp::traits::input_parameter< double >::type pval_th(pval_thSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_loop_cpp(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bisection_ci_parallel_cpp
+NumericVector bisection_ci_parallel_cpp(Function pval_fn, int nsim_exact_test, double l_lower, double u_lower, double l_upper, double u_upper, double pval_th, double tol, std::string transform_responses, int num_cores);
+RcppExport SEXP _SeqExpMatch_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< double >::type l_lower(l_lowerSEXP);
+    Rcpp::traits::input_parameter< double >::type u_lower(u_lowerSEXP);
+    Rcpp::traits::input_parameter< double >::type l_upper(l_upperSEXP);
+    Rcpp::traits::input_parameter< double >::type u_upper(u_upperSEXP);
+    Rcpp::traits::input_parameter< double >::type pval_th(pval_thSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_parallel_cpp(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bisection_ci_single_bound_cpp
+double bisection_ci_single_bound_cpp(Function pval_fn, int nsim_exact_test, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower, int num_cores);
+RcppExport SEXP _SeqExpMatch_bisection_ci_single_bound_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< double >::type l(lSEXP);
+    Rcpp::traits::input_parameter< double >::type u(uSEXP);
+    Rcpp::traits::input_parameter< double >::type pval_th(pval_thSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_single_bound_cpp(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bootstrap_indices_cpp
+IntegerMatrix bootstrap_indices_cpp(int n, int B);
+RcppExport SEXP _SeqExpMatch_bootstrap_indices_cpp(SEXP nSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(bootstrap_indices_cpp(n, B));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bootstrap_match_indices_cpp
+IntegerMatrix bootstrap_match_indices_cpp(const IntegerVector& match_indic, const IntegerVector& i_reservoir, int n_reservoir, int m, int B);
+RcppExport SEXP _SeqExpMatch_bootstrap_match_indices_cpp(SEXP match_indicSEXP, SEXP i_reservoirSEXP, SEXP n_reservoirSEXP, SEXP mSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic(match_indicSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type i_reservoir(i_reservoirSEXP);
+    Rcpp::traits::input_parameter< int >::type n_reservoir(n_reservoirSEXP);
+    Rcpp::traits::input_parameter< int >::type m(mSEXP);
+    Rcpp::traits::input_parameter< int >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(bootstrap_match_indices_cpp(match_indic, i_reservoir, n_reservoir, m, B));
+    return rcpp_result_gen;
+END_RCPP
+}
+// match_stats_from_indices_cpp
+List match_stats_from_indices_cpp(const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& match_indic_b, const IntegerVector& i_b, int m);
+RcppExport SEXP _SeqExpMatch_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP match_indic_bSEXP, SEXP i_bSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic_b(match_indic_bSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type i_b(i_bSEXP);
+    Rcpp::traits::input_parameter< int >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(match_stats_from_indices_cpp(y, w, X, match_indic_b, i_b, m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_all_subject_data_cpp
+List compute_all_subject_data_cpp(const Eigen::MatrixXd& X, int t, const IntegerVector& i_all_y_present_R, double rank_tol);
+RcppExport SEXP _SeqExpMatch_compute_all_subject_data_cpp(SEXP XSEXP, SEXP tSEXP, SEXP i_all_y_present_RSEXP, SEXP rank_tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type t(tSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type i_all_y_present_R(i_all_y_present_RSEXP);
+    Rcpp::traits::input_parameter< double >::type rank_tol(rank_tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_all_subject_data_cpp(X, t, i_all_y_present_R, rank_tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_proportional_mahal_distances_cpp
 Eigen::VectorXd compute_proportional_mahal_distances_cpp(const Eigen::VectorXd& xt_prev, const Eigen::MatrixXd& X_prev, const Eigen::VectorXi& reservoir_indices, const Eigen::MatrixXd& S_xs_inv);
 RcppExport SEXP _SeqExpMatch_compute_proportional_mahal_distances_cpp(SEXP xt_prevSEXP, SEXP X_prevSEXP, SEXP reservoir_indicesSEXP, SEXP S_xs_invSEXP) {
@@ -152,6 +313,75 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// efron_redraw_cpp
+NumericVector efron_redraw_cpp(int t, double prob_T, double weighted_coin_prob);
+RcppExport SEXP _SeqExpMatch_efron_redraw_cpp(SEXP tSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type t(tSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_T(prob_TSEXP);
+    Rcpp::traits::input_parameter< double >::type weighted_coin_prob(weighted_coin_probSEXP);
+    rcpp_result_gen = Rcpp::wrap(efron_redraw_cpp(t, prob_T, weighted_coin_prob));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_beta_regression_mle
+List fast_beta_regression_mle(NumericVector y, Eigen::MatrixXd X, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
+RcppExport SEXP _SeqExpMatch_fast_beta_regression_mle(SEXP ySEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_beta(start_betaSEXP);
+    Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_mle(y, X, start_beta, start_phi, compute_std_errs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_beta_regression_mle_with_var_cpp
+List fast_beta_regression_mle_with_var_cpp(NumericVector y, Eigen::MatrixXd X, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
+RcppExport SEXP _SeqExpMatch_fast_beta_regression_mle_with_var_cpp(SEXP ySEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_beta(start_betaSEXP);
+    Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_mle_with_var_cpp(y, X, start_beta, start_phi, compute_std_errs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_logistic_regression_cpp
+List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_logistic_regression_with_var_cpp
+List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xmm(XmmSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_with_var_cpp(Xmm, y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // matrix_rank_cpp
 int matrix_rank_cpp(const Eigen::MatrixXd& A, double tol);
 RcppExport SEXP _SeqExpMatch_matrix_rank_cpp(SEXP ASEXP, SEXP tolSEXP) {
@@ -161,6 +391,38 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type A(ASEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     rcpp_result_gen = Rcpp::wrap(matrix_rank_cpp(A, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_neg_bin_with_censoring_cpp
+List fast_neg_bin_with_censoring_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& dead, int maxit, double eps_f, double eps_g);
+RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_censoring_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_censoring_cpp(X, y, dead, maxit, eps_f, eps_g));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_neg_bin_with_censoring_with_sd_cpp
+List fast_neg_bin_with_censoring_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& dead, int maxit, double eps_f, double eps_g);
+RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_censoring_with_sd_cpp(X, y, dead, maxit, eps_f, eps_g));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -211,6 +473,302 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_survival_stat_for_group
+double get_survival_stat_for_group(NumericVector y, IntegerVector dead, std::string requested_stat);
+RcppExport SEXP _SeqExpMatch_get_survival_stat_for_group(SEXP ySEXP, SEXP deadSEXP, SEXP requested_statSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< std::string >::type requested_stat(requested_statSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_survival_stat_for_group(y, dead, requested_stat));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_survival_stat_diff
+double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector w, std::string requested_stat);
+RcppExport SEXP _SeqExpMatch_get_survival_stat_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP, SEXP requested_statSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type w(wSEXP);
+    Rcpp::traits::input_parameter< std::string >::type requested_stat(requested_statSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_survival_stat_diff(y, dead, w, requested_stat));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_restricted_mean_se_for_group
+double get_restricted_mean_se_for_group(NumericVector y, IntegerVector dead);
+RcppExport SEXP _SeqExpMatch_get_restricted_mean_se_for_group(SEXP ySEXP, SEXP deadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_restricted_mean_se_for_group(y, dead));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_restricted_mean_se_diff
+double get_restricted_mean_se_diff(NumericVector y, IntegerVector dead, IntegerVector w);
+RcppExport SEXP _SeqExpMatch_get_restricted_mean_se_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_restricted_mean_se_diff(y, dead, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_weibull_regression
+List fast_weibull_regression(NumericVector y, IntegerVector dead, Eigen::MatrixXd X);
+RcppExport SEXP _SeqExpMatch_fast_weibull_regression(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression(y, dead, X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_weibull_regression_with_var_cpp
+List fast_weibull_regression_with_var_cpp(NumericVector y, IntegerVector dead, Eigen::MatrixXd X);
+RcppExport SEXP _SeqExpMatch_fast_weibull_regression_with_var_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression_with_var_cpp(y, dead, X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_column_types_cpp
+CharacterVector get_column_types_cpp(List df);
+RcppExport SEXP _SeqExpMatch_get_column_types_cpp(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_column_types_cpp(df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// columns_have_missingness_cpp
+LogicalVector columns_have_missingness_cpp(List df);
+RcppExport SEXP _SeqExpMatch_columns_have_missingness_cpp(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(columns_have_missingness_cpp(df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// create_missingness_indicators_cpp
+List create_missingness_indicators_cpp(List df, IntegerVector col_indices);
+RcppExport SEXP _SeqExpMatch_create_missingness_indicators_cpp(SEXP dfSEXP, SEXP col_indicesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type col_indices(col_indicesSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_missingness_indicators_cpp(df, col_indices));
+    return rcpp_result_gen;
+END_RCPP
+}
+// count_unique_values_cpp
+IntegerVector count_unique_values_cpp(List df);
+RcppExport SEXP _SeqExpMatch_count_unique_values_cpp(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type df(dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_unique_values_cpp(df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// redraw_w_kk14_cpp
+NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_redraw_w_kk14_cpp(SEXP match_indicSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic(match_indicSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(redraw_w_kk14_cpp(match_indic, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_survival_weights_cpp
+NumericVector kk21_stepwise_survival_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& delta, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_survival_weights_cpp(X, y, delta, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_continuous_weights_cpp
+NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X, const NumericVector& y);
+RcppExport SEXP _SeqExpMatch_kk21_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_continuous_weights_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_logistic_weights_cpp
+NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X, const NumericVector& y, const int maxit, const double tol);
+RcppExport SEXP _SeqExpMatch_kk21_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_logistic_weights_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_continuous_weights_cpp
+NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_continuous_weights_cpp(X, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_logistic_weights_cpp
+NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_logistic_weights_cpp(X, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_beta_weights_cpp
+NumericVector kk21_beta_weights_cpp(const NumericMatrix& X, const NumericVector& y);
+RcppExport SEXP _SeqExpMatch_kk21_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_beta_weights_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_negbin_weights_cpp
+NumericVector kk21_negbin_weights_cpp(const NumericMatrix& X, const NumericVector& y);
+RcppExport SEXP _SeqExpMatch_kk21_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_negbin_weights_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_survival_weights_cpp
+NumericVector kk21_survival_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& delta);
+RcppExport SEXP _SeqExpMatch_kk21_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type delta(deltaSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_survival_weights_cpp(X, y, delta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_beta_weights_cpp
+NumericVector kk21_stepwise_beta_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_beta_weights_cpp(X, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_negbin_weights_cpp
+NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_negbin_weights_cpp(X, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk_bootstrap_loop_cpp
+NumericVector kk_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& match_indic_b, int m, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
+RcppExport SEXP _SeqExpMatch_kk_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP match_indic_bSEXP, SEXP mSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic_b(match_indic_bSEXP);
+    Rcpp::traits::input_parameter< int >::type m(mSEXP);
+    Rcpp::traits::input_parameter< Function >::type duplicate_inference_fn(duplicate_inference_fnSEXP);
+    Rcpp::traits::input_parameter< Function >::type compute_estimate_fn(compute_estimate_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk_bootstrap_loop_cpp(indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_kk_reservoir_stats_cpp
+List compute_kk_reservoir_stats_cpp(const NumericVector& y_matched_diffs, const NumericVector& y_reservoir, const NumericVector& w_reservoir);
+RcppExport SEXP _SeqExpMatch_compute_kk_reservoir_stats_cpp(SEXP y_matched_diffsSEXP, SEXP y_reservoirSEXP, SEXP w_reservoirSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y_matched_diffs(y_matched_diffsSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y_reservoir(y_reservoirSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w_reservoir(w_reservoirSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_kk_reservoir_stats_cpp(y_matched_diffs, y_reservoir, w_reservoir));
+    return rcpp_result_gen;
+END_RCPP
+}
 // neg_loglik_nb_cpp
 double neg_loglik_nb_cpp(double theta, const Eigen::VectorXd& beta, const Eigen::MatrixXd& X, const Eigen::VectorXi& y);
 RcppExport SEXP _SeqExpMatch_neg_loglik_nb_cpp(SEXP thetaSEXP, SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP) {
@@ -240,6 +798,58 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_pair_averages_cpp
+NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X, const IntegerVector& match_indic, const int m);
+RcppExport SEXP _SeqExpMatch_compute_pair_averages_cpp(SEXP XSEXP, SEXP match_indicSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic(match_indicSEXP);
+    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_pair_averages_cpp(X, match_indic, m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_pair_distance_matrix_cpp
+NumericMatrix compute_pair_distance_matrix_cpp(const NumericMatrix& pair_avg, const NumericVector& weights);
+RcppExport SEXP _SeqExpMatch_compute_pair_distance_matrix_cpp(SEXP pair_avgSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pair_avg(pair_avgSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_pair_distance_matrix_cpp(pair_avg, weights));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_lambda_squ_cpp
+double compute_lambda_squ_cpp(const NumericVector& d_i, const IntegerMatrix& halves);
+RcppExport SEXP _SeqExpMatch_compute_lambda_squ_cpp(SEXP d_iSEXP, SEXP halvesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type d_i(d_iSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type halves(halvesSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_lambda_squ_cpp(d_i, halves));
+    return rcpp_result_gen;
+END_RCPP
+}
+// randomization_loop_cpp
+NumericVector randomization_loop_cpp(int nsim_exact_test, Function duplicate_design_fn, Function duplicate_inference_fn, Function run_randomization_iteration_fn, int num_cores);
+RcppExport SEXP _SeqExpMatch_randomization_loop_cpp(SEXP nsim_exact_testSEXP, SEXP duplicate_design_fnSEXP, SEXP duplicate_inference_fnSEXP, SEXP run_randomization_iteration_fnSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< Function >::type duplicate_design_fn(duplicate_design_fnSEXP);
+    Rcpp::traits::input_parameter< Function >::type duplicate_inference_fn(duplicate_inference_fnSEXP);
+    Rcpp::traits::input_parameter< Function >::type run_randomization_iteration_fn(run_randomization_iteration_fnSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(randomization_loop_cpp(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_bootstrapped_weighted_sqd_distances_cpp
 NumericVector compute_bootstrapped_weighted_sqd_distances_cpp(NumericMatrix X_all_scaled_col_subset, NumericVector covariate_weights, int t, int B);
 RcppExport SEXP _SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp(SEXP X_all_scaled_col_subsetSEXP, SEXP covariate_weightsSEXP, SEXP tSEXP, SEXP BSEXP) {
@@ -251,6 +861,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type t(tSEXP);
     Rcpp::traits::input_parameter< int >::type B(BSEXP);
     rcpp_result_gen = Rcpp::wrap(compute_bootstrapped_weighted_sqd_distances_cpp(X_all_scaled_col_subset, covariate_weights, t, B));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sample_mode_cpp
+SEXP sample_mode_cpp(SEXP data);
+RcppExport SEXP _SeqExpMatch_sample_mode_cpp(SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type data(dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(sample_mode_cpp(data));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -273,19 +894,64 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_mean_cpp", (DL_FUNC) &_SeqExpMatch_mean_cpp, 1},
     {"_SeqExpMatch_var_cpp", (DL_FUNC) &_SeqExpMatch_var_cpp, 1},
+    {"_SeqExpMatch_atkinson_assign_weight_cpp", (DL_FUNC) &_SeqExpMatch_atkinson_assign_weight_cpp, 5},
+    {"_SeqExpMatch_atkinson_redraw_batch_cpp", (DL_FUNC) &_SeqExpMatch_atkinson_redraw_batch_cpp, 4},
+    {"_SeqExpMatch_base_bootstrap_loop_cpp", (DL_FUNC) &_SeqExpMatch_base_bootstrap_loop_cpp, 8},
     {"_SeqExpMatch_beta_loglik_cpp", (DL_FUNC) &_SeqExpMatch_beta_loglik_cpp, 4},
     {"_SeqExpMatch_beta_dev_resids_cpp", (DL_FUNC) &_SeqExpMatch_beta_dev_resids_cpp, 4},
     {"_SeqExpMatch_beta_aic_cpp", (DL_FUNC) &_SeqExpMatch_beta_aic_cpp, 4},
+    {"_SeqExpMatch_bisection_ci_loop_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_loop_cpp, 8},
+    {"_SeqExpMatch_bisection_ci_parallel_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_parallel_cpp, 10},
+    {"_SeqExpMatch_bisection_ci_single_bound_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_single_bound_cpp, 9},
+    {"_SeqExpMatch_bootstrap_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_indices_cpp, 2},
+    {"_SeqExpMatch_bootstrap_match_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_match_indices_cpp, 5},
+    {"_SeqExpMatch_match_stats_from_indices_cpp", (DL_FUNC) &_SeqExpMatch_match_stats_from_indices_cpp, 6},
+    {"_SeqExpMatch_compute_all_subject_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_all_subject_data_cpp, 4},
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
+    {"_SeqExpMatch_efron_redraw_cpp", (DL_FUNC) &_SeqExpMatch_efron_redraw_cpp, 3},
+    {"_SeqExpMatch_fast_beta_regression_mle", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_mle, 5},
+    {"_SeqExpMatch_fast_beta_regression_mle_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_mle_with_var_cpp, 5},
+    {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
+    {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 2},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
+    {"_SeqExpMatch_fast_neg_bin_with_censoring_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_censoring_cpp, 6},
+    {"_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp, 6},
     {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
     {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
     {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
     {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},
+    {"_SeqExpMatch_get_survival_stat_for_group", (DL_FUNC) &_SeqExpMatch_get_survival_stat_for_group, 3},
+    {"_SeqExpMatch_get_survival_stat_diff", (DL_FUNC) &_SeqExpMatch_get_survival_stat_diff, 4},
+    {"_SeqExpMatch_get_restricted_mean_se_for_group", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_for_group, 2},
+    {"_SeqExpMatch_get_restricted_mean_se_diff", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_diff, 3},
+    {"_SeqExpMatch_fast_weibull_regression", (DL_FUNC) &_SeqExpMatch_fast_weibull_regression, 3},
+    {"_SeqExpMatch_fast_weibull_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_weibull_regression_with_var_cpp, 3},
+    {"_SeqExpMatch_get_column_types_cpp", (DL_FUNC) &_SeqExpMatch_get_column_types_cpp, 1},
+    {"_SeqExpMatch_columns_have_missingness_cpp", (DL_FUNC) &_SeqExpMatch_columns_have_missingness_cpp, 1},
+    {"_SeqExpMatch_create_missingness_indicators_cpp", (DL_FUNC) &_SeqExpMatch_create_missingness_indicators_cpp, 2},
+    {"_SeqExpMatch_count_unique_values_cpp", (DL_FUNC) &_SeqExpMatch_count_unique_values_cpp, 1},
+    {"_SeqExpMatch_redraw_w_kk14_cpp", (DL_FUNC) &_SeqExpMatch_redraw_w_kk14_cpp, 2},
+    {"_SeqExpMatch_kk21_stepwise_survival_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_survival_weights_cpp, 4},
+    {"_SeqExpMatch_kk21_continuous_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_continuous_weights_cpp, 2},
+    {"_SeqExpMatch_kk21_logistic_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_logistic_weights_cpp, 4},
+    {"_SeqExpMatch_kk21_stepwise_continuous_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_continuous_weights_cpp, 3},
+    {"_SeqExpMatch_kk21_stepwise_logistic_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_logistic_weights_cpp, 3},
+    {"_SeqExpMatch_kk21_beta_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_beta_weights_cpp, 2},
+    {"_SeqExpMatch_kk21_negbin_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_negbin_weights_cpp, 2},
+    {"_SeqExpMatch_kk21_survival_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_survival_weights_cpp, 3},
+    {"_SeqExpMatch_kk21_stepwise_beta_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_beta_weights_cpp, 3},
+    {"_SeqExpMatch_kk21_stepwise_negbin_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_negbin_weights_cpp, 3},
+    {"_SeqExpMatch_kk_bootstrap_loop_cpp", (DL_FUNC) &_SeqExpMatch_kk_bootstrap_loop_cpp, 9},
+    {"_SeqExpMatch_compute_kk_reservoir_stats_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_reservoir_stats_cpp, 3},
     {"_SeqExpMatch_neg_loglik_nb_cpp", (DL_FUNC) &_SeqExpMatch_neg_loglik_nb_cpp, 4},
     {"_SeqExpMatch_match_diffs_cpp", (DL_FUNC) &_SeqExpMatch_match_diffs_cpp, 5},
+    {"_SeqExpMatch_compute_pair_averages_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_averages_cpp, 3},
+    {"_SeqExpMatch_compute_pair_distance_matrix_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_distance_matrix_cpp, 2},
+    {"_SeqExpMatch_compute_lambda_squ_cpp", (DL_FUNC) &_SeqExpMatch_compute_lambda_squ_cpp, 2},
+    {"_SeqExpMatch_randomization_loop_cpp", (DL_FUNC) &_SeqExpMatch_randomization_loop_cpp, 5},
     {"_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
+    {"_SeqExpMatch_sample_mode_cpp", (DL_FUNC) &_SeqExpMatch_sample_mode_cpp, 1},
     {"_SeqExpMatch_which_cols_vary_cpp", (DL_FUNC) &_SeqExpMatch_which_cols_vary_cpp, 1},
     {NULL, NULL, 0}
 };

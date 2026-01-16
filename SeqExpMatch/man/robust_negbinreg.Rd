@@ -2,7 +2,7 @@
 % Please edit documentation in R/helper_functions.R
 \name{robust_negbinreg}
 \alias{robust_negbinreg}
-\title{Robust Beta Regression}
+\title{Robust Negative Binomial Regression}
 \usage{
 robust_negbinreg(form_obj, data_obj)
 }
@@ -12,13 +12,8 @@ robust_negbinreg(form_obj, data_obj)
 \item{data_obj}{The data frame to run Negative Binomial regression on}
 }
 \value{
-The Beta regression model object
-Robust Negative Binomial Regression
-
-Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
-
 The Negative Binomial regression model object
 }
 \description{
-Performs Beta regression that if it fails, keeps dropping one column from the model matrix until it works
+Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
 }

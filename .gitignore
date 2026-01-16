@@ -1,6 +1,8 @@
 cpp_compile.txt
-*.o
-*.dll
+SeqExpMatch/src/*.o
+SeqExpMatch/src/*.dll
+SeqExpMatch/src/*.so
+Rlib/*
 
 # History files
 res/**.*
@@ -45,3 +47,53 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+local_Rprofile
+local_repo/
+package_tests/Rlib/
+benchmark_results.csv
+
+IMPUTATION_OPTIMIZATION.md
+OPTIMIZATION_SUMMARY.md
+REDRAW_OPTIMIZATION.md
+TYPE_CHECKING_OPTIMIZATION.md
+SURVREG_OPTIMIZATION_ANALYSIS.md
+BISECTION_CI_OPTIMIZATION.md
+DOPARALLEL_ELIMINATION_STATUS.md
+DOPARALLEL_ELIMINATION_SUMMARY.md
+FASTLOGISTIC_INTEGRATION.md
+OPENMP_CALLBACK_FIX.md
+OPENMP_THREAD_SAFE_BOOTSTRAP.md
+comprehensive_test_all_optimizations.R
+test_base_bootstrap.R
+test_base_bootstrap_simple.R
+test_beta_compare.R
+test_imputation_optimization.R
+test_redraw_optimization.R
+test_type_checking.R
+test_weibull_init.R
+test_survreg_optimization.R
+benchmark_bisection.R
+benchmark_new_vs_canonical_results.csv
+run_summary.md
+test_assignment.R
+test_assignment2.R
+test_bisection_optimization.R
+test_bisection_simple.R
+test_bootstrap_verbose.R
+test_cpp_bisection.R
+test_debug.R
+test_doparallel_elimination.R
+test_fastlogistic_integration.R
+test_flr_first.R
+test_flr_simple.R
+test_minimal_bootstrap.R
+test_n_value.R
+test_openmp_bootstrap.R
+test_openmp_simple.R
+test_pval_wrapper.R
+test_r6_type.R
+test_thread_safe_bootstrap.R
+test_traceback.R
+test_verbose_bootstrap.R
+test_weibull.cpp

@@ -10,20 +10,20 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-        #' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
-		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 							for \code{test_type = "MLE-or-KM-based"}.
+		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
+		#' 								for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){			
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 		
 		
-		#' Compute confidence interval
-		#'
 		#' @description
+
+		
+		
 		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
 		#' 
 		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
@@ -34,7 +34,8 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' \dontrun{
+		#' seq_des = SeqDesignCRD$new(n = 6)
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -43,8 +44,9 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
-		#' seq_des_inf$compute_confidence_interval()
+		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+		#' seq_des_inf$compute_mle_confidence_interval()
+		#' }
 		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -53,9 +55,10 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		},		
 		
 		
-		#' Compute p-value
-		#'
 		#' @description
+
+		
+		
 		#' Computes a 2-sided p-value
 		#'
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
@@ -63,7 +66,8 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#' @return 	The approximate frequentist p-value
 		#' 
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' \dontrun{
+		#' seq_des = SeqDesignCRD$new(n = 6)
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -72,8 +76,9 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#' 
-		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
-		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
+		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+		#' }
 		#' 				
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
@@ -88,10 +93,10 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 	
 	private = list(		
 		shared = function(){
-			mod = private$generate_mod() #abstract function implemented by daughter classes
-			private$cached_values$beta_hat_T = mod$b[2]			
-			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_2)
-			private$cached_values$is_z = TRUE
-		}	
+			model_output = private$generate_mod() #abstract function implemented by daughter classes. Should return a list with 'coefficients' and 'vcov'.
+			private$cached_values$beta_hat_T = model_output$b[2]
+			private$cached_values$s_beta_hat_T = sqrt(model_output$ssq_b_2)
+			private$cached_values$is_z = TRUE # This remains true for MLE-based inference
+		}
 	)		
 )
