@@ -49,33 +49,15 @@ SeqDesignInferenceIncidUnivLogRegr = R6::R6Class("SeqDesignInferenceIncidUnivLog
 		}
 	),
 	
-	private = list(		
+	private = list(
 		generate_mod = function(){
-			# Construct the full design matrix: Intercept, covariates, and treatment
-			# private$get_X() gives covariates (without intercept). private$w gives treatment.
-			# Rcpp function fast_logistic_regression_cpp expects intercept, so cbind(1, ...)
-			full_X_matrix = cbind(1, private$get_X(), private$w)
-			
-			# Add column names for clarity and easier matching with canonical models
-			colnames(full_X_matrix) <- c("(Intercept)", colnames(private$get_X()), "treatment")
-			
-			# Call the C++ logistic regression
-			logistic_regr_mod = fast_logistic_regression_cpp(full_X_matrix, private$y)
-			
-			# Extract coefficients
-			coefficients = logistic_regr_mod$b
-			names(coefficients) = colnames(full_X_matrix) # Assign names to coefficients
-			
-			# Compute vcov matrix (X'WX)^-1
-			# W is the diagonal matrix of weights 'w' from the logistic_regr_mod
-			XtWX = t(full_X_matrix) %*% diag(logistic_regr_mod$w) %*% full_X_matrix
-			vcov_matrix = solve(XtWX) # Invert to get covariance matrix
-			colnames(vcov_matrix) = rownames(vcov_matrix) = colnames(full_X_matrix)
-			
-			return(list(
-				coefficients = coefficients,
-				vcov = vcov_matrix
-			))
+			# Use the standard design matrix order: Intercept, Treatment, Covariates
+			# This ensures treatment is at index 2 for fast_logistic_regression_with_var_cpp
+			Xmm = cbind(1, private$w)
+			colnames(Xmm) = c("(Intercept)", "treatment")
+
+			# Call C++ function that computes both coefficients and variance
+			fast_logistic_regression_with_var_cpp(Xmm, private$y)
 		}		
 	)		
 )

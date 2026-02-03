@@ -7,7 +7,7 @@
 Inference for mean difference
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound} -> \code{SeqExpMatch::SeqDesignInferenceBaiAdjustedT} -> \code{SeqDesignInferenceBaiAdjustedTKK14}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThroughCompound]{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound}} -> \code{\link[SeqExpMatch:SeqDesignInferenceBaiAdjustedT]{SeqExpMatch::SeqDesignInferenceBaiAdjustedT}} -> \code{SeqDesignInferenceBaiAdjustedTKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{

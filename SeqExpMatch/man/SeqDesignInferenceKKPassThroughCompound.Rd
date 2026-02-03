@@ -7,7 +7,7 @@
 An abstract class
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqDesignInferenceKKPassThroughCompound}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceKKPassThroughCompound}
 }
 \section{Methods}{
 \subsection{Public methods}{

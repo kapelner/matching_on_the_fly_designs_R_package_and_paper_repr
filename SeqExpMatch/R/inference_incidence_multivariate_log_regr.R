@@ -42,13 +42,13 @@ SeqDesignInferenceIncidMultiLogRegr = R6::R6Class("SeqDesignInferenceIncidMultiL
 		#' }
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_logistic_regression(private$create_design_matrix(), private$seq_des_obj_priv_int$y)$b[2]
+			fast_logistic_regression(private$create_design_matrix(), private$y)$b[2]
 		}
 	),
 	
 	private = list(		
 		generate_mod = function(){
-			fast_logistic_regression_with_var(private$create_design_matrix(), private$seq_des_obj_priv_int$y)
+			fast_logistic_regression_with_var(private$create_design_matrix(), private$y)
 		}
 	)		
 )

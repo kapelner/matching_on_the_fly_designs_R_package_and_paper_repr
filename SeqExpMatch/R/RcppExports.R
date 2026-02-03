@@ -13,10 +13,6 @@ eigen_Xt_times_diag_w_times_X_cpp <- function(X, w) {
     .Call(`_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp`, X, w)
 }
 
-fast_ols_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
-}
-
 mean_cpp <- function(x) {
     .Call(`_SeqExpMatch_mean_cpp`, x)
 }
@@ -111,8 +107,8 @@ bootstrap_match_indices_cpp <- function(match_indic, i_reservoir, n_reservoir, m
     .Call(`_SeqExpMatch_bootstrap_match_indices_cpp`, match_indic, i_reservoir, n_reservoir, m, B)
 }
 
-match_stats_from_indices_cpp <- function(y, w, X, match_indic_b, i_b, m) {
-    .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, match_indic_b, i_b, m)
+match_stats_from_indices_cpp <- function(y, w, X, original_match_indic, i_b, m) {
+    .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, original_match_indic, i_b, m)
 }
 
 compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {
@@ -133,28 +129,28 @@ efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
 
 #' Fast Beta Regression using Rcpp and L-BFGS for joint MLE
 #'
-#' @param y Numeric vector of proportions (0 < y < 1).
 #' @param X Model matrix.
+#' @param y Numeric vector of proportions (0 < y < 1).
 #' @param start_beta Optional starting values for beta coefficients.
 #' @param start_phi Optional starting value for phi.
 #' @param compute_std_errs Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).
 #' @return A list with coefficients, phi, and other optimization details.
 #' @export
-fast_beta_regression_mle <- function(y, X, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
-    .Call(`_SeqExpMatch_fast_beta_regression_mle`, y, X, start_beta, start_phi, compute_std_errs)
+fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
+    .Call(`_SeqExpMatch_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
 #' Fast Beta Regression with variance using Rcpp and L-BFGS
 #'
-#' @param y Numeric vector of proportions (0 < y < 1).
 #' @param X Model matrix.
+#' @param y Numeric vector of proportions (0 < y < 1).
 #' @param start_beta Optional starting values for beta coefficients.
 #' @param start_phi Optional starting value for phi.
 #' @param compute_std_errs Logical, whether to compute and return standard errors.
 #' @return A list with coefficients, phi, std_errs, vcov, etc.
 #' @export
-fast_beta_regression_mle_with_var_cpp <- function(y, X, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
-    .Call(`_SeqExpMatch_fast_beta_regression_mle_with_var_cpp`, y, X, start_beta, start_phi, compute_std_errs)
+fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
+    .Call(`_SeqExpMatch_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
@@ -175,22 +171,25 @@ matrix_rank_cpp <- function(A, tol = 1e-12) {
     .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
 }
 
-fast_neg_bin_with_censoring_cpp <- function(X, y, dead, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
-    .Call(`_SeqExpMatch_fast_neg_bin_with_censoring_cpp`, X, y, dead, maxit, eps_f, eps_g)
-}
-
-#' Fast Negative Binomial Regression with censoring and standard deviations using Rcpp and L-BFGS
+#' Fast Negative Binomial Regression with standard deviations using Rcpp and L-BFGS
 #'
 #' @param X Design matrix.
 #' @param y Response vector.
-#' @param dead Censoring indicator (1=event, 0=censored).
 #' @param maxit Maximum iterations.
 #' @param eps_f Convergence tolerance for function value.
 #' @param eps_g Convergence tolerance for gradient.
 #' @return A list with coefficients, theta, log-likelihood, and Hessian.
 #' @export
-fast_neg_bin_with_censoring_with_sd_cpp <- function(X, y, dead, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
-    .Call(`_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp`, X, y, dead, maxit, eps_f, eps_g)
+fast_neg_bin_with_var_cpp <- function(X, y, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+    .Call(`_SeqExpMatch_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g)
+}
+
+fast_neg_bin_cpp <- function(X, y, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+    .Call(`_SeqExpMatch_fast_neg_bin_cpp`, X, y, maxit, eps_f, eps_g)
+}
+
+fast_ols_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
 }
 
 fast_ols_with_var_cpp <- function(X, y, j = 2L) {
@@ -254,28 +253,6 @@ get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_SeqExpMatch_get_restricted_mean_se_diff`, y, dead, w)
 }
 
-#' Fast Weibull Regression using Rcpp and Newton-Raphson
-#'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
-#' @param X Model matrix.
-#' @return A list with coefficients, log(sigma), standard errors, vcov, etc.
-#' @export
-fast_weibull_regression <- function(y, dead, X) {
-    .Call(`_SeqExpMatch_fast_weibull_regression`, y, dead, X)
-}
-
-#' Fast Weibull Regression with variance using Rcpp and Newton-Raphson
-#'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
-#' @param X Model matrix.
-#' @return A list with coefficients, log(sigma), standard errors, vcov, etc.
-#' @export
-fast_weibull_regression_with_var_cpp <- function(y, dead, X) {
-    .Call(`_SeqExpMatch_fast_weibull_regression_with_var_cpp`, y, dead, X)
-}
-
 get_column_types_cpp <- function(df) {
     .Call(`_SeqExpMatch_get_column_types_cpp`, df)
 }
@@ -336,8 +313,8 @@ kk21_stepwise_negbin_weights_cpp <- function(X, y, w) {
     .Call(`_SeqExpMatch_kk21_stepwise_negbin_weights_cpp`, X, y, w)
 }
 
-kk_bootstrap_loop_cpp <- function(indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
-    .Call(`_SeqExpMatch_kk_bootstrap_loop_cpp`, indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
+kk_bootstrap_loop_cpp <- function(indices, y, w, X, original_match_indic, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
+    .Call(`_SeqExpMatch_kk_bootstrap_loop_cpp`, indices, y, w, X, original_match_indic, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
 
 compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {

@@ -42,9 +42,9 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' 	
 		compute_treatment_estimate = function(){	
 			get_survival_stat_diff(
-				private$seq_des_obj_priv_int$y, 
-				private$seq_des_obj_priv_int$dead,
-				private$seq_des_obj_priv_int$w,
+				private$y, 
+				private$dead,
+				private$w,
 				"median"
 			)
 		},
@@ -104,8 +104,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 			assertNumeric(delta)
 
 			if (delta == 0){
-				survival_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)
-				surv_diff = survival::survdiff(survival_obj ~ private$seq_des_obj_priv_int$w)
+				survival_obj = survival::Surv(private$y, private$dead)
+				surv_diff = survival::survdiff(survival_obj ~ private$w)
 				surv_diff$pvalue
 			} else {
 				stop("TO-DO")

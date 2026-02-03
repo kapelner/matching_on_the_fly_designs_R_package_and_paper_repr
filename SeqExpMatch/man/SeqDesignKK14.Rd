@@ -60,7 +60,7 @@ seq_des$get_match_indic()
 
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -13,7 +13,7 @@ List match_stats_from_indices_cpp(
   const NumericVector& y,
   const NumericVector& w,
   const NumericMatrix& X,
-  const IntegerVector& match_indic_b,
+  const IntegerVector& original_match_indic, // Changed name
   const IntegerVector& i_b,
   int m
 );
@@ -24,7 +24,7 @@ NumericVector kk_bootstrap_loop_cpp(
   const NumericVector& y,
   const NumericVector& w,
   const NumericMatrix& X,
-  const IntegerVector& match_indic_b,
+  const IntegerVector& original_match_indic, // Added this argument
   int m,
   Function duplicate_inference_fn,
   Function compute_estimate_fn,
@@ -33,33 +33,35 @@ NumericVector kk_bootstrap_loop_cpp(
   int B = indices.nrow();
   NumericVector estimates(B);
 
-#ifdef _OPENMP
-  if (num_cores > 1) {
-    omp_set_num_threads(num_cores);
-  }
-#endif
+  // Create one inference object for serial execution
+  SEXP thread_inf_obj_sexp = duplicate_inference_fn();
+  bool thread_safe_inf_obj_valid = (thread_inf_obj_sexp != R_NilValue);
 
-#pragma omp parallel if(num_cores > 1)
-  {
-    // Each thread creates its own inference object copy for thread safety
-    // This is only done once per thread, not once per bootstrap iteration
-    SEXP thread_inf_obj = duplicate_inference_fn();
+  // Run serially to avoid R callback issues in OpenMP
+  for (int b = 0; b < B; ++b) {
+    if (!thread_safe_inf_obj_valid) {
+      estimates[b] = NA_REAL;
+      continue; // Skip this iteration if the inference object is invalid
+    }
 
-#pragma omp for schedule(dynamic)
-    for (int b = 0; b < B; ++b) {
-      // Get bootstrap indices for this sample
-      IntegerVector i_b = indices(b, _);
+    // Get bootstrap indices for this sample
+    IntegerVector i_b = indices(b, _);
 
-      // Compute match statistics for this bootstrap sample
-      List kk_stats = match_stats_from_indices_cpp(y, w, X, match_indic_b, i_b, m);
+    // Compute match statistics for this bootstrap sample
+    List kk_stats = match_stats_from_indices_cpp(y, w, X, original_match_indic, i_b, m); // Changed this line
 
-      // Add thread-local inference object to the stats
-      kk_stats["inf_obj"] = thread_inf_obj;
+    // Add thread-local inference object to the stats
+    kk_stats["inf_obj"] = thread_inf_obj_sexp;
+    // Also pass a flag indicating if the inf_obj is valid
+    kk_stats["thread_safe_inf_obj_valid"] = thread_safe_inf_obj_valid;
 
-      // Call R function to compute estimate using these statistics
-      // Each thread uses its own inference object
-      NumericVector result = compute_estimate_fn(kk_stats);
+    // Call R function to compute estimate using these statistics
+    NumericVector result = compute_estimate_fn(kk_stats);
+
+    if (result.length() > 0) {
       estimates[b] = result[0];
+    } else {
+      estimates[b] = NA_REAL; // Handle empty result from R function
     }
   }
 

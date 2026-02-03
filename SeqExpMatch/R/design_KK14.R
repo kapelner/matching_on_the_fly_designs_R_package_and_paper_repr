@@ -228,6 +228,6 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		
 		redraw_w_according_to_design = function(){
 			private$w = redraw_w_kk14_cpp(private$match_indic, private$w)
-		}	
+		}
 	)
 )

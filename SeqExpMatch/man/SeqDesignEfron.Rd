@@ -20,7 +20,7 @@ seq_des = SeqDesignEfron$new(response_type = "continuous")
  
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignEfron}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignEfron}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -1,4 +1,3 @@
-//#include <RcppEigen.h>
 #include "_helper_functions.h"
 using namespace Rcpp;
 
@@ -25,27 +24,18 @@ Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X,
   return X.transpose() * w.asDiagonal() * X;
 }
 
-
-// [[Rcpp::export]]
-List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
-  Eigen::MatrixXd XtX = X.transpose() * X;
-  Eigen::VectorXd Xty = X.transpose() * y;
-
-  // Solve XtX * beta = Xty
-  Eigen::VectorXd beta = XtX.ldlt().solve(Xty);  // LDLT is stable and fast
-
-  return List::create(
-    Named("b") = beta,
-    Named("XtX") = XtX
-  );
-}
-
 // [[Rcpp::export]]
 double mean_cpp(const Eigen::VectorXd& x) {
+  if (x.size() == 0) {
+    return NA_REAL;
+  }
   return x.mean();
 }
 
 // [[Rcpp::export]]
 double var_cpp(const Eigen::VectorXd& x) {
+  if (x.size() <= 1) {
+    return NA_REAL;
+  }
   return (x.array() - x.mean()).square().sum() / (x.size() - 1);
 }

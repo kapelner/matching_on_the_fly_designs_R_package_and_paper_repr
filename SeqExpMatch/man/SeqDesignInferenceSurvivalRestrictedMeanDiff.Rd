@@ -30,7 +30,7 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceSurvivalRestrictedMeanDiff}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceSurvivalRestrictedMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

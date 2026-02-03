@@ -25,7 +25,7 @@ NumericVector base_bootstrap_loop_cpp(
 
   NumericVector estimates(B);
 
-  Rcout << "DEBUG: Entering base_bootstrap_loop_cpp with B = " << B << ", num_cores = " << num_cores << std::endl;
+  //Rcout << "DEBUG: Entering base_bootstrap_loop_cpp with B = " << B << ", num_cores = " << num_cores << std::endl;
 
 // #ifdef _OPENMP
 //   if (num_cores > 1) {
@@ -40,18 +40,18 @@ NumericVector base_bootstrap_loop_cpp(
     try {
       thread_inf_obj_sexp = duplicate_inference_fn();
       if (thread_inf_obj_sexp == R_NilValue) {
-        Rcout << "DEBUG: duplicate_inference_fn returned R_NilValue" << std::endl;
+        //Rcout << "DEBUG: duplicate_inference_fn returned R_NilValue" << std::endl;
       } else if (TYPEOF(thread_inf_obj_sexp) != ENVSXP) {
         // R6 objects are environments (ENVSXP), not S4 objects
-        Rcout << "DEBUG: duplicate_inference_fn returned non-environment object (type " << TYPEOF(thread_inf_obj_sexp) << ")" << std::endl;
+        //Rcout << "DEBUG: duplicate_inference_fn returned non-environment object (type " << TYPEOF(thread_inf_obj_sexp) << ")" << std::endl;
       } else {
-        Rcout << "DEBUG: duplicate_inference_fn returned valid R6 object (environment)" << std::endl;
+        //Rcout << "DEBUG: duplicate_inference_fn returned valid R6 object (environment)" << std::endl;
         inf_obj_valid = true;
       }
     } catch (const Rcpp::exception& e) {
-      Rcout << "DEBUG: Rcpp::exception in duplicate_inference_fn: " << e.what() << std::endl;
+      //Rcout << "DEBUG: Rcpp::exception in duplicate_inference_fn: " << e.what() << std::endl;
     } catch (...) {
-      Rcout << "DEBUG: Unknown exception in duplicate_inference_fn" << std::endl;
+      //Rcout << "DEBUG: Unknown exception in duplicate_inference_fn" << std::endl;
     }
 
     // Use RObject instead of S4 since R6 objects are environments
@@ -114,29 +114,29 @@ NumericVector base_bootstrap_loop_cpp(
 
       NumericVector result;
       try {
-        Rcout << "DEBUG: Calling compute_estimate_fn for b = " << b << std::endl;
+        //Rcout << "DEBUG: Calling compute_estimate_fn for b = " << b << std::endl;
         result = compute_estimate_fn(bootstrap_data);
-        Rcout << "DEBUG: compute_estimate_fn returned, result.length() = " << result.length() << std::endl;
+        //Rcout << "DEBUG: compute_estimate_fn returned, result.length() = " << result.length() << std::endl;
         if (result.length() == 0) {
-            Rcout << "DEBUG: compute_estimate_fn returned empty vector for b = " << b << std::endl;
+            //Rcout << "DEBUG: compute_estimate_fn returned empty vector for b = " << b << std::endl;
             estimates[b] = NA_REAL;
         } else if (result.length() > 1) {
-            Rcout << "DEBUG: compute_estimate_fn returned vector of length > 1 for b = " << b << std::endl;
+            //Rcout << "DEBUG: compute_estimate_fn returned vector of length > 1 for b = " << b << std::endl;
             estimates[b] = result[0]; // Take the first element, or handle as appropriate
         } else {
-            Rcout << "DEBUG: result[0] = " << result[0] << std::endl;
+            //Rcout << "DEBUG: result[0] = " << result[0] << std::endl;
             estimates[b] = result[0];
         }
       } catch (const Rcpp::exception& e) {
-        Rcout << "DEBUG: Rcpp::exception in compute_estimate_fn for b = " << b << ": " << e.what() << std::endl;
+        //Rcout << "DEBUG: Rcpp::exception in compute_estimate_fn for b = " << b << ": " << e.what() << std::endl;
         estimates[b] = NA_REAL;
       } catch (...) {
-        Rcout << "DEBUG: Unknown exception in compute_estimate_fn for b = " << b << std::endl;
+        //Rcout << "DEBUG: Unknown exception in compute_estimate_fn for b = " << b << std::endl;
         estimates[b] = NA_REAL;
       }
     }
   }
 
-  Rcout << "DEBUG: Exiting base_bootstrap_loop_cpp." << std::endl;
+  //Rcout << "DEBUG: Exiting base_bootstrap_loop_cpp." << std::endl;
   return estimates;
 }

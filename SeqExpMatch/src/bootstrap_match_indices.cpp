@@ -57,7 +57,7 @@ List match_stats_from_indices_cpp(
   const NumericVector& y,
   const NumericVector& w,
   const NumericMatrix& X,
-  const IntegerVector& match_indic_b,
+  const IntegerVector& original_match_indic, // Changed name
   const IntegerVector& i_b,
   int m
 ) {
@@ -66,13 +66,13 @@ List match_stats_from_indices_cpp(
   NumericVector y_sample(n_rows);
   NumericVector w_sample(n_rows);
   NumericMatrix X_sample(n_rows, p);
-  IntegerVector match_indic_sample(n_rows);
+  IntegerVector match_indic_sample(n_rows); // This will hold the resampled match_indic
 
   for (int i = 0; i < n_rows; ++i) {
     int idx = i_b[i] - 1;
     y_sample[i] = y[idx];
     w_sample[i] = w[idx];
-    match_indic_sample[i] = match_indic_b[i];
+    match_indic_sample[i] = original_match_indic[idx]; // Corrected resampling
     for (int j = 0; j < p; ++j) {
       X_sample(i, j) = X(idx, j);
     }
@@ -110,8 +110,6 @@ List match_stats_from_indices_cpp(
     else nRC++;
   }
 
-  NumericVector y_matched_diffs = match_data["yTs_matched"];
-  NumericVector y_matched_diffs_combined = y_matched_diffs;
   NumericMatrix X_matched_diffs = match_data["X_matched_diffs"];
   NumericVector yTs_matched = match_data["yTs_matched"];
   NumericVector yCs_matched = match_data["yCs_matched"];

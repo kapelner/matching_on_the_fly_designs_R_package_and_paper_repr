@@ -8,7 +8,7 @@ The methods that support confidence intervals and testing for the mean differenc
 in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable} -> \code{SeqExpMatch::SeqDesignInferenceSurvivalUniWeibullRegr} -> \code{SeqDesignInferenceSurvivalMultiWeibullRegr}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMSummaryTable]{SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable}} -> \code{\link[SeqExpMatch:SeqDesignInferenceSurvivalUniWeibullRegr]{SeqExpMatch::SeqDesignInferenceSurvivalUniWeibullRegr}} -> \code{SeqDesignInferenceSurvivalMultiWeibullRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

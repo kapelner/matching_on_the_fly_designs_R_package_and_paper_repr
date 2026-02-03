@@ -4,9 +4,15 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic,
-                                const NumericVector& w) {
-  int n = w.size();
+NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic, const NumericVector& w) {
+  (void)w; // Unused; kept for ABI consistency with generated RcppExports.
+  int n = match_indic.size();
+  NumericVector w_out(n);
+  double sum_w;
+  double sum_w_reservoir;
+
+  RNGScope scope;
+
   int m = 0;
   for (int i = 0; i < n; ++i) {
     int id = match_indic[i];
@@ -33,39 +39,37 @@ NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic,
       reservoir.push_back(i);
     }
   }
+  int rsize = static_cast<int>(reservoir.size());
 
-  RNGScope scope;
-  NumericVector w_out = clone(w);
-
-  for (int i = 0; i < m; ++i) {
-    if (idx1[i] >= 0 && idx2[i] >= 0) {
-      double u = R::unif_rand();
-      if (u < 0.5) {
-        w_out[idx1[i]] = 0.0;
-        w_out[idx2[i]] = 1.0;
-      } else {
-        w_out[idx1[i]] = 1.0;
-        w_out[idx2[i]] = 0.0;
+  do {
+    for (int i = 0; i < m; ++i) {
+      if (idx1[i] >= 0 && idx2[i] >= 0) {
+        double u = R::unif_rand();
+        if (u < 0.5) {
+          w_out[idx1[i]] = 0.0;
+          w_out[idx2[i]] = 1.0;
+        } else {
+          w_out[idx1[i]] = 1.0;
+          w_out[idx2[i]] = 0.0;
+        }
       }
     }
-  }
 
-  int rsize = static_cast<int>(reservoir.size());
-  if (rsize > 1) {
-    NumericVector vals(rsize);
     for (int i = 0; i < rsize; ++i) {
-      vals[i] = w_out[reservoir[i]];
+        w_out[reservoir[i]] = (R::unif_rand() < 0.5) ? 0.0 : 1.0;
     }
-    for (int i = rsize - 1; i > 0; --i) {
-      int j = static_cast<int>(std::floor(R::unif_rand() * (i + 1)));
-      double tmp = vals[i];
-      vals[i] = vals[j];
-      vals[j] = tmp;
+
+    sum_w = 0;
+    for (int i = 0; i < n; ++i) {
+        sum_w += w_out[i];
     }
+    
+    sum_w_reservoir = 0;
     for (int i = 0; i < rsize; ++i) {
-      w_out[reservoir[i]] = vals[i];
+        sum_w_reservoir += w_out[reservoir[i]];
     }
-  }
+    
+  } while (sum_w == 0 || sum_w == n || (rsize > 1 && (sum_w_reservoir == 0 || sum_w_reservoir == rsize)));
 
   return w_out;
 }

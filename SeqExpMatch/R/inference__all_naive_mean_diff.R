@@ -43,10 +43,10 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' }
 		#' 	
 		compute_treatment_estimate = function(){
-			if (is.null(private$cached_values$beta_hat_T)){	
-				private$cached_values$yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-				private$cached_values$yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
-                
+			if (is.null(private$cached_values$beta_hat_T)){
+				private$cached_values$yTs = private$y[private$w == 1]
+				private$cached_values$yCs = private$y[private$w == 0]
+
                 # Check for empty groups in bootstrap samples
                 if (length(private$cached_values$yTs) == 0 || length(private$cached_values$yCs) == 0) {
                     return(NA_real_) # Return NA if either group is empty

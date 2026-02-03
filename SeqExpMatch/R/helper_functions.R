@@ -272,3 +272,35 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 	class(ans) <- "summary.glm"
 	return(ans)
 }
+
+#' Fast Mean Calculation
+#'
+#' Calculates the mean of a numeric vector using Rcpp for speed.
+#'
+#' @param x A numeric vector.
+#' @return The mean of the vector.
+#' @name mean_cpp
+#' @rdname mean_cpp
+#' @export
+#' @examples
+#' \dontrun{
+#' x <- rnorm(100)
+#' mean_cpp(x)
+#' }
+NULL
+
+#' Fast Variance Calculation
+#'
+#' Calculates the variance of a numeric vector using Rcpp for speed.
+#'
+#' @param x A numeric vector.
+#' @return The variance of the vector.
+#' @name var_cpp
+#' @rdname var_cpp
+#' @export
+#' @examples
+#' \dontrun{
+#' x <- rnorm(100)
+#' var_cpp(x)
+#' }
+NULL

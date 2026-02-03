@@ -44,8 +44,9 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		#' }
 		#' 	
 		compute_treatment_estimate = function(){
-			private$shared() # Ensure the model is fitted and cached values are populated
-			private$cached_values$beta_hat_T
+			full_X_matrix = private$create_design_matrix()
+			mod = lm.fit(full_X_matrix, private$y) #can't beat R's built-in OLS
+			private$cached_values$beta_hat_T = coef(mod)[2]
 		},
 		
 		

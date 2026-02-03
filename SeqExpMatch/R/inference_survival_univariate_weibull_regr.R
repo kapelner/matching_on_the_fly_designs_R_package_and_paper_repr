@@ -40,14 +40,18 @@ SeqDesignInferenceSurvivalUniWeibullRegr = R6::R6Class("SeqDesignInferenceSurviv
 				colnames(full_X_matrix) <- "treatment"
 			}
 			
-			weibull_regr_mod = fast_weibull_regression(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead, as.matrix(full_X_matrix))
+			weibull_regr_mod = fast_weibull_regression(
+				private$y,
+				private$dead,
+				as.matrix(full_X_matrix)
+			)
 			
 			# Explicitly assign names to coefficients returned from C++
 			# The C++ function adds an intercept, so names are (Intercept), then covariates, then treatment.
 			X_names_without_intercept = colnames(full_X_matrix)
 			names(weibull_regr_mod$coefficients) <- c("(Intercept)", X_names_without_intercept)
 
-			if (is.null(weibull_regr_mod$coefficients) || is.null(weibull_regr_mod$vcov)){
+			if (is.null(weibull_regr_mod$coefficients) || is.null(weibull_regr_mod$vcov) || !is.matrix(weibull_regr_mod$vcov)){
 				stop("fast_weibull_regression failed to return valid coefficients or vcov.")
 			}
 			

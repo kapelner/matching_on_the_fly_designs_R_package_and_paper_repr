@@ -110,16 +110,16 @@ public:
 
 //' Fast Beta Regression using Rcpp and L-BFGS for joint MLE
 //'
-//' @param y Numeric vector of proportions (0 < y < 1).
 //' @param X Model matrix.
+//' @param y Numeric vector of proportions (0 < y < 1).
 //' @param start_beta Optional starting values for beta coefficients.
 //' @param start_phi Optional starting value for phi.
 //' @param compute_std_errs Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).
 //' @return A list with coefficients, phi, and other optimization details.
 //' @export
 // [[Rcpp::export]]
-List fast_beta_regression_mle(NumericVector y, 
-                              Eigen::MatrixXd X, 
+List fast_beta_regression_cpp(Eigen::MatrixXd X, 
+                              NumericVector y,                                
                               Nullable<NumericVector> start_beta = R_NilValue,
                               double start_phi = 10.0,
                               bool compute_std_errs = false) {
@@ -159,21 +159,21 @@ List fast_beta_regression_mle(NumericVector y,
 
 //' Fast Beta Regression with variance using Rcpp and L-BFGS
 //'
-//' @param y Numeric vector of proportions (0 < y < 1).
 //' @param X Model matrix.
+//' @param y Numeric vector of proportions (0 < y < 1).
 //' @param start_beta Optional starting values for beta coefficients.
 //' @param start_phi Optional starting value for phi.
 //' @param compute_std_errs Logical, whether to compute and return standard errors.
 //' @return A list with coefficients, phi, std_errs, vcov, etc.
 //' @export
 // [[Rcpp::export]]
-List fast_beta_regression_mle_with_var_cpp(NumericVector y, 
-                                     Eigen::MatrixXd X, 
+List fast_beta_regression_with_var_cpp(Eigen::MatrixXd X,
+                                     NumericVector y,                                       
                                      Nullable<NumericVector> start_beta = R_NilValue,
                                      double start_phi = 10.0,
                                      bool compute_std_errs = true) {
     
-    List fit = fast_beta_regression_mle(y, X, start_beta, start_phi);
+    List fit = fast_beta_regression_cpp(X, y, start_beta, start_phi);
     Eigen::VectorXd params = fit["params"];
     
     Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);

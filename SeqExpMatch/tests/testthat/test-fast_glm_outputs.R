@@ -102,7 +102,7 @@ test_that("fast_neg_bin_with_censoring_with_sd_cpp matches MASS::glm.nb", {
   y <- MASS::rnegbin(n, mu = mu, theta = theta_true)
   dead <- rep(1L, n)
   
-  fast_mod <- SeqExpMatch:::fast_neg_bin_with_censoring_with_sd_cpp(X_int, y, dead)
+  fast_mod <- SeqExpMatch:::fast_neg_bin_with_censoring_with_var_cpp(X_int, y, dead)
   
   # canonical version
   canon_mod <- MASS::glm.nb(y ~ X)

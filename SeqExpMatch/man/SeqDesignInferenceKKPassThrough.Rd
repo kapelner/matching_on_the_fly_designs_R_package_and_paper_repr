@@ -29,7 +29,7 @@ beta_hat_T_bs
 			
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceKKPassThrough}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceKKPassThrough}
 }
 \section{Methods}{
 \subsection{Public methods}{

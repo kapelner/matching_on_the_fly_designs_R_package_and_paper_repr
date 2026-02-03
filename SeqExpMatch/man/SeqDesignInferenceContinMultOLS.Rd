@@ -67,7 +67,7 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 				
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqDesignInferenceContinMultOLS}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceContinMultOLS}
 }
 \section{Methods}{
 \subsection{Public methods}{

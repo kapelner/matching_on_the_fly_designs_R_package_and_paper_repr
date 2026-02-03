@@ -36,19 +36,17 @@ SeqDesignInferencePropUniBetaRegr = R6::R6Class("SeqDesignInferencePropUniBetaRe
 	
 	private = list(		
 		generate_mod = function(){
-			Xmm = cbind(1, private$seq_des_obj_priv_int$w)
+			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
-			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$seq_des_obj_priv_int$y)
+			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
 			
 			# Ensure names are set for shared()
 			names(res$b) = colnames(Xmm)
-			vcov_matrix = matrix(0, 2, 2)
-			vcov_matrix[2, 2] = res$ssq_b_2
-			colnames(vcov_matrix) = rownames(vcov_matrix) = colnames(Xmm)
 			
+			# Return in expected format
 			list(
-				coefficients = res$b,
-				vcov = vcov_matrix
+				b = res$b,
+				ssq_b_2 = res$ssq_b_2
 			)
 		}		
 	)		

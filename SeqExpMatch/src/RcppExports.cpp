@@ -48,18 +48,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_ols_cpp
-List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ols_cpp(SEXP XSEXP, SEXP ySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ols_cpp(X, y));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mean_cpp
 double mean_cpp(const Eigen::VectorXd& x);
 RcppExport SEXP _SeqExpMatch_mean_cpp(SEXP xSEXP) {
@@ -256,18 +244,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // match_stats_from_indices_cpp
-List match_stats_from_indices_cpp(const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& match_indic_b, const IntegerVector& i_b, int m);
-RcppExport SEXP _SeqExpMatch_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP match_indic_bSEXP, SEXP i_bSEXP, SEXP mSEXP) {
+List match_stats_from_indices_cpp(const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& original_match_indic, const IntegerVector& i_b, int m);
+RcppExport SEXP _SeqExpMatch_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_match_indicSEXP, SEXP i_bSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic_b(match_indic_bSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type original_match_indic(original_match_indicSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type i_b(i_bSEXP);
     Rcpp::traits::input_parameter< int >::type m(mSEXP);
-    rcpp_result_gen = Rcpp::wrap(match_stats_from_indices_cpp(y, w, X, match_indic_b, i_b, m));
+    rcpp_result_gen = Rcpp::wrap(match_stats_from_indices_cpp(y, w, X, original_match_indic, i_b, m));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -326,33 +314,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_beta_regression_mle
-List fast_beta_regression_mle(NumericVector y, Eigen::MatrixXd X, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
-RcppExport SEXP _SeqExpMatch_fast_beta_regression_mle(SEXP ySEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+// fast_beta_regression_cpp
+List fast_beta_regression_cpp(Eigen::MatrixXd X, NumericVector y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
+RcppExport SEXP _SeqExpMatch_fast_beta_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_beta(start_betaSEXP);
     Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
     Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_mle(y, X, start_beta, start_phi, compute_std_errs));
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_cpp(X, y, start_beta, start_phi, compute_std_errs));
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_beta_regression_mle_with_var_cpp
-List fast_beta_regression_mle_with_var_cpp(NumericVector y, Eigen::MatrixXd X, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
-RcppExport SEXP _SeqExpMatch_fast_beta_regression_mle_with_var_cpp(SEXP ySEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+// fast_beta_regression_with_var_cpp
+List fast_beta_regression_with_var_cpp(Eigen::MatrixXd X, NumericVector y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
+RcppExport SEXP _SeqExpMatch_fast_beta_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_beta(start_betaSEXP);
     Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
     Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_mle_with_var_cpp(y, X, start_beta, start_phi, compute_std_errs));
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_with_var_cpp(X, y, start_beta, start_phi, compute_std_errs));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -394,35 +382,45 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_neg_bin_with_censoring_cpp
-List fast_neg_bin_with_censoring_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& dead, int maxit, double eps_f, double eps_g);
-RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_censoring_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+// fast_neg_bin_with_var_cpp
+List fast_neg_bin_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, int maxit, double eps_f, double eps_g);
+RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type dead(deadSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_censoring_cpp(X, y, dead, maxit, eps_f, eps_g));
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_var_cpp(X, y, maxit, eps_f, eps_g));
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_neg_bin_with_censoring_with_sd_cpp
-List fast_neg_bin_with_censoring_with_sd_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& dead, int maxit, double eps_f, double eps_g);
-RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+// fast_neg_bin_cpp
+List fast_neg_bin_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, int maxit, double eps_f, double eps_g);
+RcppExport SEXP _SeqExpMatch_fast_neg_bin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type dead(deadSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_censoring_with_sd_cpp(X, y, dead, maxit, eps_f, eps_g));
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_cpp(X, y, maxit, eps_f, eps_g));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ols_cpp
+List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_ols_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ols_cpp(X, y));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -522,32 +520,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(get_restricted_mean_se_diff(y, dead, w));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fast_weibull_regression
-List fast_weibull_regression(NumericVector y, IntegerVector dead, Eigen::MatrixXd X);
-RcppExport SEXP _SeqExpMatch_fast_weibull_regression(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression(y, dead, X));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fast_weibull_regression_with_var_cpp
-List fast_weibull_regression_with_var_cpp(NumericVector y, IntegerVector dead, Eigen::MatrixXd X);
-RcppExport SEXP _SeqExpMatch_fast_weibull_regression_with_var_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression_with_var_cpp(y, dead, X));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -738,8 +710,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // kk_bootstrap_loop_cpp
-NumericVector kk_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& match_indic_b, int m, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
-RcppExport SEXP _SeqExpMatch_kk_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP match_indic_bSEXP, SEXP mSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
+NumericVector kk_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& original_match_indic, int m, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
+RcppExport SEXP _SeqExpMatch_kk_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_match_indicSEXP, SEXP mSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -747,12 +719,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic_b(match_indic_bSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type original_match_indic(original_match_indicSEXP);
     Rcpp::traits::input_parameter< int >::type m(mSEXP);
     Rcpp::traits::input_parameter< Function >::type duplicate_inference_fn(duplicate_inference_fnSEXP);
     Rcpp::traits::input_parameter< Function >::type compute_estimate_fn(compute_estimate_fnSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(kk_bootstrap_loop_cpp(indices, y, w, X, match_indic_b, m, duplicate_inference_fn, compute_estimate_fn, num_cores));
+    rcpp_result_gen = Rcpp::wrap(kk_bootstrap_loop_cpp(indices, y, w, X, original_match_indic, m, duplicate_inference_fn, compute_estimate_fn, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -891,7 +863,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fill_i_b_with_matches_loop_cpp", (DL_FUNC) &_SeqExpMatch_fill_i_b_with_matches_loop_cpp, 4},
     {"_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp", (DL_FUNC) &_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp, 2},
     {"_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp", (DL_FUNC) &_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp, 2},
-    {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_mean_cpp", (DL_FUNC) &_SeqExpMatch_mean_cpp, 1},
     {"_SeqExpMatch_var_cpp", (DL_FUNC) &_SeqExpMatch_var_cpp, 1},
     {"_SeqExpMatch_atkinson_assign_weight_cpp", (DL_FUNC) &_SeqExpMatch_atkinson_assign_weight_cpp, 5},
@@ -910,13 +881,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
     {"_SeqExpMatch_efron_redraw_cpp", (DL_FUNC) &_SeqExpMatch_efron_redraw_cpp, 3},
-    {"_SeqExpMatch_fast_beta_regression_mle", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_mle, 5},
-    {"_SeqExpMatch_fast_beta_regression_mle_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_mle_with_var_cpp, 5},
+    {"_SeqExpMatch_fast_beta_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_cpp, 5},
+    {"_SeqExpMatch_fast_beta_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_with_var_cpp, 5},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
     {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 2},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
-    {"_SeqExpMatch_fast_neg_bin_with_censoring_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_censoring_cpp, 6},
-    {"_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_censoring_with_sd_cpp, 6},
+    {"_SeqExpMatch_fast_neg_bin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_var_cpp, 5},
+    {"_SeqExpMatch_fast_neg_bin_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_cpp, 5},
+    {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
     {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
     {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
@@ -925,8 +897,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_get_survival_stat_diff", (DL_FUNC) &_SeqExpMatch_get_survival_stat_diff, 4},
     {"_SeqExpMatch_get_restricted_mean_se_for_group", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_for_group, 2},
     {"_SeqExpMatch_get_restricted_mean_se_diff", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_diff, 3},
-    {"_SeqExpMatch_fast_weibull_regression", (DL_FUNC) &_SeqExpMatch_fast_weibull_regression, 3},
-    {"_SeqExpMatch_fast_weibull_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_weibull_regression_with_var_cpp, 3},
     {"_SeqExpMatch_get_column_types_cpp", (DL_FUNC) &_SeqExpMatch_get_column_types_cpp, 1},
     {"_SeqExpMatch_columns_have_missingness_cpp", (DL_FUNC) &_SeqExpMatch_columns_have_missingness_cpp, 1},
     {"_SeqExpMatch_create_missingness_indicators_cpp", (DL_FUNC) &_SeqExpMatch_create_missingness_indicators_cpp, 2},

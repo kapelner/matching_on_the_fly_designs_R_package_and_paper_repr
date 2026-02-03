@@ -5,6 +5,9 @@
 
 using namespace Rcpp;
 
+// Forward declarations for functions from RcppExports
+Rcpp::List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j);
+
 // [[Rcpp::export]]
 NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X,
                                           const NumericVector& y) {

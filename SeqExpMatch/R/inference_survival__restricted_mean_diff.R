@@ -50,9 +50,9 @@ SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSu
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$beta_hat_T = get_survival_stat_diff(
-					private$seq_des_obj_priv_int$y,
-					private$seq_des_obj_priv_int$dead,
-					private$seq_des_obj_priv_int$w,
+					private$y,
+					private$dead,
+					private$w,
 					"restricted_mean"
 				)
 			}
@@ -76,6 +76,9 @@ SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSu
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$compute_s_beta_hat_T()
 			}
+			if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0) {
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+			}
 			private$cached_values$is_z = TRUE
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -93,6 +96,9 @@ SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSu
 				if (is.null(private$cached_values$s_beta_hat_T)){
 					private$compute_s_beta_hat_T()
 				}
+				if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0) {
+					return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
+				}
 				z_beta_hat_T = private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T
 				2 * min(stats::pnorm(z_beta_hat_T), 1 - stats::pnorm(z_beta_hat_T))
 			} else {
@@ -103,11 +109,17 @@ SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSu
 
 	private = list(
 		compute_s_beta_hat_T = function(){
-			private$cached_values$s_beta_hat_T = get_restricted_mean_se_diff(
-				private$seq_des_obj_priv_int$y,
-				private$seq_des_obj_priv_int$dead,
-				private$seq_des_obj_priv_int$w
+			se_val = get_restricted_mean_se_diff(
+				private$y,
+				private$dead,
+				private$w
 			)
+			if (is.na(se_val) || se_val <= 0) {
+				warning("Restricted mean SE is non-positive or NA; MLE p-value/CI unavailable.")
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(invisible(NULL))
+			}
+			private$cached_values$s_beta_hat_T = se_val
 		}
 	)
 )

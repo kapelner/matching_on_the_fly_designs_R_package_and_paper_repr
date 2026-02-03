@@ -41,8 +41,8 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 			colnames(vcov_matrix) = rownames(vcov_matrix) = colnames(Xmm)
 			
 			list(
-				coefficients = res$b,
-				vcov = vcov_matrix
+				b = res$b,
+				ssq_b_2 = res$ssq_b_2
 			)
 		}		
 	)		

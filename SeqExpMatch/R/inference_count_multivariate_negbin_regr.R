@@ -1,8 +1,8 @@
-#' Simple Mean Difference Inference based on Maximum Likelihood  
+#' Sequential Design Inference for Count Response Types using Multivariate Negative Binomial Regression
 #'
 #' @description
-#' The methods that support confidence intervals and testing for the mean difference
-#' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+#' The methods that support confidence intervals and testing for
+#' count response Types using Multivariate Negative Binomial Regression
 #' 
 #'
 #' @export

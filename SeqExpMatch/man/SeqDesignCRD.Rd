@@ -18,7 +18,7 @@ seq_des = SeqDesignCRD$new(response_type = "continuous")
  
 }
 \section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignCRD}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{

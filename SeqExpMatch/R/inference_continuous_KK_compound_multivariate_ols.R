@@ -6,7 +6,7 @@
 #' 
 #' @export
 SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLSKK",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInferenceKKPassThroughCompound,
 	public = list(
 		
 		#' @description
@@ -44,8 +44,8 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$shared_for_compute_estimate()
 			}		
-			if (is.null(private$cached_values$beta_hat_T)){ 
-				private$cached_values$beta_hat_T =  if (private$only_matches()){
+			if (is.null(private$cached_values[["beta_hat_T"]])){ 
+				private$cached_values[["beta_hat_T"]] =  if (private$only_matches()){
 														private$cached_values$beta_T_matched
 													} else if (private$only_reservoir()){	 		
 														private$cached_values$beta_T_reservoir
@@ -55,7 +55,7 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 														w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
 													}
 			}
-			private$cached_values$beta_hat_T
+			private$cached_values[["beta_hat_T"]]
 		},
 		
 		
@@ -139,7 +139,7 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		},
 		
 		shared_for_inference = function(){
-			if (is.null(private$cached_values$beta_hat_T)){ 
+			if (is.null(private$cached_values[["beta_hat_T"]])){ 
 				self$compute_treatment_estimate()
 			}
 			ssq_beta_hat_T = 	if (private$only_matches()){

@@ -126,82 +126,69 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'   geom_histogram(aes(x = beta_hat_T_bs))
 		#' }
 		#' 			
-				approximate_bootstrap_distribution_beta_hat_T = function(B = 501){
-					assertCount(B, positive = TRUE)
-					
-					n = private$seq_des_obj$get_n()
-					y = private$seq_des_obj_priv_int$y
-					dead = private$seq_des_obj_priv_int$dead
-					w = private$seq_des_obj_priv_int$w
-					X = private$get_X()
-		
-					duplicate_inference_fn <- function(){
-						# Pass verbose flag to the duplicated object for logging internal to compute_treatment_estimate
-						duplicated_obj = self$duplicate(verbose = private$verbose) 
-                        if (private$verbose) {
-                            cat("        duplicate_inference_fn: returned R6 object\n")
-                        }
-                        duplicated_obj
-					}
-		
-					compute_estimate_from_bootstrap_data <- function(bootstrap_data){
-						if (private$verbose) {
-						  cat("      DEBUG (R): Entering compute_estimate_from_bootstrap_data\n")
-						  cat("      DEBUG (R): bootstrap_data keys:", paste(names(bootstrap_data), collapse = ", "), "\n")
-						}
-						thread_inf_obj = bootstrap_data$inf_obj
-		
-						# Check if thread_inf_obj is NULL before accessing its private members
-						if (is.null(thread_inf_obj)) {
-							if (private$verbose) {
-								cat("      DEBUG (R): thread_inf_obj is NULL. Returning NA_real_.\n")
-							}
-							return(NA_real_)
-						}
+			approximate_bootstrap_distribution_beta_hat_T = function(B = 501){
+				assertCount(B, positive = TRUE)
 
-						thread_inf_obj$.__enclos_env__$private$y = bootstrap_data$y
-						thread_inf_obj$.__enclos_env__$private$dead = bootstrap_data$dead
-						thread_inf_obj$.__enclos_env__$private$X = bootstrap_data$X
-						thread_inf_obj$.__enclos_env__$private$w = bootstrap_data$w
-						thread_inf_obj$.__enclos_env__$private$cached_values = list()
-		
-						result = tryCatch({
-							if (private$verbose) {
-								cat("      DEBUG (R): Calling compute_treatment_estimate() on duplicated object.\n")
-							}
-							thread_inf_obj$compute_treatment_estimate()
+				n = private$seq_des_obj$get_n()
+				y = private$y
+				dead = private$dead
+				w = private$w
+				X = private$get_X()
+
+				# Pure R bootstrap implementation
+				beta_hat_T_bs = rep(NA_real_, B)
+
+				max_resample_attempts = 50
+				for (b in 1:B) {
+					# Generate bootstrap indices (sample with replacement)
+					attempt = 1
+					repeat {
+						i_b = sample(1:n, n, replace = TRUE)
+						w_b = w[i_b]
+						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+							break
+						}
+						attempt = attempt + 1
+						if (attempt > max_resample_attempts) {
+							break
+						}
+					}
+
+					# Create bootstrap sample
+					y_b = y[i_b]
+					dead_b = dead[i_b]
+					X_b = X[i_b, , drop = FALSE]
+
+					# Create a duplicate inference object for this bootstrap sample
+					boot_inf_obj = self$duplicate()
+
+					# Update the bootstrap object with resampled data
+					boot_inf_obj$.__enclos_env__$private$y = y_b
+					boot_inf_obj$.__enclos_env__$private$dead = dead_b
+					boot_inf_obj$.__enclos_env__$private$w = w_b
+					boot_inf_obj$.__enclos_env__$private$X = X_b
+					boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+					# Compute treatment estimate on bootstrap sample
+					if (attempt > max_resample_attempts) {
+						if (private$verbose) {
+							cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
+						}
+						beta_hat_T_bs[b] = NA_real_
+					} else {
+						beta_hat_T_bs[b] = tryCatch({
+							boot_inf_obj$compute_treatment_estimate()
 						}, error = function(e) {
 							if (private$verbose) {
-							  cat("      DEBUG (R): Bootstrap sample compute_treatment_estimate failed (R tryCatch):", e$message, "\n")
+								cat("      Bootstrap sample", b, "failed:", e$message, "\n")
 							}
-							NA_real_ # Return NA for problematic bootstrap samples
+							NA_real_
 						})
-                        if (private$verbose) { # Use the verbose flag of the *original* object
-                            cat("        DEBUG (R): compute_estimate_from_bootstrap_data: returning result:", result, "\n")
-                        }
-						result
 					}
-		
-					if (private$verbose) {
-					  cat("    Starting base_bootstrap_loop_cpp for B =", B, "\n")
-					}
-					indices = bootstrap_indices_cpp(n, B)
-		
-					beta_hat_T_bs = base_bootstrap_loop_cpp(
-						indices,
-						y,
-						dead,
-						X,
-						w,
-						duplicate_inference_fn,
-						compute_estimate_from_bootstrap_data, # Corrected: use the actual function
-						private$num_cores
-					)
-					if (private$verbose) {
-					  cat("    Finished base_bootstrap_loop_cpp.\n")
-					}
-					beta_hat_T_bs		
-				},
+				}
+
+				beta_hat_T_bs
+			},
 				#' @description
 		#' Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
 		#' 
@@ -229,7 +216,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, na.rm = FALSE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertLogical(na.rm)
-			quantile(private$get_or_cache_bootstrap_samples(B), c(alpha / 2, 1 - alpha / 2), na.rm = na.rm)
+			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
+			na_bs = is.na(beta_hat_T_bs)
+			if (!na.rm && any(na_bs)) {
+				warning("Bootstrap samples contain NA; dropping NA values for confidence interval computation.")
+			}
+			beta_hat_T_bs = beta_hat_T_bs[!na_bs]
+			if (length(beta_hat_T_bs) == 0) {
+				return(c(NA_real_, NA_real_))
+			}
+			quantile(beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = TRUE)
 		},
 			
 		#' @description
@@ -261,12 +257,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(delta)
 			assertLogical(na.rm)
 
+			beta_hat_obs = self$compute_treatment_estimate()
+			if (is.na(beta_hat_obs)) return(NA_real_)
 			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
-			
-			2 * min(
-				mean(delta < beta_hat_T_bs, na.rm = na.rm), 
-				mean(delta > beta_hat_T_bs, na.rm = na.rm)
-			)
+			na_bs = is.na(beta_hat_T_bs)
+			if (!na.rm && any(na_bs)) {
+				warning("Bootstrap samples contain NA; dropping NA values for p-value computation.")
+			}
+			beta_hat_T_bs = beta_hat_T_bs[!na_bs]
+			if (length(beta_hat_T_bs) == 0) return(NA_real_)
+
+			# Compute absolute deviation from null
+			t_obs = abs(beta_hat_obs - delta)
+
+			# Two-sided bootstrap p-value:
+			# Proportion of bootstrap samples whose deviation from observed
+			# is as or more extreme than the observed deviation from null
+			mean(abs(beta_hat_T_bs - beta_hat_obs) >= t_obs, na.rm = TRUE)
 		},				
 		
 		#' @description
@@ -280,6 +287,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'								"logit" for logit (your option when response type is proportion). This is mostly an 
 		#'								internal parameter set to something besides "none" when computing randomization confidence intervals
 		#'								for survival and proportion response types. 
+		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
 		#' @return 	A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
 		#' 
 		#' @examples
@@ -298,7 +306,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + 
 		#'   geom_histogram(aes(x = beta_hat_T_diff_ws))
 		#' }
-		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0, transform_responses = "none"){
+		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", show_progress = TRUE){
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 			
@@ -318,6 +326,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (private$seq_des_obj_priv_int$response_type %in% c("count", "incidence")){
 					stop("randomization tests with delta nonzero are not supported for count or incidence response types")
 				}
+				if (private$seq_des_obj_priv_int$response_type == "proportion"){
+					stop("randomization tests with delta nonzero are not supported for proportion response type (values must remain in (0,1))")
+				}
 				# Testing H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 
 				# So adjust treatment responses downward by delta
 				seq_des_template$.__enclos_env__$private$y[private$w == 1] = 
@@ -331,21 +342,41 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			run_randomization_iteration <- function(thread_des_obj, thread_inf_obj){
 				# Redraw treatment assignments
 				thread_des_obj$.__enclos_env__$private$redraw_w_according_to_design()
-				
+
 				# Update inference object with new assignments
 				thread_inf_obj$.__enclos_env__$private$seq_des_obj_priv_int = thread_des_obj$.__enclos_env__$private
+				# Also update the direct private fields that compute_treatment_estimate uses
+				thread_inf_obj$.__enclos_env__$private$y = thread_des_obj$.__enclos_env__$private$y
+				thread_inf_obj$.__enclos_env__$private$w = thread_des_obj$.__enclos_env__$private$w
+				thread_inf_obj$.__enclos_env__$private$dead = thread_des_obj$.__enclos_env__$private$dead
 				thread_inf_obj$.__enclos_env__$private$cached_values = list()
-				
-				# For KK designs, recompute match data
-				if (is_KK && "compute_basic_match_data" %in% names(thread_inf_obj$.__enclos_env__$private)){
+
+				# For KK designs, recompute match data and match statistics (the latter only if necessary)
+				if (is_KK && private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
+				thread_inf_obj$.__enclos_env__$private$match_indic = thread_des_obj$.__enclos_env__$private$match_indic
 					thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-					if ("compute_reservoir_and_match_statistics" %in% names(thread_inf_obj$.__enclos_env__$private)){
+					if (private$object_has_private_method(thread_inf_obj, "compute_reservoir_and_match_statistics")){
 						thread_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
 					}
 				}
-				
+
 				# Compute and return treatment estimate
-				thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference()
+				estimate = thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference()
+				if (is.list(estimate) && "b" %in% names(estimate) && length(estimate$b) > 0) {
+					estimate_val = as.numeric(estimate$b[1]) # Assuming first coef is the effect
+				} else if (is.numeric(estimate) && length(estimate) == 1) {
+					estimate_val = estimate
+				} else {
+					# This should ideally not happen if compute_treatment_estimate_during_randomization_inference
+					# is well-behaved, but for robustness
+					warning("run_randomization_iteration returned unexpected type or length.")
+					return(NA_real_)
+				}
+				if (!is.finite(estimate_val)) {
+					warning("run_randomization_iteration returned non-finite estimate.")
+					return(NA_real_)
+				}
+				estimate_val
 			}
 
 			# Pure R implementation for robustness
@@ -354,8 +385,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			if (private$num_cores == 1) {
 				thread_des_obj = seq_des_template$duplicate()
 				thread_inf_obj = self$duplicate()
-				
-				beta_hat_T_diff_ws = replicate(nsim_exact_test, run_randomization_iteration(thread_des_obj, thread_inf_obj))
+				beta_hat_T_diff_ws = rep(NA_real_, nsim_exact_test)
+				pb = NULL
+				if (isTRUE(show_progress)) {
+					pb = utils::txtProgressBar(min = 0, max = nsim_exact_test, style = 3)
+					on.exit(close(pb), add = TRUE)
+				}
+				for (i in seq_len(nsim_exact_test)) {
+					beta_hat_T_diff_ws[i] = run_randomization_iteration(thread_des_obj, thread_inf_obj)
+					if (!is.null(pb)) {
+						utils::setTxtProgressBar(pb, i)
+					}
+				}
 			} else {
 				# Use parallel backend if more than 1 core requested
 				beta_hat_T_diff_ws = unlist(parallel::mclapply(1:nsim_exact_test, function(i) {
@@ -363,6 +404,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					thread_inf_obj = self$duplicate()
 					run_randomization_iteration(thread_des_obj, thread_inf_obj)
 				}, mc.cores = private$num_cores))
+			}
+			
+			# Explicitly convert to numeric to catch non-numeric elements
+			if (!is.numeric(beta_hat_T_diff_ws)) {
+				if (private$verbose) {
+					cat("        WARNING: beta_hat_T_diff_ws is not numeric (type:", typeof(beta_hat_T_diff_ws), "). Coercing to numeric.\n")
+				}
+				beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			}
 			
 			beta_hat_T_diff_ws
@@ -380,7 +429,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param transform_responses	"none" for no transformation (default), "log" for log and "logit" for logit. This is mostly an 
 		#'								internal parameter set something besides "none" when computing randomization confidence intervals
 		#'								for non-continuous responses.
-		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
+		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.
+		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
 		#' 
 		#' @return 	The approximate frequentist p-value
 		#' 
@@ -399,10 +449,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 		#' }
 		#' 		
-		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = FALSE){
+		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE){
 			assertLogical(na.rm)
 			#approximate the null distribution by computing estimates on many draws of w
-			t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(nsim_exact_test, delta, transform_responses)
+			t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(
+				nsim_exact_test,
+				delta,
+				transform_responses,
+				show_progress = show_progress
+			)
 			#this calculates the actual estimate to compare against the null distribution
 			t = private$compute_treatment_estimate_during_randomization_inference()
 			#finally compute the p-value
@@ -411,18 +466,22 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			  cat("        Randomization Pval - t:", t, "\n")
 			}
 
-			if (na.rm){
-				nsim_exact_test_adjusted = sum(!is.na(t0s))
-			} else {
-				nsim_exact_test_adjusted = length(t0s)
+			# Handle case where t might be a vector or non-finite
+		if (length(t) != 1 || !is.finite(t)) return(NA_real_)
+
+			na_t0s = !is.finite(t0s)
+			if (!na.rm && any(na_t0s)) {
+				warning("Randomization distribution contains NA; dropping NA values for p-value computation.")
 			}
-            
+			nsim_exact_test_adjusted = sum(!na_t0s)
+
             if (nsim_exact_test_adjusted == 0) return(NA_real_) # Avoid division by zero
 
-			2 * min(
-				sum(t0s >= t, na.rm = na.rm) / nsim_exact_test_adjusted, 
-				sum(t0s <= t, na.rm = na.rm) / nsim_exact_test_adjusted
-			)
+			# Two-sided p-value capped at 1
+			min(1, 2 * min(
+				sum(t0s >= t, na.rm = TRUE) / nsim_exact_test_adjusted,
+				sum(t0s <= t, na.rm = TRUE) / nsim_exact_test_adjusted
+			))
 		},
 
 		
@@ -445,6 +504,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
 		#' 								The default is to find a CI accurate to within 0.005.
 		#' 
+		#' @param show_progress		Show a text progress indicator for the bisection p-value span. Ignored for parallel execution.
 		#' @return 	A 1 - alpha sized frequentist confidence interval for the treatment effect
 		#' 
 		#' @examples
@@ -462,36 +522,71 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf$compute_mle_confidence_interval()
 		#' }
 		#' 		
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005){
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+			assertLogical(show_progress)
+			show_progress = isTRUE(show_progress) && private$num_cores == 1
 						
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
-					lower_upper_ci_bounds = self$compute_bootstrap_confidence_interval(alpha / 100, na.rm = TRUE) #ensure a wider CI to be the starting position then pare down				
-					
-					ci = c(
-							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = lower_upper_ci_bounds[1], 
-								u = self$compute_treatment_estimate(), 
-								pval_th = alpha / 2, 
-								tol = pval_epsilon, 
+					# Use a modestly wider bootstrap CI as starting bounds for bisection
+				# Multiply alpha by 2 to get slightly wider bounds (e.g., 90% CI for alpha=0.05)
+				bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+				# Expand the bootstrap CI by 50% on each side to ensure coverage
+				ci_width = bootstrap_ci[2] - bootstrap_ci[1]
+				lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
+					est = self$compute_treatment_estimate()
+
+				# Check for NA bounds from failed bootstrap
+				if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
+					stop("Bootstrap confidence interval returned NA bounds. Cannot compute randomization-based confidence interval.")
+				}
+
+					# Use parallel version if num_cores > 1
+					if (private$num_cores > 1) {
+						ci = private$compute_ci_both_bounds_parallel(
+							nsim_exact_test = nsim_exact_test,
+							l_lower = lower_upper_ci_bounds[1],
+							u_lower = est,
+							l_upper = est,
+							u_upper = lower_upper_ci_bounds[2],
+							pval_th = alpha / 2,
+							tol = pval_epsilon,
+							transform_responses = "none"
+						)
+					} else {
+						# Sequential computation for single-core
+						ci = c(
+							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = lower_upper_ci_bounds[1],
+								u = est,
+								pval_th = alpha / 2,
+								tol = pval_epsilon,
 								transform_responses = "none",
-								lower = TRUE),
-							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = self$compute_treatment_estimate(), 
-								u = lower_upper_ci_bounds[2],  
-								pval_th = alpha / 2, 
-								tol = pval_epsilon, 
-								transform_responses = "none", 
-								lower = FALSE)
-						)					
+								lower = TRUE,
+								show_progress = show_progress),
+							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = est,
+								u = lower_upper_ci_bounds[2],
+								pval_th = alpha / 2,
+								tol = pval_epsilon,
+								transform_responses = "none",
+								lower = FALSE,
+								show_progress = show_progress)
+						)
+					}
 				},
 				incidence =  stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes"),
 				count =      stop("Confidence intervals are not supported for randomization tests for mean difference in count outomes"),
 				proportion = {
-					lower_upper_ci_bounds = self$compute_bootstrap_confidence_interval(alpha / 100, na.rm = TRUE) #ensure a wider CI to be the starting position then pare down
+					# Use a modestly wider bootstrap CI as starting bounds for bisection
+				# Multiply alpha by 2 to get slightly wider bounds (e.g., 90% CI for alpha=0.05)
+				bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+				# Expand the bootstrap CI by 50% on each side to ensure coverage
+				ci_width = bootstrap_ci[2] - bootstrap_ci[1]
+				lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
 					est = self$compute_treatment_estimate()
 					
 					#the bootstrap may give a bound outside of (0,1) which cannot be logitized, so correct it
@@ -513,19 +608,26 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 								pval_th = alpha / 2, 
 								tol = pval_epsilon,
 								transform_responses = "logit", 
-								lower = TRUE),
+								lower = TRUE,
+								show_progress = show_progress),
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
 								l = est_logit, 
 								u = u_logit, 
 								pval_th = alpha / 2, 
 								tol = pval_epsilon, 
 								transform_responses = "logit", 
-								lower = FALSE)
+								lower = FALSE,
+								show_progress = show_progress)
 						)					
 					ci = inv_logit(ci)								
 				},
 				survival =   {
-					lower_upper_ci_bounds = self$compute_bootstrap_confidence_interval(alpha / 100, na.rm = TRUE) #ensure a wider CI to be the starting position then pare down	
+					# Use a modestly wider bootstrap CI as starting bounds for bisection
+				# Multiply alpha by 2 to get slightly wider bounds (e.g., 90% CI for alpha=0.05)
+				bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+				# Expand the bootstrap CI by 50% on each side to ensure coverage
+				ci_width = bootstrap_ci[2] - bootstrap_ci[1]
+				lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)	
 					est = self$compute_treatment_estimate()
 					#the bootstrap may give a negative lower bound which cannot be logged, so correct it
 					if (is.na(lower_upper_ci_bounds[1]) || lower_upper_ci_bounds[1] <= 0){
@@ -543,14 +645,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 								pval_th = alpha / 2, 
 								tol = pval_epsilon,
 								transform_responses = "log", 
-								lower = TRUE),
+								lower = TRUE,
+								show_progress = show_progress),
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
 								l = est_log, 
 								u = u_log, 
 								pval_th = alpha / 2, 
 								tol = pval_epsilon, 
 								transform_responses = "log",
-								lower = FALSE)
+								lower = FALSE,
+								show_progress = show_progress)
 						)
 					#now we return to the natural time unit
 					ci = exp(ci)					
@@ -586,6 +690,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			i$.__enclos_env__$private$p = 										private$p
 			i$.__enclos_env__$private$X = 										private$X
 			i$.__enclos_env__$private$custom_randomization_statistic_function = private$custom_randomization_statistic_function
+			if (!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
+				environment(i$.__enclos_env__$private$custom_randomization_statistic_function) = environment(i$initialize)
+			}
 			i
 		}			
 	),
@@ -607,6 +714,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		custom_randomization_statistic_function = NULL,
 		cached_values = list(),
 		
+	#' @description
+	#' Helper function to check if a private method exists in this object
+	#' @param method_name The name of the method to check
+	#' @return TRUE if the method exists in private, FALSE otherwise
+	has_private_method = function(method_name){
+		method_name %in% names(private)
+	},
+
+	#' @description
+	#' Helper function to check if a private method exists in an R6 object
+	#' @param obj The R6 object to check
+	#' @param method_name The name of the method to check
+	#' @return TRUE if the method exists in the object's private environment, FALSE otherwise
+	object_has_private_method = function(obj, method_name){
+		method_name %in% names(obj$.__enclos_env__$private)
+	},
+
 		compute_treatment_estimate_during_randomization_inference = function(){
 			if (is.null(private$custom_randomization_statistic_function)){ #i.e., the default
 				self$compute_treatment_estimate()
@@ -631,7 +755,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		get_or_cache_bootstrap_samples = function(B){			
 			if (is.null(private$cached_values$beta_hat_T_bs)){
-				private$cached_values$beta_hat_T_bs = self$approximate_bootstrap_distribution_beta_hat_T(B)
+				beta_samples = self$approximate_bootstrap_distribution_beta_hat_T(B)
+				
+				if (!is.numeric(beta_samples)){
+					if (private$verbose) {
+						cat("        ERROR: approximate_bootstrap_distribution_beta_hat_T returned non-numeric. Type:", typeof(beta_samples), "\n")
+					}
+					return(rep(NA_real_, B)) # Return NAs if not numeric
+				}
+				
+				private$cached_values$beta_hat_T_bs = beta_samples
 				if (private$verbose) {
 					cat("        Bootstrap samples summary (B=", B, "): \n")
 					print(summary(private$cached_values$beta_hat_T_bs))
@@ -642,7 +775,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					return (private$cached_values$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
 				} else if (B_0 < B){ 
 					new_samples = self$approximate_bootstrap_distribution_beta_hat_T(B - B_0)
-					private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, new_samples)
+					
+					if (!is.numeric(new_samples)){
+						if (private$verbose) {
+							cat("        ERROR: approximate_bootstrap_distribution_beta_hat_T (for new samples) returned non-numeric. Type:", typeof(new_samples), "\n")
+						}
+						# Pad with NAs if new samples are not numeric
+						new_samples_padded = rep(NA_real_, B - B_0)
+						private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, new_samples_padded)
+					} else {
+						private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, new_samples)
+					}
+
 					if (private$verbose) {
 					    cat("        Bootstrap samples summary (B=", B, ", added", length(new_samples), "): \n")
 					    print(summary(private$cached_values$beta_hat_T_bs))
@@ -674,23 +818,77 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						stats::pt(z_or_t_stats, private$cached_values$df)
 					}
 			2 * min(probs)
-		},			
-		
-		compute_ci_by_inverting_the_randomization_test_iteratively = function(nsim_exact_test, l, u, pval_th, tol, transform_responses, lower){
+		},
+
+		# Parallel computation of both CI bounds using OpenMP
+		compute_ci_both_bounds_parallel = function(nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses){
+			# Create a p-value function wrapper that the C++ code can call
+			# The C++ code will pass 4 arguments: (nsim, delta, trans, cores)
+			# We use ... to ignore the cores parameter since it's handled at a different level
+			pval_fn = function(...) {
+				args = list(...)
+				as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(
+					nsim_exact_test = args[[1]],
+					delta = args[[2]],
+					transform_responses = args[[3]]
+					# args[[4]] is cores, which we ignore here
+				))
+			}
+
+			# Call parallelized C++ function that computes both bounds simultaneously
+			ci_bounds = bisection_ci_parallel_cpp(
+				pval_fn = pval_fn,
+				nsim_exact_test = nsim_exact_test,
+				l_lower = l_lower,
+				u_lower = u_lower,
+				l_upper = l_upper,
+				u_upper = u_upper,
+				pval_th = pval_th,
+				tol = tol,
+				transform_responses = transform_responses,
+				num_cores = private$num_cores
+			)
+
+			return(ci_bounds)
+		},
+
+		compute_ci_by_inverting_the_randomization_test_iteratively = function(nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE){
 			# Pure R bisection loop for robustness with R6 objects and callbacks
-			pval_l = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = l, transform_responses = transform_responses))
-			pval_u = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = u, transform_responses = transform_responses))
+			pval_l = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(
+				nsim_exact_test,
+				delta = l,
+				transform_responses = transform_responses,
+				show_progress = FALSE
+			))
+			pval_u = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(
+				nsim_exact_test,
+				delta = u,
+				transform_responses = transform_responses,
+				show_progress = FALSE
+			))
+			iter = 0
+			progress_label = if (lower) "CI lower" else "CI upper"
 
 			# Bisection loop
 			repeat {
 				# Check convergence
-				if ((abs(u - l)) <= tol || (abs(pval_u - pval_l)) <= tol) {
+				pval_span = abs(pval_u - pval_l)
+				if ((abs(u - l)) <= tol || pval_span <= tol) {
+					if (isTRUE(show_progress)) {
+						cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g) done\n", progress_label, iter, pval_span, tol))
+						utils::flush.console()
+					}
 					return(ifelse(lower, l, u))
 				}
 
 				# Compute midpoint
 				m = (l + u) / 2.0
-				pval_m = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test, delta = m, transform_responses = transform_responses))
+				pval_m = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(
+					nsim_exact_test,
+					delta = m,
+					transform_responses = transform_responses,
+					show_progress = FALSE
+				))
 
 				# Update bounds based on bisection logic
 				if (pval_m >= pval_th && lower) {
@@ -705,6 +903,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				} else { # !lower
 					u = m
 					pval_u = pval_m
+				}
+
+				iter = iter + 1
+				if (isTRUE(show_progress)) {
+					pval_span = abs(pval_u - pval_l)
+					cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g)", progress_label, iter, pval_span, tol))
+					utils::flush.console()
 				}
 			}
 		}

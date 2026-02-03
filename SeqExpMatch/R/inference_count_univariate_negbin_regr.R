@@ -35,7 +35,7 @@ SeqDesignInferenceCountUnivNegBinRegr = R6::R6Class("SeqDesignInferenceCountUniv
 	private = list(		
 		generate_mod = function(){
 			fast_negbin_regression_with_var(
-				Xmm = cbind(1, private$seq_des_obj_priv_int$w), # just Intercept + Treatment
+				Xmm = cbind(1, private$w), # just Intercept + Treatment
 				y = private$y
 			)
 		}		

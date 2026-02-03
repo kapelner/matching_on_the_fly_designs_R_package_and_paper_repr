@@ -42,17 +42,17 @@ SeqDesignInferenceSurvivalMultiCoxPHRegr = R6::R6Class("SeqDesignInferenceSurviv
 		#' }
 		#' 	
 		compute_treatment_estimate = function(){
-			fast_coxph_regression(private$create_design_matrix(), private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)$b[2]
+			private$generate_mod()$b[2]
 		}
 	),
 	
 	private = list(		
 		generate_mod = function(){
-			surv_obj = survival::Surv(private$seq_des_obj_priv_int$y, private$seq_des_obj_priv_int$dead)			
+			surv_obj = survival::Surv(private$y, private$dead)			
 			tryCatch({
-				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ cbind(private$seq_des_obj_priv_int$w, private$get_X())))
+				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ cbind(private$w, private$get_X())))
 				list(
-					b = cbind(0, stats::coef(coxph_mod)),
+					b = c(0, stats::coef(coxph_mod)),
 					ssq_b_2 = stats::coef(summary(coxph_mod))[1, 3]^2
 				)			
 			}, error = function(e){

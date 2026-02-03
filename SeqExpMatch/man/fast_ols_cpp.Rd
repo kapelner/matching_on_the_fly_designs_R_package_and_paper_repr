@@ -2,17 +2,40 @@
 % Please edit documentation in R/glm_fit_helpers.R
 \name{fast_ols_cpp}
 \alias{fast_ols_cpp}
-\title{Fast Ordinary Least Squares Regression}
+\title{Fast Ordinary Least Squares (OLS) Regression (C++ Backend)}
 \arguments{
-\item{X}{A numeric matrix of predictors.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable.}
 }
 \value{
 A list containing the following components:
-\item{b}{A numeric vector of the estimated coefficients.}
-\item{XtX}{The matrix X'X.}
+\describe{
+\item{b}{A numeric vector of the estimated regression coefficients.}
+}
 }
 \description{
-This function performs a fast Ordinary Least Squares (OLS) regression using Eigen.
+This function provides a highly optimized implementation of Ordinary Least Squares (OLS)
+regression using the Eigen C++ library for numerical computations. It is designed for speed
+when only the regression coefficients are needed, without variance-covariance matrices
+or other statistical inference components.
+}
+\examples{
+\dontrun{
+# Generate some sample data
+set.seed(123)
+n <- 100
+p <- 3
+X_mat <- cbind(1, matrix(rnorm(n * (p - 1)), ncol = p - 1)) # X with intercept
+y_vec <- X_mat \%*\% c(1, 0.5, -0.2) + rnorm(n, sd = 0.5)
+
+# Fit OLS using fast_ols_cpp
+fit_ols <- fast_ols_cpp(X = X_mat, y = y_vec)
+print(fit_ols$b)
+
+# Compare with standard R lm()
+lm_fit <- lm(y_vec ~ X_mat - 1) # -1 because X_mat already has intercept
+print(coef(lm_fit))
+}
 }

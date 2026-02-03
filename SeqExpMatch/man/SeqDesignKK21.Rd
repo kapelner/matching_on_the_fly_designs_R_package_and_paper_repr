@@ -20,7 +20,7 @@ seq_des = SeqDesignKK21$new(response_type = "continuous")
  
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqExpMatch::SeqDesignKK14} -> \code{SeqDesignKK21}
+\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{SeqDesignKK21}
 }
 \section{Methods}{
 \subsection{Public methods}{

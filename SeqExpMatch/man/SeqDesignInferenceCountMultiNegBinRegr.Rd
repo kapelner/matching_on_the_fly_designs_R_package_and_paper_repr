@@ -2,13 +2,13 @@
 % Please edit documentation in R/inference_count_multivariate_negbin_regr.R
 \name{SeqDesignInferenceCountMultiNegBinRegr}
 \alias{SeqDesignInferenceCountMultiNegBinRegr}
-\title{Simple Mean Difference Inference based on Maximum Likelihood}
+\title{Sequential Design Inference for Count Response Types using Multivariate Negative Binomial Regression}
 \description{
-The methods that support confidence intervals and testing for the mean difference
-in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+The methods that support confidence intervals and testing for
+count response Types using Multivariate Negative Binomial Regression
 }
 \section{Super classes}{
-\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs} -> \code{SeqExpMatch::SeqDesignInferenceCountUnivNegBinRegr} -> \code{SeqDesignInferenceCountMultiNegBinRegr}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMforGLMs]{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs}} -> \code{\link[SeqExpMatch:SeqDesignInferenceCountUnivNegBinRegr]{SeqExpMatch::SeqDesignInferenceCountUnivNegBinRegr}} -> \code{SeqDesignInferenceCountMultiNegBinRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
