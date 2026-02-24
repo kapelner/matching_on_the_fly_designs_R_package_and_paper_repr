@@ -14,7 +14,16 @@ double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::Matri
 
   Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower|Eigen::Upper> cg;
   cg.compute(M);
+  
+  if (cg.info() != Eigen::Success) {
+    return NA_REAL;
+  }
+  
   Eigen::VectorXd x = cg.solve(b);
+  
+  if (cg.info() != Eigen::Success) {
+    return NA_REAL;
+  }
 
   return x(j - 1);
 }

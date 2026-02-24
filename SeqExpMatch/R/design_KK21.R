@@ -34,11 +34,14 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' 						If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
 		#' 						settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
 		#' @param p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
-		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
+		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is 500.
 		#' @param count_use_speedup 		Should we speed up the estimation of the weights in the response = count case via a continuous regression on log(y + 1).
 		#' 							instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 		#' 							instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param survival_use_speedup_for_no_censoring	Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
+		#' 							instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
+		#' 							This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.
 		#'
 		#' @return 			A new `SeqDesignKK21` object
 		#' 
@@ -59,7 +62,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			p = NULL,
 			num_boot = NULL,
 			count_use_speedup = TRUE,
-			proportion_use_speedup = TRUE
+			proportion_use_speedup = TRUE,
+			survival_use_speedup_for_no_censoring = TRUE
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p)
 			if (is.null(num_boot)){
@@ -69,9 +73,11 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			}
 			private$num_boot = num_boot
 			assertFlag(count_use_speedup)
-			assertFlag(proportion_use_speedup)				
-			private$count_use_speedup = count_use_speedup	
+			assertFlag(proportion_use_speedup)
+			assertFlag(survival_use_speedup_for_no_censoring)
+			private$count_use_speedup = count_use_speedup
 			private$proportion_use_speedup = proportion_use_speedup
+			private$survival_use_speedup_for_no_censoring = survival_use_speedup_for_no_censoring
 			private$uses_covariates = TRUE
 			private$iteration_weights = list()
 		},
@@ -99,6 +105,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		num_boot = NULL,
 		count_use_speedup = NULL,
 		proportion_use_speedup = NULL,
+		survival_use_speedup_for_no_censoring = NULL,
 		
 		duplicate = function(){
 			d = super$duplicate()
@@ -107,6 +114,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			d$.__enclos_env__$private$num_boot = private$num_boot
 			d$.__enclos_env__$private$count_use_speedup = private$count_use_speedup
 			d$.__enclos_env__$private$proportion_use_speedup = private$proportion_use_speedup
+			d$.__enclos_env__$private$survival_use_speedup_for_no_censoring = private$survival_use_speedup_for_no_censoring
 			d
 		},
 		
@@ -140,24 +148,31 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
 						reservoir_indices = which(private$match_indic == 0)
 						weighted_features = colnames(all_subject_data$X_all_with_y_scaled)
-						x_new = all_subject_data$xt_all_scaled[weighted_features]
-						X_all_scaled_col_subset = all_subject_data$X_all_scaled[, weighted_features, drop = FALSE]
-						
+						available_features = colnames(all_subject_data$X_all_scaled)
+						common_weighted_features = intersect(weighted_features, available_features)
+							if (length(common_weighted_features) == 0){
+								private$match_indic[private$t] = 0
+								private$assign_wt_CRD()
+							} else {
+								x_new = all_subject_data$xt_all_scaled[common_weighted_features]
+								X_all_scaled_col_subset = all_subject_data$X_all_scaled[, common_weighted_features, drop = FALSE]
+								covariate_weights_for_distance = private$covariate_weights[common_weighted_features]
+								
 #						weighted_sqd_distances = array(NA, length(reservoir_indices))
 #						for (r in 1 : length(reservoir_indices)){
 #							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ]
 #							weighted_sqd_distances[r] = x_r_x_new_delta^2 %*% private$covariate_weights
 #						}
-						weighted_sqd_distances = compute_weighted_sqd_distances_cpp(
-													x_new,
-												    X_all_scaled_col_subset,
-												    reservoir_indices,
-												    private$covariate_weights
-												 )
-						#3) find minimum weighted sqd distiance index
-						min_weighted_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
-						
-						#generate a cutoff for the weighted minimum distance squared based on bootstrap
+								weighted_sqd_distances = compute_weighted_sqd_distances_cpp(
+														x_new,
+													    X_all_scaled_col_subset,
+													    reservoir_indices,
+													    covariate_weights_for_distance
+													 )
+								#3) find minimum weighted sqd distiance index
+								min_weighted_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
+								
+								#generate a cutoff for the weighted minimum distance squared based on bootstrap
 #						bootstrapped_weighted_sqd_distances = array(NA, private$num_boot)
 #						for (b in 1 : private$num_boot){
 #							two_xs  = X_all_scaled_col_subset[sample.int(private$t, 2), ] #private$X[sample_int_ccrank(private$t, 2, rep(1, (private$t))), ]
@@ -165,31 +180,32 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 #							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% private$covariate_weights
 #						}
 
-						bootstrapped_weighted_sqd_distances = compute_bootstrapped_weighted_sqd_distances_cpp(
-															    X_all_scaled_col_subset,
-															    private$covariate_weights,
-															    private$t,
-															    private$num_boot
-															  )
+								bootstrapped_weighted_sqd_distances = compute_bootstrapped_weighted_sqd_distances_cpp(
+																    X_all_scaled_col_subset,
+																    covariate_weights_for_distance,
+																    private$t,
+																    private$num_boot
+																  )
 
-						min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$compute_lambda())
-						
-						#5) Now, does the minimum make the cut?
-						if (length(weighted_sqd_distances[min_weighted_sqd_dist_index]) > 1 || length(min_weighted_dsqd_cutoff_sq) > 1){
-							min_weighted_sqd_dist_index = min_weighted_sqd_dist_index[1] #if there's a tie, just take the first one
-						}
-						#  (a) if it's smaller than the threshold, we're in business: match it
-						if (weighted_sqd_distances[min_weighted_sqd_dist_index] < min_weighted_dsqd_cutoff_sq){
-							new_match_id = max(private$match_indic, na.rm = TRUE) + 1 #the ID of a new match
-							private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
-							private$match_indic[private$t] = new_match_id
-							#assign opposite
-							1 - private$w[reservoir_indices[min_weighted_sqd_dist_index]]
-						# (b) otherwise, randomize and add it to the reservoir
-						} else { 
-							private$match_indic[private$t] = 0	
-							private$assign_wt_CRD()
-						}
+								min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$compute_lambda())
+								
+								#5) Now, does the minimum make the cut?
+								if (length(weighted_sqd_distances[min_weighted_sqd_dist_index]) > 1 || length(min_weighted_dsqd_cutoff_sq) > 1){
+									min_weighted_sqd_dist_index = min_weighted_sqd_dist_index[1] #if there's a tie, just take the first one
+								}
+								#  (a) if it's smaller than the threshold, we're in business: match it
+								if (weighted_sqd_distances[min_weighted_sqd_dist_index] < min_weighted_dsqd_cutoff_sq){
+									new_match_id = max(private$match_indic, na.rm = TRUE) + 1 #the ID of a new match
+									private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
+									private$match_indic[private$t] = new_match_id
+									#assign opposite
+									1 - private$w[reservoir_indices[min_weighted_sqd_dist_index]]
+								# (b) otherwise, randomize and add it to the reservoir
+								} else { 
+									private$match_indic[private$t] = 0	
+									private$assign_wt_CRD()
+								}
+							}
 					}
 			if (is.na(private$match_indic[private$t])){ #this should never happen
 				stop("no match data recorded")
@@ -218,6 +234,9 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 				return(kk21_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys / (1 - ys)))))
 			}
 			if (private$response_type == "survival"){
+				if (private$survival_use_speedup_for_no_censoring && all(deads == 1)){
+					return(kk21_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys))))
+				}
 				return(kk21_survival_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(deads)))
 			}
 			if (private$response_type == "count" && !private$count_use_speedup){

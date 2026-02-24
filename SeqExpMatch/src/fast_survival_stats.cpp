@@ -143,6 +143,14 @@ double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector
 
 //' Calculates the standard error of the restricted mean survival time for a single group.
 //'
+//' Uses the standard variance formula (Uno et al.):
+//'   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
+//' where A(t_j) = integral_{t_j}^{tau} S(u) du is the remaining area under the KM
+//' curve from event time t_j to the last observation tau, d_j is the number of events
+//' at t_j, and n_j is the number at risk just before t_j.
+//' Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
+//' contribution is 0 in the limit regardless of the undefined Greenwood denominator.
+//'
 //' @param y Numeric vector of survival times.
 //' @param dead Integer vector of event indicators (1=event, 0=censored).
 //' @return The standard error of the restricted mean.
@@ -150,66 +158,59 @@ double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector
 // [[Rcpp::export]]
 double get_restricted_mean_se_for_group(NumericVector y, IntegerVector dead) {
     int n = y.size();
-    if (n == 0) {
-        return NA_REAL;
-    }
+    if (n == 0) return NA_REAL;
 
-    struct Subject {
-        double time;
-        int status;
-    };
-
+    struct Subject { double time; int status; };
     std::vector<Subject> subjects(n);
-    for (int i = 0; i < n; ++i) {
-        subjects[i] = {y[i], dead[i]};
-    }
-
+    for (int i = 0; i < n; ++i) subjects[i] = {y[i], dead[i]};
     std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
         return a.time < b.time;
     });
 
-    std::vector<double> unique_times;
-    std::vector<double> greenwood_var_sum_terms;
+    double tau = subjects.back().time;
 
-    unique_times.push_back(0.0);
-    greenwood_var_sum_terms.push_back(0.0);
-
+    // Build KM event table: one entry per unique event time
+    struct EventInfo { double time; double S_after; int n_j; int d_j; };
+    std::vector<EventInfo> events;
+    double S = 1.0;
     for (int i = 0; i < n; ) {
-        double current_time = subjects[i].time;
-        int at_risk_at_time = n - i;
-        int event_count_at_time = 0;
-        
+        double t = subjects[i].time;
+        int n_at_risk = n - i;
+        int d = 0;
         int j = i;
-        while (j < n && subjects[j].time == current_time) {
-            if (subjects[j].status == 1) {
-                event_count_at_time++;
-            }
+        while (j < n && subjects[j].time == t) {
+            if (subjects[j].status == 1) d++;
             j++;
         }
-        
-        if (event_count_at_time > 0 && at_risk_at_time - event_count_at_time > 0) {
-            double last_sum = greenwood_var_sum_terms.back();
-            greenwood_var_sum_terms.push_back(last_sum + (double)event_count_at_time / (at_risk_at_time * (at_risk_at_time - event_count_at_time)));
-            unique_times.push_back(current_time);
+        if (d > 0) {
+            S *= (1.0 - (double)d / n_at_risk);
+            events.push_back({t, S, n_at_risk, d});
         }
-        
         i = j;
     }
 
-    // now we have the greenwood variance of S(t) at each unique time
-    // we need to integrate it. The variance is a step function, so we can just sum up the areas of the rectangles
-    double rmst_var = 0;
-    
-    // this is a simplified version of the integral of the variance of the survival function
-    // as proposed by an internet stranger from a university and seems to work in practice
-    // this is equivalent to survRM2:::rmst2.R line 186 which is the area under the curve of the variance function
-    // which is a step-function
-    for (size_t i = 1; i < unique_times.size(); ++i) {
-      double time_diff = unique_times[i] - unique_times[i-1];
-      NumericVector km_area_var_contribs = pow(get_survival_stat_for_group(y, dead, "restricted_mean") - unique_times[i-1], 2.0) * greenwood_var_sum_terms[i];
-      rmst_var += sum(km_area_var_contribs);
+    int K = (int)events.size();
+    if (K == 0) return 0.0;  // no events: RMST equals tau with zero variance
+
+    // Compute A(t_j) = integral_{t_j}^{tau} S(u) du via suffix sums.
+    // S(u) = events[k].S_after for u in [events[k].time, events[k+1].time);
+    // the final interval extends to tau.
+    std::vector<double> A(K);
+    A[K - 1] = events[K - 1].S_after * (tau - events[K - 1].time);
+    for (int k = K - 2; k >= 0; --k) {
+        A[k] = A[k + 1] + events[k].S_after * (events[k + 1].time - events[k].time);
     }
-    
+
+    // Var(RMST) = sum_j A(t_j)^2 * d_j / (n_j * (n_j - d_j)), skipping n_j == d_j
+    double rmst_var = 0.0;
+    for (int k = 0; k < K; ++k) {
+        int nj = events[k].n_j;
+        int dj = events[k].d_j;
+        if (nj > dj) {
+            rmst_var += A[k] * A[k] * (double)dj / ((double)nj * (nj - dj));
+        }
+    }
+
     return sqrt(rmst_var);
 }
 

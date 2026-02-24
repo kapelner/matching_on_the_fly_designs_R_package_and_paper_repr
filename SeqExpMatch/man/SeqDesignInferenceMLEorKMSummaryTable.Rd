@@ -36,6 +36,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferenceMLEorKMSummaryTable-new}{\code{SeqDesignInferenceMLEorKMSummaryTable$new()}}
 \item \href{#method-SeqDesignInferenceMLEorKMSummaryTable-compute_treatment_estimate}{\code{SeqDesignInferenceMLEorKMSummaryTable$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_confidence_interval}{\code{SeqDesignInferenceMLEorKMSummaryTable$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceMLEorKMSummaryTable$compute_mle_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceMLEorKMSummaryTable-clone}{\code{SeqDesignInferenceMLEorKMSummaryTable$clone()}}
 }
 }
@@ -113,6 +115,50 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMSummaryTable$compute_mle_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceMLEorKMSummaryTable-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Computes a 2-sided p-value
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceMLEorKMSummaryTable$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceMLEorKMSummaryTable-clone"></a>}}

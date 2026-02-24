@@ -26,7 +26,7 @@ seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
 beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
 beta_hat_T_bs
 }
-			
+
 }
 \section{Super class}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceKKPassThrough}
@@ -115,7 +115,7 @@ seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
 beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
 beta_hat_T_bs
 }
-			
+
 }
 \if{html}{\out{</div>}}
 

@@ -40,23 +40,28 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
-		compute_treatment_estimate = function(){			
-			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
-				private$shared_for_compute_estimate()
-			}		
-			if (is.null(private$cached_values[["beta_hat_T"]])){ 
-				private$cached_values[["beta_hat_T"]] =  if (private$only_matches()){
-														private$cached_values$beta_T_matched
-													} else if (private$only_reservoir()){	 		
-														private$cached_values$beta_T_reservoir
-													} else {
-														w_star = private$cached_values$ssq_beta_T_reservoir / 
-																	(private$cached_values$ssq_beta_T_reservoir + private$cached_values$ssq_beta_T_matched)	
-														w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
-													}
-			}
-			private$cached_values[["beta_hat_T"]]
-		},
+			compute_treatment_estimate = function(){			
+				if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
+					private$shared_for_compute_estimate()
+				}		
+				if (is.null(private$cached_values[["beta_hat_T"]])){ 
+					beta_hat_T = if (private$only_matches()){
+															private$cached_values$beta_T_matched
+														} else if (private$only_reservoir()){	 		
+															private$cached_values$beta_T_reservoir
+														} else {
+															w_star = private$cached_values$ssq_beta_T_reservoir / 
+																		(private$cached_values$ssq_beta_T_reservoir + private$cached_values$ssq_beta_T_matched)	
+															w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
+														}
+					# Avoid floating-point residue when the estimate is mathematically zero.
+					if (is.finite(beta_hat_T) && abs(beta_hat_T) < sqrt(.Machine$double.eps)){
+						beta_hat_T = 0
+					}
+					private$cached_values[["beta_hat_T"]] = beta_hat_T
+				}
+				private$cached_values[["beta_hat_T"]]
+			},
 		
 		
 		
@@ -164,15 +169,15 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		
 		ols_for_matched_pairs = function(){
 			# stats::coef(summary(lm(private$cached_values$KKstats$y_matched_diffs ~ private$cached_values$KKstats$X_matched_diffs)))
-			mod = fast_ols_with_var_cpp(private$cached_values$KKstats$X_matched_diffs, private$cached_values$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
+			mod = fast_ols_with_var_cpp(cbind(1, private$cached_values$KKstats$X_matched_diffs), private$cached_values$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
 			private$cached_values$beta_T_matched =     mod$b[1]
 			private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
 		},
-		
+
 		ols_for_reservoir = function(){
 			# stats::coef(summary(lm(private$cached_values$KKstats$y_reservoir ~ cbind(private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir))))
-			mod = fast_ols_with_var_cpp(cbind(private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir), private$cached_values$KKstats$y_reservoir)
-			private$cached_values$beta_T_reservoir =     mod$b[1]
+			mod = fast_ols_with_var_cpp(cbind(1, private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir), private$cached_values$KKstats$y_reservoir)
+			private$cached_values$beta_T_reservoir =     mod$b[2]
 			private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j
 		}
 	)		

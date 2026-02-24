@@ -59,10 +59,10 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des)
 beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + 
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) +
   geom_histogram(aes(x = beta_hat_T_bs))
 }
-			
+
 
 ## ------------------------------------------------
 ## Method `SeqDesignInference$compute_bootstrap_confidence_interval`
@@ -262,13 +262,23 @@ seq_des_inf$set_custom_randomization_statistic_function(function(){
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
 Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T(B = 501)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  max_resample_attempts = 50
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{B}}{Number of bootstrap samples. The default is 501.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times to redraw a bootstrap sample that fails
+validity checks (both treatment arms present; for censored responses,
+each arm must also contain at least one observed event and all survival
+times must be strictly positive to avoid numerical underflow in the
+Weibull log-likelihood). If all attempts are exhausted the sample is
+recorded as \code{NA}. The default is 50.}
 }
 \if{html}{\out{</div>}}
 }
@@ -289,10 +299,10 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInference$new(seq_des)
 beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + 
+ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) +
   geom_histogram(aes(x = beta_hat_T_bs))
 }
-			
+
 }
 \if{html}{\out{</div>}}
 
@@ -409,7 +419,8 @@ there will be a distribution of the estimates of the treatment effect (over many
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null(
   nsim_exact_test = 501,
   delta = 0,
-  transform_responses = "none"
+  transform_responses = "none",
+  show_progress = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -424,6 +435,8 @@ there will be a distribution of the estimates of the treatment effect (over many
 "logit" for logit (your option when response type is proportion). This is mostly an 
 internal parameter set to something besides "none" when computing randomization confidence intervals
 for survival and proportion response types.}
+
+\item{\code{show_progress}}{Show a text progress bar when running in serial. Ignored for parallel execution.}
 }
 \if{html}{\out{</div>}}
 }
@@ -466,7 +479,8 @@ the treatment different adjusted linearly for the p covariates.
   nsim_exact_test = 501,
   delta = 0,
   transform_responses = "none",
-  na.rm = FALSE
+  na.rm = TRUE,
+  show_progress = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -482,7 +496,9 @@ is not "randomization-exact"). The default is 501 providing pvalue resolution to
 internal parameter set something besides "none" when computing randomization confidence intervals
 for non-continuous responses.}
 
-\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.}
+\item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.}
+
+\item{\code{show_progress}}{Show a text progress bar when running in serial. Ignored for parallel execution.}
 }
 \if{html}{\out{</div>}}
 }
@@ -530,7 +546,8 @@ return to natural time when finished) and proportion (where we work in logit-rat
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
   alpha = 0.05,
   nsim_exact_test = 501,
-  pval_epsilon = 0.005
+  pval_epsilon = 0.005,
+  show_progress = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -544,6 +561,8 @@ The default is 1000 providing good resolutions to confidence intervals.}
 
 \item{\code{pval_epsilon}}{The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
 The default is to find a CI accurate to within 0.005.}
+
+\item{\code{show_progress}}{Show a text progress indicator for the bisection p-value span. Ignored for parallel execution.}
 }
 \if{html}{\out{</div>}}
 }

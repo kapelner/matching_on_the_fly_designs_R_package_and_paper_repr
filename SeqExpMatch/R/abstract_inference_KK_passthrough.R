@@ -159,18 +159,13 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 			y_matched_diffs = array(NA, m)
 			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 			if (m > 0){
-#				for (match_id in 1 : m){ #we want to just calculate the diffs inside matches and ignore the reservoir
-#					yTs_matched[match_id] = y[w == 1 & match_indic == match_id]
-#					yCs_matched[match_id] = y[w == 0 & match_indic == match_id]
-#
-#					xmTvec = private$X[w == 1 & match_indic == match_id, ]
-#					xmCvec = private$X[w == 0 & match_indic == match_id, ]
-#					X_matched_diffs[match_id, ] = xmTvec - xmCvec
-#				}
 				match_data = match_diffs_cpp(w, match_indic, y, private$X, m)
 				yTs_matched = match_data$yTs_matched
 				yCs_matched = match_data$yCs_matched
 				X_matched_diffs = match_data$X_matched_diffs
+				#drop columns that are all zero to avoid rank deficiency in multivariate regression                             
+        nonzero_cols = apply(X_matched_diffs, 2, function(col) any(col != 0))                                           
+        X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE] 				
 				y_matched_diffs = yTs_matched - yCs_matched
 			}
 			w_reservoir = w[match_indic == 0]

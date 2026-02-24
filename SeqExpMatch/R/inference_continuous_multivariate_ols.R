@@ -121,7 +121,7 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 			full_X_matrix = private$create_design_matrix()
 			colnames(full_X_matrix) <- c("(Intercept)", "treatment", colnames(private$get_X()))
 			
-			mod = fast_ols_with_var_cpp(full_X_matrix, private$seq_des_obj_priv_int$y)
+			mod = fast_ols_with_var_cpp(full_X_matrix, private$y)
 			private$cached_values$beta_hat_T = mod$b[2]			
 			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
 			private$cached_values$is_z = FALSE 

@@ -43,7 +43,8 @@ Imports:
     missForest,
     nbpMatching,
     methods,
-    MASS
+    MASS,
+    bclogit
 Suggests:
     doParallel,
     testthat
@@ -76,6 +77,7 @@ Collate:
     'inference_continuous_KK_compound_multivariate_ols.R'
     'inference_incidence_univariate_log_regr.R'
     'inference_incidence_multivariate_log_regr.R'
+    'inference_incidence_KK_clogit.R'
     'inference_count_univariate_negbin_regr.R'
     'inference_count_multivariate_negbin_regr.R'
     'inference_proportion_univariate_beta_regr.R'

@@ -83,7 +83,10 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 			# Construct summary table (as expected by this class)
 			full_coefficients = model_output$coefficients
 			full_vcov = model_output$vcov
-			full_std_errs = sqrt(diag(full_vcov))
+			
+			diag_vcov = diag(full_vcov)
+			# Ensure we don't take sqrt of negative numbers
+			full_std_errs = ifelse(diag_vcov > 0, sqrt(diag_vcov), NA_real_)
 			
 			summary_table = matrix(NA, nrow = length(full_coefficients), ncol = 4)
 			rownames(summary_table) = names(full_coefficients)
@@ -107,7 +110,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 				treatment_coef_name = names(full_coefficients)[length(full_coefficients)]
 			}
 			private$cached_values$beta_hat_T = full_coefficients[treatment_coef_name]
-			private$cached_values$s_beta_hat_T = sqrt(full_vcov[treatment_coef_name, treatment_coef_name])
+			private$cached_values$s_beta_hat_T = full_std_errs[treatment_coef_name]
 			private$cached_values$is_z = TRUE
 		}
 	)		

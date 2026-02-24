@@ -93,9 +93,15 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 	
 	private = list(		
 		shared = function(){
-			model_output = private$generate_mod() #abstract function implemented by daughter classes. Should return a list with 'coefficients' and 'vcov'.
+			model_output = private$generate_mod() #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.
 			private$cached_values$beta_hat_T = model_output$b[2]
-			private$cached_values$s_beta_hat_T = sqrt(model_output$ssq_b_2)
+			
+			ssq = model_output$ssq_b_2
+			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
+				private$cached_values$s_beta_hat_T = sqrt(ssq)
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
 			private$cached_values$is_z = TRUE # This remains true for MLE-based inference
 		}
 	)		

@@ -23,6 +23,45 @@ inv_logit = function(x){
 	1 / (1 + exp(-x))
 }
 
+drop_linearly_dependent_cols = function(M){
+	M = as.matrix(M)
+	js = seq_len(ncol(M))
+	if (ncol(M) > 0){
+		rank = matrix_rank_cpp(M)
+		if (rank != ncol(M)){
+			qrX = qr(M)
+			js = qrX$pivot[seq_len(qrX$rank)]
+			M = M[, js, drop = FALSE]
+		}
+	}
+	list(M = M, js = js)
+}
+
+drop_highly_correlated_cols = function(M, threshold = 0.99){
+	M = as.matrix(M)
+	js = seq_len(ncol(M))
+	if (ncol(M) <= 1) return(list(M = M, js = js))
+	# Drop zero-variance (constant) columns first so they don't produce NA
+	# correlations that could accidentally flag the treatment column for removal
+	const_cols = which(apply(M, 2, var) == 0)
+	if (length(const_cols) > 0) {
+		M = M[, -const_cols, drop = FALSE]
+		js = js[-const_cols]
+		if (ncol(M) <= 1) return(list(M = M, js = js))
+	}
+	repeat {
+		R = suppressWarnings(stats::cor(M))
+		pairs = which(abs(R) > threshold, arr.ind = TRUE)
+		pairs = pairs[pairs[, 1] < pairs[, 2], , drop = FALSE]
+		if (nrow(pairs) == 0) break
+		j_kill = unique(pairs[, 2])
+		M = M[, -j_kill, drop = FALSE]
+		js = js[-j_kill]
+		if (ncol(M) <= 1) break
+	}
+	list(M = M, js = js)
+}
+
 assertResponseType = function(response_type, needed_response_type){
 	if (response_type != needed_response_type){
 		stop("This type of inference is only available for ", needed_response_type, " responses.")
@@ -67,25 +106,7 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	X_mat = as.matrix(cov_matrix_or_vector)
 	
 	# Eliminate columns that may be causing multicollinearity before attempting model fit
-	if (ncol(X_mat) > 1){
-		repeat {
-			# Use a slightly lower threshold for better robustness
-			R = suppressWarnings(stats::cor(X_mat))
-			R[is.na(R)] = 1 # Treat constant columns as collinear
-
-			pairs_to_eliminate_one_of = which(abs(R) > .99, arr.ind = TRUE)
-			# Filter out diagonal
-			pairs_to_eliminate_one_of = pairs_to_eliminate_one_of[pairs_to_eliminate_one_of[,1] < pairs_to_eliminate_one_of[,2], , drop=FALSE]
-
-			if (nrow(pairs_to_eliminate_one_of) == 0){
-				break
-			}
-			# Drop one from each pair, prefer higher index
-			j_kill = unique(pairs_to_eliminate_one_of[, 2])
-			X_mat = X_mat[, -j_kill, drop = FALSE]
-			if (ncol(X_mat) <= 1) break
-		}
-	}
+	X_mat = drop_highly_correlated_cols(X_mat)$M
 	
 	cov_matrix_or_vector_data_frame = data.frame(X_mat)
 	

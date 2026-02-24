@@ -104,11 +104,17 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		
 		#' @description
 		#' Creates the boostrap distribution of the estimate for the treatment effect
-		#' 
+		#'
 		#' @param B						Number of bootstrap samples. The default is 501.
-		#' 
+		#' @param max_resample_attempts	Maximum number of times to redraw a bootstrap sample that fails
+		#' 								validity checks (both treatment arms present; for censored responses,
+		#' 								each arm must also contain at least one observed event and all survival
+		#' 								times must be strictly positive to avoid numerical underflow in the
+		#' 								Weibull log-likelihood). If all attempts are exhausted the sample is
+		#' 								recorded as \code{NA}. The default is 50.
+		#'
 		#' @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
-		#' 
+		#'
 		#' @examples
 		#' \dontrun{
 		#' seq_des = SeqDesignCRD$new(n = 6)
@@ -119,15 +125,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
+		#'
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-		#' ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) + 
+		#' ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) +
 		#'   geom_histogram(aes(x = beta_hat_T_bs))
 		#' }
-		#' 			
-			approximate_bootstrap_distribution_beta_hat_T = function(B = 501){
+		#'
+			approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
 				assertCount(B, positive = TRUE)
+				assertCount(max_resample_attempts, positive = TRUE)
 
 				n = private$seq_des_obj$get_n()
 				y = private$y
@@ -138,20 +145,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				# Pure R bootstrap implementation
 				beta_hat_T_bs = rep(NA_real_, B)
 
-				max_resample_attempts = 50
 				for (b in 1:B) {
 					# Generate bootstrap indices (sample with replacement)
 					attempt = 1
 					repeat {
-						i_b = sample(1:n, n, replace = TRUE)
+						i_b = sample_int_replace_cpp(n, n)
 						w_b = w[i_b]
 						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
-							break
+							if (!private$any_censoring) break
+							dead_b_temp = dead[i_b]
+							if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
+								min(y[i_b]) > 0) break
 						}
 						attempt = attempt + 1
-						if (attempt > max_resample_attempts) {
-							break
-						}
+						if (attempt > max_resample_attempts) break
 					}
 
 					# Create bootstrap sample
@@ -217,9 +224,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertLogical(na.rm)
 			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
-			na_bs = is.na(beta_hat_T_bs)
+			na_bs = !is.finite(beta_hat_T_bs)
 			if (!na.rm && any(na_bs)) {
-				warning("Bootstrap samples contain NA; dropping NA values for confidence interval computation.")
+				warning("Bootstrap samples contain NA/NaN/Inf; dropping non-finite values for confidence interval computation.")
 			}
 			beta_hat_T_bs = beta_hat_T_bs[!na_bs]
 			if (length(beta_hat_T_bs) == 0) {
@@ -260,20 +267,22 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			beta_hat_obs = self$compute_treatment_estimate()
 			if (is.na(beta_hat_obs)) return(NA_real_)
 			beta_hat_T_bs = private$get_or_cache_bootstrap_samples(B)
-			na_bs = is.na(beta_hat_T_bs)
+			na_bs = !is.finite(beta_hat_T_bs)
 			if (!na.rm && any(na_bs)) {
-				warning("Bootstrap samples contain NA; dropping NA values for p-value computation.")
+				warning("Bootstrap samples contain NA/NaN/Inf; dropping non-finite values for p-value computation.")
 			}
 			beta_hat_T_bs = beta_hat_T_bs[!na_bs]
 			if (length(beta_hat_T_bs) == 0) return(NA_real_)
 
-			# Compute absolute deviation from null
-			t_obs = abs(beta_hat_obs - delta)
-
-			# Two-sided bootstrap p-value:
-			# Proportion of bootstrap samples whose deviation from observed
-			# is as or more extreme than the observed deviation from null
-			mean(abs(beta_hat_T_bs - beta_hat_obs) >= t_obs, na.rm = TRUE)
+			# Percentile bootstrap two-sided p-value -- consistent with compute_bootstrap_confidence_interval,
+			# which uses the percentile CI [Q_{alpha/2}, Q_{1-alpha/2}].
+			# delta lies inside the (1-alpha) CI if and only if this p-value >= alpha.
+			# Floor at 2/B (the minimum resolvable p-value with B bootstrap samples), avoiding
+			# exact 0 which is a discretization artifact and not a meaningful probability.
+			n_bs = length(beta_hat_T_bs)
+			p_left  = mean(beta_hat_T_bs <= delta, na.rm = TRUE)
+			p_right = mean(beta_hat_T_bs >= delta, na.rm = TRUE)
+			min(1, max(2 / n_bs, 2 * min(p_left, p_right)))
 		},				
 		
 		#' @description
@@ -326,13 +335,22 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (private$seq_des_obj_priv_int$response_type %in% c("count", "incidence")){
 					stop("randomization tests with delta nonzero are not supported for count or incidence response types")
 				}
-				if (private$seq_des_obj_priv_int$response_type == "proportion"){
-					stop("randomization tests with delta nonzero are not supported for proportion response type (values must remain in (0,1))")
+				if (private$seq_des_obj_priv_int$response_type == "proportion" && transform_responses != "logit"){
+					stop("randomization tests with delta nonzero are not supported for proportion response type without logit transform (values must remain in (0,1))")
 				}
-				# Testing H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 
-				# So adjust treatment responses downward by delta
-				seq_des_template$.__enclos_env__$private$y[private$w == 1] = 
+				# Testing H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0
+				# So adjust treatment responses downward by delta on the (possibly transformed) scale
+				seq_des_template$.__enclos_env__$private$y[private$w == 1] =
 					seq_des_template$.__enclos_env__$private$y[private$w == 1] - delta
+				# Inverse-transform back to the original scale so downstream models receive
+				# valid inputs: survreg/coxph require y > 0; betareg requires y in (0,1).
+				# exp(log(y_T) - delta) = y_T * exp(-delta) > 0 always
+				# inv_logit(logit(y_T) - delta) is always in (0,1)
+				if (transform_responses == "log"){
+					seq_des_template$.__enclos_env__$private$y = exp(seq_des_template$.__enclos_env__$private$y)
+				} else if (transform_responses == "logit"){
+					seq_des_template$.__enclos_env__$private$y = inv_logit(seq_des_template$.__enclos_env__$private$y)
+				}
 			}
 			
 			# Store is_KK flag for use in callback
@@ -477,11 +495,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
             if (nsim_exact_test_adjusted == 0) return(NA_real_) # Avoid division by zero
 
-			# Two-sided p-value capped at 1
-			min(1, 2 * min(
+			# Two-sided p-value capped at 1, floored at 2/nsim to avoid exact 0 (discretization artifact).
+			min(1, max(2 / nsim_exact_test_adjusted, 2 * min(
 				sum(t0s >= t, na.rm = TRUE) / nsim_exact_test_adjusted,
 				sum(t0s <= t, na.rm = TRUE) / nsim_exact_test_adjusted
-			))
+			)))
 		},
 
 		
@@ -714,19 +732,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		custom_randomization_statistic_function = NULL,
 		cached_values = list(),
 		
-	#' @description
-	#' Helper function to check if a private method exists in this object
-	#' @param method_name The name of the method to check
-	#' @return TRUE if the method exists in private, FALSE otherwise
 	has_private_method = function(method_name){
 		method_name %in% names(private)
 	},
 
-	#' @description
-	#' Helper function to check if a private method exists in an R6 object
-	#' @param obj The R6 object to check
-	#' @param method_name The name of the method to check
-	#' @return TRUE if the method exists in the object's private environment, FALSE otherwise
 	object_has_private_method = function(obj, method_name){
 		method_name %in% names(obj$.__enclos_env__$private)
 	},
@@ -740,7 +749,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 				
 		create_design_matrix = function(){
-			cbind(1, private$seq_des_obj_priv_int$w, private$get_X())
+			cbind(1, private$w, private$get_X())
 		},
 		
 		get_X = function(){
@@ -753,47 +762,47 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$X
 		},	
 		
-		get_or_cache_bootstrap_samples = function(B){			
-			if (is.null(private$cached_values$beta_hat_T_bs)){
+		get_or_cache_bootstrap_samples = function(B){
+			if (is.null(private$cached_values$boot_samples)){
 				beta_samples = self$approximate_bootstrap_distribution_beta_hat_T(B)
-				
+
 				if (!is.numeric(beta_samples)){
 					if (private$verbose) {
 						cat("        ERROR: approximate_bootstrap_distribution_beta_hat_T returned non-numeric. Type:", typeof(beta_samples), "\n")
 					}
 					return(rep(NA_real_, B)) # Return NAs if not numeric
 				}
-				
-				private$cached_values$beta_hat_T_bs = beta_samples
+
+				private$cached_values$boot_samples = beta_samples
 				if (private$verbose) {
 					cat("        Bootstrap samples summary (B=", B, "): \n")
-					print(summary(private$cached_values$beta_hat_T_bs))
+					print(summary(private$cached_values$boot_samples))
 				}
 			} else {
-				B_0 = length(private$cached_values$beta_hat_T_bs)
+				B_0 = length(private$cached_values$boot_samples)
 				if (B_0 > B){
-					return (private$cached_values$beta_hat_T_bs[1 : B]) #send back what we need but don't reduce the cache
-				} else if (B_0 < B){ 
+					return (private$cached_values$boot_samples[1 : B]) #send back what we need but don't reduce the cache
+				} else if (B_0 < B){
 					new_samples = self$approximate_bootstrap_distribution_beta_hat_T(B - B_0)
-					
+
 					if (!is.numeric(new_samples)){
 						if (private$verbose) {
 							cat("        ERROR: approximate_bootstrap_distribution_beta_hat_T (for new samples) returned non-numeric. Type:", typeof(new_samples), "\n")
 						}
 						# Pad with NAs if new samples are not numeric
 						new_samples_padded = rep(NA_real_, B - B_0)
-						private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, new_samples_padded)
+						private$cached_values$boot_samples = c(private$cached_values$boot_samples, new_samples_padded)
 					} else {
-						private$cached_values$beta_hat_T_bs = c(private$cached_values$beta_hat_T_bs, new_samples)
+						private$cached_values$boot_samples = c(private$cached_values$boot_samples, new_samples)
 					}
 
 					if (private$verbose) {
 					    cat("        Bootstrap samples summary (B=", B, ", added", length(new_samples), "): \n")
-					    print(summary(private$cached_values$beta_hat_T_bs))
+					    print(summary(private$cached_values$boot_samples))
 				    }
 				}
 			}
-			private$cached_values$beta_hat_T_bs			
+			private$cached_values$boot_samples
 		},
 		
 		compute_z_or_t_ci_from_s_and_df = function(alpha){

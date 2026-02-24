@@ -120,3 +120,4 @@ CI_OPTIMIZATION_COMPLETE.md
 FAST_GLM_CHECK_FIXES.md
 PARALLEL_CI_OPTIMIZATION.md
 
+package_tests/simple_tests_results.csv

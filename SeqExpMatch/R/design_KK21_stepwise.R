@@ -38,6 +38,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#' 							instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#' @param proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 		#' 							instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param survival_use_speedup_for_no_censoring	Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
+		#' 							instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
+		#' 							This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.
   		#' @return 			A new `SeqDesignKK21stepwise` object
 		#' 
 		#' @examples
@@ -57,9 +60,10 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			p = NULL,
 			num_boot = NULL,
 			count_use_speedup = TRUE,
-			proportion_use_speedup = TRUE
+			proportion_use_speedup = TRUE,
+			survival_use_speedup_for_no_censoring = TRUE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup)		
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring)
 		}
 	),
 	private = list(
@@ -71,21 +75,24 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			deads = all_subject_data$dead_all
 			
 			if (private$response_type == "continuous"){
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(scale(ys)), as.numeric(ws)))
+				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
 			}
 			if (private$response_type == "incidence"){
 				return(kk21_stepwise_logistic_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
 			}
 			if (private$response_type == "count" && private$count_use_speedup){
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(scale(log(ys + 1))), as.numeric(ws)))
+				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys + 1)), as.numeric(ws)))
 			}
 			if (private$response_type == "proportion" && private$proportion_use_speedup){
 				ys_adj = ys
 				ys_adj[ys_adj == 0] = .Machine$double.eps
 				ys_adj[ys_adj == 1] = 1 - .Machine$double.eps
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(scale(log(ys_adj / (1 - ys_adj)))), as.numeric(ws)))
+				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys_adj / (1 - ys_adj))), as.numeric(ws)))
 			}
 			if (private$response_type == "survival"){
+				if (private$survival_use_speedup_for_no_censoring && all(deads == 1)){
+					return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys)), as.numeric(ws)))
+				}
 				return(kk21_stepwise_survival_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(deads), as.numeric(ws)))
 			}
 			if (private$response_type == "count" && !private$count_use_speedup){
@@ -130,7 +137,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		},
 		
 		compute_weights_KK21stepwise_continuous = function(xs, ys, ws, ...){
-			private$compute_weights_KK21stepwise(xs, scale(ys), ws, function(response_obj, covariate_data_matrix){				
+			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){				
 #				ols_mod = lm(response_obj ~ covariate_data_matrix)
 #				abs(stats::coef(suppressWarnings(summary(ols_mod)))[2, 3])
 				

@@ -5,9 +5,6 @@
 
 using namespace Rcpp;
 
-// Forward declarations for functions from RcppExports
-Rcpp::List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j);
-
 // [[Rcpp::export]]
 NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X,
                                           const NumericVector& y) {
@@ -169,6 +166,12 @@ NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X,
   return weights;
 }
 
+// Optimized using Frisch-Waugh-Lovell (FWL) theorem.
+// At each step k, instead of fitting (p-k) full OLS regressions of size n x (k+3),
+// we maintain an orthonormal basis Q for the "base" model [1, X_sel, w] via incremental
+// Gram-Schmidt, compute e_y = (I - QQ')y once per step, and for each candidate j compute
+// e_j = (I - QQ')x_j. FWL guarantees the t-statistic is identical to the full OLS fit.
+// Cost: O(n*p^2) vs O(n*p^4) for the naive approach.
 // [[Rcpp::export]]
 NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
                                                    const NumericVector& y,
@@ -181,57 +184,153 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
     return weights;
   }
 
+  const double eps = std::numeric_limits<double>::epsilon();
+
   Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
   Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
   Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
-  std::vector<int> selected;
-  selected.reserve(p);
+  // Orthonormal basis Q for "base" model: starts as span{1, w}, grows as covariates are selected.
+  // Pre-allocate for maximum size: intercept + w + p covariates = p+2 columns.
+  Eigen::MatrixXd Q(n, p + 2);
+  int m = 0;
+
+  // q_0 = (1/sqrt(n)) * ones (intercept direction)
+  Q.col(0).setConstant(1.0 / std::sqrt(static_cast<double>(n)));
+  m = 1;
+
+  // Gram-Schmidt: add w, orthogonalizing against intercept
+  {
+    Eigen::VectorXd u = w_vec - Q.col(0).dot(w_vec) * Q.col(0);
+    double nm = u.norm();
+    if (nm > 1e-8) {
+      Q.col(1) = u / nm;
+      m = 2;
+    }
+  }
+
+  // e_y = (I - Q_m Q_m') y: y residualized from base model, updated incrementally
+  Eigen::VectorXd e_y = y_vec - Q.leftCols(m) * (Q.leftCols(m).transpose() * y_vec);
+  double c = e_y.squaredNorm(); // ||e_y||^2, maintained incrementally
+
   std::vector<bool> used(p, false);
 
   for (int step = 0; step < p; ++step) {
+    // df = n - (m base columns + 1 for candidate x_j)
+    int df = n - m - 1;
+    if (df <= 0) break;
+
     double best_stat = -1.0;
     int best_j = -1;
-    int k = static_cast<int>(selected.size());
 
     for (int j = 0; j < p; ++j) {
-      if (used[j]) {
-        continue;
-      }
+      if (used[j]) continue;
 
-      Eigen::MatrixXd Xmm(n, k + 3);
-      Xmm.col(0).setOnes();
-      Xmm.col(1) = X_map.col(j);
-      for (int idx = 0; idx < k; ++idx) {
-        Xmm.col(2 + idx) = X_map.col(selected[idx]);
-      }
-      Xmm.col(k + 2) = w_vec;
+      // e_j = x_j - Q Q' x_j: residual of x_j orthogonal to base model
+      Eigen::VectorXd xj = X_map.col(j);
+      Eigen::VectorXd e_j = xj - Q.leftCols(m) * (Q.leftCols(m).transpose() * xj);
+      double b = e_j.squaredNorm(); // ||e_j||^2
+      if (b < eps) continue;        // x_j collinear with base model
 
-      List mod = fast_ols_with_var_cpp(Xmm, y_vec, 2);
-      Eigen::VectorXd b = mod["b"];
-      double ssq = as<double>(mod["ssq_b_j"]);
-      double stat = std::fabs(b(1) / std::sqrt(ssq));
-      if (!R_finite(stat)) {
-        stat = 0.0;
-      }
+      double a = e_j.dot(e_y);     // e_j' e_y (proportional to FWL coefficient for x_j)
+      // SSE of full model via FWL = ||e_y||^2 - (e_j' e_y)^2 / ||e_j||^2
+      double sse = c - a * a / b;
+      if (sse < 0.0) sse = 0.0;
+      double sigma2 = sse / static_cast<double>(df);
+      if (sigma2 <= 0.0 || !std::isfinite(sigma2)) continue;
+
+      // |t| = |b1_hat / se(b1_hat)| = |a/b| / sqrt(sigma2/b) = |a| / sqrt(b * sigma2)
+      double stat = std::fabs(a) / std::sqrt(b * sigma2);
+      if (!R_finite(stat)) stat = 0.0;
+
       if (stat > best_stat) {
         best_stat = stat;
         best_j = j;
       }
     }
 
-    if (best_j < 0) {
-      break;
-    }
+    if (best_j < 0) break;
 
     weights[best_j] = best_stat;
     used[best_j] = true;
-    selected.push_back(best_j);
+
+    // Update Q: Gram-Schmidt of x_{best_j} against current basis
+    if (m < p + 2) {
+      Eigen::VectorXd xbest = X_map.col(best_j);
+      Eigen::VectorXd u = xbest - Q.leftCols(m) * (Q.leftCols(m).transpose() * xbest);
+      double nm = u.norm();
+      if (nm > 1e-8) {
+        Q.col(m) = u / nm;
+        // Update e_y incrementally: e_y_new = e_y_old - (q_new . e_y_old) * q_new
+        double proj = Q.col(m).dot(e_y);
+        e_y -= proj * Q.col(m);
+        c -= proj * proj;
+        if (c < 0.0) c = 0.0;
+        m++;
+      }
+    }
   }
 
   return weights;
 }
 
+// Helper: fit logistic regression on reduced design matrix XS via IRLS.
+// beta is used as warm start and updated in place. Returns false on failure.
+static bool logistic_reduced_fit_for_score_test(
+    const Eigen::MatrixXd& XS,
+    const Eigen::VectorXd& y,
+    Eigen::VectorXd& beta,
+    Eigen::VectorXd& p_hat,
+    Eigen::VectorXd& W_diag,
+    Eigen::VectorXd& resid,
+    Eigen::LDLT<Eigen::MatrixXd>& XtWX_ldlt,
+    int maxit = 100,
+    double tol = 1e-8) {
+  int n = XS.rows();
+  int m = XS.cols();
+  if (n <= m) return false;
+
+  p_hat.resize(n);
+  W_diag.resize(n);
+
+  for (int iter = 0; iter < maxit; ++iter) {
+    Eigen::VectorXd eta = XS * beta;
+    for (int i = 0; i < n; ++i) {
+      double val = 1.0 / (1.0 + std::exp(-eta[i]));
+      p_hat[i] = val;
+      W_diag[i] = std::max(val * (1.0 - val), 1e-10);
+    }
+    Eigen::VectorXd z = eta + (y - p_hat).cwiseQuotient(W_diag);
+    Eigen::MatrixXd XtW = XS.transpose() * W_diag.asDiagonal();
+    Eigen::MatrixXd XtWX = XtW * XS;
+    Eigen::VectorXd beta_new = XtWX.ldlt().solve(XtW * z);
+    if ((beta - beta_new).norm() < tol) {
+      beta = beta_new;
+      break;
+    }
+    beta = beta_new;
+  }
+
+  // Final quantities for score test
+  Eigen::VectorXd eta = XS * beta;
+  for (int i = 0; i < n; ++i) {
+    double val = 1.0 / (1.0 + std::exp(-eta[i]));
+    p_hat[i] = val;
+    W_diag[i] = std::max(val * (1.0 - val), 1e-10);
+  }
+  resid = y - p_hat;
+  Eigen::MatrixXd XtWX = XS.transpose() * W_diag.asDiagonal() * XS;
+  XtWX_ldlt = XtWX.ldlt();
+  return XtWX_ldlt.info() == Eigen::Success;
+}
+
+// Optimized using score test (LM test) from the reduced model.
+// At each step k, instead of fitting (p-k) logistic regressions of size n x (k+3), we:
+//   1. Fit ONE logistic regression on the reduced model [1, X_sel, w] (with warm start)
+//   2. For each candidate x_j compute the score test statistic:
+//      stat_j = |x_j' (y - p_hat)| / sqrt(I_jj.S)
+//      where I_jj.S = x_j' W x_j - (X_S' W x_j)' (X_S' W X_S)^{-1} (X_S' W x_j)
+// Asymptotically equivalent to the Wald t-statistic; gives the same ordering in practice.
 // [[Rcpp::export]]
 NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X,
                                                  const NumericVector& y,
@@ -248,48 +347,70 @@ NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X,
   Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
   Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
-  std::vector<int> selected;
-  selected.reserve(p);
+  // Base design matrix X_S = [1, w, ...selected...], starting with [1, w]
+  int m = 2;
+  Eigen::MatrixXd XS(n, m);
+  XS.col(0).setOnes();
+  XS.col(1) = w_vec;
+
+  Eigen::VectorXd beta = Eigen::VectorXd::Zero(m);
+  Eigen::VectorXd p_hat, W_diag, resid;
+  Eigen::LDLT<Eigen::MatrixXd> XtWX_ldlt;
+  bool fit_ok = logistic_reduced_fit_for_score_test(XS, y_vec, beta, p_hat, W_diag, resid, XtWX_ldlt);
+
   std::vector<bool> used(p, false);
 
   for (int step = 0; step < p; ++step) {
+    if (!fit_ok) break;
+
+    // Precompute diag(W) * X_S once per step (used for each candidate's information)
+    Eigen::MatrixXd WXS = W_diag.asDiagonal() * XS; // n x m
+
     double best_stat = -1.0;
     int best_j = -1;
-    int k = static_cast<int>(selected.size());
 
     for (int j = 0; j < p; ++j) {
-      if (used[j]) {
-        continue;
-      }
+      if (used[j]) continue;
 
-      Eigen::MatrixXd Xmm(n, k + 3);
-      Xmm.col(0).setOnes();
-      Xmm.col(1) = X_map.col(j);
-      for (int idx = 0; idx < k; ++idx) {
-        Xmm.col(2 + idx) = X_map.col(selected[idx]);
-      }
-      Xmm.col(k + 2) = w_vec;
+      Eigen::VectorXd xj = X_map.col(j);
+      // Score: U_j = x_j' (y - p_hat)
+      double Uj = xj.dot(resid);
+      // Adjusted information: I_jj.S = x_j' W x_j - (X_S' W x_j)' (X_S' W X_S)^{-1} (X_S' W x_j)
+      Eigen::VectorXd v_j = WXS.transpose() * xj;          // X_S' W x_j  (m-vector)
+      Eigen::VectorXd h_j = XtWX_ldlt.solve(v_j);          // (X_S' W X_S)^{-1} v_j
+      double xjWxj = (W_diag.array() * xj.array().square()).sum();
+      double Ijj = xjWxj - v_j.dot(h_j);
+      if (Ijj <= 0.0) continue;
 
-      List mod = fast_logistic_regression_with_var_cpp(Xmm, y_vec);
-      Eigen::VectorXd b = mod["b"];
-      double ssq = as<double>(mod["ssq_b_2"]);
-      double stat = std::fabs(b(1) / std::sqrt(ssq));
-      if (!R_finite(stat)) {
-        stat = 0.0;
-      }
+      // |z_score| = |U_j| / sqrt(I_jj.S)  (asymptotically equivalent to |t| from full Wald)
+      double stat = std::fabs(Uj) / std::sqrt(Ijj);
+      if (!R_finite(stat)) stat = 0.0;
+
       if (stat > best_stat) {
         best_stat = stat;
         best_j = j;
       }
     }
 
-    if (best_j < 0) {
-      break;
-    }
+    if (best_j < 0) break;
 
     weights[best_j] = best_stat;
     used[best_j] = true;
-    selected.push_back(best_j);
+
+    // Update X_S: append x_{best_j}, refit with warm start
+    Eigen::MatrixXd XS_new(n, m + 1);
+    XS_new.leftCols(m) = XS;
+    XS_new.col(m) = X_map.col(best_j);
+    XS = XS_new;
+    m++;
+
+    // Warm start: extend beta with 0 for the newly added covariate
+    Eigen::VectorXd beta_new(m);
+    beta_new.head(m - 1) = beta;
+    beta_new[m - 1] = 0.0;
+    beta = beta_new;
+
+    fit_ok = logistic_reduced_fit_for_score_test(XS, y_vec, beta, p_hat, W_diag, resid, XtWX_ldlt);
   }
 
   return weights;

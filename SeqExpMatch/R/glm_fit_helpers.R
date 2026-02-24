@@ -111,11 +111,17 @@ NULL
 #'
 #' @export
 fast_logistic_regression = function(Xmm, y){
-  mod = fastLogisticRegressionWrap::fast_logistic_regression(
-      Xmm = Xmm,
-      ybin = as.numeric(y)
-  )
-  list(b = as.vector(mod$coefficients))
+  tryCatch({
+    mod = fastLogisticRegressionWrap::fast_logistic_regression(
+        Xmm = Xmm,
+        ybin = as.numeric(y)
+    )
+    list(b = as.vector(mod$coefficients))
+  }, error = function(e) {
+    warning("fastLogisticRegressionWrap failed, falling back to stats::glm.fit. Error: ", e$message)
+    mod_canonical = stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
+    list(b = as.vector(mod_canonical$coefficients))
+  })
 }
 
 #' Fast Logistic Regression with Variance Calculation (R Wrapper)
@@ -162,15 +168,39 @@ fast_logistic_regression = function(Xmm, y){
 #' @export
 fast_logistic_regression_with_var = function(Xmm, y){
   # Compute inference on the second coefficient (treatment effect)
-  mod = fastLogisticRegressionWrap::fast_logistic_regression(
-      Xmm = Xmm,
-      ybin = as.numeric(y),
-      do_inference_on_var = 2
-  )
-  list(
-    b = as.vector(mod$coefficients),
-    ssq_b_2 = mod$se[2]^2  # Square the standard error to get variance
-  )
+  tryCatch({
+    mod = fastLogisticRegressionWrap::fast_logistic_regression(
+        Xmm = Xmm,
+        ybin = as.numeric(y),
+        do_inference_on_var = 2
+    )
+    
+    # Check for NaNs in standard errors
+    if (any(is.na(mod$se)) || any(!is.finite(mod$se))) {
+      stop("NaNs or non-finite values detected in standard errors from fastLogisticRegressionWrap")
+    }
+    
+    list(
+      b = as.vector(mod$coefficients),
+      ssq_b_2 = mod$se[2]^2  # Square the standard error to get variance
+    )
+  }, error = function(e) {
+    # Fallback to standard R glm if fast version fails
+    warning("fastLogisticRegressionWrap failed, falling back to stats::glm. Error: ", e$message)
+    # Using glm.fit for speed
+    mod_canonical = stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
+    
+    # Extract variance of second coefficient (treatment effect)
+    # The variance-covariance matrix is (X'WX)^-1
+    R <- qr.R(mod_canonical$qr)
+    Rinv <- backsolve(R, diag(ncol(R)))
+    vcov <- Rinv %*% t(Rinv)
+    
+    list(
+      b = as.vector(mod_canonical$coefficients),
+      ssq_b_2 = vcov[2, 2]
+    )
+  })
 }
 
 #' Weibull Regression using survival package internals (fast, coefficients only)
@@ -226,6 +256,9 @@ fast_weibull_regression = function(y, dead, X){
     Xmm_no_intercept = Xmm
   }
 
+  # Drop linearly dependent columns before passing to survreg
+  Xmm_no_intercept = drop_linearly_dependent_cols(Xmm_no_intercept)$M
+
   # Use survreg (not survreg.fit) to handle parameter defaults properly
   if (NCOL(Xmm_no_intercept) > 0) {
     # Preserve or create column names
@@ -239,7 +272,9 @@ fast_weibull_regression = function(y, dead, X){
     colnames(df) = original_colnames
     df$y = y
     df$dead = dead
-    formula_str = paste("survival::Surv(y, dead) ~", paste(original_colnames, collapse = " + "))
+    # Wrap column names in backticks to handle special characters
+    backticked_colnames = paste0("`", original_colnames, "`")
+    formula_str = paste("survival::Surv(y, dead) ~", paste(backticked_colnames, collapse = " + "))
     mod <- survival::survreg(as.formula(formula_str), data = df, dist = "weibull")
 
     # Extract coefficients and preserve names
@@ -256,6 +291,14 @@ fast_weibull_regression = function(y, dead, X){
   std_errs = if (is.matrix(vcov)) sqrt(diag(vcov)) else rep(NA_real_, length(coefficients) + 1)
   log_sigma = log(mod$scale)
   neg_log_lik = if (!is.null(mod$loglik) && length(mod$loglik) >= 2) -mod$loglik[2] else NA_real_
+
+  # Throw (rather than silently return NaN) so callers like the bootstrap tryCatch can handle failure
+  if (any(!is.finite(coefficients))) {
+    stop("fast_weibull_regression: survreg returned non-finite coefficients (convergence failure)")
+  }
+  if (is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
+    stop("fast_weibull_regression: survreg returned non-finite variance-covariance (convergence failure)")
+  }
 
   list(
     coefficients = coefficients,

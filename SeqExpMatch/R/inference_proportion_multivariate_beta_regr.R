@@ -28,7 +28,7 @@ SeqDesignInferencePropMultiBetaRegr = R6::R6Class("SeqDesignInferencePropMultiBe
 			# create_design_matrix is [Intercept, Treatment, Covariates]
 			colnames(Xmm) = c("(Intercept)", "treatment", paste0("x", 1:(ncol(Xmm)-2)))
 			
-			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$seq_des_obj_priv_int$y)
+			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
 			
 			# Ensure names are set for shared()
 			names(res$b) = colnames(Xmm)

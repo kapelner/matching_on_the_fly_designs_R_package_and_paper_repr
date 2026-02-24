@@ -79,7 +79,8 @@ Kapelner and Krieger (2021) with option to use matching parameters of Morrison a
   p = NULL,
   num_boot = NULL,
   count_use_speedup = TRUE,
-  proportion_use_speedup = TRUE
+  proportion_use_speedup = TRUE,
+  survival_use_speedup_for_no_censoring = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -122,6 +123,10 @@ instead of a negative binomial regression each time? This is at the expense of t
 
 \item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
 instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
+
+\item{\code{survival_use_speedup_for_no_censoring}}{Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
+instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
+This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

@@ -695,7 +695,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
 				private$X = as.matrix(private$Ximp) #model.matrix(~ ., private$Ximp)
-				private$X = private$drop_linearly_dependent_cols(private$X)$M
+				private$X = drop_linearly_dependent_cols(private$X)$M
 				
 				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
 					stop("improper sizing for the internal X representation")
@@ -783,19 +783,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# 	}
 		# },
 		
-		drop_linearly_dependent_cols = function(M){
-			rank = matrix_rank_cpp(as.matrix(M))
-			js = 1 : ncol(M)
-			#it's possible that there may be linearly dependent columns
-			if (rank != ncol(M)){
-				#kill linearly dependent column(s) via cool trick found at
-				#https://stackoverflow.com/questions/19100600/extract-maximal-set-of-independent-columns-from-a-matrix
-				qrX = qr(as.matrix(M))
-				js = qrX$pivot[seq_len(qrX$rank)] #the true linearly independent column indicies
-				M = M[, js, drop = FALSE]
-			}
-			list(M = as.matrix(M), js = js)
-		},		
 		
 		assign_wt_CRD = function(){
 			rbinom(1, 1, private$prob_T)
