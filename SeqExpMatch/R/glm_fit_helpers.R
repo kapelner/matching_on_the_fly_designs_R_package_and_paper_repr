@@ -111,16 +111,25 @@ NULL
 #'
 #' @export
 fast_logistic_regression = function(Xmm, y){
+  na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
   tryCatch({
-    mod = fastLogisticRegressionWrap::fast_logistic_regression(
+    mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
         Xmm = Xmm,
         ybin = as.numeric(y)
-    )
-    list(b = as.vector(mod$coefficients))
+    ))
+    b = as.vector(mod$coefficients)
+    if (!all(is.finite(b))) return(na_b())
+    list(b = b)
   }, error = function(e) {
-    warning("fastLogisticRegressionWrap failed, falling back to stats::glm.fit. Error: ", e$message)
-    mod_canonical = stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
-    list(b = as.vector(mod_canonical$coefficients))
+    mod_canonical = suppressWarnings(
+      stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
+    )
+    # Non-convergence (e.g. complete separation) produces unreliable large-magnitude
+    # coefficients; signal failure with NA so bootstrap callers can discard the sample.
+    if (!isTRUE(mod_canonical$converged)) return(na_b())
+    b = as.vector(mod_canonical$coefficients)
+    if (!all(is.finite(b))) return(na_b())
+    list(b = b)
   })
 }
 
@@ -169,11 +178,11 @@ fast_logistic_regression = function(Xmm, y){
 fast_logistic_regression_with_var = function(Xmm, y){
   # Compute inference on the second coefficient (treatment effect)
   tryCatch({
-    mod = fastLogisticRegressionWrap::fast_logistic_regression(
+    mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
         Xmm = Xmm,
         ybin = as.numeric(y),
         do_inference_on_var = 2
-    )
+    ))
     
     # Check for NaNs in standard errors
     if (any(is.na(mod$se)) || any(!is.finite(mod$se))) {
@@ -186,7 +195,7 @@ fast_logistic_regression_with_var = function(Xmm, y){
     )
   }, error = function(e) {
     # Fallback to standard R glm if fast version fails
-    warning("fastLogisticRegressionWrap failed, falling back to stats::glm. Error: ", e$message)
+    #warning("fastLogisticRegressionWrap failed, falling back to stats::glm. Error: ", e$message)
     # Using glm.fit for speed
     mod_canonical = stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
     

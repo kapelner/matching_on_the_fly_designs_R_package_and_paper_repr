@@ -109,7 +109,7 @@ datasets_and_response_models = list(
   ),
   diamonds = list(
     X = diamonds_subset %>% model.matrix(price ~ 0 + ., .) %>% apply(2, scale) %>% `/`(ncol(.)) %>% data.table %>% select(where(~ !any(is.na(.)))),
-    y_original = finagle_different_responses_from_continuous(diamonds_subset$price),
+    y_original = finagle_different_responses_from_continuous(log(diamonds_subset$price)),
     beta_T = list(
       continuous = 0.2,
       incidence =  2,

@@ -1,14 +1,14 @@
-#' Simple Mean Difference Inference based on Maximum Likelihood  
+#' Simple Mean Difference Inference based on Maximum Likelihood
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
-#' 
+#'
 #' @export
 SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLSKK",
 	inherit = SeqDesignInferenceKKPassThroughCompound,
 	public = list(
-		
+
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
@@ -16,17 +16,17 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
 		#' 								for \code{test_type = "MLE-or-KM-based"}.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){		
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
-		
+
 		#' @description
 		#' Computes the appropriate estimate
-		#' 
+		#'
 		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#' 
+		#'
 		#' @examples
 		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
@@ -36,149 +36,233 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
+		#'
 		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
-		#' 	
-			compute_treatment_estimate = function(){			
-				if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
-					private$shared_for_compute_estimate()
-				}		
-				if (is.null(private$cached_values[["beta_hat_T"]])){ 
-					beta_hat_T = if (private$only_matches()){
-															private$cached_values$beta_T_matched
-														} else if (private$only_reservoir()){	 		
-															private$cached_values$beta_T_reservoir
-														} else {
-															w_star = private$cached_values$ssq_beta_T_reservoir / 
-																		(private$cached_values$ssq_beta_T_reservoir + private$cached_values$ssq_beta_T_matched)	
-															w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
-														}
-					# Avoid floating-point residue when the estimate is mathematically zero.
-					if (is.finite(beta_hat_T) && abs(beta_hat_T) < sqrt(.Machine$double.eps)){
-						beta_hat_T = 0
-					}
-					private$cached_values[["beta_hat_T"]] = beta_hat_T
-				}
-				private$cached_values[["beta_hat_T"]]
-			},
-		
-		
-		
-		#' @description
-
-		
-		
-		
-		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
-		#' 
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
-		#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-		#' seq_des_inf$compute_mle_confidence_interval()
-		#' }
-		#'		
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)	
-			private$shared_for_inference()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		
-		#' @description
-
-		
-		#' Computes a 2-sided p-value
 		#'
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' 
-		#' @return 	The approximate frequentist p-value
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
-		#' }
-		#' 				
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)	
-			private$shared_for_inference()
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		}
+		compute_treatment_estimate = function(){
+			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
+				private$shared_for_compute_estimate()
+			}
+			if (is.null(private$cached_values[["beta_hat_T"]])){
+				beta_hat_T = if (private$only_matches()){
+								private$cached_values$beta_T_matched
+							} else if (private$only_reservoir()){
+								private$cached_values$beta_T_reservoir
+							} else {
+								# If one side has an unusable variance (NA/non-positive from a
+								# rank-deficient OLS or too few matched pairs), fall back to the
+								# other side's estimate so the result stays finite.
+								ssq_m = private$cached_values$ssq_beta_T_matched
+								ssq_r = private$cached_values$ssq_beta_T_reservoir
+								if (!is.finite(ssq_m) || ssq_m <= 0) {
+									private$cached_values$beta_T_reservoir
+								} else if (!is.finite(ssq_r) || ssq_r <= 0) {
+									private$cached_values$beta_T_matched
+								} else {
+									w_star = ssq_r / (ssq_r + ssq_m)
+									w_star * private$cached_values$beta_T_matched + (1 - w_star) * private$cached_values$beta_T_reservoir
+								}
+							}
+				# Avoid floating-point residue when the estimate is mathematically zero.
+				if (is.finite(beta_hat_T) && abs(beta_hat_T) < sqrt(.Machine$double.eps)){
+					beta_hat_T = 0
+				}
+				private$cached_values[["beta_hat_T"]] = beta_hat_T
+			}
+			private$cached_values[["beta_hat_T"]]
+		},
+
+
+
+	#' @description
+
+
+
+
+	#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+	#'
+	#' Here we use the theory that MLE's computed for GLM's are asymptotically normal.
+	#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
+	#'
+	#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+	#'
+	#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+	#'
+	#' @examples
+	#' \dontrun{
+	#' seq_des = SeqDesignCRD$new(n = 6)
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+	#'
+	#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+	#' seq_des_inf$compute_mle_confidence_interval()
+	#' }
+	#'
+	compute_mle_confidence_interval = function(alpha = 0.05){
+		assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		private$shared_for_inference()
+		private$compute_z_or_t_ci_from_s_and_df(alpha)
+	},
+
+	#' @description
+
+
+	#' Computes a 2-sided p-value
+	#'
+	#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+	#'
+	#' @return 	The approximate frequentist p-value
+	#'
+	#' @examples
+	#' \dontrun{
+	#' seq_des = SeqDesignCRD$new(n = 6)
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+	#'
+	#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+	#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+	#' }
+	#'
+	compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		assertNumeric(delta)
+		private$shared_for_inference()
+		private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+	}
 	),
-	
-	private = list(		
+
+	private = list(
 		shared_for_compute_estimate = function(){
 			if (private$only_matches()){
-				private$ols_for_matched_pairs() 
-			} else if (private$only_reservoir()){			
-				private$ols_for_reservoir()		
+				private$ols_for_matched_pairs()
+			} else if (private$only_reservoir()){
+				private$ols_for_reservoir()
 			} else {
-				private$ols_for_matched_pairs() 		
+				private$ols_for_matched_pairs()
 				private$ols_for_reservoir()
 			}
 		},
-		
+
 		shared_for_inference = function(){
-			if (is.null(private$cached_values[["beta_hat_T"]])){ 
+			if (is.null(private$cached_values[["beta_hat_T"]])){
 				self$compute_treatment_estimate()
 			}
-			ssq_beta_hat_T = 	if (private$only_matches()){
-									private$cached_values$ssq_beta_T_matched
-								} else if (private$only_reservoir()){			
+			ssq_beta_hat_T = if (private$only_matches()){
+								ssq_m = private$cached_values$ssq_beta_T_matched
+								if (!is.finite(ssq_m) || ssq_m <= 0) {
+									# Fallback: use reservoir SE even though reservoir is small
+									if (is.null(private$cached_values$ssq_beta_T_reservoir)) {
+										private$ols_for_reservoir()
+									}
 									private$cached_values$ssq_beta_T_reservoir
 								} else {
-									private$cached_values$ssq_beta_T_matched * private$cached_values$ssq_beta_T_reservoir / 
-										(private$cached_values$ssq_beta_T_matched + private$cached_values$ssq_beta_T_reservoir) #analagous eq's
+									ssq_m
 								}
+							} else if (private$only_reservoir()){
+								ssq_r = private$cached_values$ssq_beta_T_reservoir
+								if (!is.finite(ssq_r) || ssq_r <= 0) {
+									# Fallback: use matched-pairs SE
+									if (is.null(private$cached_values$ssq_beta_T_matched) &&
+										private$cached_values$KKstats$m > 0) {
+										private$ols_for_matched_pairs()
+									}
+									private$cached_values$ssq_beta_T_matched
+								} else {
+									ssq_r
+								}
+							} else {
+								# Combined: if one side is unusable, fall back to the other
+								ssq_m = private$cached_values$ssq_beta_T_matched
+								ssq_r = private$cached_values$ssq_beta_T_reservoir
+								if (!is.finite(ssq_m) || ssq_m <= 0) {
+									ssq_r
+								} else if (!is.finite(ssq_r) || ssq_r <= 0) {
+									ssq_m
+								} else {
+									ssq_m * ssq_r / (ssq_m + ssq_r) #analogous eq's
+								}
+							}
 			private$cached_values$s_beta_hat_T = sqrt(ssq_beta_hat_T)
 			private$cached_values$is_z = TRUE #TO-DO: linear combination of degrees of freedom of t's
 		},
-		
+
 		only_matches = function(){
 			private$cached_values$KKstats$nRT <= 2 || private$cached_values$KKstats$nRC <= 2 || (private$cached_values$KKstats$nRT + private$cached_values$KKstats$nRC <= ncol(private$get_X()) + 2)
 		},
-		
+
 		only_reservoir = function(){
 			private$cached_values$KKstats$m == 0
 		},
-		
+
 		ols_for_matched_pairs = function(){
-			# stats::coef(summary(lm(private$cached_values$KKstats$y_matched_diffs ~ private$cached_values$KKstats$X_matched_diffs)))
-			mod = fast_ols_with_var_cpp(cbind(1, private$cached_values$KKstats$X_matched_diffs), private$cached_values$KKstats$y_matched_diffs, j = 1) #the only time you need the intercept's ssq
-			private$cached_values$beta_T_matched =     mod$b[1]
+			yd = private$cached_values$KKstats$y_matched_diffs
+			Xd = private$cached_values$KKstats$X_matched_diffs
+			m  = length(yd)
+
+			# Use QR with column pivoting to reduce Xd to a numerically full-rank subset.
+			# This handles: (a) exact linear dependencies from factor dummy columns that
+			# sum to zero in the differences, and (b) near-zero columns that would make
+			# X'X near-singular and cause ConjugateGradient to fail in fast_ols_with_var_cpp.
+			if (ncol(Xd) > 0) {
+				qr_Xd = qr(Xd)
+				r = qr_Xd$rank
+				if (r < ncol(Xd)) {
+					Xd = Xd[, qr_Xd$pivot[seq_len(r)], drop = FALSE]
+				}
+			}
+			p_kept = ncol(Xd)
+
+			# If the system is underdetermined after rank reduction (or no covariates),
+			# fall back to the simple mean difference (intercept-only OLS).
+			if (m <= p_kept + 1) {
+				private$cached_values$beta_T_matched     = if (m >= 1) mean(yd) else NA_real_
+				private$cached_values$ssq_beta_T_matched = if (m >= 2) var(yd) / m else NA_real_
+				return(invisible(NULL))
+			}
+
+			mod = fast_ols_with_var_cpp(cbind(1, Xd), yd, j = 1) #the only time you need the intercept's ssq
+			private$cached_values$beta_T_matched     = mod$b[1]
 			private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
 		},
 
 		ols_for_reservoir = function(){
-			# stats::coef(summary(lm(private$cached_values$KKstats$y_reservoir ~ cbind(private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir))))
-			mod = fast_ols_with_var_cpp(cbind(1, private$cached_values$KKstats$w_reservoir, private$cached_values$KKstats$X_reservoir), private$cached_values$KKstats$y_reservoir)
-			private$cached_values$beta_T_reservoir =     mod$b[2]
+			y_r = private$cached_values$KKstats$y_reservoir
+			w_r = private$cached_values$KKstats$w_reservoir
+			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
+
+			# Build full design matrix: intercept (col 1), treatment (col 2), covariates (cols 3+).
+			X_full  = cbind(1, w_r, X_r)
+			j_treat = 2L
+
+			# QR-reduce to full rank while always preserving the treatment column.
+			# This handles datasets where model.matrix(~ 0 + .) includes all factor levels,
+			# which when combined with the intercept creates a linear dependency.
+			qr_full = qr(X_full)
+			r_full  = qr_full$rank
+			if (r_full < ncol(X_full)) {
+				keep = qr_full$pivot[seq_len(r_full)]
+				# Ensure treatment column is always included
+				if (!(2L %in% keep)) {
+					keep[r_full] = 2L
+				}
+				keep    = sort(keep)
+				X_full  = X_full[, keep, drop = FALSE]
+				j_treat = which(keep == 2L)
+			}
+
+			mod = fast_ols_with_var_cpp(X_full, y_r, j = j_treat)
+			private$cached_values$beta_T_reservoir     = mod$b[j_treat]
 			private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j
 		}
-	)		
+	)
 )

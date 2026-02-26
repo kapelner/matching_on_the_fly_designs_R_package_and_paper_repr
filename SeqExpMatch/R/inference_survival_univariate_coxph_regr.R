@@ -44,6 +44,18 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 		#' 	
 		compute_treatment_estimate = function(){
 			private$generate_mod()$b[2]
+		},
+
+		#' @description
+		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#'
+		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param nsim_exact_test		The number of randomization vectors. The default is 501.
+		#' @param pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
+		#' @param show_progress		Show a text progress indicator.
+		#' @return 	A 1 - alpha sized frequentist confidence interval
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+			stop("Randomization confidence intervals are not supported for Cox PH models because the estimator units (Log-Hazard Ratio) are inconsistent with the randomization test's required transformed scale (Log-Time Ratio / AFT effect).")
 		}
 	),
 	

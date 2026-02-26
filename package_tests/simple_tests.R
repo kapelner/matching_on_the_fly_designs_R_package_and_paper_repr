@@ -7,39 +7,40 @@ source("package_tests/_dataset_load.R")
 options(error = recover)
 # options(warn=2)
 
-NUM_CORES = 1 # Force serial execution for debugging
+Nrep = 1
+NUM_CORES = 4
 prob_censoring = 0.15
-nsim_exact_test = 201
-pval_epsilon = 0.01
+nsim_exact_test = 351
+pval_epsilon = 0.007
 test_compute_confidence_interval_rand = TRUE #too slow for now
-beta_T = 1
 beta_T_values = c(0, 1)
 SD_NOISE = 0.1
 
 results_file = "package_tests/simple_tests_results.csv"
 run_row_id = 0L
 results_dt = data.table(
-  run_row_id = integer(),
   duration_time_sec = numeric(),
-  beta_T = numeric(),
-  nsim_exact_test = integer(),
-  pval_epsilon = numeric(),
-  prob_censoring = numeric(),
-  sd_noise = numeric(),
-  num_cores = integer(),
   inference_class = character(),
   dataset = character(),
-  dataset_n_rows = integer(),
-  dataset_n_cols = integer(),
   design = character(),
   response_type = character(),
   function_run = character(),
   result_1 = character(),
   result_2 = character(),
   beta_T_in_confidence_interval = logical(),
+  error_message = character(),
+  rep = integer(),
+  run_row_id = integer(),
+  beta_T = numeric(),
+  nsim_exact_test = integer(),
+  pval_epsilon = numeric(),
+  prob_censoring = numeric(),
+  sd_noise = numeric(),
+  num_cores = integer(),
+  dataset_n_rows = integer(),
+  dataset_n_cols = integer(),
   result = character(),
-  status = character(),
-  error_message = character()
+  status = character()
 )
 write_results_if_needed = function(force = FALSE){
   if (force || nrow(results_dt) > 0L){
@@ -77,6 +78,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
   results_dt <<- data.table::rbindlist(list(
     results_dt,
     data.table(
+      rep = as.integer(rep_curr),
       run_row_id = run_row_id,
       duration_time_sec = duration_time_sec,
       beta_T = beta_T,
@@ -99,7 +101,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
       status = status,
       error_message = ifelse(is.null(error_message), NA_character_, as.character(error_message))
     )
-  ))
+  ), use.names = TRUE)
   write_results_if_needed(force = TRUE)
 }
 
@@ -163,6 +165,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
       is_non_fatal = grepl("not implemented", e$message, fixed = TRUE) ||
                      grepl("not enough discordant pairs", e$message, ignore.case = TRUE) ||
                      grepl("Degenerate confidence interval", e$message, fixed = TRUE) ||
+                     grepl("inconsistent estimator units", e$message, ignore.case = TRUE) ||
                      (grepl("NA/NaN/Inf", e$message, fixed = TRUE) &&
                       grepl("compute_bootstrap", label, fixed = TRUE) &&
                       is(seq_des_inf, "SeqDesignInferenceIncidKKClogit"))
@@ -210,7 +213,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
             ))
   }
 
-  if (test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #,  "proportion", "survival"
+  if (test_compute_confidence_interval_rand & response_type %in% c("continuous",  "proportion",  "count")){ #,  "proportion", "survival"
     message("    Calling compute_confidence_interval_rand()")
     safe_call("compute_confidence_interval_rand",
               seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
@@ -237,7 +240,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 
 run_tests_for_response = function(response_type, design_type, dataset_name){
   inference_banner = function(inf_name){
-    message(paste0("\n\n  == Inference: ", inf_name, " beta_T = [", beta_T, "]\n"))
+    message(paste0("\n\n  == Inference: ", inf_name, " dataset = ", dataset_name, " beta_T = [", beta_T, "]\n"))
   }
 
   apply_treatment_effect_and_noise = function(y_t, w_t, response_type){
@@ -269,10 +272,11 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
   n = nrow(D$X)
   dead = rep(1, n)
   y = D$y_original[[response_type]]
+  t_f = quantile(y, .95)
 
   if (response_type == "survival"){
     for (i in 1 : n){
-      if (runif(1) < prob_censoring){
+      if (runif(1) < prob_censoring | y[i] >= t_f){
         y[i] = runif(1, 0, y[i])
         dead[i] = 0
       }
@@ -372,28 +376,31 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 # design_type = "CRD"
 # dataset_name = "boston"
 
-for (beta_T_iter_curr in seq_along(beta_T_values)){
-  beta_T = beta_T_values[beta_T_iter_curr]
-  message(paste0("\n\n=== Running tests with beta_T = [", beta_T, "] ===\n\n"))
-  for (dataset_name in names(datasets_and_response_models)){
-    message(paste0("\n\n=== Running tests for dataset: ", dataset_name, " ===\n\n"))
-    for (response_type in c("continuous", "incidence", "proportion", "count", "survival")) {
-      if (!(response_type %in% names(datasets_and_response_models[[dataset_name]]$y_original))) {
-        message(paste0("\n\n  === Skipping response_type: ", response_type, " for dataset: ", dataset_name, " (not found in y_original) ===\n\n"))
-        next
+for (rep_curr in 1:Nrep) {
+  message(paste0("\n\n====== RUNNING REPETITION ", rep_curr, " OF ", Nrep, " ======\n\n"))
+  for (beta_T_iter_curr in seq_along(beta_T_values)){
+    beta_T = beta_T_values[beta_T_iter_curr]
+    message(paste0("\n\n=== Running tests with beta_T = [", beta_T, "] ===\n\n"))
+    for (dataset_name in names(datasets_and_response_models)){
+      message(paste0("\n\n=== Running tests for dataset: ", dataset_name, " ===\n\n"))
+      for (response_type in c("continuous", "incidence", "proportion", "count", "survival")) {
+        if (!(response_type %in% names(datasets_and_response_models[[dataset_name]]$y_original))) {
+          message(paste0("\n\n  === Skipping response_type: ", response_type, " for dataset: ", dataset_name, " (not found in y_original) ===\n\n"))
+          next
+        }
+        message(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
+        for (design_type in c("CRD", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise")) { #, "Atkinson"
+          message(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
+          run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
+          message(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))
+        }
+        message(paste0("\n\n  === Finished tests for response_type: ", response_type, " ===\n\n"))
       }
-      message(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
-      for (design_type in c("CRD", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise")) { #, "Atkinson"
-        message(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
-        run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
-        message(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))
-      }
-      message(paste0("\n\n  === Finished tests for response_type: ", response_type, " ===\n\n"))
+      message(paste0("\n\n  === Finished tests for dataset: ", dataset_name, " ===\n\n"))
     }
-    message(paste0("\n\n  === Finished tests for dataset: ", dataset_name, " ===\n\n"))
   }
 }
 message("\n\n----------------------All tests complete!")
 write_results_if_needed(force = TRUE)
 
-rm(list=ls()); rstudioapi::restartSession()
+rm(list=ls()) #; rstudioapi::restartSession()

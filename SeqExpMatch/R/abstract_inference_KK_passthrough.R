@@ -49,6 +49,10 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 			} else {
 				assertCount(B, positive = TRUE)
 
+				if (is.null(private$cached_values$KKstats)){
+					private$compute_basic_match_data()
+				}
+
 				n = private$n
 				y = private$y
 				dead = private$dead

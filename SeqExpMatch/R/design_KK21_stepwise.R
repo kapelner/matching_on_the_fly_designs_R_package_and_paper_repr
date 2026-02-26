@@ -73,33 +73,38 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			ys = all_subject_data$y_all
 			ws = all_subject_data$w_all_with_y_scaled
 			deads = all_subject_data$dead_all
-			
+			# The C++ stepwise functions initialize all weights to NA and fill them as each
+			# step succeeds. When perfect separation (or rank deficiency) causes an early
+			# break, the remaining features retain NA. Replace NA with 0 so those features
+			# are simply excluded from distance matching rather than crashing the design.
+			na0 = function(w) { w[is.na(w)] = 0; w }
+
 			if (private$response_type == "continuous"){
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
+				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
 			}
 			if (private$response_type == "incidence"){
-				return(kk21_stepwise_logistic_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
+				return(na0(kk21_stepwise_logistic_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
 			}
 			if (private$response_type == "count" && private$count_use_speedup){
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys + 1)), as.numeric(ws)))
+				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys + 1)), as.numeric(ws))))
 			}
 			if (private$response_type == "proportion" && private$proportion_use_speedup){
 				ys_adj = ys
 				ys_adj[ys_adj == 0] = .Machine$double.eps
 				ys_adj[ys_adj == 1] = 1 - .Machine$double.eps
-				return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys_adj / (1 - ys_adj))), as.numeric(ws)))
+				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys_adj / (1 - ys_adj))), as.numeric(ws))))
 			}
 			if (private$response_type == "survival"){
 				if (private$survival_use_speedup_for_no_censoring && all(deads == 1)){
-					return(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys)), as.numeric(ws)))
+					return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys)), as.numeric(ws))))
 				}
-				return(kk21_stepwise_survival_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(deads), as.numeric(ws)))
+				return(na0(kk21_stepwise_survival_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(deads), as.numeric(ws))))
 			}
 			if (private$response_type == "count" && !private$count_use_speedup){
-				return(kk21_stepwise_negbin_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
+				return(na0(kk21_stepwise_negbin_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
 			}
 			if (private$response_type == "proportion" && !private$proportion_use_speedup){
-				return(kk21_stepwise_beta_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws)))
+				return(na0(kk21_stepwise_beta_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
 			}
 
 			# Fallback for future response types (should not reach here for current types)

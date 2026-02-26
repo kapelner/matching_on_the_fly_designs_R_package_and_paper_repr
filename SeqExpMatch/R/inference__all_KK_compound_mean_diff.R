@@ -43,6 +43,10 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' }
 		#' 	
 		compute_treatment_estimate = function(){			
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+				private$compute_reservoir_and_match_statistics()
+			}
 			private$cached_values$beta_hat_T = 	if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
 													private$cached_values$KKstats$d_bar	
 												} else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
@@ -119,28 +123,55 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 			assertNumeric(delta)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
-			}						
-			2 * stats::pnorm(
-					-abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
-				) #approximate by using N(0, 1) distribution
+			}
+			private$cached_values$is_z = TRUE
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
 
+		#' @description
+		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#'
+		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param nsim_exact_test		The number of randomization vectors. The default is 501.
+		#' @param pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
+		#' @param show_progress		Show a text progress indicator.
+		#' @return 	A 1 - alpha sized frequentist confidence interval
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+			if (private$seq_des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
+				stop("Randomization confidence intervals are not supported for SeqDesignInferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+			}
+			super$compute_confidence_interval_rand(alpha = alpha, nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = show_progress)
 		}
 	),
-	
-	private = list(					
+
+	private = list(
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
-			}			
-			
+			}
+
+			ssqD = private$cached_values$KKstats$ssqD_bar
+			ssqR = private$cached_values$KKstats$ssqR
+
 			private$cached_values$s_beta_hat_T =
-				if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){	
-					sqrt(private$cached_values$KKstats$ssqD_bar)
-				} else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
-					sqrt(private$cached_values$KKstats$ssqR)		
+				if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
+					# Only matched pairs are usable; fall back to ssqR if ssqD is degenerate
+					if (is.finite(ssqD) && ssqD > 0) sqrt(ssqD) else if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
+				} else if (private$cached_values$KKstats$m == 0){
+					# No matched pairs
+					if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
 				} else {
-					sqrt(private$cached_values$KKstats$ssqR * private$cached_values$KKstats$ssqD_bar / (private$cached_values$KKstats$ssqR + private$cached_values$KKstats$ssqD_bar))
-				}			
+					# Combined: require both components to be positive and finite.
+					# If one collapses (e.g. tiny reservoir with near-identical responses),
+					# fall back to the other rather than pulling the combined SE to zero.
+					if (!is.finite(ssqD) || ssqD <= 0) {
+						if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
+					} else if (!is.finite(ssqR) || ssqR <= 0) {
+						sqrt(ssqD)
+					} else {
+						sqrt(ssqR * ssqD / (ssqR + ssqD))
+					}
+				}
 		}		
 	)		
 )

@@ -64,6 +64,7 @@ SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
+			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -81,6 +82,7 @@ SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
+			private$assert_finite_se()
 			if (delta == 0){
 				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
@@ -97,8 +99,17 @@ SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 			}
 			mod = private$fit_clogit()
 			private$cached_values$beta_hat_T   = as.numeric(mod$coefficients["w"])
-			private$cached_values$s_beta_hat_T = as.numeric(mod$se[1])
+			se = as.numeric(mod$se[1])
+			# Store NA when the SE is non-finite (e.g. too few discordant pairs /
+			# perfect separation); SE-dependent methods detect this via assert_finite_se()
+			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 			private$cached_values$is_z = TRUE
+		},
+
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				stop("Conditional logistic regression: not enough discordant pairs to compute a finite standard error (possible perfect separation).")
+			}
 		},
 
 		fit_clogit = function(){

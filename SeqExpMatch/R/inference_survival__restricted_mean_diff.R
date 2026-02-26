@@ -104,6 +104,18 @@ SeqDesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("SeqDesignInferenceSu
 			} else {
 				stop("TO-DO")
 			}
+		},
+
+		#' @description
+		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#'
+		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param nsim_exact_test		The number of randomization vectors. The default is 501.
+		#' @param pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
+		#' @param show_progress		Show a text progress indicator.
+		#' @return 	A 1 - alpha sized frequentist confidence interval
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+			stop("Randomization confidence intervals are not supported for SeqDesignInferenceSurvivalRestrictedMeanDiff due to inconsistent estimator units on the transformed scale (estimates time difference, but randomization test searches for log-time ratio).")
 		}
 	),
 

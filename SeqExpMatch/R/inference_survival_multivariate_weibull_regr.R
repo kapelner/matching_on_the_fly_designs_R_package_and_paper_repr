@@ -26,10 +26,11 @@ SeqDesignInferenceSurvivalMultiWeibullRegr = R6::R6Class("SeqDesignInferenceSurv
 		generate_mod = function(){
 			# Multivariate: covariates + treatment (mirrors SeqDesignInferenceSurvivalMultiCoxPHRegr)
 			X_cov_orig = private$get_X()
-			# Try first with no dropping, then progressively lower correlation threshold on error.
-			# For each threshold, first try fast_weibull_regression, then fall back to
-			# robust_survreg_with_surv_object (which retries with random initializations).
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80)
+			# Try fast C++ path with progressively lower correlation thresholds.
+			# The robust survreg fallback (slow: up to 50 random restarts) is invoked at most
+			# ONCE after all fast paths are exhausted, so bootstrap iterations stay fast.
+			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			full_X_matrix_last = NULL
 			for (thresh in thresholds) {
 				if (ncol(X_cov_orig) > 0) {
 					if (is.finite(thresh)) {
@@ -43,18 +44,18 @@ SeqDesignInferenceSurvivalMultiWeibullRegr = R6::R6Class("SeqDesignInferenceSurv
 					full_X_matrix = matrix(private$w, ncol = 1)
 					colnames(full_X_matrix) = "treatment"
 				}
-				# Fast path
+				full_X_matrix_last = full_X_matrix
 				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix), error = function(e) NULL)
 				if (!is.null(mod)) return(mod)
-				# Robust fallback: retries survreg with random initializations
-				surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix)
-				if (!is.null(surv_mod)) {
-					full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
-					full_vcov = surv_mod$var
-					if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
-						colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
-						return(list(coefficients = full_coefficients, vcov = full_vcov))
-					}
+			}
+			# All fast C++ paths failed: one robust survreg fallback on the most-reduced matrix
+			surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix_last)
+			if (!is.null(surv_mod)) {
+				full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
+				full_vcov = surv_mod$var
+				if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
+					colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
+					return(list(coefficients = full_coefficients, vcov = full_vcov))
 				}
 			}
 			stop("Weibull regression failed to converge even after progressive correlation dropping and robust retries.")
