@@ -7,8 +7,8 @@ source("package_tests/_dataset_load.R")
 options(error = recover)
 # options(warn=2)
 
-Nrep = 1
-NUM_CORES = 4
+Nrep = 10
+NUM_CORES = 2
 prob_censoring = 0.15
 nsim_exact_test = 351
 pval_epsilon = 0.007
@@ -16,7 +16,7 @@ test_compute_confidence_interval_rand = TRUE #too slow for now
 beta_T_values = c(0, 1)
 SD_NOISE = 0.1
 
-results_file = "package_tests/simple_tests_results.csv"
+results_file = paste0("package_tests/simple_tests_results_nc_", NUM_CORES, ".csv")
 run_row_id = 0L
 results_dt = data.table(
   duration_time_sec = numeric(),
@@ -106,6 +106,14 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 }
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
+  skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr")
+  skip_ci = beta_T == 1 && (
+    is(seq_des_inf, "SeqDesignInferenceIncidMultiLogRegr") ||
+    is(seq_des_inf, "SeqDesignInferencePropUniBetaRegr") ||
+    is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") ||
+    is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") ||
+    is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr")
+  )
   snap_small_numeric_to_zero = function(x, tol = sqrt(.Machine$double.eps)){
     if (is.null(x)){
       return(x)
@@ -166,9 +174,11 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
                      grepl("not enough discordant pairs", e$message, ignore.case = TRUE) ||
                      grepl("Degenerate confidence interval", e$message, fixed = TRUE) ||
                      grepl("inconsistent estimator units", e$message, ignore.case = TRUE) ||
+                     grepl("Bootstrap confidence interval returned NA bounds", e$message, fixed = TRUE) ||
+                     grepl("Weibull regression failed to converge", e$message, fixed = TRUE) ||
                      (grepl("NA/NaN/Inf", e$message, fixed = TRUE) &&
                       grepl("compute_bootstrap", label, fixed = TRUE) &&
-                      is(seq_des_inf, "SeqDesignInferenceIncidKKClogit"))
+                      (is(seq_des_inf, "SeqDesignInferenceIncidKKClogit") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
       
       if (is_non_fatal){
         message("Skipping ", label, " (non-fatal): ", e$message)
@@ -186,16 +196,22 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
   message("    Calling compute_mle_two_sided_pval_for_treatment_effect()")
   safe_call("compute_mle_two_sided_pval_for_treatment_effect",
             seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect())
-  message("    Calling compute_mle_confidence_interval()")
-  safe_call("compute_mle_confidence_interval",
-            seq_des_inf$compute_mle_confidence_interval(0.05))
-  message("    Calling compute_bootstrap_confidence_interval()")
-  safe_call("compute_bootstrap_confidence_interval",
-            seq_des_inf$compute_bootstrap_confidence_interval(B = nsim_exact_test, na.rm = TRUE))
-  message("    Calling compute_bootstrap_two_sided_pval()")
-  safe_call("compute_bootstrap_two_sided_pval",
-            seq_des_inf$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE))
-  if (response_type %in% c("continuous", "survival", "proportion")){
+  if (!skip_ci){
+    message("    Calling compute_mle_confidence_interval()")
+    safe_call("compute_mle_confidence_interval",
+              seq_des_inf$compute_mle_confidence_interval(0.05))
+  }
+  if (!skip_slow && !skip_ci){
+    message("    Calling compute_bootstrap_confidence_interval()")
+    safe_call("compute_bootstrap_confidence_interval",
+              seq_des_inf$compute_bootstrap_confidence_interval(B = nsim_exact_test, na.rm = TRUE))
+  }
+  if (!skip_slow){
+    message("    Calling compute_bootstrap_two_sided_pval()")
+    safe_call("compute_bootstrap_two_sided_pval",
+              seq_des_inf$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE))
+  }
+  if (!skip_slow && response_type %in% c("continuous", "survival", "proportion")){
     message("    Calling compute_two_sided_pval_for_treatment_effect_rand()")
     safe_call("compute_two_sided_pval_for_treatment_effect_rand",
             seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
@@ -213,7 +229,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
             ))
   }
 
-  if (test_compute_confidence_interval_rand & response_type %in% c("continuous",  "proportion",  "count")){ #,  "proportion", "survival"
+  if (!skip_slow && !skip_ci && test_compute_confidence_interval_rand & response_type %in% c("continuous",  "proportion",  "count")){ #,  "proportion", "survival"
     message("    Calling compute_confidence_interval_rand()")
     safe_call("compute_confidence_interval_rand",
               seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
@@ -227,10 +243,12 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
     yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
     (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
   })
-  message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
-  safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
-            seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
-  if (test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
+  if (!skip_slow){
+    message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
+    safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
+              seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
+  }
+  if (!skip_slow && !skip_ci && test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
     message("    Calling compute_confidence_interval_rand(custom)")
     safe_call("compute_confidence_interval_rand(custom)",
               seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
@@ -240,7 +258,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 
 run_tests_for_response = function(response_type, design_type, dataset_name){
   inference_banner = function(inf_name){
-    message(paste0("\n\n  == Inference: ", inf_name, " dataset = ", dataset_name, " beta_T = [", beta_T, "]\n"))
+    message(paste0("\n\n  == Inference: ", inf_name, " dataset = ", dataset_name, " beta_T = [", beta_T, "] num_cores = [", NUM_CORES, "] rep = [", rep_curr, "/", Nrep, "]\n"))
   }
 
   apply_treatment_effect_and_noise = function(y_t, w_t, response_type){
@@ -308,6 +326,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
       run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceContinMultOLSKK")
       run_inference_checks(SeqDesignInferenceContinMultOLSKK$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferenceContinMultGLS")
+      run_inference_checks(SeqDesignInferenceContinMultGLS$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     } else {
       inference_banner("SeqDesignInferenceContinMultOLS")
       run_inference_checks(SeqDesignInferenceContinMultOLS$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))

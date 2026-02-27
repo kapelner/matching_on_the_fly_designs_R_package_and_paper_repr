@@ -107,7 +107,8 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	
 	# Eliminate columns that may be causing multicollinearity before attempting model fit
 	X_mat = drop_highly_correlated_cols(X_mat)$M
-	
+	X_mat = drop_linearly_dependent_cols(X_mat)$M
+
 	cov_matrix_or_vector_data_frame = data.frame(X_mat)
 	
 	# Optimization: Use fast_weibull_regression for initialization if applicable

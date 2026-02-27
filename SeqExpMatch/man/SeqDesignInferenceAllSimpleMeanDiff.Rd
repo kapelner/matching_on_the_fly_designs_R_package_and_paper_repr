@@ -76,6 +76,7 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \item \href{#method-SeqDesignInferenceAllSimpleMeanDiff-compute_treatment_estimate}{\code{SeqDesignInferenceAllSimpleMeanDiff$compute_treatment_estimate()}}
 \item \href{#method-SeqDesignInferenceAllSimpleMeanDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllSimpleMeanDiff$compute_mle_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllSimpleMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllSimpleMeanDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceAllSimpleMeanDiff-compute_confidence_interval_rand}{\code{SeqDesignInferenceAllSimpleMeanDiff$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceAllSimpleMeanDiff-clone}{\code{SeqDesignInferenceAllSimpleMeanDiff$clone()}}
 }
 }
@@ -86,7 +87,6 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
@@ -112,8 +112,9 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-(which is very slow). The default is 1 for serial computation. This parameter is ignored
-for \code{test_type = "MLE-or-KM-based"}.}
+and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }
@@ -242,6 +243,37 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleMeanDiff-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleMeanDiff-compute_confidence_interval_rand}{}}}
+\subsection{Method \code{compute_confidence_interval_rand()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleMeanDiff$compute_confidence_interval_rand(
+  alpha = 0.05,
+  nsim_exact_test = 501,
+  pval_epsilon = 0.005,
+  show_progress = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{nsim_exact_test}}{The number of randomization vectors. The default is 501.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleMeanDiff-clone"></a>}}

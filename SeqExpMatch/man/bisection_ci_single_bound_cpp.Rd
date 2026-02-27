@@ -17,6 +17,6 @@ bisection_ci_single_bound_cpp(
 )
 }
 \description{
-Helper function that computes a single CI bound. Used internally.
+Single-threaded helper for computing one CI bound
 }
 \keyword{internal}

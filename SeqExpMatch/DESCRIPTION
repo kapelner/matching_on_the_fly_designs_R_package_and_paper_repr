@@ -44,7 +44,8 @@ Imports:
     nbpMatching,
     methods,
     MASS,
-    bclogit
+    bclogit,
+    nlme
 Suggests:
     doParallel,
     testthat
@@ -75,6 +76,7 @@ Collate:
     'inference_bai_et_al_KK21.R'
     'inference_continuous_multivariate_ols.R'
     'inference_continuous_KK_compound_multivariate_ols.R'
+    'inference_continuous_multivariate_gls.R'
     'inference_incidence_univariate_log_regr.R'
     'inference_incidence_multivariate_log_regr.R'
     'inference_incidence_KK_clogit.R'

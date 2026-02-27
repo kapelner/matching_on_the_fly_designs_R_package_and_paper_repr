@@ -15,6 +15,12 @@ get_restricted_mean_se_for_group(y, dead)
 The standard error of the restricted mean.
 }
 \description{
-Calculates the standard error of the restricted mean survival time for a single group.
+Uses the standard variance formula (Uno et al.):
+  Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
+where A(t_j) = integral_{t_j}^{tau} S(u) du is the remaining area under the KM
+curve from event time t_j to the last observation tau, d_j is the number of events
+at t_j, and n_j is the number at risk just before t_j.
+Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
+contribution is 0 in the limit regardless of the undefined Greenwood denominator.
 }
 \keyword{internal}

@@ -21,9 +21,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference 
-		#' 							(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 							for \code{test_type = "MLE-or-KM-based"}.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#'
 		#' @return A new `SeqDesignInference` object.
@@ -142,59 +143,102 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				w = private$w
 				X = private$get_X()
 
-				# Pure R bootstrap implementation
-				beta_hat_T_bs = rep(NA_real_, B)
-
-				for (b in 1:B) {
-					# Generate bootstrap indices (sample with replacement)
-					attempt = 1
-					repeat {
-						i_b = sample_int_replace_cpp(n, n)
-						w_b = w[i_b]
-						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
-							if (!private$any_censoring) break
-							dead_b_temp = dead[i_b]
-							if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
-								min(y[i_b]) > 0) break
-						}
-						attempt = attempt + 1
-						if (attempt > max_resample_attempts) break
-					}
-
-					# Create bootstrap sample
-					y_b = y[i_b]
-					dead_b = dead[i_b]
-					X_b = X[i_b, , drop = FALSE]
-
-					# Create a duplicate inference object for this bootstrap sample
-					boot_inf_obj = self$duplicate()
-
-					# Update the bootstrap object with resampled data
-					boot_inf_obj$.__enclos_env__$private$y = y_b
-					boot_inf_obj$.__enclos_env__$private$dead = dead_b
-					boot_inf_obj$.__enclos_env__$private$w = w_b
-					boot_inf_obj$.__enclos_env__$private$X = X_b
-					boot_inf_obj$.__enclos_env__$private$cached_values = list()
-
-					# Compute treatment estimate on bootstrap sample
-					if (attempt > max_resample_attempts) {
-						if (private$verbose) {
-							cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
-						}
-						beta_hat_T_bs[b] = NA_real_
-					} else {
-						beta_hat_T_bs[b] = tryCatch({
-							boot_inf_obj$compute_treatment_estimate()
-						}, error = function(e) {
-							if (private$verbose) {
-								cat("      Bootstrap sample", b, "failed:", e$message, "\n")
-							}
-							NA_real_
-						})
+				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
+				if (private$has_private_method("compute_fast_bootstrap_distr")) {
+					fast_distr = private$compute_fast_bootstrap_distr(B, max_resample_attempts, n, y, dead, w)
+					if (!is.null(fast_distr)) {
+						return(fast_distr)
 					}
 				}
 
-				beta_hat_T_bs
+				# Pure R bootstrap implementation (fallback for GLMs or when C++ fast-path is unavailable)
+				if (private$num_cores == 1) {
+					beta_hat_T_bs = rep(NA_real_, B)
+					for (b in 1:B) {
+						# Generate bootstrap indices (sample with replacement)
+						attempt = 1
+						repeat {
+							i_b = sample_int_replace_cpp(n, n)
+							w_b = w[i_b]
+							if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+								if (!private$any_censoring) break
+								dead_b_temp = dead[i_b]
+								if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
+									min(y[i_b]) > 0) break
+							}
+							attempt = attempt + 1
+							if (attempt > max_resample_attempts) break
+						}
+
+						# Create bootstrap sample
+						y_b = y[i_b]
+						dead_b = dead[i_b]
+						X_b = X[i_b, , drop = FALSE]
+
+						# Create a duplicate inference object for this bootstrap sample
+						boot_inf_obj = self$duplicate()
+
+						# Update the bootstrap object with resampled data
+						boot_inf_obj$.__enclos_env__$private$y = y_b
+						boot_inf_obj$.__enclos_env__$private$dead = dead_b
+						boot_inf_obj$.__enclos_env__$private$w = w_b
+						boot_inf_obj$.__enclos_env__$private$X = X_b
+						boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+						# Compute treatment estimate on bootstrap sample
+						if (attempt > max_resample_attempts) {
+							if (private$verbose) {
+								cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
+							}
+							beta_hat_T_bs[b] = NA_real_
+						} else {
+							beta_hat_T_bs[b] = tryCatch({
+								boot_inf_obj$compute_treatment_estimate()
+							}, error = function(e) {
+								if (private$verbose) {
+									cat("      Bootstrap sample", b, "failed:", e$message, "\n")
+								}
+								NA_real_
+							})
+						}
+					}
+					return(beta_hat_T_bs)
+				} else {
+					# Parallel bootstrap execution for R loop fallback
+					beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+						attempt = 1
+						repeat {
+							i_b = sample_int_replace_cpp(n, n)
+							w_b = w[i_b]
+							if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+								if (!private$any_censoring) break
+								dead_b_temp = dead[i_b]
+								if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
+									min(y[i_b]) > 0) break
+							}
+							attempt = attempt + 1
+							if (attempt > max_resample_attempts) break
+						}
+
+						if (attempt > max_resample_attempts) {
+							return(NA_real_)
+						}
+
+						boot_inf_obj = self$duplicate()
+						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+						boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+						boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+						tryCatch({
+							boot_inf_obj$compute_treatment_estimate()
+						}, error = function(e) {
+							NA_real_
+						})
+					}, mc.cores = private$num_cores))
+					return(beta_hat_T_bs)
+				}
 			},
 				#' @description
 		#' Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
@@ -296,6 +340,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'								internal parameter set to something besides "none" when computing randomization confidence intervals
 		#'								for non-continuous response types. 
 		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
+		#' @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+		#' 							If NULL (default), permutations will be drawn on the fly.
 		#' @return 	A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
 		#' 
 		#' @examples
@@ -374,12 +420,26 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			
 			use_perms = !is.null(permutations) && length(permutations) >= nsim_exact_test
 			
+			# If a fast C++ dispatcher exists but permutations weren't provided, generate them now 
+			# to avoid falling back to the slow, heavy mclapply R loop.
+			if (!use_perms && private$has_private_method("compute_fast_randomization_distr")) {
+				permutations = private$generate_permutations(nsim_exact_test)
+				use_perms = TRUE
+			}
+
 			# Iteration function that uses thread-local objects
 			run_randomization_iteration <- function(thread_des_obj, thread_inf_obj, perm_idx = NULL){
 				if (use_perms && !is.null(perm_idx)) {
 					# Use cached w
 					perm_data = permutations[[perm_idx]]
 					
+					# Update design object directly with cached assignments so custom stats 
+					# accessing seq_des_obj_priv_int$w get the permuted w.
+					thread_des_obj$.__enclos_env__$private$w = perm_data$w
+					if (is_KK && private$object_has_private_method(thread_des_obj, "match_indic")){
+						thread_des_obj$.__enclos_env__$private$match_indic = perm_data$match_indic
+					}
+
 					# Update inference object directly with cached assignments
 					thread_inf_obj$.__enclos_env__$private$w = perm_data$w
 					if (is_KK && private$object_has_private_method(thread_inf_obj, "match_indic")){
@@ -462,6 +522,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				estimate_val
 			}
 
+			# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
+			if (use_perms && private$has_private_method("compute_fast_randomization_distr")) {
+				fast_distr = private$compute_fast_randomization_distr(
+					seq_des_template$.__enclos_env__$private$y, 
+					permutations, 
+					delta, 
+					transform_responses
+				)
+				if (!is.null(fast_distr)) {
+					return(fast_distr)
+				}
+			}
+
 			# Pure R implementation for robustness
 			# We use a single pair of objects if cores = 1
 			# Parallelizing randomization tests in R can be done via mclapply if needed
@@ -532,6 +605,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'								for non-continuous responses.
 		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.
 		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
+		#' @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+		#' 							If NULL (default), permutations will be drawn on the fly.
 		#' 
 		#' @return 	The approximate frequentist p-value
 		#' 
@@ -1051,35 +1126,30 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 		# Parallel computation of both CI bounds using OpenMP
 		compute_ci_both_bounds_parallel = function(nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, permutations = NULL){
-			# Create a p-value function wrapper that the C++ code can call
-			# The C++ code will pass 4 arguments: (nsim, delta, trans, cores)
-			# We use ... to ignore the cores parameter since it's handled at a different level
-			pval_fn = function(...) {
-				args = list(...)
-				as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(
-					nsim_exact_test = args[[1]],
-					delta = args[[2]],
-					transform_responses = args[[3]],
-					# args[[4]] is cores, which we ignore here
-					permutations = permutations
-				))
-			}
-
-			# Call parallelized C++ function that computes both bounds simultaneously
-			ci_bounds = bisection_ci_parallel_cpp(
-				pval_fn = pval_fn,
-				nsim_exact_test = nsim_exact_test,
-				l_lower = l_lower,
-				u_lower = u_lower,
-				l_upper = l_upper,
-				u_upper = u_upper,
-				pval_th = pval_th,
-				tol = tol,
-				transform_responses = transform_responses,
-				num_cores = private$num_cores
+			# Compute both CI bounds in parallel using mclapply (fork-based).
+			# Calling R functions from OpenMP threads is unsafe; mclapply gives each
+			# child its own R interpreter (copy-on-write fork), so it is safe even when
+			# private$cached_values$t0s_rand is read by both children simultaneously.
+			bound_specs = list(
+				list(l = l_lower, u = u_lower, lower = TRUE),
+				list(l = l_upper, u = u_upper, lower = FALSE)
 			)
+			results = parallel::mclapply(bound_specs, function(spec) {
+				private$num_cores = 1L  # each forked child runs its bound serially
+				private$compute_ci_by_inverting_the_randomization_test_iteratively(
+					nsim_exact_test,
+					l                  = spec$l,
+					u                  = spec$u,
+					pval_th            = pval_th,
+					tol                = tol,
+					transform_responses = transform_responses,
+					lower              = spec$lower,
+					show_progress      = FALSE,
+					permutations       = permutations
+				)
+			}, mc.cores = min(2L, private$num_cores))
 
-			return(ci_bounds)
+			c(results[[1]], results[[2]])
 		},
 
 		compute_ci_by_inverting_the_randomization_test_iteratively = function(nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL){

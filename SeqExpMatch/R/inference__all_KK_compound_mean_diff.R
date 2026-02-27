@@ -13,8 +13,9 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 								for \code{test_type = "MLE-or-KM-based"}.
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
@@ -145,6 +146,105 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 	),
 
 	private = list(
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic) {
+			# Only safe for simple additive/linear combinations right now.
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			n = length(y)
+			y_mat = matrix(0.0, nrow = n, ncol = B)
+			w_mat = matrix(0L, nrow = n, ncol = B)
+			match_indic_mat = matrix(0L, nrow = n, ncol = B)
+			
+			for (b in 1:B) {
+				# Resample reservoir with replacement
+				i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+
+				# For matched pairs, sample which pairs to include (with replacement)
+				if (m > 0) {
+					pairs_to_include = sample(1:m, m, replace = TRUE)
+					i_matched_b = integer(0)
+					match_indic_b_matched = integer(0)
+					for (new_pair_id in 1:m) {
+						original_pair_id = pairs_to_include[new_pair_id]
+						pair_indices = which(match_indic == original_pair_id)
+						i_matched_b = c(i_matched_b, pair_indices)
+						match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+					}
+				} else {
+					i_matched_b = integer(0)
+					match_indic_b_matched = integer(0)
+				}
+
+				# Combine reservoir and matched indices
+				i_b = c(i_reservoir_b, i_matched_b)
+				
+				y_mat[, b] = y[i_b]
+				w_mat[, b] = w[i_b]
+				match_indic_mat[, b] = c(rep(0L, n_reservoir), match_indic_b_matched)
+			}
+			
+			res = compute_kk_compound_bootstrap_parallel_cpp(
+				y_mat, 
+				w_mat, 
+				match_indic_mat, 
+				private$num_cores
+			)
+			
+			return(res)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+			# Only safe for simple additive/linear combinations right now.
+			# If a custom statistic is provided, fall back to slow R evaluation.
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			nsim = length(permutations)
+			n = length(y)
+			
+			w_mat = matrix(0L, nrow = n, ncol = nsim)
+			match_indic_mat = matrix(0L, nrow = n, ncol = nsim)
+			
+			for (i in 1:nsim) {
+				w_mat[, i] = permutations[[i]]$w
+				
+				mi = permutations[[i]]$match_indic
+				if (is.null(mi)) {
+					mi = rep(0L, n)
+				}
+				mi[is.na(mi)] = 0L
+				match_indic_mat[, i] = mi
+			}
+
+			# Apply the delta shift to y BEFORE passing to C++
+			y_shifted = copy(y)
+			if (delta != 0) {
+				# For the actual math in the C++ function, we simulate what the data 
+				# looks like *under the null hypothesis*. The R base class already 
+				# did the `seq_des_template$y[w==1] - delta` to shift the overall population.
+				# However, in the slow R loop, it adds delta *back* to the permuted 
+				# treatment subjects so the null distribution is centered at delta.
+				# We must reproduce this addition in R before handing off to C++, 
+				# or handle it in C++. We will handle it in C++ since we need `w_sim` to do it.
+				# WAIT! If we handle it in C++, we have to duplicate that logic.
+				# Alternatively, since we are doing linear estimators (mean diffs),
+				# `t0s(delta) = t0s(0) + delta`. The base class handles this perfectly!
+				# If delta != 0, it won't even call this function usually, it'll just shift t0s_ref.
+				# If it DOES call it, we can just return NULL and let the robust R loop handle it, 
+				# because this is only a bottleneck for the initial delta=0 generation!
+				if (delta != 0) return(NULL)
+			}
+			
+			# Call the fast C++ implementation
+			res = compute_kk_compound_distr_parallel_cpp(
+				y_shifted, 
+				w_mat, 
+				match_indic_mat, 
+				private$num_cores
+			)
+			
+			return(res)
+		},
+
 		shared = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()

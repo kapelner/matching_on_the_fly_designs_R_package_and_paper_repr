@@ -45,6 +45,38 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
     .Call(`_SeqExpMatch_beta_aic_cpp`, y, mu, phi, wt)
 }
 
+#' Sequential computation of both CI bounds (called from R-level parallelism)
+#'
+#' This function is kept for backwards compatibility but the outer parallelism
+#' (running lower/upper bounds simultaneously) is now handled at the R level via
+#' parallel::mclapply, which is safe. Calling R functions from OpenMP threads is
+#' undefined behaviour in R and caused process crashes.
+#'
+#' @param pval_fn R function: pval_fn(nsim, delta, transform_responses, num_cores)
+#' @param nsim_exact_test Number of randomization iterations
+#' @param l_lower Initial lower bound for lower CI bound search
+#' @param u_lower Initial upper bound for lower CI bound search (typically the estimate)
+#' @param l_upper Initial lower bound for upper CI bound search (typically the estimate)
+#' @param u_upper Initial upper bound for upper CI bound search
+#' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
+#' @param tol Tolerance for convergence (in p-value space)
+#' @param transform_responses String: "none", "log", or "logit"
+#' @param num_cores Passed through to pval_fn for inner parallelism
+#'
+#' @return Numeric vector of length 2: [lower_bound, upper_bound]
+#'
+#' @export
+bisection_ci_parallel_cpp <- function(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 1L) {
+    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
+}
+
+#' Single-threaded helper for computing one CI bound
+#'
+#' @keywords internal
+bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
+    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores)
+}
+
 #' Bisection loop for computing confidence interval bounds by inverting randomization tests
 #'
 #' This function implements the bisection algorithm to find CI bounds by inverting
@@ -65,38 +97,6 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
 #' @export
 bisection_ci_loop_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower) {
     .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower)
-}
-
-#' Parallel computation of both CI bounds by inverting randomization tests
-#'
-#' This function computes both the lower and upper confidence interval bounds
-#' in parallel using OpenMP. Each bound uses the bisection algorithm.
-#'
-#' @param pval_fn R function that computes two-sided p-value given delta
-#' @param nsim_exact_test Number of randomization iterations
-#' @param l_lower Initial lower bound for lower CI bound search
-#' @param u_lower Initial upper bound for lower CI bound search (typically the estimate)
-#' @param l_upper Initial lower bound for upper CI bound search (typically the estimate)
-#' @param u_upper Initial upper bound for upper CI bound search
-#' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
-#' @param tol Tolerance for convergence (in p-value space)
-#' @param transform_responses String: "none", "log", or "logit"
-#' @param num_cores Number of cores to use (0 = auto-detect, 1 = no parallelization)
-#'
-#' @return Numeric vector of length 2: [lower_bound, upper_bound]
-#'
-#' @export
-bisection_ci_parallel_cpp <- function(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 0L) {
-    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
-}
-
-#' Single-threaded helper for computing one CI bound
-#'
-#' Helper function that computes a single CI bound. Used internally.
-#'
-#' @keywords internal
-bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
-    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores)
 }
 
 bootstrap_indices_cpp <- function(n, B) {
@@ -234,6 +234,14 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
 
 #' Calculates the standard error of the restricted mean survival time for a single group.
 #'
+#' Uses the standard variance formula (Uno et al.):
+#'   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
+#' where A(t_j) = integral_{t_j}^{tau} S(u) du is the remaining area under the KM
+#' curve from event time t_j to the last observation tau, d_j is the number of events
+#' at t_j, and n_j is the number at risk just before t_j.
+#' Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
+#' contribution is 0 in the limit regardless of the undefined Greenwood denominator.
+#'
 #' @param y Numeric vector of survival times.
 #' @param dead Integer vector of event indicators (1=event, 0=censored).
 #' @return The standard error of the restricted mean.
@@ -321,12 +329,28 @@ compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reser
     .Call(`_SeqExpMatch_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
 }
 
+compute_kk_compound_distr_parallel_cpp <- function(y, w_mat, match_indic_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_kk_compound_distr_parallel_cpp`, y, w_mat, match_indic_mat, num_cores)
+}
+
+compute_kk_compound_bootstrap_parallel_cpp <- function(y_mat, w_mat, match_indic_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp`, y_mat, w_mat, match_indic_mat, num_cores)
+}
+
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
     .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
 }
 
 match_diffs_cpp <- function(w, match_indic, y, X, m) {
     .Call(`_SeqExpMatch_match_diffs_cpp`, w, match_indic, y, X, m)
+}
+
+compute_ols_distr_parallel_cpp <- function(y, X_covars, w_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_ols_distr_parallel_cpp`, y, X_covars, w_mat, num_cores)
+}
+
+compute_ols_bootstrap_parallel_cpp <- function(y, X_covars, w, indices_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_ols_bootstrap_parallel_cpp`, y, X_covars, w, indices_mat, num_cores)
 }
 
 compute_pair_averages_cpp <- function(X, match_indic, m) {
@@ -351,6 +375,10 @@ compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_sub
 
 sample_mode_cpp <- function(data) {
     .Call(`_SeqExpMatch_sample_mode_cpp`, data)
+}
+
+compute_simple_mean_diff_parallel_cpp <- function(y_mat, w_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_simple_mean_diff_parallel_cpp`, y_mat, w_mat, num_cores)
 }
 
 which_cols_vary_cpp <- function(X) {

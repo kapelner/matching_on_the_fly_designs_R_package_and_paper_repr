@@ -16,8 +16,10 @@ SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 		#' with a binary (incidence) response.
 		#' @param seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose binary response y is recorded.
-		#' @param num_cores			The number of CPU cores to use for randomization-based inference.
-		#' 							Ignored for MLE-based inference. Default is 1.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			Whether to print progress messages. Default is \code{FALSE}.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "incidence")

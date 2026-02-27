@@ -14,8 +14,9 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 								for \code{test_type = "MLE-or-KM-based"}.
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)	
@@ -140,8 +141,62 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		}
 	),
 	
-			private = list(			
-				shared = function(){
+			private = list(
+		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			y_mat = matrix(0.0, nrow = n, ncol = B)
+			w_mat = matrix(0L, nrow = n, ncol = B)
+
+			for (b in 1:B) {
+				attempt = 1
+				i_b = NULL
+				w_b = NULL
+				repeat {
+					i_b = sample(n, n, replace = TRUE)
+					w_b = w[i_b]
+					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+						if (!private$any_censoring) break
+						dead_b_temp = dead[i_b]
+						if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) && min(y[i_b]) > 0) break
+					}
+					attempt = attempt + 1
+					if (attempt > max_resample_attempts) break
+				}
+
+				if (attempt > max_resample_attempts) {
+					w_mat[, b] = rep(0L, n)
+				} else {
+					y_mat[, b] = y[i_b]
+					w_mat[, b] = w_b
+				}
+			}
+
+			res = compute_simple_mean_diff_parallel_cpp(y_mat, w_mat, private$num_cores)
+			return(res)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			nsim = length(permutations)
+			n = length(y)
+			
+			w_mat = matrix(0L, nrow = n, ncol = nsim)
+			for (i in 1:nsim) {
+				w_mat[, i] = permutations[[i]]$w
+			}
+
+			y_shifted = copy(y)
+			if (delta != 0) return(NULL)
+			
+			y_mat = matrix(y_shifted, nrow = n, ncol = nsim)
+
+			res = compute_simple_mean_diff_parallel_cpp(y_mat, w_mat, private$num_cores)
+			return(res)
+		},
+
+		shared = function(){
 					if (is.null(private$cached_values$beta_hat_T)){
 						self$compute_treatment_estimate()
 					}

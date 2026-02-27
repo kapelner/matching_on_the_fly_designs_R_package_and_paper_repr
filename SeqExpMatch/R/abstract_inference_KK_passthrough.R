@@ -8,8 +8,9 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 								for \code{test_type = "MLE-or-KM-based"}.
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
@@ -68,6 +69,14 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 				# Identify reservoir and matched observations
 				i_reservoir = which(match_indic == 0)
 				n_reservoir = length(i_reservoir)
+
+				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
+				if (private$has_private_method("compute_fast_bootstrap_distr")) {
+					fast_distr = private$compute_fast_bootstrap_distr(B, i_reservoir, n_reservoir, m, y, w, match_indic)
+					if (!is.null(fast_distr)) {
+						return(fast_distr)
+					}
+				}
 
 				# Pure R KK bootstrap implementation
 				beta_hat_T_bs = rep(NA_real_, B)

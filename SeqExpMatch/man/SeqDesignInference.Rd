@@ -189,9 +189,10 @@ Initialize a sequential experimental design estimation and test object after the
 \describe{
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference 
-(which is very slow). The default is 1 for serial computation. This parameter is ignored
-for \code{test_type = "MLE-or-KM-based"}.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
+and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }
@@ -420,7 +421,8 @@ there will be a distribution of the estimates of the treatment effect (over many
   nsim_exact_test = 501,
   delta = 0,
   transform_responses = "none",
-  show_progress = TRUE
+  show_progress = TRUE,
+  permutations = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -431,12 +433,14 @@ there will be a distribution of the estimates of the treatment effect (over many
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
 
-\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log (your option when response type is survival) and 
-"logit" for logit (your option when response type is proportion). This is mostly an 
+\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
 internal parameter set to something besides "none" when computing randomization confidence intervals
-for survival and proportion response types.}
+for non-continuous response types.}
 
 \item{\code{show_progress}}{Show a text progress bar when running in serial. Ignored for parallel execution.}
+
+\item{\code{permutations}}{(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+If NULL (default), permutations will be drawn on the fly.}
 }
 \if{html}{\out{</div>}}
 }
@@ -480,7 +484,8 @@ the treatment different adjusted linearly for the p covariates.
   delta = 0,
   transform_responses = "none",
   na.rm = TRUE,
-  show_progress = TRUE
+  show_progress = TRUE,
+  permutations = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -492,13 +497,16 @@ is not "randomization-exact"). The default is 501 providing pvalue resolution to
 
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
 
-\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log and "logit" for logit. This is mostly an 
+\item{\code{transform_responses}}{"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
 internal parameter set something besides "none" when computing randomization confidence intervals
 for non-continuous responses.}
 
 \item{\code{na.rm}}{Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.}
 
 \item{\code{show_progress}}{Show a text progress bar when running in serial. Ignored for parallel execution.}
+
+\item{\code{permutations}}{(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+If NULL (default), permutations will be drawn on the fly.}
 }
 \if{html}{\out{</div>}}
 }
@@ -541,7 +549,7 @@ we adjust the treatment responses downward by delta. We then find the set of all
 This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
 https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
 As far as we know, this only works for response type continuous, uncensored survival (where we work in log-time and then
-return to natural time when finished) and proportion (where we work in logit-rate and return to rate when finished).
+return to natural time when finished), count (where we work in log1p-count and then return to natural count when finished) and proportion (where we work in logit-rate and return to rate when finished).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInference$compute_confidence_interval_rand(
   alpha = 0.05,

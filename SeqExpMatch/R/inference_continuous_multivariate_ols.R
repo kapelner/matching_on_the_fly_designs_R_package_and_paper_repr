@@ -14,8 +14,9 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 								(which is very slow). The default is 1 for serial computation. This parameter is ignored
-		#' 								for \code{test_type = "MLE-or-KM-based"}.
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")			
@@ -115,6 +116,57 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 	),
 	
 	private = list(		
+		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			indices_mat = matrix(0L, nrow = n, ncol = B)
+			
+			for (b in 1:B) {
+				attempt = 1
+				i_b = NULL
+				repeat {
+					i_b = sample(n, n, replace = TRUE)
+					w_b = w[i_b]
+					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+						if (!private$any_censoring) break
+						dead_b_temp = dead[i_b]
+						if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) && min(y[i_b]) > 0) break
+					}
+					attempt = attempt + 1
+					if (attempt > max_resample_attempts) break
+				}
+
+				if (attempt > max_resample_attempts) {
+					indices_mat[, b] = rep(-1L, n) # C++ looks for -1 to return NA
+				} else {
+					indices_mat[, b] = i_b - 1L # Convert to 0-based for C++
+				}
+			}
+			
+			X_covars = private$get_X()
+			res = compute_ols_bootstrap_parallel_cpp(y, X_covars, w, indices_mat, private$num_cores)
+			return(res)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			nsim = length(permutations)
+			n = length(y)
+			
+			w_mat = matrix(0L, nrow = n, ncol = nsim)
+			for (i in 1:nsim) {
+				w_mat[, i] = permutations[[i]]$w
+			}
+
+			if (delta != 0) return(NULL)
+			
+			X_covars = private$get_X()
+
+			res = compute_ols_distr_parallel_cpp(y, X_covars, w_mat, private$num_cores)
+			return(res)
+		},
+
 		shared = function(){
 #			private$cached_values$summary_table = 
 #				stats::coef(summary(lm(private$seq_des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$seq_des_obj_priv_int$w), private$get_X()))))

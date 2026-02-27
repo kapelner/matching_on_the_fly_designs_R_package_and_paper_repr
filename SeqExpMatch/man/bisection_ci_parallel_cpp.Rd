@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{bisection_ci_parallel_cpp}
 \alias{bisection_ci_parallel_cpp}
-\title{Parallel computation of both CI bounds by inverting randomization tests}
+\title{Sequential computation of both CI bounds (called from R-level parallelism)}
 \usage{
 bisection_ci_parallel_cpp(
   pval_fn,
@@ -14,11 +14,11 @@ bisection_ci_parallel_cpp(
   pval_th,
   tol,
   transform_responses,
-  num_cores = 0L
+  num_cores = 1L
 )
 }
 \arguments{
-\item{pval_fn}{R function that computes two-sided p-value given delta}
+\item{pval_fn}{R function: pval_fn(nsim, delta, transform_responses, num_cores)}
 
 \item{nsim_exact_test}{Number of randomization iterations}
 
@@ -36,12 +36,14 @@ bisection_ci_parallel_cpp(
 
 \item{transform_responses}{String: "none", "log", or "logit"}
 
-\item{num_cores}{Number of cores to use (0 = auto-detect, 1 = no parallelization)}
+\item{num_cores}{Passed through to pval_fn for inner parallelism}
 }
 \value{
 Numeric vector of length 2: [lower_bound, upper_bound]
 }
 \description{
-This function computes both the lower and upper confidence interval bounds
-in parallel using OpenMP. Each bound uses the bisection algorithm.
+This function is kept for backwards compatibility but the outer parallelism
+(running lower/upper bounds simultaneously) is now handled at the R level via
+parallel::mclapply, which is safe. Calling R functions from OpenMP threads is
+undefined behaviour in R and caused process crashes.
 }

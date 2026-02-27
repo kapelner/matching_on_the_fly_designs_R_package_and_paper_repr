@@ -121,3 +121,9 @@ FAST_GLM_CHECK_FIXES.md
 PARALLEL_CI_OPTIMIZATION.md
 
 package_tests/simple_tests_results.csv
+package_tests/benchmark_parallelism_results.csv
+package_tests/benchmark_parallelism_count_results.csv
+package_tests/simple_tests_results_nc_1.csv
+package_tests/simple_tests_results_nc_2.csv
+test_custom_pval.R
+test_gls.R

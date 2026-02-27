@@ -176,40 +176,48 @@ fast_logistic_regression = function(Xmm, y){
 #'
 #' @export
 fast_logistic_regression_with_var = function(Xmm, y){
-  # Compute inference on the second coefficient (treatment effect)
-  tryCatch({
-    mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-        Xmm = Xmm,
-        ybin = as.numeric(y),
-        do_inference_on_var = 2
-    ))
-    
-    # Check for NaNs in standard errors
-    if (any(is.na(mod$se)) || any(!is.finite(mod$se))) {
-      stop("NaNs or non-finite values detected in standard errors from fastLogisticRegressionWrap")
+  # Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
+  # separation: the MLE does not exist and the IWLS optimizer has diverged to a large
+  # but finite value (which passes is.finite() checks and would silently corrupt CIs).
+  SEPARATION_THRESHOLD = 1e6
+
+  # Attempt a single fit on matrix X; always returns a list with (b, ssq_b_2, converged).
+  # 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
+  try_fit = function(X){
+    tryCatch({
+      mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
+          Xmm = X,
+          ybin = as.numeric(y),
+          do_inference_on_var = 2
+      ))
+      if (any(is.na(mod$se)) || any(!is.finite(mod$se))) stop("non-finite SE")
+      b = as.vector(mod$coefficients)
+      list(b = b, ssq_b_2 = mod$se[2]^2, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+    }, error = function(e) {
+      # Fallback to standard R glm if fast version fails
+      mod_canonical = stats::glm.fit(x = X, y = as.numeric(y), family = stats::binomial())
+      b = as.vector(mod_canonical$coefficients)
+      R <- qr.R(mod_canonical$qr)
+      Rinv <- backsolve(R, diag(ncol(R)))
+      vcov <- Rinv %*% t(Rinv)
+      list(b = b, ssq_b_2 = vcov[2, 2], converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+    })
+  }
+
+  # Iteratively drop the covariate (column >= 3) with the largest absolute coefficient
+  # until the model converges or only the intercept + treatment remain.
+  X_curr = Xmm
+  repeat {
+    fit = try_fit(X_curr)
+    if (fit$converged) return(list(b = fit$b, ssq_b_2 = fit$ssq_b_2))
+    if (ncol(X_curr) <= 2){
+      stop("complete separation detected: logistic regression coefficients diverged (MLE does not exist)")
     }
-    
-    list(
-      b = as.vector(mod$coefficients),
-      ssq_b_2 = mod$se[2]^2  # Square the standard error to get variance
-    )
-  }, error = function(e) {
-    # Fallback to standard R glm if fast version fails
-    #warning("fastLogisticRegressionWrap failed, falling back to stats::glm. Error: ", e$message)
-    # Using glm.fit for speed
-    mod_canonical = stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
-    
-    # Extract variance of second coefficient (treatment effect)
-    # The variance-covariance matrix is (X'WX)^-1
-    R <- qr.R(mod_canonical$qr)
-    Rinv <- backsolve(R, diag(ncol(R)))
-    vcov <- Rinv %*% t(Rinv)
-    
-    list(
-      b = as.vector(mod_canonical$coefficients),
-      ssq_b_2 = vcov[2, 2]
-    )
-  })
+    covariate_cols = 3:ncol(X_curr)
+    coef_mags = abs(fit$b[covariate_cols])
+    worst_idx = if (all(is.na(coef_mags))) length(covariate_cols) else which.max(coef_mags)
+    X_curr = X_curr[, -covariate_cols[worst_idx], drop = FALSE]
+  }
 }
 
 #' Weibull Regression using survival package internals (fast, coefficients only)

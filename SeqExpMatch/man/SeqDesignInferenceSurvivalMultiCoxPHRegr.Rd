@@ -45,13 +45,13 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMforGLMs" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMforGLMs.html#method-SeqDesignInferenceMLEorKMforGLMs-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs$compute_mle_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceMLEorKMforGLMs" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceMLEorKMforGLMs.html#method-SeqDesignInferenceMLEorKMforGLMs-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceSurvivalUniCoxPHRegr" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceSurvivalUniCoxPHRegr.html#method-SeqDesignInferenceSurvivalUniCoxPHRegr-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInferenceSurvivalUniCoxPHRegr$compute_confidence_interval_rand()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -74,8 +74,9 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-(which is very slow). The default is 1 for serial computation. This parameter is ignored
-for \code{test_type = "MLE-or-KM-based"}.}
+and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }

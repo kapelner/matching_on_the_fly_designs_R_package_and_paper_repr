@@ -25,7 +25,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
-	
+
 
 ## ------------------------------------------------
 ## Method `SeqDesignInferenceContinMultOLSKK$compute_mle_confidence_interval`
@@ -44,7 +44,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_mle_confidence_interval()
 }
-	
+
 
 ## ------------------------------------------------
 ## Method `SeqDesignInferenceContinMultOLSKK$compute_mle_two_sided_pval_for_treatment_effect`
@@ -63,7 +63,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 }
-				
+
 }
 \section{Super classes}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThroughCompound]{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound}} -> \code{SeqDesignInferenceContinMultOLSKK}
@@ -111,8 +111,9 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-(which is very slow). The default is 1 for serial computation. This parameter is ignored
-for \code{test_type = "MLE-or-KM-based"}.}
+and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
 }
@@ -144,7 +145,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
-	
+
 }
 \if{html}{\out{</div>}}
 
@@ -157,7 +158,7 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_mle_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
 
-Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
+Here we use the theory that MLE's computed for GLM's are asymptotically normal.
 Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKK$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
@@ -188,7 +189,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_mle_confidence_interval()
 }
-	
+
 }
 \if{html}{\out{</div>}}
 
@@ -231,7 +232,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 }
-				
+
 }
 \if{html}{\out{</div>}}
 
