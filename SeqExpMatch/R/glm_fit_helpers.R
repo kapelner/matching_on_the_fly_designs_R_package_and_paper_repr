@@ -292,14 +292,26 @@ fast_weibull_regression = function(y, dead, X){
     # Wrap column names in backticks to handle special characters
     backticked_colnames = paste0("`", original_colnames, "`")
     formula_str = paste("survival::Surv(y, dead) ~", paste(backticked_colnames, collapse = " + "))
-    mod <- survival::survreg(as.formula(formula_str), data = df, dist = "weibull")
+    mod <- tryCatch(
+      survival::survreg(as.formula(formula_str), data = df, dist = "weibull"),
+      error = function(e) {
+        msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
+        stop("Weibull regression failed to converge: ", msg)
+      }
+    )
 
     # Extract coefficients and preserve names
     coefficients = as.vector(mod$coefficients)
     names(coefficients) = c("(Intercept)", original_colnames)
   } else {
     # Intercept-only model
-    mod <- survival::survreg(survival::Surv(y, dead) ~ 1, dist = "weibull")
+    mod <- tryCatch(
+      survival::survreg(survival::Surv(y, dead) ~ 1, dist = "weibull"),
+      error = function(e) {
+        msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
+        stop("Weibull regression failed to converge: ", msg)
+      }
+    )
     coefficients = as.vector(mod$coefficients)
     names(coefficients) = "(Intercept)"
   }

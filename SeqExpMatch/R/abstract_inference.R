@@ -806,12 +806,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
+					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
+					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
+					# mclapply when private$num_cores > 1 (see parallel branch below).
+					temp_inf$.__enclos_env__$private$num_cores = 1L
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
-					
+
 					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
 					transform_arg = "already_transformed"
-					
+
 					if (is_glm_like){
 						transform_arg = "log"
 						# y remains counts
@@ -819,52 +823,63 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						# No need to clamp 0 for log1p, it handles 0 naturally
 						temp_inf$.__enclos_env__$private$y = log1p(temp_inf$.__enclos_env__$private$y)
 					}
-					
+
 					temp_inf$.__enclos_env__$private$cached_values = list()
-					
+
 					est = temp_inf$compute_treatment_estimate()
-					
+
 					# Bootstrap on transformed data
 					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					l = bootstrap_ci[1] - 0.5 * ci_width
 					u = bootstrap_ci[2] + 0.5 * ci_width
-					
-					# Run inversion on temp_inf which has transformed data
-					ci = c(
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = l, 
-								u = est, 
-								pval_th = alpha / 2, 
-								tol = pval_epsilon,
-								transform_responses = transform_arg, 
-								lower = TRUE,
-								show_progress = show_progress,
-								permutations = perms),
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = est, 
-								u = u, 
-								pval_th = alpha / 2, 
-								tol = pval_epsilon, 
-								transform_responses = transform_arg, 
-								lower = FALSE,
-								show_progress = show_progress,
-								permutations = perms)
+
+					# Run inversion on temp_inf which has transformed data.
+					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
+					# computed simultaneously via an outer fork when private$num_cores > 1.
+					if (private$num_cores > 1) {
+						bound_specs = list(
+							list(l = l, u = est, lower = TRUE),
+							list(l = est, u = u, lower = FALSE)
 						)
+						results = parallel::mclapply(bound_specs, function(spec) {
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+								nsim_exact_test, l = spec$l, u = spec$u,
+								pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = spec$lower,
+								show_progress = FALSE, permutations = perms)
+						}, mc.cores = min(2L, private$num_cores))
+						ci = c(results[[1]], results[[2]])
+					} else {
+						ci = c(
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = TRUE,
+								show_progress = show_progress, permutations = perms),
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = FALSE,
+								show_progress = show_progress, permutations = perms)
+						)
+					}
 					# ci = exp(ci) # Ratio of (1+y)
 				},
 				proportion = {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
+					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
+					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
+					# mclapply when private$num_cores > 1 (see parallel branch below).
+					temp_inf$.__enclos_env__$private$num_cores = 1L
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
-					
+
 					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
 					transform_arg = "already_transformed"
-					
+
 					# Clamp to (epsilon, 1-epsilon) to avoid 0/1 for both GLM (Beta Reg) and Logit
 					y_clamped = pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, temp_inf$.__enclos_env__$private$y))
-					
+
 					if (is_glm_like){
 						transform_arg = "logit"
 						# y remains proportions but clamped
@@ -872,91 +887,109 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						temp_inf$.__enclos_env__$private$y = logit(y_clamped)
 					}
-					
+
 					temp_inf$.__enclos_env__$private$cached_values = list()
-					
+
 					est = temp_inf$compute_treatment_estimate()
-					
+
 					# Bootstrap on transformed data
 					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					l = bootstrap_ci[1] - 0.5 * ci_width
 					u = bootstrap_ci[2] + 0.5 * ci_width
-					
-					# Run inversion on temp_inf which has transformed data
-					ci = c(
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = l, 
-								u = est, 
-								pval_th = alpha / 2, 
-								tol = pval_epsilon,
-								transform_responses = transform_arg, 
-								lower = TRUE,
-								show_progress = show_progress,
-								permutations = perms),
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-								l = est, 
-								u = u, 
-								pval_th = alpha / 2, 
-								tol = pval_epsilon, 
-								transform_responses = transform_arg, 
-								lower = FALSE,
-								show_progress = show_progress,
-								permutations = perms)
-						)					
+
+					# Run inversion on temp_inf which has transformed data.
+					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
+					# computed simultaneously via an outer fork when private$num_cores > 1.
+					if (private$num_cores > 1) {
+						bound_specs = list(
+							list(l = l, u = est, lower = TRUE),
+							list(l = est, u = u, lower = FALSE)
+						)
+						results = parallel::mclapply(bound_specs, function(spec) {
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+								nsim_exact_test, l = spec$l, u = spec$u,
+								pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = spec$lower,
+								show_progress = FALSE, permutations = perms)
+						}, mc.cores = min(2L, private$num_cores))
+						ci = c(results[[1]], results[[2]])
+					} else {
+						ci = c(
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = TRUE,
+								show_progress = show_progress, permutations = perms),
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = FALSE,
+								show_progress = show_progress, permutations = perms)
+						)
+					}
 					# ci = exp(ci) # Odds Ratio - Removed for consistency with logit estimate
 				},
-												survival =   {
-													# Create a temporary object with transformed responses
-													temp_inf = self$duplicate()
-													# Cache permutations for speed
-													perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
-													
-													is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
-													transform_arg = "already_transformed"
-													
-													if (is_glm_like){
-														transform_arg = "log"
-														# y remains time
-													} else {
-														# Clamp 0 to epsilon (though survival times should be >0)
-														y_clamped = pmax(.Machine$double.eps, temp_inf$.__enclos_env__$private$y)
-														temp_inf$.__enclos_env__$private$y = log(y_clamped)
-													}
-													
-													temp_inf$.__enclos_env__$private$cached_values = list()
-													
-													est = temp_inf$compute_treatment_estimate()
-													
-													# Bootstrap on transformed data
-													bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-													ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-													l = bootstrap_ci[1] - 0.5 * ci_width
-													u = bootstrap_ci[2] + 0.5 * ci_width
-													
-													ci = c(
-															temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-																l = l, 
-																u = est, 
-																pval_th = alpha / 2, 
-																tol = pval_epsilon,
-																transform_responses = transform_arg, 
-																lower = TRUE,
-																show_progress = show_progress,
-																permutations = perms),
-															temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test, 
-																l = est, 
-																u = u, 
-																pval_th = alpha / 2, 
-																tol = pval_epsilon, 
-																transform_responses = transform_arg, 
-																lower = FALSE,
-																show_progress = show_progress,
-																								permutations = perms)
-																						)
-																					# ci = exp(ci) # Ratio - Removed for consistency with log estimate					
-																				}					# Use a modestly wider bootstrap CI as starting bounds for bisection
-			)
+				survival =   {
+					# Create a temporary object with transformed responses
+					temp_inf = self$duplicate()
+					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
+					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
+					# mclapply when private$num_cores > 1 (see parallel branch below).
+					temp_inf$.__enclos_env__$private$num_cores = 1L
+					# Cache permutations for speed
+					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
+
+					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
+					transform_arg = "already_transformed"
+
+					if (is_glm_like){
+						transform_arg = "log"
+						# y remains time
+					} else {
+						# Clamp 0 to epsilon (though survival times should be >0)
+						y_clamped = pmax(.Machine$double.eps, temp_inf$.__enclos_env__$private$y)
+						temp_inf$.__enclos_env__$private$y = log(y_clamped)
+					}
+
+					temp_inf$.__enclos_env__$private$cached_values = list()
+
+					est = temp_inf$compute_treatment_estimate()
+
+					# Bootstrap on transformed data
+					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
+					l = bootstrap_ci[1] - 0.5 * ci_width
+					u = bootstrap_ci[2] + 0.5 * ci_width
+
+					# Run inversion on temp_inf which has transformed data.
+					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
+					# computed simultaneously via an outer fork when private$num_cores > 1.
+					if (private$num_cores > 1) {
+						bound_specs = list(
+							list(l = l, u = est, lower = TRUE),
+							list(l = est, u = u, lower = FALSE)
+						)
+						results = parallel::mclapply(bound_specs, function(spec) {
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+								nsim_exact_test, l = spec$l, u = spec$u,
+								pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = spec$lower,
+								show_progress = FALSE, permutations = perms)
+						}, mc.cores = min(2L, private$num_cores))
+						ci = c(results[[1]], results[[2]])
+					} else {
+						ci = c(
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = TRUE,
+								show_progress = show_progress, permutations = perms),
+							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								transform_responses = transform_arg, lower = FALSE,
+								show_progress = show_progress, permutations = perms)
+						)
+					}
+					# ci = exp(ci) # Ratio - Removed for consistency with log estimate
+				})
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, sep = "%")
 			ci
 		},
