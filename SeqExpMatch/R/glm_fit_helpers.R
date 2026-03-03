@@ -323,10 +323,10 @@ fast_weibull_regression = function(y, dead, X){
 
   # Throw (rather than silently return NaN) so callers like the bootstrap tryCatch can handle failure
   if (any(!is.finite(coefficients))) {
-    stop("fast_weibull_regression: survreg returned non-finite coefficients (convergence failure)")
+    stop("Weibull regression failed to converge: survreg returned non-finite coefficients")
   }
   if (is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
-    stop("fast_weibull_regression: survreg returned non-finite variance-covariance (convergence failure)")
+    stop("Weibull regression failed to converge: survreg returned non-finite variance-covariance")
   }
 
   list(

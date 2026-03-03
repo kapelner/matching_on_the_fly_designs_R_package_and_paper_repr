@@ -108,13 +108,13 @@ C[beta_T == 0][1:100]
 
 #check size
 X[beta_T == 0 & str_detect(X$function_run, "pval"), H0_rejected := ifelse(result_1 < 0.05, 1, 0)]
-table(X[beta_T == 0]$H0_rejected, useNA = "always")
+#table(X[beta_T == 0]$H0_rejected, useNA = "always")
 S = X[beta_T == 0 & str_detect(X$function_run, "pval"), .(
   size = mean(H0_rejected, na.rm = TRUE),
   size_pval = prop.test(sum(H0_rejected, na.rm = TRUE), length(na.omit(H0_rejected)), p = 0.05)$p.value
 ), by = c("inference_class", "design", "response_type", "beta_T", "function_run")][order(-size)]
 S[, bonf_size_pval := pmin(1, size_pval * .N)][, size_pval := NULL]
-S[11:100]
+S[11:160]
 
 # 2. `pval_mle` (Size $\approx$ 0.15 - 0.25)
 #   This is the classic failure of parametric MLE inference (like OLS and CoxPH) on real-world datasets, and it perfectly
@@ -131,7 +131,7 @@ X[beta_T == 1 & str_detect(X$function_run, "pval"), H0_rejected := ifelse(result
 table(X[beta_T == 1]$H0_rejected, useNA = "always")
 P = X[beta_T == 1 & str_detect(X$function_run, "pval"), .(power = mean(H0_rejected)), 
   by = c("inference_class", "design", "response_type", "function_run")][order(-power)]
-P[1:260]
+P[!is.na(power)][1:200]
 
 # 1. The Bootstrapped KK OLS (ContinMultOLSKK)
 #   You'll notice that for the continuous KK OLS estimator, only the pval_bootstrap is in this low-power list (~52-54%). Its

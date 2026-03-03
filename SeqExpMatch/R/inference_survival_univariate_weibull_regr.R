@@ -29,7 +29,19 @@ SeqDesignInferenceSurvivalUniWeibullRegr = R6::R6Class("SeqDesignInferenceSurviv
 			# Univariate: treatment only, no covariates (mirrors SeqDesignInferenceSurvivalUniCoxPHRegr)
 			full_X_matrix = matrix(private$w, ncol = 1)
 			colnames(full_X_matrix) = "treatment"
-			private$weibull_generate_mod_from_X(full_X_matrix)
+			mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix), error = function(e) NULL)
+			if (!is.null(mod)) return(mod)
+			# Fast path failed: fall back to robust_survreg with multiple random initializations
+			surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix)
+			if (!is.null(surv_mod)) {
+				full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
+				full_vcov = surv_mod$var
+				if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
+					colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
+					return(list(coefficients = full_coefficients, vcov = full_vcov))
+				}
+			}
+			stop("Weibull regression failed to converge even after robust retries.")
 		},
 
 		weibull_generate_mod_from_X = function(full_X_matrix){

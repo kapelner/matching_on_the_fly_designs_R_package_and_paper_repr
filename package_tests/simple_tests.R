@@ -7,7 +7,7 @@ source("package_tests/_dataset_load.R")
 options(error = recover)
 # options(warn=2)
 
-Nrep = 10
+Nrep = 40
 NUM_CORES = 2
 prob_censoring = 0.15
 nsim_exact_test = 351
