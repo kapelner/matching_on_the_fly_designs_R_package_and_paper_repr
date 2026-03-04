@@ -85,8 +85,16 @@ X[beta_T == 1 & inference_class == "SeqDesignInferenceSurvivalRestrictedMeanDiff
 
 #now some are impossible to calculate for real data due to the unknown f(x) model
 X[beta_T == 1 &
-  inference_class %in% c("SeqDesignInferenceIncidMultiLogRegr", "SeqDesignInferencePropUniBetaRegr", "SeqDesignInferencePropMultiBetaRegr", "SeqDesignInferenceSurvivalUniCoxPHRegr", "SeqDesignInferenceSurvivalMultiCoxPHRegr"),
-    beta := NA_real_]
+  inference_class %in% c(
+    "SeqDesignInferenceIncidMultiLogRegr", 
+    "SeqDesignInferenceIncidMultiKKGEE",
+    "SeqDesignInferenceIncidMultiKKGLMM",
+    "SeqDesignInferencePropUniBetaRegr", 
+    "SeqDesignInferencePropMultiBetaRegr", 
+    "SeqDesignInferenceSurvivalUniCoxPHRegr", 
+    "SeqDesignInferenceSurvivalMultiCoxPHRegr"
+  ),
+  beta := NA_real_]
 table(X$beta, useNA = "always")
 
 

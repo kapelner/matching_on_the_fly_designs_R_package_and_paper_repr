@@ -24,3 +24,8 @@ by wrapping the \code{glmnet} package's Cox model with \code{lambda = 0}.
 It is designed to efficiently estimate regression coefficients for time-to-event data
 without penalization.
 }
+\details{
+This function requires the \pkg{glmnet} package, which is listed under \code{Suggests}
+and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+\code{install.packages("glmnet")} before calling this function.
+}

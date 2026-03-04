@@ -35,18 +35,19 @@ Imports:
     checkmate,
     Rcpp,
     data.table,
-    glmnet,
-    betareg,
     fastLogisticRegressionWrap,
     survival,
     missRanger,
     missForest,
-    nbpMatching,
     methods,
-    MASS,
-    bclogit,
-    nlme
+    MASS
 Suggests:
+    bclogit,
+    betareg,
+    geepack,
+    lme4,
+    nbpMatching,
+    nlme,
     doParallel,
     testthat
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
@@ -69,25 +70,43 @@ Collate:
     'abstract_inference_KK_passthrough_compound.R'
     'abstract_inference_mle_or_KM_for_GLMs.R'
     'abstract_inference_mle_or_KM_summary_table.R'
-    'inference__all_naive_mean_diff.R'
-    'inference__all_KK_compound_mean_diff.R'
+    'inference_all_mean_diff.R'
+    'inference_all_KK_compound_mean_diff.R'
     'abstract_inference_bai_et_al.R'
-    'inference_bai_et_al_KK14.R'
-    'inference_bai_et_al_KK21.R'
-    'inference_continuous_multivariate_ols.R'
-    'inference_continuous_KK_compound_multivariate_ols.R'
-    'inference_continuous_multivariate_gls.R'
-    'inference_incidence_univariate_log_regr.R'
-    'inference_incidence_multivariate_log_regr.R'
+    'inference_continuous_KK14_bai.R'
+    'inference_continuous_KK21_bai.R'
+    'inference_continuous_ols_multi.R'
+    'inference_continuous_KK_ols_multi.R'
+    'inference_continuous_KK_gls_multi.R'
+    'inference_incidence_logit_univ.R'
+    'inference_incidence_logit_multi.R'
     'inference_incidence_KK_clogit.R'
-    'inference_count_univariate_negbin_regr.R'
-    'inference_count_multivariate_negbin_regr.R'
-    'inference_proportion_univariate_beta_regr.R'
-    'inference_proportion_multivariate_beta_regr.R'
-    'inference_survival_KM.R'
-    'inference_survival__restricted_mean_diff.R'
-    'inference_survival_univariate_weibull_regr.R'
-    'inference_survival_multivariate_weibull_regr.R'
-    'inference_survival_univariate_coxph_regr.R'
-    'inference_survival_multivariate_coxph_regr.R'
+    'abstract_inference_KK_gee.R'
+    'inference_incidence_KK_gee_univ.R'
+    'inference_incidence_KK_gee_multi.R'
+    'abstract_inference_KK_glmm.R'
+    'inference_incidence_KK_glmm_univ.R'
+    'inference_incidence_KK_glmm_multi.R'
+    'inference_count_KK_gee_univ.R'
+    'inference_count_KK_gee_multi.R'
+    'inference_count_KK_glmm_univ.R'
+    'inference_count_KK_glmm_multi.R'
+    'inference_count_negbin_univ.R'
+    'inference_count_negbin_multi.R'
+    'inference_proportion_KK_gee_univ.R'
+    'inference_proportion_KK_gee_multi.R'
+    'inference_proportion_KK_glmm_univ.R'
+    'inference_proportion_KK_glmm_multi.R'
+    'inference_proportion_beta_univ.R'
+    'inference_proportion_beta_multi.R'
+    'inference_survival_KK_gee_univ.R'
+    'inference_survival_KK_gee_multi.R'
+    'inference_survival_KK_glmm_univ.R'
+    'inference_survival_KK_glmm_multi.R'
+    'inference_survival_km_diff.R'
+    'inference_survival_rmst.R'
+    'inference_survival_weibull_univ.R'
+    'inference_survival_weibull_multi.R'
+    'inference_survival_coxph_univ.R'
+    'inference_survival_coxph_multi.R'
     'zzz.R'

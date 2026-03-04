@@ -6,6 +6,11 @@
 #' (i.e. those with a non-zero match indicator) are included in the model; reservoir
 #' subjects are excluded because conditional logistic regression requires paired data.
 #'
+#' @details
+#' This class requires the \pkg{bclogit} package, which is listed under \code{Suggests}
+#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+#' \code{install.packages("bclogit")} before using this class.
+#'
 #' @export
 SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 	inherit = SeqDesignInferenceKKPassThrough,
@@ -22,6 +27,9 @@ SeqDesignInferenceIncidKKClogit = R6::R6Class("SeqDesignInferenceIncidKKClogit",
 		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			Whether to print progress messages. Default is \code{FALSE}.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			if (!requireNamespace("bclogit", quietly = TRUE)) {
+				stop("Package 'bclogit' is required for SeqDesignInferenceIncidKKClogit. Please install it.")
+			}
 			assertResponseType(seq_des_obj$get_response_type(), "incidence")
 			if (!is(seq_des_obj, "SeqDesignKK14")){
 				stop("SeqDesignInferenceIncidKKClogit requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")

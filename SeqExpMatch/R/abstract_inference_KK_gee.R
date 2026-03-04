@@ -1,0 +1,111 @@
+SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
+	inherit = SeqDesignInferenceKKPassThrough,
+	public = list(
+
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(seq_des_obj$get_response_type(), private$gee_response_type())
+			if (!is(seq_des_obj, "SeqDesignKK14")){
+				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
+			}
+			super$initialize(seq_des_obj, num_cores, verbose)
+			assertNoCensoring(private$any_censoring)
+			if (!requireNamespace("geepack", quietly = TRUE)){
+				stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
+			}
+		},
+
+		compute_treatment_estimate = function(){
+			private$shared()
+			private$cached_values$beta_hat_T
+		},
+
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			private$shared()
+			private$assert_finite_se()
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			assertNumeric(delta)
+			private$shared()
+			private$assert_finite_se()
+			if (delta == 0){
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			} else {
+				stop("TO-DO")
+			}
+		}
+	),
+
+	private = list(
+
+		# Abstract: subclasses must return the expected response type string.
+		gee_response_type = function() stop(class(self)[1], " must implement gee_response_type()"),
+
+		# Abstract: subclasses must return the glm family object for geeglm.
+		gee_family = function() stop(class(self)[1], " must implement gee_family()"),
+
+		# Default (multivariate): intercept dropped, treatment column named "w".
+		# Univariate subclasses override this to return data.frame(w = private$w).
+		gee_predictors_df = function(){
+			full_X = private$create_design_matrix()
+			X_model = full_X[, -1, drop = FALSE]
+			colnames(X_model)[1] = "w"
+			as.data.frame(X_model)
+		},
+
+		shared = function(){
+			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			mod = private$fit_gee()
+			if (is.null(mod)){
+				private$cached_values$beta_hat_T   = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z         = TRUE
+				return(invisible(NULL))
+			}
+			private$cached_values$beta_hat_T   = as.numeric(coef(mod)["w"])
+			se = as.numeric(summary(mod)$coefficients["w", "Std.err"])
+			# Store NA when the SE is non-finite; SE-dependent methods detect this via assert_finite_se()
+			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			private$cached_values$is_z         = TRUE
+		},
+
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T))
+				stop("GEE: non-finite standard error (possible separation or insufficient data).")
+		},
+
+		fit_gee = function(){
+			match_indic = private$match_indic
+			if (is.null(match_indic)) match_indic = rep(0L, private$n)
+			match_indic[is.na(match_indic)] = 0L
+
+			# Build group ID: matched pairs share their match_indic value;
+			# reservoir subjects (match_indic == 0) each get a unique singleton ID.
+			group_id = match_indic
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L)
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+
+			dat = data.frame(y = private$y, private$gee_predictors_df(), group_id = group_id)
+			# geeglm requires data sorted by id
+			dat = dat[order(dat$group_id), ]
+			id_sorted = dat$group_id
+			dat$group_id = NULL
+
+			tryCatch({
+				utils::capture.output(mod <- suppressMessages(suppressWarnings(
+					geepack::geeglm(
+						y ~ .,
+						family = private$gee_family(),
+						data   = dat,
+						id     = id_sorted,
+						corstr = "exchangeable"
+					)
+				)))
+				mod
+			}, error = function(e) NULL)
+		}
+	)
+)

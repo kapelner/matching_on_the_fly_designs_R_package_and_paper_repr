@@ -2,7 +2,11 @@
 #'
 #' @description
 #' Inference for mean difference
-#' 
+#'
+#' @details
+#' This class requires the \pkg{nbpMatching} package, which is listed under \code{Suggests}
+#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+#' \code{install.packages("nbpMatching")} before using this class.
 #'
 SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
   inherit = SeqDesignInferenceKKPassThroughCompound,
@@ -20,6 +24,9 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
     #' 					matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
     #' 
     initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+      if (!requireNamespace("nbpMatching", quietly = TRUE)) {
+        stop("Package 'nbpMatching' is required for SeqDesignInferenceBaiAdjustedT. Please install it.")
+      }
       super$initialize(seq_des_obj, num_cores, verbose)
       private$convex_flag = convex_flag
       assertNoCensoring(private$any_censoring)

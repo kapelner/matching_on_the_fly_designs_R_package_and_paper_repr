@@ -6,6 +6,11 @@
 \description{
 Inference for mean difference
 }
+\details{
+This class requires the \pkg{nbpMatching} package, which is listed under \code{Suggests}
+and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+\code{install.packages("nbpMatching")} before using this class.
+}
 \examples{
 
 ## ------------------------------------------------

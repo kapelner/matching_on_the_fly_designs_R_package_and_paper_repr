@@ -27,3 +27,10 @@ It estimates regression coefficients for response variables that are continuous 
 restricted to the (0, 1) interval, and specifically computes the variance
 of the second coefficient (assumed to be the treatment effect).
 }
+\details{
+The primary implementation uses a C++ backend. If that fails, the function falls back
+to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
+\code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+enable the intermediate fallback.
+}

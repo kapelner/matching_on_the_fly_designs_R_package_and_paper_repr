@@ -24,3 +24,10 @@ This function provides a fast implementation of beta regression by wrapping
 a C++ backend function. It is designed to efficiently estimate regression coefficients
 for response variables that are continuous and restricted to the (0, 1) interval.
 }
+\details{
+The primary implementation uses a C++ backend. If that fails, the function falls back
+to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
+\code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+enable the intermediate fallback.
+}

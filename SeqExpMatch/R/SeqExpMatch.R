@@ -19,12 +19,10 @@
 #' @import      R6
 #' @import      missForest
 #' @import      missRanger
-#' @import      nbpMatching
 #' @import      Rcpp
 #' @import      methods
 #' @importFrom  stats coef cor glm.control make.link nlminb pnorm pt rnorm qnorm qf rbinom var median sd model.matrix as.formula formula qt
 #' @importFrom  survival Surv survreg.control survfit survdiff
-#' @importFrom  glmnet glmnet
 #' @importFrom  utils packageVersion
 #' @importFrom  graphics hist
 #' @useDynLib   SeqExpMatch, .registration=TRUE

@@ -372,6 +372,13 @@ sanitize_beta_response = function(y){
 #' @return A list containing the following component:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
 #'
+#' @details
+#' The primary implementation uses a C++ backend. If that fails, the function falls back
+#' to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+#' with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
+#' \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+#' enable the intermediate fallback.
+#'
 #' @export
 fast_beta_regression = function(Xmm, y, start_phi = 10){
   y = sanitize_beta_response(y)
@@ -379,6 +386,10 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
     list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi)$coefficients)
   }, error = function(e) {
     warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
+    if (!requireNamespace("betareg", quietly = TRUE)) {
+      warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
+      return(list(b = fast_ols_cpp(Xmm, logit(y))$b))
+    }
     # create a data frame for betareg, removing the intercept from Xmm
     data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
     # rename columns for formula
@@ -415,6 +426,13 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
 #'   which typically corresponds to the treatment effect.}
 #'
+#' @details
+#' The primary implementation uses a C++ backend. If that fails, the function falls back
+#' to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+#' with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
+#' \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+#' enable the intermediate fallback.
+#'
 #' @importFrom stats vcov
 #' @export
 fast_beta_regression_with_var = function(Xmm, y, start_phi = 10){
@@ -424,6 +442,11 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10){
     list(b = mod$coefficients, ssq_b_2 = mod$vcov[2, 2])
   }, error = function(e) {
     warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
+    if (!requireNamespace("betareg", quietly = TRUE)) {
+      warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
+      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)
+      return(list(b = mod$b, ssq_b_2 = mod$ssq_b_j))
+    }
     # create a data frame for betareg, removing the intercept from Xmm
     data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
     # rename columns for formula
@@ -460,8 +483,16 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10){
 #' @return A list containing the following component:
 #' \item{b}{A numeric vector of the estimated Cox regression coefficients.}
 #'
+#' @details
+#' This function requires the \pkg{glmnet} package, which is listed under \code{Suggests}
+#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+#' \code{install.packages("glmnet")} before calling this function.
+#'
 #' @export
 fast_coxph_regression = function(Xmm, y, dead){
+	if (!requireNamespace("glmnet", quietly = TRUE)) {
+		stop("Package 'glmnet' is required for fast_coxph_regression. Please install it.")
+	}
 	mod = glmnet::glmnet(Xmm, survival::Surv(y, dead), family = "cox", lambda = 0)
 	list(b = stats::coef(mod))
 }

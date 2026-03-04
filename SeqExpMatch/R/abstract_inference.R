@@ -734,7 +734,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
 			assertLogical(show_progress)
 			show_progress = isTRUE(show_progress) && private$num_cores == 1
-						
+
+			# TRUE for any model that operates on the original response scale (GLMs, GEE, GLMM).
+			# These branches keep y untransformed and pass a transform_arg to the randomization test.
+			# FALSE for simple mean-difference estimators that pre-transform y (e.g. logit, log).
+			is_model_on_original_scale = inherits(self, "SeqDesignInferenceMLEorKMforGLMs") ||
+				inherits(self, "SeqDesignInferenceAbstractKKGEE") ||
+				inherits(self, "SeqDesignInferenceAbstractKKGLMM")
+
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
 					# Pre-calculate permutations for speed/monotonicity
@@ -813,10 +820,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
-					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
 					transform_arg = "already_transformed"
 
-					if (is_glm_like){
+					if (is_model_on_original_scale){
 						transform_arg = "log"
 						# y remains counts
 					} else {
@@ -874,13 +880,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
-					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
 					transform_arg = "already_transformed"
 
 					# Clamp to (epsilon, 1-epsilon) to avoid 0/1 for both GLM (Beta Reg) and Logit
 					y_clamped = pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, temp_inf$.__enclos_env__$private$y))
 
-					if (is_glm_like){
+					if (is_model_on_original_scale){
 						transform_arg = "logit"
 						# y remains proportions but clamped
 						temp_inf$.__enclos_env__$private$y = y_clamped
@@ -938,10 +943,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
-					is_glm_like = inherits(self, "SeqDesignInferenceMLEorKMforGLMs")
 					transform_arg = "already_transformed"
 
-					if (is_glm_like){
+					if (is_model_on_original_scale){
 						transform_arg = "log"
 						# y remains time
 					} else {

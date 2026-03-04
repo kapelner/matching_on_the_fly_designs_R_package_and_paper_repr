@@ -9,6 +9,11 @@ the matched pairs from a KK matching-on-the-fly design. Only matched subjects
 (i.e. those with a non-zero match indicator) are included in the model; reservoir
 subjects are excluded because conditional logistic regression requires paired data.
 }
+\details{
+This class requires the \pkg{bclogit} package, which is listed under \code{Suggests}
+and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+\code{install.packages("bclogit")} before using this class.
+}
 \examples{
 
 ## ------------------------------------------------
