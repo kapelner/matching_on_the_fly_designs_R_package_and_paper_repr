@@ -1,4 +1,4 @@
-#' Abstract class for Rank-based Regression (R-Estimation) Compound Inference
+#' Abstract class for Wilcoxon Regression (R-Estimation) Compound Inference
 #'
 #' @description
 #' This class implements a robust compound estimator for KK matching-on-the-fly
@@ -11,7 +11,7 @@
 #' This class requires the \pkg{Rfit} package.
 #'
 #' @keywords internal
-SeqDesignInferenceAbstractKKRankRegr = R6::R6Class("SeqDesignInferenceAbstractKKRankRegr",
+SeqDesignInferenceAbstractKKWilcoxRegr = R6::R6Class("SeqDesignInferenceAbstractKKWilcoxRegr",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
@@ -77,6 +77,11 @@ SeqDesignInferenceAbstractKKRankRegr = R6::R6Class("SeqDesignInferenceAbstractKK
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+
+			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
 
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
@@ -145,35 +150,45 @@ SeqDesignInferenceAbstractKKRankRegr = R6::R6Class("SeqDesignInferenceAbstractKK
 			}
 			
 			if (is.null(mod)) return(invisible(NULL))
+
+			summ = tryCatch(summary(mod), error = function(e) NULL)
+			if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
+			if (!"(Intercept)" %in% rownames(summ$coefficients)) return(invisible(NULL))
+
+			beta = as.numeric(summ$coefficients["(Intercept)", "Estimate"])
+			se   = as.numeric(summ$coefficients["(Intercept)", "Std. Error"])
 			
-			summ = summary(mod)
-			private$cached_values$beta_T_matched     = as.numeric(summ$coefficients["(Intercept)", "Estimate"])
-			se = as.numeric(summ$coefficients["(Intercept)", "Std. Error"])
-			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$beta_T_matched     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
 		rfit_for_reservoir = function(){
 			y_r = private$cached_values$KKstats$y_reservoir
 			w_r = private$cached_values$KKstats$w_reservoir
 			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
-			
+
 			dat = data.frame(y = y_r, w = w_r)
 			if (private$include_covariates()){
 				X_covs = as.data.frame(X_r)
 				colnames(X_covs) = paste0("x", 1:ncol(X_covs))
 				dat = cbind(dat, X_covs)
 			}
-			
+
 			mod = tryCatch({
 				Rfit::rfit(y ~ ., data = dat)
 			}, error = function(e) NULL)
-			
+
 			if (is.null(mod)) return(invisible(NULL))
+
+			summ = tryCatch(summary(mod), error = function(e) NULL)
+			if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
+			if (!"w" %in% rownames(summ$coefficients)) return(invisible(NULL))
+
+			beta = as.numeric(summ$coefficients["w", "Estimate"])
+			se   = as.numeric(summ$coefficients["w", "Std. Error"])
 			
-			summ = summary(mod)
-			private$cached_values$beta_T_reservoir     = as.numeric(summ$coefficients["w", "Estimate"])
-			se = as.numeric(summ$coefficients["w", "Std. Error"])
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

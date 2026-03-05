@@ -641,7 +641,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				t = private$compute_treatment_estimate_during_randomization_inference()
 				if (length(t) != 1 || !is.finite(t)) return(NA_real_)
 				na_t0s = !is.finite(t0s)
-				if (!na.rm && any(na_t0s)) {
+				if (length(t0s) > 0 && !na.rm && any(na_t0s)) {
 					warning("Randomization distribution contains NA; dropping NA values for p-value computation.")
 				}
 				nsim_adj = sum(!na_t0s)
@@ -678,7 +678,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			if (length(t) != 1 || !is.finite(t)) return(NA_real_)
 
 			na_t0s = !is.finite(t0s)
-			if (!na.rm && any(na_t0s)) {
+			if (length(t0s) > 0 && !na.rm && any(na_t0s)) {
 				warning("Randomization distribution contains NA; dropping NA values for p-value computation.")
 			}
 			nsim_exact_test_adjusted = sum(!na_t0s)
@@ -756,6 +756,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
 					est = self$compute_treatment_estimate()
+					# Fallback: if estimate is not finite (e.g., rank-regression failed),
+					# use the bootstrap CI midpoint to anchor the bisection search.
+					if (!is.finite(est)) {
+						est = (bootstrap_ci[1] + bootstrap_ci[2]) / 2
+					}
 
 					# Check for NA bounds from failed bootstrap
 					if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
@@ -1208,6 +1213,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				permutations = permutations
 			))
 
+			# If p-values are empty (numeric(0)), treat as NA
+			if (length(pval_l) == 0) pval_l = NA_real_
+			if (length(pval_u) == 0) pval_u = NA_real_
+
 			# If an extreme bound causes model failure (NA p-value), progressively tighten
 			# it toward the other bound (up to 30 halvings) until convergence is achieved.
 			for (k in seq_len(30L)) {
@@ -1254,7 +1263,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 				# NA p-value at midpoint: model fails at this delta, treat as outside the CI
 				# (extreme side) and move the extreme bound to m.
-				if (is.na(pval_m)) {
+				if (length(pval_m) == 0L || is.na(pval_m)) {
 					if (lower) { l = m; pval_l = 0 } else { u = m; pval_u = 0 }
 					iter = iter + 1
 					next

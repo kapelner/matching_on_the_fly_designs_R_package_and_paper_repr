@@ -71,6 +71,11 @@ SeqDesignInferenceAllKKWilcox = R6::R6Class("SeqDesignInferenceAllKKWilcox",
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
+			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
 			nRT = KKstats$nRT
@@ -130,11 +135,12 @@ SeqDesignInferenceAllKKWilcox = R6::R6Class("SeqDesignInferenceAllKKWilcox",
 			if (is.null(mod)) return(invisible(NULL))
 			
 			beta = as.numeric(mod$estimate)
-			# Back-calculate SE from 95% CI width
-			se = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
-			
-			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
+			# Back-calculate SE from 95% CI width; guard against NULL/empty conf.int
+			ci = mod$conf.int
+			se = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
+
+			private$cached_values$beta_T_matched     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
 		rank_for_reservoir = function(){
@@ -142,19 +148,20 @@ SeqDesignInferenceAllKKWilcox = R6::R6Class("SeqDesignInferenceAllKKWilcox",
 			w_r = private$cached_values$KKstats$w_reservoir
 			yT = y_r[w_r == 1]
 			yC = y_r[w_r == 0]
-			
+
 			mod = tryCatch({
 				stats::wilcox.test(yT, yC, conf.int = TRUE)
 			}, error = function(e) NULL)
-			
+
 			if (is.null(mod)) return(invisible(NULL))
-			
+
 			beta = as.numeric(mod$estimate)
-			# Back-calculate SE from 95% CI width
-			se = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
-			
-			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
+			# Back-calculate SE from 95% CI width; guard against NULL/empty conf.int
+			ci = mod$conf.int
+			se = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
+
+			private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

@@ -17,8 +17,8 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 			}
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
-			if (!requireNamespace("lme4", quietly = TRUE)){
-				stop("Package 'lme4' is required for ", class(self)[1], ". Please install it.")
+			if (!requireNamespace("glmmTMB", quietly = TRUE)){
+				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
 			}
 		},
 
@@ -59,7 +59,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 		# Abstract: subclasses must return the expected response type string.
 		glmm_response_type = function() stop(class(self)[1], " must implement glmm_response_type()"),
 
-		# Abstract: subclasses must return the glm family object for glmer.
+		# Abstract: subclasses must return the glm family object for glmmTMB.
 		glmm_family = function() stop(class(self)[1], " must implement glmm_family()"),
 
 		# Default (multivariate): intercept dropped, treatment column named "w".
@@ -80,7 +80,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
-			coef_table = summary(mod)$coefficients
+			coef_table = summary(mod)$coefficients$cond
 			private$cached_values$beta_hat_T   = as.numeric(coef_table["w", "Estimate"])
 			se = as.numeric(coef_table["w", "Std. Error"])
 			# Store NA when the SE is non-finite; SE-dependent methods detect this via assert_finite_se()
@@ -107,12 +107,21 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 
 			dat = data.frame(y = private$y, private$glmm_predictors_df(), group_id = factor(group_id))
 
+			# Use internal glmmTMB parallelism only if we are not already in an outer 
+			# parallel loop (num_cores == 1). This prevents CPU over-subscription.
+			glmm_control = if (private$num_cores > 1) {
+				glmmTMB::glmmTMBControl(parallel = 1L)
+			} else {
+				glmmTMB::glmmTMBControl()
+			}
+
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
-					lme4::glmer(
+					glmmTMB::glmmTMB(
 						y ~ . - group_id + (1 | group_id),
-						family = private$glmm_family(),
-						data   = dat
+						family  = private$glmm_family(),
+						data    = dat,
+						control = glmm_control
 					)
 				)))
 				mod

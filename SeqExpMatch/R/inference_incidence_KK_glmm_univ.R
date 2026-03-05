@@ -1,7 +1,7 @@
 #' Univariate GLMM Inference for KK Designs with Binary Response
 #'
 #' @description
-#' Fits a Generalized Linear Mixed Model (GLMM) via \code{lme4::glmer} for binary
+#' Fits a Generalized Linear Mixed Model (GLMM) via \code{glmmTMB::glmmTMB} for binary
 #' (incidence) responses under a KK matching-on-the-fly design using only the
 #' treatment indicator as a fixed-effect predictor (intercept + treatment). The
 #' matched-pair strata enter the model as a subject-level random intercept
@@ -11,9 +11,9 @@
 #' from the GLMM fixed-effects table.
 #'
 #' @details
-#' This class requires the \pkg{lme4} package, which is listed under \code{Suggests}
+#' This class requires the \pkg{glmmTMB} package, which is listed under \code{Suggests}
 #' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("lme4")} before using this class.
+#' \code{install.packages("glmmTMB")} before using this class.
 #'
 #' @export
 SeqDesignInferenceIncidUnivKKGLMM = R6::R6Class("SeqDesignInferenceIncidUnivKKGLMM",

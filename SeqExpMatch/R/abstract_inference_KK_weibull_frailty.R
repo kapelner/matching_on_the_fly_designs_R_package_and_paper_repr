@@ -71,6 +71,11 @@ SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbst
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
+			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
 			nRT = KKstats$nRT

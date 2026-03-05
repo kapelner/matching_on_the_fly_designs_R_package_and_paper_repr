@@ -8,7 +8,7 @@ options(error = recover)
 # options(warn=2)
 
 Nrep = 40
-NUM_CORES = 1
+NUM_CORES = 2
 prob_censoring = 0.15
 nsim_exact_test = 351
 pval_epsilon = 0.007
@@ -175,16 +175,24 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
         record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, result, status = "ok", duration_time_sec = duration_time_sec)
         result
       }, error = function(e){
-      is_non_fatal = grepl("not implemented", e$message, fixed = TRUE) ||
-                     grepl("not enough discordant pairs", e$message, ignore.case = TRUE) ||
-                     grepl("Degenerate confidence interval", e$message, fixed = TRUE) ||
-                     grepl("inconsistent estimator units", e$message, ignore.case = TRUE) ||
-                     grepl("Bootstrap confidence interval returned NA bounds", e$message, fixed = TRUE) ||
-                     grepl("Weibull regression failed to converge", e$message, fixed = TRUE) ||
-                     ((grepl("NA/NaN/Inf", e$message, fixed = TRUE) || grepl("non-finite standard error", e$message, fixed = TRUE) || grepl("could not compute a finite standard error", e$message, fixed = TRUE)) &&
-                      (is(seq_des_inf, "SeqDesignInferenceAbstractKKClogit") || is(seq_des_inf, "SeqDesignInferenceAbstractKKCPoisson") || is(seq_des_inf, "SeqDesignInferenceAbstractKKStratCox") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAbstractKKRankRegr") || is(seq_des_inf, "SeqDesignInferenceIncidUnivKKGEE") || is(seq_des_inf, "SeqDesignInferenceIncidMultiKKGEE") || is(seq_des_inf, "SeqDesignInferenceIncidUnivKKGLMM") || is(seq_des_inf, "SeqDesignInferenceIncidMultiKKGLMM") || is(seq_des_inf, "SeqDesignInferenceCountUnivKKGEE") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKGEE") || is(seq_des_inf, "SeqDesignInferenceCountUnivKKGLMM") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKGLMM") || is(seq_des_inf, "SeqDesignInferencePropUnivKKGEE") || is(seq_des_inf, "SeqDesignInferencePropMultiKKGEE") || is(seq_des_inf, "SeqDesignInferencePropUnivKKGLMM") || is(seq_des_inf, "SeqDesignInferencePropMultiKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
+      msg = if (length(e$message) == 0L) "" else e$message
+      is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
+                     grepl("not enough discordant pairs", msg, ignore.case = TRUE) ||
+                     grepl("Degenerate confidence interval", msg, fixed = TRUE) ||
+                     grepl("inconsistent estimator units", msg, ignore.case = TRUE) ||
+                     grepl("Bootstrap confidence interval returned NA bounds", msg, fixed = TRUE) ||
+                     grepl("Weibull regression failed to converge", msg, fixed = TRUE) ||
+                     ((grepl("NA/NaN/Inf", msg, fixed = TRUE) || grepl("non-finite standard error", msg, fixed = TRUE) || grepl("could not compute a finite standard error", msg, fixed = TRUE)) &&
+                      (is(seq_des_inf, "SeqDesignInferenceAbstractKKClogit") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKCPoisson") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKStratCox") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || 
+                       is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
       
-      if (is_non_fatal){
+      if (isTRUE(is_non_fatal)){
         message("Skipping ", label, " (non-fatal): ", e$message)
         duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
         record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "error", duration_time_sec = duration_time_sec, error_message = e$message)
