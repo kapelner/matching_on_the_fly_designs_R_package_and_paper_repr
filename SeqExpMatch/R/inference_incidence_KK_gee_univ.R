@@ -6,7 +6,7 @@
 #' the treatment indicator as a predictor (intercept + treatment). Matched pairs are
 #' treated as clusters (with exchangeable correlation structure); reservoir subjects
 #' each form their own singleton cluster. Unlike
-#' \code{SeqDesignInferenceIncidKKClogit}, all subjects (matched and reservoir) are
+#' \code{SeqDesignInferenceAbstractKKClogit}, all subjects (matched and reservoir) are
 #' included. Inference is based on sandwich-robust standard errors, so the test
 #' statistic is Z-distributed.
 #'

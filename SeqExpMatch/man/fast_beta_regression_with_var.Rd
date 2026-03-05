@@ -4,7 +4,7 @@
 \alias{fast_beta_regression_with_var}
 \title{Fast Beta Regression with Variance Calculation (R Wrapper)}
 \usage{
-fast_beta_regression_with_var(Xmm, y, start_phi = 10)
+fast_beta_regression_with_var(Xmm, y, start_phi = 10, j = 2)
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
@@ -14,10 +14,13 @@ fast_beta_regression_with_var(Xmm, y, start_phi = 10)
 
 \item{start_phi}{A numeric value, the starting value for the precision parameter phi.
 Defaults to 10.}
+
+\item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 }
 \value{
 A list containing the following components:
 \item{b}{A numeric vector of the estimated beta regression coefficients.}
+\item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
   which typically corresponds to the treatment effect.}
 }

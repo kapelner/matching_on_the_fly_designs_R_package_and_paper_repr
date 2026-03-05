@@ -4,18 +4,21 @@
 \alias{fast_logistic_regression_with_var}
 \title{Fast Logistic Regression with Variance Calculation (R Wrapper)}
 \usage{
-fast_logistic_regression_with_var(Xmm, y)
+fast_logistic_regression_with_var(Xmm, y, j = 2)
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
 (e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
+
+\item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 }
 \value{
 A list containing the following components:
 \describe{
 \item{b}{A numeric vector of the obtained logistic regression coefficients.}
+\item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
   which typically corresponds to the treatment effect.}
 }
@@ -40,7 +43,7 @@ y_log_var <- rbinom(n, 1, prob_var)
 # Fit logistic regression with variance using fast_logistic_regression_with_var
 fit_logistic_var <- fast_logistic_regression_with_var(Xmm = X_log_var, y = y_log_var)
 print(fit_logistic_var$b)
-print(fit_logistic_var$ssq_b_2)
+print(fit_logistic_var$ssq_b_j)
 
 # Compare with standard R glm()
 glm_fit_var <- glm(y_log_var ~ X_log_var - 1, family = binomial)

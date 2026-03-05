@@ -3,7 +3,7 @@ pacman::p_load(SeqExpMatch, stringr, doParallel, PTE, datasets, qgam, mlbench, A
 max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 
-X = fread("package_tests/simple_tests_results_nc_1.csv")
+X = fread("package_tests/simple_tests_results_nc_2.csv")
 table(X$rep)
 
 
@@ -21,21 +21,18 @@ X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(custom)", fu
 X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)", function_run := "pval_rand_shift"]
 table(X$function_run)
 
+#check duration time
+D = X[, .(mean_duration = mean(duration_time_sec)), 
+  by = c("inference_class", "design", "function_run")][order(-mean_duration)]
+D[1:100]
+table(D[1:100]$inference_class)
+
 #we kind of don't care as much about these results
 Xextra = X[function_run %in% c("pval_rand_custom", "pval_rand_shift")]
 X = X[!(function_run %in% c("pval_rand_custom", "pval_rand_shift"))]
 
 #create the actual beta being estimated
 table(X$inference_class)
-#good default
-
-
-D = X[, .(mean_duration = mean(duration_time_sec)), 
-  by = c("inference_class", "design", "function_run")][order(-mean_duration)]
-D[1:100]
-table(D[1:100]$inference_class)
-table(X$function_run)
-
 
 #set the correct value of beta as it's inference and response dependent - this default works for most
 X[, beta := as.numeric(beta_T)]

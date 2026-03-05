@@ -1,28 +1,27 @@
-#' Multivariate GEE Inference for KK Designs with Binary Response
+#' Univariate Conditional Logistic Regression Inference for KK Designs with Binary Response
 #'
 #' @description
-#' Fits a Generalized Estimating Equations (GEE) model (via \code{geepack::geeglm})
-#' for binary (incidence) responses under a KK matching-on-the-fly design using the
-#' treatment indicator and all recorded covariates as predictors. Matched pairs are
-#' treated as clusters (with exchangeable correlation structure); reservoir subjects
-#' each form their own singleton cluster. Unlike
-#' \code{SeqDesignInferenceAbstractKKClogit}, all subjects (matched and reservoir) are
-#' included. Inference is based on sandwich-robust standard errors, so the test
-#' statistic is Z-distributed.
+#' Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
+#' responses using only the treatment indicator (no additional covariates). For matched
+#' pairs, a conditional logistic regression model (via \code{bclogit::clogit}) is used.
+#' For reservoir subjects, a standard logistic regression is used. The two estimates
+#' are combined via a variance-weighted linear combination, analogous to
+#' \code{SeqDesignInferenceContinMultOLSKK}. If clogit fails (e.g. no discordant pairs),
+#' the estimator falls back to logistic regression on the reservoir only.
 #'
 #' @details
-#' This class requires the \pkg{geepack} package, which is listed under \code{Suggests}
+#' This class requires the \pkg{bclogit} package, which is listed under \code{Suggests}
 #' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("geepack")} before using this class.
+#' \code{install.packages("bclogit")} before using this class.
 #'
 #' @export
-SeqDesignInferenceIncidMultiKKGEE = R6::R6Class("SeqDesignInferenceIncidMultiKKGEE",
-	inherit = SeqDesignInferenceAbstractKKGEE,
+SeqDesignInferenceIncidUnivKKClogit = R6::R6Class("SeqDesignInferenceIncidUnivKKClogit",
+	inherit = SeqDesignInferenceAbstractKKClogit,
 	public = list(
 
 		#' @description
-		#' Initialize a multivariate GEE inference object for a completed KK design
-		#' with a binary (incidence) response.
+		#' Initialize a univariate conditional logistic regression inference object for a
+		#' completed KK design with a binary (incidence) response.
 		#' @param seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose binary response y is recorded.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
@@ -39,7 +38,7 @@ SeqDesignInferenceIncidMultiKKGEE = R6::R6Class("SeqDesignInferenceIncidMultiKKG
 		#' }
 		#' seq_des$add_all_subject_responses(rbinom(20, 1, 0.5))
 		#'
-		#' seq_des_inf = SeqDesignInferenceIncidMultiKKGEE$new(seq_des)
+		#' seq_des_inf = SeqDesignInferenceIncidUnivKKClogit$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
@@ -47,7 +46,6 @@ SeqDesignInferenceIncidMultiKKGEE = R6::R6Class("SeqDesignInferenceIncidMultiKKG
 		}
 	),
 	private = list(
-		gee_response_type = function() "incidence",
-		gee_family        = function() binomial(link = "logit")
+		include_covariates = function() FALSE
 	)
 )

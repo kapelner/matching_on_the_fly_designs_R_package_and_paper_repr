@@ -359,14 +359,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_logistic_regression_with_var_cpp
-List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP) {
+List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j);
+RcppExport SEXP _SeqExpMatch_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xmm(XmmSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_with_var_cpp(Xmm, y));
+    Rcpp::traits::input_parameter< int >::type j(jSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_with_var_cpp(Xmm, y, j));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -954,7 +955,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_beta_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_cpp, 5},
     {"_SeqExpMatch_fast_beta_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_with_var_cpp, 5},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
-    {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 2},
+    {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 3},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
     {"_SeqExpMatch_fast_neg_bin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_var_cpp, 5},
     {"_SeqExpMatch_fast_neg_bin_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_cpp, 5},

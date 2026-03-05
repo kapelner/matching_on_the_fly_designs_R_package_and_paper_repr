@@ -4,7 +4,7 @@
 \alias{fast_logistic_regression_with_var_cpp}
 \title{Fast Logistic Regression with variance using Rcpp and IRLS}
 \usage{
-fast_logistic_regression_with_var_cpp(Xmm, y)
+fast_logistic_regression_with_var_cpp(Xmm, y, j = 2L)
 }
 \arguments{
 \item{Xmm}{Design matrix.}

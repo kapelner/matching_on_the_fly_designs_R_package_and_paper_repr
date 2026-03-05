@@ -4,19 +4,24 @@
 \alias{fast_negbin_regression_with_var}
 \title{Fast Negative Binomial Regression with Variance Calculation (R Wrapper)}
 \usage{
-fast_negbin_regression_with_var(Xmm, y)
+fast_negbin_regression_with_var(Xmm, y, j = 2)
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
 (e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
 \item{y}{A numeric vector of the response variable, representing count data.}
+
+\item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 }
 \value{
 A list containing the following components:
+\describe{
 \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
+\item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
   which typically corresponds to the treatment effect.}
+}
 }
 \description{
 This function provides a fast implementation of negative binomial regression, wrapping

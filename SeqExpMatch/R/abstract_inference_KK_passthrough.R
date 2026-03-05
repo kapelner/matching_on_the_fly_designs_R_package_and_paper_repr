@@ -79,74 +79,117 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 				}
 
 				# Pure R KK bootstrap implementation
-				beta_hat_T_bs = rep(NA_real_, B)
+				if (private$num_cores == 1) {
+					beta_hat_T_bs = rep(NA_real_, B)
 
-				for (b in 1:B) {
-					# Bootstrap indices for KK design:
-					# - Resample reservoir with replacement
-					# - Resample entire matched pairs with replacement
-					i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+					for (b in 1:B) {
+						# Bootstrap indices for KK design:
+						# - Resample reservoir with replacement
+						# - Resample entire matched pairs with replacement
+						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 
-				# For matched pairs, sample which pairs to include (with replacement)
-				if (m > 0) {
-					pairs_to_include = sample(1:m, m, replace = TRUE)
-					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
-					for (new_pair_id in 1:m) {
-						# Get both members of the original pair
-						original_pair_id = pairs_to_include[new_pair_id]
-						pair_indices = which(match_indic == original_pair_id)
-						i_matched_b = c(i_matched_b, pair_indices)
-						# Assign new pair IDs sequentially
-						match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+						# For matched pairs, sample which pairs to include (with replacement)
+						if (m > 0) {
+							pairs_to_include = sample(1:m, m, replace = TRUE)
+							i_matched_b = integer(0)
+							match_indic_b_matched = integer(0)
+							for (new_pair_id in 1:m) {
+								# Get both members of the original pair
+								original_pair_id = pairs_to_include[new_pair_id]
+								pair_indices = which(match_indic == original_pair_id)
+								i_matched_b = c(i_matched_b, pair_indices)
+								# Assign new pair IDs sequentially
+								match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+							}
+						} else {
+							i_matched_b = integer(0)
+							match_indic_b_matched = integer(0)
+						}
+
+						# Combine reservoir and matched indices
+						i_b = c(i_reservoir_b, i_matched_b)
+
+						# Create bootstrap sample
+						y_b = y[i_b]
+						dead_b = dead[i_b]
+						w_b = w[i_b]
+						X_b = X[i_b, , drop = FALSE]
+						match_indic_b = c(rep(0, n_reservoir), match_indic_b_matched)
+
+						# Create duplicate inference object
+						boot_inf_obj = self$duplicate()
+
+						# Update with bootstrap data
+						boot_inf_obj$.__enclos_env__$private$y = y_b
+						boot_inf_obj$.__enclos_env__$private$dead = dead_b
+						boot_inf_obj$.__enclos_env__$private$w = w_b
+						boot_inf_obj$.__enclos_env__$private$X = X_b
+						boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+						# Compute KK match statistics for bootstrap sample
+						tryCatch({
+							# Call compute_basic_match_data with the new match_indic
+							boot_inf_obj$.__enclos_env__$private$match_indic = match_indic_b
+							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+
+							# For compound classes, compute reservoir/match statistics
+							if (private$object_has_private_method(boot_inf_obj, "compute_reservoir_and_match_statistics")){
+								boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+							}
+
+							# Compute treatment estimate
+							beta_hat_T_bs[b] = boot_inf_obj$compute_treatment_estimate()
+						}, error = function(e) {
+							if (private$verbose) {
+								cat("      KK Bootstrap sample", b, "failed:", e$message, "\n")
+							}
+							beta_hat_T_bs[b] = NA_real_
+						})
 					}
+					return(beta_hat_T_bs)
 				} else {
-					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
-				}
+					# Parallel bootstrap execution for KK designs
+					beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 
-					# Combine reservoir and matched indices
-					i_b = c(i_reservoir_b, i_matched_b)
-
-					# Create bootstrap sample
-					y_b = y[i_b]
-					dead_b = dead[i_b]
-					w_b = w[i_b]
-					X_b = X[i_b, , drop = FALSE]
-					match_indic_b = c(rep(0, n_reservoir), match_indic_b_matched)
-
-					# Create duplicate inference object
-					boot_inf_obj = self$duplicate()
-
-					# Update with bootstrap data
-					boot_inf_obj$.__enclos_env__$private$y = y_b
-					boot_inf_obj$.__enclos_env__$private$dead = dead_b
-					boot_inf_obj$.__enclos_env__$private$w = w_b
-					boot_inf_obj$.__enclos_env__$private$X = X_b
-					boot_inf_obj$.__enclos_env__$private$cached_values = list()
-
-					# Compute KK match statistics for bootstrap sample
-					tryCatch({
-						# Call compute_basic_match_data with the new match_indic
-						boot_inf_obj$.__enclos_env__$private$match_indic = match_indic_b
-						boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-
-						# For compound classes, compute reservoir/match statistics
-						if (private$object_has_private_method(boot_inf_obj, "compute_reservoir_and_match_statistics")){
-							boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+						if (m > 0) {
+							pairs_to_include = sample(1:m, m, replace = TRUE)
+							i_matched_b = integer(0)
+							match_indic_b_matched = integer(0)
+							for (new_pair_id in 1:m) {
+								original_pair_id = pairs_to_include[new_pair_id]
+								pair_indices = which(match_indic == original_pair_id)
+								i_matched_b = c(i_matched_b, pair_indices)
+								match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+							}
+						} else {
+							i_matched_b = integer(0)
+							match_indic_b_matched = integer(0)
 						}
 
-						# Compute treatment estimate
-						beta_hat_T_bs[b] = boot_inf_obj$compute_treatment_estimate()
-					}, error = function(e) {
-						if (private$verbose) {
-							cat("      KK Bootstrap sample", b, "failed:", e$message, "\n")
-						}
-						beta_hat_T_bs[b] = NA_real_
-					})
-				}
+						i_b = c(i_reservoir_b, i_matched_b)
+						match_indic_b = c(rep(0, n_reservoir), match_indic_b_matched)
 
-				beta_hat_T_bs
+						boot_inf_obj = self$duplicate()
+						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+						boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+						boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+						tryCatch({
+							boot_inf_obj$.__enclos_env__$private$match_indic = match_indic_b
+							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+							if (private$object_has_private_method(boot_inf_obj, "compute_reservoir_and_match_statistics")){
+								boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+							}
+							boot_inf_obj$compute_treatment_estimate()
+						}, error = function(e) {
+							NA_real_
+						})
+					}, mc.cores = private$num_cores))
+					return(beta_hat_T_bs)
+				}
 			}
 		}
 	),

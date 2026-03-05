@@ -31,5 +31,6 @@ List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, i
 
   // Compute variance using the XtX we already have
   mod["ssq_b_j"] = sigma2_hat * eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtX, j);
+  mod["ssq_b_2"] = (X.cols() >= 2) ? (sigma2_hat * eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtX, 2)) : NA_REAL;
   return mod;
 }

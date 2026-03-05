@@ -62,7 +62,7 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @return A list with coefficients and specific treatment variance.
 //' @export
 // [[Rcpp::export]]
-List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y) {
+List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j = 2) {
   List mod = fast_logistic_regression_cpp(Xmm, y);
   Eigen::VectorXd w = mod["w"];
   Eigen::VectorXd b = mod["b"];
@@ -70,10 +70,12 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eig
   // Xmm.transpose() * w.asDiagonal() * Xmm
   Eigen::MatrixXd XtWX = Xmm.transpose() * w.asDiagonal() * Xmm;
   
-  double ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2);
+  double ssq_b_j = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, j);
+  double ssq_b_2 = (Xmm.cols() >= 2) ? eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2) : NA_REAL;
   
   return List::create(
     Named("b") = b,
+    Named("ssq_b_j") = ssq_b_j,
     Named("ssq_b_2") = ssq_b_2
   );
 }

@@ -163,8 +163,8 @@ fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 #' @param y Response vector.
 #' @return A list with coefficients and specific treatment variance.
 #' @export
-fast_logistic_regression_with_var_cpp <- function(Xmm, y) {
-    .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y)
+fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
+    .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
 }
 
 matrix_rank_cpp <- function(A, tol = 1e-12) {

@@ -142,9 +142,11 @@ fast_logistic_regression = function(Xmm, y){
 #' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @return A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the obtained logistic regression coefficients.}
+#' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 #' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
 #'   which typically corresponds to the treatment effect.}
 #' }
@@ -164,7 +166,7 @@ fast_logistic_regression = function(Xmm, y){
 #' # Fit logistic regression with variance using fast_logistic_regression_with_var
 #' fit_logistic_var <- fast_logistic_regression_with_var(Xmm = X_log_var, y = y_log_var)
 #' print(fit_logistic_var$b)
-#' print(fit_logistic_var$ssq_b_2)
+#' print(fit_logistic_var$ssq_b_j)
 #'
 #' # Compare with standard R glm()
 #' glm_fit_var <- glm(y_log_var ~ X_log_var - 1, family = binomial)
@@ -175,24 +177,24 @@ fast_logistic_regression = function(Xmm, y){
 #' }
 #'
 #' @export
-fast_logistic_regression_with_var = function(Xmm, y){
+fast_logistic_regression_with_var = function(Xmm, y, j = 2){
   # Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
   # separation: the MLE does not exist and the IWLS optimizer has diverged to a large
   # but finite value (which passes is.finite() checks and would silently corrupt CIs).
   SEPARATION_THRESHOLD = 1e6
 
-  # Attempt a single fit on matrix X; always returns a list with (b, ssq_b_2, converged).
+  # Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
   # 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
   try_fit = function(X){
     tryCatch({
       mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
           Xmm = X,
           ybin = as.numeric(y),
-          do_inference_on_var = 2
+          do_inference_on_var = j
       ))
       if (any(is.na(mod$se)) || any(!is.finite(mod$se))) stop("non-finite SE")
       b = as.vector(mod$coefficients)
-      list(b = b, ssq_b_2 = mod$se[2]^2, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+      list(b = b, ssq_b_j = mod$se[j]^2, ssq_b_2 = if (length(mod$se) >= 2) mod$se[2]^2 else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
     }, error = function(e) {
       # Fallback to standard R glm if fast version fails
       mod_canonical = stats::glm.fit(x = X, y = as.numeric(y), family = stats::binomial())
@@ -200,7 +202,7 @@ fast_logistic_regression_with_var = function(Xmm, y){
       R <- qr.R(mod_canonical$qr)
       Rinv <- backsolve(R, diag(ncol(R)))
       vcov <- Rinv %*% t(Rinv)
-      list(b = b, ssq_b_2 = vcov[2, 2], converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+      list(b = b, ssq_b_j = vcov[j, j], ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
     })
   }
 
@@ -209,7 +211,7 @@ fast_logistic_regression_with_var = function(Xmm, y){
   X_curr = Xmm
   repeat {
     fit = try_fit(X_curr)
-    if (fit$converged) return(list(b = fit$b, ssq_b_2 = fit$ssq_b_2))
+    if (fit$converged) return(list(b = fit$b, ssq_b_j = fit$ssq_b_j, ssq_b_2 = fit$ssq_b_2))
     if (ncol(X_curr) <= 2){
       stop("complete separation detected: logistic regression coefficients diverged (MLE does not exist)")
     }
@@ -420,9 +422,11 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #' @param y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
+#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
 #'
 #' @return A list containing the following components:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
+#' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 #' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
 #'   which typically corresponds to the treatment effect.}
 #'
@@ -435,17 +439,17 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #'
 #' @importFrom stats vcov
 #' @export
-fast_beta_regression_with_var = function(Xmm, y, start_phi = 10){
+fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
   y = sanitize_beta_response(y)
   tryCatch({
     mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi)
-    list(b = mod$coefficients, ssq_b_2 = mod$vcov[2, 2])
+    list(b = mod$coefficients, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
   }, error = function(e) {
     warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
     if (!requireNamespace("betareg", quietly = TRUE)) {
       warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
-      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)
-      return(list(b = mod$b, ssq_b_2 = mod$ssq_b_j))
+      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
+      return(list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
     }
     # create a data frame for betareg, removing the intercept from Xmm
     data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
@@ -457,13 +461,13 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10){
         fit <- betareg::betareg(y ~ ., data = data_df,
                                 control = betareg::betareg.control(start = list(phi = start_phi)))
       })
-      # Get the variance of the second coefficient
+      # Get the variance of the j-th coefficient
       vcov_matrix <- vcov(fit)
-      list(b = coef(fit), ssq_b_2 = vcov_matrix[2, 2])
+      list(b = coef(fit), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
     }, error = function(e2) {
       warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
-      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)
-      list(b = mod$b, ssq_b_2 = mod$ssq_b_j)
+      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
+      list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
     })
   })
 }
@@ -541,16 +545,20 @@ fast_negbin_regression <- function(Xmm, y) {
 #' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param y A numeric vector of the response variable, representing count data.
+#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
 #'
 #' @return A list containing the following components:
+#' \describe{
 #' \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
+#' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 #' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
 #'   which typically corresponds to the treatment effect.}
+#' }
 #'
 #' @importFrom stats glm.fit
 #' @importFrom MASS negative.binomial
 #' @export
-fast_negbin_regression_with_var <- function(Xmm, y) {
+fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
   # Use glm.fit for efficiency
   mod <- stats::glm.fit(
     x = Xmm,
@@ -576,14 +584,16 @@ fast_negbin_regression_with_var <- function(Xmm, y) {
   # Scale the variance-covariance matrix by dispersion
   vcov <- vcov_unscaled * dispersion
 
-  # Extract variance of second coefficient (treatment effect)
-  ssq_b_2 <- vcov[2, 2]
+  # Extract variance of j-th coefficient
+  ssq_b_j <- vcov[j, j]
 
   list(
     b = as.vector(mod$coefficients),
-    ssq_b_2 = ssq_b_2
+    ssq_b_j = ssq_b_j,
+    ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_
   )
 }
+
 
 
 
