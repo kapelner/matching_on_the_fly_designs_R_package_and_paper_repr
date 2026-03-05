@@ -10,7 +10,7 @@
 #' @details
 #' This class requires the \pkg{parfm} package.
 #'
-#' @export
+#' @keywords internal
 SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbstractKKWeibullFrailty",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(

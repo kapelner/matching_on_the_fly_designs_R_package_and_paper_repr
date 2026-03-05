@@ -13,6 +13,7 @@ reservoir subjects, it uses standard Weibull regression (AFT). The two estimates
 \details{
 This class requires the \pkg{parfm} package.
 }
+\keyword{internal}
 \section{Super classes}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceAbstractKKWeibullFrailty}
 }

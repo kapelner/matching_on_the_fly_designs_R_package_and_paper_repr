@@ -47,6 +47,7 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 }
 				
 }
+\keyword{internal}
 \section{Super classes}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceMLEorKMforGLMs}
 }

@@ -28,6 +28,7 @@ beta_hat_T_bs
 }
 
 }
+\keyword{internal}
 \section{Super class}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceKKPassThrough}
 }

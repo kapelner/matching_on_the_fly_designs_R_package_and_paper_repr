@@ -7,7 +7,7 @@
 #' subjects, it uses Negative Binomial regression. The two estimates are combined via a
 #' variance-weighted linear combination.
 #'
-#' @export
+#' @keywords internal
 SeqDesignInferenceAbstractKKCPoisson = R6::R6Class("SeqDesignInferenceAbstractKKCPoisson",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(

@@ -10,6 +10,7 @@ via binomial logistic regression on the differences of covariates). For reservoi
 subjects, it uses Negative Binomial regression. The two estimates are combined via a
 variance-weighted linear combination.
 }
+\keyword{internal}
 \section{Super classes}{
 \code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceAbstractKKCPoisson}
 }

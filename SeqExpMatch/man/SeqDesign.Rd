@@ -198,6 +198,7 @@ seq_des$any_censoring() #returns FALSE
 }
 			
 }
+\keyword{internal}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

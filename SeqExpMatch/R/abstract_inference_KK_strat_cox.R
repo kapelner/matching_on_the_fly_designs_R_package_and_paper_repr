@@ -7,7 +7,7 @@
 #' regression. The two estimates (both log-hazard ratios) are combined via a
 #' variance-weighted linear combination.
 #'
-#' @export
+#' @keywords internal
 SeqDesignInferenceAbstractKKStratCox = R6::R6Class("SeqDesignInferenceAbstractKKStratCox",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(

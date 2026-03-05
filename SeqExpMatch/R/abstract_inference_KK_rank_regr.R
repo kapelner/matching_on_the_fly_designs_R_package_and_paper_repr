@@ -1,7 +1,17 @@
-#' Abstract class for Conditional Logistic Compound Inference
-#' 
+#' Abstract class for Rank-based Regression (R-Estimation) Compound Inference
+#'
+#' @description
+#' This class implements a robust compound estimator for KK matching-on-the-fly
+#' designs using rank-based regression (R-estimation) via the \pkg{Rfit} package.
+#' For matched pairs, it fits an R-regression on the within-pair differences of responses
+#' and covariates. For reservoir subjects, it fits a standard rank-based linear model.
+#' The two estimates are combined via a variance-weighted linear combination.
+#'
+#' @details
+#' This class requires the \pkg{Rfit} package.
+#'
 #' @keywords internal
-SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKClogit",
+SeqDesignInferenceAbstractKKRankRegr = R6::R6Class("SeqDesignInferenceAbstractKKRankRegr",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
@@ -11,15 +21,21 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			if (!requireNamespace("bclogit", quietly = TRUE)) {
-				stop("Package 'bclogit' is required for ", class(self)[1], ". Please install it.")
+			res_type = seq_des_obj$get_response_type()
+			if (res_type == "incidence"){
+				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
 			}
-			assertResponseType(seq_des_obj$get_response_type(), "incidence")
+			assertResponseType(res_type, c("continuous", "count", "proportion", "survival"))
 			if (!is(seq_des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
 			super$initialize(seq_des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (private$any_censoring){
+				stop(class(self)[1], " does not support censored survival data.")
+			}
+			if (!requireNamespace("Rfit", quietly = TRUE)) {
+				stop("Package 'Rfit' is required for ", class(self)[1], ". Please install it.")
+			}
 		},
 
 		#' @description
@@ -49,7 +65,7 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 			if (delta == 0){
 				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
-				stop("TO-DO")
+				stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
 			}
 		}
 	),
@@ -67,25 +83,25 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			# --- Matched pairs: clogit ---
+			# --- Matched pairs: Rfit on differences ---
 			if (m > 0){
-				private$clogit_for_matched_pairs()
+				private$rfit_for_matched_pairs()
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
 
-			# --- Reservoir: logistic regression ---
+			# --- Reservoir: Rfit on level data ---
 			if (nRT > 0 && nRC > 0){
-				private$logistic_for_reservoir()
+				private$rfit_for_reservoir()
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
 			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
 
-			# --- Variance-weighted combination (mirrors SeqDesignInferenceContinMultOLSKK) ---
+			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
@@ -105,81 +121,59 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Clogit/logistic compound estimator: could not compute a finite standard error (possible perfect separation or insufficient data).")
+				stop("Rank-regression compound estimator: could not compute a finite standard error.")
 			}
 		},
 
-		clogit_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
-
-			i_matched = which(match_indic > 0)
-			y_m       = private$y[i_matched]
-			w_m       = private$w[i_matched]
-			strata_m  = match_indic[i_matched]
-			X_m       = if (private$include_covariates()) as.data.frame(private$X[i_matched, , drop = FALSE]) else data.frame()
-
-			mod = tryCatch(
-				bclogit::clogit(
-					formula        = NULL,
-					y              = y_m,
-					X              = X_m,
-					treatment      = w_m,
-					strata         = strata_m,
-					treatment_name = "w"
-				),
-				error = function(e) NULL
-			)
+		rfit_for_matched_pairs = function(){
+			KKstats = private$cached_values$KKstats
+			dy = KKstats$y_matched_diffs
+			
+			if (private$include_covariates()){
+				dX = KKstats$X_matched_diffs
+				# Formula: dy ~ 1 + dX. Intercept is the treatment effect.
+				dat = as.data.frame(dX)
+				colnames(dat) = paste0("x", 1:ncol(dat))
+				dat$dy = dy
+				mod = tryCatch({
+					Rfit::rfit(dy ~ ., data = dat)
+				}, error = function(e) NULL)
+			} else {
+				mod = tryCatch({
+					Rfit::rfit(dy ~ 1)
+				}, error = function(e) NULL)
+			}
+			
 			if (is.null(mod)) return(invisible(NULL))
-
-			beta = as.numeric(mod$coefficients["w"])
-			se   = as.numeric(mod$se[1])
-			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
+			
+			summ = summary(mod)
+			private$cached_values$beta_T_matched     = as.numeric(summ$coefficients["(Intercept)", "Estimate"])
+			se = as.numeric(summ$coefficients["(Intercept)", "Std. Error"])
 			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
-		logistic_for_reservoir = function(){
-			y_r    = private$cached_values$KKstats$y_reservoir
-			w_r    = private$cached_values$KKstats$w_reservoir
-			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
-			j_treat = 2L
-
+		rfit_for_reservoir = function(){
+			y_r = private$cached_values$KKstats$y_reservoir
+			w_r = private$cached_values$KKstats$w_reservoir
+			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
+			
+			dat = data.frame(y = y_r, w = w_r)
 			if (private$include_covariates()){
-				X_full = cbind(1, w_r, X_r)
-				# QR-reduce to full rank while always preserving the treatment column,
-				# mirroring the approach used in ols_for_reservoir().
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(2L %in% keep)) keep[r_full] = 2L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
-					j_treat = which(keep == 2L)
-				}
-			} else {
-				X_full = cbind(1, w_r)
+				X_covs = as.data.frame(X_r)
+				colnames(X_covs) = paste0("x", 1:ncol(X_covs))
+				dat = cbind(dat, X_covs)
 			}
-
-			mod = tryCatch(
-				fast_logistic_regression_with_var(X_full, y_r, j = j_treat),
-				error = function(e) NULL
-			)
-			# Fallback: if the covariates model failed, retry with just intercept + treatment
-			if (is.null(mod) && private$include_covariates()){
-				mod = tryCatch(
-					fast_logistic_regression_with_var(cbind(1, w_r), y_r, j = 2L),
-					error = function(e) NULL
-				)
-				j_treat = 2L
-			}
+			
+			mod = tryCatch({
+				Rfit::rfit(y ~ ., data = dat)
+			}, error = function(e) NULL)
+			
 			if (is.null(mod)) return(invisible(NULL))
-
-			beta = as.numeric(mod$b[j_treat])
-			ssq  = as.numeric(mod$ssq_b_j)
-			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
+			
+			summ = summary(mod)
+			private$cached_values$beta_T_reservoir     = as.numeric(summ$coefficients["w", "Estimate"])
+			se = as.numeric(summ$coefficients["w", "Std. Error"])
+			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

@@ -8,6 +8,7 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 #' \code{install.packages("nbpMatching")} before using this class.
 #'
+#' @keywords internal
 SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
   inherit = SeqDesignInferenceKKPassThroughCompound,
   public = list(

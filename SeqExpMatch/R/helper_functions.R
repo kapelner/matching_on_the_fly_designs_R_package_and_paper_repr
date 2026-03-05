@@ -63,8 +63,8 @@ drop_highly_correlated_cols = function(M, threshold = 0.99){
 }
 
 assertResponseType = function(response_type, needed_response_type){
-	if (response_type != needed_response_type){
-		stop("This type of inference is only available for ", needed_response_type, " responses.")
+	if (!(response_type %in% needed_response_type)){
+		stop("This type of inference is only available for ", paste(needed_response_type, collapse = "/"), " responses.")
 	}
 }
 

@@ -51,7 +51,8 @@ Suggests:
     doParallel,
     testthat,
     fixest,
-    parfm
+    parfm,
+    Rfit
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.3
 Collate:
@@ -74,6 +75,10 @@ Collate:
     'abstract_inference_mle_or_KM_summary_table.R'
     'inference_all_mean_diff.R'
     'inference_all_KK_compound_mean_diff.R'
+    'inference_all_KK_wilcox.R'
+    'abstract_inference_KK_rank_regr.R'
+    'inference_all_KK_rank_regr_univ.R'
+    'inference_all_KK_rank_regr_multi.R'
     'abstract_inference_bai_et_al.R'
     'inference_continuous_KK14_bai.R'
     'inference_continuous_KK21_bai.R'

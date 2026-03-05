@@ -12,6 +12,8 @@
 #' testing the population H_0: beta_T = 0 and if the test is a randomization test, 
 #' it is testing the sharp null that H_0: Y_T_i = Y_C_i for all subjects. Confidence
 #' interval construction is available for normal-theory based test type as well.
+#' 
+#' @keywords internal
 SeqDesignInference = R6::R6Class("SeqDesignInference",
 	public = list(
 		#' Begin Inference

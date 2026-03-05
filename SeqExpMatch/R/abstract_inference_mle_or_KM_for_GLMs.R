@@ -4,6 +4,7 @@
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 #' 
+#' @keywords internal
 SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(

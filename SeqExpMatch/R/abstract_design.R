@@ -5,7 +5,7 @@
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #' 
-#' @export
+#' @keywords internal
 SeqDesign = R6::R6Class("SeqDesign",
 	public = list(
 		#' 				

@@ -4,6 +4,7 @@
 #' An abstract R6 Class that provides MLE-based tests and intervals for a treatment effect in a sequential design
 #' where the common denominator is a summary table from a glm.
 #' 
+#' @keywords internal
 SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSummaryTable",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(

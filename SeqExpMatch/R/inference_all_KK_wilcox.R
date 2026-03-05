@@ -1,7 +1,15 @@
-#' Abstract class for Conditional Logistic Compound Inference
-#' 
-#' @keywords internal
-SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKClogit",
+#' Non-parametric Wilcoxon-based Compound Inference for KK Designs
+#'
+#' @description
+#' Fits a non-parametric compound estimator for KK matching-on-the-fly designs.
+#' For matched pairs, it uses the Wilcoxon Signed-Rank Hodges-Lehmann estimate.
+#' For reservoir subjects, it uses the Wilcoxon Rank-Sum (Mann-Whitney U) Hodges-Lehmann
+#' estimate. The two estimates are combined via a variance-weighted linear combination.
+#' This method is robust to outliers and does not assume a specific parametric
+#' distribution for the response.
+#'
+#' @export
+SeqDesignInferenceAllKKWilcox = R6::R6Class("SeqDesignInferenceAllKKWilcox",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
@@ -11,36 +19,40 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			if (!requireNamespace("bclogit", quietly = TRUE)) {
-				stop("Package 'bclogit' is required for ", class(self)[1], ". Please install it.")
+			res_type = seq_des_obj$get_response_type()
+			if (res_type == "incidence"){
+				stop("Rank-based compound inference is not recommended for incidence data; clogit or compound mean difference estimators are preferred.")
 			}
-			assertResponseType(seq_des_obj$get_response_type(), "incidence")
+			assertResponseType(res_type, c("continuous", "count", "proportion", "survival"))
 			if (!is(seq_des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
 			super$initialize(seq_des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (private$any_censoring){
+				stop(class(self)[1], " does not currently support censored survival data. Use restricted mean or Cox-based methods instead.")
+			}
 		},
 
 		#' @description
-		#' Returns the estimated treatment effect.
+		#' Returns the estimated treatment effect (Hodges-Lehmann median shift).
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
 		#' @description
-		#' Computes the MLE-based confidence interval.
+		#' Computes the non-parametric confidence interval.
 		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$assert_finite_se()
+			# Even though estimates are non-parametric, the combined estimator is asymptotically normal
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
 		#' @description
-		#' Computes the MLE-based p-value.
+		#' Computes the non-parametric p-value.
 		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
@@ -49,15 +61,12 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 			if (delta == 0){
 				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
-				stop("TO-DO")
+				stop("Testing non-zero delta is not yet implemented for the combined rank estimator.")
 			}
 		}
 	),
 
 	private = list(
-
-		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -67,25 +76,25 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			# --- Matched pairs: clogit ---
+			# --- Matched pairs: Wilcoxon Signed-Rank HL Estimate ---
 			if (m > 0){
-				private$clogit_for_matched_pairs()
+				private$rank_for_matched_pairs()
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
 
-			# --- Reservoir: logistic regression ---
+			# --- Reservoir: Wilcoxon Rank-Sum HL Estimate ---
 			if (nRT > 0 && nRC > 0){
-				private$logistic_for_reservoir()
+				private$rank_for_reservoir()
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
 			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
 
-			# --- Variance-weighted combination (mirrors SeqDesignInferenceContinMultOLSKK) ---
+			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
@@ -105,81 +114,47 @@ SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKCl
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Clogit/logistic compound estimator: could not compute a finite standard error (possible perfect separation or insufficient data).")
+				stop("Rank compound estimator: could not compute a finite standard error.")
 			}
 		},
 
-		clogit_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
-
-			i_matched = which(match_indic > 0)
-			y_m       = private$y[i_matched]
-			w_m       = private$w[i_matched]
-			strata_m  = match_indic[i_matched]
-			X_m       = if (private$include_covariates()) as.data.frame(private$X[i_matched, , drop = FALSE]) else data.frame()
-
-			mod = tryCatch(
-				bclogit::clogit(
-					formula        = NULL,
-					y              = y_m,
-					X              = X_m,
-					treatment      = w_m,
-					strata         = strata_m,
-					treatment_name = "w"
-				),
-				error = function(e) NULL
-			)
+		rank_for_matched_pairs = function(){
+			diffs = private$cached_values$KKstats$y_matched_diffs
+			# signed-rank test requires at least some non-zero differences
+			if (all(diffs == 0)) return(invisible(NULL))
+			
+			mod = tryCatch({
+				stats::wilcox.test(diffs, conf.int = TRUE)
+			}, error = function(e) NULL)
+			
 			if (is.null(mod)) return(invisible(NULL))
-
-			beta = as.numeric(mod$coefficients["w"])
-			se   = as.numeric(mod$se[1])
+			
+			beta = as.numeric(mod$estimate)
+			# Back-calculate SE from 95% CI width
+			se = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
+			
 			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
-		logistic_for_reservoir = function(){
-			y_r    = private$cached_values$KKstats$y_reservoir
-			w_r    = private$cached_values$KKstats$w_reservoir
-			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
-			j_treat = 2L
-
-			if (private$include_covariates()){
-				X_full = cbind(1, w_r, X_r)
-				# QR-reduce to full rank while always preserving the treatment column,
-				# mirroring the approach used in ols_for_reservoir().
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(2L %in% keep)) keep[r_full] = 2L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
-					j_treat = which(keep == 2L)
-				}
-			} else {
-				X_full = cbind(1, w_r)
-			}
-
-			mod = tryCatch(
-				fast_logistic_regression_with_var(X_full, y_r, j = j_treat),
-				error = function(e) NULL
-			)
-			# Fallback: if the covariates model failed, retry with just intercept + treatment
-			if (is.null(mod) && private$include_covariates()){
-				mod = tryCatch(
-					fast_logistic_regression_with_var(cbind(1, w_r), y_r, j = 2L),
-					error = function(e) NULL
-				)
-				j_treat = 2L
-			}
+		rank_for_reservoir = function(){
+			y_r = private$cached_values$KKstats$y_reservoir
+			w_r = private$cached_values$KKstats$w_reservoir
+			yT = y_r[w_r == 1]
+			yC = y_r[w_r == 0]
+			
+			mod = tryCatch({
+				stats::wilcox.test(yT, yC, conf.int = TRUE)
+			}, error = function(e) NULL)
+			
 			if (is.null(mod)) return(invisible(NULL))
-
-			beta = as.numeric(mod$b[j_treat])
-			ssq  = as.numeric(mod$ssq_b_j)
+			
+			beta = as.numeric(mod$estimate)
+			# Back-calculate SE from 95% CI width
+			se = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
+			
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

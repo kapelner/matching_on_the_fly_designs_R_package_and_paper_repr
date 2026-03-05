@@ -2,6 +2,8 @@
 #'
 #' @description
 #' An abstract class
+#' 
+#' @keywords internal
 SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 	inherit = SeqDesignInference,
 	public = list(
