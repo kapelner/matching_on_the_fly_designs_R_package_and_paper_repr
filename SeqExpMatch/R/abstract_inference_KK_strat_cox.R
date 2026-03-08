@@ -173,7 +173,10 @@ SeqDesignInferenceAbstractKKStratCox = R6::R6Class("SeqDesignInferenceAbstractKK
 		cox_for_reservoir = function(){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
-			dead_r = private$dead[private$match_indic == 0]
+			match_indic_safe = private$match_indic
+			if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
+			match_indic_safe[is.na(match_indic_safe)] = 0L
+			dead_r = private$dead[match_indic_safe == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 			
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)

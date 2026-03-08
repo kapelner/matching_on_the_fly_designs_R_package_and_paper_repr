@@ -2,13 +2,38 @@
 #'
 #' @description
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' survival responses using the Weibull AFT model. For matched pairs, it uses a Weibull
-#' shared frailty model (each pair is a cluster) to estimate the log-time ratio. For
-#' reservoir subjects, it uses standard Weibull regression (AFT). The two estimates
-#' (both log-time ratios) are combined via a variance-weighted linear combination.
+#' survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
+#' model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
+#' reservoir subjects, it uses standard Weibull AFT regression. The two estimates
+#' are combined via a variance-weighted linear combination.
 #'
 #' @details
-#' This class requires the \pkg{parfm} package.
+#' The matched-pairs frailty estimator differs between the univariate and multivariate
+#' subclasses due to computational constraints:
+#'
+#' \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
+#' to fit a fully parametric Weibull gamma-frailty model with only the treatment
+#' indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
+#' \code{parfm}, and the AFT log-time ratio is recovered as
+#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
+#' This is fast because there is only one fixed-effect parameter.
+#'
+#' \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
+#' prohibitively slow when many covariates are present (its EM algorithm is
+#' \eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
+#' Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
+#' obtained from \code{survival::coxph()} with a \code{frailty(cluster,
+#' distribution = "gamma")} term, which is a highly optimised C implementation.
+#' The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
+#' \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
+#' The AFT log-time ratio is then
+#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
+#' and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
+#' (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
+#' semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
+#' only for scale conversion and does not affect the frailty correction itself.
+#'
+#' The \pkg{parfm} package is required only for the univariate subclass.
 #'
 #' @keywords internal
 SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbstractKKWeibullFrailty",
@@ -146,39 +171,62 @@ SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbst
 				w = w_m[i_valid],
 				cluster = factor(strata_m[i_valid])
 			)
-			
-			formula_str = "survival::Surv(time, event) ~ w"
+
 			if (private$include_covariates()){
+				# Multivariate: coxph with gamma frailty (optimised C implementation) for the
+				# PH treatment coefficient; survreg for Weibull shape rho; convert via
+				# alpha_AFT = -beta_PH / rho,  SE_AFT = SE_PH / rho  (delta method, rho fixed).
 				X_m = as.matrix(private$X[i_matched[i_valid], , drop = FALSE])
 				colnames(X_m) = paste0("x", 1:ncol(X_m))
 				dat = cbind(dat, X_m)
-				formula_str = paste(formula_str, "+", paste(colnames(X_m), collapse = " + "))
+				cov_str = paste(colnames(X_m), collapse = " + ")
+
+				cox_formula = as.formula(paste(
+					"survival::Surv(time, event) ~ w +", cov_str,
+					"+ survival::frailty(cluster, distribution = 'gamma')"))
+				cox_mod = tryCatch(
+					survival::coxph(cox_formula, data = dat),
+					error = function(e) NULL
+				)
+				if (is.null(cox_mod)) return(invisible(NULL))
+
+				cox_coef = tryCatch(summary(cox_mod)$coefficients, error = function(e) NULL)
+				if (is.null(cox_coef) || !("w" %in% rownames(cox_coef))) return(invisible(NULL))
+				beta_ph = cox_coef["w", "coef"]
+				se_ph   = cox_coef["w", "se(coef)"]
+
+				survreg_formula = as.formula(paste("survival::Surv(time, event) ~ w +", cov_str))
+				survreg_mod = tryCatch(
+					survival::survreg(survreg_formula, data = dat, dist = "weibull"),
+					error = function(e) NULL
+				)
+				if (is.null(survreg_mod)) return(invisible(NULL))
+				rho = 1 / survreg_mod$scale
+
+				alpha_aft     = -beta_ph / rho
+				ssq_alpha_aft = (se_ph / rho)^2
+			} else {
+				# Univariate: parfm parametric Weibull gamma-frailty (fast when p = 1).
+				mod = tryCatch({
+					parfm::parfm(
+						survival::Surv(time, event) ~ w,
+						cluster = "cluster",
+						data = dat,
+						dist = "weibull",
+						frailty = "gamma"
+					)
+				}, error = function(e) NULL)
+
+				if (is.null(mod)) return(invisible(NULL))
+
+				# parfm returns PH coefficients; convert to AFT: alpha_AFT = -beta_PH / rho.
+				rho           = as.numeric(mod["rho", "ESTIMATE"])
+				beta_ph       = as.numeric(mod["w",   "ESTIMATE"])
+				se_ph         = as.numeric(mod["w",   "SE"])
+				alpha_aft     = -beta_ph / rho
+				ssq_alpha_aft = (se_ph / rho)^2
 			}
 
-			mod = tryCatch({
-				parfm::parfm(
-					as.formula(formula_str),
-					cluster = "cluster",
-					data = dat,
-					dist = "weibull",
-					frailty = "gamma"
-				)
-			}, error = function(e) NULL)
-			
-			if (is.null(mod)) return(invisible(NULL))
-
-			# parfm returns coefficients in PH units (log-hazard ratios).
-			# Convert back to AFT: alpha_AFT = -beta_PH * sigma, where sigma = 1/rho (shape).
-			# In parfm summary, "rho" is the Weibull shape parameter.
-			rho = as.numeric(mod["rho", "estimate"])
-			sigma = 1 / rho
-			beta_ph = as.numeric(mod["w", "estimate"])
-			alpha_aft = -beta_ph * sigma
-			
-			# Delta method for variance: Var(alpha_AFT) approx Var(beta_PH) * sigma^2
-			se_ph = as.numeric(mod["w", "std.error"])
-			ssq_alpha_aft = (se_ph^2) * (sigma^2)
-			
 			private$cached_values$beta_T_matched     = if (is.finite(alpha_aft)) alpha_aft else NA_real_
 			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq_alpha_aft) && ssq_alpha_aft > 0) ssq_alpha_aft else NA_real_
 		},
@@ -186,7 +234,10 @@ SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbst
 		weibull_for_reservoir = function(){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
-			dead_r = private$dead[private$match_indic == 0]
+			match_indic_safe = private$match_indic
+			if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
+			match_indic_safe[is.na(match_indic_safe)] = 0L
+			dead_r = private$dead[match_indic_safe == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 			
 			X_full = matrix(w_r, ncol = 1)

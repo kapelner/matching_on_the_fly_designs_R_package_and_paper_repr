@@ -11,7 +11,7 @@
 #' seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
 #' X = data.table::data.table(MASS::biopsy[1:6, 2:10])
 #' for (i in 1:6) seq_des$add_subject_to_experiment_and_assign(X[i, ])
-#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
 #' 
 #' # Initialize inference object
 #' seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)

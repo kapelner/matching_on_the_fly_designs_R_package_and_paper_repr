@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 SeqDesignInferenceAbstractKKWilcoxRegr = R6::R6Class("SeqDesignInferenceAbstractKKWilcoxRegr",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInferenceAbstractKKWilcoxBase,
 	public = list(
 
 		#' @description
@@ -143,23 +143,34 @@ SeqDesignInferenceAbstractKKWilcoxRegr = R6::R6Class("SeqDesignInferenceAbstract
 				mod = tryCatch({
 					Rfit::rfit(dy ~ ., data = dat)
 				}, error = function(e) NULL)
+
+				if (is.null(mod)) return(invisible(NULL))
+
+				summ = tryCatch(summary(mod), error = function(e) NULL)
+				if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
+				if (!"(Intercept)" %in% rownames(summ$coefficients)) return(invisible(NULL))
+
+				beta = as.numeric(summ$coefficients["(Intercept)", "Estimate"])
+				se   = as.numeric(summ$coefficients["(Intercept)", "Std. Error"])
+				
+				private$cached_values$beta_T_matched     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+				private$cached_values$ssq_beta_T_matched = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 			} else {
+				# Univariate case: Rfit fails on dy ~ 1. Use Wilcoxon HL estimate.
+				# This is mathematically consistent with the RankRegr goal.
+				if (all(dy == 0)) return(invisible(NULL))
 				mod = tryCatch({
-					Rfit::rfit(dy ~ 1)
+					stats::wilcox.test(dy, conf.int = TRUE)
 				}, error = function(e) NULL)
+				
+				if (is.null(mod)) return(invisible(NULL))
+				
+				beta = as.numeric(mod$estimate)
+				se   = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
+				
+				private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
+				private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
 			}
-			
-			if (is.null(mod)) return(invisible(NULL))
-
-			summ = tryCatch(summary(mod), error = function(e) NULL)
-			if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
-			if (!"(Intercept)" %in% rownames(summ$coefficients)) return(invisible(NULL))
-
-			beta = as.numeric(summ$coefficients["(Intercept)", "Estimate"])
-			se   = as.numeric(summ$coefficients["(Intercept)", "Std. Error"])
-			
-			private$cached_values$beta_T_matched     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
 		rfit_for_reservoir = function(){
@@ -167,28 +178,43 @@ SeqDesignInferenceAbstractKKWilcoxRegr = R6::R6Class("SeqDesignInferenceAbstract
 			w_r = private$cached_values$KKstats$w_reservoir
 			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
 
-			dat = data.frame(y = y_r, w = w_r)
 			if (private$include_covariates()){
+				dat = data.frame(y = y_r, w = w_r)
 				X_covs = as.data.frame(X_r)
 				colnames(X_covs) = paste0("x", 1:ncol(X_covs))
 				dat = cbind(dat, X_covs)
+
+				mod = tryCatch({
+					Rfit::rfit(y ~ ., data = dat)
+				}, error = function(e) NULL)
+
+				if (is.null(mod)) return(invisible(NULL))
+
+				summ = tryCatch(summary(mod), error = function(e) NULL)
+				if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
+				if (!"w" %in% rownames(summ$coefficients)) return(invisible(NULL))
+
+				beta = as.numeric(summ$coefficients["w", "Estimate"])
+				se   = as.numeric(summ$coefficients["w", "Std. Error"])
+				
+				private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
+				private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
+			} else {
+				# Univariate case: use Wilcoxon rank-sum HL estimate
+				yT = y_r[w_r == 1]
+				yC = y_r[w_r == 0]
+				mod = tryCatch({
+					stats::wilcox.test(yT, yC, conf.int = TRUE)
+				}, error = function(e) NULL)
+				
+				if (is.null(mod)) return(invisible(NULL))
+				
+				beta = as.numeric(mod$estimate)
+				se   = (as.numeric(mod$conf.int[2]) - as.numeric(mod$conf.int[1])) / (2 * 1.96)
+				
+				private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
+				private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
 			}
-
-			mod = tryCatch({
-				Rfit::rfit(y ~ ., data = dat)
-			}, error = function(e) NULL)
-
-			if (is.null(mod)) return(invisible(NULL))
-
-			summ = tryCatch(summary(mod), error = function(e) NULL)
-			if (is.null(summ) || is.null(summ$coefficients)) return(invisible(NULL))
-			if (!"w" %in% rownames(summ$coefficients)) return(invisible(NULL))
-
-			beta = as.numeric(summ$coefficients["w", "Estimate"])
-			se   = as.numeric(summ$coefficients["w", "Std. Error"])
-			
-			private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

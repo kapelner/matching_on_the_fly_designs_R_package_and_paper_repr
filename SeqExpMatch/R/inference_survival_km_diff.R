@@ -36,8 +36,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = rep(1, 6))
-		#' 
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 	
@@ -50,33 +50,69 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 			)
 		},
 		
-		#' @description		
-		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
-		#' 
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal. 
-		#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#' 
+		#' @description
+		#' Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
+		#' median survival times (treatment minus control).
+		#'
+		#' The Brookmeyer-Crowley confidence interval is obtained for each group's median
+		#' separately via \code{survival::survfit} (using a log-log transformation of the
+		#' survival function by default). The per-group SE is back-calculated from the CI
+		#' half-width as \eqn{\hat\sigma_i = (\text{upper}_i - \text{lower}_i) / (2 z_{\alpha/2})}.
+		#' The two groups are independent by design, so the SE of the difference is
+		#' \eqn{\sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}, and the CI is
+		#' \eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}.
+		#'
+		#' Falls back to \code{compute_bootstrap_confidence_interval} when either group's
+		#' median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
+		#' when the Brookmeyer-Crowley CI bounds are \code{NA}.
+		#'
+		#' @param alpha		The significance level; the confidence level is 1 - \code{alpha}. Default is 0.05.
+		#'
+		#' @return	A numeric vector of length 2 giving the (lower, upper) confidence bounds
+		#' 			for the difference in median survival times, on the original time scale.
+		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_mle_confidence_interval()
 		#' }
-		#'		
 		compute_mle_confidence_interval = function(alpha = 0.05){
-			stop("not implemented --- use the bootstrap instead")
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			y    = private$y
+			dead = private$dead
+			w    = private$w
+			fit_T = tryCatch(survival::survfit(survival::Surv(y[w == 1], dead[w == 1]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
+			fit_C = tryCatch(survival::survfit(survival::Surv(y[w == 0], dead[w == 0]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
+			if (is.null(fit_T) || is.null(fit_C)){
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+			}
+			q_T = quantile(fit_T, 0.5)
+			q_C = quantile(fit_C, 0.5)
+			med_T = as.numeric(q_T$quantile)
+			lo_T  = as.numeric(q_T$lower)
+			hi_T  = as.numeric(q_T$upper)
+			med_C = as.numeric(q_C$quantile)
+			lo_C  = as.numeric(q_C$lower)
+			hi_C  = as.numeric(q_C$upper)
+			# Fall back to bootstrap if either median or its CI is not estimable
+			if (!is.finite(med_T) || !is.finite(med_C) || !is.finite(lo_T) || !is.finite(hi_T) || !is.finite(lo_C) || !is.finite(hi_C)){
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+			}
+			# Back-calculate SE for each median from the Brookmeyer-Crowley CI,
+			# then combine under independence for the difference
+			z        = stats::qnorm(1 - alpha / 2)
+			se_diff  = sqrt(((hi_T - lo_T) / (2 * z))^2 + ((hi_C - lo_C) / (2 * z))^2)
+			diff     = med_T - med_C
+			c(diff - z * se_diff, diff + z * se_diff)
 		},
 		
 		#' @description		
@@ -95,8 +131,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 		#' }

@@ -10,7 +10,7 @@
 #'
 #' @export
 SeqDesignInferenceAllKKWilcox = R6::R6Class("SeqDesignInferenceAllKKWilcox",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInferenceAbstractKKWilcoxBase,
 	public = list(
 
 		#' @description

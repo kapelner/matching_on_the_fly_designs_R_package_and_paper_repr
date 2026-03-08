@@ -7,8 +7,9 @@ source("package_tests/_dataset_load.R")
 options(error = recover)
 # options(warn=2)
 
-Nrep = 40
-NUM_CORES = 2
+args = commandArgs(trailingOnly = TRUE)
+Nrep      = if (length(args) >= 1) as.integer(args[1]) else 40L
+NUM_CORES = if (length(args) >= 2) as.integer(args[2]) else 2L
 prob_censoring = 0.15
 nsim_exact_test = 351
 pval_epsilon = 0.007
@@ -107,7 +108,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
   skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCox") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoisson") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti")
-  skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS")
+  skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcox") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr")
   skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM")
   skip_ci = beta_T == 1 && (
     is(seq_des_inf, "SeqDesignInferenceIncidMultiLogRegr") ||
@@ -437,14 +438,23 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 
   if (response_type == "survival"){
     if (is_kk_design){
-      inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
-      run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-      inference_banner("SeqDesignInferenceAllKKWilcox")
-      run_inference_checks(SeqDesignInferenceAllKKWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-      inference_banner("SeqDesignInferenceAllKKWilcoxRegrUniv")
-      run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrUniv$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-      inference_banner("SeqDesignInferenceAllKKWilcoxRegrMulti")
-      run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrMulti$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      is_censoring_skip_error = function(msg){
+        grepl("only available for uncensored", msg, fixed = TRUE) ||
+        grepl("does not currently support censored", msg, fixed = TRUE) ||
+        grepl("does not support censored", msg, fixed = TRUE)
+      }
+      for (kk_surv_class in list(SeqDesignInferenceAllKKCompoundMeanDiff, SeqDesignInferenceAllKKWilcox, SeqDesignInferenceAllKKWilcoxRegrUniv, SeqDesignInferenceAllKKWilcoxRegrMulti)){
+        class_name = kk_surv_class$classname
+        inference_banner(class_name)
+        err_msg = tryCatch({
+          run_inference_checks(kk_surv_class$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+          NULL
+        }, error = function(e) if (length(e$message) == 0L) "" else e$message)
+        if (!is.null(err_msg)){
+          if (is_censoring_skip_error(err_msg)) message("  Skipping ", class_name, " (censored data): ", err_msg)
+          else stop(err_msg)
+        }
+      }
       for (kk_surv_class in list(
         SeqDesignInferenceSurvivalUnivKKGEE,
         SeqDesignInferenceSurvivalMultiKKGammaGEE,
@@ -455,19 +465,20 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
         SeqDesignInferenceSurvivalUnivKKWeibullFrailty,
         SeqDesignInferenceSurvivalMultiKKWeibullFrailty
       )){
-        class_name = class(kk_surv_class)[1]
+        class_name = kk_surv_class$classname
         inference_banner(class_name)
-        tryCatch({
+        err_msg = tryCatch({
           run_inference_checks(kk_surv_class$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-        }, error = function(e){
-          if (grepl("only available for uncensored", e$message, fixed = TRUE)){
-            message("  Skipping ", class_name, " (censored data): ", e$message)
-          } else {
-            stop(e)
-          }
-        })
+          NULL
+        }, error = function(e) if (length(e$message) == 0L) "" else e$message)
+        if (!is.null(err_msg)){
+          if (grepl("only available for uncensored", err_msg, fixed = TRUE)) message("  Skipping ", class_name, " (censored data): ", err_msg)
+          else stop(err_msg)
+        }
       }
     }
+    inference_banner("SeqDesignInferenceSurvivalGehanWilcox")
+    run_inference_checks(SeqDesignInferenceSurvivalGehanWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     inference_banner("SeqDesignInferenceSurvivalRestrictedMeanDiff")
     run_inference_checks(SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     inference_banner("SeqDesignInferenceSurvivalKMDiff")

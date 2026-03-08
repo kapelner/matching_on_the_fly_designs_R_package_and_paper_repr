@@ -30,16 +30,16 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 		#' 
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#'
+		#' seq_des_inf = SeqDesignInferenceSurvivalUniCoxPHRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		#' 	
