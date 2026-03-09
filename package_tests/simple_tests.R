@@ -347,6 +347,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
       run_inference_checks(SeqDesignInferenceContinMultOLSKK$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceContinMultGLS")
       run_inference_checks(SeqDesignInferenceContinMultGLS$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferenceContinMultKKQuantileRegr")
+      run_inference_checks(SeqDesignInferenceContinMultKKQuantileRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     } else {
       inference_banner("SeqDesignInferenceContinMultOLS")
       run_inference_checks(SeqDesignInferenceContinMultOLS$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
@@ -398,6 +400,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
       run_inference_checks(SeqDesignInferencePropUnivKKGLMM$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferencePropMultiKKGLMM")
       run_inference_checks(SeqDesignInferencePropMultiKKGLMM$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferencePropMultiKKQuantileRegr")
+      run_inference_checks(SeqDesignInferencePropMultiKKQuantileRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     }
     inference_banner("SeqDesignInferencePropUniBetaRegr")
     run_inference_checks(SeqDesignInferencePropUniBetaRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))

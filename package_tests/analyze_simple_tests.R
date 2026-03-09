@@ -3,7 +3,7 @@ pacman::p_load(SeqExpMatch, stringr, doParallel, PTE, datasets, qgam, mlbench, A
 max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 
-X = fread("package_tests/simple_tests_results_nc_2.csv")
+X = fread("package_tests/simple_tests_results_nc_1.csv")
 table(X$rep)
 
 

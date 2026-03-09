@@ -2,7 +2,7 @@
 #' 
 #' @keywords internal
 SeqDesignInferenceAbstractKKClogit = R6::R6Class("SeqDesignInferenceAbstractKKClogit",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInferenceAbstractIncidRandCI,
 	public = list(
 
 		#' @description
