@@ -158,114 +158,115 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#'   geom_histogram(aes(x = beta_hat_T_bs))
 		#' }
 		#'
-			approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
-				assertCount(B, positive = TRUE)
-				assertCount(max_resample_attempts, positive = TRUE)
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
+			assertCount(B, positive = TRUE)
+			assertCount(max_resample_attempts, positive = TRUE)
 
-				n = private$seq_des_obj$get_n()
-				y = private$y
-				dead = private$dead
-				w = private$w
-				X = private$get_X()
+			n = private$seq_des_obj$get_n()
+			y = private$y
+			dead = private$dead
+			w = private$w
+			X = private$get_X()
 
-				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
-				if (private$has_private_method("compute_fast_bootstrap_distr")) {
-					fast_distr = private$compute_fast_bootstrap_distr(B, max_resample_attempts, n, y, dead, w)
-					if (!is.null(fast_distr)) {
-						return(fast_distr)
-					}
+			# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
+			if (private$has_private_method("compute_fast_bootstrap_distr")) {
+				fast_distr = private$compute_fast_bootstrap_distr(B, max_resample_attempts, n, y, dead, w)
+				if (!is.null(fast_distr)) {
+					return(fast_distr)
 				}
+			}
 
-				# Pure R bootstrap implementation (fallback for GLMs or when C++ fast-path is unavailable)
-				if (private$num_cores == 1) {
-					beta_hat_T_bs = rep(NA_real_, B)
-					for (b in 1:B) {
-						# Generate bootstrap indices (sample with replacement)
-						attempt = 1
-						repeat {
-							i_b = sample_int_replace_cpp(n, n)
-							w_b = w[i_b]
-							if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
-								if (!private$any_censoring) break
-								dead_b_temp = dead[i_b]
-								if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
-									min(y[i_b]) > 0) break
-							}
-							attempt = attempt + 1
-							if (attempt > max_resample_attempts) break
+			# Pure R bootstrap implementation (fallback for GLMs or when C++ fast-path is unavailable)
+			if (private$num_cores == 1) {
+				beta_hat_T_bs = rep(NA_real_, B)
+				for (b in 1:B) {
+					# Generate bootstrap indices (sample with replacement)
+					attempt = 1
+					repeat {
+						i_b = sample_int_replace_cpp(n, n)
+						w_b = w[i_b]
+						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+							if (!private$any_censoring) break
+							dead_b_temp = dead[i_b]
+							if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
+								min(y[i_b]) > 0) break
 						}
-
-						# Create bootstrap sample
-						y_b = y[i_b]
-						dead_b = dead[i_b]
-						X_b = X[i_b, , drop = FALSE]
-
-						# Create a duplicate inference object for this bootstrap sample
-						boot_inf_obj = self$duplicate()
-
-						# Update the bootstrap object with resampled data
-						boot_inf_obj$.__enclos_env__$private$y = y_b
-						boot_inf_obj$.__enclos_env__$private$dead = dead_b
-						boot_inf_obj$.__enclos_env__$private$w = w_b
-						boot_inf_obj$.__enclos_env__$private$X = X_b
-						boot_inf_obj$.__enclos_env__$private$cached_values = list()
-
-						# Compute treatment estimate on bootstrap sample
-						if (attempt > max_resample_attempts) {
-							if (private$verbose) {
-								cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
-							}
-							beta_hat_T_bs[b] = NA_real_
-						} else {
-							beta_hat_T_bs[b] = tryCatch({
-								boot_inf_obj$compute_treatment_estimate()
-							}, error = function(e) {
-								if (private$verbose) {
-									cat("      Bootstrap sample", b, "failed:", e$message, "\n")
-								}
-								NA_real_
-							})
-						}
+						attempt = attempt + 1
+						if (attempt > max_resample_attempts) break
 					}
-					return(beta_hat_T_bs)
-				} else {
-					# Parallel bootstrap execution for R loop fallback
-					beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
-						attempt = 1
-						repeat {
-							i_b = sample_int_replace_cpp(n, n)
-							w_b = w[i_b]
-							if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
-								if (!private$any_censoring) break
-								dead_b_temp = dead[i_b]
-								if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
-									min(y[i_b]) > 0) break
-							}
-							attempt = attempt + 1
-							if (attempt > max_resample_attempts) break
+
+					# Create bootstrap sample
+					y_b = y[i_b]
+					dead_b = dead[i_b]
+					X_b = X[i_b, , drop = FALSE]
+
+					# Create a duplicate inference object for this bootstrap sample
+					boot_inf_obj = self$duplicate()
+
+					# Update the bootstrap object with resampled data
+					boot_inf_obj$.__enclos_env__$private$y = y_b
+					boot_inf_obj$.__enclos_env__$private$dead = dead_b
+					boot_inf_obj$.__enclos_env__$private$w = w_b
+					boot_inf_obj$.__enclos_env__$private$X = X_b
+					boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+					# Compute treatment estimate on bootstrap sample
+					if (attempt > max_resample_attempts) {
+						if (private$verbose) {
+							cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
 						}
-
-						if (attempt > max_resample_attempts) {
-							return(NA_real_)
-						}
-
-						boot_inf_obj = self$duplicate()
-						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-						boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-						boot_inf_obj$.__enclos_env__$private$cached_values = list()
-
-						tryCatch({
+						beta_hat_T_bs[b] = NA_real_
+					} else {
+						beta_hat_T_bs[b] = tryCatch({
 							boot_inf_obj$compute_treatment_estimate()
 						}, error = function(e) {
+							if (private$verbose) {
+								cat("      Bootstrap sample", b, "failed:", e$message, "\n")
+							}
 							NA_real_
 						})
-					}, mc.cores = private$num_cores))
-					return(beta_hat_T_bs)
+					}
 				}
-			},
-				#' @description
+				return(beta_hat_T_bs)
+			} else {
+				# Parallel bootstrap execution for R loop fallback
+				beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+					attempt = 1
+					repeat {
+						i_b = sample_int_replace_cpp(n, n)
+						w_b = w[i_b]
+						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+							if (!private$any_censoring) break
+							dead_b_temp = dead[i_b]
+							if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) &&
+								min(y[i_b]) > 0) break
+						}
+						attempt = attempt + 1
+						if (attempt > max_resample_attempts) break
+					}
+
+					if (attempt > max_resample_attempts) {
+						return(NA_real_)
+					}
+
+					boot_inf_obj = self$duplicate()
+					boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+					boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+					boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+					boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+					boot_inf_obj$.__enclos_env__$private$cached_values = list()
+
+					tryCatch({
+						boot_inf_obj$compute_treatment_estimate()
+					}, error = function(e) {
+						NA_real_
+					})
+				}, mc.cores = private$num_cores))
+				return(beta_hat_T_bs)
+			}
+		},
+			
+		#' @description
 		#' Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
 		#' 
 		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
@@ -652,6 +653,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 		
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
 			assertLogical(na.rm)
+			if (private$seq_des_obj_priv_int$response_type == "incidence"){
+				stop("Randomization tests are not supported for incidence outcomes. Use SeqDesignInferenceIncidExact for the Zhang combined exact method.")
+			}
 
 			# Fast path for linear estimators (continuous, no custom statistic):
 			# t0s(delta) = t0s(0) + delta exactly (mean diff, OLS, KK compound).
@@ -839,7 +843,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 					ci
 				},
-				incidence =  stop("Confidence intervals are not supported for randomization tests for mean difference in incidence outomes"),
+				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidExact for the Zhang combined exact method."),
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()

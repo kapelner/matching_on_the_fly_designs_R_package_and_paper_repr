@@ -36,7 +36,7 @@
 #' }
 #'
 #' @keywords internal
-SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractIncidRandCI",
+SeqDesignInferenceIncidExactAbstract = R6::R6Class("SeqDesignInferenceIncidExactAbstract",
 	inherit = SeqDesignInference,
 	public = list(
 
@@ -130,25 +130,6 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 		# -----------------------------------------------------------------------
 
 		ci_rand_combine_matched_pair_and_reservoir_p_values = function(alpha, pval_epsilon, combination_method){
-			# Design validation: only CRD and KK supported by this method
-			is_crd = is(private$seq_des_obj, "SeqDesignCRD")
-			is_kk  = is(private$seq_des_obj, "SeqDesignKK14")
-			if (!is_crd && !is_kk){
-				stop("zhang_combined CI rand is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
-			}
-
-			# Component sizes: use KKstats when available (KK designs),
-			# otherwise derive directly from the treatment vector (CRD)
-			if (!is.null(private$cached_values$KKstats)){
-				m   = private$cached_values$KKstats$m
-				nRT = private$cached_values$KKstats$nRT
-				nRC = private$cached_values$KKstats$nRC
-			} else {
-				m   = 0L
-				nRT = sum(private$w == 1L, na.rm = TRUE)
-				nRC = sum(private$w == 0L, na.rm = TRUE)
-			}
-
 			est = self$compute_treatment_estimate()
 			if (!is.finite(est)){
 				stop("Cannot compute randomisation CI: point estimate is not finite.")
@@ -162,15 +143,7 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 
 			# Combined two-sided p-value: large near est, declines as delta_0 moves away.
 			# Switch on combination_method to select Fisher / Stouffer / min_p.
-			p_fn = function(delta_0){
-				p_M = if (m > 0)             private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
-				p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
-				switch(combination_method,
-					Fisher   = private$combine_rand_pvals_fisher(p_M, p_R, m, nRT, nRC),
-					Stouffer = private$combine_rand_pvals_stouffer(p_M, p_R, m, nRT, nRC),
-					min_p    = private$combine_rand_pvals_minp(p_M, p_R, m, nRT, nRC)
-				)
-			}
+			p_fn = function(delta_0) private$compute_combined_exact_pval(delta_0, combination_method)
 
 			# Bisect to find the two CI boundaries.
 			# est is always inside the CI; the expanded MLE bounds are outside.
@@ -180,9 +153,36 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 			c(lower, upper)
 		},
 
+		compute_combined_exact_pval = function(delta_0, combination_method = "Fisher"){
+			# Design validation: only CRD and KK supported by this method
+			is_crd = is(private$seq_des_obj, "SeqDesignCRD")
+			is_kk  = is(private$seq_des_obj, "SeqDesignKK14")
+			if (!is_crd && !is_kk){
+				stop("zhang_combined CI rand is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
+			}
+
+			if (!is.null(private$cached_values$KKstats)){
+				m   = private$cached_values$KKstats$m
+				nRT = private$cached_values$KKstats$nRT
+				nRC = private$cached_values$KKstats$nRC
+			} else {
+				m   = 0L
+				nRT = sum(private$w == 1L, na.rm = TRUE)
+				nRC = sum(private$w == 0L, na.rm = TRUE)
+			}
+
+			p_M = if (m > 0)              private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
+			p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
+
+			switch(combination_method,
+				Fisher   = private$combine_rand_pvals_fisher(p_M, p_R, m, nRT, nRC),
+				Stouffer = private$combine_rand_pvals_stouffer(p_M, p_R, m, nRT, nRC),
+				min_p    = private$combine_rand_pvals_minp(p_M, p_R, m, nRT, nRC)
+			)
+		},
+
 		# Default: no matched-pair test (CRD designs have m = 0 always;
-		# KK designs that need the McNemar test override this in
-		# SeqDesignInferenceAbstractIncidKKRandCI below).
+		# KK-specific exact classes override this method when needed).
 		compute_rand_pval_matched_pairs = function(delta_0) NA_real_,
 
 		# Exact Fisher test under H0: OR_reservoir = exp(delta_0).

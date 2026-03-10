@@ -361,9 +361,15 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
   if (response_type == "incidence"){
     inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
     run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+    if (design_type == "CRD"){
+      inference_banner("SeqDesignInferenceIncidExact")
+      run_inference_checks(SeqDesignInferenceIncidExact$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+    }
     if (is_kk_design){
       inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
       run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferenceIncidKKExact")
+      run_inference_checks(SeqDesignInferenceIncidKKExact$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceIncidUnivKKClogit")
       run_inference_checks(SeqDesignInferenceIncidUnivKKClogit$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceIncidMultiKKClogit")

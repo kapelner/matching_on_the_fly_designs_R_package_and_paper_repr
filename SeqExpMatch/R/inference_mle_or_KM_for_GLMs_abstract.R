@@ -6,7 +6,7 @@
 #' 
 #' @keywords internal
 SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs",
-	inherit = SeqDesignInferenceAbstractIncidRandCI,
+	inherit = SeqDesignInference,
 	public = list(
 		
 		#' @description
