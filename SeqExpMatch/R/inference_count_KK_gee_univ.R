@@ -22,13 +22,13 @@ SeqDesignInferenceCountUnivKKGEE = R6::R6Class("SeqDesignInferenceCountUnivKKGEE
 		#' @description
 		#' Initialize a univariate GEE inference object for a completed KK design
 		#' with a count response.
-		#' @param seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
+		#' @param	seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose count response y is recorded.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
 		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
 		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param verbose			Whether to print progress messages. Default is \code{FALSE}.
+		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
 		#'
 		#' @examples
 		#' \dontrun{

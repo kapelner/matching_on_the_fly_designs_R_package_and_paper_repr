@@ -6,7 +6,7 @@ set.seed(456)  # Different seed to test robustness
 seq_des = SeqDesignKK14$new(n = 30, response_type = "continuous")
 
 for (i in 1:30) {
-  seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
+	seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
 }
 
 # Add continuous responses
@@ -29,9 +29,9 @@ print(boot_ci)
 
 cat("\nRandomization CI (nsim=200):\n")
 rand_ci = seq_des_inf$compute_confidence_interval_rand(
-  alpha = 0.05,
-  nsim_exact_test = 200,
-  pval_epsilon = 0.01
+	alpha = 0.05,
+	nsim_exact_test = 200,
+	pval_epsilon = 0.01
 )
 print(rand_ci)
 
@@ -39,4 +39,4 @@ cat("\n== Comparison ==\n")
 cat(sprintf("Bootstrap CI width:      %.2f\n", boot_ci[2] - boot_ci[1]))
 cat(sprintf("Randomization CI width:  %.2f\n", rand_ci[2] - rand_ci[1]))
 cat(sprintf("Ratio (Rand/Boot):       %.2f\n",
-            (rand_ci[2] - rand_ci[1]) / (boot_ci[2] - boot_ci[1])))
+			(rand_ci[2] - rand_ci[1]) / (boot_ci[2] - boot_ci[1])))

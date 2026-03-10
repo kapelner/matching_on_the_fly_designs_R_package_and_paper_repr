@@ -1,33 +1,33 @@
-#' Simple Mean Difference Inference based on Maximum Likelihood  
+#' Simple Mean Difference Inference based on Maximum Likelihood
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
-#' 
+#'
 #'
 #' @export
 SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff",
 	inherit = SeqDesignInference,
 	public = list(
-		
+
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){		
+		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
-			assertResponseType(seq_des_obj$get_response_type(), "survival")	
+			assertResponseType(seq_des_obj$get_response_type(), "survival")
 		},
-		
+
 		#' @description
 		#' Computes the appropriate estimate for mean difference
-		#' 
-		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#' 
+		#'
+		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#'
 		#' @examples
 		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
@@ -40,16 +40,16 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
-		#' 	
-		compute_treatment_estimate = function(){	
+		#'
+		compute_treatment_estimate = function(){
 			get_survival_stat_diff(
-				private$y, 
+				private$y,
 				private$dead,
 				private$w,
 				"median"
 			)
 		},
-		
+
 		#' @description
 		#' Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
 		#' median survival times (treatment minus control).
@@ -66,7 +66,7 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
 		#' when the Brookmeyer-Crowley CI bounds are \code{NA}.
 		#'
-		#' @param alpha		The significance level; the confidence level is 1 - \code{alpha}. Default is 0.05.
+		#' @param	alpha		The significance level; the confidence level is 1 - \code{alpha}. Default is 0.05.
 		#'
 		#' @return	A numeric vector of length 2 giving the (lower, upper) confidence bounds
 		#' 			for the difference in median survival times, on the original time scale.
@@ -114,14 +114,14 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 			diff     = med_T - med_C
 			c(diff - z * se_diff, diff + z * se_diff)
 		},
-		
-		#' @description		
+
+		#' @description
 		#' Computes a 2-sided p-value via the log rank test
 		#'
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' 
-		#' @return 	The approximate frequentist p-value
-		#' 
+		#' @param	delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#'
+		#' @return	The approximate frequentist p-value
+		#'
 		#' @examples
 		#' \dontrun{
 		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
@@ -136,7 +136,7 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 		#' }
-		#' 				
+		#'
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 
@@ -152,15 +152,15 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param nsim_exact_test		The number of randomization vectors. The default is 501.
-		#' @param pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
-		#' @param show_progress		Show a text progress indicator.
-		#' @return 	A 1 - alpha sized frequentist confidence interval
+		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param	nsim_exact_test		The number of randomization vectors. The default is 501.
+		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
+		#' @param	show_progress		Show a text progress indicator.
+		#' @return	A 1 - alpha sized frequentist confidence interval
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			stop("Randomization confidence intervals are not supported for SeqDesignInferenceSurvivalKMDiff due to inconsistent estimator units on the transformed scale.")
 		}
 	),
-	
-	private = list()		
+
+	private = list()
 )

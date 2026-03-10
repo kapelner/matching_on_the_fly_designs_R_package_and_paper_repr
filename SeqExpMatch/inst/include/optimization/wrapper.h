@@ -17,52 +17,52 @@ namespace Numer
 class LBFGSFun
 {
 private:
-    MFuncGrad& f;
+	MFuncGrad& f;
 public:
-    LBFGSFun(MFuncGrad& f_) : f(f_) {}
-    inline double operator()(const Eigen::VectorXd& x, Eigen::VectorXd& grad)
-    {
-        return f.f_grad(x, grad);
-    }
+	LBFGSFun(MFuncGrad& f_) : f(f_) {}
+	inline double operator()(const Eigen::VectorXd& x, Eigen::VectorXd& grad)
+	{
+		return f.f_grad(x, grad);
+	}
 };
 
 
 // [RcppNumerical API] Optimization using L-BFGS algorithm
 inline int optim_lbfgs(
-    MFuncGrad& f, Refvec x, double& fx_opt,
-    const int maxit = 300, const double& eps_f = 1e-6, const double& eps_g = 1e-5
+	MFuncGrad& f, Refvec x, double& fx_opt,
+	const int maxit = 300, const double& eps_f = 1e-6, const double& eps_g = 1e-5
 )
 {
-    // Create functor
-    LBFGSFun fun(f);
+	// Create functor
+	LBFGSFun fun(f);
 
-    // Prepare parameters
-    LBFGSpp::LBFGSParam<double> param;
-    param.epsilon        = eps_g;
-    param.epsilon_rel    = eps_g;
-    param.past           = 1;
-    param.delta          = eps_f;
-    param.max_iterations = maxit;
-    param.max_linesearch = 100;
-    param.linesearch     = LBFGSpp::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
+	// Prepare parameters
+	LBFGSpp::LBFGSParam<double> param;
+	param.epsilon        = eps_g;
+	param.epsilon_rel    = eps_g;
+	param.past           = 1;
+	param.delta          = eps_f;
+	param.max_iterations = maxit;
+	param.max_linesearch = 100;
+	param.linesearch     = LBFGSpp::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
 
-    // Solver
-    LBFGSpp::LBFGSSolver<double> solver(param);
+	// Solver
+	LBFGSpp::LBFGSSolver<double> solver(param);
 
-    int status = 0;
-    Eigen::VectorXd xx(x.size());
-    xx.noalias() = x;
+	int status = 0;
+	Eigen::VectorXd xx(x.size());
+	xx.noalias() = x;
 
-    try {
-        solver.minimize(fun, xx, fx_opt);
-    } catch(const std::exception& e) {
-        status = -1;
-        Rcpp::warning(e.what());
-    }
+	try {
+		solver.minimize(fun, xx, fx_opt);
+	} catch(const std::exception& e) {
+		status = -1;
+		Rcpp::warning(e.what());
+	}
 
-    x.noalias() = xx;
+	x.noalias() = xx;
 
-    return status;
+	return status;
 }
 
 

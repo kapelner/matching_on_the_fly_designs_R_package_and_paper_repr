@@ -12,93 +12,93 @@ using namespace Rcpp;
 //' @keywords internal
 // [[Rcpp::export]]
 double get_survival_stat_for_group(NumericVector y, IntegerVector dead, std::string requested_stat) {
-    // Combine y and dead into a data frame-like structure for sorting
-    int n = y.size();
-    if (n == 0) {
-        return NA_REAL;
-    }
+	// Combine y and dead into a data frame-like structure for sorting
+	int n = y.size();
+	if (n == 0) {
+		return NA_REAL;
+	}
 
-    struct Subject {
-        double time;
-        int status;
-    };
+	struct Subject {
+		double time;
+		int status;
+	};
 
-    std::vector<Subject> subjects(n);
-    for (int i = 0; i < n; ++i) {
-        subjects[i] = {y[i], dead[i]};
-    }
+	std::vector<Subject> subjects(n);
+	for (int i = 0; i < n; ++i) {
+		subjects[i] = {y[i], dead[i]};
+	}
 
-    // Sort subjects by time
-    std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
-        return a.time < b.time;
-    });
+	// Sort subjects by time
+	std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
+		return a.time < b.time;
+	});
 
-    // Calculate Kaplan-Meier survival probability
-    double survival_prob = 1.0;
-    std::vector<double> unique_times;
-    std::vector<double> survival_probs;
-    
-    unique_times.push_back(0.0);
-    survival_probs.push_back(1.0);
+	// Calculate Kaplan-Meier survival probability
+	double survival_prob = 1.0;
+	std::vector<double> unique_times;
+	std::vector<double> survival_probs;
 
-    double last_unique_time = -1.0;
-    int at_risk = n;
-    int event_count_at_time = 0;
-    int at_risk_at_time = n;
+	unique_times.push_back(0.0);
+	survival_probs.push_back(1.0);
 
-    for (int i = 0; i < n; ) {
-        double current_time = subjects[i].time;
-        at_risk_at_time = n - i;
-        event_count_at_time = 0;
-        
-        int j = i;
-        while (j < n && subjects[j].time == current_time) {
-            if (subjects[j].status == 1) {
-                event_count_at_time++;
-            }
-            j++;
-        }
-        
-        if (event_count_at_time > 0) {
-            survival_prob *= (1.0 - (double)event_count_at_time / at_risk_at_time);
-            unique_times.push_back(current_time);
-            survival_probs.push_back(survival_prob);
-        }
-        
-        i = j;
-    }
+	double last_unique_time = -1.0;
+	int at_risk = n;
+	int event_count_at_time = 0;
+	int at_risk_at_time = n;
+
+	for (int i = 0; i < n; ) {
+		double current_time = subjects[i].time;
+		at_risk_at_time = n - i;
+		event_count_at_time = 0;
+
+		int j = i;
+		while (j < n && subjects[j].time == current_time) {
+			if (subjects[j].status == 1) {
+				event_count_at_time++;
+			}
+			j++;
+		}
+
+		if (event_count_at_time > 0) {
+			survival_prob *= (1.0 - (double)event_count_at_time / at_risk_at_time);
+			unique_times.push_back(current_time);
+			survival_probs.push_back(survival_prob);
+		}
+
+		i = j;
+	}
 
 
-    if (requested_stat == "median") {
-        for (size_t i = 0; i < survival_probs.size(); ++i) {
-            if (survival_probs[i] < 0.5) {
-                // simple linear interpolation
-                if (i > 0){
-                    double p1 = survival_probs[i-1];
-                    double p2 = survival_probs[i];
-                    double t1 = unique_times[i-1];
-                    double t2 = unique_times[i];
-                    return t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1);
-                } else {
-                    return unique_times[i]; // should be 0 if it happens at first obs
-                }
-            }
-        }
-        return R_PosInf; // Median is beyond the last observation time
-    } else if (requested_stat == "restricted_mean") {
-        double restricted_mean = 0.0;
-        for (size_t i = 0; i < unique_times.size() - 1; ++i) {
-            restricted_mean += survival_probs[i] * (unique_times[i+1] - unique_times[i]);
-        }
-        // Add the last interval
-        if (unique_times.size() > 1){
-             restricted_mean += survival_probs.back() * (subjects.back().time - unique_times.back());
-        }
-       
-        return restricted_mean;
-    }
+	if (requested_stat == "median") {
+		for (size_t i = 0; i < survival_probs.size(); ++i) {
+			if (survival_probs[i] < 0.5) {
+				// simple linear interpolation
+				if (i > 0){
+					double p1 = survival_probs[i-1];
+					double p2 = survival_probs[i];
+					double t1 = unique_times[i-1];
+					double t2 = unique_times[i];
+					return t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1);
+				} else {
+					return unique_times[i]; // should be 0 if it happens at first obs
+				}
+			}
+		}
+		return R_PosInf; // Median is beyond the last observation time
+	} else if (requested_stat == "restricted_mean") {
+		double restricted_mean = 0.0;
+		for (size_t i = 0; i < unique_times.size() - 1; ++i) {
+			restricted_mean += survival_probs[i] * (unique_times[i+1] - unique_times[i]);
+		}
+		// Add the last interval
+		if (unique_times.size() > 1){
+			 restricted_mean += survival_probs.back() * (subjects.back().time - unique_times.back());
+		}
 
-    return NA_REAL; // Should not be reached
+		return restricted_mean;
+	}
+
+	return NA_REAL; // Should not be reached
 }
 
 
@@ -113,31 +113,31 @@ double get_survival_stat_for_group(NumericVector y, IntegerVector dead, std::str
 //' @keywords internal
 // [[Rcpp::export]]
 double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector w, std::string requested_stat) {
-    std::vector<int> control_indices_std, treatment_indices_std;
-    for (int i = 0; i < w.size(); ++i) {
-        if (w[i] == 0) {
-            control_indices_std.push_back(i);
-        } else {
-            treatment_indices_std.push_back(i);
-        }
-    }
-    IntegerVector control_indices = wrap(control_indices_std);
-    IntegerVector treatment_indices = wrap(treatment_indices_std);
+	std::vector<int> control_indices_std, treatment_indices_std;
+	for (int i = 0; i < w.size(); ++i) {
+		if (w[i] == 0) {
+			control_indices_std.push_back(i);
+		} else {
+			treatment_indices_std.push_back(i);
+		}
+	}
+	IntegerVector control_indices = wrap(control_indices_std);
+	IntegerVector treatment_indices = wrap(treatment_indices_std);
 
-    NumericVector y_control = y[control_indices];
-    IntegerVector dead_control = dead[control_indices];
-    
-    NumericVector y_treatment = y[treatment_indices];
-    IntegerVector dead_treatment = dead[treatment_indices];
+	NumericVector y_control = y[control_indices];
+	IntegerVector dead_control = dead[control_indices];
 
-    double stat_control = get_survival_stat_for_group(y_control, dead_control, requested_stat);
-    double stat_treatment = get_survival_stat_for_group(y_treatment, dead_treatment, requested_stat);
+	NumericVector y_treatment = y[treatment_indices];
+	IntegerVector dead_treatment = dead[treatment_indices];
 
-    if (R_IsNA(stat_treatment) || R_IsNA(stat_control)) {
-        return NA_REAL;
-    }
+	double stat_control = get_survival_stat_for_group(y_control, dead_control, requested_stat);
+	double stat_treatment = get_survival_stat_for_group(y_treatment, dead_treatment, requested_stat);
 
-    return stat_treatment - stat_control;
+	if (R_IsNA(stat_treatment) || R_IsNA(stat_control)) {
+		return NA_REAL;
+	}
+
+	return stat_treatment - stat_control;
 }
 
 
@@ -157,61 +157,61 @@ double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector
 //' @keywords internal
 // [[Rcpp::export]]
 double get_restricted_mean_se_for_group(NumericVector y, IntegerVector dead) {
-    int n = y.size();
-    if (n == 0) return NA_REAL;
+	int n = y.size();
+	if (n == 0) return NA_REAL;
 
-    struct Subject { double time; int status; };
-    std::vector<Subject> subjects(n);
-    for (int i = 0; i < n; ++i) subjects[i] = {y[i], dead[i]};
-    std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
-        return a.time < b.time;
-    });
+	struct Subject { double time; int status; };
+	std::vector<Subject> subjects(n);
+	for (int i = 0; i < n; ++i) subjects[i] = {y[i], dead[i]};
+	std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
+		return a.time < b.time;
+	});
 
-    double tau = subjects.back().time;
+	double tau = subjects.back().time;
 
-    // Build KM event table: one entry per unique event time
-    struct EventInfo { double time; double S_after; int n_j; int d_j; };
-    std::vector<EventInfo> events;
-    double S = 1.0;
-    for (int i = 0; i < n; ) {
-        double t = subjects[i].time;
-        int n_at_risk = n - i;
-        int d = 0;
-        int j = i;
-        while (j < n && subjects[j].time == t) {
-            if (subjects[j].status == 1) d++;
-            j++;
-        }
-        if (d > 0) {
-            S *= (1.0 - (double)d / n_at_risk);
-            events.push_back({t, S, n_at_risk, d});
-        }
-        i = j;
-    }
+	// Build KM event table: one entry per unique event time
+	struct EventInfo { double time; double S_after; int n_j; int d_j; };
+	std::vector<EventInfo> events;
+	double S = 1.0;
+	for (int i = 0; i < n; ) {
+		double t = subjects[i].time;
+		int n_at_risk = n - i;
+		int d = 0;
+		int j = i;
+		while (j < n && subjects[j].time == t) {
+			if (subjects[j].status == 1) d++;
+			j++;
+		}
+		if (d > 0) {
+			S *= (1.0 - (double)d / n_at_risk);
+			events.push_back({t, S, n_at_risk, d});
+		}
+		i = j;
+	}
 
-    int K = (int)events.size();
-    if (K == 0) return 0.0;  // no events: RMST equals tau with zero variance
+	int K = (int)events.size();
+	if (K == 0) return 0.0;  // no events: RMST equals tau with zero variance
 
-    // Compute A(t_j) = integral_{t_j}^{tau} S(u) du via suffix sums.
-    // S(u) = events[k].S_after for u in [events[k].time, events[k+1].time);
-    // the final interval extends to tau.
-    std::vector<double> A(K);
-    A[K - 1] = events[K - 1].S_after * (tau - events[K - 1].time);
-    for (int k = K - 2; k >= 0; --k) {
-        A[k] = A[k + 1] + events[k].S_after * (events[k + 1].time - events[k].time);
-    }
+	// Compute A(t_j) = integral_{t_j}^{tau} S(u) du via suffix sums.
+	// S(u) = events[k].S_after for u in [events[k].time, events[k+1].time);
+	// the final interval extends to tau.
+	std::vector<double> A(K);
+	A[K - 1] = events[K - 1].S_after * (tau - events[K - 1].time);
+	for (int k = K - 2; k >= 0; --k) {
+		A[k] = A[k + 1] + events[k].S_after * (events[k + 1].time - events[k].time);
+	}
 
-    // Var(RMST) = sum_j A(t_j)^2 * d_j / (n_j * (n_j - d_j)), skipping n_j == d_j
-    double rmst_var = 0.0;
-    for (int k = 0; k < K; ++k) {
-        int nj = events[k].n_j;
-        int dj = events[k].d_j;
-        if (nj > dj) {
-            rmst_var += A[k] * A[k] * (double)dj / ((double)nj * (nj - dj));
-        }
-    }
+	// Var(RMST) = sum_j A(t_j)^2 * d_j / (n_j * (n_j - d_j)), skipping n_j == d_j
+	double rmst_var = 0.0;
+	for (int k = 0; k < K; ++k) {
+		int nj = events[k].n_j;
+		int dj = events[k].d_j;
+		if (nj > dj) {
+			rmst_var += A[k] * A[k] * (double)dj / ((double)nj * (nj - dj));
+		}
+	}
 
-    return sqrt(rmst_var);
+	return sqrt(rmst_var);
 }
 
 //' Calculates the standard error of the difference in restricted mean survival times.
@@ -223,29 +223,29 @@ double get_restricted_mean_se_for_group(NumericVector y, IntegerVector dead) {
 //' @keywords internal
 // [[Rcpp::export]]
 double get_restricted_mean_se_diff(NumericVector y, IntegerVector dead, IntegerVector w) {
-    std::vector<int> control_indices_std, treatment_indices_std;
-    for (int i = 0; i < w.size(); ++i) {
-        if (w[i] == 0) {
-            control_indices_std.push_back(i);
-        } else {
-            treatment_indices_std.push_back(i);
-        }
-    }
-    IntegerVector control_indices = wrap(control_indices_std);
-    IntegerVector treatment_indices = wrap(treatment_indices_std);
+	std::vector<int> control_indices_std, treatment_indices_std;
+	for (int i = 0; i < w.size(); ++i) {
+		if (w[i] == 0) {
+			control_indices_std.push_back(i);
+		} else {
+			treatment_indices_std.push_back(i);
+		}
+	}
+	IntegerVector control_indices = wrap(control_indices_std);
+	IntegerVector treatment_indices = wrap(treatment_indices_std);
 
-    NumericVector y_control = y[control_indices];
-    IntegerVector dead_control = dead[control_indices];
-    
-    NumericVector y_treatment = y[treatment_indices];
-    IntegerVector dead_treatment = dead[treatment_indices];
+	NumericVector y_control = y[control_indices];
+	IntegerVector dead_control = dead[control_indices];
 
-    double se_control = get_restricted_mean_se_for_group(y_control, dead_control);
-    double se_treatment = get_restricted_mean_se_for_group(y_treatment, dead_treatment);
+	NumericVector y_treatment = y[treatment_indices];
+	IntegerVector dead_treatment = dead[treatment_indices];
 
-    if (R_IsNA(se_treatment) || R_IsNA(se_control)) {
-        return NA_REAL;
-    }
+	double se_control = get_restricted_mean_se_for_group(y_control, dead_control);
+	double se_treatment = get_restricted_mean_se_for_group(y_treatment, dead_treatment);
 
-    return sqrt(pow(se_treatment, 2.0) + pow(se_control, 2.0));
+	if (R_IsNA(se_treatment) || R_IsNA(se_control)) {
+		return NA_REAL;
+	}
+
+	return sqrt(pow(se_treatment, 2.0) + pow(se_control, 2.0));
 }

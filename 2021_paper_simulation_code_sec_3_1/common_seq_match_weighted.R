@@ -1,5 +1,5 @@
 #initialize the indicator treatment vector
-indic_T = array(NA, n) 
+indic_T = array(NA, n)
 #initialize the reservoir
 match_indic = array(-1, n) #0 indicates reservoir
 
@@ -24,26 +24,26 @@ for (t in 1 : n){
 		# (c) now we need to scale them
 		weights = weights / sum(weights)
 
-		#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy 
+		#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy
 		reservoir_indices = which(match_indic == 0)
 		x_star = x_s[t, ]
 		weighted_sqd_distances = array(NA, length(reservoir_indices))
 		for (r in 1 : length(reservoir_indices)){
 			delta_x = x_star - x_s[reservoir_indices[r], ]
-			weighted_sqd_distances[r] = delta_x^2 %*% weights			
+			weighted_sqd_distances[r] = delta_x^2 %*% weights
 		}
 		#3) find minimum weighted sqd distiance index
 		min_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
-		
+
 #		cat(paste("i_match", i_match, "sqd_distances", paste(sqd_distances, collapse = ", "), "T_cutoff_sq", T_cutoff_sq, "\n"))
-		
-		
-		
+
+
+
 		#4) Now we need to determine the critical value of the weighted sqd distiance distr
 		#At the moment, this is based on the old F distribution (this is known to be wrong)
 		F_crit =  qf(prob_match_cutoff_lambda, p, t - p)
 		T_cutoff_sq = p * (n - 1) / (n - p) * F_crit
-		
+
 		#5) Now, does the minimum make the cut?
 		if (length(weighted_sqd_distances[min_sqd_dist_index]) > 1 || length(T_cutoff_sq) > 1){
 			min_sqd_dist_index = min_sqd_dist_index[1] #if there's a tie, just take the first one
@@ -55,12 +55,12 @@ for (t in 1 : n){
 			match_indic[t] = match_num
 			indic_T[t] = 1 - indic_T[reservoir_indices[min_sqd_dist_index]]
 		# (b) otherwise, randomize and add it to the reservoir
-		} else { 
+		} else {
 			indic_T[t] = rbinom(1, 1, prob_trt)
-			match_indic[t] = 0		
+			match_indic[t] = 0
 		}
 	}
-	
+
 	#realize the y for subject t
 	sys.source(paste("create_response_", response_model, ".R", sep = ""), envir = environment())
 }

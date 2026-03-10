@@ -28,58 +28,58 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 NumericVector bisection_ci_parallel_cpp(
-  Function pval_fn,
-  int nsim_exact_test,
-  double l_lower,
-  double u_lower,
-  double l_upper,
-  double u_upper,
-  double pval_th,
-  double tol,
-  std::string transform_responses,
-  int num_cores = 1
+	Function pval_fn,
+	int nsim_exact_test,
+	double l_lower,
+	double u_lower,
+	double l_upper,
+	double u_upper,
+	double pval_th,
+	double tol,
+	std::string transform_responses,
+	int num_cores = 1
 ) {
-  NumericVector ci_bounds(2);
+	NumericVector ci_bounds(2);
 
-  // --- Lower CI bound ---
-  {
-    double l = l_lower;
-    double u = u_lower;
+	// --- Lower CI bound ---
+	{
+	double l = l_lower;
+	double u = u_lower;
 
-    double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
-    double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
+	double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
+	double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
 
-    while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
-      double m = (l + u) / 2.0;
-      double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
+	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+		double m = (l + u) / 2.0;
+		double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
 
-      if (!R_finite(pval_m)) { l = m; pval_l = 0.0; }
-      else if (pval_m >= pval_th) { u = m; pval_u = pval_m; }
-      else                        { l = m; pval_l = pval_m; }
-    }
-    ci_bounds[0] = l;
-  }
+		if (!R_finite(pval_m)) { l = m; pval_l = 0.0; }
+		else if (pval_m >= pval_th) { u = m; pval_u = pval_m; }
+		else                        { l = m; pval_l = pval_m; }
+	}
+	ci_bounds[0] = l;
+	}
 
-  // --- Upper CI bound ---
-  {
-    double l = l_upper;
-    double u = u_upper;
+	// --- Upper CI bound ---
+	{
+	double l = l_upper;
+	double u = u_upper;
 
-    double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
-    double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
+	double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
+	double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
 
-    while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
-      double m = (l + u) / 2.0;
-      double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
+	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+		double m = (l + u) / 2.0;
+		double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
 
-      if (!R_finite(pval_m)) { u = m; pval_u = 0.0; }
-      else if (pval_m >= pval_th) { l = m; pval_l = pval_m; }
-      else                        { u = m; pval_u = pval_m; }
-    }
-    ci_bounds[1] = u;
-  }
+		if (!R_finite(pval_m)) { u = m; pval_u = 0.0; }
+		else if (pval_m >= pval_th) { l = m; pval_l = pval_m; }
+		else                        { u = m; pval_u = pval_m; }
+	}
+	ci_bounds[1] = u;
+	}
 
-  return ci_bounds;
+	return ci_bounds;
 }
 
 
@@ -88,31 +88,31 @@ NumericVector bisection_ci_parallel_cpp(
 //' @keywords internal
 // [[Rcpp::export]]
 double bisection_ci_single_bound_cpp(
-  Function pval_fn,
-  int nsim_exact_test,
-  double l,
-  double u,
-  double pval_th,
-  double tol,
-  std::string transform_responses,
-  bool lower,
-  int num_cores = 1
+	Function pval_fn,
+	int nsim_exact_test,
+	double l,
+	double u,
+	double pval_th,
+	double tol,
+	std::string transform_responses,
+	bool lower,
+	int num_cores = 1
 ) {
-  double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
-  double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
+	double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses, num_cores));
+	double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses, num_cores));
 
-  while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
-    double m = (l + u) / 2.0;
-    double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
+	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+	double m = (l + u) / 2.0;
+	double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses, num_cores));
 
-    if (!R_finite(pval_m)) {
-      if (lower) { l = m; pval_l = 0.0; }
-      else       { u = m; pval_u = 0.0; }
-    } else if (pval_m >= pval_th && lower)  { u = m; pval_u = pval_m; }
-    else if   (pval_m >= pval_th && !lower) { l = m; pval_l = pval_m; }
-    else if   (lower)                       { l = m; pval_l = pval_m; }
-    else                                    { u = m; pval_u = pval_m; }
-  }
+	if (!R_finite(pval_m)) {
+		if (lower) { l = m; pval_l = 0.0; }
+		else       { u = m; pval_u = 0.0; }
+	} else if (pval_m >= pval_th && lower)  { u = m; pval_u = pval_m; }
+	else if   (pval_m >= pval_th && !lower) { l = m; pval_l = pval_m; }
+	else if   (lower)                       { l = m; pval_l = pval_m; }
+	else                                    { u = m; pval_u = pval_m; }
+	}
 
-  return lower ? l : u;
+	return lower ? l : u;
 }

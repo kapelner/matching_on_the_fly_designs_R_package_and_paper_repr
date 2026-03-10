@@ -2,7 +2,7 @@
 efron_biased_coin_design = function(n, prob_trt, bias = 2 / 3){ #his personal favorite
 	#initialize the indicator treatment vector
 	indic_T = array(NA, n)
-	
+
 	for (i in 1 : n){
 		if (sum(indic_T == 1, na.rm = TRUE) == sum(indic_T == 0, na.rm = TRUE)){
 			indic_T[i] = rbinom(1, 1, prob_trt)
@@ -11,7 +11,7 @@ efron_biased_coin_design = function(n, prob_trt, bias = 2 / 3){ #his personal fa
 		} else if (sum(indic_T == 1, na.rm = TRUE) > sum(indic_T == 0, na.rm = TRUE)){
 			indic_T[i] = rbinom(1, 1, 1 - bias)
 		}
-	}	
+	}
 	indic_T
 }
 

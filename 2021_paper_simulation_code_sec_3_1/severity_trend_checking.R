@@ -41,7 +41,7 @@ CochranArmitageTest(contingency_table, "decreasing")
 
 # dose <- matrix(c(10,9,10,7, 0,1,0,3), byrow=TRUE, nrow=2, dimnames=list(resp=0:1, dose=0:3))
 # Desc(dose)
-# 
+#
 # CochranArmitageTest(dose, "increasing")
 # CochranArmitageTest(dose)
 
@@ -61,8 +61,8 @@ z_crit = qnorm(1 - alpha_corr / 2)
 ggplot(data.frame(
 						t = 1 : n,
 						Design = c(rep("Bernoulli", n * t_0_matching_pcts[1]), rep("Our CARA", n - n * t_0_matching_pcts[1])),
-						prob_T_t_est = prob_T_t_est, 
-						l = prob_T_t_est - z_crit * sqrt(prob_T_t_est * (1 - prob_T_t_est) / Nsim_per_block), 
+						prob_T_t_est = prob_T_t_est,
+						l = prob_T_t_est - z_crit * sqrt(prob_T_t_est * (1 - prob_T_t_est) / Nsim_per_block),
 						u = prob_T_t_est + z_crit * sqrt(prob_T_t_est * (1 - prob_T_t_est) / Nsim_per_block)
 				)) + geom_point(aes(x = t, y = prob_T_t_est, col = Design)) +
 		geom_errorbar(aes(x = t, y = prob_T_t_est, ymin = l, ymax = u, col = Design), width=1) +

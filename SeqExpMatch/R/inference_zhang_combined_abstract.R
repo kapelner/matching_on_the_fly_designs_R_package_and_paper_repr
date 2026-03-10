@@ -1,4 +1,4 @@
-# Abstract base class for Zhang combined randomisation CIs
+# Abstract base class for Zhang combined exact CIs
 #
 # @description
 # Consolidates the shared logic for the Zhang (2026) combined test-inversion
@@ -79,7 +79,7 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 		# Core Zhang Bisection Algorithm
 		# -----------------------------------------------------------------------
 
-		ci_rand_zhang_combined = function(alpha, pval_epsilon, combination_method = "Fisher"){
+		ci_exact_zhang_combined = function(alpha, pval_epsilon, combination_method = "Fisher"){
 			# Component sizes
 			if (!is.null(private$cached_values$KKstats)){
 				m   = private$cached_values$KKstats$m
@@ -91,21 +91,21 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 				nRC = sum(private$w == 0L, na.rm = TRUE)
 			}
 
-			est = self$compute_treatment_estimate()
+			est = private$compute_treatment_estimate_internal()
 			if (!is.finite(est)){
-				stop("Cannot compute randomisation CI: point estimate is not finite.")
+				stop("Cannot compute exact CI: point estimate is not finite.")
 			}
 
 			# Expand the MLE CI (at 2*alpha) by 50% on each side
-			mle_ci   = self$compute_mle_confidence_interval(alpha * 2)
+			mle_ci   = private$compute_mle_confidence_interval_internal(alpha * 2)
 			ci_width = mle_ci[2] - mle_ci[1]
 			lo_bound = mle_ci[1] - 0.5 * ci_width
 			hi_bound = mle_ci[2] + 0.5 * ci_width
 
 			p_fn = function(delta_0){
-				p_M = if (m > 0)             private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
-				p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
-				private$combine_rand_pvals(p_M, p_R, m, nRT, nRC, combination_method)
+				p_M = if (m > 0)             private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
+				p_R = if (nRT > 0 && nRC > 0) private$compute_exact_pval_reservoir(delta_0)    else NA_real_
+				private$combine_exact_pvals(p_M, p_R, m, nRT, nRC, combination_method)
 			}
 
 			lower = private$bisect_ci_boundary(p_fn, inside = est, outside = lo_bound, pval_th = alpha, tol = pval_epsilon)
@@ -118,14 +118,16 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 		# Abstract hooks for subclasses
 		# -----------------------------------------------------------------------
 
-		compute_rand_pval_matched_pairs = function(delta_0) stop("must implement"),
-		compute_rand_pval_reservoir     = function(delta_0) stop("must implement"),
+		compute_treatment_estimate_internal     = function() stop("must implement"),
+		compute_mle_confidence_interval_internal = function(alpha) stop("must implement"),
+		compute_exact_pval_matched_pairs          = function(delta_0) stop("must implement"),
+		compute_exact_pval_reservoir              = function(delta_0) stop("must implement"),
 
 		# -----------------------------------------------------------------------
 		# Combination Rules
 		# -----------------------------------------------------------------------
 
-		combine_rand_pvals = function(p_M, p_R, m, nRT, nRC, method){
+		combine_exact_pvals = function(p_M, p_R, m, nRT, nRC, method){
 			has_M = m > 0              && is.finite(p_M) && p_M > 0
 			has_R = nRT > 0 && nRC > 0 && is.finite(p_R) && p_R > 0
 

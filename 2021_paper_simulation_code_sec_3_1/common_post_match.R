@@ -24,7 +24,7 @@ for (i_0 in 1 : nC){
 	for (j_0 in 1 : nT){
 		x_diff = t(as.matrix(xCs[i_0, ] - xTs[j_0, ]))
 		mahalanobis_distance_sqd = 1 / 2 * t(x_diff) %*% S_xs_inv_n %*% x_diff
-		
+
 		#now ensure some cannot be matched because they're too far apart in X space
 		mahalanobis_distances_sqd[i_0, j_0] = ifelse(mahalanobis_distance_sqd > T_cutoff_sq, Inf, mahalanobis_distance_sqd)
 	}
@@ -41,11 +41,11 @@ tryCatch(library(optmatch, quietly = TRUE), error = function(e){install.packages
 
 #####optmatch sometimes does not produce matches
 match_obj = tryCatch(
-	pairmatch(mahalanobis_distances_sqd, data = Xy, remove.unmatchables = TRUE), 
+	pairmatch(mahalanobis_distances_sqd, data = Xy, remove.unmatchables = TRUE),
 	#if there's an error, transpose it
 	error = function(e){
 		return(tryCatch(
-				pairmatch(t(mahalanobis_distances_sqd), data = Xy, remove.unmatchables = TRUE), 
+				pairmatch(t(mahalanobis_distances_sqd), data = Xy, remove.unmatchables = TRUE),
 				#if there's an error, transpose it
 				error = function(e){NULL})
 		)
@@ -56,17 +56,17 @@ match_obj = tryCatch(
 if (!is.null(match_obj)){
 	control_matches = match_obj[paste("c", 1 : nC, sep = "")]
 	treatment_matches = match_obj[paste("t", 1 : nT, sep = "")]
-	
-	
+
+
 	#summary(match_obj)
 	#matched(match_obj)
 	#unmatched(match_obj)
 	#matchfailed(match_obj)
 	#sort(control_matches)
 	#sort(treatment_matches)
-	
-	
-	
+
+
+
 	match_num = 0
 	for (i_0 in 1 : nC){
 		control_index = names(control_matches)[i_0]
@@ -75,7 +75,7 @@ if (!is.null(match_obj)){
 			next
 		}
 		match_num = match_num + 1
-		
+
 		treatment_index = names(treatment_matches)[which(treatment_matches == match)]
 	#	cat("c", control_index, "t", treatment_index, "match_num", match_num, "\n")
 		#now mark it in Xy
@@ -96,16 +96,16 @@ Xy[order(Xy$match_indic), ]
 #		break
 #	}
 #	match_indices = which(mahalanobis_distances_sqd == min(mahalanobis_distances_sqd), arr.ind = TRUE)
-#		
+#
 #	matched_control = rownames(mahalanobis_distances_sqd)[match_indices[1]]
 #	matched_treatment = colnames(mahalanobis_distances_sqd)[match_indices[2]]
-#	
+#
 #	#now make a new match
 #	match_num = match_num + 1
 #	Xy[matched_control, "match_indic"] = match_num
 #	Xy[matched_treatment, "match_indic"] = match_num
 ##	cat("made match", match_num, "c =", matched_control, "t =", matched_treatment, "\n")
-#	
+#
 #	#remove match from dist matrix
 #	mahalanobis_distances_sqd = mahalanobis_distances_sqd[-c(match_indices[1]), , drop = FALSE]
 #	mahalanobis_distances_sqd = mahalanobis_distances_sqd[, -c(match_indices[2]), drop = FALSE]

@@ -16,9 +16,9 @@ helper_path <- file.path(getwd(), "benchmark_inference_loops.R")
 source(helper_path)
 
 tryCatch({
-    library(SeqExpMatch)
+	library(SeqExpMatch)
 }, error = function(e) {
-    stop("Failed to load SeqExpMatch library: ", e$message)
+	stop("Failed to load SeqExpMatch library: ", e$message)
 })
 
 cat(sprintf("Running benchmark in library: %s\n", lib_path))
@@ -28,15 +28,15 @@ cat(sprintf("Package Version: %s\n", packageVersion("SeqExpMatch")))
 res_list <- vector("list", n_iter)
 cat("Starting comprehensive inference benchmark iterations...\n")
 for (i in seq_len(n_iter)) {
-  seed <- 12345 + i
-  res_list[[i]] <- run_comprehensive_inference_suite(
-    version_label = version_label,
-    iteration = i,
-    n = 100,
-    p = 5,
-    seed = seed,
-    verbose = FALSE
-  )
+	seed <- 12345 + i
+	res_list[[i]] <- run_comprehensive_inference_suite(
+	version_label = version_label,
+	iteration = i,
+	n = 100,
+	p = 5,
+	seed = seed,
+	verbose = FALSE
+	)
 }
 
 benchmark_results <- data.table::rbindlist(res_list, fill = TRUE)

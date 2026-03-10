@@ -6,7 +6,7 @@ set.seed(789)
 seq_des = SeqDesignCRD$new(n = 30, response_type = "survival")
 
 for (i in 1:30) {
-  seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
+	seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
 }
 
 # Generate survival data (time and censoring indicator)
@@ -22,34 +22,34 @@ cat("\n== Inference: SeqDesignInferenceSurvivalUniWeibullRegr\n\n")
 
 cat("Calling compute_treatment_estimate()\n")
 tryCatch({
-  est = seq_des_inf$compute_treatment_estimate()
-  print(est)
+	est = seq_des_inf$compute_treatment_estimate()
+	print(est)
 }, error = function(e) {
-  cat("Error:", e$message, "\n")
+	cat("Error:", e$message, "\n")
 })
 
 cat("\nCalling compute_mle_two_sided_pval_for_treatment_effect()\n")
 tryCatch({
-  pval = seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
-  print(pval)
+	pval = seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+	print(pval)
 }, error = function(e) {
-  cat("Error:", e$message, "\n")
+	cat("Error:", e$message, "\n")
 })
 
 cat("\nCalling compute_mle_confidence_interval()\n")
 tryCatch({
-  ci = seq_des_inf$compute_mle_confidence_interval()
-  print(ci)
+	ci = seq_des_inf$compute_mle_confidence_interval()
+	print(ci)
 }, error = function(e) {
-  cat("Error:", e$message, "\n")
+	cat("Error:", e$message, "\n")
 })
 
 cat("\nCalling compute_bootstrap_confidence_interval()\n")
 tryCatch({
-  boot_ci = seq_des_inf$compute_bootstrap_confidence_interval(B = 50)
-  print(boot_ci)
+	boot_ci = seq_des_inf$compute_bootstrap_confidence_interval(B = 50)
+	print(boot_ci)
 }, error = function(e) {
-  cat("Error:", e$message, "\n")
+	cat("Error:", e$message, "\n")
 })
 
 cat("\n== Test Complete ==\n")

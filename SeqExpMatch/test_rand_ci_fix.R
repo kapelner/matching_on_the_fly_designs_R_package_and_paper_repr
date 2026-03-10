@@ -6,7 +6,7 @@ set.seed(123)
 seq_des = SeqDesignKK14$new(n = 30, response_type = "continuous")
 
 for (i in 1:30) {
-  seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
+	seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
 }
 
 # Add continuous responses
@@ -37,8 +37,8 @@ print(rand_ci)
 cat("\n== Summary ==\n")
 cat(sprintf("Estimate:      %8.3f\n", est))
 cat(sprintf("MLE CI:        [%8.3f, %8.3f] (width: %.3f)\n",
-            mle_ci[1], mle_ci[2], mle_ci[2] - mle_ci[1]))
+			mle_ci[1], mle_ci[2], mle_ci[2] - mle_ci[1]))
 cat(sprintf("Bootstrap CI:  [%8.3f, %8.3f] (width: %.3f)\n",
-            boot_ci[1], boot_ci[2], boot_ci[2] - boot_ci[1]))
+			boot_ci[1], boot_ci[2], boot_ci[2] - boot_ci[1]))
 cat(sprintf("Rand CI:       [%8.3f, %8.3f] (width: %.3f)\n",
-            rand_ci[1], rand_ci[2], rand_ci[2] - rand_ci[1]))
+			rand_ci[1], rand_ci[2], rand_ci[2] - rand_ci[1]))

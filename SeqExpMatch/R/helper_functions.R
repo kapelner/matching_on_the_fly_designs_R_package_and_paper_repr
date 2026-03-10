@@ -2,8 +2,8 @@
 #'
 #' Calculates the logit i.e., log(p / (1 - p))
 #'
-#' @param p		The value between 0 and 1 non inclusive
-#' @return		Its corresponding logit value as a real number
+#' @param	p		The value between 0 and 1 non inclusive
+#' @return	Its corresponding logit value as a real number
 #' @export
 logit = function(p){
 	if (any(p <= 0 | p >= 1, na.rm = TRUE)){
@@ -16,8 +16,8 @@ logit = function(p){
 #'
 #' Calculates the inverse logit i.e., 1 / (1 + exp(-x))
 #'
-#' @param x		Any real number
-#' @return		Its corresponding inverse logit value between 0 and 1 non inclusive
+#' @param	x		Any real number
+#' @return	Its corresponding inverse logit value between 0 and 1 non inclusive
 #' @export
 inv_logit = function(x){
 	1 / (1 + exp(-x))
@@ -76,15 +76,15 @@ assertNoCensoring = function(any_censoring){
 
 #' Robust Survival Regression
 #'
-#' Performs Survival regression from the original response and censoring vectors 
+#' Performs Survival regression from the original response and censoring vectors
 #' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
 #'
-#' @param y						The response vector
-#' @param dead					The censoring vector (1 if dead/uncensored and 0 if censored)
-#' @param cov_matrix_or_vector  The model matrix
-#' @param dist  				The parametric distribution form (default is Weibull)
-#' @param num_max_iter			Maximum # of iterations to repeat (default is 50)
-#' @return						The Survival regression model object
+#' @param	y						The response vector
+#' @param	dead					The censoring vector (1 if dead/uncensored and 0 if censored)
+#' @param	cov_matrix_or_vector  The model matrix
+#' @param	dist  				The parametric distribution form (default is Weibull)
+#' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
+#' @return	The Survival regression model object
 #' @export
 robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, num_max_iter = num_max_iter)
@@ -92,49 +92,49 @@ robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_m
 
 #' Robust Survival Regression
 #'
-#' Performs Survival regression from a survival::Surv object 
+#' Performs Survival regression from a survival::Surv object
 #' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
 #'
-#' @param surv_object			The survival object (built from the response vector and censoring vector)
-#' @param cov_matrix_or_vector  The model matrix
-#' @param dist  				The parametric distribution form (default is Weibull)
-#' @param num_max_iter			Maximum # of iterations to repeat (default is 50)
-#' @return						The Survival regression model object
+#' @param	surv_object			The survival object (built from the response vector and censoring vector)
+#' @param	cov_matrix_or_vector  The model matrix
+#' @param	dist  				The parametric distribution form (default is Weibull)
+#' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
+#' @return	The Survival regression model object
 #' @export
 robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	surv_reg_formula = surv_object ~ .
 	X_mat = as.matrix(cov_matrix_or_vector)
-	
+
 	# Eliminate columns that may be causing multicollinearity before attempting model fit
 	X_mat = drop_highly_correlated_cols(X_mat)$M
 	X_mat = drop_linearly_dependent_cols(X_mat)$M
 
 	cov_matrix_or_vector_data_frame = data.frame(X_mat)
-	
+
 	# Optimization: Use fast_weibull_regression for initialization if applicable
 	if (dist == "weibull") {
 		y = surv_object[, 1]
 		dead = surv_object[, 2]
-		
+
 		# fast_weibull_regression expects X without intercept (it adds it)
-		# BUT robust_survreg might already have intercept-like cols? 
+		# BUT robust_survreg might already have intercept-like cols?
 		# No, the formula ~ . adds intercept.
-		
+
 		res = tryCatch(fast_weibull_regression(y, dead, X_mat), error = function(e) NULL)
-		
+
 		if (!is.null(res) && is.finite(res$neg_log_lik)) {
 			init_vals = c(res$coefficients, res$log_sigma)
-			
+
 			mod = tryCatch({
 				suppressWarnings(survival::survreg(
-					surv_reg_formula, 
-					data = cov_matrix_or_vector_data_frame, 
-					dist = dist, 
+					surv_reg_formula,
+					data = cov_matrix_or_vector_data_frame,
+					dist = dist,
 					init = init_vals,
 					control = survival::survreg.control(maxiter = 100, rel.tolerance = 1e-9, outer.max = 10)
 				))
 			}, error = function(e) NULL)
-			
+
 			if (!is.null(mod) && !any(is.na(mod$coefficients))){
 				return(mod)
 			}
@@ -146,9 +146,9 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 	repeat {
 		tryCatch({
 			mod = suppressWarnings(survival::survreg(
-				surv_reg_formula, 
-				data = cov_matrix_or_vector_data_frame, 
-				dist = dist, 
+				surv_reg_formula,
+				data = cov_matrix_or_vector_data_frame,
+				dist = dist,
 				init = init,
 				control = 	survival::survreg.control(
 								maxiter = 100,			#default
@@ -158,7 +158,7 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 			))
 			if (!any(is.na(mod$coefficients))){
 				return(mod)
-			}	
+			}
 		}, error = function(e){})
 		if (num_iter >= num_max_iter){
 			break
@@ -166,7 +166,7 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 		init = init + stats::rnorm(length(init))
 		num_iter = num_iter + 1
 	}
-	
+
 	return(NULL)
 }
 
@@ -174,9 +174,9 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 #'
 #' Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
 #'
-#' @param form_obj	The formula
-#' @param data_obj  The data frame to run Negative Binomial regression on 
-#' @return			The Negative Binomial regression model object
+#' @param	form_obj	The formula
+#' @param	data_obj  The data frame to run Negative Binomial regression on
+#' @return	The Negative Binomial regression model object
 #' @export
 robust_negbinreg = function(form_obj, data_obj){
 	repeat {
@@ -196,8 +196,8 @@ robust_negbinreg = function(form_obj, data_obj){
 #'
 #' Compute sample mode from an array of numbers
 #'
-#' @param data	The array of numbers
-#' @return		The sample mode
+#' @param	data	The array of numbers
+#' @return	The sample mode
 #' @export
 sample_mode = function(data){
 	sample_mode_cpp(data)
@@ -207,27 +207,27 @@ sample_mode = function(data){
 #'
 #' Same as summary.glm except it doesn't calculate the residuals as this takes a long time
 #'
-#' @param object		The GLM object
-#' @param dispersion	See GLM documentation 
-#' @param correlation	See GLM documentation 
-#' @param symbolic.cor	See GLM documentation 
-#' @param ...			Other parameters (currently unused)
-#' @return				The summary of the GLM
+#' @param	object		The GLM object
+#' @param	dispersion	See GLM documentation
+#' @param	correlation	See GLM documentation
+#' @param	symbolic.cor	See GLM documentation
+#' @param	...			Other parameters (currently unused)
+#' @return	The summary of the GLM
 #' @export
 summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, symbolic.cor = FALSE, ...){
 	est.disp <- FALSE
 	df.r <- object$df.residual
 	if (is.null(dispersion)) {
 		fam <- object$family
-		dispersion <- if (!is.null(fam$dispersion) && !is.na(fam$dispersion)) 
+		dispersion <- if (!is.null(fam$dispersion) && !is.na(fam$dispersion))
 					fam$dispersion
-				else if (fam$family %in% c("poisson", "binomial")) 
+				else if (fam$family %in% c("poisson", "binomial"))
 					1
 				else if (df.r > 0) {
 					est.disp <- TRUE
-					if (any(object$weights == 0)) 
+					if (any(object$weights == 0))
 						warning("observations with zero weight not used for calculating dispersion")
-					sum((object$weights * object$residuals^2)[object$weights > 
+					sum((object$weights * object$residuals^2)[object$weights >
 											0])/df.r
 				}
 				else {
@@ -251,38 +251,38 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 		if (!est.disp) {
 			pvalue <- 2 * stats::pnorm(-abs(tvalue))
 			coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
-			dimnames(coef.table) <- list(names(coef.p), c(dn, 
+			dimnames(coef.table) <- list(names(coef.p), c(dn,
 							"z value", "Pr(>|z|)"))
 		}
 		else if (df.r > 0) {
 			pvalue <- 2 * stats::pt(-abs(tvalue), df.r)
 			coef.table <- cbind(coef.p, s.err, tvalue, pvalue)
-			dimnames(coef.table) <- list(names(coef.p), c(dn, 
+			dimnames(coef.table) <- list(names(coef.p), c(dn,
 							"t value", "Pr(>|t|)"))
 		}
 		else {
 			coef.table <- cbind(coef.p, NaN, NaN, NaN)
-			dimnames(coef.table) <- list(names(coef.p), c(dn, 
+			dimnames(coef.table) <- list(names(coef.p), c(dn,
 							"t value", "Pr(>|t|)"))
 		}
 		df.f <- NCOL(Qr$qr)
 	}
 	else {
 		coef.table <- matrix( 0L, 4L)
-		dimnames(coef.table) <- list(NULL, c("Estimate", "Std. Error", 
+		dimnames(coef.table) <- list(NULL, c("Estimate", "Std. Error",
 						"t value", "Pr(>|t|)"))
 		covmat.unscaled <- covmat <- matrix( 0L, 0L)
 		df.f <- length(aliased)
 	}
-	keep <- match(c("call", "terms", "family", "deviance", "aic", 
-					"contrasts", "df.residual", "null.deviance", "df.null", 
+	keep <- match(c("call", "terms", "family", "deviance", "aic",
+					"contrasts", "df.residual", "null.deviance", "df.null",
 					"iter", "na.action"), names(object), 0L)
 	ans <- c(object[keep], list(
-					coefficients = coef.table, 
-					aliased = aliased, 
-					dispersion = dispersion, 
-					df = c(object$rank, df.r, df.f), 
-					cov.unscaled = covmat.unscaled, 
+					coefficients = coef.table,
+					aliased = aliased,
+					dispersion = dispersion,
+					df = c(object$rank, df.r, df.f),
+					cov.unscaled = covmat.unscaled,
 					cov.scaled = covmat
 				)
 			)
@@ -299,8 +299,8 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 #'
 #' Calculates the mean of a numeric vector using Rcpp for speed.
 #'
-#' @param x A numeric vector.
-#' @return The mean of the vector.
+#' @param	x A numeric vector.
+#' @return	The mean of the vector.
 #' @name mean_cpp
 #' @rdname mean_cpp
 #' @export
@@ -315,8 +315,8 @@ NULL
 #'
 #' Calculates the variance of a numeric vector using Rcpp for speed.
 #'
-#' @param x A numeric vector.
-#' @return The variance of the vector.
+#' @param	x A numeric vector.
+#' @return	The variance of the vector.
 #' @name var_cpp
 #' @rdname var_cpp
 #' @export

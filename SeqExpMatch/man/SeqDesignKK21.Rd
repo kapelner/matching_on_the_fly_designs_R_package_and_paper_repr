@@ -17,7 +17,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \dontrun{
 seq_des = SeqDesignKK21$new(response_type = "continuous")
 }
- 
+
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{SeqDesignKK21}
@@ -138,7 +138,7 @@ A new `SeqDesignKK21` object
 \preformatted{\dontrun{
 seq_des = SeqDesignKK21$new(response_type = "continuous")
 }
- 
+
 }
 \if{html}{\out{</div>}}
 

@@ -12,22 +12,22 @@ cat("Debugging Bootstrap NAs for CRD continuous SimpleMeanDiff\n")
 
 # Define Designs
 design_constructors = list(
-  "CRD" = function(type) SeqDesignCRD$new(response_type = type)
+	"CRD" = function(type) SeqDesignCRD$new(response_type = type)
 )
 
 # Inference classes mapped by response type
 inference_map = list(
-  "continuous" = list(
-    "SimpleMeanDiff" = SeqDesignInferenceAllSimpleMeanDiff
-  )
+	"continuous" = list(
+	"SimpleMeanDiff" = SeqDesignInferenceAllSimpleMeanDiff
+	)
 )
 
 generate_data = function(n, p, type) {
-  X = matrix(rnorm(n * p), nrow = n, ncol = p)
-  X_dt = as.data.table(X)
-  y = rnorm(n)
-  dead = NULL
-  list(X = X_dt, y = y, dead = dead)
+	X = matrix(rnorm(n * p), nrow = n, ncol = p)
+	X_dt = as.data.table(X)
+	y = rnorm(n)
+	dead = NULL
+	list(X = X_dt, y = y, dead = dead)
 }
 
 des_name = "CRD"
@@ -40,7 +40,7 @@ data = generate_data(n, p, resp_type)
 # Instantiate design
 des_completed = design_constructors[[des_name]](resp_type)
 for (i in 1:n) {
-  des_completed$add_subject_to_experiment_and_assign(data$X[i])
+	des_completed$add_subject_to_experiment_and_assign(data$X[i])
 }
 des_completed$add_all_subject_responses(data$y)
 

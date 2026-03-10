@@ -16,9 +16,9 @@ Rcpp::cppFunction('
 	  Function R_load("load");
 	  Environment env = Environment::global_env();
 		for (int i = 0; i < all_data_files.length(); i++){
-  		if (i % 1000 == 0){
-  		  Rcout << "i: " << i << " filename: " << all_data_files[i] << std::endl;
-  		}
+			if (i % 1000 == 0){
+			  Rcout << "i: " << i << " filename: " << all_data_files[i] << std::endl;
+			}
 		  String s(all_data_files[i]);
 		  R_load(s);
 		  List res_row = env["res_row"];

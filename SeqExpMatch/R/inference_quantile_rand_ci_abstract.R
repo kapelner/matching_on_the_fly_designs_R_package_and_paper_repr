@@ -28,7 +28,7 @@ SeqDesignInferenceAbstractQuantileRandCI = R6::R6Class("SeqDesignInferenceAbstra
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
 			assertCount(nsim_exact_test, positive = TRUE)
 			private$nsim_rand = as.integer(nsim_exact_test)
-			private$ci_rand_zhang_combined(alpha, pval_epsilon)
+			private$ci_exact_zhang_combined(alpha, pval_epsilon)
 		}
 	),
 

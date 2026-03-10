@@ -7,7 +7,7 @@ seq_des = SeqDesignCRD$new(n = 30, response_type = "survival")
 
 cat("Adding subjects...\n")
 for (i in 1:30) {
-  seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
+	seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
 }
 
 cat("Generating survival data...\n")
@@ -22,11 +22,11 @@ seq_des_inf = SeqDesignInferenceSurvivalUniWeibullRegr$new(seq_des, verbose = TR
 
 cat("\nAttempting to compute treatment estimate...\n")
 tryCatch({
-  est = seq_des_inf$compute_treatment_estimate()
-  cat("Estimate:", est, "\n")
+	est = seq_des_inf$compute_treatment_estimate()
+	cat("Estimate:", est, "\n")
 }, error = function(e) {
-  cat("ERROR in compute_treatment_estimate:\n")
-  cat("  Message:", e$message, "\n")
-  cat("  Call:", deparse(e$call), "\n")
-  traceback()
+	cat("ERROR in compute_treatment_estimate:\n")
+	cat("  Message:", e$message, "\n")
+	cat("  Call:", deparse(e$call), "\n")
+	traceback()
 })

@@ -23,9 +23,9 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 
 		#' @description
 		#' Initialize a Gehan-Wilcoxon (Peto-Prentice) inference object for survival data.
-		#' @param seq_des_obj	A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores		The number of CPU cores to use for parallel processing. Default is 1.
-		#' @param verbose		Whether to print progress messages. Default is FALSE.
+		#' @param	seq_des_obj	A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param	num_cores		The number of CPU cores to use for parallel processing. Default is 1.
+		#' @param	verbose		Whether to print progress messages. Default is FALSE.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertResponseType(seq_des_obj$get_response_type(), "survival")
@@ -36,7 +36,7 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' between the treatment and control groups. Positive values indicate that treatment
 		#' subjects experienced fewer early events than expected.
 		#'
-		#' @return A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
+		#' @return	A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
 		#'
 		#' @examples
 		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
@@ -60,9 +60,9 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' of the Peto-Prentice weighted martingale residual mean difference. Falls back to
 		#' bootstrap if the SE is unavailable.
 		#'
-		#' @param alpha	Significance level. Default is 0.05.
+		#' @param	alpha	Significance level. Default is 0.05.
 		#'
-		#' @return A numeric vector of length 2: (lower, upper) confidence bounds.
+		#' @return	A numeric vector of length 2: (lower, upper) confidence bounds.
 		#'
 		#' @examples
 		#' \dontrun{
@@ -94,9 +94,9 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' relative to the standard log-rank test (\code{rho = 0}).
 		#' For delta != 0, not yet implemented.
 		#'
-		#' @param delta	Null treatment effect to test against. Default is 0.
+		#' @param	delta	Null treatment effect to test against. Default is 0.
 		#'
-		#' @return A p-value in [0, 1].
+		#' @return	A p-value in [0, 1].
 		#'
 		#' @examples
 		#' \dontrun{
@@ -128,10 +128,10 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' the Peto-Prentice weighted score scale is not commensurate with the time-ratio
 		#' null used by the randomization CI bisection algorithm.
 		#'
-		#' @param alpha			Unused.
-		#' @param nsim_exact_test	Unused.
-		#' @param pval_epsilon	Unused.
-		#' @param show_progress	Unused.
+		#' @param	alpha			Unused.
+		#' @param	nsim_exact_test	Unused.
+		#' @param	pval_epsilon	Unused.
+		#' @param	show_progress	Unused.
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			stop("Randomization confidence intervals are not supported for SeqDesignInferenceSurvivalGehanWilcox due to inconsistent estimator units on the Peto-Prentice score scale.")
 		}

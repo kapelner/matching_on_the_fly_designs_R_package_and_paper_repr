@@ -20,25 +20,25 @@
 //  public:
 //	  NegBinCensoredFunctor(const VectorXd& y_, const VectorXd& dead_, const MatrixXd& X_) :
 //	    y(y_), dead(dead_), X(X_) {}
-//	
+//
 //	  double operator()(const VectorXd& x, VectorXd& grad) {
 ////	    using stan::math::var;
 ////	    using stan::math::gradient;
-////	
+////
 ////	    std::vector<var> theta(x.size());
 ////	    for (int i = 0; i < x.size(); ++i) theta[i] = x[i];
-////	
+////
 ////	    int K = X.cols();
 ////	    VectorXd b = x.head(K);
 ////	    var phi = x[K];
-////	
+////
 ////	    auto log_lik_var = [&]() {
 ////	      var ll = 0;
 ////	      for (int i = 0; i < y.size(); ++i) {
 ////	        var eta = dot_product(X.row(i), b);
 ////	        var mu = exp(eta);
 ////	        var alpha = phi;
-////	
+////
 ////	        if (dead[i] == 1) {
 ////	          ll += stan::math::neg_binomial_log(y[i], mu, alpha);
 ////	        } else {
@@ -47,15 +47,15 @@
 ////	      }
 ////	      return ll;
 ////	    };
-////	
+////
 ////	    var ll = log_lik_var();
 ////	    double val = ll.val();
-////	
+////
 ////	    stan::math::grad(ll.vi_);
 ////	    for (int i = 0; i < theta.size(); ++i) {
 ////	      grad[i] = theta[i].adj();
 ////	    }
-////	
+////
 ////	    return -val; // LBFGS minimizes, so return negative log-lik
 //return 0;
 //	  }

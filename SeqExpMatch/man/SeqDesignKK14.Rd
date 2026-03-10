@@ -17,7 +17,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \dontrun{
 seq_des = SeqDesignKK14$new(response_type = "continuous")
 }
- 
+
 
 ## ------------------------------------------------
 ## Method `SeqDesignKK14$matching_statistics`
@@ -159,7 +159,7 @@ A new `SeqDesignKK14` object
 \preformatted{\dontrun{
 seq_des = SeqDesignKK14$new(response_type = "continuous")
 }
- 
+
 }
 \if{html}{\out{</div>}}
 
@@ -176,7 +176,7 @@ This returns a list with useful matching statistics.
 }
 
 \subsection{Returns}{
-A list with the following data: \code{num_matches}, \code{prop_subjects_matched}, 
+A list with the following data: \code{num_matches}, \code{prop_subjects_matched},
 			\code{num_subjects_remaining_in_reservoir}, \code{prop_subjects_remaining_in_reservoir}.
 }
 \subsection{Examples}{
@@ -212,7 +212,7 @@ Returns information about the matched pairs and reservoir
 }
 
 \subsection{Returns}{
-An array in the order in which the subject entered with the match number or zero if the subject 
+An array in the order in which the subject entered with the match number or zero if the subject
 		belonged to the reservoir at the end of the study.
 }
 \subsection{Examples}{

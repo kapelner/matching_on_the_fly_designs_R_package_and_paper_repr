@@ -13,12 +13,12 @@ for (i_match in 1 : n){
 	#first go through the decision tree to assign a block
 	if (x_i[1] < cutoff_a){
 		if (x_i[2] < cutoff_a){
-			blocks[i_match] = "1-1"			
+			blocks[i_match] = "1-1"
 		} else if (x_i[2] < cutoff_b){
 			blocks[i_match] = "1-2"
 		} else {
 			blocks[i_match] = "1-3"
-		}		
+		}
 	} else if (x_i[1] < cutoff_b){
 		if (x_i[2] < cutoff_a){
 			blocks[i_match] = "2-1"
@@ -26,7 +26,7 @@ for (i_match in 1 : n){
 			blocks[i_match] = "2-2"
 		} else {
 			blocks[i_match] = "2-3"
-		}		
+		}
 	} else {
 		if (x_i[2] < cutoff_a){
 			blocks[i_match] = "3-1"
@@ -34,7 +34,7 @@ for (i_match in 1 : n){
 			blocks[i_match] = "3-2"
 		} else {
 			blocks[i_match] = "3-3"
-		}		
+		}
 	}
 #	cat("i", i_match, "\n")
 	#now assign T or C
@@ -42,7 +42,7 @@ for (i_match in 1 : n){
 	previous_assigments = indic_T[1 : i_match][blocks == block]
 	previous_assigments = previous_assigments[!is.na(previous_assigments)]
 #	cat(previous_assigments, "\n")
-	if (length(previous_assigments) == 0){ 
+	if (length(previous_assigments) == 0){
 		#if there's no assignments, do it randomly
 		indic_T[i_match] = rbinom(1, 1, prob_trt)
 	} else {

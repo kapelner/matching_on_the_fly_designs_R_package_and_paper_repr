@@ -259,6 +259,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// build_kk_combined_ols_design_cpp
+List build_kk_combined_ols_design_cpp(const Eigen::VectorXd& yd, const Eigen::MatrixXd& Xd, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r);
+RcppExport SEXP _SeqExpMatch_build_kk_combined_ols_design_cpp(SEXP ydSEXP, SEXP XdSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type yd(ydSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xd(XdSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_r(y_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type w_r(w_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_r(X_rSEXP);
+    rcpp_result_gen = Rcpp::wrap(build_kk_combined_ols_design_cpp(yd, Xd, y_r, w_r, X_r));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_all_subject_data_cpp
 List compute_all_subject_data_cpp(const Eigen::MatrixXd& X, int t, const IntegerVector& i_all_y_present_R, double rank_tol);
 RcppExport SEXP _SeqExpMatch_compute_all_subject_data_cpp(SEXP XSEXP, SEXP tSEXP, SEXP i_all_y_present_RSEXP, SEXP rank_tolSEXP) {
@@ -948,6 +963,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_bootstrap_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_indices_cpp, 2},
     {"_SeqExpMatch_bootstrap_match_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_match_indices_cpp, 5},
     {"_SeqExpMatch_match_stats_from_indices_cpp", (DL_FUNC) &_SeqExpMatch_match_stats_from_indices_cpp, 6},
+    {"_SeqExpMatch_build_kk_combined_ols_design_cpp", (DL_FUNC) &_SeqExpMatch_build_kk_combined_ols_design_cpp, 5},
     {"_SeqExpMatch_compute_all_subject_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_all_subject_data_cpp, 4},
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},

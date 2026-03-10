@@ -25,7 +25,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 }
-	
+
 
 ## ------------------------------------------------
 ## Method `SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_confidence_interval`
@@ -63,7 +63,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 }
-		
+
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound} -> \code{SeqDesignInferenceAllKKCompoundMeanDiff}
@@ -111,8 +111,8 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
@@ -147,7 +147,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 }
-	
+
 }
 \if{html}{\out{</div>}}
 
@@ -160,7 +160,7 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_mle_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 
-Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case 
+Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case
 of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
 is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
 \subsection{Usage}{
@@ -237,7 +237,7 @@ seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
 seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 }
-		
+
 }
 \if{html}{\out{</div>}}
 

@@ -18,8 +18,8 @@ NUM_BOOT_DSQD_DIST = 500 #500 #500
 
 #the treatment effects: 0 tests the size of test and something \neq 0 tests power
 treatment_effects = c(
-  1,
-  0
+	1,
+	0
 )
 
 #do we use the Z test and/or the T test (only when applicable)
@@ -29,7 +29,7 @@ Z_TESTS = c(TRUE)
 prob_trt = 0.5
 
 #how many subjects enter the sequential experiment?
-ns_to_test = c( 
+ns_to_test = c(
 	# 50,
 	100
 	# 200
@@ -85,7 +85,7 @@ all_betas_and_correlations = c(all_betas_and_correlations, list(setting = list(r
 all_betas_and_correlations = c(all_betas_and_correlations, list(setting = list(rho = 0, 	betas = c(6, 1, 2, 0, 0)))) #QUAD MORE UNEVEN
 all_betas_and_correlations = c(all_betas_and_correlations, list(setting = list(rho = 0.75, 	betas = c(6, 1, 2, 0, 0)))) #QUAD MORE UNEVEN with CORR
 
-#How do we randomize subjects into treatment or control? 
+#How do we randomize subjects into treatment or control?
 #Then, how do we analyze the resulting data to obtain an effect size and significance level?
 #Everything uncommented becomes part of the simulation
 randomization_types = c(
@@ -112,12 +112,12 @@ randomization_types = c(
 #   # "strat_lin",					#stratification by tertiles => 9 blocks design  			#analyzed via OLS
 # # "strat_exact",					#stratification by tertiles => 9 blocks design  			#analyzed via classic permutation test
 # # "strat_exact_lin",				#stratification by tertiles => 9 blocks design  			#analyzed via classic permutation test with OLS estimate
- 
+
  "ps_min_ttest",					#Pocock & Simon's minimization design						#analyzed via t-test
  "ps_min_lin",					#Pocock & Simon's minimization design						#analyzed via OLS
 #  # "ps_min_exact",				#Pocock & Simon's minimization design						#analyzed via classic permutation test with OLS estimate
 #  # "ps_min_exact_lin",			#Pocock & Simon's minimization design						#analyzed via classic permutation test
-# 
+#
 
 "seq_match_kk_ttest",					#KK14 design, t-test  							#analyzed via classic test of Section 2.3.1, Equation 4
 "seq_match_kk_lin",	    #KK14 design, OLS exact test
@@ -135,7 +135,7 @@ randomization_types = c(
  "seq_match_weighted_bootstrap_stepwise_exact", #KK20 design
  "seq_match_weighted_bootstrap_stepwise_exact_lin" #KK20 design
 
-		
+
 )
 
 ##########deprecated
@@ -156,10 +156,10 @@ metrics_for_each_run = c(
 	"res_end_prop_avg",
 	"pct_only_matches",
 	"pct_only_reservoir",
-	"avg_beta_T", 
+	"avg_beta_T",
 	"avg_abs_bias",
 	"std_err_beta_T",
-	"avg_max_std_diff_bal", 
+	"avg_max_std_diff_bal",
 	"avg_max_ks_stat",
 	"pct_trt_diff",
 	"conv_guessing_strategy_pct_correct_avg",
@@ -174,14 +174,14 @@ metrics_for_each_run = c(
 
 #make master results matrix
 colnames_master_results = c(
-  "algorithm",
-  "n",
-  "beta_T",
-  "betas",
-  "rho",
-  "cutoff",
-  "t_0_pct",
-  metrics_for_each_run
+	"algorithm",
+	"n",
+	"beta_T",
+	"betas",
+	"rho",
+	"cutoff",
+	"t_0_pct",
+	metrics_for_each_run
 )
 master_results = data.frame(matrix(NA, nrow = 0, ncol = length(colnames_master_results)))
 colnames(master_results) = colnames_master_results
@@ -190,9 +190,9 @@ time_began = Sys.time()
 num_simulation_settings = length(treatment_effects) * length(ns_to_test) * length(prob_match_cutoff_lambdas) * length(t_0_matching_pcts) * length(all_betas_and_correlations) * length(randomization_types)
 num_simulation_setting = 0
 run_sims = function(){
-  for (sim_type in sim_types){
-    source(paste("sim_type_", sim_type, ".R", sep = ""))
-  }
+	for (sim_type in sim_types){
+	source(paste("sim_type_", sim_type, ".R", sep = ""))
+	}
 }
 run_sims()
 stopCluster(cl)
@@ -210,8 +210,8 @@ num_atkinson_assignment_errors
 #############checks on distributions
 # pacman::p_load(ggplot2)
 # fake_normal = rnorm(Nsim_per_block, mean = 1, sd = sd(all_beta_hats[["bcrd_lin"]]))
-# ggplot(data.frame(betaThat = all_beta_hats[["bcrd_lin"]], fake_normal = fake_normal)) + 
-#   geom_density(aes(x = betaThat), fill = "red", alpha = 0.5) + 
+# ggplot(data.frame(betaThat = all_beta_hats[["bcrd_lin"]], fake_normal = fake_normal)) +
+#   geom_density(aes(x = betaThat), fill = "red", alpha = 0.5) +
 #   geom_density(aes(x = fake_normal), fill = "green", alpha = 0.5)
 # ks.test(all_beta_hats[["bcrd_lin"]], fake_normal)
 

@@ -9,7 +9,7 @@ for (t in 2 : n){
 		indic_T_guesses[t] = rbinom(1, 1, 0.5)
 	} else {
 		#deterministically guess the least represented tx group
-		indic_T_guesses[t] = ifelse(sum_T < t_minus_one_over_two, 1, 0)	
+		indic_T_guesses[t] = ifelse(sum_T < t_minus_one_over_two, 1, 0)
 	}
 	sum_T = sum_T + indic_T[t]
 }

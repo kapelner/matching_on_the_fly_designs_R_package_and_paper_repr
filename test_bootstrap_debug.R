@@ -16,8 +16,8 @@ seq_des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1 : n){
-  seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-  seq_des_obj$add_subject_response(t, y[t], dead[t])
+	seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des_obj$add_subject_response(t, y[t], dead[t])
 }
 
 cat("Creating SeqDesignInferenceAllKKCompoundMeanDiff...\n")

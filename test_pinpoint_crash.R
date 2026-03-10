@@ -17,8 +17,8 @@ seq_des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1 : n){
-  seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-  seq_des_obj$add_subject_response(t, y[t], dead[t])
+	seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des_obj$add_subject_response(t, y[t], dead[t])
 }
 
 cat("Subjects added successfully\n")
@@ -34,18 +34,18 @@ flush.console()
 
 # Try with R-level error handling
 result = tryCatch({
-  inf2 = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
-  cat("  Created successfully!\n")
-  inf2
+	inf2 = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+	cat("  Created successfully!\n")
+	inf2
 }, error = function(e) {
-  cat("R ERROR:", e$message, "\n")
-  traceback()
-  NULL
+	cat("R ERROR:", e$message, "\n")
+	traceback()
+	NULL
 })
 
 if (!is.null(result)) {
-  cat("  Treatment estimate:", result$compute_treatment_estimate(), "\n")
-  cat("SUCCESS!\n")
+	cat("  Treatment estimate:", result$compute_treatment_estimate(), "\n")
+	cat("SUCCESS!\n")
 } else {
-  cat("FAILED - R error caught\n")
+	cat("FAILED - R error caught\n")
 }

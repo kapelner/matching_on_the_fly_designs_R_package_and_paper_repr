@@ -27,6 +27,6 @@ robust_survreg(
 The Survival regression model object
 }
 \description{
-Performs Survival regression from the original response and censoring vectors 
+Performs Survival regression from the original response and censoring vectors
 that if it fails, keeps trying with a different initialization point until a maximum number of iterations
 }

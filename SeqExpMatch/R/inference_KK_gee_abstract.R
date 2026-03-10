@@ -1,5 +1,5 @@
 # Abstract class for GEE-based Inference
-# 
+#
 # @keywords internal
 SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 	inherit = SeqDesignInferenceKKPassThrough,

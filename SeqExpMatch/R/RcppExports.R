@@ -111,6 +111,10 @@ match_stats_from_indices_cpp <- function(y, w, X, original_match_indic, i_b, m) 
     .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, original_match_indic, i_b, m)
 }
 
+build_kk_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
+    .Call(`_SeqExpMatch_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
+}
+
 compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {
     .Call(`_SeqExpMatch_compute_all_subject_data_cpp`, X, t, i_all_y_present_R, rank_tol)
 }

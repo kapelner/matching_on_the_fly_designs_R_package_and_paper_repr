@@ -19,7 +19,7 @@ It implements appropriate permuted blocks based on \code{prob_T}
 \dontrun{
 seq_des = SeqDesigniBCRD$new(response_type = "continuous")
 }
- 
+
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesign} -> \code{SeqDesigniBCRD}
@@ -105,7 +105,7 @@ A new `SeqDesigniBCRD` object
 \preformatted{\dontrun{
 seq_des = SeqDesigniBCRD$new(response_type = "continuous")
 }
- 
+
 }
 \if{html}{\out{</div>}}
 

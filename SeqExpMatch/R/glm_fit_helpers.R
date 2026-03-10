@@ -5,11 +5,11 @@
 #' when only the regression coefficients are needed, without variance-covariance matrices
 #' or other statistical inference components.
 #'
-#' @param X A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param y A numeric vector of the response variable.
+#' @param	y A numeric vector of the response variable.
 #'
-#' @return A list containing the following components:
+#' @return	A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the estimated regression coefficients.}
 #' }
@@ -42,12 +42,12 @@ NULL
 #' regression using the Eigen C++ library, including the calculation of the
 #' variance-covariance matrix of the coefficients.
 #'
-#' @param X A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param y A numeric vector of the response variable.
-#' @param j This function will compute the variance of the jth coefficient estimator. Default is 2.
+#' @param	y A numeric vector of the response variable.
+#' @param	j This function will compute the variance of the jth coefficient estimator. Default is 2.
 #'
-#' @return A list containing the following components:
+#' @return	A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the estimated regression coefficients.}
 #' \item{ssq_b_j}{The variance of the jth coefficient estimator.}
@@ -79,11 +79,11 @@ NULL
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for binary outcomes without computing variance components.
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
 #'
-#' @return A list containing the following component:
+#' @return	A list containing the following component:
 #' \describe{
 #' \item{b}{A numeric vector of the estimated logistic regression coefficients.}
 #' }
@@ -111,26 +111,26 @@ NULL
 #'
 #' @export
 fast_logistic_regression = function(Xmm, y){
-  na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
-  tryCatch({
-    mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-        Xmm = Xmm,
-        ybin = as.numeric(y)
-    ))
-    b = as.vector(mod$coefficients)
-    if (!all(is.finite(b))) return(na_b())
-    list(b = b)
-  }, error = function(e) {
-    mod_canonical = suppressWarnings(
-      stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
-    )
-    # Non-convergence (e.g. complete separation) produces unreliable large-magnitude
-    # coefficients; signal failure with NA so bootstrap callers can discard the sample.
-    if (!isTRUE(mod_canonical$converged)) return(na_b())
-    b = as.vector(mod_canonical$coefficients)
-    if (!all(is.finite(b))) return(na_b())
-    list(b = b)
-  })
+	na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
+	tryCatch({
+	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
+		Xmm = Xmm,
+		ybin = as.numeric(y)
+	))
+	b = as.vector(mod$coefficients)
+	if (!all(is.finite(b))) return(na_b())
+	list(b = b)
+	}, error = function(e) {
+	mod_canonical = suppressWarnings(
+		stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
+	)
+	# Non-convergence (e.g. complete separation) produces unreliable large-magnitude
+	# coefficients; signal failure with NA so bootstrap callers can discard the sample.
+	if (!isTRUE(mod_canonical$converged)) return(na_b())
+	b = as.vector(mod_canonical$coefficients)
+	if (!all(is.finite(b))) return(na_b())
+	list(b = b)
+	})
 }
 
 #' Fast Logistic Regression with Variance Calculation (R Wrapper)
@@ -139,11 +139,11 @@ fast_logistic_regression = function(Xmm, y){
 #' It estimates regression coefficients for binary outcomes and specifically computes the
 #' variance of the second coefficient (assumed to be the treatment effect).
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, expected to be binary (0 or 1).
-#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
-#' @return A list containing the following components:
+#' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @return	A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the obtained logistic regression coefficients.}
 #' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
@@ -178,59 +178,59 @@ fast_logistic_regression = function(Xmm, y){
 #'
 #' @export
 fast_logistic_regression_with_var = function(Xmm, y, j = 2){
-  # Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
-  # separation: the MLE does not exist and the IWLS optimizer has diverged to a large
-  # but finite value (which passes is.finite() checks and would silently corrupt CIs).
-  SEPARATION_THRESHOLD = 1e6
+	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
+	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
+	# but finite value (which passes is.finite() checks and would silently corrupt CIs).
+	SEPARATION_THRESHOLD = 1e6
 
-  # Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
-  # 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
-  try_fit = function(X){
-    tryCatch({
-      mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-          Xmm = X,
-          ybin = as.numeric(y),
-          do_inference_on_var = j
-      ))
-      if (any(is.na(mod$se)) || any(!is.finite(mod$se))) stop("non-finite SE")
-      b = as.vector(mod$coefficients)
-      list(b = b, ssq_b_j = mod$se[j]^2, ssq_b_2 = if (length(mod$se) >= 2) mod$se[2]^2 else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
-    }, error = function(e) {
-      # Fallback to standard R glm if fast version fails
-      mod_canonical = stats::glm.fit(x = X, y = as.numeric(y), family = stats::binomial())
-      b = as.vector(mod_canonical$coefficients)
-      R <- qr.R(mod_canonical$qr)
-      Rinv <- backsolve(R, diag(ncol(R)))
-      vcov <- Rinv %*% t(Rinv)
-      list(b = b, ssq_b_j = vcov[j, j], ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
-    })
-  }
+	# Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
+	# 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
+	try_fit = function(X){
+	tryCatch({
+		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
+			Xmm = X,
+			ybin = as.numeric(y),
+			do_inference_on_var = j
+		))
+		if (any(is.na(mod$se)) || any(!is.finite(mod$se))) stop("non-finite SE")
+		b = as.vector(mod$coefficients)
+		list(b = b, ssq_b_j = mod$se[j]^2, ssq_b_2 = if (length(mod$se) >= 2) mod$se[2]^2 else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+	}, error = function(e) {
+		# Fallback to standard R glm if fast version fails
+		mod_canonical = stats::glm.fit(x = X, y = as.numeric(y), family = stats::binomial())
+		b = as.vector(mod_canonical$coefficients)
+		R <- qr.R(mod_canonical$qr)
+		Rinv <- backsolve(R, diag(ncol(R)))
+		vcov <- Rinv %*% t(Rinv)
+		list(b = b, ssq_b_j = vcov[j, j], ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+	})
+	}
 
-  # Iteratively drop the covariate (column >= 3) with the largest absolute coefficient
-  # until the model converges or only the intercept + treatment remain.
-  X_curr = Xmm
-  repeat {
-    fit = try_fit(X_curr)
-    if (fit$converged) return(list(b = fit$b, ssq_b_j = fit$ssq_b_j, ssq_b_2 = fit$ssq_b_2))
-    if (ncol(X_curr) <= 2){
-      stop("complete separation detected: logistic regression coefficients diverged (MLE does not exist)")
-    }
-    covariate_cols = 3:ncol(X_curr)
-    coef_mags = abs(fit$b[covariate_cols])
-    worst_idx = if (all(is.na(coef_mags))) length(covariate_cols) else which.max(coef_mags)
-    X_curr = X_curr[, -covariate_cols[worst_idx], drop = FALSE]
-  }
+	# Iteratively drop the covariate (column >= 3) with the largest absolute coefficient
+	# until the model converges or only the intercept + treatment remain.
+	X_curr = Xmm
+	repeat {
+	fit = try_fit(X_curr)
+	if (fit$converged) return(list(b = fit$b, ssq_b_j = fit$ssq_b_j, ssq_b_2 = fit$ssq_b_2))
+	if (ncol(X_curr) <= 2){
+		stop("complete separation detected: logistic regression coefficients diverged (MLE does not exist)")
+	}
+	covariate_cols = 3:ncol(X_curr)
+	coef_mags = abs(fit$b[covariate_cols])
+	worst_idx = if (all(is.na(coef_mags))) length(covariate_cols) else which.max(coef_mags)
+	X_curr = X_curr[, -covariate_cols[worst_idx], drop = FALSE]
+	}
 }
 
 #' Weibull Regression using survival package internals (fast, coefficients only)
 #'
 #' This function performs Weibull regression using survival::survreg.fit for speed.
 #'
-#' @param y Survival times.
-#' @param dead Event indicator (1 = event, 0 = censored).
-#' @param X A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	y Survival times.
+#' @param	dead Event indicator (1 = event, 0 = censored).
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @return A list containing the following components:
+#' @return	A list containing the following components:
 #' \describe{
 #' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients, including the intercept.}
 #' \item{log_sigma}{The logarithm of the scale parameter from the Weibull distribution.}
@@ -265,98 +265,98 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #' }
 #' @export
 fast_weibull_regression = function(y, dead, X){
-  Xmm = as.matrix(X)
-  # Check if Xmm has an intercept column (a column of all ones)
-  # Assuming intercept is the first column if present
-  if (NCOL(Xmm) > 0 && all(Xmm[, 1] == 1)) {
-    # If an intercept is present, remove it as survreg adds one automatically
-    Xmm_no_intercept = Xmm[, -1, drop = FALSE]
-  } else {
-    Xmm_no_intercept = Xmm
-  }
+	Xmm = as.matrix(X)
+	# Check if Xmm has an intercept column (a column of all ones)
+	# Assuming intercept is the first column if present
+	if (NCOL(Xmm) > 0 && all(Xmm[, 1] == 1)) {
+	# If an intercept is present, remove it as survreg adds one automatically
+	Xmm_no_intercept = Xmm[, -1, drop = FALSE]
+	} else {
+	Xmm_no_intercept = Xmm
+	}
 
-  # Drop linearly dependent columns before passing to survreg
-  Xmm_no_intercept = drop_linearly_dependent_cols(Xmm_no_intercept)$M
+	# Drop linearly dependent columns before passing to survreg
+	Xmm_no_intercept = drop_linearly_dependent_cols(Xmm_no_intercept)$M
 
-  # Use survreg (not survreg.fit) to handle parameter defaults properly
-  if (NCOL(Xmm_no_intercept) > 0) {
-    # Preserve or create column names
-    original_colnames = colnames(Xmm_no_intercept)
-    if (is.null(original_colnames)) {
-      original_colnames = paste0("X", 1:NCOL(Xmm_no_intercept))
-    }
+	# Use survreg (not survreg.fit) to handle parameter defaults properly
+	if (NCOL(Xmm_no_intercept) > 0) {
+	# Preserve or create column names
+	original_colnames = colnames(Xmm_no_intercept)
+	if (is.null(original_colnames)) {
+		original_colnames = paste0("X", 1:NCOL(Xmm_no_intercept))
+	}
 
-    # Create a data frame for survreg
-    df = as.data.frame(Xmm_no_intercept)
-    colnames(df) = original_colnames
-    df$y = y
-    df$dead = dead
-    # Wrap column names in backticks to handle special characters
-    backticked_colnames = paste0("`", original_colnames, "`")
-    formula_str = paste("survival::Surv(y, dead) ~", paste(backticked_colnames, collapse = " + "))
-    mod <- tryCatch(
-      survival::survreg(as.formula(formula_str), data = df, dist = "weibull"),
-      error = function(e) {
-        msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
-        stop("Weibull regression failed to converge: ", msg)
-      }
-    )
+	# Create a data frame for survreg
+	df = as.data.frame(Xmm_no_intercept)
+	colnames(df) = original_colnames
+	df$y = y
+	df$dead = dead
+	# Wrap column names in backticks to handle special characters
+	backticked_colnames = paste0("`", original_colnames, "`")
+	formula_str = paste("survival::Surv(y, dead) ~", paste(backticked_colnames, collapse = " + "))
+	mod <- tryCatch(
+		survival::survreg(as.formula(formula_str), data = df, dist = "weibull"),
+		error = function(e) {
+		msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
+		stop("Weibull regression failed to converge: ", msg)
+		}
+	)
 
-    # Extract coefficients and preserve names
-    coefficients = as.vector(mod$coefficients)
-    names(coefficients) = c("(Intercept)", original_colnames)
-  } else {
-    # Intercept-only model
-    mod <- tryCatch(
-      survival::survreg(survival::Surv(y, dead) ~ 1, dist = "weibull"),
-      error = function(e) {
-        msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
-        stop("Weibull regression failed to converge: ", msg)
-      }
-    )
-    coefficients = as.vector(mod$coefficients)
-    names(coefficients) = "(Intercept)"
-  }
+	# Extract coefficients and preserve names
+	coefficients = as.vector(mod$coefficients)
+	names(coefficients) = c("(Intercept)", original_colnames)
+	} else {
+	# Intercept-only model
+	mod <- tryCatch(
+		survival::survreg(survival::Surv(y, dead) ~ 1, dist = "weibull"),
+		error = function(e) {
+		msg = if (nzchar(trimws(e$message))) e$message else "survreg returned no error message"
+		stop("Weibull regression failed to converge: ", msg)
+		}
+	)
+	coefficients = as.vector(mod$coefficients)
+	names(coefficients) = "(Intercept)"
+	}
 
-  vcov = mod$var
-  std_errs = if (is.matrix(vcov)) sqrt(diag(vcov)) else rep(NA_real_, length(coefficients) + 1)
-  log_sigma = log(mod$scale)
-  neg_log_lik = if (!is.null(mod$loglik) && length(mod$loglik) >= 2) -mod$loglik[2] else NA_real_
+	vcov = mod$var
+	std_errs = if (is.matrix(vcov)) sqrt(diag(vcov)) else rep(NA_real_, length(coefficients) + 1)
+	log_sigma = log(mod$scale)
+	neg_log_lik = if (!is.null(mod$loglik) && length(mod$loglik) >= 2) -mod$loglik[2] else NA_real_
 
-  # Throw (rather than silently return NaN) so callers like the bootstrap tryCatch can handle failure
-  if (any(!is.finite(coefficients))) {
-    stop("Weibull regression failed to converge: survreg returned non-finite coefficients")
-  }
-  if (is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
-    stop("Weibull regression failed to converge: survreg returned non-finite variance-covariance")
-  }
+	# Throw (rather than silently return NaN) so callers like the bootstrap tryCatch can handle failure
+	if (any(!is.finite(coefficients))) {
+	stop("Weibull regression failed to converge: survreg returned non-finite coefficients")
+	}
+	if (is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
+	stop("Weibull regression failed to converge: survreg returned non-finite variance-covariance")
+	}
 
-  list(
-    coefficients = coefficients,
-    log_sigma = log_sigma,
-    std_errs = std_errs,
-    vcov = vcov,
-    neg_log_lik = neg_log_lik,
-    b = coefficients,
-    ssq_b_2 = if (is.matrix(vcov) && nrow(vcov) >= 2) vcov[2, 2] else NA_real_
-  )
+	list(
+	coefficients = coefficients,
+	log_sigma = log_sigma,
+	std_errs = std_errs,
+	vcov = vcov,
+	neg_log_lik = neg_log_lik,
+	b = coefficients,
+	ssq_b_2 = if (is.matrix(vcov) && nrow(vcov) >= 2) vcov[2, 2] else NA_real_
+	)
 }
 
 # Internal helper for beta regression safety.
 sanitize_beta_response = function(y){
-  y = as.numeric(y)
-  if (any(!is.finite(y))){
-    stop("y must be finite for beta regression")
-  }
-  eps = .Machine$double.eps
-  if (any(y <= 0 | y >= 1)){
-    n = length(y)
-    if (n > 1){
-      y = (y * (n - 1) + 0.5) / n
-    }
-    y = pmin(pmax(y, eps), 1 - eps)
-  }
-  y
+	y = as.numeric(y)
+	if (any(!is.finite(y))){
+	stop("y must be finite for beta regression")
+	}
+	eps = .Machine$double.eps
+	if (any(y <= 0 | y >= 1)){
+	n = length(y)
+	if (n > 1){
+		y = (y * (n - 1) + 0.5) / n
+	}
+	y = pmin(pmax(y, eps), 1 - eps)
+	}
+	y
 }
 
 #' Fast Beta Regression (R Wrapper)
@@ -365,13 +365,13 @@ sanitize_beta_response = function(y){
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for response variables that are continuous and restricted to the (0, 1) interval.
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, with values strictly between 0 and 1.
-#' @param start_phi A numeric value, the starting value for the precision parameter phi.
+#' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
+#' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
 #'
-#' @return A list containing the following component:
+#' @return	A list containing the following component:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
 #'
 #' @details
@@ -383,31 +383,31 @@ sanitize_beta_response = function(y){
 #'
 #' @export
 fast_beta_regression = function(Xmm, y, start_phi = 10){
-  y = sanitize_beta_response(y)
-  tryCatch({
-    list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi)$coefficients)
-  }, error = function(e) {
-    warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
-    if (!requireNamespace("betareg", quietly = TRUE)) {
-      warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
-      return(list(b = fast_ols_cpp(Xmm, logit(y))$b))
-    }
-    # create a data frame for betareg, removing the intercept from Xmm
-    data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
-    # rename columns for formula
-    colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
-    # fit model with control to suppress precision parameter warning
-    tryCatch({
-      suppressWarnings({
-        fit <- betareg::betareg(y ~ ., data = data_df,
-                                control = betareg::betareg.control(start = list(phi = start_phi)))
-      })
-      list(b = coef(fit))
-    }, error = function(e2) {
-      warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
-      list(b = fast_ols_cpp(Xmm, logit(y))$b)
-    })
-  })
+	y = sanitize_beta_response(y)
+	tryCatch({
+	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi)$coefficients)
+	}, error = function(e) {
+	warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
+	if (!requireNamespace("betareg", quietly = TRUE)) {
+		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
+		return(list(b = fast_ols_cpp(Xmm, logit(y))$b))
+	}
+	# create a data frame for betareg, removing the intercept from Xmm
+	data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
+	# rename columns for formula
+	colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
+	# fit model with control to suppress precision parameter warning
+	tryCatch({
+		suppressWarnings({
+		fit <- betareg::betareg(y ~ ., data = data_df,
+								control = betareg::betareg.control(start = list(phi = start_phi)))
+		})
+		list(b = coef(fit))
+	}, error = function(e2) {
+		warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
+		list(b = fast_ols_cpp(Xmm, logit(y))$b)
+	})
+	})
 }
 
 #' Fast Beta Regression with Variance Calculation (R Wrapper)
@@ -417,14 +417,14 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #' restricted to the (0, 1) interval, and specifically computes the variance
 #' of the second coefficient (assumed to be the treatment effect).
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, with values strictly between 0 and 1.
-#' @param start_phi A numeric value, the starting value for the precision parameter phi.
+#' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
+#' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
-#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #'
-#' @return A list containing the following components:
+#' @return	A list containing the following components:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
 #' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
 #' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient,
@@ -437,39 +437,39 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #' \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
 #' enable the intermediate fallback.
 #'
-#' @importFrom stats vcov
+#' @importFrom	stats vcov
 #' @export
 fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
-  y = sanitize_beta_response(y)
-  tryCatch({
-    mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi)
-    list(b = mod$coefficients, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
-  }, error = function(e) {
-    warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
-    if (!requireNamespace("betareg", quietly = TRUE)) {
-      warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
-      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-      return(list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
-    }
-    # create a data frame for betareg, removing the intercept from Xmm
-    data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
-    # rename columns for formula
-    colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
-    # fit model with control to suppress precision parameter warning
-    tryCatch({
-      suppressWarnings({
-        fit <- betareg::betareg(y ~ ., data = data_df,
-                                control = betareg::betareg.control(start = list(phi = start_phi)))
-      })
-      # Get the variance of the j-th coefficient
-      vcov_matrix <- vcov(fit)
-      list(b = coef(fit), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
-    }, error = function(e2) {
-      warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
-      mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-      list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
-    })
-  })
+	y = sanitize_beta_response(y)
+	tryCatch({
+	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi)
+	list(b = mod$coefficients, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
+	}, error = function(e) {
+	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
+	if (!requireNamespace("betareg", quietly = TRUE)) {
+		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
+		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
+		return(list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
+	}
+	# create a data frame for betareg, removing the intercept from Xmm
+	data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
+	# rename columns for formula
+	colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
+	# fit model with control to suppress precision parameter warning
+	tryCatch({
+		suppressWarnings({
+		fit <- betareg::betareg(y ~ ., data = data_df,
+								control = betareg::betareg.control(start = list(phi = start_phi)))
+		})
+		# Get the variance of the j-th coefficient
+		vcov_matrix <- vcov(fit)
+		list(b = coef(fit), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
+	}, error = function(e2) {
+		warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
+		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
+		list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
+	})
+	})
 }
 
 #' Fast Cox Proportional Hazards Regression (R Wrapper)
@@ -479,12 +479,12 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #' It is designed to efficiently estimate regression coefficients for time-to-event data
 #' without penalization.
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept term
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept term
 #'   is handled implicitly by the Cox model and should not be included in \code{Xmm}.
-#' @param y A numeric vector representing the observed time (event time or censoring time).
-#' @param dead A numeric vector (0 or 1) indicating event status (1 for event, 0 for censored).
+#' @param	y A numeric vector representing the observed time (event time or censoring time).
+#' @param	dead A numeric vector (0 or 1) indicating event status (1 for event, 0 for censored).
 #'
-#' @return A list containing the following component:
+#' @return	A list containing the following component:
 #' \item{b}{A numeric vector of the estimated Cox regression coefficients.}
 #'
 #' @details
@@ -507,32 +507,32 @@ fast_coxph_regression = function(Xmm, y, dead){
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for count data, assuming all observations are "not censored" (i.e., `dead = 1`).
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, representing count data.
+#' @param	y A numeric vector of the response variable, representing count data.
 #'
-#' @return A list containing the following component:
+#' @return	A list containing the following component:
 #' \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
 #'
-#' @importFrom stats glm.fit
-#' @importFrom MASS negative.binomial
+#' @importFrom	stats glm.fit
+#' @importFrom	MASS negative.binomial
 #' @export
 fast_negbin_regression <- function(Xmm, y) {
-  # if (nrow(Xmm) > 300 & ncol(Xmm) > 5){ #R's canonical version is faster as IRLS is a different algorithm
-  #     
-  # } else {
-    # list(
-    #   b = fast_neg_bin_cpp(
-    #     X = Xmm,
-    #     y = as.integer(y)
-    #   )$b
-    # )
-  # }
-  list(b = coef(stats::glm.fit(
-    x = Xmm,
-    y = y,
-    family = MASS::negative.binomial(theta = 1)  # initial theta
-  )))
+	# if (nrow(Xmm) > 300 & ncol(Xmm) > 5){ #R's canonical version is faster as IRLS is a different algorithm
+	#
+	# } else {
+	# list(
+	#   b = fast_neg_bin_cpp(
+	#     X = Xmm,
+	#     y = as.integer(y)
+	#   )$b
+	# )
+	# }
+	list(b = coef(stats::glm.fit(
+	x = Xmm,
+	y = y,
+	family = MASS::negative.binomial(theta = 1)  # initial theta
+	)))
 }
 
 #' Fast Negative Binomial Regression with Variance Calculation (R Wrapper)
@@ -542,12 +542,12 @@ fast_negbin_regression <- function(Xmm, y) {
 #' data and computes the variance of the second coefficient (assumed to be the treatment effect),
 #' assuming all observations are "not censored" (i.e., `dead = 1`).
 #'
-#' @param Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
-#' @param y A numeric vector of the response variable, representing count data.
-#' @param j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param	y A numeric vector of the response variable, representing count data.
+#' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #'
-#' @return A list containing the following components:
+#' @return	A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
 #' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
@@ -555,43 +555,43 @@ fast_negbin_regression <- function(Xmm, y) {
 #'   which typically corresponds to the treatment effect.}
 #' }
 #'
-#' @importFrom stats glm.fit
-#' @importFrom MASS negative.binomial
+#' @importFrom	stats glm.fit
+#' @importFrom	MASS negative.binomial
 #' @export
 fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
-  # Use glm.fit for efficiency
-  mod <- stats::glm.fit(
-    x = Xmm,
-    y = y,
-    family = MASS::negative.binomial(theta = 1)  # initial theta
-  )
+	# Use glm.fit for efficiency
+	mod <- stats::glm.fit(
+	x = Xmm,
+	y = y,
+	family = MASS::negative.binomial(theta = 1)  # initial theta
+	)
 
-  # Compute variance-covariance matrix from QR decomposition
-  # The variance-covariance matrix is (X'WX)^-1 * dispersion
-  # where W is the weight matrix from IRLS
+	# Compute variance-covariance matrix from QR decomposition
+	# The variance-covariance matrix is (X'WX)^-1 * dispersion
+	# where W is the weight matrix from IRLS
 
-  # Get the R matrix from QR decomposition
-  R <- qr.R(mod$qr)
+	# Get the R matrix from QR decomposition
+	R <- qr.R(mod$qr)
 
-  # Compute (X'WX)^-1 = R^-1 %*% t(R^-1)
-  Rinv <- backsolve(R, diag(ncol(R)))
-  vcov_unscaled <- Rinv %*% t(Rinv)
+	# Compute (X'WX)^-1 = R^-1 %*% t(R^-1)
+	Rinv <- backsolve(R, diag(ncol(R)))
+	vcov_unscaled <- Rinv %*% t(Rinv)
 
-  # Compute dispersion parameter
-  # For negative binomial, dispersion = sum(weights * residuals^2) / df.residual
-  dispersion <- sum(mod$weights * mod$residuals^2) / mod$df.residual
+	# Compute dispersion parameter
+	# For negative binomial, dispersion = sum(weights * residuals^2) / df.residual
+	dispersion <- sum(mod$weights * mod$residuals^2) / mod$df.residual
 
-  # Scale the variance-covariance matrix by dispersion
-  vcov <- vcov_unscaled * dispersion
+	# Scale the variance-covariance matrix by dispersion
+	vcov <- vcov_unscaled * dispersion
 
-  # Extract variance of j-th coefficient
-  ssq_b_j <- vcov[j, j]
+	# Extract variance of j-th coefficient
+	ssq_b_j <- vcov[j, j]
 
-  list(
-    b = as.vector(mod$coefficients),
-    ssq_b_j = ssq_b_j,
-    ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_
-  )
+	list(
+	b = as.vector(mod$coefficients),
+	ssq_b_j = ssq_b_j,
+	ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_
+	)
 }
 
 
@@ -632,7 +632,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #                              start_phi = 10,
 #                              bounds_logphi = c(log(1e-3), log(1e4)),
 #                              control = stats::glm.control(epsilon=1e-8, maxit=100)) {
-   
+
 #   weights <- rep(1, nrow(Xmm))
 
 #   # Use C++ logistic regression to find beta (quasi-likelihood, independent of phi)
@@ -654,7 +654,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #                 lower = bounds_logphi[1], upper = bounds_logphi[2])
 
 #   phi_hat <- as.numeric(exp(opt$par))
-  
+
 #   # Construct weights for the object matching beta_family/glm.fit behavior
 #   # weights = (1+phi) * mu * (1-mu)
 #   w_final = (1 + phi_hat) * mod_log$w
@@ -673,7 +673,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #                              start_phi = 10,
 #                              bounds_logphi = c(log(1e-3), log(1e4)),
 #                              control = stats::glm.control(epsilon=1e-8, maxit=100)) {
-#     fit_hat = fast_beta_regression(Xmm, y, start_phi = start_phi, bounds_logphi = bounds_logphi, control = control) 
+#     fit_hat = fast_beta_regression(Xmm, y, start_phi = start_phi, bounds_logphi = bounds_logphi, control = control)
 #     XtWX <- crossprod(sqrt(fit_hat$w) * Xmm)
 #     fit_hat$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
 #     fit_hat
@@ -683,11 +683,11 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 
 # beta_family <- function(link = "logit", phi = 10) {
 #   linkobj <- stats::make.link(link)
-  
+
 #   variance <- function(mu) {
 #     mu * (1 - mu) / (1 + phi)
 #   }
-  
+
 #   dev.resids <- function(y, mu, wt) {
 #     # negative twice log-likelihood contribution
 # #    2 * wt * (lbeta(mu * phi, (1 - mu) * phi) -
@@ -695,7 +695,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 # #              ((1 - mu) * phi - 1) * log(1 - y))
 # 	beta_dev_resids_cpp(y, mu, phi, wt)
 #   }
-  
+
 #   aic <- function(y, n, mu, wt, dev) {
 #     # -2*logLik + 2*edf
 # #    -2 * sum(wt * (
@@ -704,9 +704,9 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 # #    )) + 2 * (length(mu) + 1)
 #     beta_aic_cpp(y, mu, phi, wt)
 #   }
-  
+
 #   mu.eta <- linkobj$mu.eta
-  
+
 #   structure(
 #     list(
 #       family = "Beta",
@@ -737,10 +737,10 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 # fast_beta_regression_mle_r <- function(Xmm, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
 #   start_beta <- fast_logistic_regression(Xmm, y)$b
-  
+
 #   # Call the full MLE in C++ without computing standard errors
 #   mod_cpp = fast_beta_regression_mle(y, Xmm, start_beta = start_beta, start_phi = start_phi, compute_std_errs = FALSE)
-  
+
 #   out <- list(
 #     b = mod_cpp$coefficients,
 #     phi = mod_cpp$phi
@@ -751,17 +751,17 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 # fast_beta_regression_mle_r_with_var <- function(Xmm, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
 #   start_beta <- fast_logistic_regression(Xmm, y)$b
-  
+
 #   # Call the full MLE in C++ and compute standard errors
 #   mod_cpp = fast_beta_regression_mle(y, Xmm, start_beta = start_beta, start_phi = start_phi, compute_std_errs = TRUE)
-  
+
 #   out <- list(
 #     b = mod_cpp$coefficients,
 #     phi = mod_cpp$phi,
 #     # ssq_b_2 is the squared standard error of the treatment effect, which is the second coefficient
 #     # The std_errs from C++ includes standard errors for all coefficients and log(phi)
 #     # We assume the second element of std_errs corresponds to the treatment effect std error
-#     ssq_b_2 = mod_cpp$std_errs[2]^2 
+#     ssq_b_2 = mod_cpp$std_errs[2]^2
 #   )
 #   class(out) <- "beta_glm_mle"
 #   out
@@ -770,9 +770,9 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 
 #fast_glm_with_var = function(Xmm, y, glm_function){
 #	mod = glm_function(Xmm, y)
-#	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)	
+#	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)
 #	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
-#	mod	
+#	mod
 #}
 #
 #fast_glm_nb <- function(X, y, maxit = 50, tol = 1e-8, trace = FALSE) {
@@ -792,7 +792,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #    beta_new <- fit$coefficients
 #
 #    if (any(is.na(beta_new))) stop("NA in coefficients; possibly singular matrix")
-#	
+#
 #	opt <- optim(par = theta, fn = neg_loglik_nb_cpp, beta = beta_new, X = X, y = y, method = "L-BFGS-B", lower = 1e-8)
 #    theta_new <- opt$par
 #
@@ -819,41 +819,41 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #  )
 #}
 
-	
-#	loglik <- function(n, th, mu, y, w) sum(w * (lgamma(th + 
-#        y) - lgamma(th) - lgamma(y + 1) + th * log(th) + y * 
+
+#	loglik <- function(n, th, mu, y, w) sum(w * (lgamma(th +
+#        y) - lgamma(th) - lgamma(y + 1) + th * log(th) + y *
 #        log(mu + (y == 0)) - (th + y) * log(th + mu)))
 #    link <- log
-#    fam0 <- if (missing(init.theta)) 
+#    fam0 <- if (missing(init.theta))
 #        do.call("poisson", list(link = link))
-#    else do.call("negative.binomial", list(theta = init.theta, 
+#    else do.call("negative.binomial", list(theta = init.theta,
 #        link = link))
 #    mf <- Call <- match.call()
-#    m <- match(c("formula", "data", "subset", "weights", "na.action", 
+#    m <- match(c("formula", "data", "subset", "weights", "na.action",
 #        "etastart", "mustart", "offset"), names(mf), 0)
 #    mf <- mf[c(1, m)]
 #    mf$drop.unused.levels <- TRUE
 #    mf[[1L]] <- quote(stats::model.frame)
 #    mf <- eval.parent(mf)
 #    Terms <- attr(mf, "terms")
-#    if (method == "model.frame") 
+#    if (method == "model.frame")
 #        return(mf)
 #    Y <- model.response(mf, "numeric")
-#    X <- if (!is.empty.model(Terms)) 
+#    X <- if (!is.empty.model(Terms))
 #        model.matrix(Terms, mf, contrasts)
 #    else matrix( NROW(Y), 0)
 #    w <- model.weights(mf)
-#    if (!length(w)) 
+#    if (!length(w))
 #        w <- rep(1, nrow(mf))
-#    else if (any(w < 0)) 
+#    else if (any(w < 0))
 #        stop("negative weights not allowed")
 #    offset <- model.offset(mf)
 #    mustart <- model.extract(mf, "mustart")
 #    etastart <- model.extract(mf, "etastart")
 #    n <- length(Y)
 #    if (!missing(method)) {
-#        if (!exists(method, mode = "function")) 
-#            stop(gettextf("unimplemented method: %s", sQuote(method)), 
+#        if (!exists(method, mode = "function"))
+#            stop(gettextf("unimplemented method: %s", sQuote(method)),
 #                domain = NA)
 #        glm.fitter <- get(method)
 #    }
@@ -861,19 +861,19 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #        method <- "glm.fit"
 #        glm.fitter <- stats::glm.fit
 #    }
-#    if (control$trace > 1) 
+#    if (control$trace > 1)
 #        message("Initial fit:")
-#    fit <- glm.fitter(x = X, y = Y, weights = w, start = start, 
-#        etastart = etastart, mustart = mustart, offset = offset, 
-#        family = fam0, control = list(maxit = control$maxit, 
-#            epsilon = control$epsilon, trace = control$trace > 
+#    fit <- glm.fitter(x = X, y = Y, weights = w, start = start,
+#        etastart = etastart, mustart = mustart, offset = offset,
+#        family = fam0, control = list(maxit = control$maxit,
+#            epsilon = control$epsilon, trace = control$trace >
 #                1), intercept = attr(Terms, "intercept") > 0)
 #    class(fit) <- c("glm", "lm")
 #    mu <- fit$fitted.values
-#    th <- as.vector(theta.ml(Y, mu, sum(w), w, limit = control$maxit, 
+#    th <- as.vector(theta.ml(Y, mu, sum(w), w, limit = control$maxit,
 #        trace = control$trace > 2))
-#    if (control$trace > 1) 
-#        message(gettextf("Initial value for 'theta': %f", signif(th)), 
+#    if (control$trace > 1)
+#        message(gettextf("Initial value for 'theta': %f", signif(th)),
 #            domain = NA)
 #    fam <- do.call("negative.binomial", list(theta = th, link = link))
 #    iter <- 0
@@ -882,18 +882,18 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #    g <- fam$linkfun
 #    Lm <- loglik(n, th, mu, Y, w)
 #    Lm0 <- Lm + 2 * d1
-#    while ((iter <- iter + 1) <= control$maxit && (abs(Lm0 - 
+#    while ((iter <- iter + 1) <= control$maxit && (abs(Lm0 -
 #        Lm)/d1 + abs(del)/d2) > control$epsilon) {
 #        eta <- g(mu)
-#        fit <- glm.fitter(x = X, y = Y, weights = w, etastart = eta, 
-#            offset = offset, family = fam, control = list(maxit = control$maxit, 
-#                epsilon = control$epsilon, trace = control$trace > 
-#                  1), intercept = attr(Terms, "intercept") > 
+#        fit <- glm.fitter(x = X, y = Y, weights = w, etastart = eta,
+#            offset = offset, family = fam, control = list(maxit = control$maxit,
+#                epsilon = control$epsilon, trace = control$trace >
+#                  1), intercept = attr(Terms, "intercept") >
 #                0)
 #        t0 <- th
-#        th <- theta.ml(Y, mu, sum(w), w, limit = control$maxit, 
+#        th <- theta.ml(Y, mu, sum(w), w, limit = control$maxit,
 #            trace = control$trace > 2)
-#        fam <- do.call("negative.binomial", list(theta = th, 
+#        fam <- do.call("negative.binomial", list(theta = th,
 #            link = link))
 #        mu <- fit$fitted.values
 #        del <- t0 - th
@@ -902,21 +902,21 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #        if (control$trace) {
 #            Ls <- loglik(n, th, Y, Y, w)
 #            Dev <- 2 * (Ls - Lm)
-#            message(sprintf("Theta(%d) = %f, 2(Ls - Lm) = %f", 
+#            message(sprintf("Theta(%d) = %f, 2(Ls - Lm) = %f",
 #                iter, signif(th), signif(Dev)), domain = NA)
 #        }
 #    }
-#    if (!is.null(attr(th, "warn"))) 
+#    if (!is.null(attr(th, "warn")))
 #        fit$th.warn <- attr(th, "warn")
 #    if (iter > control$maxit) {
 #        warning("alternation limit reached")
 #        fit$th.warn <- gettext("alternation limit reached")
 #    }
 #    if (length(offset) && attr(Terms, "intercept")) {
-#        null.deviance <- if (length(Terms)) 
-#            glm.fitter(X[, "(Intercept)", drop = FALSE], Y, w, 
-#                offset = offset, family = fam, control = list(maxit = control$maxit, 
-#                  epsilon = control$epsilon, trace = control$trace > 
+#        null.deviance <- if (length(Terms))
+#            glm.fitter(X[, "(Intercept)", drop = FALSE], Y, w,
+#                offset = offset, family = fam, control = list(maxit = control$maxit,
+#                  epsilon = control$epsilon, trace = control$trace >
 #                    1), intercept = TRUE)$deviance
 #        else fit$deviance
 #        fit$null.deviance <- null.deviance
@@ -927,12 +927,12 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #    Call$init.theta <- signif(as.vector(th), 10)
 #    Call$link <- link
 #    fit$call <- Call
-#    if (model) 
+#    if (model)
 #        fit$model <- mf
 #    fit$na.action <- attr(mf, "na.action")
-#    if (x) 
+#    if (x)
 #        fit$x <- X
-#    if (!y) 
+#    if (!y)
 #        fit$y <- NULL
 #    fit$theta <- as.vector(th)
 #    fit$SE.theta <- attr(th, "SE")

@@ -19,10 +19,10 @@ typedef double cubareal;
 	   simply use an explicit typecast to integrand_t in the Cuba
 	   invocation. */
 typedef int (*integrand_t)(const int *ndim, const cubareal x[],
-  const int *ncomp, cubareal f[], void *userdata);
+	const int *ncomp, cubareal f[], void *userdata);
 
 typedef void (*peakfinder_t)(const int *ndim, const cubareal b[],
-  int *n, cubareal x[], void *userdata);
+	int *n, cubareal x[], void *userdata);
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,13 +30,13 @@ extern "C" {
 
 
 void Cuhre(const int ndim, const int ncomp,
-  integrand_t integrand, void *userdata, const int nvec,
-  const cubareal epsrel, const cubareal epsabs,
-  const int flags, const int mineval, const int maxeval,
-  const int key,
-  const char *statefile, void *spin,
-  int *nregions, int *neval, int *fail,
-  cubareal integral[], cubareal err[], cubareal prob[]);
+	integrand_t integrand, void *userdata, const int nvec,
+	const cubareal epsrel, const cubareal epsabs,
+	const int flags, const int mineval, const int maxeval,
+	const int key,
+	const char *statefile, void *spin,
+	int *nregions, int *neval, int *fail,
+	cubareal integral[], cubareal err[], cubareal prob[]);
 
 
 #ifdef __cplusplus

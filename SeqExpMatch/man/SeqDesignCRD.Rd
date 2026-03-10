@@ -15,7 +15,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## ------------------------------------------------
 
 seq_des = SeqDesignCRD$new(response_type = "continuous")
- 
+
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignCRD}
@@ -99,7 +99,7 @@ A new `SeqDesignCRD` object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = SeqDesignCRD$new(response_type = "continuous")
- 
+
 }
 \if{html}{\out{</div>}}
 

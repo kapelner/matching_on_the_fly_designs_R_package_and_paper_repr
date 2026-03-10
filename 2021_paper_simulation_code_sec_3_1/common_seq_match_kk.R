@@ -1,7 +1,7 @@
 #do the standard matching procedure
 
 #initialize the indicator treatment vector
-indic_T = array(NA, n) 
+indic_T = array(NA, n)
 #initialize the reservoir
 match_indic = array(-1, n) #0 indicates reservoir
 
@@ -10,10 +10,10 @@ min_t0_based_on_matching_pct = round(t_0_matching_pct * n)
 #now we're going to go through and do the matching
 
 for (t0 in 1 : n){
-  # cat("for\n")
+	# cat("for\n")
 	#if there is nothing in the reservoir, randomize and add it to reservoir
 	if (length(match_indic[match_indic == 0]) == 0 || t0 <= min_t0_based_on_matching_pct){
-	  
+
 	  # cat("if\n")
 		indic_T[t0] = rbinom(1, 1, prob_trt)
 		match_indic[t0] = 0
@@ -29,13 +29,13 @@ for (t0 in 1 : n){
 		x_star = x_s[t0, ]
 		sqd_distances = array(NA, length(reservoir_indices))
 		for (r in 1 : length(reservoir_indices)){
-			sqd_distances[r] = 1 / 2 * 
+			sqd_distances[r] = 1 / 2 *
 					t(x_star - x_s[reservoir_indices[r], ]) %*%
 					S_xs_inv %*%
-					(x_star - x_s[reservoir_indices[r], ])			
+					(x_star - x_s[reservoir_indices[r], ])
 		}
 #		cat(paste("t", t, "sqd_distances", paste(sqd_distances, collapse = ", "), "T_cutoff_sq", T_cutoff_sq, "\n"))
-		
+
 		#find minimum distance index
 		min_sqd_dist_index = which(sqd_distances == min(sqd_distances))
 		if (length(sqd_distances[min_sqd_dist_index]) > 1 || length(T_cutoff_sq) > 1){

@@ -23,7 +23,7 @@ if (m > 0){ #R runs the for loop if it's over the collection 1 : 0 => how stupid
 		ydiffs[match_id] = yT - yC
 		zT = Xy[Xy$indic_T == 1 & Xy$match_indic == match_id, "z"]
 		zC = Xy[Xy$indic_T == 0 & Xy$match_indic == match_id, "z"]
-		zdiffs[match_id] = zT - zC	
+		zdiffs[match_id] = zT - zC
 	}
 }
 

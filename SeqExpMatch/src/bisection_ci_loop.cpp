@@ -25,46 +25,46 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 double bisection_ci_loop_cpp(
-  Function pval_fn,
-  int nsim_exact_test,
-  double l,
-  double u,
-  double pval_th,
-  double tol,
-  std::string transform_responses,
-  bool lower
+	Function pval_fn,
+	int nsim_exact_test,
+	double l,
+	double u,
+	double pval_th,
+	double tol,
+	std::string transform_responses,
+	bool lower
 ) {
-  // Compute initial p-values at bounds
-  double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses));
-  double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses));
+	// Compute initial p-values at bounds
+	double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses));
+	double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses));
 
-  // Bisection loop
-  while (true) {
-    // Check convergence
-    if ((pval_u - pval_l) <= tol) {
-      return lower ? l : u;
-    }
+	// Bisection loop
+	while (true) {
+	// Check convergence
+	if ((pval_u - pval_l) <= tol) {
+		return lower ? l : u;
+	}
 
-    // Compute midpoint
-    double m = (l + u) / 2.0;
-    double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses));
+	// Compute midpoint
+	double m = (l + u) / 2.0;
+	double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses));
 
-    // Update bounds based on bisection logic
-    if (pval_m >= pval_th && lower) {
-      u = m;
-      pval_u = pval_m;
-    } else if (pval_m >= pval_th && !lower) {
-      l = m;
-      pval_l = pval_m;
-    } else if (lower) {
-      l = m;
-      pval_l = pval_m;
-    } else { // !lower
-      u = m;
-      pval_u = pval_m;
-    }
-  }
+	// Update bounds based on bisection logic
+	if (pval_m >= pval_th && lower) {
+		u = m;
+		pval_u = pval_m;
+	} else if (pval_m >= pval_th && !lower) {
+		l = m;
+		pval_l = pval_m;
+	} else if (lower) {
+		l = m;
+		pval_l = pval_m;
+	} else { // !lower
+		u = m;
+		pval_u = pval_m;
+	}
+	}
 
-  // Should never reach here due to while(true), but compiler needs return
-  return lower ? l : u;
+	// Should never reach here due to while(true), but compiler needs return
+	return lower ? l : u;
 }

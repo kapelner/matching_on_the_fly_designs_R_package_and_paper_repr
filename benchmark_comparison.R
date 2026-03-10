@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library(data.table))
 # Pull in helper suite so that the loops used for comparison are accessible here as well.
 helper_file <- file.path(getwd(), "benchmark_inference_loops.R")
 if (file.exists(helper_file)) {
-  source(helper_file)
+	source(helper_file)
 }
 
 # Setup Paths
@@ -47,31 +47,31 @@ src_path_old <- file.path(pkg_path_old, "src")
 cat("Cleaning up old binaries and Windows-specific files...\n")
 bin_files <- list.files(src_path_old, pattern = "\\.(o|so|dll|exe|a|lib|exp|def)$", full.names = TRUE, ignore.case = TRUE)
 if (length(bin_files) > 0) {
-    cat(sprintf("Removing %d binary files...\n", length(bin_files)))
-    unlink(bin_files)
+	cat(sprintf("Removing %d binary files...\n", length(bin_files)))
+	unlink(bin_files)
 }
 unlink(file.path(src_path_old, "Makevars.win"))
 
 # Patch 1: Copy Makevars from current (to match system build env)
 if (file.exists(file.path(pkg_path, "src/Makevars"))) {
-    cat("Copying Makevars from current version...\n")
-    file.copy(file.path(pkg_path, "src/Makevars"), file.path(pkg_path_old, "src/Makevars"), overwrite = TRUE)
+	cat("Copying Makevars from current version...\n")
+	file.copy(file.path(pkg_path, "src/Makevars"), file.path(pkg_path_old, "src/Makevars"), overwrite = TRUE)
 }
 
 # Patch 2: Run compileAttributes to regenerate exports
 cat("Running Rcpp::compileAttributes on old version...\n")
 tryCatch({
-    library(Rcpp)
-    compileAttributes(pkg_path_old)
+	library(Rcpp)
+	compileAttributes(pkg_path_old)
 }, error = function(e) warning("compileAttributes failed: ", e$message))
 
 cat("\n>>> Installing OLD version to temporary library...\n")
 install_cmd_old <- sprintf("R CMD INSTALL %s -l %s", shQuote(pkg_path_old), shQuote(lib_old))
 if (system(install_cmd_old) != 0) {
-    cat("\n!!! Failed to install OLD version. Proceeding with NEW version only benchmark. !!!\n")
-    SKIP_OLD <- TRUE
+	cat("\n!!! Failed to install OLD version. Proceeding with NEW version only benchmark. !!!\n")
+	SKIP_OLD <- TRUE
 } else {
-    SKIP_OLD <- FALSE
+	SKIP_OLD <- FALSE
 }
 
 # --- 3. Run Benchmarks ---
@@ -79,12 +79,12 @@ res_file_old <- file.path(tmp_dir, "res_old.rds")
 res_file_new <- file.path(tmp_dir, "res_new.rds")
 
 if (!SKIP_OLD) {
-    cat(sprintf("\n>>> Running Benchmark on OLD version (%d iterations)...\n", N_ITER))
-    cmd_old <- sprintf("Rscript %s %s %s %d %s", WORKER_SCRIPT, shQuote(lib_old), shQuote(res_file_old), N_ITER, "old")
-    if (system(cmd_old) != 0) {
-        warning("Benchmark worker failed for OLD version")
-        SKIP_OLD <- TRUE
-    }
+	cat(sprintf("\n>>> Running Benchmark on OLD version (%d iterations)...\n", N_ITER))
+	cmd_old <- sprintf("Rscript %s %s %s %d %s", WORKER_SCRIPT, shQuote(lib_old), shQuote(res_file_old), N_ITER, "old")
+	if (system(cmd_old) != 0) {
+		warning("Benchmark worker failed for OLD version")
+		SKIP_OLD <- TRUE
+	}
 }
 
 cat(sprintf("\n>>> Running Benchmark on NEW version (%d iterations)...\n", N_ITER))
@@ -93,100 +93,100 @@ if (system(cmd_new) != 0) stop("Benchmark worker failed for NEW version")
 
 # --- 4. Analyze Results ---
 summarize_results <- function(dt) {
-    if (nrow(dt) == 0) {
-        return(data.table())
-    }
-    dt[,
-       .(
-           mean_time = mean(elapsed, na.rm = TRUE),
-           median_time = median(elapsed, na.rm = TRUE),
-           sd_time = sd(elapsed, na.rm = TRUE),
-           error_rate = sum(!is.na(error)) / .N,
-           successes = sum(status == "success"),
-           total = .N
-       ),
-       by = .(response_type, design, inference, metric, version_label)
-    ]
+	if (nrow(dt) == 0) {
+		return(data.table())
+	}
+	dt[,
+		 .(
+			 mean_time = mean(elapsed, na.rm = TRUE),
+			 median_time = median(elapsed, na.rm = TRUE),
+			 sd_time = sd(elapsed, na.rm = TRUE),
+			 error_rate = sum(!is.na(error)) / .N,
+			 successes = sum(status == "success"),
+			 total = .N
+		 ),
+		 by = .(response_type, design, inference, metric, version_label)
+	]
 }
 
 print_top_speedups <- function(comparison_table, n_rows = 10) {
-    if (nrow(comparison_table) == 0) {
-        cat("No comparable metrics were recorded between versions.\n")
-        return()
-    }
-    comparison_table[, speedup := ifelse(mean_time_new > 0,
-        mean_time_old / mean_time_new,
-        NA_real_
-    )]
-    comparison_table[!is.finite(speedup), speedup := NA_real_]
-    top_rows <- comparison_table[order(-speedup)][1:min(n_rows, .N)]
-    if (nrow(top_rows) == 0) {
-        cat("No valid speedup entries to display.\n")
-        return()
-    }
-    print(top_rows[, .(
-        response_type,
-        design,
-        inference,
-        metric,
-        mean_time_old,
-        mean_time_new,
-        speedup,
-        error_rate_old,
-        error_rate_new
-    )])
+	if (nrow(comparison_table) == 0) {
+		cat("No comparable metrics were recorded between versions.\n")
+		return()
+	}
+	comparison_table[, speedup := ifelse(mean_time_new > 0,
+		mean_time_old / mean_time_new,
+		NA_real_
+	)]
+	comparison_table[!is.finite(speedup), speedup := NA_real_]
+	top_rows <- comparison_table[order(-speedup)][1:min(n_rows, .N)]
+	if (nrow(top_rows) == 0) {
+		cat("No valid speedup entries to display.\n")
+		return()
+	}
+	print(top_rows[, .(
+		response_type,
+		design,
+		inference,
+		metric,
+		mean_time_old,
+		mean_time_new,
+		speedup,
+		error_rate_old,
+		error_rate_new
+	)])
 }
 
 cat("\n>>> Analysis <<<\n")
 if (file.exists(res_file_new)) {
-    res_new <- readRDS(res_file_new)
+	res_new <- readRDS(res_file_new)
 
-    if (!SKIP_OLD && file.exists(res_file_old)) {
-        res_old <- readRDS(res_file_old)
+	if (!SKIP_OLD && file.exists(res_file_old)) {
+		res_old <- readRDS(res_file_old)
 
-        summary_old <- summarize_results(res_old)
-        summary_new <- summarize_results(res_new)
+		summary_old <- summarize_results(res_old)
+		summary_new <- summarize_results(res_new)
 
-        summary_old_core <- summary_old[, setdiff(names(summary_old), "version_label"), with = FALSE]
-        summary_new_core <- summary_new[, setdiff(names(summary_new), "version_label"), with = FALSE]
-        comparison <- merge(
-            summary_old_core,
-            summary_new_core,
-            by = c("response_type", "design", "inference", "metric"),
-            suffixes = c("_old", "_new")
-        )
+		summary_old_core <- summary_old[, setdiff(names(summary_old), "version_label"), with = FALSE]
+		summary_new_core <- summary_new[, setdiff(names(summary_new), "version_label"), with = FALSE]
+		comparison <- merge(
+			summary_old_core,
+			summary_new_core,
+			by = c("response_type", "design", "inference", "metric"),
+			suffixes = c("_old", "_new")
+		)
 
-        cat("\n--- Comparative timing per metric (top speedups) ---\n")
-        print_top_speedups(comparison, n_rows = 20)
+		cat("\n--- Comparative timing per metric (top speedups) ---\n")
+		print_top_speedups(comparison, n_rows = 20)
 
-        cat("\n--- Specific comparison for randomization p-value (compute_two_sided_pval_for_treatment_effect_rand) ---\n")
-        rand_comp <- comparison[metric == "compute_two_sided_pval_for_treatment_effect_rand"]
-        if (nrow(rand_comp) > 0) {
-            print(rand_comp[order(-speedup), .(
-                response_type,
-                design,
-                inference,
-                mean_time_old,
-                mean_time_new,
-                speedup
-            )])
-        } else {
-            cat("Metric not found in both versions.\n")
-        }
-    } else {
-        cat("Old version results not available. Showing New version timing summary only.\n")
-        summary_new <- summarize_results(res_new)
-        cat("\n--- New version timing summary (slowest metrics) ---\n")
-        print(summary_new[order(-mean_time)][1:min(20, .N)][, .(
-            response_type,
-            design,
-            inference,
-            metric,
-            mean_time,
-            median_time,
-            error_rate
-        )])
-    }
+		cat("\n--- Specific comparison for randomization p-value (compute_two_sided_pval_for_treatment_effect_rand) ---\n")
+		rand_comp <- comparison[metric == "compute_two_sided_pval_for_treatment_effect_rand"]
+		if (nrow(rand_comp) > 0) {
+			print(rand_comp[order(-speedup), .(
+				response_type,
+				design,
+				inference,
+				mean_time_old,
+				mean_time_new,
+				speedup
+			)])
+		} else {
+			cat("Metric not found in both versions.\n")
+		}
+	} else {
+		cat("Old version results not available. Showing New version timing summary only.\n")
+		summary_new <- summarize_results(res_new)
+		cat("\n--- New version timing summary (slowest metrics) ---\n")
+		print(summary_new[order(-mean_time)][1:min(20, .N)][, .(
+			response_type,
+			design,
+			inference,
+			metric,
+			mean_time,
+			median_time,
+			error_rate
+		)])
+	}
 }
 
 cat("\nDone.\n")

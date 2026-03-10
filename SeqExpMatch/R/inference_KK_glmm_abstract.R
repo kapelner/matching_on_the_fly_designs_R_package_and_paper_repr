@@ -1,5 +1,5 @@
 # Abstract class for GLMM-based Inference
-# 
+#
 # @keywords internal
 SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM",
 	inherit = SeqDesignInferenceKKPassThrough,
@@ -107,7 +107,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 
 			dat = data.frame(y = private$y, private$glmm_predictors_df(), group_id = factor(group_id))
 
-			# Use internal glmmTMB parallelism only if we are not already in an outer 
+			# Use internal glmmTMB parallelism only if we are not already in an outer
 			# parallel loop (num_cores == 1). This prevents CPU over-subscription.
 			glmm_control = if (private$num_cores > 1) {
 				glmmTMB::glmmTMBControl(parallel = 1L)

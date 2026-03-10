@@ -24,6 +24,6 @@ robust_survreg_with_surv_object(
 The Survival regression model object
 }
 \description{
-Performs Survival regression from a survival::Surv object 
+Performs Survival regression from a survival::Surv object
 that if it fails, keeps trying with a different initialization point until a maximum number of iterations
 }

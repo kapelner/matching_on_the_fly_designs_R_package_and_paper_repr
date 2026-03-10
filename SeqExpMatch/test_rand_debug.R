@@ -6,7 +6,7 @@ set.seed(123)
 seq_des = SeqDesignKK14$new(n = 30, response_type = "continuous")
 
 for (i in 1:30) {
-  seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
+	seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[i, 2:10])
 }
 
 # Add continuous responses
@@ -22,10 +22,10 @@ cat("Estimate:", est, "\n")
 
 cat("\n=== Randomization Distribution (first 10 draws) ===\n")
 t0s = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null(
-  nsim_exact_test = 10,
-  delta = 0,
-  transform_responses = "none",
-  show_progress = FALSE
+	nsim_exact_test = 10,
+	delta = 0,
+	transform_responses = "none",
+	show_progress = FALSE
 )
 cat("t0s:", t0s, "\n")
 cat("Range:", range(t0s, na.rm = TRUE), "\n")

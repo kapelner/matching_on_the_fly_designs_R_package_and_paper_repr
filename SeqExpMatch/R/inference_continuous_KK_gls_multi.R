@@ -24,56 +24,56 @@
 SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
-		
+
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")			
-			super$initialize(seq_des_obj, num_cores, verbose)	
+			assertResponseType(seq_des_obj$get_response_type(), "continuous")
+			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
-			
+
 			if (!requireNamespace("nlme", quietly = TRUE)) {
 				stop("Package 'nlme' is required for SeqDesignInferenceContinMultGLS. Please install it.")
 			}
 		},
-		
+
 		#' @description
 		#' Computes the appropriate GLS estimate
-		#' 
-		#' @return 	The setting-appropriate numeric estimate of the treatment effect
+		#'
+		#' @return	The setting-appropriate numeric estimate of the treatment effect
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$shared()
 			}
 			private$cached_values$beta_hat_T
 		},
-		
-		#' @description		
+
+		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+		#'
+		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#'
+		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
-			}			
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},		
-		
+		},
+
 		#' @description
 		#' Computes a 2-sided p-value
 		#'
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' 
-		#' @return 	The approximate frequentist p-value
+		#' @param	delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#'
+		#' @return	The approximate frequentist p-value
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$df)){
@@ -82,7 +82,7 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-	
+
 	private = list(
 		shared = function(){
 			match_indic = private$match_indic

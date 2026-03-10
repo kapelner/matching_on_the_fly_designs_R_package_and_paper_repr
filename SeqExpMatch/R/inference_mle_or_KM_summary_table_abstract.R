@@ -3,29 +3,29 @@
 # @description
 # An abstract R6 Class that provides MLE-based tests and intervals for a treatment effect in a sequential design
 # where the common denominator is a summary table from a glm.
-# 
+#
 # @keywords internal
 SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSummaryTable",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
-		
+
 		# @description
 		# Initialize a sequential experimental design estimation and test object after the sequential design is completed.
 		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
-		
+
 		# @description
 		# Computes the appropriate estimate for mean difference
-		# 
+		#
 		# @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-		# 
+		#
 		# @examples
 		# \dontrun{
 		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
@@ -36,13 +36,13 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		# 
+		#
 		# seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
 		# seq_des_inf$compute_treatment_estimate()
 		# }
-		# 	
+		#
 		compute_treatment_estimate = function(){
-			private$shared()			
+			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
@@ -50,7 +50,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		# Computes a 1-alpha level frequentist confidence interval
 		#
 		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		# 
+		#
 		# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -62,7 +62,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		# Computes a 2-sided p-value
 		#
 		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		# 
+		#
 		# @return 	The approximate frequentist p-value
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
@@ -72,7 +72,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 			} else {
 				stop("TO-DO")
 			}
-		}		
+		}
 	),
 	private = list(
 		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
@@ -80,28 +80,28 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		shared = function(){
 			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
 			model_output = private$generate_mod() # Implemented by child classes (Weibull, NegBin)
-			
+
 			if (is.null(model_output$coefficients) || is.null(model_output$vcov)){
 				stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")
 			}
-			
+
 			# Construct summary table (as expected by this class)
 			full_coefficients = model_output$coefficients
 			full_vcov = model_output$vcov
-			
+
 			diag_vcov = diag(full_vcov)
 			# Ensure we don't take sqrt of negative numbers
 			full_std_errs = ifelse(diag_vcov > 0, sqrt(diag_vcov), NA_real_)
-			
+
 			summary_table = matrix(NA, nrow = length(full_coefficients), ncol = 4)
 			rownames(summary_table) = names(full_coefficients)
 			colnames(summary_table) = c("Value", "Std. Error", "z value", "Pr(>|z|)")
-			
+
 			summary_table[, 1] = full_coefficients
 			summary_table[, 2] = full_std_errs
 			summary_table[, 3] = full_coefficients / full_std_errs # z value
 			summary_table[, 4] = 2 * stats::pnorm(-abs(summary_table[, 3])) # p-value
-			
+
 			private$cached_values$summary_table = summary_table
 
 			# Populate full_coefficients and full_vcov for consistency across all inference classes
@@ -118,5 +118,5 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 			private$cached_values$s_beta_hat_T = full_std_errs[treatment_coef_name]
 			private$cached_values$is_z = TRUE
 		}
-	)		
+	)
 )

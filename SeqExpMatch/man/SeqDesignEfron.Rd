@@ -17,7 +17,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \dontrun{
 seq_des = SeqDesignEfron$new(response_type = "continuous")
 }
- 
+
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignEfron}
@@ -106,7 +106,7 @@ A new `SeqDesignEfron` object
 \preformatted{\dontrun{
 seq_des = SeqDesignEfron$new(response_type = "continuous")
 }
- 
+
 }
 \if{html}{\out{</div>}}
 

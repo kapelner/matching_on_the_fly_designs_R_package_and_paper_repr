@@ -17,7 +17,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \dontrun{
 seq_des = SeqDesignKK21stepwise$new(response_type = "continuous")
 }
- 
+
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{\link[SeqExpMatch:SeqDesignKK21]{SeqExpMatch::SeqDesignKK21}} -> \code{SeqDesignKK21stepwise}
@@ -64,7 +64,7 @@ seq_des = SeqDesignKK21stepwise$new(response_type = "continuous")
 \if{html}{\out{<a id="method-SeqDesignKK21stepwise-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK21stepwise-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a matching-on-the-fly sequential experimental design which matches based on the stepwise version of 
+Initialize a matching-on-the-fly sequential experimental design which matches based on the stepwise version of
 Kapelner and Krieger (2021) with option to use matching parameters of Morrison and Owen (2025)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK21stepwise$new(
@@ -138,7 +138,7 @@ A new `SeqDesignKK21stepwise` object
 \preformatted{\dontrun{
 seq_des = SeqDesignKK21stepwise$new(response_type = "continuous")
 }
- 
+
 }
 \if{html}{\out{</div>}}
 
