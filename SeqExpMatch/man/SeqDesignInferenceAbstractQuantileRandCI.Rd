@@ -4,7 +4,7 @@
 \alias{SeqDesignInferenceAbstractQuantileRandCI}
 \title{Abstract mixin: Zhang combined randomisation CI for quantile regression}
 \description{
-Analogous to \code{SeqDesignInferenceAbstractIncidRandCI} but for quantile
+Analogous to \code{SeqDesignInferenceIncidExactAbstract} but for quantile
 regression estimators.  Provides \code{compute_confidence_interval_rand()}
 via Zhang's combined test-inversion method for both CRD (\eqn{m = 0},
 all subjects in the reservoir) and KK matching-on-the-fly designs

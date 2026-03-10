@@ -29,7 +29,7 @@ seq_des_inf$compute_treatment_estimate()
 	
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractIncidRandCI]{SeqExpMatch::SeqDesignInferenceAbstractIncidRandCI}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMforGLMs]{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs}} -> \code{SeqDesignInferenceSurvivalUniCoxPHRegr}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMforGLMs]{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs}} -> \code{SeqDesignInferenceSurvivalUniCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
