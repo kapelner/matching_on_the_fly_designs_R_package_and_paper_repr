@@ -1,35 +1,35 @@
-#' Inference for A Sequential Design
-#' 
-#' @description
-#' An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a sequential design.
-#' This class takes a \code{SeqDesign} object as an input where this object
-#' contains data for a fully completed sequential experiment (i.e. all treatment
-#' assignments were allocated and all responses were collected). Then the user
-#' specifies the type of estimation (mean_difference-or-medians or default_regression) and the type
-#' of sampling assumption (i.e. the superpopulation assumption leading to MLE-or-KM-based inference or 
-#' the finite population assumption implying randomization-exact-based inference) and then can query the
-#' estimate and pval for the test. If the test is normal-theory based it is 
-#' testing the population H_0: beta_T = 0 and if the test is a randomization test, 
-#' it is testing the sharp null that H_0: Y_T_i = Y_C_i for all subjects. Confidence
-#' interval construction is available for normal-theory based test type as well.
-#' 
-#' @keywords internal
+# Inference for A Sequential Design
+# 
+# @description
+# An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a sequential design.
+# This class takes a \code{SeqDesign} object as an input where this object
+# contains data for a fully completed sequential experiment (i.e. all treatment
+# assignments were allocated and all responses were collected). Then the user
+# specifies the type of estimation (mean_difference-or-medians or default_regression) and the type
+# of sampling assumption (i.e. the superpopulation assumption leading to MLE-or-KM-based inference or 
+# the finite population assumption implying randomization-exact-based inference) and then can query the
+# estimate and pval for the test. If the test is normal-theory based it is 
+# testing the population H_0: beta_T = 0 and if the test is a randomization test, 
+# it is testing the sharp null that H_0: Y_T_i = Y_C_i for all subjects. Confidence
+# interval construction is available for normal-theory based test type as well.
+# 
+# @keywords internal
 SeqDesignInference = R6::R6Class("SeqDesignInference",
 	public = list(
-		#' Begin Inference
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' 
-		#' 
-		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# Begin Inference
+		# @description
+		# Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+		# 
+		# 
+		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		#'
-		#' @return A new `SeqDesignInference` object.
+		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
+		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
+		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#
+		# @return A new `SeqDesignInference` object.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertClass(seq_des_obj, "SeqDesign")
 			assertCount(num_cores, positive = TRUE)
@@ -59,42 +59,42 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			}
 		},
 		
-		#' Set Custom Randomization Statistic Computation
-		#'
-		#' @description
-		#' For advanced users only. This allows changing the default estimate inside randomization tests and interval construction.
-		#' For example, when the response is continuous, instead of using ybarT - ybarC, you may want to use the studentized version
-		#' i.e., (ybarT - ybarC) / sqrt(s^2_T / n_T + s^2_C / n_C). Work by Chung & Romano (2013, Annals of Statistics), 
-		#' Janssen (1997), and others shows that studentized permutation tests are asymptotically valid and often asymptotically optimal.
-		#' In finite samples, the studentized test often approximates a pivotal distribution better, leading to higher power.
-		#' 
-		#' 
-		#' @param custom_randomization_statistic_function	A function that is run that returns a scalar value representing the statistic of interest
-		#'													which is computed during each iteration sampling from the null distribution as w is drawn
-		#'													drawn from the design. This function is embedded into this class and has write access to all of 
-		#'													its data and functions (both public and private) so be careful! Setting this to NULL removes 
-		#'													whatever function was set previously essentially. When there is no custom function, the default 
-		#'													\code{self$compute_treatment_estimate()} will be run.
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-		#' #now let's set the statistic during randomization tests and intervals to the 
-		#' #studentized average difference (the t stat). 
-		#' seq_des_inf$set_custom_randomization_statistic_function(function(){
-		#'    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-		#'	  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
-		#'	  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
-		#' })
-		#' }
+		# Set Custom Randomization Statistic Computation
+		#
+		# @description
+		# For advanced users only. This allows changing the default estimate inside randomization tests and interval construction.
+		# For example, when the response is continuous, instead of using ybarT - ybarC, you may want to use the studentized version
+		# i.e., (ybarT - ybarC) / sqrt(s^2_T / n_T + s^2_C / n_C). Work by Chung & Romano (2013, Annals of Statistics), 
+		# Janssen (1997), and others shows that studentized permutation tests are asymptotically valid and often asymptotically optimal.
+		# In finite samples, the studentized test often approximates a pivotal distribution better, leading to higher power.
+		# 
+		# 
+		# @param custom_randomization_statistic_function	A function that is run that returns a scalar value representing the statistic of interest
+		#													which is computed during each iteration sampling from the null distribution as w is drawn
+		#													drawn from the design. This function is embedded into this class and has write access to all of 
+		#													its data and functions (both public and private) so be careful! Setting this to NULL removes 
+		#													whatever function was set previously essentially. When there is no custom function, the default 
+		#													\code{self$compute_treatment_estimate()} will be run.
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+		# #now let's set the statistic during randomization tests and intervals to the 
+		# #studentized average difference (the t stat). 
+		# seq_des_inf$set_custom_randomization_statistic_function(function(){
+		#    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+		#	  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+		#	  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+		# })
+		# }
 		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
 			assertFunction(custom_randomization_statistic_function, null.ok = TRUE)			
 			# Embed the function into this class as a private function
@@ -105,59 +105,59 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			}		    						
 		},
 
-		#' @description
-		#' Computes the appropriate estimate
-		#' @return 	The numeric estimate of the treatment effect
+		# @description
+		# Computes the appropriate estimate
+		# @return 	The numeric estimate of the treatment effect
 		compute_treatment_estimate = function(){
 			stop(class(self)[1], " must implement compute_treatment_estimate()")
 		},
 
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
-		#' @param alpha					The confidence level.
-		#' @return 	A confidence interval
+		# @description
+		# Computes a 1-alpha level frequentist confidence interval
+		# @param alpha					The confidence level.
+		# @return 	A confidence interval
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			stop(class(self)[1], " must implement compute_mle_confidence_interval(alpha)")
 		},
 
-		#' @description
-		#' Computes a 2-sided p-value
-		#' @param delta					The null difference to test against.
-		#' @return 	The frequentist p-value
+		# @description
+		# Computes a 2-sided p-value
+		# @param delta					The null difference to test against.
+		# @return 	The frequentist p-value
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			stop(class(self)[1], " must implement compute_mle_two_sided_pval_for_treatment_effect(delta)")
 		},
 		
-		#' @description
-		#' Creates the boostrap distribution of the estimate for the treatment effect
-		#'
-		#' @param B						Number of bootstrap samples. The default is 501.
-		#' @param max_resample_attempts	Maximum number of times to redraw a bootstrap sample that fails
-		#' 								validity checks (both treatment arms present; for censored responses,
-		#' 								each arm must also contain at least one observed event and all survival
-		#' 								times must be strictly positive to avoid numerical underflow in the
-		#' 								Weibull log-likelihood). If all attempts are exhausted the sample is
-		#' 								recorded as \code{NA}. The default is 50.
-		#'
-		#' @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
-		#' ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) +
-		#'   geom_histogram(aes(x = beta_hat_T_bs))
-		#' }
-		#'
+		# @description
+		# Creates the boostrap distribution of the estimate for the treatment effect
+		#
+		# @param B						Number of bootstrap samples. The default is 501.
+		# @param max_resample_attempts	Maximum number of times to redraw a bootstrap sample that fails
+		# 								validity checks (both treatment arms present; for censored responses,
+		# 								each arm must also contain at least one observed event and all survival
+		# 								times must be strictly positive to avoid numerical underflow in the
+		# 								Weibull log-likelihood). If all attempts are exhausted the sample is
+		# 								recorded as \code{NA}. The default is 50.
+		#
+		# @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
+		#
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T()
+		# ggplot(data.frame(beta_hat_T_bs = beta_hat_T_bs)) +
+		#   geom_histogram(aes(x = beta_hat_T_bs))
+		# }
+		#
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
 			assertCount(B, positive = TRUE)
 			assertCount(max_resample_attempts, positive = TRUE)
@@ -266,30 +266,30 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			}
 		},
 			
-		#' @description
-		#' Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
-		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
-		#' 
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' seq_des_inf$compute_mle_confidence_interval()
-		#' }
-		#' 					
+		# @description
+		# Computes a 1-alpha level frequentist bootstrap confidence interval differently for all response types, estimate types and test types.
+		# 
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		# @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
+		# @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
+		# 
+		# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+		# 
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# seq_des_inf$compute_mle_confidence_interval()
+		# }
+		# 					
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, na.rm = FALSE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertLogical(na.rm)
@@ -305,31 +305,31 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			quantile(beta_hat_T_bs, c(alpha / 2, 1 - alpha / 2), na.rm = TRUE)
 		},
 			
-		#' @description
-		#' Computes a bootstrap two-sided p-value for H_0: betaT = delta. 
-		#' It does so differently for all response types, estimate types and test types.
-		#' 
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
-		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
-		#'
-		#' @return 	The approximate frequentist p-value
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' seq_des_inf$compute_bootstrap_two_sided_pval()
-		#' }
-		#' 					
+		# @description
+		# Computes a bootstrap two-sided p-value for H_0: betaT = delta. 
+		# It does so differently for all response types, estimate types and test types.
+		# 
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @param B						Number of bootstrap samples. The default is NA which corresponds to B=501.
+		# @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{FALSE}.
+		#
+		# @return 	The approximate frequentist p-value
+		# 
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# seq_des_inf$compute_bootstrap_two_sided_pval()
+		# }
+		# 					
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
 			assertNumeric(delta)
 			assertLogical(na.rm)
@@ -355,37 +355,37 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			min(1, max(2 / n_bs, 2 * min(p_left, p_right)))
 		},				
 		
-		#' @description
-		#' Under the sharp null of 
-		#' forall i H_0: y_i_T - y_i_C = delta 
-		#' there will be a distribution of the estimates of the treatment effect (over many realizations of assignments)
-		#'
-		#' @param nsim_exact_test		The number of randomization vectors to use. The default is 501.
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' @param transform_responses	"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
-		#'								internal parameter set to something besides "none" when computing randomization confidence intervals
-		#'								for non-continuous response types. 
-		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
-		#' @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
-		#' 							If NULL (default), permutations will be drawn on the fly.
-		#' @return 	A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' beta_hat_T_diff_ws = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null()
-		#' ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + 
-		#'   geom_histogram(aes(x = beta_hat_T_diff_ws))
-		#' }
+		# @description
+		# Under the sharp null of 
+		# forall i H_0: y_i_T - y_i_C = delta 
+		# there will be a distribution of the estimates of the treatment effect (over many realizations of assignments)
+		#
+		# @param nsim_exact_test		The number of randomization vectors to use. The default is 501.
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @param transform_responses	"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
+		#								internal parameter set to something besides "none" when computing randomization confidence intervals
+		#								for non-continuous response types. 
+		# @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
+		# @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+		# 							If NULL (default), permutations will be drawn on the fly.
+		# @return 	A vector of size \code{nsim_exact_test} that has the values of beta_hat_T over many w draws.
+		# 
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# beta_hat_T_diff_ws = seq_des_inf$compute_beta_hat_T_randomization_distr_under_sharp_null()
+		# ggplot(data.frame(beta_hat_T_diff_ws = beta_hat_T_diff_ws)) + 
+		#   geom_histogram(aes(x = beta_hat_T_diff_ws))
+		# }
 		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL){
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
@@ -617,44 +617,44 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			beta_hat_T_diff_ws
 		},
 		
-		#' @description
-		#' Fisher's randomization test which means that H_0: y_i_T - y_i_C = delta for all subjects
-		#' either the classic different-in-means estimate of the additive treatment effect, 
-		#' i.e. ybar_T - ybar_C or the default_regression estimate of the additive treatment effect linearly i.e. 
-		#' the treatment different adjusted linearly for the p covariates.
-		#'
-		#' @param nsim_exact_test		The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
-		#' 								is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#' @param transform_responses	"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
-		#'								internal parameter set something besides "none" when computing randomization confidence intervals
-		#'								for non-continuous responses.
-		#' @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.
-		#' @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
-		#' @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
-		#' 							If NULL (default), permutations will be drawn on the fly.
-		#' 
-		#' @return 	The approximate frequentist p-value
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
-		#' }
-		#' 		
+		# @description
+		# Fisher's randomization test which means that H_0: y_i_T - y_i_C = delta for all subjects
+		# either the classic different-in-means estimate of the additive treatment effect, 
+		# i.e. ybar_T - ybar_C or the default_regression estimate of the additive treatment effect linearly i.e. 
+		# the treatment different adjusted linearly for the p covariates.
+		#
+		# @param nsim_exact_test		The number of randomization vectors to use in the randomization test (ignored if \code{test_type}
+		# 								is not "randomization-exact"). The default is 501 providing pvalue resolution to a fifth of a percent.
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @param transform_responses	"none" for no transformation (default), "log" for log (your option when response type is survival), "logit" for logit (your option when response type is proportion) and "log1p" for log(y+1) (your option when response type is count). This is mostly an 
+		#								internal parameter set something besides "none" when computing randomization confidence intervals
+		#								for non-continuous responses.
+		# @param na.rm 				Should we remove beta_hat_T's that are NA's? Default is \code{TRUE}.
+		# @param show_progress		Show a text progress bar when running in serial. Ignored for parallel execution.
+		# @param permutations		(Optional) A list of pre-computed randomization permutations to use for the exact test. 
+		# 							If NULL (default), permutations will be drawn on the fly.
+		# 
+		# @return 	The approximate frequentist p-value
+		# 
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+		# }
+		# 		
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
 			assertLogical(na.rm)
 			if (private$seq_des_obj_priv_int$response_type == "incidence"){
-				stop("Randomization tests are not supported for incidence outcomes. Use SeqDesignInferenceIncidExact for the Zhang combined exact method.")
+				stop("Randomization tests are not supported for incidence outcomes. Use SeqDesignInferenceIncidZhang for the Zhang method.")
 			}
 
 			# Fast path for linear estimators (continuous, no custom statistic):
@@ -720,43 +720,43 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 
 		
-		#' @description
-		#' Fisher's randomization test which means that H_0: y_i_T - y_i_C = delta for all subjects
+		# @description
+		# Fisher's randomization test which means that H_0: y_i_T - y_i_C = delta for all subjects
 
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
-		#' 
-		#' Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
-		#' we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
-		#' This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
-		#' https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-		#' As far as we know, this only works for response type continuous, uncensored survival (where we work in log-time and then
-		#' return to natural time when finished), count (where we work in log1p-count and then return to natural count when finished) and proportion (where we work in logit-rate and return to rate when finished).
-		#' 
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
-		#' 								The default is 1000 providing good resolutions to confidence intervals.
-		#' @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
-		#' 								The default is to find a CI accurate to within 0.005.
-		#' 
-		#' @param show_progress		Show a text progress indicator for the bisection p-value span. Ignored for parallel execution.
-		#' @return 	A 1 - alpha sized frequentist confidence interval for the treatment effect
-		#' 
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#' 
-		#' seq_des_inf = SeqDesignInference$new(seq_des)
-		#' seq_des_inf$compute_mle_confidence_interval()
-		#' }
-		#' 		
+		# @description
+		# Computes a 1-alpha level frequentist confidence interval for the randomization test
+		# 
+		# Here we invert the randomization test that tests the strong null H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0 so 
+		# we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
+		# This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
+		# https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
+		# As far as we know, this only works for response type continuous, uncensored survival (where we work in log-time and then
+		# return to natural time when finished), count (where we work in log1p-count and then return to natural count when finished) and proportion (where we work in logit-rate and return to rate when finished).
+		# 
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		# @param nsim_exact_test		The number of randomization vectors (applicable for test type "randomization-exact" only). 
+		# 								The default is 1000 providing good resolutions to confidence intervals.
+		# @param pval_epsilon			The bisection algorithm tolerance for the test inversion (applicable for test type "randomization-exact" only). 
+		# 								The default is to find a CI accurate to within 0.005.
+		# 
+		# @param show_progress		Show a text progress indicator for the bisection p-value span. Ignored for parallel execution.
+		# @return 	A 1 - alpha sized frequentist confidence interval for the treatment effect
+		# 
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		# 
+		# seq_des_inf = SeqDesignInference$new(seq_des)
+		# seq_des_inf$compute_mle_confidence_interval()
+		# }
+		# 		
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
@@ -843,7 +843,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 					ci
 				},
-				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidExact for the Zhang combined exact method."),
+				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidZhang for the Zhang method."),
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
@@ -1032,11 +1032,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			ci
 		},
 
-		#' @description
-		#' Duplicate this inference object
-		#'
-		#' @param verbose 	A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
-		#' @return 			A new `SeqDesignInference` object with the same data
+		# @description
+		# Duplicate this inference object
+		#
+		# @param verbose 	A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
+		# @return 			A new `SeqDesignInference` object with the same data
 		duplicate = function(verbose = FALSE){
 			i = tryCatch({
 				do.call(get(class(self)[1])$new, args = list(

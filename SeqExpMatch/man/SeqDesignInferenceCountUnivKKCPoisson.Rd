@@ -9,7 +9,7 @@ using only the treatment indicator. For matched pairs, it uses conditional Poiss
 regression. For reservoir subjects, it uses Negative Binomial regression.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKCPoisson]{SeqExpMatch::SeqDesignInferenceAbstractKKCPoisson}} -> \code{SeqDesignInferenceCountUnivKKCPoisson}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKCPoisson} -> \code{SeqDesignInferenceCountUnivKKCPoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{

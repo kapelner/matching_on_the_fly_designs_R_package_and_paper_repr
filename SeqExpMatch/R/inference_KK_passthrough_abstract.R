@@ -1,19 +1,19 @@
-#' A class that provides for relevant methods when the designs are KK matching-on-the-fly
-#'
-#' @description
-#' An abstract class
-#' 
-#' @keywords internal
+# A class that provides for relevant methods when the designs are KK matching-on-the-fly
+#
+# @description
+# An abstract class
+# 
+# @keywords internal
 SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 	inherit = SeqDesignInference,
 	public = list(
 
-		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
+		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
+		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			if (is(seq_des_obj, "SeqDesignKK14")){
@@ -23,29 +23,29 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 		},
 
 
-		#' @description
-		#' Creates the boostrap distribution of the estimate for the treatment effect
-		#'
-		#' @param B						Number of bootstrap samples. The default is 501.
-		#'
-		#' @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
-		#' beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
-		#' beta_hat_T_bs
-		#' }
-		#'
+		# @description
+		# Creates the boostrap distribution of the estimate for the treatment effect
+		#
+		# @param B						Number of bootstrap samples. The default is 501.
+		#
+		# @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
+		#
+		# @examples
+		# \dontrun{
+		# seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#
+		# seq_des_inf = SeqDesignInferenceContinMultOLSKK$new(seq_des)
+		# beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
+		# beta_hat_T_bs
+		# }
+		#
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501){
 			if (!private$is_KK){
 				super$approximate_bootstrap_distribution_beta_hat_T(B)

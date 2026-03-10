@@ -24,7 +24,7 @@ installed automatically with \pkg{SeqExpMatch}. Install it manually with
 \code{install.packages("nlme")} before using this class.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{SeqDesignInferenceContinMultGLS}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqDesignInferenceContinMultGLS}
 }
 \section{Methods}{
 \subsection{Public methods}{

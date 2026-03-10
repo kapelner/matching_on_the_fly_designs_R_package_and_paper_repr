@@ -8,7 +8,7 @@ The methods that support confidence intervals and testing for
 count response Types using Multivariate Negative Binomial Regression
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMforGLMs]{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs}} -> \code{\link[SeqExpMatch:SeqDesignInferenceCountUnivNegBinRegr]{SeqExpMatch::SeqDesignInferenceCountUnivNegBinRegr}} -> \code{SeqDesignInferenceCountMultiNegBinRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs} -> \code{\link[SeqExpMatch:SeqDesignInferenceCountUnivNegBinRegr]{SeqExpMatch::SeqDesignInferenceCountUnivNegBinRegr}} -> \code{SeqDesignInferenceCountMultiNegBinRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -12,7 +12,7 @@ models estimate log-time ratios, which are then combined via a variance-weighted
 linear combination. This is the multivariate (covariate-adjusted) variant.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKSurvivalRankRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKSurvivalRankRegr}} -> \code{SeqDesignInferenceSurvivalMultiKKRankRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKSurvivalRankRegr} -> \code{SeqDesignInferenceSurvivalMultiKKRankRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

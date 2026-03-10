@@ -1,23 +1,23 @@
-#' Abstract Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
-#'
-#' @description
-#' An abstract base class providing shared quantile regression logic for KK matching-on-the-fly
-#' designs. Subclasses override the \code{transform_y_fn} private field to apply a response
-#' transformation before quantile regression (e.g., \code{identity} for continuous,
-#' \code{qlogis} for proportion outcomes).
-#'
-#' @keywords internal
+# Abstract Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+#
+# @description
+# An abstract base class providing shared quantile regression logic for KK matching-on-the-fly
+# designs. Subclasses override the \code{transform_y_fn} private field to apply a response
+# transformation before quantile regression (e.g., \code{identity} for continuous,
+# \code{qlogis} for proportion outcomes).
+#
+# @keywords internal
 SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstractKKQuantileRegr",
 	inherit = SeqDesignInferenceAbstractQuantileRandCI,
 	public = list(
 
-		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param tau				The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
-		#' 							estimates the median treatment effect.
-		#' @param transform_y_fn	A function applied to y values before quantile regression. Subclasses pass
-		#' 							\code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.
-		#' @param num_cores			The number of CPU cores to use to parallelize sampling.
-		#' @param verbose			A flag indicating whether messages should be displayed. Default is \code{FALSE}.
+		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# @param tau				The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
+		# 							estimates the median treatment effect.
+		# @param transform_y_fn	A function applied to y values before quantile regression. Subclasses pass
+		# 							\code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.
+		# @param num_cores			The number of CPU cores to use to parallelize sampling.
+		# @param verbose			A flag indicating whether messages should be displayed. Default is \code{FALSE}.
 		initialize = function(seq_des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
@@ -28,10 +28,10 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 
-		#' @description
-		#' Computes the appropriate quantile regression compound estimate
-		#'
-		#' @return 	The setting-appropriate numeric estimate of the treatment effect
+		# @description
+		# Computes the appropriate quantile regression compound estimate
+		#
+		# @return 	The setting-appropriate numeric estimate of the treatment effect
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$shared()
@@ -39,13 +39,13 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
-		#' of the quantile regression estimator (z-based).
-		#'
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#'
-		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+		# @description
+		# Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
+		# of the quantile regression estimator (z-based).
+		#
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#
+		# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$s_beta_hat_T)){
@@ -54,12 +54,12 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		#' @description
-		#' Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
-		#'
-		#' @param delta					The null difference to test against. Default is zero.
-		#'
-		#' @return 	The approximate frequentist p-value
+		# @description
+		# Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
+		#
+		# @param delta					The null difference to test against. Default is zero.
+		#
+		# @return 	The approximate frequentist p-value
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$s_beta_hat_T)){

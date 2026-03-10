@@ -11,7 +11,7 @@ For reservoir subjects, it uses a standard rank-based linear model with the trea
 assignment as the sole predictor. This is the univariate (covariate-free) variant.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWilcoxBase]{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWilcoxRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxRegr}} -> \code{SeqDesignInferenceAllKKWilcoxRegrUniv}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxRegr} -> \code{SeqDesignInferenceAllKKWilcoxRegrUniv}
 }
 \section{Methods}{
 \subsection{Public methods}{

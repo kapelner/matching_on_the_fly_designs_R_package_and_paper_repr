@@ -64,7 +64,7 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 				
 }
 \section{Super class}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{SeqDesignInferenceSurvivalKMDiff}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceSurvivalKMDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

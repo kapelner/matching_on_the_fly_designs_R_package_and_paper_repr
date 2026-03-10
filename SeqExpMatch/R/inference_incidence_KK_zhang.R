@@ -1,13 +1,13 @@
 #' Exact incidence inference for KK designs via Zhang's combined matched-pair / reservoir tests
 #'
 #' @description
-#' Extends \code{SeqDesignInferenceIncidExact} with the KK matched-pair exact test,
+#' Extends \code{SeqDesignInferenceIncidZhang} with the KK matched-pair exact test,
 #' producing Zhang's combined exact p-values and confidence intervals for KK
 #' matching-on-the-fly designs with incidence outcomes.
 #'
 #' @export
-SeqDesignInferenceIncidKKExact = R6::R6Class("SeqDesignInferenceIncidKKExact",
-	inherit = SeqDesignInferenceIncidExact,
+SeqDesignInferenceIncidKKZhang = R6::R6Class("SeqDesignInferenceIncidKKZhang",
+	inherit = SeqDesignInferenceIncidZhang,
 	public = list(
 
 		#' @description

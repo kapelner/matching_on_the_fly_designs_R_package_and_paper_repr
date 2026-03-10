@@ -5,11 +5,11 @@
 #' For CRD designs this uses the reservoir exact test only. Point estimates and
 #' Wald-style anchor intervals use an unadjusted log-odds-ratio anchor and are used
 #' only to center and bracket the exact CI inversion. KK-specific exact matched-pair
-#' logic lives in \code{SeqDesignInferenceIncidKKExact}.
+#' logic lives in \code{SeqDesignInferenceIncidKKZhang}.
 #'
 #' @export
-SeqDesignInferenceIncidExact = R6::R6Class("SeqDesignInferenceIncidExact",
-	inherit = SeqDesignInferenceIncidExactAbstract,
+SeqDesignInferenceIncidZhang = R6::R6Class("SeqDesignInferenceIncidZhang",
+	inherit = SeqDesignInferenceIncidZhangAbstract,
 	public = list(
 
 		#' @description
@@ -61,7 +61,7 @@ SeqDesignInferenceIncidExact = R6::R6Class("SeqDesignInferenceIncidExact",
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, combination_method = "Fisher"){
 			assertNumeric(delta)
 			if (!identical(transform_responses, "none")){
-				stop("SeqDesignInferenceIncidExact only supports transform_responses = 'none'.")
+				stop("SeqDesignInferenceIncidZhang only supports transform_responses = 'none'.")
 			}
 			combination_method = match.arg(combination_method, c("Fisher", "Stouffer", "min_p"))
 			private$compute_combined_exact_pval(delta, combination_method)
@@ -72,7 +72,7 @@ SeqDesignInferenceIncidExact = R6::R6Class("SeqDesignInferenceIncidExact",
 
 		assert_supported_design = function(seq_des_obj){
 			if (!is(seq_des_obj, "SeqDesignCRD")){
-				stop(class(self)[1], " requires a completely randomized design (SeqDesignCRD). Use SeqDesignInferenceIncidKKExact for KK matching-on-the-fly designs.")
+				stop(class(self)[1], " requires a completely randomized design (SeqDesignCRD). Use SeqDesignInferenceIncidKKZhang for KK matching-on-the-fly designs.")
 			}
 		},
 

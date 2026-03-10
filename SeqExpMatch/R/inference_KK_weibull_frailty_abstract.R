@@ -1,50 +1,50 @@
-#' Abstract class for Weibull Frailty / Standard Weibull Compound Inference
-#'
-#' @description
-#' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
-#' model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
-#' reservoir subjects, it uses standard Weibull AFT regression. The two estimates
-#' are combined via a variance-weighted linear combination.
-#'
-#' @details
-#' The matched-pairs frailty estimator differs between the univariate and multivariate
-#' subclasses due to computational constraints:
-#'
-#' \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
-#' to fit a fully parametric Weibull gamma-frailty model with only the treatment
-#' indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
-#' \code{parfm}, and the AFT log-time ratio is recovered as
-#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
-#' This is fast because there is only one fixed-effect parameter.
-#'
-#' \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
-#' prohibitively slow when many covariates are present (its EM algorithm is
-#' \eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
-#' Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
-#' obtained from \code{survival::coxph()} with a \code{frailty(cluster,
-#' distribution = "gamma")} term, which is a highly optimised C implementation.
-#' The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
-#' \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
-#' The AFT log-time ratio is then
-#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
-#' and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
-#' (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
-#' semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
-#' only for scale conversion and does not affect the frailty correction itself.
-#'
-#' The \pkg{parfm} package is required only for the univariate subclass.
-#'
-#' @keywords internal
+# Abstract class for Weibull Frailty / Standard Weibull Compound Inference
+#
+# @description
+# This class implements a compound estimator for KK matching-on-the-fly designs with
+# survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
+# model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
+# reservoir subjects, it uses standard Weibull AFT regression. The two estimates
+# are combined via a variance-weighted linear combination.
+#
+# @details
+# The matched-pairs frailty estimator differs between the univariate and multivariate
+# subclasses due to computational constraints:
+#
+# \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
+# to fit a fully parametric Weibull gamma-frailty model with only the treatment
+# indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
+# \code{parfm}, and the AFT log-time ratio is recovered as
+# \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
+# This is fast because there is only one fixed-effect parameter.
+#
+# \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
+# prohibitively slow when many covariates are present (its EM algorithm is
+# \eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
+# Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
+# obtained from \code{survival::coxph()} with a \code{frailty(cluster,
+# distribution = "gamma")} term, which is a highly optimised C implementation.
+# The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
+# \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
+# The AFT log-time ratio is then
+# \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
+# and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
+# (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
+# semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
+# only for scale conversion and does not affect the frailty correction itself.
+#
+# The \pkg{parfm} package is required only for the univariate subclass.
+#
+# @keywords internal
 SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbstractKKWeibullFrailty",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
-		#' @description
-		#' Initialize the inference object.
-		#' @param seq_des_obj		A SeqDesign object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
-		#' @param verbose			Whether to print progress messages.
+		# @description
+		# Initialize the inference object.
+		# @param seq_des_obj		A SeqDesign object (must be a KK design).
+		# @param num_cores			Number of CPU cores for parallel processing.
+		# @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			if (!requireNamespace("parfm", quietly = TRUE)) {
 				stop("Package 'parfm' is required for ", class(self)[1], ". Please install it.")
@@ -56,16 +56,16 @@ SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbst
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 
-		#' @description
-		#' Returns the estimated treatment effect (log-time ratio).
+		# @description
+		# Returns the estimated treatment effect (log-time ratio).
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description
-		#' Computes the MLE-based confidence interval.
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		# @description
+		# Computes the MLE-based confidence interval.
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -73,9 +73,9 @@ SeqDesignInferenceAbstractKKWeibullFrailty = R6::R6Class("SeqDesignInferenceAbst
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		#' @description
-		#' Computes the MLE-based p-value.
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @description
+		# Computes the MLE-based p-value.
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

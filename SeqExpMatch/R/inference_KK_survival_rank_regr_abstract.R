@@ -1,26 +1,26 @@
-#' Abstract class for Survival Rank-based Regression (AFT) Compound Inference
-#'
-#' @description
-#' This class implements a robust compound estimator for KK matching-on-the-fly
-#' designs with survival responses using rank-based estimating equations via the
-#' \pkg{aftgee} package. For matched pairs, it fits a rank-based AFT model with
-#' clustering. For reservoir subjects, it fits a standard rank-based AFT model.
-#' The two estimates (both log-time ratios) are combined via a variance-weighted
-#' linear combination.
-#'
-#' @details
-#' This class requires the \pkg{aftgee} package.
-#'
-#' @keywords internal
+# Abstract class for Survival Rank-based Regression (AFT) Compound Inference
+#
+# @description
+# This class implements a robust compound estimator for KK matching-on-the-fly
+# designs with survival responses using rank-based estimating equations via the
+# \pkg{aftgee} package. For matched pairs, it fits a rank-based AFT model with
+# clustering. For reservoir subjects, it fits a standard rank-based AFT model.
+# The two estimates (both log-time ratios) are combined via a variance-weighted
+# linear combination.
+#
+# @details
+# This class requires the \pkg{aftgee} package.
+#
+# @keywords internal
 SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAbstractKKSurvivalRankRegr",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
-		#' @description
-		#' Initialize the inference object.
-		#' @param seq_des_obj		A SeqDesign object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
-		#' @param verbose			Whether to print progress messages.
+		# @description
+		# Initialize the inference object.
+		# @param seq_des_obj		A SeqDesign object (must be a KK design).
+		# @param num_cores			Number of CPU cores for parallel processing.
+		# @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			res_type = seq_des_obj$get_response_type()
 			if (res_type == "incidence"){
@@ -36,16 +36,16 @@ SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAb
 			}
 		},
 
-		#' @description
-		#' Returns the estimated treatment effect (log-time ratio).
+		# @description
+		# Returns the estimated treatment effect (log-time ratio).
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description
-		#' Computes the MLE-based confidence interval.
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		# @description
+		# Computes the MLE-based confidence interval.
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -53,9 +53,9 @@ SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAb
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		#' @description
-		#' Computes the MLE-based p-value.
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @description
+		# Computes the MLE-based p-value.
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

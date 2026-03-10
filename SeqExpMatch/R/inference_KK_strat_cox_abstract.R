@@ -1,22 +1,22 @@
-#' Abstract class for Stratified Cox / Standard Cox Compound Inference
-#'
-#' @description
-#' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' survival responses. For matched pairs, it uses stratified Cox proportional hazards
-#' regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
-#' regression. The two estimates (both log-hazard ratios) are combined via a
-#' variance-weighted linear combination.
-#'
-#' @keywords internal
+# Abstract class for Stratified Cox / Standard Cox Compound Inference
+#
+# @description
+# This class implements a compound estimator for KK matching-on-the-fly designs with
+# survival responses. For matched pairs, it uses stratified Cox proportional hazards
+# regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
+# regression. The two estimates (both log-hazard ratios) are combined via a
+# variance-weighted linear combination.
+#
+# @keywords internal
 SeqDesignInferenceAbstractKKStratCox = R6::R6Class("SeqDesignInferenceAbstractKKStratCox",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
-		#' @description
-		#' Initialize the inference object.
-		#' @param seq_des_obj		A SeqDesign object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
-		#' @param verbose			Whether to print progress messages.
+		# @description
+		# Initialize the inference object.
+		# @param seq_des_obj		A SeqDesign object (must be a KK design).
+		# @param num_cores			Number of CPU cores for parallel processing.
+		# @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "survival")
 			if (!is(seq_des_obj, "SeqDesignKK14")){
@@ -25,16 +25,16 @@ SeqDesignInferenceAbstractKKStratCox = R6::R6Class("SeqDesignInferenceAbstractKK
 			super$initialize(seq_des_obj, num_cores, verbose)
 		},
 
-		#' @description
-		#' Returns the estimated treatment effect (log-hazard ratio).
+		# @description
+		# Returns the estimated treatment effect (log-hazard ratio).
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description
-		#' Computes the MLE-based confidence interval.
-		#' @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		# @description
+		# Computes the MLE-based confidence interval.
+		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -42,9 +42,9 @@ SeqDesignInferenceAbstractKKStratCox = R6::R6Class("SeqDesignInferenceAbstractKK
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		#' @description
-		#' Computes the MLE-based p-value.
-		#' @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		# @description
+		# Computes the MLE-based p-value.
+		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

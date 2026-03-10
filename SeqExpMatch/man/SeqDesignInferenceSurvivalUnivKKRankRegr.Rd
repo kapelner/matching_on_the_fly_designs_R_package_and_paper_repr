@@ -12,7 +12,7 @@ via a variance-weighted linear combination. This is the univariate (covariate-fr
 variant.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKSurvivalRankRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKSurvivalRankRegr}} -> \code{SeqDesignInferenceSurvivalUnivKKRankRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKSurvivalRankRegr} -> \code{SeqDesignInferenceSurvivalUnivKKRankRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

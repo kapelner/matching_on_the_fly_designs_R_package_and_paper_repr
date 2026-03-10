@@ -8,7 +8,7 @@ The methods that support confidence intervals and testing for the mean differenc
 in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceMLEorKMforGLMs]{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs}} -> \code{SeqDesignInferencePropUniBetaRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMforGLMs} -> \code{SeqDesignInferencePropUniBetaRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

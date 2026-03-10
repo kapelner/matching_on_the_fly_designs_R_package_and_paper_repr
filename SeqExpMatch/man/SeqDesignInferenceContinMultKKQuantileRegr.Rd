@@ -36,7 +36,7 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \code{install.packages("quantreg")} before using this class.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractQuantileRandCI]{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKQuantileRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr}} -> \code{SeqDesignInferenceContinMultKKQuantileRegr}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr} -> \code{SeqDesignInferenceContinMultKKQuantileRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

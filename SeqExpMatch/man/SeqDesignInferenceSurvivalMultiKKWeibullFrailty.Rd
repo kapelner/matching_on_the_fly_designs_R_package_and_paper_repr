@@ -11,7 +11,7 @@ Weibull regression. Both models estimate log-time ratios, which are then
 combined via a variance-weighted linear combination.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWeibullFrailty]{SeqExpMatch::SeqDesignInferenceAbstractKKWeibullFrailty}} -> \code{SeqDesignInferenceSurvivalMultiKKWeibullFrailty}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWeibullFrailty} -> \code{SeqDesignInferenceSurvivalMultiKKWeibullFrailty}
 }
 \section{Methods}{
 \subsection{Public methods}{

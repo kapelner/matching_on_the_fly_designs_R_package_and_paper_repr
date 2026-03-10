@@ -12,7 +12,7 @@ This method is robust to outliers and does not assume a specific parametric
 distribution for the response.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWilcoxBase]{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase}} -> \code{SeqDesignInferenceAllKKWilcox}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase} -> \code{SeqDesignInferenceAllKKWilcox}
 }
 \section{Methods}{
 \subsection{Public methods}{

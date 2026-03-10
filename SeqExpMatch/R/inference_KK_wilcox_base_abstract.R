@@ -1,22 +1,22 @@
-#' Abstract base class for KK Wilcoxon-based compound inference
-#'
-#' @description
-#' Shared base for all KK Wilcoxon inference classes. Overrides the per-permutation
-#' statistic used in randomization tests with standardized Wilcoxon W statistics
-#' (O(n log n), conf.int = FALSE), avoiding the O(n^2) Walsh-average computation
-#' required by the full Hodges-Lehmann estimate.
-#'
-#' @keywords internal
+# Abstract base class for KK Wilcoxon-based compound inference
+#
+# @description
+# Shared base for all KK Wilcoxon inference classes. Overrides the per-permutation
+# statistic used in randomization tests with standardized Wilcoxon W statistics
+# (O(n log n), conf.int = FALSE), avoiding the O(n^2) Walsh-average computation
+# required by the full Hodges-Lehmann estimate.
+#
+# @keywords internal
 SeqDesignInferenceAbstractKKWilcoxBase = R6::R6Class("SeqDesignInferenceAbstractKKWilcoxBase",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
-		#' @description
-		#' Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
-		#' inside compute_confidence_interval_rand. The asymptotic MLE CI is a perfectly
-		#' adequate starting bound for the bisection and is computed in O(1).
-		#' @param alpha					The confidence level. Default is 0.05.
-		#' @param ... 					Additional arguments passed to super.
+		# @description
+		# Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
+		# inside compute_confidence_interval_rand. The asymptotic MLE CI is a perfectly
+		# adequate starting bound for the bisection and is computed in O(1).
+		# @param alpha					The confidence level. Default is 0.05.
+		# @param ... 					Additional arguments passed to super.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, ...){
 			self$compute_mle_confidence_interval(alpha)
 		}

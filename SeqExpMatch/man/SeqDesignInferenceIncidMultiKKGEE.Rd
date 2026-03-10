@@ -36,7 +36,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKGEE]{SeqExpMatch::SeqDesignInferenceAbstractKKGEE}} -> \code{SeqDesignInferenceIncidMultiKKGEE}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKGEE} -> \code{SeqDesignInferenceIncidMultiKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{

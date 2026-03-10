@@ -20,7 +20,7 @@ seq_des = SeqDesignAtkinson$new(response_type = "continuous")
  
 }
 \section{Super class}{
-\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesignAtkinson}
+\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{

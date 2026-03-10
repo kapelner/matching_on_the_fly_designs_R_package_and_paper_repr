@@ -22,7 +22,7 @@ seq_des = SeqDesigniBCRD$new(response_type = "continuous")
  
 }
 \section{Super class}{
-\code{\link[SeqExpMatch:SeqDesign]{SeqExpMatch::SeqDesign}} -> \code{SeqDesigniBCRD}
+\code{SeqExpMatch::SeqDesign} -> \code{SeqDesigniBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{

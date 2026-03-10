@@ -1,50 +1,50 @@
-#' Abstract mixin: randomisation-based CI for binary (incidence) outcomes
-#'
-#' @description
-#' Sits between \code{SeqDesignInference} and incidence-focused inference
-#' classes.  The single public method it contributes,
-#' \code{compute_confidence_interval_rand()}, intercepts calls where the
-#' response type is \code{"incidence"} and dispatches to the chosen CI
-#' algorithm; for all other response types it delegates straight to
-#' \code{super$compute_confidence_interval_rand()} (i.e. the standard
-#' continuous / count / proportion / survival implementation in
-#' \code{SeqDesignInference}).
-#'
-#' Currently supported designs for the incidence path:
-#' \itemize{
-#'   \item \code{SeqDesignCRD} — all subjects treated as a Bernoulli reservoir
-#'         (\eqn{m = 0}); \pkg{bclogit} not required.
-#'   \item \code{SeqDesignKK14} and subclasses — matched pairs plus a Bernoulli
-#'         reservoir; \pkg{bclogit} required when \eqn{m > 0}.
-#' }
-#' Other designs raise an informative error.  Support for additional designs
-#' can be added in future \code{method} implementations without touching this
-#' class.
-#'
-#' \strong{Extension points for subclasses} (used by \code{"zhang_combined"}):
-#' \itemize{
-#'   \item \code{compute_rand_pval_matched_pairs(delta_0)}: two-sided p-value
-#'         for \eqn{H_0 : \mathrm{ATE}_\mathrm{pairs} = \delta_0}.  Return
-#'         \code{NA_real_} when there are no matched pairs or no discordant
-#'         pairs.
-#'   \item \code{compute_rand_pval_reservoir(delta_0)}: two-sided p-value for
-#'         \eqn{H_0 : \mathrm{ATE}_\mathrm{reservoir} = \delta_0}.  Return
-#'         \code{NA_real_} when either reservoir arm is empty.
-#'   \item \code{combine_rand_pvals_fisher / _stouffer / _minp}: combination
-#'         rules selected via the \code{combination_method} argument of
-#'         \code{compute_confidence_interval_rand()}.
-#' }
-#'
-#' @keywords internal
-SeqDesignInferenceIncidExactAbstract = R6::R6Class("SeqDesignInferenceIncidExactAbstract",
+# Abstract mixin: randomisation-based CI for binary (incidence) outcomes
+#
+# @description
+# Sits between \code{SeqDesignInference} and incidence-focused inference
+# classes.  The single public method it contributes,
+# \code{compute_confidence_interval_rand()}, intercepts calls where the
+# response type is \code{"incidence"} and dispatches to the chosen CI
+# algorithm; for all other response types it delegates straight to
+# \code{super$compute_confidence_interval_rand()} (i.e. the standard
+# continuous / count / proportion / survival implementation in
+# \code{SeqDesignInference}).
+#
+# Currently supported designs for the incidence path:
+# \itemize{
+#   \item \code{SeqDesignCRD} — all subjects treated as a Bernoulli reservoir
+#         (\eqn{m = 0}); \pkg{bclogit} not required.
+#   \item \code{SeqDesignKK14} and subclasses — matched pairs plus a Bernoulli
+#         reservoir; \pkg{bclogit} required when \eqn{m > 0}.
+# }
+# Other designs raise an informative error.  Support for additional designs
+# can be added in future Zhang-style implementations without touching this
+# class.
+#
+# \strong{Extension points for subclasses}:
+# \itemize{
+#   \item \code{compute_rand_pval_matched_pairs(delta_0)}: two-sided p-value
+#         for \eqn{H_0 : \mathrm{ATE}_\mathrm{pairs} = \delta_0}.  Return
+#         \code{NA_real_} when there are no matched pairs or no discordant
+#         pairs.
+#   \item \code{compute_rand_pval_reservoir(delta_0)}: two-sided p-value for
+#         \eqn{H_0 : \mathrm{ATE}_\mathrm{reservoir} = \delta_0}.  Return
+#         \code{NA_real_} when either reservoir arm is empty.
+#   \item \code{combine_rand_pvals_fisher / _stouffer / _minp}: combination
+#         rules selected via the \code{combination_method} argument of
+#         \code{compute_confidence_interval_rand()}.
+# }
+#
+# @keywords internal
+SeqDesignInferenceIncidZhangAbstract = R6::R6Class("SeqDesignInferenceIncidZhangAbstract",
 	inherit = SeqDesignInference,
 	public = list(
 
-		#' @description
-		#' Initialize the object.
-		#' @param seq_des_obj  A SeqDesign object.
-		#' @param num_cores    Number of CPU cores for parallel processing.
-		#' @param verbose      Whether to print progress messages.
+		# @description
+		# Initialize the object.
+		# @param seq_des_obj  A SeqDesign object.
+		# @param num_cores    Number of CPU cores for parallel processing.
+		# @param verbose      Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			# For KK designs set up match data eagerly (mirrors SeqDesignInferenceKKPassThrough)
@@ -54,46 +54,32 @@ SeqDesignInferenceIncidExactAbstract = R6::R6Class("SeqDesignInferenceIncidExact
 			}
 		},
 
-		#' @description
-		#' Compute the randomisation-based CI.
-		#'
-		#' For \code{response_type != "incidence"} the call is forwarded
-		#' unchanged to \code{SeqDesignInference$compute_confidence_interval_rand()}.
-		#' For \code{response_type == "incidence"} the chosen \code{method} is
-		#' executed.
-		#'
-		#' @param alpha            Significance level; CI covers \eqn{1-\alpha}.
-		#'                         Default \code{0.05}.
-		#' @param nsim_exact_test  Passed to Monte Carlo methods; ignored by exact
-		#'                         methods.  Default \code{501}.
-		#' @param pval_epsilon     Bisection convergence tolerance on the p-value
-		#'                         scale.  Default \code{0.005}.
-		#' @param show_progress    Forwarded to the base-class method for
-		#'                         non-incidence types; ignored by incidence methods.
-		#' @param method             CI algorithm to use for incidence outcomes.
-		#'   Currently supported:
-		#'   \describe{
-		#'     \item{\code{"zhang_combined"}}{(default) Exact test-inversion via
-		#'       combination of matched-pair and reservoir p-values (Zhang 2026).
-		#'       Requires subclasses to implement
-		#'       \code{compute_rand_pval_matched_pairs()} and
-		#'       \code{compute_rand_pval_reservoir()}.}
-		#'   }
-		#' @param combination_method  How to combine the matched-pair and reservoir
-		#'   p-values.  One of \code{"Fisher"} (default), \code{"Stouffer"}, or
-		#'   \code{"min_p"}.
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE, method = "zhang_combined", combination_method = "Fisher"){
+		# @description
+		# Compute the randomisation-based CI.
+		#
+		# For \code{response_type != "incidence"} the call is forwarded
+		# unchanged to \code{SeqDesignInference$compute_confidence_interval_rand()}.
+		# For \code{response_type == "incidence"} the Zhang method is executed.
+		#
+		# @param alpha            Significance level; CI covers \eqn{1-\alpha}.
+		#                         Default \code{0.05}.
+		# @param nsim_exact_test  Passed to Monte Carlo methods; ignored by exact
+		#                         methods.  Default \code{501}.
+		# @param pval_epsilon     Bisection convergence tolerance on the p-value
+		#                         scale.  Default \code{0.005}.
+		# @param show_progress    Forwarded to the base-class method for
+		#                         non-incidence types; ignored by incidence methods.
+		# @param combination_method  How to combine the matched-pair and reservoir
+		#   p-values.  One of \code{"Fisher"} (default), \code{"Stouffer"}, or
+		#   \code{"min_p"}.
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE, combination_method = "Fisher"){
 			if (private$seq_des_obj_priv_int$response_type != "incidence"){
 				return(super$compute_confidence_interval_rand(alpha, nsim_exact_test, pval_epsilon, show_progress))
 			}
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			method             = match.arg(method, choices = c("zhang_combined"))
 			combination_method = match.arg(combination_method, c("Fisher", "Stouffer", "min_p"))
-
-			switch(method,
-				zhang_combined = private$ci_rand_combine_matched_pair_and_reservoir_p_values(alpha, pval_epsilon, combination_method)
-			)
+			private$ci_rand_combine_matched_pair_and_reservoir_p_values(alpha, pval_epsilon, combination_method)
 		}
 	),
 
@@ -122,7 +108,7 @@ SeqDesignInferenceIncidExactAbstract = R6::R6Class("SeqDesignInferenceIncidExact
 		},
 
 		# -----------------------------------------------------------------------
-		# "zhang_combined" method
+		# Zhang method
 		#
 		# Test-inversion via combination of independent matched-pair and
 		# reservoir p-values, with bisection to find CI boundaries.
@@ -158,7 +144,7 @@ SeqDesignInferenceIncidExactAbstract = R6::R6Class("SeqDesignInferenceIncidExact
 			is_crd = is(private$seq_des_obj, "SeqDesignCRD")
 			is_kk  = is(private$seq_des_obj, "SeqDesignKK14")
 			if (!is_crd && !is_kk){
-				stop("zhang_combined CI rand is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
+				stop("Zhang incidence inference is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
 			}
 
 			if (!is.null(private$cached_values$KKstats)){

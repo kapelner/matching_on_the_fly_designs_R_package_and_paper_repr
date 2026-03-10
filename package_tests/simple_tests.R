@@ -108,7 +108,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
   skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCox") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoisson") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegr")
-  skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcox") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr")
+  skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcox") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegr")
   skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM")
   skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegr") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegr")
   skip_ci = beta_T == 1 && (
@@ -253,23 +253,25 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
     #safe_call("compute_confidence_interval_rand(alpha=0.01)",
     #          seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, alpha = 0.01))
   }
-  message("    Calling set_custom_randomization_statistic_function()")
-  seq_des_inf$set_custom_randomization_statistic_function(function(){
-    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-    yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
-    (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
-  })
-  if (!skip_slow){
-    message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
-    safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
-              seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
+  if (response_type != "incidence"){
+    message("    Calling set_custom_randomization_statistic_function()")
+    seq_des_inf$set_custom_randomization_statistic_function(function(){
+      yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
+      yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+      (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+    })
+    if (!skip_slow){
+      message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
+      safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
+                seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
+    }
+    if (!skip_slow && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
+      message("    Calling compute_confidence_interval_rand(custom)")
+      safe_call("compute_confidence_interval_rand(custom)",
+                seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
+    }
+    seq_des_inf$set_custom_randomization_statistic_function(NULL)
   }
-  if (!skip_slow && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
-    message("    Calling compute_confidence_interval_rand(custom)")
-    safe_call("compute_confidence_interval_rand(custom)",
-              seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
-  }
-  seq_des_inf$set_custom_randomization_statistic_function(NULL)
 }
 
 run_tests_for_response = function(response_type, design_type, dataset_name){
@@ -362,14 +364,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
     inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
     run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     if (design_type == "CRD"){
-      inference_banner("SeqDesignInferenceIncidExact")
-      run_inference_checks(SeqDesignInferenceIncidExact$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferenceIncidZhang")
+      run_inference_checks(SeqDesignInferenceIncidZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
     }
     if (is_kk_design){
       inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
       run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-      inference_banner("SeqDesignInferenceIncidKKExact")
-      run_inference_checks(SeqDesignInferenceIncidKKExact$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+      inference_banner("SeqDesignInferenceIncidKKZhang")
+      run_inference_checks(SeqDesignInferenceIncidKKZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceIncidUnivKKClogit")
       run_inference_checks(SeqDesignInferenceIncidUnivKKClogit$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
       inference_banner("SeqDesignInferenceIncidMultiKKClogit")

@@ -12,7 +12,7 @@ including both treatment and covariates. This is the multivariate (covariate-adj
 variant.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWilcoxBase]{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKWilcoxRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxRegr}} -> \code{SeqDesignInferenceAllKKWilcoxRegrMulti}
+\code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxRegr} -> \code{SeqDesignInferenceAllKKWilcoxRegrMulti}
 }
 \section{Methods}{
 \subsection{Public methods}{
