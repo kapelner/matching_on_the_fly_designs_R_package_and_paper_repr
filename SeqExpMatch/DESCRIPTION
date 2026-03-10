@@ -74,6 +74,7 @@ Collate:
     'inference_abstract.R'
     'inference_KK_passthrough_abstract.R'
     'inference_incid_rand_ci_abstract.R'
+    'inference_incid_kk_rand_ci_abstract.R'
     'inference_KK_passthrough_compound_abstract.R'
     'inference_mle_or_KM_for_GLMs_abstract.R'
     'inference_mle_or_KM_summary_table_abstract.R'

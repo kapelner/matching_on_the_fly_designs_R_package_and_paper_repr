@@ -245,15 +245,19 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 			beta_simple  = if (m >= 1) mean(yd) else NA_real_
 			fallback_ssq = if (m >= 2) var(yd) / m else NA_real_
 			mod = fast_ols_with_var_cpp(design_mat, yd, j = 1) #the only time you need the intercept's ssq
-			# Guard against two failure modes in ill-conditioned bootstrap samples:
+			# Guard against failure modes in ill-conditioned/degenerate bootstrap samples:
 			# (1) OLS variance inflated (>10x simple variance): near-singular X'X.
-			# (2) OLS estimate far from simple mean diff (>10 simple SEs): near-perfect fit
-			#     where a covariate collinear with treatment absorbs the treatment effect,
-			#     producing an extreme estimate with near-zero reported variance.
+			# (2) OLS estimate far from simple mean diff (>5 simple SEs): treatment confounded
+			#     with a near-perfect covariate predictor, giving extreme estimate.
+			# (3) OLS variance near-zero (<1e-6 of simple variance): R^2 approx 1, which
+			#     means OLS has absorbed treatment into a covariate, inflating the coefficient.
+			#     Near-zero ssq_b_j also makes w_star -> 0 in the compound formula,
+			#     giving all weight to the (degenerate) reservoir OLS estimate.
 			se_simple = if (!is.na(fallback_ssq) && fallback_ssq > 0) sqrt(fallback_ssq) else NA_real_
 			ols_ok = is.finite(mod$ssq_b_j) &&
-			         (is.na(fallback_ssq) || mod$ssq_b_j < 10 * fallback_ssq) &&
-			         (is.na(se_simple)    || abs(mod$b[1] - beta_simple) <= 10 * se_simple)
+			         (is.na(fallback_ssq) || (mod$ssq_b_j < 10 * fallback_ssq &&
+			                                   mod$ssq_b_j > 1e-6 * fallback_ssq)) &&
+			         (is.na(se_simple)    || abs(mod$b[1] - beta_simple) <= 5 * se_simple)
 			if (ols_ok) {
 				private$cached_values$beta_T_matched     = mod$b[1]
 				private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
@@ -307,15 +311,19 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 			fallback_ssq = if (nRT_local > 1 && nRC_local > 1) var(y_rT)/nRT_local + var(y_rC)/nRC_local else NA_real_
 
 			mod = fast_ols_with_var_cpp(X_full, y_r, j = j_treat)
-			# Guard against two failure modes in ill-conditioned bootstrap samples:
+			# Guard against failure modes in ill-conditioned/degenerate bootstrap samples:
 			# (1) OLS variance inflated (>10x simple variance): near-singular X'X.
-			# (2) OLS estimate far from simple mean diff (>10 simple SEs): near-perfect fit
-			#     where a covariate collinear with treatment absorbs the treatment effect,
-			#     producing an extreme estimate with near-zero reported variance.
+			# (2) OLS estimate far from simple mean diff (>5 simple SEs): treatment confounded
+			#     with a near-perfect covariate predictor, giving extreme estimate.
+			# (3) OLS variance near-zero (<1e-6 of simple variance): R^2 approx 1, which
+			#     means OLS has absorbed treatment into a covariate, inflating the coefficient.
+			#     Near-zero ssq_b_j also makes w_star -> 0 in the compound formula,
+			#     giving all weight to the (degenerate) reservoir OLS estimate.
 			se_simple = if (!is.na(fallback_ssq) && fallback_ssq > 0) sqrt(fallback_ssq) else NA_real_
 			ols_ok = is.finite(mod$ssq_b_j) &&
-			         (is.na(fallback_ssq) || mod$ssq_b_j < 10 * fallback_ssq) &&
-			         (is.na(se_simple)    || abs(mod$b[j_treat] - beta_simple) <= 10 * se_simple)
+			         (is.na(fallback_ssq) || (mod$ssq_b_j < 10 * fallback_ssq &&
+			                                   mod$ssq_b_j > 1e-6 * fallback_ssq)) &&
+			         (is.na(se_simple)    || abs(mod$b[j_treat] - beta_simple) <= 5 * se_simple)
 			if (ols_ok) {
 				private$cached_values$beta_T_reservoir     = mod$b[j_treat]
 				private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j

@@ -37,8 +37,22 @@
 #'
 #' @keywords internal
 SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractIncidRandCI",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInference,
 	public = list(
+
+		#' @description
+		#' Initialize the object.
+		#' @param seq_des_obj  A SeqDesign object.
+		#' @param num_cores    Number of CPU cores for parallel processing.
+		#' @param verbose      Whether to print progress messages.
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(seq_des_obj, num_cores, verbose)
+			# For KK designs set up match data eagerly (mirrors SeqDesignInferenceKKPassThrough)
+			if (is(seq_des_obj, "SeqDesignKK14")){
+				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
+				private$compute_basic_match_data()
+			}
+		},
 
 		#' @description
 		#' Compute the randomisation-based CI.
@@ -84,6 +98,28 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 	),
 
 	private = list(
+
+		match_indic = NULL,
+
+		# -----------------------------------------------------------------------
+		# KK match-data setup (mirrors SeqDesignInferenceKKPassThrough so that
+		# KK-based subclasses work without going through that branch).
+		# For CRD designs this is never called; ci_rand_zhang handles m = 0 via
+		# private$w directly.
+		# -----------------------------------------------------------------------
+
+		compute_basic_match_data = function(){
+			if (is.null(private$X)){
+				private$X = private$get_X()
+			}
+			private$cached_values$KKstats = .compute_kk_basic_match_data(
+				X = private$X,
+				n = private$n,
+				y = private$y,
+				w = private$w,
+				match_indic = private$match_indic
+			)
+		},
 
 		# -----------------------------------------------------------------------
 		# "zhang_combined" method
@@ -263,38 +299,6 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 				}
 			}
 			(inside + outside) / 2
-		}
-	)
-)
-
-#' Extension of SeqDesignInferenceAbstractIncidRandCI for KK matched-pair designs
-#'
-#' @description
-#' Adds the exact McNemar-style matched-pair p-value needed by the
-#' \code{"zhang_combined"} randomisation CI when \eqn{m > 0}.
-#'
-#' @keywords internal
-SeqDesignInferenceAbstractIncidKKRandCI = R6::R6Class("SeqDesignInferenceAbstractIncidKKRandCI",
-	inherit = SeqDesignInferenceAbstractIncidRandCI,
-	private = list(
-
-		# Exact McNemar test under H0: OR_pairs = exp(delta_0).
-		# Given k = d_plus + d_minus discordant pairs,
-		# d_plus | k ~ Binomial(k, expit(delta_0)) under H0.
-		# Concordant pairs contribute no information and are ignored.
-		compute_rand_pval_matched_pairs = function(delta_0){
-			KKstats = private$cached_values$KKstats
-			if (is.null(KKstats) || KKstats$m == 0L) return(NA_real_)
-
-			yTs = KKstats$yTs_matched
-			yCs = KKstats$yCs_matched
-			d_plus  = sum(yTs == 1L & yCs == 0L)   # (T=1, C=0) discordant
-			d_minus = sum(yTs == 0L & yCs == 1L)   # (T=0, C=1) discordant
-			k = d_plus + d_minus
-			if (k == 0L) return(NA_real_)
-
-			p0 = exp(delta_0) / (1 + exp(delta_0))
-			binom.test(d_plus, k, p = p0, alternative = "two.sided")$p.value
 		}
 	)
 )

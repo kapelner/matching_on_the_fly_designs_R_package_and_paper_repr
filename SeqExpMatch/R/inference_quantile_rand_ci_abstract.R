@@ -71,39 +71,12 @@ SeqDesignInferenceAbstractQuantileRandCI = R6::R6Class("SeqDesignInferenceAbstra
 			if (is.null(private$X)){
 				private$X = private$get_X()
 			}
-			match_indic = private$match_indic
-			if (is.null(match_indic)){
-				match_indic = rep(0, private$n)
-			}
-			match_indic[is.na(match_indic)] = 0
-			m = max(match_indic, na.rm = TRUE)
-			y = private$y
-			w = private$w
-
-			yTs_matched     = array(NA, m)
-			yCs_matched     = array(NA, m)
-			y_matched_diffs = array(NA, m)
-			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
-			if (m > 0){
-				match_data      = match_diffs_cpp(w, match_indic, y, private$X, m)
-				yTs_matched     = match_data$yTs_matched
-				yCs_matched     = match_data$yCs_matched
-				X_matched_diffs = match_data$X_matched_diffs
-				nonzero_cols    = apply(X_matched_diffs, 2, function(col) any(col != 0))
-				X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE]
-			}
-			w_reservoir = w[match_indic == 0]
-			private$cached_values$KKstats = list(
-				X_matched_diffs = X_matched_diffs,
-				yTs_matched     = yTs_matched,
-				yCs_matched     = yCs_matched,
-				y_matched_diffs = yTs_matched - yCs_matched,
-				X_reservoir     = private$X[match_indic == 0, , drop = FALSE],
-				y_reservoir     = y[match_indic == 0],
-				w_reservoir     = w_reservoir,
-				nRT             = sum(w_reservoir, na.rm = TRUE),
-				nRC             = sum(w_reservoir == 0, na.rm = TRUE),
-				m               = m
+			private$cached_values$KKstats = .compute_kk_basic_match_data(
+				X = private$X,
+				n = private$n,
+				y = private$y,
+				w = private$w,
+				match_indic = private$match_indic
 			)
 		},
 

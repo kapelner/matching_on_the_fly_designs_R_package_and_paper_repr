@@ -73,6 +73,29 @@ SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAb
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
+		extract_term_estimate = function(mod, term_name = "w"){
+			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
+			if (is.null(coefs) || is.null(names(coefs)) || !(term_name %in% names(coefs))){
+				return(NA_real_)
+			}
+			as.numeric(coefs[[term_name]])
+		},
+
+		extract_term_se = function(mod, term_name = "w"){
+			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+			if (is.null(coef_table) || is.null(dim(coef_table))){
+				return(NA_real_)
+			}
+			if (is.null(rownames(coef_table)) || !(term_name %in% rownames(coef_table))){
+				return(NA_real_)
+			}
+			se_col = intersect(colnames(coef_table), c("StdErr", "Std.Err", "Std.err", "Std.Error"))[1]
+			if (is.na(se_col) || length(se_col) == 0L){
+				return(NA_real_)
+			}
+			as.numeric(coef_table[term_name, se_col])
+		},
+
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
@@ -149,13 +172,13 @@ SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAb
 
 			mod = tryCatch({
 				# Use Gehan-type rank estimator (default)
-				aftgee::aftgee(as.formula(formula_str), id = id, data = dat, corstr = "exchangeable")
+				suppressMessages(aftgee::aftgee(as.formula(formula_str), id = id, data = dat, corstr = "exchangeable"))
 			}, error = function(e) NULL)
 			
 			if (is.null(mod)) return(invisible(NULL))
 
-			beta = as.numeric(coef(mod)["w"])
-			se   = as.numeric(summary(mod)$coefficients["w", "Std.Err"])
+			beta = private$extract_term_estimate(mod, "w")
+			se   = private$extract_term_se(mod, "w")
 			
 			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
@@ -180,13 +203,13 @@ SeqDesignInferenceAbstractKKSurvivalRankRegr = R6::R6Class("SeqDesignInferenceAb
 			}
 
 			mod = tryCatch({
-				aftgee::aftgee(as.formula(formula_str), data = dat)
+				suppressMessages(aftgee::aftgee(as.formula(formula_str), data = dat))
 			}, error = function(e) NULL)
 			
 			if (is.null(mod)) return(invisible(NULL))
 
-			beta = as.numeric(coef(mod)["w"])
-			se   = as.numeric(summary(mod)$coefficients["w", "Std.Err"])
+			beta = private$extract_term_estimate(mod, "w")
+			se   = private$extract_term_se(mod, "w")
 			
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
