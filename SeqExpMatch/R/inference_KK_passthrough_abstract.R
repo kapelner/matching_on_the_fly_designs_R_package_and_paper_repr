@@ -10,16 +10,16 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		#' @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference 
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs), 
+		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
+		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		#' @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
-
-			#there is no situation where we don't need the basic match data, so hit it right away
-			private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
-			private$compute_basic_match_data()
+			if (is(seq_des_obj, "SeqDesignKK14")){
+				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
+				private$compute_basic_match_data()
+			}
 		},
 
 
@@ -196,13 +196,13 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 		}
 	),
 	private = list(
+
 		match_indic = NULL,
 
 		compute_basic_match_data = function(){
 			if (is.null(private$X)){
 				private$X = private$get_X()
 			}
-			#cache data for speed
 			match_indic = private$match_indic
 			if (is.null(match_indic)){
 				match_indic = rep(0, private$n)
@@ -212,33 +212,32 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 			y = private$y
 			w = private$w
 
-			yTs_matched = array(NA, m)
-			yCs_matched = array(NA, m)
+			yTs_matched     = array(NA, m)
+			yCs_matched     = array(NA, m)
 			y_matched_diffs = array(NA, m)
 			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
 			if (m > 0){
-				match_data = match_diffs_cpp(w, match_indic, y, private$X, m)
-				yTs_matched = match_data$yTs_matched
-				yCs_matched = match_data$yCs_matched
+				match_data      = match_diffs_cpp(w, match_indic, y, private$X, m)
+				yTs_matched     = match_data$yTs_matched
+				yCs_matched     = match_data$yCs_matched
 				X_matched_diffs = match_data$X_matched_diffs
-				#drop columns that are all zero to avoid rank deficiency in multivariate regression                             
-        nonzero_cols = apply(X_matched_diffs, 2, function(col) any(col != 0))                                           
-        X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE] 				
+				nonzero_cols    = apply(X_matched_diffs, 2, function(col) any(col != 0))
+				X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE]
 				y_matched_diffs = yTs_matched - yCs_matched
 			}
 			w_reservoir = w[match_indic == 0]
 
 			private$cached_values$KKstats = list(
 				X_matched_diffs = X_matched_diffs,
-				yTs_matched = yTs_matched,
-				yCs_matched = yCs_matched,
+				yTs_matched     = yTs_matched,
+				yCs_matched     = yCs_matched,
 				y_matched_diffs = y_matched_diffs,
-				X_reservoir = private$X[match_indic == 0, , drop = FALSE],
-				y_reservoir = y[match_indic == 0],
-				w_reservoir = w_reservoir,
-				nRT = sum(w_reservoir, na.rm = TRUE), #how many treatment observations are there in the reservoir?
-				nRC = sum(w_reservoir == 0, na.rm = TRUE), #how many control observations are there in the reservoir?
-				m = m
+				X_reservoir     = private$X[match_indic == 0, , drop = FALSE],
+				y_reservoir     = y[match_indic == 0],
+				w_reservoir     = w_reservoir,
+				nRT             = sum(w_reservoir, na.rm = TRUE),
+				nRC             = sum(w_reservoir == 0, na.rm = TRUE),
+				m               = m
 			)
 		},
 

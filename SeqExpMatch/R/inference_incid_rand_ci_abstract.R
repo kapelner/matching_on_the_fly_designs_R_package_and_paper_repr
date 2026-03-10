@@ -37,22 +37,8 @@
 #'
 #' @keywords internal
 SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractIncidRandCI",
-	inherit = SeqDesignInference,
+	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the object.
-		#' @param seq_des_obj  A SeqDesign object.
-		#' @param num_cores    Number of CPU cores for parallel processing.
-		#' @param verbose      Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
-			# For KK designs set up match data eagerly (mirrors SeqDesignInferenceKKPassThrough)
-			if (is(seq_des_obj, "SeqDesignKK14")){
-				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
-				private$compute_basic_match_data()
-			}
-		},
 
 		#' @description
 		#' Compute the randomisation-based CI.
@@ -98,57 +84,6 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 	),
 
 	private = list(
-
-		match_indic = NULL,
-
-		# -----------------------------------------------------------------------
-		# KK match-data setup (mirrors SeqDesignInferenceKKPassThrough so that
-		# KK-based subclasses work without going through that branch).
-		# For CRD designs this is never called; ci_rand_zhang handles m = 0 via
-		# private$w directly.
-		# -----------------------------------------------------------------------
-
-		compute_basic_match_data = function(){
-			if (is.null(private$X)){
-				private$X = private$get_X()
-			}
-			match_indic = private$match_indic
-			if (is.null(match_indic)){
-				match_indic = rep(0, private$n)
-			}
-			match_indic[is.na(match_indic)] = 0
-			m = max(match_indic, na.rm = TRUE)
-			y = private$y
-			w = private$w
-
-			yTs_matched     = array(NA, m)
-			yCs_matched     = array(NA, m)
-			y_matched_diffs = array(NA, m)
-			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
-			if (m > 0){
-				match_data      = match_diffs_cpp(w, match_indic, y, private$X, m)
-				yTs_matched     = match_data$yTs_matched
-				yCs_matched     = match_data$yCs_matched
-				X_matched_diffs = match_data$X_matched_diffs
-				nonzero_cols    = apply(X_matched_diffs, 2, function(col) any(col != 0))
-				X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE]
-				y_matched_diffs = yTs_matched - yCs_matched
-			}
-			w_reservoir = w[match_indic == 0]
-
-			private$cached_values$KKstats = list(
-				X_matched_diffs = X_matched_diffs,
-				yTs_matched     = yTs_matched,
-				yCs_matched     = yCs_matched,
-				y_matched_diffs = y_matched_diffs,
-				X_reservoir     = private$X[match_indic == 0, , drop = FALSE],
-				y_reservoir     = y[match_indic == 0],
-				w_reservoir     = w_reservoir,
-				nRT             = sum(w_reservoir, na.rm = TRUE),
-				nRC             = sum(w_reservoir == 0, na.rm = TRUE),
-				m               = m
-			)
-		},
 
 		# -----------------------------------------------------------------------
 		# "zhang_combined" method
@@ -209,21 +144,41 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 			c(lower, upper)
 		},
 
-		# -----------------------------------------------------------------------
-		# Abstract stubs for "zhang_combined"
-		#
-		# Subclasses MUST implement these when method = "zhang_combined".
-		# Each returns a scalar two-sided p-value in (0, 1] for
-		# H0: component-ATE = delta_0.  Return NA_real_ when the component
-		# cannot be tested.
-		# -----------------------------------------------------------------------
+		# Default: no matched-pair test (CRD designs have m = 0 always;
+		# KK designs that need the McNemar test override this in
+		# SeqDesignInferenceAbstractIncidKKRandCI below).
+		compute_rand_pval_matched_pairs = function(delta_0) NA_real_,
 
-		compute_rand_pval_matched_pairs = function(delta_0){
-			stop(class(self)[1], " must implement compute_rand_pval_matched_pairs(delta_0)")
-		},
-
+		# Exact Fisher test under H0: OR_reservoir = exp(delta_0).
+		# For CRD designs (KKstats = NULL) all subjects are treated as the reservoir.
 		compute_rand_pval_reservoir = function(delta_0){
-			stop(class(self)[1], " must implement compute_rand_pval_reservoir(delta_0)")
+			if (!is.null(private$cached_values$KKstats)){
+				y_r = private$cached_values$KKstats$y_reservoir
+				w_r = private$cached_values$KKstats$w_reservoir
+				nRT = private$cached_values$KKstats$nRT
+				nRC = private$cached_values$KKstats$nRC
+			} else {
+				y_r = private$y
+				w_r = private$w
+				nRT = sum(w_r == 1L, na.rm = TRUE)
+				nRC = sum(w_r == 0L, na.rm = TRUE)
+			}
+			if (nRT == 0L || nRC == 0L) return(NA_real_)
+
+			n11 = sum(y_r[w_r == 1L])              # successes in treatment
+			n01 = sum(y_r[w_r == 0L])              # successes in control
+			n10 = as.integer(nRT) - n11            # failures  in treatment
+			n00 = as.integer(nRC) - n01            # failures  in control
+
+			if (n11 + n01 == 0L || n10 + n00 == 0L) return(NA_real_)
+
+			# 2x2 table: rows = Y (1/0), cols = arm (T/C)
+			# OR = (n11 * n00) / (n10 * n01) — standard treatment-vs-control OR
+			fisher.test(
+				matrix(c(n11, n10, n01, n00), 2L, 2L),
+				or          = exp(delta_0),
+				alternative = "two.sided"
+			)$p.value
 		},
 
 		# -----------------------------------------------------------------------
@@ -308,6 +263,38 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 				}
 			}
 			(inside + outside) / 2
+		}
+	)
+)
+
+#' Extension of SeqDesignInferenceAbstractIncidRandCI for KK matched-pair designs
+#'
+#' @description
+#' Adds the exact McNemar-style matched-pair p-value needed by the
+#' \code{"zhang_combined"} randomisation CI when \eqn{m > 0}.
+#'
+#' @keywords internal
+SeqDesignInferenceAbstractIncidKKRandCI = R6::R6Class("SeqDesignInferenceAbstractIncidKKRandCI",
+	inherit = SeqDesignInferenceAbstractIncidRandCI,
+	private = list(
+
+		# Exact McNemar test under H0: OR_pairs = exp(delta_0).
+		# Given k = d_plus + d_minus discordant pairs,
+		# d_plus | k ~ Binomial(k, expit(delta_0)) under H0.
+		# Concordant pairs contribute no information and are ignored.
+		compute_rand_pval_matched_pairs = function(delta_0){
+			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats) || KKstats$m == 0L) return(NA_real_)
+
+			yTs = KKstats$yTs_matched
+			yCs = KKstats$yCs_matched
+			d_plus  = sum(yTs == 1L & yCs == 0L)   # (T=1, C=0) discordant
+			d_minus = sum(yTs == 0L & yCs == 1L)   # (T=0, C=1) discordant
+			k = d_plus + d_minus
+			if (k == 0L) return(NA_real_)
+
+			p0 = exp(delta_0) / (1 + exp(delta_0))
+			binom.test(d_plus, k, p = p0, alternative = "two.sided")$p.value
 		}
 	)
 )
