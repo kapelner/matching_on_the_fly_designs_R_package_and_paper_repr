@@ -94,6 +94,8 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 	),
 	
 	private = list(		
+		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
+
 		shared = function(){
 			if (!is.null(private$cached_values$is_z)) return(invisible(NULL))
 			model_output = private$generate_mod() #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.

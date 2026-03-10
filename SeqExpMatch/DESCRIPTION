@@ -49,10 +49,12 @@ Suggests:
     nlme,
     doParallel,
     testthat,
-    fixest,
-    parfm,
-    Rfit,
-    glmmTMB,
+        fixest,
+        parfm,
+        Rfit,
+        glmmTMB,
+        aftgee
+    ,
     quantreg
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.3
@@ -61,7 +63,7 @@ Collate:
     'SeqExpMatch.R'
     'helper_functions.R'
     'glm_fit_helpers.R'
-    'abstract_design.R'
+    'design_abstract.R'
     'design_crd.R'
     'design_ibcrd.R'
     'design_Atkinson.R'
@@ -69,36 +71,37 @@ Collate:
     'design_KK14.R'
     'design_KK21.R'
     'design_KK21_stepwise.R'
-    'abstract_inference.R'
-    'abstract_inference_KK_passthrough.R'
-    'abstract_inference_KK_passthrough_compound.R'
-    'abstract_inference_mle_or_KM_for_GLMs.R'
-    'abstract_inference_mle_or_KM_summary_table.R'
+    'inference_abstract.R'
+    'inference_KK_passthrough_abstract.R'
+    'inference_KK_passthrough_compound_abstract.R'
+    'inference_mle_or_KM_for_GLMs_abstract.R'
+    'inference_mle_or_KM_summary_table_abstract.R'
     'inference_all_mean_diff.R'
     'inference_all_KK_compound_mean_diff.R'
-    'abstract_inference_KK_wilcox_base.R'
+    'inference_KK_wilcox_base_abstract.R'
     'inference_all_KK_wilcox.R'
-    'abstract_inference_KK_wilcox_regr.R'
+    'inference_KK_wilcox_regr_abstract.R'
     'inference_all_KK_wilcox_regr_univ.R'
     'inference_all_KK_wilcox_regr_multi.R'
-    'abstract_inference_bai_et_al.R'
+    'inference_bai_et_al_abstract.R'
     'inference_continuous_KK14_bai.R'
     'inference_continuous_KK21_bai.R'
     'inference_continuous_ols_multi.R'
     'inference_continuous_KK_ols_multi.R'
     'inference_continuous_KK_gls_multi.R'
-    'abstract_inference_KK_quantile_regr.R'
+    'inference_quantile_rand_ci_abstract.R'
+    'inference_KK_quantile_regr_abstract.R'
     'inference_continuous_KK_quantile_regr.R'
     'inference_incidence_logit_univ.R'
     'inference_incidence_logit_multi.R'
-    'abstract_inference_incid_rand_ci.R'
-    'abstract_inference_KK_clogit.R'
+    'inference_incid_rand_ci_abstract.R'
+    'inference_KK_clogit_abstract.R'
     'inference_incidence_KK_clogit_univ.R'
     'inference_incidence_KK_clogit_multi.R'
-    'abstract_inference_KK_gee.R'
+    'inference_KK_gee_abstract.R'
     'inference_incidence_KK_gee_univ.R'
     'inference_incidence_KK_gee_multi.R'
-    'abstract_inference_KK_glmm.R'
+    'inference_KK_glmm_abstract.R'
     'inference_incidence_KK_glmm_univ.R'
     'inference_incidence_KK_glmm_multi.R'
     'inference_count_KK_gee_univ.R'
@@ -107,7 +110,7 @@ Collate:
     'inference_count_KK_glmm_multi.R'
     'inference_count_negbin_univ.R'
     'inference_count_negbin_multi.R'
-    'abstract_inference_KK_cpoisson.R'
+    'inference_KK_cpoisson_abstract.R'
     'inference_count_KK_cpoisson_univ.R'
     'inference_count_KK_cpoisson_multi.R'
     'inference_proportion_KK_gee_univ.R'
@@ -121,12 +124,15 @@ Collate:
     'inference_survival_KK_gamma_gee_multi.R'
     'inference_survival_KK_glmm_univ.R'
     'inference_survival_KK_gamma_glmm_multi.R'
-    'abstract_inference_KK_strat_cox.R'
+    'inference_KK_strat_cox_abstract.R'
     'inference_survival_KK_strat_cox_univ.R'
     'inference_survival_KK_strat_cox_multi.R'
-    'abstract_inference_KK_weibull_frailty.R'
+    'inference_KK_weibull_frailty_abstract.R'
     'inference_survival_KK_weibull_frailty_univ.R'
     'inference_survival_KK_weibull_frailty_multi.R'
+    'inference_KK_survival_rank_regr_abstract.R'
+    'inference_survival_KK_rank_regr_univ.R'
+    'inference_survival_KK_rank_regr_multi.R'
     'inference_survival_gehan_wilcox.R'
     'inference_survival_km_diff.R'
     'inference_survival_rmst.R'

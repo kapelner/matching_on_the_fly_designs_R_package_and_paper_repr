@@ -107,9 +107,10 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 }
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
-  skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCox") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoisson") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti")
+  skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCox") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoisson") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegr")
   skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcox") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr")
   skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM")
+  skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegr") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegr")
   skip_ci = beta_T == 1 && (
     is(seq_des_inf, "SeqDesignInferenceIncidMultiLogRegr") ||
     is(seq_des_inf, "SeqDesignInferencePropUniBetaRegr") ||
@@ -118,7 +119,8 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
     is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") ||
     is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCox") ||
     is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailty") ||
-    is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti")
+    is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMulti") ||
+    is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegr")
   )
   snap_small_numeric_to_zero = function(x, tol = sqrt(.Machine$double.eps)){
     if (is.null(x)){
@@ -189,6 +191,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
                        is(seq_des_inf, "SeqDesignInferenceAbstractKKStratCox") || 
                        is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailty") || 
                        is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegr") || 
+                       is(seq_des_inf, "SeqDesignInferenceAbstractKKSurvivalRankRegr") || 
                        is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || 
                        is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || 
                        is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
@@ -242,7 +245,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
             ))
   }
 
-  if (!skip_slow && !skip_rand && !skip_ci && test_compute_confidence_interval_rand & response_type %in% c("continuous",  "proportion",  "count")){ #,  "proportion", "survival"
+  if (!skip_slow && !skip_rand && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand & response_type %in% c("continuous",  "proportion",  "count")){ #,  "proportion", "survival"
     message("    Calling compute_confidence_interval_rand()")
     safe_call("compute_confidence_interval_rand",
               seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
@@ -261,7 +264,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
     safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
               seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
   }
-  if (!skip_slow && !skip_ci && test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
+  if (!skip_slow && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand & response_type %in% c("continuous")){ #, "proportion", "survival"
     message("    Calling compute_confidence_interval_rand(custom)")
     safe_call("compute_confidence_interval_rand(custom)",
               seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
@@ -466,6 +469,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
         SeqDesignInferenceSurvivalMultiKKGammaGLMM,
         SeqDesignInferenceSurvivalUnivKKStratCox,
         SeqDesignInferenceSurvivalMultiKKStratCox,
+        SeqDesignInferenceSurvivalUnivKKRankRegr,
+        SeqDesignInferenceSurvivalMultiKKRankRegr,
         SeqDesignInferenceSurvivalUnivKKWeibullFrailty,
         SeqDesignInferenceSurvivalMultiKKWeibullFrailty
       )){

@@ -8,7 +8,7 @@
 #'
 #' @keywords internal
 SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstractKKQuantileRegr",
-	inherit = SeqDesignInferenceKKPassThrough,
+	inherit = SeqDesignInferenceAbstractQuantileRandCI,
 	public = list(
 
 		#' @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
@@ -66,32 +66,11 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 				private$shared()
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
-
-		#' @description
-		#' Computes a randomization-based confidence interval via Zhang's combined test.
-		#' For matched pairs the sign-flip randomization test is used; for reservoir subjects
-		#' the permutation test is used. The two component p-values are combined with
-		#' Fisher's chi-squared statistic and the CI boundary is found by bisection.
-		#'
-		#' @param alpha					The confidence level is 1 - \code{alpha}. Default \code{0.05}.
-		#' @param nsim_exact_test		Number of random sign-flips / permutations per boundary evaluation. Default \code{499}.
-		#' @param pval_epsilon			Bisection convergence tolerance on the p-value scale. Default \code{0.005}.
-		#' @param show_progress			Ignored (kept for interface compatibility).
-		#'
-		#' @return 	A length-2 numeric vector giving the lower and upper CI boundary.
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 499, pval_epsilon = 0.005, show_progress = TRUE){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			assertCount(nsim_exact_test, positive = TRUE)
-			private$nsim_rand = as.integer(nsim_exact_test)
-			private$ci_rand_zhang_combined(alpha, pval_epsilon)
 		}
 	),
 
 	private = list(
 		tau = NULL,
-		nsim_rand = 499L,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 
 		shared = function(){
@@ -257,66 +236,28 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			iqr / (2 * qnorm(0.75)) / sqrt(n)
 		},
 
-		# Helper: extract SE from rq fit by coefficient name, trying "nid" then "iid"
+		# Helper: extract SE from rq fit by coefficient name, trying "nid" then "iid".
+		# SEs above 1e6 are treated as invalid (the "nid" sparsity estimator can return
+		# astronomically large but finite values when the density at the quantile is near
+		# zero, which bypasses the usual !is.finite() || <= 0 guard in callers).
 		extract_se_from_rq = function(fit, coef_name){
+			is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
+
 			se = tryCatch({
 				s_fit = suppressWarnings(summary(fit, se = "nid", covariance = TRUE))
 				ct = s_fit$coefficients
-				if (coef_name %in% rownames(ct)){
-					ct[coef_name, "Std. Error"]
-				} else {
-					NA_real_
-				}
+				if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
 			}, error = function(e) NA_real_)
 
-			if (!is.finite(se) || se <= 0){
+			if (is_bad_se(se)){
 				se = tryCatch({
 					s_fit = suppressWarnings(summary(fit, se = "iid", covariance = TRUE))
 					ct = s_fit$coefficients
-					if (coef_name %in% rownames(ct)){
-						ct[coef_name, "Std. Error"]
-					} else {
-						NA_real_
-					}
+					if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
 				}, error = function(e) NA_real_)
 			}
-			se
-		},
 
-		# -----------------------------------------------------------------------
-		# Randomisation CI: Zhang combined method
-		# -----------------------------------------------------------------------
-
-		ci_rand_zhang_combined = function(alpha, pval_epsilon){
-			KKstats = private$cached_values$KKstats
-			if (is.null(KKstats)){
-				private$compute_basic_match_data()
-				KKstats = private$cached_values$KKstats
-			}
-			m   = KKstats$m
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-
-			est = self$compute_treatment_estimate()
-			if (!is.finite(est)){
-				stop("Cannot compute randomisation CI: point estimate is not finite.")
-			}
-
-			# Expand the MLE CI (at 2*alpha) by 50% each side for reliable bisection bounds
-			mle_ci   = self$compute_mle_confidence_interval(alpha * 2)
-			ci_width = mle_ci[2] - mle_ci[1]
-			lo_bound = mle_ci[1] - 0.5 * ci_width
-			hi_bound = mle_ci[2] + 0.5 * ci_width
-
-			p_fn = function(delta_0){
-				p_M = if (m > 0)             private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
-				p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
-				private$combine_rand_pvals(p_M, p_R, m, nRT, nRC)
-			}
-
-			lower = private$bisect_ci_boundary(p_fn, inside = est, outside = lo_bound, pval_th = alpha, tol = pval_epsilon)
-			upper = private$bisect_ci_boundary(p_fn, inside = est, outside = hi_bound, pval_th = alpha, tol = pval_epsilon)
-			c(lower, upper)
+			if (is_bad_se(se)) NA_real_ else se
 		},
 
 		# Two-sided sign-flip randomisation test for matched pairs at H0: Q_tau(yd) = delta_0.
@@ -327,12 +268,10 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			fn  = private$transform_y_fn_list$fn
 			tau = private$tau
 
-			# Adjusted differences under H0
 			yd_adj = fn(KKstats$yTs_matched) - fn(KKstats$yCs_matched) - delta_0
 			Xd     = KKstats$X_matched_diffs
 			m      = length(yd_adj)
 
-			# Use the same rank-reduced Xd for all permutations
 			if (ncol(Xd) > 0){
 				qr_Xd = qr(Xd)
 				r = qr_Xd$rank
@@ -344,7 +283,6 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
 			if (!is.finite(T_obs)) return(NA_real_)
 
-			# Sign-flip distribution: negate both yd and Xd row-wise for each flipped pair
 			T_rand = replicate(private$nsim_rand, {
 				signs = sample(c(-1L, 1L), m, replace = TRUE)
 				private$qr_intercept_pairs(
@@ -358,9 +296,7 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			mean(abs(T_rand) >= abs(T_obs))
 		},
 
-		# Two-sided permutation test for reservoir at H0: Q_tau(transform(y) | w=1, X) - Q_tau(...|w=0,X) = delta_0.
-		# Under H0, adjust y_adj = transform(y) - delta_0 * w; permuting w (and updating both y_adj and the
-		# treatment column of the design matrix) gives the reference distribution.
+		# Two-sided permutation test for reservoir at H0: Q_tau(transform(y)|w=1,X) - Q_tau(...|w=0,X) = delta_0.
 		compute_rand_pval_reservoir = function(delta_0){
 			KKstats = private$cached_values$KKstats
 			fn  = private$transform_y_fn_list$fn
@@ -368,9 +304,8 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 
 			w_r = KKstats$w_reservoir
 			X_r = as.matrix(KKstats$X_reservoir)
-			ty  = fn(KKstats$y_reservoir)   # transformed y (fixed across permutations)
+			ty  = fn(KKstats$y_reservoir)
 
-			# Build the same rank-reduced design matrix as quantile_for_reservoir
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
 			qr_full = qr(X_full)
@@ -387,12 +322,10 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			cn[j_treat] = "trt__"
 			colnames(X_full) = cn
 
-			# Observed statistic with adjusted response
 			y_adj_obs = ty - delta_0 * w_r
 			T_obs = private$qr_trt_coef_reservoir(y_adj_obs, X_full, tau)
 			if (!is.finite(T_obs)) return(NA_real_)
 
-			# Permutation distribution: permute w, update treatment column and y_adj
 			T_rand = replicate(private$nsim_rand, {
 				w_perm = sample(w_r)
 				X_perm = X_full
@@ -436,40 +369,6 @@ SeqDesignInferenceAbstractKKQuantileRegr = R6::R6Class("SeqDesignInferenceAbstra
 			)
 			if (is.null(fit)) return(NA_real_)
 			tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
-		},
-
-		# Fisher's chi-squared combination of independent p-values
-		combine_rand_pvals = function(p_M, p_R, m, nRT, nRC){
-			has_M = m > 0              && is.finite(p_M) && p_M > 0
-			has_R = nRT > 0 && nRC > 0 && is.finite(p_R) && p_R > 0
-			if (has_M && has_R){
-				pchisq(-2 * (log(p_M) + log(p_R)), df = 4, lower.tail = FALSE)
-			} else if (has_M){
-				p_M
-			} else if (has_R){
-				p_R
-			} else {
-				NA_real_
-			}
-		},
-
-		# Bisection to find CI boundary where p_fn(delta_0) == pval_th.
-		# Precondition: p_fn(inside) > pval_th, p_fn(outside) < pval_th.
-		bisect_ci_boundary = function(p_fn, inside, outside, pval_th, tol){
-			for (iter in seq_len(50L)){
-				mid   = (inside + outside) / 2
-				p_mid = tryCatch(p_fn(mid), error = function(e) NA_real_)
-				if (is.na(p_mid)) p_mid = 0
-
-				if (abs(p_mid - pval_th) < tol || abs(outside - inside) < 1e-8) break
-
-				if (p_mid > pval_th){
-					inside  = mid
-				} else {
-					outside = mid
-				}
-			}
-			(inside + outside) / 2
 		}
 	)
 )

@@ -231,7 +231,18 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 				return(invisible(NULL))
 			}
 
-			mod = fast_ols_with_var_cpp(cbind(1, Xd), yd, j = 1) #the only time you need the intercept's ssq
+			design_mat = cbind(1, Xd)
+			# Guard against near-singular bootstrap samples: duplicate rows reduce the
+			# effective rank, making X'X ill-conditioned even after QR rank reduction.
+			# LDLT on a near-singular X'X returns extreme but finite coefficients.
+			# Fall back to simple mean difference when the design matrix is ill-conditioned.
+			if (kappa(design_mat, exact = FALSE) > 1e6) {
+				private$cached_values$beta_T_matched     = if (m >= 1) mean(yd) else NA_real_
+				private$cached_values$ssq_beta_T_matched = if (m >= 2) var(yd) / m else NA_real_
+				return(invisible(NULL))
+			}
+
+			mod = fast_ols_with_var_cpp(design_mat, yd, j = 1) #the only time you need the intercept's ssq
 			private$cached_values$beta_T_matched     = mod$b[1]
 			private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
 		},
@@ -259,6 +270,19 @@ SeqDesignInferenceContinMultOLSKK = R6::R6Class("SeqDesignInferenceContinMultOLS
 				keep    = sort(keep)
 				X_full  = X_full[, keep, drop = FALSE]
 				j_treat = which(keep == 2L)
+			}
+
+			# Guard against near-singular bootstrap samples: duplicate rows reduce the
+			# effective rank, making X'X ill-conditioned even after QR rank reduction.
+			# LDLT on a near-singular X'X returns extreme but finite coefficients.
+			# Fall back to simple mean difference when the design matrix is ill-conditioned.
+			if (kappa(X_full, exact = FALSE) > 1e6) {
+				y_rT = y_r[w_r == 1]; y_rC = y_r[w_r == 0]
+				nRT_local = length(y_rT); nRC_local = length(y_rC)
+				private$cached_values$beta_T_reservoir = mean(y_rT) - mean(y_rC)
+				private$cached_values$ssq_beta_T_reservoir =
+					if (nRT_local > 1 && nRC_local > 1) var(y_rT)/nRT_local + var(y_rC)/nRC_local else NA_real_
+				return(invisible(NULL))
 			}
 
 			mod = fast_ols_with_var_cpp(X_full, y_r, j = j_treat)

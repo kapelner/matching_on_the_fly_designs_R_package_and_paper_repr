@@ -75,6 +75,8 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		}		
 	),
 	private = list(
+		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
+
 		shared = function(){
 			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
 			model_output = private$generate_mod() # Implemented by child classes (Weibull, NegBin)

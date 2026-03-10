@@ -30,9 +30,9 @@
 #'   \item \code{compute_rand_pval_reservoir(delta_0)}: two-sided p-value for
 #'         \eqn{H_0 : \mathrm{ATE}_\mathrm{reservoir} = \delta_0}.  Return
 #'         \code{NA_real_} when either reservoir arm is empty.
-#'   \item \code{combine_rand_pvals_fisher / _stouffer / _minp}: how to combine
-#'         the two component p-values.  Selected via the \code{combination_method}
-#'         constructor argument.
+#'   \item \code{combine_rand_pvals_fisher / _stouffer / _minp}: combination
+#'         rules selected via the \code{combination_method} argument of
+#'         \code{compute_confidence_interval_rand()}.
 #' }
 #'
 #' @keywords internal
@@ -42,15 +42,11 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 
 		#' @description
 		#' Initialize the object.
-		#' @param seq_des_obj       A SeqDesign object.
-		#' @param num_cores         Number of CPU cores for parallel processing.
-		#' @param verbose           Whether to print progress messages.
-		#' @param combination_method  How to combine the matched-pair and reservoir
-		#'   p-values.  One of \code{"Fisher"} (default), \code{"Stouffer"}, or
-		#'   \code{"min_p"}.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE, combination_method = "Fisher"){
+		#' @param seq_des_obj  A SeqDesign object.
+		#' @param num_cores    Number of CPU cores for parallel processing.
+		#' @param verbose      Whether to print progress messages.
+		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
-			private$combination_method = match.arg(combination_method, c("Fisher", "Stouffer", "min_p"))
 			# For KK designs set up match data eagerly (mirrors SeqDesignInferenceKKPassThrough)
 			if (is(seq_des_obj, "SeqDesignKK14")){
 				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
@@ -74,7 +70,7 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 		#'                         scale.  Default \code{0.005}.
 		#' @param show_progress    Forwarded to the base-class method for
 		#'                         non-incidence types; ignored by incidence methods.
-		#' @param method           CI algorithm to use for incidence outcomes.
+		#' @param method             CI algorithm to use for incidence outcomes.
 		#'   Currently supported:
 		#'   \describe{
 		#'     \item{\code{"zhang_combined"}}{(default) Exact test-inversion via
@@ -83,24 +79,27 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 		#'       \code{compute_rand_pval_matched_pairs()} and
 		#'       \code{compute_rand_pval_reservoir()}.}
 		#'   }
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE, method = "zhang_combined"){
+		#' @param combination_method  How to combine the matched-pair and reservoir
+		#'   p-values.  One of \code{"Fisher"} (default), \code{"Stouffer"}, or
+		#'   \code{"min_p"}.
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE, method = "zhang_combined", combination_method = "Fisher"){
 			if (private$seq_des_obj_priv_int$response_type != "incidence"){
 				return(super$compute_confidence_interval_rand(alpha, nsim_exact_test, pval_epsilon, show_progress))
 			}
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			method = match.arg(method, choices = c("zhang_combined"))
+			method             = match.arg(method, choices = c("zhang_combined"))
+			combination_method = match.arg(combination_method, c("Fisher", "Stouffer", "min_p"))
 
 			switch(method,
-				zhang_combined = private$ci_rand_combine_matched_pair_and_reservoir_p_values(alpha, pval_epsilon)
+				zhang_combined = private$ci_rand_combine_matched_pair_and_reservoir_p_values(alpha, pval_epsilon, combination_method)
 			)
 		}
 	),
 
 	private = list(
 
-		combination_method = NULL,
-		match_indic        = NULL,
+		match_indic = NULL,
 
 		# -----------------------------------------------------------------------
 		# KK match-data setup (mirrors SeqDesignInferenceKKPassThrough so that
@@ -159,7 +158,7 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 		# The combination rule is chosen by private$combination_method.
 		# -----------------------------------------------------------------------
 
-		ci_rand_combine_matched_pair_and_reservoir_p_values = function(alpha, pval_epsilon){
+		ci_rand_combine_matched_pair_and_reservoir_p_values = function(alpha, pval_epsilon, combination_method){
 			# Design validation: only CRD and KK supported by this method
 			is_crd = is(private$seq_des_obj, "SeqDesignCRD")
 			is_kk  = is(private$seq_des_obj, "SeqDesignKK14")
@@ -192,11 +191,10 @@ SeqDesignInferenceAbstractIncidRandCI = R6::R6Class("SeqDesignInferenceAbstractI
 
 			# Combined two-sided p-value: large near est, declines as delta_0 moves away.
 			# Switch on combination_method to select Fisher / Stouffer / min_p.
-			combiner = private$combination_method
 			p_fn = function(delta_0){
 				p_M = if (m > 0)             private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
 				p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
-				switch(combiner,
+				switch(combination_method,
 					Fisher   = private$combine_rand_pvals_fisher(p_M, p_R, m, nRT, nRC),
 					Stouffer = private$combine_rand_pvals_stouffer(p_M, p_R, m, nRT, nRC),
 					min_p    = private$combine_rand_pvals_minp(p_M, p_R, m, nRT, nRC)

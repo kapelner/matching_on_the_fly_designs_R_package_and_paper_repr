@@ -36,7 +36,7 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \code{install.packages("quantreg")} before using this class.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceKKPassThrough]{SeqExpMatch::SeqDesignInferenceKKPassThrough}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKQuantileRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr}} -> \code{SeqDesignInferenceContinMultKKQuantileRegr}
+\code{\link[SeqExpMatch:SeqDesignInference]{SeqExpMatch::SeqDesignInference}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractQuantileRandCI]{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI}} -> \code{\link[SeqExpMatch:SeqDesignInferenceAbstractKKQuantileRegr]{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr}} -> \code{SeqDesignInferenceContinMultKKQuantileRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -48,14 +48,14 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractQuantileRandCI.html#method-SeqDesignInferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegr" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegr.html#method-SeqDesignInferenceAbstractKKQuantileRegr-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr$compute_mle_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegr" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegr.html#method-SeqDesignInferenceAbstractKKQuantileRegr-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegr" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegr.html#method-SeqDesignInferenceAbstractKKQuantileRegr-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegr$compute_treatment_estimate()</code></a></span></li>
@@ -71,7 +71,6 @@ Initialize a sequential experimental design estimation and test object after the
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegr$new(
   seq_des_obj,
   tau = 0.5,
-  method = "zhang_combined",
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -85,10 +84,6 @@ Initialize a sequential experimental design estimation and test object after the
 \item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
 estimates the median treatment effect. Pass a different value (e.g. \code{tau = 0.25} or
 \code{tau = 0.75}) to target the corresponding percentile of the treatment effect distribution.}
-
-\item{\code{method}}{The compound estimation method. Currently only \code{"zhang_combined"} is supported
-(variance-weighted combination of matched-pair and reservoir quantile regressions).
-This argument is provided to allow for additional methods in future versions.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
 and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference

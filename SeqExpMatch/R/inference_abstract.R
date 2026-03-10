@@ -104,6 +104,29 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				environment(private[["custom_randomization_statistic_function"]]) = environment(self$initialize)
 			}		    						
 		},
+
+		#' @description
+		#' Computes the appropriate estimate
+		#' @return 	The numeric estimate of the treatment effect
+		compute_treatment_estimate = function(){
+			stop(class(self)[1], " must implement compute_treatment_estimate()")
+		},
+
+		#' @description
+		#' Computes a 1-alpha level frequentist confidence interval
+		#' @param alpha					The confidence level.
+		#' @return 	A confidence interval
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			stop(class(self)[1], " must implement compute_mle_confidence_interval(alpha)")
+		},
+
+		#' @description
+		#' Computes a 2-sided p-value
+		#' @param delta					The null difference to test against.
+		#' @return 	The frequentist p-value
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			stop(class(self)[1], " must implement compute_mle_two_sided_pval_for_treatment_effect(delta)")
+		},
 		
 		#' @description
 		#' Creates the boostrap distribution of the estimate for the treatment effect
