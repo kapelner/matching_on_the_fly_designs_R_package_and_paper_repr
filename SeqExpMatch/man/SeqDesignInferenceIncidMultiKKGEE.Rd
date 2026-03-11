@@ -8,10 +8,9 @@ Fits a Generalized Estimating Equations (GEE) model (via \code{geepack::geeglm})
 for binary (incidence) responses under a KK matching-on-the-fly design using the
 treatment indicator and all recorded covariates as predictors. Matched pairs are
 treated as clusters (with exchangeable correlation structure); reservoir subjects
-each form their own singleton cluster. Unlike
-\code{SeqDesignInferenceAbstractKKClogit}, all subjects (matched and reservoir) are
-included. Inference is based on sandwich-robust standard errors, so the test
-statistic is Z-distributed.
+each form their own singleton cluster. Unlike conditional-logit-only matched-pair
+analyses, all subjects (matched and reservoir) are included. Inference is based on
+sandwich-robust standard errors, so the test statistic is Z-distributed.
 }
 \details{
 This class requires the \pkg{geepack} package, which is listed under \code{Suggests}
@@ -42,6 +41,9 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidMultiKKGEE-new}{\code{SeqDesignInferenceIncidMultiKKGEE$new()}}
+\item \href{#method-SeqDesignInferenceIncidMultiKKGEE-compute_treatment_estimate}{\code{SeqDesignInferenceIncidMultiKKGEE$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidMultiKKGEE$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidMultiKKGEE$compute_mle_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidMultiKKGEE-clone}{\code{SeqDesignInferenceIncidMultiKKGEE$clone()}}
 }
 }
@@ -56,9 +58,6 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGEE" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGEE.html#method-SeqDesignInferenceAbstractKKGEE-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGEE$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGEE" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGEE.html#method-SeqDesignInferenceAbstractKKGEE-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGEE$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGEE" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGEE.html#method-SeqDesignInferenceAbstractKKGEE-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGEE$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -108,6 +107,52 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiKKGEE-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidMultiKKGEE-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiKKGEE$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Computes the MLE-based confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiKKGEE$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Computes the MLE-based p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiKKGEE$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiKKGEE-clone"></a>}}

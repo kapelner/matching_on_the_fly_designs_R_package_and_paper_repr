@@ -45,6 +45,9 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceSurvivalUnivKKGLMM-new}{\code{SeqDesignInferenceSurvivalUnivKKGLMM$new()}}
+\item \href{#method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_treatment_estimate}{\code{SeqDesignInferenceSurvivalUnivKKGLMM$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_confidence_interval}{\code{SeqDesignInferenceSurvivalUnivKKGLMM$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalUnivKKGLMM$compute_mle_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceSurvivalUnivKKGLMM-clone}{\code{SeqDesignInferenceSurvivalUnivKKGLMM$clone()}}
 }
 }
@@ -59,9 +62,6 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGLMM" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGLMM.html#method-SeqDesignInferenceAbstractKKGLMM-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGLMM$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGLMM" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGLMM.html#method-SeqDesignInferenceAbstractKKGLMM-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGLMM$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKGLMM" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKGLMM.html#method-SeqDesignInferenceAbstractKKGLMM-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKGLMM$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -111,6 +111,54 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalUnivKKGLMM$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Computes the MLE-based confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalUnivKKGLMM$compute_mle_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalUnivKKGLMM-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Computes the MLE-based p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalUnivKKGLMM$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceSurvivalUnivKKGLMM-clone"></a>}}

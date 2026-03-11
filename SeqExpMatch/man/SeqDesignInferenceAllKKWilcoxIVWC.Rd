@@ -21,6 +21,7 @@ distribution for the response.
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_treatment_estimate}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_treatment_estimate()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-clone}{\code{SeqDesignInferenceAllKKWilcoxIVWC$clone()}}
 }
 }
@@ -34,7 +35,6 @@ distribution for the response.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKWilcoxBaseIVWC" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKWilcoxBaseIVWC.html#method-SeqDesignInferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -105,6 +105,28 @@ Computes the non-parametric p-value.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Computes the bootstrap confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKWilcoxIVWC$compute_bootstrap_confidence_interval(
+  alpha = 0.05,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level. Default is 0.05.}
+
+\item{\code{...}}{Additional arguments passed to the superclass method.}
 }
 \if{html}{\out{</div>}}
 }

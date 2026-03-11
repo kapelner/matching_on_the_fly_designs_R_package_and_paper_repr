@@ -43,6 +43,10 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-new}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$new()}}
+\item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_confidence_interval_rand}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_confidence_interval_rand()}}
+\item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_treatment_estimate}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-clone}{\code{SeqDesignInferencePropMultiKKQuantileRegrIVWC$clone()}}
 }
 }
@@ -56,10 +60,6 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractQuantileRandCI.html#method-SeqDesignInferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrIVWC" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrIVWC.html#method-SeqDesignInferenceAbstractKKQuantileRegrIVWC-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrIVWC$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrIVWC" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrIVWC.html#method-SeqDesignInferenceAbstractKKQuantileRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrIVWC$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrIVWC" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrIVWC.html#method-SeqDesignInferenceAbstractKKQuantileRegrIVWC-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -91,6 +91,82 @@ different percentile of the treatment effect distribution.}
 and bootstrap resampling. The default is 1 for serial computation.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_confidence_interval_rand}{}}}
+\subsection{Method \code{compute_confidence_interval_rand()}}{
+Computes the randomization-based confidence interval via Zhang's combined test.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_confidence_interval_rand(
+  alpha = 0.05,
+  nsim_exact_test = 499,
+  pval_epsilon = 0.005,
+  show_progress = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level is 1 - \code{alpha}.}
+
+\item{\code{nsim_exact_test}}{Number of random sign-flips / permutations.}
+
+\item{\code{pval_epsilon}}{Bisection convergence tolerance.}
+
+\item{\code{show_progress}}{Ignored.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Computes the MLE-based confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_mle_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Computes the MLE-based p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrIVWC$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is zero.}
 }
 \if{html}{\out{</div>}}
 }

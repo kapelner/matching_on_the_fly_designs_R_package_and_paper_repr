@@ -3,9 +3,12 @@
 %   R/inference_continuous_KK_quantile_regr_combined_likelihood.R
 \name{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood}
 \alias{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood}
-\title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (stub, continuous)}
+\title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)}
 \description{
-Stub placeholder. Methods are not yet implemented.
+Fits the combined stacked quantile regression (matched-pair differences + reservoir)
+using the treatment indicator and all recorded covariates for continuous responses.
+Minimises the joint check-function loss over both data sources simultaneously.
+Inference is based on the stacked combined-likelihood quantile-regression fit.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood}
@@ -14,6 +17,10 @@ Stub placeholder. Methods are not yet implemented.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-new}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$new()}}
+\item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_confidence_interval_rand}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_confidence_interval_rand()}}
+\item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_confidence_interval}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_mle_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-clone}{\code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$clone()}}
 }
 }
@@ -27,10 +34,6 @@ Stub placeholder. Methods are not yet implemented.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractQuantileRandCI.html#method-SeqDesignInferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -58,6 +61,82 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_confidence_interval_rand}{}}}
+\subsection{Method \code{compute_confidence_interval_rand()}}{
+Computes the randomization-based confidence interval via Zhang's combined test.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_confidence_interval_rand(
+  alpha = 0.05,
+  nsim_exact_test = 499,
+  pval_epsilon = 0.005,
+  show_progress = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level is 1 - \code{alpha}.}
+
+\item{\code{nsim_exact_test}}{Number of random sign-flips / permutations.}
+
+\item{\code{pval_epsilon}}{Bisection convergence tolerance.}
+
+\item{\code{show_progress}}{Ignored.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Computes the MLE-based confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_mle_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Computes the MLE-based p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
 }
 \if{html}{\out{</div>}}
 }

@@ -63,6 +63,14 @@ SeqDesignInferenceAllKKWilcoxIVWC = R6::R6Class("SeqDesignInferenceAllKKWilcoxIV
 			} else {
 				stop("Testing non-zero delta is not yet implemented for the combined rank estimator.")
 			}
+		},
+
+		#' @description
+		#' Computes the bootstrap confidence interval.
+		#' @param alpha The confidence level. Default is 0.05.
+		#' @param ... Additional arguments passed to the superclass method.
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, ...){
+			super$compute_bootstrap_confidence_interval(alpha = alpha, ...)
 		}
 	),
 

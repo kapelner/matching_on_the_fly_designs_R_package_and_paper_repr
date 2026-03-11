@@ -52,6 +52,41 @@ SeqDesignInferenceContinMultKKQuantileRegrIVWC = R6::R6Class("SeqDesignInference
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, tau, identity, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
+		},
+
+		#' @description
+		#' Computes the randomization-based confidence interval via Zhang's combined test.
+		#' @param alpha The confidence level is 1 - \code{alpha}.
+		#' @param nsim_exact_test Number of random sign-flips / permutations.
+		#' @param pval_epsilon Bisection convergence tolerance.
+		#' @param show_progress Ignored.
+		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 499, pval_epsilon = 0.005, show_progress = TRUE){
+			super$compute_confidence_interval_rand(
+				alpha = alpha,
+				nsim_exact_test = nsim_exact_test,
+				pval_epsilon = pval_epsilon,
+				show_progress = show_progress
+			)
+		},
+
+		#' @description
+		#' Returns the estimated treatment effect.
+		compute_treatment_estimate = function(){
+			super$compute_treatment_estimate()
+		},
+
+		#' @description
+		#' Computes the MLE-based confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			super$compute_mle_confidence_interval(alpha = alpha)
+		},
+
+		#' @description
+		#' Computes the MLE-based p-value.
+		#' @param delta The null difference to test against. Default is zero.
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	)
 )
