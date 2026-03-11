@@ -101,7 +101,9 @@ Computes the randomization-based confidence interval via Zhang's combined test.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
+  
+)}\if{html}{\out{</div>}}
 }
 
 }
@@ -119,7 +121,7 @@ Computes the MLE-based confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95 percent CI.}
 }
 \if{html}{\out{</div>}}
 }

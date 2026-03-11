@@ -42,7 +42,7 @@ SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqD
 
 		#' @description
 		#' Computes the MLE-based confidence interval.
-		#' @param alpha Significance level; default 0.05 gives a 95% CI.
+		#' @param alpha Significance level; default 0.05 gives a 95 percent CI.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			super$compute_mle_confidence_interval(alpha = alpha)
 		},
