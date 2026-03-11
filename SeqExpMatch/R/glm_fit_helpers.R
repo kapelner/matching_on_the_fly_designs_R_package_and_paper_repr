@@ -944,3 +944,32 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #    fit$control <- control
 #    fit$offset <- offset
 #    fit
+
+# Conditional logistic regression for matched pairs.
+#
+# Replaces bclogit::clogit. For matched pairs (exactly 2 subjects per stratum),
+# the conditional log-likelihood depends only on discordant pairs. Within each
+# discordant pair the contribution reduces to ordinary logistic regression on
+# signed within-pair differences with no intercept.
+#
+# @param y_m       Binary outcome vector (0/1) for matched subjects.
+# @param X_m       Covariate matrix or data.frame (may have 0 columns).
+# @param w_m       Treatment indicator (0/1) for matched subjects.
+# @param strata_m  Integer stratum IDs (pair labels) for matched subjects.
+# @return          Result list from fast_logistic_regression_with_var:
+#                  b[1] = beta_T, ssq_b_j = Var(beta_T). NULL on failure.
+clogit_helper = function(y_m, X_m, w_m, strata_m){
+	p     = if (is.null(X_m) || ncol(X_m) == 0L) 0L else ncol(X_m)
+	X_mat = if (p > 0L) as.matrix(X_m) else matrix(nrow = length(y_m), ncol = 0L)
+
+	res = collect_discordant_pairs_cpp(as.double(y_m), as.double(w_m), X_mat, as.integer(strata_m))
+	nd  = res$nd
+	if (nd < p + 5L) return(NULL)         # too few discordant pairs
+
+	X_full = if (p > 0L) cbind(res$t_diffs, res$X_diffs) else matrix(res$t_diffs, ncol = 1L)
+
+	tryCatch(
+		fast_logistic_regression_with_var(X_full, res$y_01, j = 1L),
+		error = function(e) NULL
+	)
+}

@@ -3,16 +3,13 @@
 #' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
 #' responses using only the treatment indicator (no additional covariates). For matched
-#' pairs, a conditional logistic regression model (via \code{bclogit::clogit}) is used.
-#' For reservoir subjects, a standard logistic regression is used. The two estimates
-#' are combined via a variance-weighted linear combination, analogous to
-#' \code{SeqDesignInferenceContinMultOLSKK}. If clogit fails (e.g. no discordant pairs),
-#' the estimator falls back to logistic regression on the reservoir only.
-#'
-#' @details
-#' This class requires the \pkg{bclogit} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("bclogit")} before using this class.
+#' pairs, a conditional logistic regression model is used (via the internal
+#' \code{clogit_helper}, which processes discordant pairs and fits logistic regression
+#' on within-pair signed differences). For reservoir subjects, a standard logistic
+#' regression is used. The two estimates are combined via a variance-weighted linear
+#' combination, analogous to \code{SeqDesignInferenceContinMultOLSKK}. If clogit fails
+#' (e.g. no discordant pairs), the estimator falls back to logistic regression on the
+#' reservoir only.
 #'
 #' @export
 SeqDesignInferenceIncidUnivKKClogitIVWC = R6::R6Class("SeqDesignInferenceIncidUnivKKClogitIVWC",
@@ -43,6 +40,26 @@ SeqDesignInferenceIncidUnivKKClogitIVWC = R6::R6Class("SeqDesignInferenceIncidUn
 		#' }
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
+		},
+
+		#' @description
+		#' Returns the estimated treatment effect.
+		compute_treatment_estimate = function(){
+			super$compute_treatment_estimate()
+		},
+
+		#' @description
+		#' Computes the MLE-based confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			super$compute_mle_confidence_interval(alpha = alpha)
+		},
+
+		#' @description
+		#' Computes the MLE-based p-value.
+		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	),
 	private = list(

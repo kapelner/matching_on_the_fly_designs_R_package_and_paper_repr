@@ -42,37 +42,10 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 				match_indic = rep(0, private$n)
 			}
 			match_indic[is.na(match_indic)] = 0
-			m = max(match_indic, na.rm = TRUE)
 			y = private$y
 			w = private$w
 
-			yTs_matched     = array(NA, m)
-			yCs_matched     = array(NA, m)
-			y_matched_diffs = array(NA, m)
-			X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(private$X))
-			if (m > 0){
-				match_data      = match_diffs_cpp(w, match_indic, y, private$X, m)
-				yTs_matched     = match_data$yTs_matched
-				yCs_matched     = match_data$yCs_matched
-				X_matched_diffs = match_data$X_matched_diffs
-				nonzero_cols    = apply(X_matched_diffs, 2, function(col) any(col != 0))
-				X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE]
-				y_matched_diffs = yTs_matched - yCs_matched
-			}
-			w_reservoir = w[match_indic == 0]
-
-			private$cached_values$KKstats = list(
-				X_matched_diffs = X_matched_diffs,
-				yTs_matched     = yTs_matched,
-				yCs_matched     = yCs_matched,
-				y_matched_diffs = y_matched_diffs,
-				X_reservoir     = private$X[match_indic == 0, , drop = FALSE],
-				y_reservoir     = y[match_indic == 0],
-				w_reservoir     = w_reservoir,
-				nRT             = sum(w_reservoir, na.rm = TRUE),
-				nRC             = sum(w_reservoir == 0, na.rm = TRUE),
-				m               = m
-			)
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(w, match_indic, y, private$X)
 		},
 
 		# -----------------------------------------------------------------------
@@ -118,10 +91,12 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 		# Abstract hooks for subclasses
 		# -----------------------------------------------------------------------
 
-		compute_treatment_estimate_internal     = function() stop("must implement"),
+		compute_treatment_estimate_internal      = function() stop("must implement"),
 		compute_mle_confidence_interval_internal = function(alpha) stop("must implement"),
-		compute_exact_pval_matched_pairs          = function(delta_0) stop("must implement"),
-		compute_exact_pval_reservoir              = function(delta_0) stop("must implement"),
+		
+		# Children must implement these to provide the per-component p-values
+		compute_exact_pval_matched_pairs         = function(delta_0) stop("must implement"),
+		compute_exact_pval_reservoir             = function(delta_0) stop("must implement"),
 
 		# -----------------------------------------------------------------------
 		# Combination Rules
@@ -134,16 +109,16 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			if (has_M && has_R){
 				switch(method,
 					Fisher = {
-						pchisq(-2 * (log(p_M) + log(p_R)), df = 4, lower.tail = FALSE)
+						stats::pchisq(-2 * (base::log(p_M) + base::log(p_R)), df = 4, lower.tail = FALSE)
 					},
 					Stouffer = {
-						z_M = qnorm(1 - p_M / 2)
-						z_R = qnorm(1 - p_R / 2)
-						z_combined = (z_M + z_R) / sqrt(2)
-						2 * pnorm(-abs(z_combined))
+						z_M = stats::qnorm(1 - p_M / 2)
+						z_R = stats::qnorm(1 - p_R / 2)
+						z_combined = (z_M + z_R) / base::sqrt(2)
+						2 * stats::pnorm(-base::abs(z_combined))
 					},
 					min_p = {
-						1 - (1 - min(p_M, p_R))^2
+						1 - (1 - base::min(p_M, p_R))^2
 					}
 				)
 			} else if (has_M){
@@ -153,6 +128,10 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			} else {
 				NA_real_
 			}
+		},
+
+		combine_rand_pvals = function(p_M, p_R, m, nRT, nRC, method){
+			private$combine_exact_pvals(p_M, p_R, m, nRT, nRC, method)
 		},
 
 		# -----------------------------------------------------------------------

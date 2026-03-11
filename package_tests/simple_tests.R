@@ -107,8 +107,8 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 }
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
-	skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxIVWC") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoissonIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMultiIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegrIVWC")
-	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract")
+	skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxIVWC") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoissonIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMultiIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoissonCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood")
+	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract")
 	skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract")
 	skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrIVWC")
 	skip_ci = beta_T == 1 && (
@@ -358,6 +358,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrUnivIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceAllKKWilcoxRegrMultiIVWC")
 		run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrMultiIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceContinMultOLSKKCombinedLikelihood")
+		run_inference_checks(SeqDesignInferenceContinMultOLSKKCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceContinMultOLSKKIVWC")
 		run_inference_checks(SeqDesignInferenceContinMultOLSKKIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceContinMultGLS")
@@ -382,6 +384,10 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceIncidKKExactZhang")
 		run_inference_checks(SeqDesignInferenceIncidKKExactZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceIncidUnivKKClogitCombinedLikelihood")
+		run_inference_checks(SeqDesignInferenceIncidUnivKKClogitCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood")
+		run_inference_checks(SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceIncidUnivKKClogitIVWC")
 		run_inference_checks(SeqDesignInferenceIncidUnivKKClogitIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceIncidMultiKKClogitIVWC")
@@ -446,6 +452,10 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		run_inference_checks(SeqDesignInferenceCountUnivKKGEE$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		# inference_banner("SeqDesignInferenceCountMultiKKGEE")
 		# run_inference_checks(SeqDesignInferenceCountMultiKKGEE$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceCountUnivKKCPoissonCombinedLikelihood")
+		run_inference_checks(SeqDesignInferenceCountUnivKKCPoissonCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceCountMultiKKCPoissonCombinedLikelihood")
+		run_inference_checks(SeqDesignInferenceCountMultiKKCPoissonCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceCountUnivKKCPoissonIVWC")
 		run_inference_checks(SeqDesignInferenceCountUnivKKCPoissonIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("SeqDesignInferenceCountMultiKKCPoissonIVWC")
@@ -490,7 +500,11 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		SeqDesignInferenceSurvivalUnivKKRankRegrIVWC,
 		SeqDesignInferenceSurvivalMultiKKRankRegrIVWC,
 		SeqDesignInferenceSurvivalUnivKKWeibullFrailtyIVWC,
-		SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC
+		SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC,
+		SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood,
+		SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood,
+		SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood,
+		SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood
 		)){
 		class_name = kk_surv_class$classname
 		inference_banner(class_name)

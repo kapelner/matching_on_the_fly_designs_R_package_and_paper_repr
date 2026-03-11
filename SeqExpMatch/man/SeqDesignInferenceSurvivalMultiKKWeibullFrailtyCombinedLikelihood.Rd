@@ -3,9 +3,11 @@
 %   R/inference_survival_KK_weibull_frailty_multi_combined_likelihood.R
 \name{SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood}
 \alias{SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood}
-\title{Multivariate Weibull Frailty Combined-Likelihood Compound Inference for KK Designs (stub)}
+\title{Multivariate Weibull Frailty Combined-Likelihood Inference for KK Designs}
 \description{
-Stub placeholder. Methods are not yet implemented.
+Fits a single joint Weibull frailty model (matched pairs + reservoir as singletons)
+using the treatment indicator and all recorded covariates. See
+\code{SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood} for details.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood} -> \code{SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood}

@@ -5,10 +5,9 @@
 #' for binary (incidence) responses under a KK matching-on-the-fly design using the
 #' treatment indicator and all recorded covariates as predictors. Matched pairs are
 #' treated as clusters (with exchangeable correlation structure); reservoir subjects
-#' each form their own singleton cluster. Unlike
-#' \code{SeqDesignInferenceAbstractKKClogit}, all subjects (matched and reservoir) are
-#' included. Inference is based on sandwich-robust standard errors, so the test
-#' statistic is Z-distributed.
+#' each form their own singleton cluster. Unlike conditional-logit-only matched-pair
+#' analyses, all subjects (matched and reservoir) are included. Inference is based on
+#' sandwich-robust standard errors, so the test statistic is Z-distributed.
 #'
 #' @details
 #' This class requires the \pkg{geepack} package, which is listed under \code{Suggests}
@@ -44,6 +43,26 @@ SeqDesignInferenceIncidMultiKKGEE = R6::R6Class("SeqDesignInferenceIncidMultiKKG
 		#' }
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
+		},
+
+		#' @description
+		#' Returns the estimated treatment effect.
+		compute_treatment_estimate = function(){
+			super$compute_treatment_estimate()
+		},
+
+		#' @description
+		#' Computes the MLE-based confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			super$compute_mle_confidence_interval(alpha = alpha)
+		},
+
+		#' @description
+		#' Computes the MLE-based p-value.
+		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	),
 	private = list(

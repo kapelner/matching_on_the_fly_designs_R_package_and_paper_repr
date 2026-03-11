@@ -6,16 +6,13 @@
 \description{
 Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
 responses using the treatment indicator and all recorded covariates. For matched
-pairs, a conditional logistic regression model (via \code{bclogit::clogit}) is used.
-For reservoir subjects, a standard logistic regression is used. The two estimates
-are combined via a variance-weighted linear combination, analogous to
-\code{SeqDesignInferenceContinMultOLSKK}. If clogit fails (e.g. no discordant pairs),
-the estimator falls back to logistic regression on the reservoir only.
-}
-\details{
-This class requires the \pkg{bclogit} package, which is listed under \code{Suggests}
-and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-\code{install.packages("bclogit")} before using this class.
+pairs, a conditional logistic regression model is used (via the internal
+\code{clogit_helper}, which processes discordant pairs and fits logistic regression
+on within-pair signed differences). For reservoir subjects, a standard logistic
+regression is used. The two estimates are combined via a variance-weighted linear
+combination, analogous to \code{SeqDesignInferenceContinMultOLSKK}. If clogit fails
+(e.g. no discordant pairs), the estimator falls back to logistic regression on the
+reservoir only.
 }
 \examples{
 

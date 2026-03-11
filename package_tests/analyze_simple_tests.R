@@ -12,6 +12,8 @@ colnames(X)
 X[function_run == "compute_bootstrap_confidence_interval", function_run := "ci_bootstrap"]
 X[function_run == "compute_bootstrap_two_sided_pval", function_run := "pval_bootstrap"]
 X[function_run == "compute_confidence_interval_rand", function_run := "ci_rand"]
+X[function_run == "compute_exact_confidence_interval", function_run := "ci_exact"]
+X[function_run == "compute_exact_two_sided_pval_for_treatment_effect", function_run := "pval_exact"]
 X[function_run == "compute_confidence_interval_rand(custom)", function_run := "ci_rand_custom"]
 X[function_run == "compute_mle_confidence_interval", function_run := "ci_mle"]
 X[function_run == "compute_mle_two_sided_pval_for_treatment_effect", function_run := "pval_mle"]
@@ -24,8 +26,8 @@ table(X$function_run)
 #check duration time
 D = X[, .(mean_duration = mean(duration_time_sec)),
 	by = c("inference_class", "design", "function_run")][order(-mean_duration)]
-D[1:100]
-table(D[1:100]$inference_class)
+D[1:50]
+table(D[1:50]$inference_class)
 
 #we kind of don't care as much about these results
 Xextra = X[function_run %in% c("pval_rand_custom", "pval_rand_shift")]

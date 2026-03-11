@@ -8,10 +8,12 @@ Provides incidence-specific exact inference based on the Zhang (2026) combined
 method. For CRD designs this uses the reservoir exact test only.
 }
 \details{
-This class provides the \code{compute_exact_two_sided_pval_for_treatment_effect} and
-\code{compute_exact_confidence_interval} methods. Standard methods like
-\code{compute_treatment_estimate} and \code{compute_mle_confidence_interval}
-are not implemented for this class.
+This class provides the \code{compute_exact_two_sided_pval_for_treatment_effect}
+and \code{compute_exact_confidence_interval} methods for uncensored incidence
+outcomes under a completely randomized design. Standard estimator-based methods
+such as \code{compute_treatment_estimate()} and
+\code{compute_mle_confidence_interval()} are intentionally unavailable for this
+exact Zhang interface.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract} -> \code{SeqDesignInferenceIncidExactZhang}
@@ -20,25 +22,25 @@ are not implemented for this class.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidExactZhang-new}{\code{SeqDesignInferenceIncidExactZhang$new()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_treatment_estimate}{\code{SeqDesignInferenceIncidExactZhang$compute_treatment_estimate()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidExactZhang$compute_mle_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidExactZhang$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_confidence_interval_rand}{\code{SeqDesignInferenceIncidExactZhang$compute_confidence_interval_rand()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_two_sided_pval_for_treatment_effect_rand}{\code{SeqDesignInferenceIncidExactZhang$compute_two_sided_pval_for_treatment_effect_rand()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-approximate_bootstrap_distribution_beta_hat_T}{\code{SeqDesignInferenceIncidExactZhang$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceIncidExactZhang$compute_bootstrap_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_two_sided_pval}{\code{SeqDesignInferenceIncidExactZhang$compute_bootstrap_two_sided_pval()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_exact_confidence_interval}{\code{SeqDesignInferenceIncidExactZhang$compute_exact_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidExactZhang-clone}{\code{SeqDesignInferenceIncidExactZhang$clone()}}
 }
 }
 \if{html}{\out{
-<details><summary>Inherited methods</summary>
+<details open><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_exact_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceIncidExactZhangAbstract" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInferenceIncidExactZhangAbstract.html#method-SeqDesignInferenceIncidExactZhangAbstract-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInferenceIncidExactZhangAbstract$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -63,6 +65,190 @@ Initialize the exact incidence inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_treatment_estimate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval}{}}}
+\subsection{Method \code{compute_mle_confidence_interval()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_mle_two_sided_pval_for_treatment_effect(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_confidence_interval_rand}{}}}
+\subsection{Method \code{compute_confidence_interval_rand()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_confidence_interval_rand(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_two_sided_pval_for_treatment_effect_rand}{}}}
+\subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_two_sided_pval_for_treatment_effect_rand(
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$approximate_bootstrap_distribution_beta_hat_T(
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_bootstrap_confidence_interval(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Not implemented for Zhang exact incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_bootstrap_two_sided_pval(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_exact_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_exact_confidence_interval}{}}}
+\subsection{Method \code{compute_exact_confidence_interval()}}{
+Computes the exact Zhang confidence interval for the log-odds treatment
+effect under CRD.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_exact_confidence_interval(
+  alpha = 0.05,
+  pval_epsilon = 0.005,
+  combination_method = "Fisher"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; the interval covers \code{1 - alpha}.}
+
+\item{\code{pval_epsilon}}{Bisection convergence tolerance.}
+
+\item{\code{combination_method}}{Combination rule for component p-values.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
+Computes the exact Zhang two-sided p-value for the log-odds treatment
+effect under CRD.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect(
+  delta = 0,
+  combination_method = "Fisher"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect (log-odds ratio) to test.}
+
+\item{\code{combination_method}}{Combination rule for component p-values.}
 }
 \if{html}{\out{</div>}}
 }

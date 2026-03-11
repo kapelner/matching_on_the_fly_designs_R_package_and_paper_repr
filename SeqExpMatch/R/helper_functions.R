@@ -332,33 +332,5 @@ NULL
 		match_indic = rep(0, n)
 	}
 	match_indic[is.na(match_indic)] = 0
-	m = max(match_indic, na.rm = TRUE)
-
-	yTs_matched     = array(NA, m)
-	yCs_matched     = array(NA, m)
-	y_matched_diffs = array(NA, m)
-	X_matched_diffs = matrix(NA, nrow = m, ncol = ncol(X))
-	if (m > 0){
-		match_data      = match_diffs_cpp(w, match_indic, y, X, m)
-		yTs_matched     = match_data$yTs_matched
-		yCs_matched     = match_data$yCs_matched
-		X_matched_diffs = match_data$X_matched_diffs
-		nonzero_cols    = apply(X_matched_diffs, 2, function(col) any(col != 0))
-		X_matched_diffs = X_matched_diffs[, nonzero_cols, drop = FALSE]
-		y_matched_diffs = yTs_matched - yCs_matched
-	}
-	w_reservoir = w[match_indic == 0]
-
-	list(
-		X_matched_diffs = X_matched_diffs,
-		yTs_matched     = yTs_matched,
-		yCs_matched     = yCs_matched,
-		y_matched_diffs = y_matched_diffs,
-		X_reservoir     = X[match_indic == 0, , drop = FALSE],
-		y_reservoir     = y[match_indic == 0],
-		w_reservoir     = w_reservoir,
-		nRT             = sum(w_reservoir, na.rm = TRUE),
-		nRC             = sum(w_reservoir == 0, na.rm = TRUE),
-		m               = m
-	)
+	compute_zhang_match_data_cpp(w, match_indic, y, X)
 }

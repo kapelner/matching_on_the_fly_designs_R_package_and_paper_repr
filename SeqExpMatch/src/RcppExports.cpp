@@ -259,6 +259,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// collect_discordant_pairs_cpp
+List collect_discordant_pairs_cpp(const Eigen::VectorXd& y_m, const Eigen::VectorXd& w_m, const Eigen::MatrixXd& X_m, const Rcpp::IntegerVector& strata_m);
+RcppExport SEXP _SeqExpMatch_collect_discordant_pairs_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_m(y_mSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type w_m(w_mSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_m(X_mSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type strata_m(strata_mSEXP);
+    rcpp_result_gen = Rcpp::wrap(collect_discordant_pairs_cpp(y_m, w_m, X_m, strata_m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// build_kk_combined_clogit_design_cpp
+List build_kk_combined_clogit_design_cpp(const Eigen::VectorXd& y_m, const Eigen::VectorXd& w_m, const Eigen::MatrixXd& X_m, const Rcpp::IntegerVector& strata_m, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r);
+RcppExport SEXP _SeqExpMatch_build_kk_combined_clogit_design_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_m(y_mSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type w_m(w_mSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_m(X_mSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type strata_m(strata_mSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_r(y_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type w_r(w_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_r(X_rSEXP);
+    rcpp_result_gen = Rcpp::wrap(build_kk_combined_clogit_design_cpp(y_m, w_m, X_m, strata_m, y_r, w_r, X_r));
+    return rcpp_result_gen;
+END_RCPP
+}
 // build_kk_combined_ols_design_cpp
 List build_kk_combined_ols_design_cpp(const Eigen::VectorXd& yd, const Eigen::MatrixXd& Xd, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r);
 RcppExport SEXP _SeqExpMatch_build_kk_combined_ols_design_cpp(SEXP ydSEXP, SEXP XdSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
@@ -356,6 +387,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
     Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_beta_regression_with_var_cpp(X, y, start_beta, start_phi, compute_std_errs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_cpoisson_combined_with_var_cpp
+List fast_cpoisson_combined_with_var_cpp(const Eigen::VectorXd& yT_v, const Eigen::VectorXd& n_k_v, const Eigen::MatrixXd& X_diff_v, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_cpoisson_combined_with_var_cpp(SEXP yT_vSEXP, SEXP n_k_vSEXP, SEXP X_diff_vSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type yT_v(yT_vSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type n_k_v(n_k_vSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_diff_v(X_diff_vSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_r(y_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type w_r(w_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_r(X_rSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_cpoisson_combined_with_var_cpp(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -944,6 +993,48 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// zhang_exact_binom_pval_cpp
+double zhang_exact_binom_pval_cpp(int d_plus, int d_minus, double delta_0);
+RcppExport SEXP _SeqExpMatch_zhang_exact_binom_pval_cpp(SEXP d_plusSEXP, SEXP d_minusSEXP, SEXP delta_0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type d_plus(d_plusSEXP);
+    Rcpp::traits::input_parameter< int >::type d_minus(d_minusSEXP);
+    Rcpp::traits::input_parameter< double >::type delta_0(delta_0SEXP);
+    rcpp_result_gen = Rcpp::wrap(zhang_exact_binom_pval_cpp(d_plus, d_minus, delta_0));
+    return rcpp_result_gen;
+END_RCPP
+}
+// zhang_exact_fisher_pval_cpp
+double zhang_exact_fisher_pval_cpp(int n11, int n10, int n01, int n00, double delta_0);
+RcppExport SEXP _SeqExpMatch_zhang_exact_fisher_pval_cpp(SEXP n11SEXP, SEXP n10SEXP, SEXP n01SEXP, SEXP n00SEXP, SEXP delta_0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n11(n11SEXP);
+    Rcpp::traits::input_parameter< int >::type n10(n10SEXP);
+    Rcpp::traits::input_parameter< int >::type n01(n01SEXP);
+    Rcpp::traits::input_parameter< int >::type n00(n00SEXP);
+    Rcpp::traits::input_parameter< double >::type delta_0(delta_0SEXP);
+    rcpp_result_gen = Rcpp::wrap(zhang_exact_fisher_pval_cpp(n11, n10, n01, n00, delta_0));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_zhang_match_data_cpp
+List compute_zhang_match_data_cpp(const IntegerVector& w, const IntegerVector& match_indic, const NumericVector& y, const NumericMatrix& X);
+RcppExport SEXP _SeqExpMatch_compute_zhang_match_data_cpp(SEXP wSEXP, SEXP match_indicSEXP, SEXP ySEXP, SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type match_indic(match_indicSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_zhang_match_data_cpp(w, match_indic, y, X));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fill_i_b_with_matches_loop_cpp", (DL_FUNC) &_SeqExpMatch_fill_i_b_with_matches_loop_cpp, 4},
@@ -963,6 +1054,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_bootstrap_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_indices_cpp, 2},
     {"_SeqExpMatch_bootstrap_match_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_match_indices_cpp, 5},
     {"_SeqExpMatch_match_stats_from_indices_cpp", (DL_FUNC) &_SeqExpMatch_match_stats_from_indices_cpp, 6},
+    {"_SeqExpMatch_collect_discordant_pairs_cpp", (DL_FUNC) &_SeqExpMatch_collect_discordant_pairs_cpp, 4},
+    {"_SeqExpMatch_build_kk_combined_clogit_design_cpp", (DL_FUNC) &_SeqExpMatch_build_kk_combined_clogit_design_cpp, 7},
     {"_SeqExpMatch_build_kk_combined_ols_design_cpp", (DL_FUNC) &_SeqExpMatch_build_kk_combined_ols_design_cpp, 5},
     {"_SeqExpMatch_compute_all_subject_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_all_subject_data_cpp, 4},
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
@@ -970,6 +1063,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_efron_redraw_cpp", (DL_FUNC) &_SeqExpMatch_efron_redraw_cpp, 3},
     {"_SeqExpMatch_fast_beta_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_cpp, 5},
     {"_SeqExpMatch_fast_beta_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_with_var_cpp, 5},
+    {"_SeqExpMatch_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_cpoisson_combined_with_var_cpp, 8},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
     {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 3},
     {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
@@ -1015,6 +1109,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_sample_mode_cpp", (DL_FUNC) &_SeqExpMatch_sample_mode_cpp, 1},
     {"_SeqExpMatch_compute_simple_mean_diff_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_simple_mean_diff_parallel_cpp, 3},
     {"_SeqExpMatch_which_cols_vary_cpp", (DL_FUNC) &_SeqExpMatch_which_cols_vary_cpp, 1},
+    {"_SeqExpMatch_zhang_exact_binom_pval_cpp", (DL_FUNC) &_SeqExpMatch_zhang_exact_binom_pval_cpp, 3},
+    {"_SeqExpMatch_zhang_exact_fisher_pval_cpp", (DL_FUNC) &_SeqExpMatch_zhang_exact_fisher_pval_cpp, 5},
+    {"_SeqExpMatch_compute_zhang_match_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_zhang_match_data_cpp, 4},
     {NULL, NULL, 0}
 };
 

@@ -89,20 +89,13 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 		# -----------------------------------------------------------------------
 
 		incid_exact_zhang_treatment_estimate = function(){
-			# For bisection starting points, we use the standard LogRegr estimate
-			# if available, or a simple odds ratio.
-			if (!is.null(private$cached_values$KKstats)){
-				y_r = private$cached_values$KKstats$y_reservoir
-				w_r = private$cached_values$KKstats$w_reservoir
-			} else {
-				y_r = private$y
-				w_r = private$w
-			}
-
-			n11 = sum(y_r[w_r == 1L])
-			n01 = sum(y_r[w_r == 0L])
-			n10 = sum(w_r == 1L) - n11
-			n00 = sum(w_r == 0L) - n01
+			# For bisection starting points, we use a simple odds ratio on the
+			# reservoir counts, which are cached once and reused across CI calls.
+			exact_stats = private$get_exact_zhang_stats()
+			n11 = exact_stats$n11
+			n10 = exact_stats$n10
+			n01 = exact_stats$n01
+			n00 = exact_stats$n00
 
 			# Sample Odds Ratio (with continuity correction)
 			log((n11 + 0.5) * (n00 + 0.5) / ((n10 + 0.5) * (n01 + 0.5)))
@@ -110,18 +103,11 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 
 		incid_exact_zhang_mle_ci = function(alpha){
 			# Standard error for log-odds ratio (Woolf's formula)
-			if (!is.null(private$cached_values$KKstats)){
-				y_r = private$cached_values$KKstats$y_reservoir
-				w_r = private$cached_values$KKstats$w_reservoir
-			} else {
-				y_r = private$y
-				w_r = private$w
-			}
-
-			n11 = sum(y_r[w_r == 1L])
-			n01 = sum(y_r[w_r == 0L])
-			n10 = sum(w_r == 1L) - n11
-			n00 = sum(w_r == 0L) - n01
+			exact_stats = private$get_exact_zhang_stats()
+			n11 = exact_stats$n11
+			n10 = exact_stats$n10
+			n01 = exact_stats$n01
+			n00 = exact_stats$n00
 
 			est = log((n11 + 0.5) * (n00 + 0.5) / ((n10 + 0.5) * (n01 + 0.5)))
 			se  = sqrt(1/(n11+0.5) + 1/(n10+0.5) + 1/(n01+0.5) + 1/(n00+0.5))
@@ -138,55 +124,73 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 				stop("Zhang incidence inference is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
 			}
 
-			if (!is.null(private$cached_values$KKstats)){
-				m   = private$cached_values$KKstats$m
-				nRT = private$cached_values$KKstats$nRT
-				nRC = private$cached_values$KKstats$nRC
-			} else {
-				m   = 0L
-				nRT = sum(private$w == 1L, na.rm = TRUE)
-				nRC = sum(private$w == 0L, na.rm = TRUE)
-			}
+			exact_stats = private$get_exact_zhang_stats()
+			p_M = if (exact_stats$m > 0)              private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
+			p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) private$compute_exact_pval_reservoir(delta_0)    else NA_real_
 
-			p_M = if (m > 0)              private$compute_rand_pval_matched_pairs(delta_0) else NA_real_
-			p_R = if (nRT > 0 && nRC > 0) private$compute_rand_pval_reservoir(delta_0)    else NA_real_
-
-			private$combine_rand_pvals(p_M, p_R, m, nRT, nRC, combination_method)
+			private$combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
 		},
 
 		# Default: no matched-pair test (CRD designs have m = 0 always;
 		# KK-specific exact classes override this method when needed).
-		compute_rand_pval_matched_pairs = function(delta_0) NA_real_,
+		compute_exact_pval_matched_pairs = function(delta_0) NA_real_,
 
 		# Exact Fisher test under H0: OR_reservoir = exp(delta_0).
-		compute_rand_pval_reservoir = function(delta_0){
-			if (!is.null(private$cached_values$KKstats)){
-				y_r = private$cached_values$KKstats$y_reservoir
-				w_r = private$cached_values$KKstats$w_reservoir
-				nRT = private$cached_values$KKstats$nRT
-				nRC = private$cached_values$KKstats$nRC
-			} else {
-				y_r = private$y
-				w_r = private$w
-				nRT = sum(w_r == 1L, na.rm = TRUE)
-				nRC = sum(w_r == 0L, na.rm = TRUE)
+		# For CRD designs (KKstats = NULL) all subjects are treated as the reservoir.
+		compute_exact_pval_reservoir = function(delta_0){
+			exact_stats = private$get_exact_zhang_stats()
+			if (exact_stats$nRT == 0L || exact_stats$nRC == 0L) return(NA_real_)
+			if (exact_stats$n11 + exact_stats$n01 == 0L || exact_stats$n10 + exact_stats$n00 == 0L) return(NA_real_)
+
+			zhang_exact_fisher_pval_cpp(
+				exact_stats$n11,
+				exact_stats$n10,
+				exact_stats$n01,
+				exact_stats$n00,
+				delta_0
+			)
+		},
+
+		get_exact_zhang_stats = function(){
+			if (!is.null(private$cached_values$incid_exact_zhang_stats)){
+				return(private$cached_values$incid_exact_zhang_stats)
 			}
-			if (nRT == 0L || nRC == 0L) return(NA_real_)
 
-			n11 = sum(y_r[w_r == 1L])              # successes in treatment
-			n01 = sum(y_r[w_r == 0L])              # successes in control
-			n10 = as.integer(nRT) - n11            # failures  in treatment
-			n00 = as.integer(nRC) - n01            # failures  in control
+			if (!is.null(private$cached_values$KKstats)){
+				KKstats = private$cached_values$KKstats
+				exact_stats = list(
+					m       = as.integer(KKstats$m),
+					nRT     = as.integer(KKstats$nRT),
+					nRC     = as.integer(KKstats$nRC),
+					d_plus  = as.integer(KKstats$d_plus),
+					d_minus = as.integer(KKstats$d_minus),
+					n11     = as.integer(KKstats$n11),
+					n10     = as.integer(KKstats$n10),
+					n01     = as.integer(KKstats$n01),
+					n00     = as.integer(KKstats$n00)
+				)
+			} else {
+				y = private$y
+				w = private$w
+				nRT = sum(w == 1L, na.rm = TRUE)
+				nRC = sum(w == 0L, na.rm = TRUE)
+				n11 = sum(y[w == 1L])
+				n01 = sum(y[w == 0L])
+				exact_stats = list(
+					m       = 0L,
+					nRT     = as.integer(nRT),
+					nRC     = as.integer(nRC),
+					d_plus  = 0L,
+					d_minus = 0L,
+					n11     = as.integer(n11),
+					n10     = as.integer(nRT - n11),
+					n01     = as.integer(n01),
+					n00     = as.integer(nRC - n01)
+				)
+			}
 
-			if (n11 + n01 == 0L || n10 + n00 == 0L) return(NA_real_)
-
-			# 2x2 table: rows = Y (1/0), cols = arm (T/C)
-			# OR = (n11 * n00) / (n10 * n01) — standard treatment-vs-control OR
-			stats::fisher.test(
-				matrix(c(n11, n10, n01, n00), 2L, 2L),
-				or          = exp(delta_0),
-				alternative = "two.sided"
-			)$p.value
+			private$cached_values$incid_exact_zhang_stats = exact_stats
+			exact_stats
 		}
 	)
 )

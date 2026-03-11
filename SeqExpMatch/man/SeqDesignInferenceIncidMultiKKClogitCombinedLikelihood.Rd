@@ -3,9 +3,12 @@
 %   R/inference_incidence_KK_clogit_multi_combined_likelihood.R
 \name{SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood}
 \alias{SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood}
-\title{Multivariate Conditional Logistic Combined-Likelihood Compound Inference for KK Designs (stub)}
+\title{Multivariate Conditional Logistic Combined-Likelihood Compound Inference for KK Designs}
 \description{
-Stub placeholder. Methods are not yet implemented.
+Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
+responses using the treatment indicator and all recorded covariates. Uses the combined
+logistic likelihood over discordant matched-pair differences and reservoir subjects.
+See \code{SeqDesignInferenceAbstractKKClogitCombinedLikelihood} for details.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKClogitCombinedLikelihood} -> \code{SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood}

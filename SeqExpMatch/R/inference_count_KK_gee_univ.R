@@ -43,6 +43,26 @@ SeqDesignInferenceCountUnivKKGEE = R6::R6Class("SeqDesignInferenceCountUnivKKGEE
 		#' }
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
+		},
+
+		#' @description
+		#' Returns the estimated treatment effect.
+		compute_treatment_estimate = function(){
+			super$compute_treatment_estimate()
+		},
+
+		#' @description
+		#' Computes the MLE-based confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			super$compute_mle_confidence_interval(alpha = alpha)
+		},
+
+		#' @description
+		#' Computes the MLE-based p-value.
+		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	),
 	private = list(

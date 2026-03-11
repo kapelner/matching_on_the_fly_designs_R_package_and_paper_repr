@@ -3,9 +3,12 @@
 %   R/inference_count_KK_cpoisson_univ_combined_likelihood.R
 \name{SeqDesignInferenceCountUnivKKCPoissonCombinedLikelihood}
 \alias{SeqDesignInferenceCountUnivKKCPoissonCombinedLikelihood}
-\title{Univariate Conditional Poisson Combined-Likelihood Compound Inference for KK Designs (stub)}
+\title{Univariate Conditional Poisson Combined-Likelihood Compound Inference for KK Designs}
 \description{
-Stub placeholder. Methods are not yet implemented.
+Fits a compound estimator for KK matching-on-the-fly designs with count
+responses using only the treatment indicator (no additional covariates).
+Jointly maximises L_cond_Poisson(pairs) + L_Poisson(reservoir) via BFGS.
+See \code{SeqDesignInferenceAbstractKKCPoissonCombinedLikelihood} for details.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKCPoissonCombinedLikelihood} -> \code{SeqDesignInferenceCountUnivKKCPoissonCombinedLikelihood}

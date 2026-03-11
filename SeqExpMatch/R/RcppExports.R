@@ -111,6 +111,14 @@ match_stats_from_indices_cpp <- function(y, w, X, original_match_indic, i_b, m) 
     .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, original_match_indic, i_b, m)
 }
 
+collect_discordant_pairs_cpp <- function(y_m, w_m, X_m, strata_m) {
+    .Call(`_SeqExpMatch_collect_discordant_pairs_cpp`, y_m, w_m, X_m, strata_m)
+}
+
+build_kk_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_r, X_r) {
+    .Call(`_SeqExpMatch_build_kk_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
+}
+
 build_kk_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
     .Call(`_SeqExpMatch_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
 }
@@ -155,6 +163,10 @@ fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, 
 #' @export
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
     .Call(`_SeqExpMatch_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
+}
+
+fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol)
 }
 
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
@@ -387,5 +399,17 @@ compute_simple_mean_diff_parallel_cpp <- function(y_mat, w_mat, num_cores) {
 
 which_cols_vary_cpp <- function(X) {
     .Call(`_SeqExpMatch_which_cols_vary_cpp`, X)
+}
+
+zhang_exact_binom_pval_cpp <- function(d_plus, d_minus, delta_0) {
+    .Call(`_SeqExpMatch_zhang_exact_binom_pval_cpp`, d_plus, d_minus, delta_0)
+}
+
+zhang_exact_fisher_pval_cpp <- function(n11, n10, n01, n00, delta_0) {
+    .Call(`_SeqExpMatch_zhang_exact_fisher_pval_cpp`, n11, n10, n01, n00, delta_0)
+}
+
+compute_zhang_match_data_cpp <- function(w, match_indic, y, X) {
+    .Call(`_SeqExpMatch_compute_zhang_match_data_cpp`, w, match_indic, y, X)
 }
 

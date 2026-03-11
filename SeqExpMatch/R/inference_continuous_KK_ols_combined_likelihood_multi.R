@@ -60,10 +60,34 @@ SeqDesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("SeqDesignInfe
 			private$cached_values$beta_hat_T
 		},
 
-		compute_mle_confidence_interval = function(alpha = 0.05)
-			stop(paste(class(self)[1], ": combined-likelihood confidence interval not yet implemented.")),
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0)
-			stop(paste(class(self)[1], ": combined-likelihood p-value not yet implemented."))
+		#' @description
+		#' Returns a \eqn{1 - \alpha} confidence interval for \eqn{\beta_T} based on
+		#' the asymptotic normal distribution of the combined-likelihood OLS estimator.
+		#' Uses the standard error \eqn{\hat{s}_{\beta_T}} computed as a side-effect of
+		#' \code{compute_treatment_estimate()}.
+		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
+		#' @return Named numeric vector of length 2: lower and upper bounds.
+		compute_mle_confidence_interval = function(alpha = 0.05){
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (is.null(private$cached_values$beta_hat_T)){
+				private$fit_combined_likelihood()
+			}
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description
+		#' Returns a 2-sided p-value for \eqn{H_0: \beta_T = \delta} based on the
+		#' asymptotic normal distribution of the combined-likelihood OLS estimator.
+		#' Uses the standard error \eqn{\hat{s}_{\beta_T}} computed as a side-effect of
+		#' \code{compute_treatment_estimate()}.
+		#' @param delta Null value to test against; default 0.
+		#' @return Numeric scalar p-value.
+		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+			assertNumeric(delta)
+			if (is.null(private$cached_values$beta_hat_T)){
+				private$fit_combined_likelihood()
+			}
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		}
 	),
 
 	private = list(

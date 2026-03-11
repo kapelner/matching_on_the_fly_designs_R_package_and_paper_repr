@@ -31,19 +31,12 @@ SeqDesignInferenceIncidKKExactZhang = R6::R6Class("SeqDesignInferenceIncidKKExac
 		# Given k = d_plus + d_minus discordant pairs,
 		# d_plus | k ~ Binomial(k, expit(delta_0)) under H0.
 		# Concordant pairs contribute no information and are ignored.
-		compute_rand_pval_matched_pairs = function(delta_0){
-			KKstats = private$cached_values$KKstats
-			if (is.null(KKstats) || KKstats$m == 0L) return(NA_real_)
+		compute_exact_pval_matched_pairs = function(delta_0){
+			exact_stats = private$get_exact_zhang_stats()
+			if (exact_stats$m == 0L) return(NA_real_)
+			if (exact_stats$d_plus + exact_stats$d_minus == 0L) return(NA_real_)
 
-			yTs = KKstats$yTs_matched
-			yCs = KKstats$yCs_matched
-			d_plus  = sum(yTs == 1L & yCs == 0L)
-			d_minus = sum(yTs == 0L & yCs == 1L)
-			k = d_plus + d_minus
-			if (k == 0L) return(NA_real_)
-
-			p0 = exp(delta_0) / (1 + exp(delta_0))
-			stats::binom.test(d_plus, k, p = p0, alternative = "two.sided")$p.value
+			zhang_exact_binom_pval_cpp(exact_stats$d_plus, exact_stats$d_minus, delta_0)
 		}
 	)
 )

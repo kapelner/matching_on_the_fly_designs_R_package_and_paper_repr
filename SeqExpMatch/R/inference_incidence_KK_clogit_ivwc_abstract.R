@@ -11,9 +11,6 @@ SeqDesignInferenceAbstractKKClogitIVWC = R6::R6Class("SeqDesignInferenceAbstract
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			if (!requireNamespace("bclogit", quietly = TRUE)) {
-				stop("Package 'bclogit' is required for ", class(self)[1], ". Please install it.")
-			}
 			assertResponseType(seq_des_obj$get_response_type(), "incidence")
 			if (!is(seq_des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
@@ -125,23 +122,13 @@ SeqDesignInferenceAbstractKKClogitIVWC = R6::R6Class("SeqDesignInferenceAbstract
 			strata_m  = match_indic[i_matched]
 			X_m       = if (private$include_covariates()) as.data.frame(private$X[i_matched, , drop = FALSE]) else data.frame()
 
-			mod = tryCatch(
-				bclogit::clogit(
-					formula        = NULL,
-					y              = y_m,
-					X              = X_m,
-					treatment      = w_m,
-					strata         = strata_m,
-					treatment_name = "w"
-				),
-				error = function(e) NULL
-			)
+			mod = clogit_helper(y_m, X_m, w_m, strata_m)
 			if (is.null(mod)) return(invisible(NULL))
 
-			beta = as.numeric(mod$coefficients["w"])
-			se   = as.numeric(mod$se[1])
+			beta = as.numeric(mod$b[1])
+			ssq  = as.numeric(mod$ssq_b_j)
 			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
 		},
 
 		logistic_for_reservoir = function(){

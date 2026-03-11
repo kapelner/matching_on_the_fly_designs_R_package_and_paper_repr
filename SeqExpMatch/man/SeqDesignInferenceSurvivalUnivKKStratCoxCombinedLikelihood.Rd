@@ -3,9 +3,11 @@
 %   R/inference_survival_KK_strat_cox_univ_combined_likelihood.R
 \name{SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood}
 \alias{SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood}
-\title{Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs (stub)}
+\title{Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs}
 \description{
-Stub placeholder. Methods are not yet implemented.
+Fits the combined stratified Cox partial likelihood (matched pairs + reservoir)
+using only the treatment indicator. See
+\code{SeqDesignInferenceAbstractKKStratCoxCombinedLikelihood} for details.
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKStratCoxCombinedLikelihood} -> \code{SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood}
