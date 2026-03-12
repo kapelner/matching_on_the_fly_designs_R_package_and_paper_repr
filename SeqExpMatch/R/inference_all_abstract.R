@@ -400,9 +400,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			# This will be duplicated by each thread
 			seq_des_template = private$seq_des_obj$duplicate()
 
-			# Apply response transformation if necessary
+			# Apply response transformation if necessary. Count models that operate on the
+			# original response scale still use transform_responses = "log" to indicate a
+			# multiplicative null, but the responses themselves must remain on the count scale.
 			if (transform_responses == "log"){
-				seq_des_template$.__enclos_env__$private$y = log(copy(private$y))
+				if (private$seq_des_obj_priv_int$response_type != "count") {
+					seq_des_template$.__enclos_env__$private$y = log(copy(private$y))
+				}
 			} else if (transform_responses == "logit"){
 				seq_des_template$.__enclos_env__$private$y = logit(copy(private$y))
 			} else if (transform_responses == "log1p"){
@@ -424,20 +428,30 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (private$seq_des_obj_priv_int$response_type == "survival" && transform_responses != "log"){
 					stop("randomization tests with delta nonzero are not supported for survival response type without log transform (values must be positive)")
 				}
-				# Testing H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0
-				# So adjust treatment responses downward by delta on the (possibly transformed) scale
-				seq_des_template$.__enclos_env__$private$y[private$w == 1] =
-					seq_des_template$.__enclos_env__$private$y[private$w == 1] - delta
-				# Inverse-transform back to the original scale so downstream models receive
-				# valid inputs: survreg/coxph require y > 0; betareg requires y in (0,1).
-				# exp(log(y_T) - delta) = y_T * exp(-delta) > 0 always
-				# inv_logit(logit(y_T) - delta) is always in (0,1)
-				if (transform_responses == "log"){
-					seq_des_template$.__enclos_env__$private$y = exp(seq_des_template$.__enclos_env__$private$y)
-				} else if (transform_responses == "logit"){
-					seq_des_template$.__enclos_env__$private$y = inv_logit(seq_des_template$.__enclos_env__$private$y)
-				} else if (transform_responses == "log1p"){
-					seq_des_template$.__enclos_env__$private$y = expm1(seq_des_template$.__enclos_env__$private$y)
+				if (transform_responses == "log" &&
+						private$seq_des_obj_priv_int$response_type == "count") {
+					# Multiplicative sharp null: H_0: y_T = y_C * exp(delta)
+					# Multiply treatment responses by exp(-delta) so template holds y_C for everyone.
+					# This keeps counts non-negative (unlike additive subtraction which can yield y < 0).
+					seq_des_template$.__enclos_env__$private$y[private$w == 1] =
+						seq_des_template$.__enclos_env__$private$y[private$w == 1] * exp(-delta)
+				} else {
+					# Testing H_0: y_T_i - y_C_i = delta <=> (y_T_i - delta) - y_C_i = 0
+					# So adjust treatment responses downward by delta on the (possibly transformed) scale
+					seq_des_template$.__enclos_env__$private$y[private$w == 1] =
+						seq_des_template$.__enclos_env__$private$y[private$w == 1] - delta
+					# Inverse-transform back to the original scale so downstream models receive
+					# valid inputs: survreg/coxph require y > 0; betareg requires y in (0,1).
+					# exp(log(y_T) - delta) = y_T * exp(-delta) > 0 always
+					# inv_logit(logit(y_T) - delta) is always in (0,1)
+					if (transform_responses == "log" &&
+							private$seq_des_obj_priv_int$response_type != "count"){
+						seq_des_template$.__enclos_env__$private$y = exp(seq_des_template$.__enclos_env__$private$y)
+					} else if (transform_responses == "logit"){
+						seq_des_template$.__enclos_env__$private$y = inv_logit(seq_des_template$.__enclos_env__$private$y)
+					} else if (transform_responses == "log1p"){
+						seq_des_template$.__enclos_env__$private$y = expm1(seq_des_template$.__enclos_env__$private$y)
+					}
 				}
 			}
 
@@ -870,9 +884,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 					# Bootstrap on transformed data
 					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+					if (!all(is.finite(bootstrap_ci))) {
+						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
+					}
+					if (!is.finite(est)) {
+						est = mean(bootstrap_ci)
+					}
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					l = bootstrap_ci[1] - 0.5 * ci_width
 					u = bootstrap_ci[2] + 0.5 * ci_width
+					if (!all(is.finite(c(l, u)))) {
+						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
+					}
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be

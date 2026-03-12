@@ -1,3 +1,38 @@
+v2.0.0
+* MAJOR ARCHITECTURAL REVOLUTION:
+  + Unified all inference methodologies under a strict R6 class hierarchy, centered on the abstract `SeqDesignInference` base.
+  + Implemented a dual-strategy pooling framework for all KK matching-on-the-fly designs:
+    - IVWC (Inverse-Variance Weighted Combination): Rigorous variance-weighted pooling of independent matched-pair and reservoir estimators.
+    - Combined Likelihood: Joint modeling across the entire dataset using design-aware constraints and efficient likelihood aggregation.
+  + Standardized class naming conventions (e.g., `...IVWC`, `...CombinedLikelihood`) for clear API navigation.
+  + Hidden all internal abstract base classes from the public R help system to simplify user discovery.
+
+* STATISTICAL METHODOLOGY BREAKTHROUGHS:
+  + Zhang (2026) Exact Inference: Full implementation of the exact test-inversion algorithm for distribution-free inference in incidence (log-odds) and quantile regression (median shifts).
+  + Survival & Count Advancements:
+    - Achieved package-wide unit consistency by standardizing all survival effects to Accelerated Failure Time (AFT) log-time ratios.
+    - Added Shared Gamma Frailty models (via `parfm`) for parametric handling of matched-pair dependencies.
+    - Added Stratified Cox Proportional Hazards regression for strata-aware survival analysis.
+    - Implemented Conditional Poisson regression for exact matched-pair count inference.
+    - Added Restricted Mean Survival Time (RMST) difference with robust SEs.
+    - Added Gehan-type rank-based AFT models (via `aftgee`).
+  + Robust & Non-parametric Expansion:
+    - Integrated R-estimation (Wilcoxon regression) via `Rfit`, with robust fallback to classical ranks for univariate cases.
+    - Full Quantile Regression support (via `quantreg`) within the Compound/IVWC framework.
+    - Comprehensive GEE and GLMM support for all response types, utilizing `glmmTMB` for superior random-effects stability.
+
+* EXTREME PERFORMANCE OPTIMIZATION:
+  + Developed a suite of high-performance C++ IRLS (Iteratively Reweighted Least Squares) solvers for Logistic, Beta, and Negative Binomial regression.
+  + Leveraged OpenMP and RcppEigen to achieve orders-of-magnitude speedups in bootstrap and randomization distribution computations.
+  + Implemented intelligent thread-control for `glmmTMB` to prevent resource contention in parallelized inference loops.
+  + Integrated `fixest::feglm.fit` for lightning-fast fixed-effects estimation.
+
+* PRODUCTION-GRADE RELIABILITY:
+  + Automated missing data pipeline with Design-aware imputation using `missRanger` and `missForest`.
+  + Fully validated support for unequal allocation (prob_T != 0.5) across all 40+ inference classes.
+  + Hardened error handling for perfect separation, small-sample degeneracy, and non-convergence.
+  + Global codebase cleanup: standardized tab-based indentation, fixed all Roxygen warnings, and cleaned up the NAMESPACE.
+
 v1.1.0 (planned)
 * Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
 * Support for inverting randomization tests to create nonparametric confidence intervals
@@ -47,7 +82,7 @@ v1.0.0
     - additive effect on log hazard / Coxph regression estimate without covariates
     - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean
     - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean with covariates and dummies for reservoir and pairs
-    - additive effect on log hazard / Coxph regression estimate with covariates linear in log mean with covariates and random effects for reservoir and pairs
+    - additive effect on log hazard / Coxph regression effect with covariates linear in log mean with covariates and random effects for reservoir and pairs
     
 v0.1.0
 * Initial Release with support for continuous response type and equal allocation (50-50 treatment/control) only

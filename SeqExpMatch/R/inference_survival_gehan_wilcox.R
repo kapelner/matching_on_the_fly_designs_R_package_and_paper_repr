@@ -46,7 +46,10 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#' seq_des$add_all_subject_responses(
+		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+		#' )
 		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
@@ -73,7 +76,10 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#' seq_des$add_all_subject_responses(
+		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+		#' )
 		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
 		#' seq_des_inf$compute_mle_confidence_interval()
@@ -107,7 +113,10 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43), deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#' seq_des$add_all_subject_responses(
+		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+		#' )
 		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
 		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()

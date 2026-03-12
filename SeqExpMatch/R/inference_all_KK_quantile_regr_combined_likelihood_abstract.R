@@ -104,20 +104,38 @@ SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqDes
 
 			if (m > 0){
 				yd = fn(KKstats$yTs_matched) - fn(KKstats$yCs_matched)
-				Xd = as.matrix(KKstats$X_matched_diffs)
-				p  = ncol(Xd)
 
 				if (has_reservoir){
+					# Combined case: pair rows and reservoir rows must share the same
+					# covariate columns. KKstats$X_matched_diffs drops all-zero pair-diff
+					# columns, so rebuild full-width differences from private$X here.
+					match_indic_safe = private$match_indic
+					if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
+					match_indic_safe[is.na(match_indic_safe)] = 0L
+					pair_ids_sorted = sort(unique(match_indic_safe[match_indic_safe > 0L]))
+					Xd = do.call(rbind, lapply(pair_ids_sorted, function(pid){
+						idx   = which(match_indic_safe == pid)
+						idx_T = idx[private$w[idx] == 1]
+						idx_C = idx[private$w[idx] == 0]
+						if (length(idx_T) == 1L && length(idx_C) == 1L) {
+							as.numeric(private$X[idx_T, , drop = FALSE]) - as.numeric(private$X[idx_C, , drop = FALSE])
+						} else {
+							rep(0, ncol(private$X))
+						}
+					}))
+					p   = ncol(Xd)
 					y_r = fn(KKstats$y_reservoir)
 					w_r = KKstats$w_reservoir
 					X_r = as.matrix(KKstats$X_reservoir)
-					X_pairs = if (p > 0) cbind(0, 1, Xd) else cbind(0, 1)
+					X_pairs = if (p > 0) cbind(0, 1, Xd) else matrix(c(0, 1), nrow = m, ncol = 2, byrow = TRUE)
 					X_res   = if (p > 0) cbind(1, w_r, X_r) else cbind(1, w_r)
 					X_stack  = rbind(X_pairs, X_res)
 					y_stack  = c(yd, y_r)
 					j_beta_T = 2L
 				} else {
-					# Pairs only: drop all-zero beta_0 column; intercept = beta_T
+					# Pairs only: drop all-zero beta_0 column; intercept = beta_T.
+					Xd = as.matrix(KKstats$X_matched_diffs)
+					p  = ncol(Xd)
 					X_stack  = if (p > 0) cbind(1, Xd) else matrix(1, nrow = m, ncol = 1)
 					y_stack  = yd
 					j_beta_T = 1L

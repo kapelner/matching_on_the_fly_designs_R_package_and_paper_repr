@@ -121,9 +121,24 @@ SeqDesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("SeqDesignInfe
 			if (m > 0 && nRT > 0 && nRC > 0){
 				# Both components: shared beta_xs, layout [beta_0 | beta_T | beta_xs]
 				# Built in one C++ pass — no intermediate R matrix allocations.
+				# Use full-p covariate differences from private$X (not KKstats$X_matched_diffs,
+				# which drops zero-difference columns and would misalign with X_reservoir).
+				match_indic_safe = private$match_indic
+				if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
+				match_indic_safe[is.na(match_indic_safe)] = 0L
+				pair_ids_sorted = sort(unique(match_indic_safe[match_indic_safe > 0L]))
+				Xd_full = do.call(rbind, lapply(pair_ids_sorted, function(pid){
+					idx   = which(match_indic_safe == pid)
+					idx_T = idx[private$w[idx] == 1]
+					idx_C = idx[private$w[idx] == 0]
+					if (length(idx_T) == 1L && length(idx_C) == 1L)
+						as.numeric(private$X[idx_T, , drop = FALSE]) - as.numeric(private$X[idx_C, , drop = FALSE])
+					else
+						rep(0, ncol(private$X))
+				}))
 				design   = build_kk_combined_ols_design_cpp(
 					KKstats$y_matched_diffs,
-					as.matrix(KKstats$X_matched_diffs),
+					Xd_full,
 					KKstats$y_reservoir,
 					KKstats$w_reservoir,
 					as.matrix(KKstats$X_reservoir)

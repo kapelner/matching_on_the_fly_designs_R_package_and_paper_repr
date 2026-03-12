@@ -142,6 +142,61 @@ SeqDesignInferenceAbstractKKCPoissonCombinedLikelihood = R6::R6Class("SeqDesignI
 
 			# ---- Case 1: pairs + reservoir — joint BFGS optimization --------
 			if (has_pairs && has_reservoir){
+				if (p > 0L) {
+					# Use full-p covariate differences from private$X, not the reduced
+					# KKstats$X_matched_diffs matrix, which drops zero-difference columns
+					# and can misalign with the full-width reservoir covariate matrix.
+					match_indic_safe = private$match_indic
+					if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
+					match_indic_safe[is.na(match_indic_safe)] = 0L
+					pair_ids_sorted = sort(unique(match_indic_safe[match_indic_safe > 0L]))
+					Xd_full = do.call(rbind, lapply(pair_ids_sorted, function(pid){
+						idx   = which(match_indic_safe == pid)
+						idx_T = idx[private$w[idx] == 1]
+						idx_C = idx[private$w[idx] == 0]
+						if (length(idx_T) == 1L && length(idx_C) == 1L) {
+							as.numeric(private$X[idx_T, , drop = FALSE]) - as.numeric(private$X[idx_C, , drop = FALSE])
+						} else {
+							rep(0, ncol(private$X))
+						}
+					}))
+					X_diff_v = as.matrix(Xd_full[valid, , drop = FALSE])
+
+					# QR-reduce the combined design to full rank while preserving the
+					# intercept and treatment columns required by the C++ parameterization.
+					X_rank = rbind(
+						cbind(0, 1, X_diff_v),
+						cbind(1, w_r_v, X_r_v)
+					)
+					keep = 1:2
+					rank_keep = qr(X_rank[, keep, drop = FALSE])$rank
+					if (rank_keep < length(keep)) {
+						private$cached_values$beta_hat_T   = NA_real_
+						private$cached_values$s_beta_hat_T = NA_real_
+						private$cached_values$is_z         = TRUE
+						return(invisible(NULL))
+					}
+					for (j in 3:ncol(X_rank)) {
+						trial_keep = c(keep, j)
+						trial_rank = qr(X_rank[, trial_keep, drop = FALSE])$rank
+						if (trial_rank > rank_keep) {
+							keep = trial_keep
+							rank_keep = trial_rank
+						}
+					}
+					keep_cov = keep[keep > 2L] - 2L
+					X_diff_v = if (length(keep_cov) > 0L) {
+						X_diff_v[, keep_cov, drop = FALSE]
+					} else {
+						matrix(nrow = nrow(X_diff_v), ncol = 0L)
+					}
+					X_r_v = if (length(keep_cov) > 0L) {
+						X_r_v[, keep_cov, drop = FALSE]
+					} else {
+						matrix(nrow = nrow(X_r_v), ncol = 0L)
+					}
+				}
+
 				# Combined: Newton's method in C++ (fast_cpoisson_combined_with_var_cpp)
 				# params layout: [beta_0, beta_T, beta_xs]; beta_T is at 1-based index 2
 				mod = tryCatch(

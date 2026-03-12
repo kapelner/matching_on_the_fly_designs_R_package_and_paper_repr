@@ -47,7 +47,7 @@ X[beta_T == 1 &
 	beta := (1/2)*3*e/(1+3*e) + (1/2)*e/(3+e) - 0.5]
 
 # incidence — univariate logistic: marginal log-OR ≈ 0.767, not 1
-X[beta_T == 1 & inference_class == "SeqDesignInferenceIncidUnivLogRegr",
+X[beta_T == 1 & inference_class %in% c("SeqDesignInferenceIncidUnivLogRegr", "SeqDesignInferenceIncidUnivKKGEE"),
 	beta := qlogis((1/2)*3*e/(1+3*e) + (1/2)*e/(3+e))]
 
 
@@ -59,12 +59,36 @@ X[beta_T == 1 & response_type == "proportion" &
 		mean(e * y_p / (1 + (e - 1) * y_p)) - mean(y_p)
 	}, by = dataset]
 
+# proportion — KK univ GEE (logit link): marginal log-OR = logit(E[Y_T]) - logit(E[Y_C])
+X[beta_T == 1 & response_type == "proportion" &
+	inference_class == "SeqDesignInferencePropUnivKKGEE",
+	beta := {
+		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
+		qlogis(mean(e * y_p / (1 + (e - 1) * y_p))) - qlogis(mean(y_p))
+	}, by = dataset]
+
+# proportion — KK Wilcox: HL estimate ≈ median of within-pair differences
+X[beta_T == 1 & response_type == "proportion" &
+	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
+	beta := {
+		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
+		median(e * y_p / (1 + (e - 1) * y_p) - y_p)
+	}, by = dataset]
+
 # count — simple/KK mean diff: E[Y_C] * (e - 1)
 X[beta_T == 1 & response_type == "count" &
 	inference_class %in% c("SeqDesignInferenceAllSimpleMeanDiff", "SeqDesignInferenceAllKKCompoundMeanDiff"),
 	beta := {
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		mean(y_c) * (e - 1)
+	}, by = dataset]
+
+# count — KK Wilcox: HL estimate ≈ (e-1) * median(Y_C)
+X[beta_T == 1 & response_type == "count" &
+	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
+	beta := {
+		y_c = datasets_and_response_models[[dataset]]$y_original$count
+		(e - 1) * median(y_c)
 	}, by = dataset]
 
 # survival — KM median diff: (e - 1) * median(Y_C)
@@ -81,6 +105,14 @@ X[beta_T == 1 & inference_class == "SeqDesignInferenceSurvivalRestrictedMeanDiff
 		(e - 1) * mean(pmin(y_s, tau))
 	}, by = dataset]
 
+# survival — KK compound mean diff: (e-1) * mean(Y_C)
+X[beta_T == 1 & response_type == "survival" &
+	inference_class == "SeqDesignInferenceAllKKCompoundMeanDiff",
+	beta := {
+		y_s = datasets_and_response_models[[dataset]]$y_original$survival
+		(e - 1) * mean(y_s)
+	}, by = dataset]
+
 
 #now some are impossible to calculate for real data due to the unknown f(x) model
 X[beta_T == 1 &
@@ -90,9 +122,24 @@ X[beta_T == 1 &
 	"SeqDesignInferenceIncidMultiKKGLMM",
 	"SeqDesignInferencePropUniBetaRegr",
 	"SeqDesignInferencePropMultiBetaRegr",
+	"SeqDesignInferencePropMultiKKGEE",
 	"SeqDesignInferenceSurvivalUniCoxPHRegr",
-	"SeqDesignInferenceSurvivalMultiCoxPHRegr"
+	"SeqDesignInferenceSurvivalMultiCoxPHRegr",
+	"SeqDesignInferenceSurvivalUnivKKStratCoxIVWC",
+	"SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood",
+	"SeqDesignInferenceSurvivalMultiKKStratCoxIVWC",
+	"SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood",
+	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC",
+	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
+	"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
+	"SeqDesignInferenceSurvivalMultiKKRankRegrIVWC",
+	"SeqDesignInferenceSurvivalGehanWilcox"
 	),
+	beta := NA_real_]
+
+# survival — KK Wilcox: censored survival times bias the HL estimate
+X[beta_T == 1 & response_type == "survival" &
+	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
 	beta := NA_real_]
 table(X$beta, useNA = "always")
 

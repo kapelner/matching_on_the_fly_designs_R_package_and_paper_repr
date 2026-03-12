@@ -177,6 +177,7 @@ fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 #'
 #' @param Xmm Design matrix.
 #' @param y Response vector.
+#' @param j Index of the coefficient for which to compute the variance.
 #' @return A list with coefficients and specific treatment variance.
 #' @export
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
@@ -248,13 +249,11 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
     .Call(`_SeqExpMatch_get_survival_stat_diff`, y, dead, w, requested_stat)
 }
 
-#' Calculates the standard error of the restricted mean survival time for a single group.
-#'
 #' Uses the standard variance formula (Uno et al.):
 #'   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
-#' where A(t_j) = integral_{t_j}^{tau} S(u) du is the remaining area under the KM
-#' curve from event time t_j to the last observation tau, d_j is the number of events
-#' at t_j, and n_j is the number at risk just before t_j.
+#' where \eqn{A(t_j) = \int_{t_j}^{\tau} S(u) du} is the remaining area under the KM
+#' curve from event time \eqn{t_j} to the last observation \eqn{\tau}, \eqn{d_j} is the number of events
+#' at \eqn{t_j}, and \eqn{n_j} is the number at risk just before \eqn{t_j}.
 #' Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
 #' contribution is 0 in the limit regardless of the undefined Greenwood denominator.
 #'

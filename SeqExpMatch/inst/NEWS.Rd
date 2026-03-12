@@ -1,97 +1,56 @@
 \name{NEWS}
-\title{News for Package "RcppNumerical"}
+\title{News for Package "SeqExpMatch"}
 
-\section{Changes in RcppNumerical version 0.6-0}{
+\section{Changes in SeqExpMatch version 2.0.0}{
   \subsection{NEW FEATURES}{
     \itemize{
-      \item Updated LBFGS++ to v0.3.0.
+      \item Complete R6 class inheritance revolution for all inference methodologies.
+      \item Implementation of the dual-strategy framework for designs with matched-pair strata:
+        \itemize{
+          \item \strong{IVWC}: Rigorous inverse-variance weighted combination of component estimators.
+          \item \strong{Combined Likelihood}: Joint design-aware modeling of matched and unmatched data.
+        }
+      \item Support for Zhang (2026) Exact Inference for distribution-free p-values and confidence intervals (Incidence and Quantile Regression).
+      \item Standardized all survival-based methodologies to Accelerated Failure Time (AFT) log-time ratios.
+      \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), \pkg{parfm} (Frailty), and \pkg{Rfit} (R-estimation).
+      \item Support for Stratified Cox and Conditional Poisson regression.
+      \item Automated missing data pipeline using \pkg{missRanger} and \pkg{missForest}.
+      \item Full support for unequal treatment allocation probabilities (prob_T != 0.5).
+    }
+  }
+  \subsection{PERFORMANCE AND OPTIMIZATION}{
+    \itemize{
+      \item Extreme speedups via C++/Eigen/OpenMP implementations of bootstrap and randomization distributions.
+      \item Custom high-speed C++ IRLS solvers for Logistic, Beta, and Negative Binomial regression.
+      \item Intelligent thread-control for parallelized inference.
+    }
+  }
+  \subsection{ROBUSTNESS AND USABILITY}{
+    \itemize{
+      \item Standardized global indentation to tabs and modernized Roxygen documentation.
+      \item Hidden internal abstract base classes for a streamlined public API.
+      \item Robust error handling for small-sample degeneracy and non-convergence.
     }
   }
 }
 
-\section{Changes in RcppNumerical version 0.5-0}{
-  \subsection{BUG FIXES}{
-    \itemize{
-      \item Removed the C function \code{sprintf()} calls according to CRAN's policy.
-    }
-  }
+\section{Changes in SeqExpMatch version 1.0.0}{
   \subsection{NEW FEATURES}{
     \itemize{
-      \item Updated LBFGS++ to v0.2.0.
+      \item Support for general response types: incidence, proportion, count, and survival.
+      \item Support for adding responses whenever they become recorded.
+      \item Support for general data frames including factors, characters, and logicals.
+      \item Integrated \pkg{missRanger} and \pkg{missForest} for missing data.
     }
   }
 }
 
-\section{Changes in RcppNumerical version 0.4-0}{
+\section{Changes in SeqExpMatch version 0.1.0}{
   \subsection{NEW FEATURES}{
     \itemize{
-      \item Added one-dimensional numerical integration on infinite intervals,
-            contributed by \href{https://github.com/rstub}{@rstub}
-            (\href{https://github.com/yixuan/RcppNumerical/pull/11}{#11}).
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.3-3}{
-  \subsection{BUG FIXES}{
-    \itemize{
-      \item Updated LBFGS++ to the newest version.
-      \item Fixed the \code{VignetteBuilder} entry in the \code{DESCRIPTION} file
-            according to CRAN's policy.
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.3-2}{
-  \subsection{BUG FIXES}{
-    \itemize{
-      \item Fixed a convergence test bug in LBFGS++.
-      \item Registered native routines per CRAN's policy.
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.3-1}{
-  \subsection{BUG FIXES}{
-    \itemize{
-      \item Fixed a bug of name hiding in C++.
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.3-0}{
-  \subsection{NEW FEATURES}{
-    \itemize{
-      \item Now using the LBFGS++ library for L-BFGS optimization.
-      \item Added a vignette.
-    }
-  }
-  \subsection{BUG FIXES}{
-    \itemize{
-      \item Fixed an index-out-of-bound bug in one dimensional integration (#1),
-            thanks to Greg Finak.
-      \item Added virtual destructors for classes \code{Func}, \code{MFunc}, and
-            \code{MFuncGrad}.
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.2-0}{
-  \subsection{NEW FEATURES}{
-    \itemize{
-      \item Added the Cuba library for multi-dimensional integration.
-    }
-  }
-}
-
-\section{Changes in RcppNumerical version 0.1-0}{
-  \subsection{NEW FEATURES}{
-    \itemize{
-      \item Initial release.
-      \item Provides C++ interface for one-dimensional numerical integration
-            and L-BFGS optimization.
-      \item R function \code{fastLR()} for fast logistic regression using
-            L-BFGS.
+      \item Initial Release.
+      \item Support for continuous response types.
+      \item Support for standard designs: CRD, BCRD, Atkinson, KK14, and KK21.
     }
   }
 }

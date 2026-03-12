@@ -108,9 +108,12 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
 	skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxIVWC") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoissonIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMultiIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceCountMultiKKCPoissonCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood")
-	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract")
+	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract") || is(seq_des_inf, "SeqDesignInferenceAllSimpleWilcox")
 	skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract")
-	skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood")
+	  skip_mle_pval  = is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
+	  skip_rand_pval = is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS")
+	  skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood")
+	
 	skip_ci = beta_T == 1 && (
 	is(seq_des_inf, "SeqDesignInferenceIncidMultiLogRegr") ||
 	is(seq_des_inf, "SeqDesignInferencePropUniBetaRegr") ||
@@ -118,7 +121,9 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") ||
 	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") ||
 	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxIVWC") ||
+	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood") ||
 	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC") ||
+	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood") ||
 	is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMultiIVWC") ||
 	is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegrIVWC")
 	)
@@ -219,9 +224,11 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	message("    Calling compute_treatment_estimate()")
 	safe_call("compute_treatment_estimate",
 	seq_des_inf$compute_treatment_estimate())
+	if (!skip_mle_pval){
 	message("    Calling compute_mle_two_sided_pval_for_treatment_effect()")
 	safe_call("compute_mle_two_sided_pval_for_treatment_effect",
 			seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect())
+	}
 	if (!skip_ci){
 	message("    Calling compute_mle_confidence_interval()")
 	safe_call("compute_mle_confidence_interval",
@@ -237,7 +244,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	safe_call("compute_bootstrap_two_sided_pval",
 				seq_des_inf$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE))
 	}
-	if (!skip_slow && !skip_rand && response_type %in% c("continuous", "survival", "proportion")){
+	if (!skip_slow && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion")){
 	message("    Calling compute_two_sided_pval_for_treatment_effect_rand()")
 	safe_call("compute_two_sided_pval_for_treatment_effect_rand",
 			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
@@ -270,7 +277,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
 		(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 	})
-	if (!skip_slow){
+	if (!skip_slow && !skip_rand_pval){
 		message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
 				seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
@@ -286,7 +293,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 
 run_tests_for_response = function(response_type, design_type, dataset_name){
 	inference_banner = function(inf_name){
-	message(paste0("\n\n  == Inference: ", inf_name, " dataset = ", dataset_name, " beta_T = [", beta_T, "] num_cores = [", NUM_CORES, "] rep = [", rep_curr, "/", Nrep, "]\n"))
+	message(paste0("\n\n  == Inference: ", inf_name, " dataset = ", dataset_name, " response_type = ", response_type, " beta_T = [", beta_T, "] num_cores = [", NUM_CORES, "] rep = [", rep_curr, "/", Nrep, "]\n"))
 	}
 
 	apply_treatment_effect_and_noise = function(y_t, w_t, response_type){
@@ -349,6 +356,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (response_type == "continuous"){
 	inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
 	run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+	inference_banner("SeqDesignInferenceAllSimpleWilcox")
+	run_inference_checks(SeqDesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 	if (is_kk_design){
 		inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
 		run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
@@ -412,6 +421,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (response_type == "proportion"){
 	inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
 	run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+	inference_banner("SeqDesignInferenceAllSimpleWilcox")
+	run_inference_checks(SeqDesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 	if (is_kk_design){
 		inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
 		run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
@@ -443,6 +454,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (response_type == "count"){
 	inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
 	run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+	inference_banner("SeqDesignInferenceAllSimpleWilcox")
+	run_inference_checks(SeqDesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 	if (is_kk_design){
 		inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
 		run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
@@ -521,6 +534,15 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			else stop(err_msg)
 		}
 		}
+	}
+	inference_banner("SeqDesignInferenceAllSimpleWilcox")
+	err_msg_sw = tryCatch({
+		run_inference_checks(SeqDesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		NULL
+	}, error = function(e) if (length(e$message) == 0L) "" else e$message)
+	if (!is.null(err_msg_sw)){
+		if (grepl("does not support censored", err_msg_sw, fixed = TRUE)) message("  Skipping SeqDesignInferenceAllSimpleWilcox (censored data): ", err_msg_sw)
+		else stop(err_msg_sw)
 	}
 	inference_banner("SeqDesignInferenceSurvivalGehanWilcox")
 	run_inference_checks(SeqDesignInferenceSurvivalGehanWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))

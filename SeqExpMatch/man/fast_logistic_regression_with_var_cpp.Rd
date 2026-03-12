@@ -10,6 +10,8 @@ fast_logistic_regression_with_var_cpp(Xmm, y, j = 2L)
 \item{Xmm}{Design matrix.}
 
 \item{y}{Response vector.}
+
+\item{j}{Index of the coefficient for which to compute the variance.}
 }
 \value{
 A list with coefficients and specific treatment variance.
