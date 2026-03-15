@@ -107,22 +107,9 @@ SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqDes
 
 				if (has_reservoir){
 					# Combined case: pair rows and reservoir rows must share the same
-					# covariate columns. KKstats$X_matched_diffs drops all-zero pair-diff
-					# columns, so rebuild full-width differences from private$X here.
-					match_indic_safe = private$match_indic
-					if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
-					match_indic_safe[is.na(match_indic_safe)] = 0L
-					pair_ids_sorted = sort(unique(match_indic_safe[match_indic_safe > 0L]))
-					Xd = do.call(rbind, lapply(pair_ids_sorted, function(pid){
-						idx   = which(match_indic_safe == pid)
-						idx_T = idx[private$w[idx] == 1]
-						idx_C = idx[private$w[idx] == 0]
-						if (length(idx_T) == 1L && length(idx_C) == 1L) {
-							as.numeric(private$X[idx_T, , drop = FALSE]) - as.numeric(private$X[idx_C, , drop = FALSE])
-						} else {
-							rep(0, ncol(private$X))
-						}
-					}))
+					# covariate columns. Use the full-width pair differences from the
+					# shared C++ preprocessing rather than the reduced pair-only matrix.
+					Xd = as.matrix(KKstats$X_matched_diffs_full)
 					p   = ncol(Xd)
 					y_r = fn(KKstats$y_reservoir)
 					w_r = KKstats$w_reservoir
@@ -158,14 +145,9 @@ SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqDes
 			}
 
 			# QR-reduce to full rank, preserving beta_T column
-			qr_X = qr(X_stack)
-			if (qr_X$rank < ncol(X_stack)){
-				keep     = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(j_beta_T %in% keep)) keep[qr_X$rank] = j_beta_T
-				keep     = sort(keep)
-				X_stack  = X_stack[, keep, drop = FALSE]
-				j_beta_T = which(keep == j_beta_T)
-			}
+			reduced = qr_reduce_preserve_cols_cpp(X_stack, j_beta_T)
+			X_stack  = reduced$X_reduced
+			j_beta_T = match(j_beta_T, reduced$keep)
 
 			n_total  = nrow(X_stack)
 			n_params = ncol(X_stack)
@@ -207,23 +189,7 @@ SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqDes
 		# astronomically large but finite values when the density at the quantile is near
 		# zero, which bypasses the usual !is.finite() || <= 0 guard in callers).
 		extract_se_from_rq = function(fit, coef_name){
-			is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
-
-			se = tryCatch({
-				s_fit = suppressWarnings(summary(fit, se = "nid", covariance = TRUE))
-				ct = s_fit$coefficients
-				if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
-			}, error = function(e) NA_real_)
-
-			if (is_bad_se(se)){
-				se = tryCatch({
-					s_fit = suppressWarnings(summary(fit, se = "iid", covariance = TRUE))
-					ct = s_fit$coefficients
-					if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
-				}, error = function(e) NA_real_)
-			}
-
-			if (is_bad_se(se)) NA_real_ else se
+			.extract_se_from_rq_fit(fit, coef_name)
 		}
 	)
 )

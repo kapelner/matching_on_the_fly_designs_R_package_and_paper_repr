@@ -21,6 +21,7 @@ SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqDe
 			assertResponseType(seq_des_obj$get_response_type(), "proportion")
 			super$initialize(seq_des_obj, tau, qlogis, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
+			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		},
 
 		#' @description

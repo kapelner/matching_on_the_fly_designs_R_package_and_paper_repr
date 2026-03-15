@@ -130,11 +130,7 @@ SeqDesignInferenceAbstractKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceAb
 
 			# QR-reduce Xd to full rank (same logic as OLS compound)
 			if (ncol(Xd) > 0){
-				qr_Xd = qr(Xd)
-				r = qr_Xd$rank
-				if (r < ncol(Xd)){
-					Xd = Xd[, qr_Xd$pivot[seq_len(r)], drop = FALSE]
-				}
+				Xd = qr_reduce_full_rank_cpp(Xd)$X_reduced
 			}
 			p_kept = ncol(Xd)
 
@@ -185,18 +181,9 @@ SeqDesignInferenceAbstractKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceAb
 			# Build full design matrix and QR-reduce, always preserving treatment column
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
-
-			qr_full = qr(X_full)
-			r_full  = qr_full$rank
-			if (r_full < ncol(X_full)){
-				keep = qr_full$pivot[seq_len(r_full)]
-				if (!(j_treat %in% keep)){
-					keep[r_full] = j_treat
-				}
-				keep    = sort(keep)
-				X_full  = X_full[, keep, drop = FALSE]
-				j_treat = which(keep == 2L)
-			}
+			reduced = qr_reduce_preserve_cols_cpp(X_full, j_treat)
+			X_full  = reduced$X_reduced
+			j_treat = match(2L, reduced$keep)
 
 			p = ncol(X_full)
 			cn = paste0("xr", seq_len(p))
@@ -241,23 +228,7 @@ SeqDesignInferenceAbstractKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceAb
 		# astronomically large but finite values when the density at the quantile is near
 		# zero, which bypasses the usual !is.finite() || <= 0 guard in callers).
 		extract_se_from_rq = function(fit, coef_name){
-			is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
-
-			se = tryCatch({
-				s_fit = suppressWarnings(summary(fit, se = "nid", covariance = TRUE))
-				ct = s_fit$coefficients
-				if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
-			}, error = function(e) NA_real_)
-
-			if (is_bad_se(se)){
-				se = tryCatch({
-					s_fit = suppressWarnings(summary(fit, se = "iid", covariance = TRUE))
-					ct = s_fit$coefficients
-					if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
-				}, error = function(e) NA_real_)
-			}
-
-			if (is_bad_se(se)) NA_real_ else se
+			.extract_se_from_rq_fit(fit, coef_name)
 		},
 
 		# Two-sided sign-flip randomisation test for matched pairs at H0: Q_tau(yd) = delta_0.
@@ -273,11 +244,7 @@ SeqDesignInferenceAbstractKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceAb
 			m      = length(yd_adj)
 
 			if (ncol(Xd) > 0){
-				qr_Xd = qr(Xd)
-				r = qr_Xd$rank
-				if (r < ncol(Xd)){
-					Xd = Xd[, qr_Xd$pivot[seq_len(r)], drop = FALSE]
-				}
+				Xd = qr_reduce_full_rank_cpp(Xd)$X_reduced
 			}
 
 			T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
@@ -308,15 +275,9 @@ SeqDesignInferenceAbstractKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceAb
 
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
-			qr_full = qr(X_full)
-			r_full  = qr_full$rank
-			if (r_full < ncol(X_full)){
-				keep = qr_full$pivot[seq_len(r_full)]
-				if (!(j_treat %in% keep)) keep[r_full] = j_treat
-				keep    = sort(keep)
-				X_full  = X_full[, keep, drop = FALSE]
-				j_treat = which(keep == 2L)
-			}
+			reduced = qr_reduce_preserve_cols_cpp(X_full, j_treat)
+			X_full  = reduced$X_reduced
+			j_treat = match(2L, reduced$keep)
 			p  = ncol(X_full)
 			cn = paste0("xr", seq_len(p))
 			cn[j_treat] = "trt__"

@@ -16,6 +16,8 @@ v2.0.0
     - Implemented Conditional Poisson regression for exact matched-pair count inference.
     - Added Restricted Mean Survival Time (RMST) difference with robust SEs.
     - Added Gehan-type rank-based AFT models (via `aftgee`).
+  + Added a standalone log-rank inference class with C++ score/variance helpers plus automatic stratification helper logic (`compute_survival_strata_ids_cpp`).
+  + Added zero-inflated negative binomial, hurdle negative binomial, and denominator-aware Poisson/quasi-Poisson inference with new Rcpp solvers for fast score/variance extraction.
   + Robust & Non-parametric Expansion:
     - Integrated R-estimation (Wilcoxon regression) via `Rfit`, with robust fallback to classical ranks for univariate cases.
     - Full Quantile Regression support (via `quantreg`) within the Compound/IVWC framework.

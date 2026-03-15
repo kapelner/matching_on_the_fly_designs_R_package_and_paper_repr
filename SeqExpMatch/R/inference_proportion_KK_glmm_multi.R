@@ -46,6 +46,7 @@ SeqDesignInferencePropMultiKKGLMM = R6::R6Class("SeqDesignInferencePropMultiKKGL
 		#' }
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
+			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		},
 
 		#' @description

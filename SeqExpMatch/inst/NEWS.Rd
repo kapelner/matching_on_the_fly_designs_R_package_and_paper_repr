@@ -14,6 +14,8 @@
       \item Standardized all survival-based methodologies to Accelerated Failure Time (AFT) log-time ratios.
       \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), \pkg{parfm} (Frailty), and \pkg{Rfit} (R-estimation).
       \item Support for Stratified Cox and Conditional Poisson regression.
+      \item Standalone log-rank inference powered by a new C++ score/variance routine plus automatic covariate-based strata construction.
+      \item Zero-inflated/negative binomial and hurdle negative binomial regression classes plus Poisson/quasi-Poisson inference that now use high-speed Rcpp IRLS solvers with Huber-White variance.
       \item Automated missing data pipeline using \pkg{missRanger} and \pkg{missForest}.
       \item Full support for unequal treatment allocation probabilities (prob_T != 0.5).
     }
@@ -22,6 +24,7 @@
     \itemize{
       \item Extreme speedups via C++/Eigen/OpenMP implementations of bootstrap and randomization distributions.
       \item Custom high-speed C++ IRLS solvers for Logistic, Beta, and Negative Binomial regression.
+      \item Rcpp helper for computing informative survival strata IDs and fast log-rank statistics.
       \item Intelligent thread-control for parallelized inference.
     }
   }

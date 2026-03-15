@@ -44,6 +44,24 @@ test_that("Inference works for count", {
 	inf <- SeqDesignInferenceCountUnivNegBinRegr$new(des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()
 	expect_true(is.numeric(est))
+
+	inf_robust_pois <- SeqDesignInferenceCountUnivRobustPoissonRegr$new(des, verbose = FALSE)
+	est_robust_pois <- inf_robust_pois$compute_treatment_estimate()
+	expect_true(is.numeric(est_robust_pois))
+
+	inf_quasi_pois <- SeqDesignInferenceCountUnivQuasiPoissonRegr$new(des, verbose = FALSE)
+	est_quasi_pois <- inf_quasi_pois$compute_treatment_estimate()
+	expect_true(is.numeric(est_quasi_pois))
+
+	if (requireNamespace("glmmTMB", quietly = TRUE)) {
+		inf_zinb <- SeqDesignInferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE)
+		est_zinb <- inf_zinb$compute_treatment_estimate()
+		expect_true(is.numeric(est_zinb))
+	}
+
+	inf_hurdle_nb <- SeqDesignInferenceCountUnivHurdleNegBinRegr$new(des, verbose = FALSE)
+	est_hurdle_nb <- inf_hurdle_nb$compute_treatment_estimate()
+	expect_true(is.numeric(est_hurdle_nb))
 })
 
 test_that("Inference works for proportion", {
@@ -74,8 +92,18 @@ test_that("Inference works for survival", {
 	est <- inf$compute_treatment_estimate()
 	expect_true(is.numeric(est))
 
+	# Log-rank
+	inf_logrank <- SeqDesignInferenceSurvivalLogRank$new(des, verbose = FALSE)
+	est_logrank <- inf_logrank$compute_treatment_estimate()
+	expect_true(is.numeric(est_logrank))
+
 	# Cox PH
 	inf_cox <- SeqDesignInferenceSurvivalUniCoxPHRegr$new(des, verbose = FALSE)
 	est_cox <- inf_cox$compute_treatment_estimate()
 	expect_true(is.numeric(est_cox))
+
+	# Stratified Cox PH
+	inf_strat_cox <- SeqDesignInferenceSurvivalUniStratCoxPHRegr$new(des, verbose = FALSE)
+	est_strat_cox <- inf_strat_cox$compute_treatment_estimate()
+	expect_true(is.numeric(est_strat_cox))
 })

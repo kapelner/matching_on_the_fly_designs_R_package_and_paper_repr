@@ -169,6 +169,23 @@ fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r,
     .Call(`_SeqExpMatch_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol)
 }
 
+#' Fast Hurdle Negative Binomial Count-Component Regression with variance
+#'
+#' Fits the hurdle indicator model on all subjects via logistic regression and the
+#' zero-truncated negative binomial count component on positive counts via L-BFGS.
+#'
+#' @param Xmm Design matrix.
+#' @param y Count response vector.
+#' @param j Index of the coefficient for which to compute the variance.
+#' @param maxit Maximum optimization iterations for the truncated NB fit.
+#' @param tol Convergence tolerance for the L-BFGS optimizer.
+#' @return A list with count-component coefficients, treatment variance, dispersion parameter,
+#'   and hurdle-model coefficients.
+#' @export
+fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
+}
+
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
@@ -182,6 +199,22 @@ fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 #' @export
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
     .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
+}
+
+#' Fast log-rank summary statistics in C++
+#'
+#' Computes the standard two-sample log-rank score statistic, its hypergeometric
+#' tie-adjusted variance, and a score-style treatment estimate based on the
+#' difference in mean martingale residuals under the null pooled hazard.
+#'
+#' @param time Observed follow-up times.
+#' @param dead Event indicators (`1` = event, `0` = censored).
+#' @param w Treatment indicators (`1` = treatment, `0` = control).
+#' @return A list with the log-rank score, its variance, a martingale-residual
+#'   mean-difference estimate, and its standard error.
+#' @export
+fast_logrank_stats_cpp <- function(time, dead, w) {
+    .Call(`_SeqExpMatch_fast_logrank_stats_cpp`, time, dead, w)
 }
 
 matrix_rank_cpp <- function(A, tol = 1e-12) {
@@ -211,6 +244,44 @@ fast_ols_cpp <- function(X, y) {
 
 fast_ols_with_var_cpp <- function(X, y, j = 2L) {
     .Call(`_SeqExpMatch_fast_ols_with_var_cpp`, X, y, j)
+}
+
+#' Fast Poisson Regression using Rcpp and IRLS
+#'
+#' @param X Design matrix.
+#' @param y Response vector.
+#' @param maxit Maximum IRLS iterations.
+#' @param tol Convergence tolerance for coefficient updates.
+#' @return A list with coefficients, fitted means, Fisher information, and convergence flag.
+#' @export
+fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_poisson_regression_cpp`, X, y, maxit, tol)
+}
+
+#' Fast Poisson Regression with variance using Rcpp and IRLS
+#'
+#' @param Xmm Design matrix.
+#' @param y Response vector.
+#' @param j Index of the coefficient for which to compute the variance.
+#' @param maxit Maximum IRLS iterations.
+#' @param tol Convergence tolerance for coefficient updates.
+#' @return A list with coefficients and selected coefficient variances.
+#' @export
+fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+}
+
+#' Fast Quasi-Poisson Regression with variance using Rcpp and IRLS
+#'
+#' @param Xmm Design matrix.
+#' @param y Response vector.
+#' @param j Index of the coefficient for which to compute the variance.
+#' @param maxit Maximum IRLS iterations.
+#' @param tol Convergence tolerance for coefficient updates.
+#' @return A list with coefficients, dispersion estimate, and selected coefficient variances.
+#' @export
+fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 sample_int_replace_cpp <- function(n, size) {
@@ -274,6 +345,18 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_SeqExpMatch_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
+    .Call(`_SeqExpMatch_gcomp_logistic_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+}
+
+gcomp_fractional_logit_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
+    .Call(`_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+}
+
+gcomp_logistic_cluster_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, cluster_id, j_treat) {
+    .Call(`_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, cluster_id, j_treat)
 }
 
 get_column_types_cpp <- function(df) {
@@ -344,6 +427,10 @@ compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reser
     .Call(`_SeqExpMatch_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
 }
 
+compute_kk_cluster_ids_cpp <- function(match_indic) {
+    .Call(`_SeqExpMatch_compute_kk_cluster_ids_cpp`, match_indic)
+}
+
 compute_kk_compound_distr_parallel_cpp <- function(y, w_mat, match_indic_mat, num_cores) {
     .Call(`_SeqExpMatch_compute_kk_compound_distr_parallel_cpp`, y, w_mat, match_indic_mat, num_cores)
 }
@@ -352,12 +439,59 @@ compute_kk_compound_bootstrap_parallel_cpp <- function(y_mat, w_mat, match_indic
     .Call(`_SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp`, y_mat, w_mat, match_indic_mat, num_cores)
 }
 
+compute_kk_lin_match_data_cpp <- function(w, match_indic, y, X) {
+    .Call(`_SeqExpMatch_compute_kk_lin_match_data_cpp`, w, match_indic, y, X)
+}
+
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
     .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
 }
 
 match_diffs_cpp <- function(w, match_indic, y, X, m) {
     .Call(`_SeqExpMatch_match_diffs_cpp`, w, match_indic, y, X, m)
+}
+
+#' Constrained MLE for Risk Difference (Miettinen-Nurminen)
+#'
+#' Solves the likelihood equations for p_C subject to p_T - p_C = delta.
+#' Uses bisection on the score function (derivative of log-likelihood)
+#' which is monotonic and well-behaved.
+#' @keywords internal
+mn_constrained_mle_pc_cpp <- function(x_t, n_t, x_c, n_c, delta) {
+    .Call(`_SeqExpMatch_mn_constrained_mle_pc_cpp`, x_t, n_t, x_c, n_c, delta)
+}
+
+#' @keywords internal
+mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
+    .Call(`_SeqExpMatch_mn_z_statistic_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
+}
+
+#' @keywords internal
+mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
+    .Call(`_SeqExpMatch_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
+}
+
+#' @keywords internal
+mn_ci_cpp <- function(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon) {
+    .Call(`_SeqExpMatch_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
+}
+
+#' Wilson Score Interval for a Single Proportion
+#' @keywords internal
+wilson_score_interval_cpp <- function(x, n, alpha) {
+    .Call(`_SeqExpMatch_wilson_score_interval_cpp`, x, n, alpha)
+}
+
+#' Newcombe Hybrid Score Interval for Independent Proportions (Method 10)
+#' @keywords internal
+newcombe_independent_ci_cpp <- function(x1, n1, x2, n2, alpha) {
+    .Call(`_SeqExpMatch_newcombe_independent_ci_cpp`, x1, n1, x2, n2, alpha)
+}
+
+#' Newcombe Hybrid Score Interval for Paired Proportions
+#' @keywords internal
+newcombe_paired_ci_cpp <- function(n11, n10, n01, n00, alpha) {
+    .Call(`_SeqExpMatch_newcombe_paired_ci_cpp`, n11, n10, n01, n00, alpha)
 }
 
 compute_ols_distr_parallel_cpp <- function(y, X_covars, w_mat, num_cores) {
@@ -380,8 +514,28 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
     .Call(`_SeqExpMatch_compute_lambda_squ_cpp`, d_i, halves)
 }
 
+qr_reduce_full_rank_cpp <- function(X) {
+    .Call(`_SeqExpMatch_qr_reduce_full_rank_cpp`, X)
+}
+
+qr_reduce_preserve_cols_cpp <- function(X, required_cols) {
+    .Call(`_SeqExpMatch_qr_reduce_preserve_cols_cpp`, X, required_cols)
+}
+
 randomization_loop_cpp <- function(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
     .Call(`_SeqExpMatch_randomization_loop_cpp`, nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+}
+
+ols_hc2_post_fit_cpp <- function(X_fit, y, coef_hat, j_treat) {
+    .Call(`_SeqExpMatch_ols_hc2_post_fit_cpp`, X_fit, y, coef_hat, j_treat)
+}
+
+glm_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, j_treat) {
+    .Call(`_SeqExpMatch_glm_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, j_treat)
+}
+
+glm_cluster_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat) {
+    .Call(`_SeqExpMatch_glm_cluster_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat)
 }
 
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {
@@ -394,6 +548,25 @@ sample_mode_cpp <- function(data) {
 
 compute_simple_mean_diff_parallel_cpp <- function(y_mat, w_mat, num_cores) {
     .Call(`_SeqExpMatch_compute_simple_mean_diff_parallel_cpp`, y_mat, w_mat, num_cores)
+}
+
+#' Compute automatic survival strata IDs from low-cardinality covariates
+#'
+#' Selects numeric covariate columns with a small number of observed levels and
+#' combines them into a single all-subject stratum identifier. This is used to
+#' support automatic stratified Cox models when the design object stores observed
+#' covariates but no explicit stratum variable.
+#'
+#' @param X Numeric covariate matrix.
+#' @param max_unique_per_col Maximum number of unique values allowed for a column
+#'   to be considered a stratification candidate.
+#' @param max_strata_cols Maximum number of candidate columns to combine.
+#' @param min_count_per_level Minimum frequency required for every level in a
+#'   candidate column.
+#' @return A list with `strata_id`, `selected_cols`, and `num_strata`.
+#' @export
+compute_survival_strata_ids_cpp <- function(X, max_unique_per_col = 4L, max_strata_cols = 4L, min_count_per_level = 2L) {
+    .Call(`_SeqExpMatch_compute_survival_strata_ids_cpp`, X, max_unique_per_col, max_strata_cols, min_count_per_level)
 }
 
 which_cols_vary_cpp <- function(X) {

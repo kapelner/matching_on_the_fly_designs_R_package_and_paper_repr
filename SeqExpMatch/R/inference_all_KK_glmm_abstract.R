@@ -106,6 +106,8 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
 
 			dat = data.frame(y = private$y, private$glmm_predictors_df(), group_id = factor(group_id))
+			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
+			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
 
 			# Use internal glmmTMB parallelism only if we are not already in an outer
 			# parallel loop (num_cores == 1). This prevents CPU over-subscription.
@@ -118,7 +120,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					glmmTMB::glmmTMB(
-						y ~ . - group_id + (1 | group_id),
+						glmm_formula,
 						family  = private$glmm_family(),
 						data    = dat,
 						control = glmm_control

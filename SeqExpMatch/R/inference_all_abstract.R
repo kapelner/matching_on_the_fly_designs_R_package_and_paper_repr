@@ -956,9 +956,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 					# Bootstrap on transformed data
 					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+					if (!all(is.finite(bootstrap_ci))) {
+						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
+					}
+					if (!is.finite(est)) {
+						est = mean(bootstrap_ci)
+					}
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					l = bootstrap_ci[1] - 0.5 * ci_width
 					u = bootstrap_ci[2] + 0.5 * ci_width
+					if (!all(is.finite(c(l, u)))) {
+						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
+					}
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
@@ -1017,9 +1026,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 					# Bootstrap on transformed data
 					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+					if (!all(is.finite(bootstrap_ci))) {
+						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
+					}
+					if (!is.finite(est)) {
+						est = mean(bootstrap_ci)
+					}
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					l = bootstrap_ci[1] - 0.5 * ci_width
 					u = bootstrap_ci[2] + 0.5 * ci_width
+					if (!all(is.finite(c(l, u)))) {
+						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
+					}
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
@@ -1285,6 +1303,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				}
 			}
 			if (is.na(pval_l) || is.na(pval_u)) return(NA_real_)
+			if (!all(is.finite(c(l, u)))) return(NA_real_)
 
 			iter = 0
 			progress_label = if (lower) "CI lower" else "CI upper"

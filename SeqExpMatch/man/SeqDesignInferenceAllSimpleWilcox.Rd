@@ -29,7 +29,6 @@ on the original response scale for continuous responses.
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_treatment_estimate}{\code{SeqDesignInferenceAllSimpleWilcox$compute_treatment_estimate()}}
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllSimpleWilcox$compute_mle_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllSimpleWilcox$compute_mle_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceAllSimpleWilcox$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-clone}{\code{SeqDesignInferenceAllSimpleWilcox$clone()}}
 }
 }
@@ -38,6 +37,7 @@ on the original response scale for continuous responses.
 <ul>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
@@ -115,30 +115,6 @@ normal approximation for the HL estimator.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{delta}}{Null value; default 0.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Returns the asymptotic CI in place of a bootstrap CI to avoid the
-\eqn{O(n^2)} cost of recomputing the HL estimate for each bootstrap resample.
-The asymptotic CI is an adequate warm-start bound for the randomization CI bisection.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_bootstrap_confidence_interval(
-  alpha = 0.05,
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level; default 0.05. Passed to \code{compute_mle_confidence_interval}.}
-
-\item{\code{...}}{Ignored.}
 }
 \if{html}{\out{</div>}}
 }

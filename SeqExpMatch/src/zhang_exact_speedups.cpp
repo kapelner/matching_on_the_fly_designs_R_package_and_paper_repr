@@ -247,6 +247,7 @@ List compute_zhang_match_data_cpp(const IntegerVector& w,
 
   return List::create(
     _["X_matched_diffs"] = X_matched_diffs,
+    _["X_matched_diffs_full"] = X_matched_diffs_full,
     _["yTs_matched"] = yTs_matched,
     _["yCs_matched"] = yCs_matched,
     _["y_matched_diffs"] = y_matched_diffs,

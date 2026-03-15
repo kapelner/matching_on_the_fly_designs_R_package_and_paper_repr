@@ -9,20 +9,25 @@ using namespace Rcpp;
 double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j) {
 	Eigen::VectorXd b = Eigen::VectorXd::Unit(M.rows(), j - 1);
 
-	// Use a direct LDLT decomposition instead of the iterative ConjugateGradient
-	// solver. CG has a fixed iteration budget and fails for poorly-conditioned but
-	// invertible matrices (e.g. scaled factor-dummy designs). LDLT is exact for
-	// symmetric positive-definite matrices and has no convergence issues.
+	// Prefer a direct LDLT decomposition for well-behaved symmetric systems.
 	Eigen::LDLT<Eigen::MatrixXd> ldlt(M);
 
-	if (ldlt.info() != Eigen::Success) {
-	return NA_REAL;
+	if (ldlt.info() == Eigen::Success) {
+		Eigen::VectorXd x = ldlt.solve(b);
+		if (x.allFinite()) {
+			return x(j - 1);
+		}
 	}
 
-	Eigen::VectorXd x = ldlt.solve(b);
+	// Fall back to a rank-revealing solve for near-singular or indefinite systems.
+	Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(M);
+	if (cod.rank() == 0) {
+		return NA_REAL;
+	}
 
+	Eigen::VectorXd x = cod.solve(b);
 	if (!x.allFinite()) {
-	return NA_REAL;
+		return NA_REAL;
 	}
 
 	return x(j - 1);

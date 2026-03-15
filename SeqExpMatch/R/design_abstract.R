@@ -239,7 +239,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			} else if (private$response_type == "incidence"){
 				assertChoice(y, c(0, 1))
 			} else if (private$response_type == "proportion"){
-				assertNumeric(y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps) #ones and zeroes not allowed
+				assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1)
 			} else if (private$response_type == "count"){
 				assertCount(y, na.ok = FALSE)
 			} else if (private$response_type == "survival"){
