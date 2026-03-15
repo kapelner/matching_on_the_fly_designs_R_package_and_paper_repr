@@ -2,7 +2,9 @@
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
-#' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+#' in all response types (except Weibull with censoring)
+#' sequential experimental design estimation and test object
+#' after the sequential design is completed.
 #'
 #'
 #' @export
@@ -11,13 +13,22 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 	public = list(
 
 		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' Initialize a sequential experimental design estimation and test object
+		#' after the sequential design is completed.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertResponseType(seq_des_obj$get_response_type(), "survival")
@@ -37,8 +48,10 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-		#										deads = c(1L, 0L, 1L, 1L, 0L, 1L))
+		#' seq_des$add_all_subject_responses(
+		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+		#' )
 		#'
 		#' seq_des_inf = SeqDesignInferenceSurvivalUniCoxPHRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
@@ -51,7 +64,8 @@ SeqDesignInferenceSurvivalUniCoxPHRegr = R6::R6Class("SeqDesignInferenceSurvival
 		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
-		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param	nsim_exact_test		The number of randomization vectors. The default is 501.
 		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
 		#' @param	show_progress		Show a text progress indicator.

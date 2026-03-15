@@ -2,7 +2,9 @@
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
-#' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+#' in all response types (except Weibull with censoring)
+#' sequential experimental design estimation and test object
+#' after the sequential design is completed.
 #'
 #'
 #' @export
@@ -11,13 +13,22 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 	public = list(
 
 		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' Initialize a sequential experimental design estimation and test object
+		#' after the sequential design is completed.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, num_cores, verbose)
@@ -52,12 +63,16 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 
 
 		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+		#' Computes a 1-alpha level frequentist confidence interval
+		#' differently for all response types, estimate types, and
+		#' test types.
 		#'
 		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal.
-		#' Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
+		#' Hence these confidence intervals are asymptotically valid
+		#' and thus approximate for any sample size.
 		#'
-		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#'
@@ -89,7 +104,8 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 
 		#' Computes a 2-sided p-value
 		#'
-		#' @param	delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
 		#'

@@ -29,3 +29,16 @@ This function requires the \pkg{glmnet} package, which is listed under \code{Sug
 and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 \code{install.packages("glmnet")} before calling this function.
 }
+\examples{
+if (requireNamespace("glmnet", quietly = TRUE)) {
+  Xmm <- matrix(c(-1, 0,
+                  0, 1,
+                  1, 0,
+                  0, 1,
+                  1, 0,
+                  2, 1), ncol = 2, byrow = TRUE)
+  y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
+  dead <- c(1, 1, 0, 1, 0, 1)
+  fast_coxph_regression(Xmm, y, dead)
+}
+}

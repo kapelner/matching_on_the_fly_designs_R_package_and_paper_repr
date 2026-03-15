@@ -9,7 +9,8 @@
 
 \item{y}{A numeric vector of the response variable.}
 
-\item{j}{This function will compute the variance of the jth coefficient estimator. Default is 2.}
+\item{j}{This function will compute the variance of the jth coefficient estimator. Default is
+2.}
 }
 \value{
 A list containing the following components:

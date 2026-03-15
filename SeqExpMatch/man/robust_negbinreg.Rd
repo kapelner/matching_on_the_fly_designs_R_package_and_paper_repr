@@ -15,5 +15,10 @@ robust_negbinreg(form_obj, data_obj)
 The Negative Binomial regression model object
 }
 \description{
-Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
+Performs Negative Binomial regression that if it fails, keeps dropping one column from the
+model matrix until it works
+}
+\examples{
+dat <- data.frame(y = c(0, 1, 1, 2, 3, 4), x1 = c(-1, 0, 1, 0, 1, 2))
+robust_negbinreg(y ~ x1, dat)
 }

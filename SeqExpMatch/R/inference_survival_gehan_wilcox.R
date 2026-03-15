@@ -23,7 +23,8 @@ SeqDesignInferenceSurvivalGehanWilcox = R6::R6Class("SeqDesignInferenceSurvivalG
 
 		#' @description
 		#' Initialize a Gehan-Wilcoxon (Peto-Prentice) inference object for survival data.
-		#' @param	seq_des_obj	A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param seq_des_obj     A SeqDesign object whose entire n subjects are assigned and response
+		#'   y is recorded within.
 		#' @param	num_cores		The number of CPU cores to use for parallel processing. Default is 1.
 		#' @param	verbose		Whether to print progress messages. Default is FALSE.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){

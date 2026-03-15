@@ -61,7 +61,6 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @param y Response vector.
 //' @param j Index of the coefficient for which to compute the variance.
 //' @return A list with coefficients and specific treatment variance.
-//' @export
 // [[Rcpp::export]]
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j = 2) {
 	List mod = fast_logistic_regression_cpp(Xmm, y);

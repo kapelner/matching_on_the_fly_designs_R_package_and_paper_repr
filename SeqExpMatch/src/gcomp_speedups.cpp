@@ -313,3 +313,38 @@ List gcomp_logistic_cluster_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     _["se_log_rr"] = se_log_rr
   );
 }
+
+// [[Rcpp::export]]
+List gcomp_ordinal_proportional_odds_post_fit_cpp(const Eigen::MatrixXd& X_fit,
+                                                  const Eigen::VectorXd& coef_hat,
+                                                  const Eigen::VectorXd& alpha_hat,
+                                                  int j_treat) {
+  const int n = X_fit.rows();
+  const int K_minus_1 = alpha_hat.size();
+  const int j_treat0 = j_treat - 1;
+
+  Eigen::VectorXd eta_base = X_fit * coef_hat - coef_hat[j_treat0] * X_fit.col(j_treat0);
+  Eigen::VectorXd eta1 = eta_base.array() + coef_hat[j_treat0];
+  Eigen::VectorXd eta0 = eta_base;
+
+  auto compute_mean = [&](const Eigen::VectorXd& eta_vec) {
+    double total_mean = 0.0;
+    for (int i = 0; i < n; ++i) {
+      double mean_i = 1.0;
+      for (int k = 0; k < K_minus_1; ++k) {
+        mean_i += (1.0 - plogis_stable(alpha_hat[k] - eta_vec[i]));
+      }
+      total_mean += mean_i;
+    }
+    return total_mean / static_cast<double>(n);
+  };
+
+  double mean1 = compute_mean(eta1);
+  double mean0 = compute_mean(eta0);
+
+  return List::create(
+    _["mean1"] = mean1,
+    _["mean0"] = mean0,
+    _["md"] = mean1 - mean0
+  );
+}

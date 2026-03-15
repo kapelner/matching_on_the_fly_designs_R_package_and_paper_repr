@@ -11,43 +11,68 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 	public = list(
 		#'
 		#' @description
-		#' Initialize a matching-on-the-fly sequential experimental design which matches based on the stepwise version of
-		#' Kapelner and Krieger (2021) with option to use matching parameters of Morrison and Owen (2025)
+		#' Initialize a matching-on-the-fly sequential experimental design which matches based on the
+		#' stepwise version of
+		#' Kapelner and Krieger (2021) with option to use matching parameters of Morrison and Owen
+		#' (2025)
 		#' @param	response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous" (the default),
 		#' 								"incidence",
 		#' 								"proportion",
 		#' 								"count",
 		#' 								"survival".
-		#' 								This package will enforce that all added responses via the \code{add_subject_response} method will be
+		#'                                                                 This package will enforce
+		#' that all added responses via the \code{add_subject_response} method will be
 		#' 								of the appropriate type.
 		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
-		#' @param	include_is_missing_as_a_new_feature	If missing data is present in a variable, should we include another dummy variable for its
-		#' 								missingness in addition to imputing its value? If the feature is type factor, instead of creating
+		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
+		#'   should we include another dummy variable for its
+		#'                                                                 missingness in addition to
+		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param	verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param	lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
-		#' @param	t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.
-		#' @param	morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
-		#' 						If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
-		#' 						settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
-		#' @param	p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
-		#' @param	num_boot the number of bootstrap samples taken to approximate the subject-distance distribution. Default is \code{NULL} for not 500.
-		#' @param	count_use_speedup 		Should we speed up the estimation of the weights in the response = count case via a continuous regression on log(y + 1).
-		#' 							instead of a negative binomial regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
-		#' @param	proportion_use_speedup 	Should we speed up the estimation of the weights in the response = proportion case via a continuous regression on log(y / (1 - y))
-		#' 							instead of a beta regression each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
-		#' @param	survival_use_speedup_for_no_censoring	Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
-		#' 							instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
-		#' 							This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.
-		#' @param	ordinal_use_speedup 	Should we speed up the estimation of the weights in the response = ordinal case via a continuous regression on the ordinal levels coerced to numeric.
-		#' 							instead of a proportional odds model each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
+		#'   matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified
+		#'   and \code{morrison = FALSE}, default is 35\%.
+		#' @param morrison        Default is \code{FALSE} which implies matching via the KK14
+		#'   algorithm using \code{lambda} and \code{t_0_pct} matching.
+		#'                                                 If \code{TRUE}, we use Morrison and Owen
+		#' (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
+		#'                                                 settings and matching begins immediately
+		#' with no wait for a certain reservoir size like in KK14.
+		#' @param p                       The number of covariate features. Must be specified when
+		#'   \code{morrison = TRUE} otherwise do not specify this argument.
+		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance
+		#'   distribution. Default is \code{NULL} for not 500.
+		#' @param count_use_speedup               Should we speed up the estimation of the weights in
+		#'   the response = count case via a continuous regression on log(y + 1).
+		#'                                                         instead of a negative binomial
+		#' regression each time? This is at the expense of the weights being less accurate. Default is
+		#' \code{TRUE}.
+		#' @param proportion_use_speedup  Should we speed up the estimation of the weights in the
+		#'   response = proportion case via a continuous regression on log(y / (1 - y))
+		#'                                                         instead of a beta regression each
+		#' time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @param survival_use_speedup_for_no_censoring   Should we speed up the estimation of the
+		#'   weights in the response = survival case via a continuous regression on log(y)
+		#'                                                         instead of a Weibull AFT regression
+		#' each time, but only when there is no censoring in the data collected so far?
+		#'                                                         This is at the expense of the
+		#' weights being less accurate when censoring is present. Default is \code{TRUE}.
+		#' @param ordinal_use_speedup     Should we speed up the estimation of the weights in the
+		#'   response = ordinal case via a continuous regression on the ordinal levels coerced to
+		#'   numeric.
+		#'                                                         instead of a proportional odds
+		#' model each time? This is at the expense of the weights being less accurate. Default is
+		#' \code{TRUE}.
 		#' @return	A new `SeqDesignKK21stepwise` object
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignKK21stepwise$new(response_type = "continuous")
+		#' seq_des = SeqDesignKK21stepwise$new(n = 6, response_type = "continuous")
 		#' }
 		#'
 		initialize = function(

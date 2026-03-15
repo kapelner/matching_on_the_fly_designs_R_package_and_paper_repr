@@ -84,7 +84,6 @@ public:
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.
 //' @return A list with coefficients, theta, log-likelihood, and Hessian.
-//' @export
 // [[Rcpp::export]]
 List fast_neg_bin_with_var_cpp(const Eigen::MatrixXd& X,
 								 const Eigen::VectorXi& y,

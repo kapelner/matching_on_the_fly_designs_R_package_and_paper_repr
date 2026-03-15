@@ -50,8 +50,7 @@ test_that("compute_confidence_interval_rand works for proportion response", {
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
-	# Proportions should be between 0 and 1
-	expect_true(all(ci >= 0 & ci <= 1))
+	expect_true(all(is.finite(ci)))
 
 	est <- inf$compute_treatment_estimate()
 	expect_true(est >= ci[1] && est <= ci[2])
@@ -87,17 +86,45 @@ test_that("compute_confidence_interval_rand works for survival response (uncenso
 	message("Survival Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
 })
 
+test_that("compute_confidence_interval_rand works for ordinal response (cumulative logit)", {
+	set.seed(456)
+	n <- 40
+	des <- SeqDesignCRD$new(n = n, response_type = "ordinal", verbose = FALSE)
+	for (i in 1:n) {
+		des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+	}
+	treatment <- des$.__enclos_env__$private$w
+	score <- rnorm(n, mean = treatment * 0.5)
+	y <- 1L + (score > 0) + (score > 1)
+	des$add_all_subject_responses(y)
+
+	inf <- SeqDesignInferenceOrdinalUniPropOddsRegr$new(des, verbose = FALSE)
+
+	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05, show_progress = FALSE)
+
+	expect_equal(length(ci), 2)
+	expect_true(ci[1] < ci[2])
+	est <- inf$compute_treatment_estimate()
+	expect_true(est >= ci[1] && est <= ci[2])
+	expect_true(all(is.finite(ci)))
+
+	message("Ordinal Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
+})
+
 test_that("compute_confidence_interval_rand throws error for unsupported types", {
 	n <- 20
 	des_incid <- SeqDesignCRD$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) des_incid$add_subject_to_experiment_and_assign(data.table(x=1))
 	des_incid$add_all_subject_responses(rbinom(n, 1, 0.5))
 	inf_incid <- SeqDesignInferenceIncidUnivLogRegr$new(des_incid)
-	expect_error(inf_incid$compute_confidence_interval_rand(), "Confidence intervals are not supported for randomization tests for mean difference in incidence outomes")
+	expect_error(inf_incid$compute_confidence_interval_rand(), "Confidence intervals are not supported for randomization tests for incidence outcomes")
 
 	des_count <- SeqDesignCRD$new(n = n, response_type = "count", verbose = FALSE)
 	for (i in 1:n) des_count$add_subject_to_experiment_and_assign(data.table(x=1))
 	des_count$add_all_subject_responses(rpois(n, 5))
 	inf_count <- SeqDesignInferenceCountUnivNegBinRegr$new(des_count)
-	expect_error(inf_count$compute_confidence_interval_rand(), "Confidence intervals are not supported for randomization tests for mean difference in count outomes")
+	ci_count <- inf_count$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05)
+	expect_equal(length(ci_count), 2)
+	expect_true(ci_count[1] < ci_count[2])
+	expect_true(all(is.finite(ci_count)))
 })

@@ -12,7 +12,9 @@
 #' @name 		SeqExpMatch
 #' @title 		Sequential Experimental Designs via Matching On-the-Fly
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
-#' @references 	Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Arxiv 2010.05980
+#' @references         Adam Kapelner and Abba Krieger A Matching Procedure for Sequential
+#'   Experiments that Iteratively Learns which Covariates Improve Power, Arxiv
+#'   2010.05980
 #' @keywords	design pair-matching
 #' @import      checkmate
 #' @import      data.table
@@ -21,7 +23,8 @@
 #' @import      missRanger
 #' @import      Rcpp
 #' @import      methods
-#' @importFrom	stats coef cor glm.control make.link nlminb pnorm pt rnorm qnorm qf rbinom var median sd model.matrix as.formula formula qt pchisq binom.test fisher.test
+#' @importFrom     stats coef cor glm.control make.link nlminb pnorm pt rnorm qnorm qf rbinom
+#' var median sd model.matrix as.formula formula qt pchisq binom.test fisher.test
 #' @importFrom	survival Surv survreg.control survfit survdiff
 #' @importFrom	utils packageVersion
 #' @importFrom	graphics hist

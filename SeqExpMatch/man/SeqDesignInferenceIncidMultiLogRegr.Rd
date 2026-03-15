@@ -5,7 +5,9 @@
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
 The methods that support confidence intervals and testing for the mean difference
-in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+in all response types (except Weibull with censoring)
+sequential experimental design estimation and test object
+after the sequential design is completed.
 }
 \examples{
 
@@ -59,7 +61,8 @@ seq_des_inf$compute_treatment_estimate()
 \if{html}{\out{<a id="method-SeqDesignInferenceIncidMultiLogRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidMultiLogRegr-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidMultiLogRegr$new(
   seq_des_obj,
@@ -71,14 +74,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

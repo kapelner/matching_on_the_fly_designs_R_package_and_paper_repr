@@ -22,7 +22,6 @@ using namespace Rcpp;
 //'
 //' @return The CI bound value
 //'
-//' @export
 // [[Rcpp::export]]
 double bisection_ci_loop_cpp(
 	Function pval_fn,

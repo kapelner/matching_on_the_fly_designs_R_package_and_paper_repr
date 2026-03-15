@@ -15,7 +15,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignEfron$new(response_type = "continuous")
+seq_des = SeqDesignEfron$new(n = 6, response_type = "continuous")
 }
 
 }
@@ -76,25 +76,30 @@ Initialize an Efron's weighted coin sequential experimental design
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{response_type}}{The data type of response values which must be one of the following:
-"continuous" (the default),
-"incidence",
-"proportion",
-"count",
-"survival".
-This package will enforce that all added responses via the \code{add_subject_response} method will be
-of the appropriate type.}
+                                "continuous" (the default),
+                                "incidence",
+                                "proportion",
+                                "count",
+                                "survival".
+                                                                This package will enforce
+that all added responses via the \code{add_subject_response} method will be
+                                of the appropriate type.}
 
 \item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
 
-\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable, should we include another dummy variable for its
-missingness in addition to imputing its value? If the feature is type factor, instead of creating
-a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
+  should we include another dummy variable for its
+                                                                missingness in addition to
+imputing its value? If the feature is type factor, instead of creating
+                                a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 
-\item{\code{weighted_coin_prob}}{The probability of Efron's weighted coin. Default is \code{NULL} for Efron's default of 2/3.}
+\item{\code{weighted_coin_prob}}{The probability of Efron's weighted coin. Default is \code{NULL}
+for Efron's default of 2/3.}
 }
 \if{html}{\out{</div>}}
 }
@@ -104,7 +109,7 @@ A new `SeqDesignEfron` object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignEfron$new(response_type = "continuous")
+seq_des = SeqDesignEfron$new(n = 6, response_type = "continuous")
 }
 
 }

@@ -9,14 +9,16 @@ Fits a single joint normal likelihood over all KK design data — matched-pair
 differences and reservoir subjects — estimating the treatment effect \eqn{\beta_T}
 in one combined OLS.
 
-\strong{Model:} \eqn{y = \beta_0 + \beta_T w + \mathbf{x}'\boldsymbol{\beta_{xs}} + \varepsilon},
+\strong{Model:} \eqn{y = \beta_0 + \beta_T w + \mathbf{x}'\boldsymbol{\beta_{xs}} +
+\varepsilon},
 \eqn{\varepsilon \sim N(0, \sigma^2)}. Differencing within pairs eliminates the
 pair-specific intercept and yields
 \eqn{d_k = \beta_T + \mathbf{x}_{d,k}'\boldsymbol{\beta_{xs}} + \varepsilon_{d,k}},
 \eqn{\varepsilon_{d,k} \sim N(0, 2\sigma^2)}.
 The same \eqn{\boldsymbol{\beta_{xs}}} appears in both components.
 
-\strong{Combined design matrix} (column layout: \eqn{\beta_0,\,\beta_T,\,\boldsymbol{\beta_{xs}}}):
+\strong{Combined design matrix} (column layout:
+\eqn{\beta_0,\,\beta_T,\,\boldsymbol{\beta_{xs}}}):
 \itemize{
   \item Matched-pair rows (scaled by \eqn{1/\sqrt{2}}):
         \eqn{[0,\; 1/\sqrt{2},\; \mathbf{x}_{d,k}'/\sqrt{2}]}.
@@ -31,6 +33,27 @@ The Hessian of the log-likelihood with respect to
 \eqn{(\beta_0, \beta_T, \boldsymbol{\beta_{xs}})} is
 \eqn{H = -\mathbf{X}'\mathbf{X}/\hat\sigma^2}, stored in
 \code{private$cached_values$hessian} for downstream use (CI, p-value).
+}
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceContinMultOLSKKCombinedLikelihood$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultOLSKKCombinedLikelihood$new(seq_des, verbose = FALSE)
+infer
+
 }
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound} -> \code{SeqDesignInferenceContinMultOLSKKCombinedLikelihood}
@@ -83,6 +106,27 @@ Initialize the inference object.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultOLSKKCombinedLikelihood$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKCombinedLikelihood-compute_treatment_estimate"></a>}}

@@ -5,8 +5,9 @@
 \title{Uses the standard variance formula (Uno et al.):
   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
 where \eqn{A(t_j) = \int_{t_j}^{\tau} S(u) du} is the remaining area under the KM
-curve from event time \eqn{t_j} to the last observation \eqn{\tau}, \eqn{d_j} is the number of events
-at \eqn{t_j}, and \eqn{n_j} is the number at risk just before \eqn{t_j}.
+curve from event time \eqn{t_j} to the last observation \eqn{\tau}.
+Here \eqn{d_j} is the number of events at \eqn{t_j}, and \eqn{n_j}
+is the number at risk just before \eqn{t_j}.
 Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
 contribution is 0 in the limit regardless of the undefined Greenwood denominator.}
 \usage{
@@ -24,8 +25,9 @@ The standard error of the restricted mean.
 Uses the standard variance formula (Uno et al.):
   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
 where \eqn{A(t_j) = \int_{t_j}^{\tau} S(u) du} is the remaining area under the KM
-curve from event time \eqn{t_j} to the last observation \eqn{\tau}, \eqn{d_j} is the number of events
-at \eqn{t_j}, and \eqn{n_j} is the number at risk just before \eqn{t_j}.
+curve from event time \eqn{t_j} to the last observation \eqn{\tau}.
+Here \eqn{d_j} is the number of events at \eqn{t_j}, and \eqn{n_j}
+is the number at risk just before \eqn{t_j}.
 Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
 contribution is 0 in the limit regardless of the undefined Greenwood denominator.
 }

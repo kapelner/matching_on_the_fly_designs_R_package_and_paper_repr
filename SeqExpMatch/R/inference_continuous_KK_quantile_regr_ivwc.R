@@ -38,16 +38,43 @@ SeqDesignInferenceContinMultKKQuantileRegrIVWC = R6::R6Class("SeqDesignInference
 	public = list(
 
 		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param	tau				The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
-		#' 							estimates the median treatment effect. Pass a different value (e.g. \code{tau = 0.25} or
-		#' 							\code{tau = 0.75}) to target the corresponding percentile of the treatment effect distribution.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
+		#' Initialize a sequential experimental design estimation and test object
+		#' after the sequential design is completed.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
+		#' @param tau                             The quantile level for regression, strictly between
+		#'   0 and 1. The default \code{tau = 0.5}
+		#'                                                         estimates the median treatment
+		#' effect. Pass a different value (e.g. \code{tau = 0.25} or
+		#'                                                         \code{tau = 0.75}) to target the
+		#' corresponding percentile of the treatment effect distribution.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{FALSE}.
+		#' @examples
+		#' set.seed(1)
+		#' x_dat <- data.frame(
+		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+		#' )
+		#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+		#' FALSE)
+		#' for (i in seq_len(nrow(x_dat))) {
+		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		#' }
+		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+		#' infer <- SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+		#' infer
+		#'
 		initialize = function(seq_des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, tau, identity, num_cores, verbose)
@@ -77,7 +104,8 @@ SeqDesignInferenceContinMultKKQuantileRegrIVWC = R6::R6Class("SeqDesignInference
 
 		#' @description
 		#' Computes the MLE-based confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			super$compute_mle_confidence_interval(alpha = alpha)
 		},

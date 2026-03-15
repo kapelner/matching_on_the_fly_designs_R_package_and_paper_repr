@@ -125,7 +125,8 @@ Initialize a Gehan-Wilcoxon (Peto-Prentice) inference object for survival data.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response
+y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use for parallel processing. Default is 1.}
 

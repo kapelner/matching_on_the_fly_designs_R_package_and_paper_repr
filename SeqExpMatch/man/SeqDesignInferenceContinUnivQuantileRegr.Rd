@@ -81,7 +81,8 @@ with a continuous response.
 \describe{
 \item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with a continuous response.}
 
-\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
+\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default
+\code{tau = 0.5}
 estimates the median treatment effect.}
 
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
@@ -132,7 +133,8 @@ Computes an approximate confidence interval for the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }

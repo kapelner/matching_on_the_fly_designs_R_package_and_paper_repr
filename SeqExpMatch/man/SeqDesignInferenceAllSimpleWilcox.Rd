@@ -19,6 +19,26 @@ The HL estimator satisfies the exact linearity property
 so the randomization confidence interval inversion is exact (not approximate)
 on the original response scale for continuous responses.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceAllSimpleWilcox$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "continuous", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super class}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceAllSimpleWilcox}
 }
@@ -70,12 +90,33 @@ Initialize the inference object.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "continuous", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control differences.
+Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
+differences.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }

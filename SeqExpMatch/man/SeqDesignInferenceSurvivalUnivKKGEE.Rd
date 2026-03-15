@@ -85,10 +85,16 @@ with an uncensored survival response.
 \item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design) whose entire n subjects
 are assigned and whose uncensored survival response y is recorded.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
 \item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
 }
@@ -136,7 +142,8 @@ Computes the MLE-based confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -155,7 +162,8 @@ Computes the MLE-based p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{</div>}}
 }

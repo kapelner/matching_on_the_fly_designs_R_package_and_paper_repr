@@ -5,7 +5,9 @@
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
 The methods that support confidence intervals and testing for the mean difference
-in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+in all response types (except Weibull with censoring)
+sequential experimental design estimation and test object
+after the sequential design is completed.
 }
 \examples{
 
@@ -95,7 +97,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$new(
   seq_des_obj,
@@ -107,14 +110,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -155,10 +166,13 @@ seq_des_inf$compute_treatment_estimate()
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_confidence_interval}{}}}
 \subsection{Method \code{compute_mle_confidence_interval()}}{
-Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+Computes a 1-alpha level frequentist confidence interval
+differently for all response types, estimate types, and
+test types.
 
 Here we use the theory that MLE's computed for GLM's are asymptotically normal.
-Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
+Hence these confidence intervals are asymptotically valid
+and thus approximate for any sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_confidence_interval(
   alpha = 0.05
@@ -168,7 +182,8 @@ Hence these confidence intervals are asymptotically valid and thus approximate f
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -211,7 +226,8 @@ Computes a 2-sided p-value
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{</div>}}
 }

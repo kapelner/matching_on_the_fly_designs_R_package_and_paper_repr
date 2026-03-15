@@ -13,6 +13,20 @@
 #' @param verbose Whether to print progress messaging.
 #'
 #' @export
+#' @examples
+#' set.seed(1)
+#' x_dat <- data.frame(
+#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+#' )
+#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+#' for (i in seq_len(nrow(x_dat))) {
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#' }
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(seq_des, verbose = FALSE)
+#' infer
+#'
 SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 	"SeqDesignInferenceOrdinalPartialProportionalOdds",
 	inherit = SeqDesignInference,
@@ -39,6 +53,8 @@ SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 
 		#' @description
 		#' Retrieves the estimated log-odds shift for the treatment arm.
+		#'
+		#' @return The estimated treatment effect.
 		compute_treatment_estimate = function() {
 			private$shared()
 			private$cached_values$beta_hat_T
@@ -47,6 +63,8 @@ SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 		#' @description
 		#' Computes a Wald-style CI using the beta concentration estimate.
 		#' @param alpha Significance level for the interval.
+		#'
+		#' @return A confidence interval for the treatment effect.
 		compute_mle_confidence_interval = function(alpha = 0.05) {
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -57,20 +75,16 @@ SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 		#' @description
 		#' Computes a Wald p-value for the (parallel) treatment effect.
 		#' @param delta Null treatment effect to test.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0) {
-			assertNumeric(delta)
-			private$shared()
-			private$assert_finite_se()
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
+		#'
+		#' @return A two-sided p-value.
+			compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0) {
+				assertNumeric(delta)
+				private$shared()
+				private$assert_finite_se()
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			}
 
-		#' @description
-		#' Randomization-based CIs are not supported for this estimator.
-		#' @param ... Unused.
-		compute_confidence_interval_rand = function(...) {
-			stop("Randomization confidence intervals are not supported for the partial proportional-odds estimator.")
-		}
-	),
+		),
 
 	private = list(
 		nonparallel = character(0),

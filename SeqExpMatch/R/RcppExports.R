@@ -65,7 +65,6 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
 #'
 #' @return Numeric vector of length 2: [lower_bound, upper_bound]
 #'
-#' @export
 bisection_ci_parallel_cpp <- function(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 1L) {
     .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
 }
@@ -94,7 +93,6 @@ bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_t
 #'
 #' @return The CI bound value
 #'
-#' @export
 bisection_ci_loop_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower) {
     .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower)
 }
@@ -153,9 +151,10 @@ fast_adjacent_category_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 
 #' @param y Numeric vector of proportions (0 < y < 1).
 #' @param start_beta Optional starting values for beta coefficients.
 #' @param start_phi Optional starting value for phi.
-#' @param compute_std_errs Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).
+#' @param compute_std_errs Logical, whether to compute and return standard
+#'   errors (currently ignored in this function; use
+#'   \code{fast_beta_regression_with_var_cpp()} for SEs).
 #' @return A list with coefficients, phi, and other optimization details.
-#' @export
 fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
     .Call(`_SeqExpMatch_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
@@ -166,9 +165,9 @@ fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, 
 #' @param y Numeric vector of proportions (0 < y < 1).
 #' @param start_beta Optional starting values for beta coefficients.
 #' @param start_phi Optional starting value for phi.
-#' @param compute_std_errs Logical, whether to compute and return standard errors.
+#' @param compute_std_errs Logical, whether to compute and return standard
+#'   errors.
 #' @return A list with coefficients, phi, std_errs, vcov, etc.
-#' @export
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
     .Call(`_SeqExpMatch_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
@@ -197,7 +196,6 @@ fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r,
 #' @param tol Convergence tolerance for the L-BFGS optimizer.
 #' @return A list with count-component coefficients, treatment variance, dispersion parameter,
 #'   and hurdle-model coefficients.
-#' @export
 fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
@@ -212,7 +210,6 @@ fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 #' @param y Response vector.
 #' @param j Index of the coefficient for which to compute the variance.
 #' @return A list with coefficients and specific treatment variance.
-#' @export
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
     .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
 }
@@ -228,7 +225,6 @@ fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
 #' @param w Treatment indicators (`1` = treatment, `0` = control).
 #' @return A list with the log-rank score, its variance, a martingale-residual
 #'   mean-difference estimate, and its standard error.
-#' @export
 fast_logrank_stats_cpp <- function(time, dead, w) {
     .Call(`_SeqExpMatch_fast_logrank_stats_cpp`, time, dead, w)
 }
@@ -245,7 +241,6 @@ matrix_rank_cpp <- function(A, tol = 1e-12) {
 #' @param eps_f Convergence tolerance for function value.
 #' @param eps_g Convergence tolerance for gradient.
 #' @return A list with coefficients, theta, log-likelihood, and Hessian.
-#' @export
 fast_neg_bin_with_var_cpp <- function(X, y, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
     .Call(`_SeqExpMatch_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g)
 }
@@ -301,7 +296,6 @@ expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
 #' @param maxit Maximum IRLS iterations.
 #' @param tol Convergence tolerance for coefficient updates.
 #' @return A list with coefficients, fitted means, Fisher information, and convergence flag.
-#' @export
 fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_poisson_regression_cpp`, X, y, maxit, tol)
 }
@@ -314,7 +308,6 @@ fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 #' @param maxit Maximum IRLS iterations.
 #' @param tol Convergence tolerance for coefficient updates.
 #' @return A list with coefficients and selected coefficient variances.
-#' @export
 fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
@@ -327,7 +320,6 @@ fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, t
 #' @param maxit Maximum IRLS iterations.
 #' @param tol Convergence tolerance for coefficient updates.
 #' @return A list with coefficients, dispersion estimate, and selected coefficient variances.
-#' @export
 fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
@@ -383,8 +375,9 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
 #' Uses the standard variance formula (Uno et al.):
 #'   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
 #' where \eqn{A(t_j) = \int_{t_j}^{\tau} S(u) du} is the remaining area under the KM
-#' curve from event time \eqn{t_j} to the last observation \eqn{\tau}, \eqn{d_j} is the number of events
-#' at \eqn{t_j}, and \eqn{n_j} is the number at risk just before \eqn{t_j}.
+#' curve from event time \eqn{t_j} to the last observation \eqn{\tau}.
+#' Here \eqn{d_j} is the number of events at \eqn{t_j}, and \eqn{n_j}
+#' is the number at risk just before \eqn{t_j}.
 #' Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
 #' contribution is 0 in the limit regardless of the undefined Greenwood denominator.
 #'
@@ -417,6 +410,10 @@ gcomp_fractional_logit_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_tr
 
 gcomp_logistic_cluster_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, cluster_id, j_treat) {
     .Call(`_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, cluster_id, j_treat)
+}
+
+gcomp_ordinal_proportional_odds_post_fit_cpp <- function(X_fit, coef_hat, alpha_hat, j_treat) {
+    .Call(`_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit, coef_hat, alpha_hat, j_treat)
 }
 
 get_column_types_cpp <- function(df) {
@@ -543,7 +540,6 @@ mn_constrained_mle_pc_cpp <- function(x_t, n_t, x_c, n_c, delta) {
 #' @param p_t_obs Observed treatment-arm risk.
 #' @param p_c_obs Observed control-arm risk.
 #' @return The asymptotic z statistic.
-#' @export
 mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_SeqExpMatch_mn_z_statistic_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
@@ -555,7 +551,6 @@ mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #'
 #' @inheritParams mn_z_statistic_cpp
 #' @return The two-sided p-value.
-#' @export
 mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_SeqExpMatch_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
@@ -569,7 +564,6 @@ mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #' @param alpha The confidence level is \code{1 - alpha}.
 #' @param pval_epsilon Bisection tolerance in p-value space.
 #' @return A length-2 numeric vector containing the lower and upper CI bounds.
-#' @export
 mn_ci_cpp <- function(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon) {
     .Call(`_SeqExpMatch_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
 }
@@ -662,7 +656,6 @@ compute_simple_mean_diff_parallel_cpp <- function(y_mat, w_mat, num_cores) {
 #' @param min_count_per_level Minimum frequency required for every level in a
 #'   candidate column.
 #' @return A list with `strata_id`, `selected_cols`, and `num_strata`.
-#' @export
 compute_survival_strata_ids_cpp <- function(X, max_unique_per_col = 4L, max_strata_cols = 4L, min_count_per_level = 2L) {
     .Call(`_SeqExpMatch_compute_survival_strata_ids_cpp`, X, max_unique_per_col, max_strata_cols, min_count_per_level)
 }

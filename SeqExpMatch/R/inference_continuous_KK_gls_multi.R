@@ -2,17 +2,21 @@
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
-#' in continuous response types for sequential experimental designs using Generalized Least Squares (GLS).
-#' This model assumes a shared correlation within matched pairs but independence for subjects in the reservoir.
+#' in continuous response types for sequential experimental designs using Generalized Least
+#' Squares (GLS).
+#' This model assumes a shared correlation within matched pairs but independence for subjects in
+#' the reservoir.
 #' When no matched pairs exist (pure reservoir design), the model degenerates to OLS.
 #'
 #' @details
-#' The GLS model is fit by REML, which provides unbiased estimates of the within-pair correlation
+#' The GLS model is fit by REML, which provides unbiased estimates of the within-pair
+#' correlation
 #' \eqn{\rho} and the residual variance \eqn{\sigma^2}. The residual degrees of freedom for
 #' t-based inference on the treatment effect are set to \eqn{n - p - 1}, where \eqn{p} is the
 #' number of fixed-effect parameters (intercept + treatment + covariates) and the extra \eqn{-1}
 #' accounts for the estimated \eqn{\rho}. Treating \eqn{\rho} as known would yield \eqn{n - p},
-#' which slightly overstates precision; the conservative \eqn{n - p - 1} correction is used instead.
+#' which slightly overstates precision; the conservative \eqn{n - p - 1} correction is used
+#' instead.
 #' When the model falls back to OLS (no matched pairs), the standard OLS residual df \eqn{n - p}
 #' is used since no correlation parameter is estimated.
 #'
@@ -26,13 +30,37 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 	public = list(
 
 		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' Initialize a sequential experimental design estimation and test object
+		#' after the sequential design is completed.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
+		#' @examples
+		#' set.seed(1)
+		#' x_dat <- data.frame(
+		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+		#' )
+		#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+		#' FALSE)
+		#' for (i in seq_len(nrow(x_dat))) {
+		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		#' }
+		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+		#' infer <- SeqDesignInferenceContinMultGLS$new(seq_des, verbose = FALSE)
+		#' infer
+		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, num_cores, verbose)
@@ -55,9 +83,12 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 		},
 
 		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
+		#' Computes a 1-alpha level frequentist confidence interval
+		#' differently for all response types, estimate types, and
+		#' test types.
 		#'
-		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_mle_confidence_interval = function(alpha = 0.05){
@@ -71,7 +102,8 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 		#' @description
 		#' Computes a 2-sided p-value
 		#'
-		#' @param	delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){

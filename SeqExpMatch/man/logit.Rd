@@ -15,3 +15,6 @@ Its corresponding logit value as a real number
 \description{
 Calculates the logit i.e., log(p / (1 - p))
 }
+\examples{
+logit(0.25)
+}

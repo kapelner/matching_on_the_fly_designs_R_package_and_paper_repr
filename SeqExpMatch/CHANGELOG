@@ -17,7 +17,9 @@ v2.0.0
     - Added Restricted Mean Survival Time (RMST) difference with robust SEs.
     - Added Gehan-type rank-based AFT models (via `aftgee`).
   + Added a standalone log-rank inference class with C++ score/variance helpers plus automatic stratification helper logic (`compute_survival_strata_ids_cpp`).
+  + Extended the Wang & Rosenberger-style randomization confidence interval inversion to ordinal GLM estimators (cumulative logit/probit, adjacent-category, etc.), so computed intervals now use the permutation distribution of their shared treatment parameter.
   + Added zero-inflated negative binomial, hurdle negative binomial, and denominator-aware Poisson/quasi-Poisson inference with new Rcpp solvers for fast score/variance extraction.
+  + Ordinal: Added a partial proportional-odds estimator that allows covariates to vary across thresholds while still estimating a parallel treatment effect, reusing the stacked design with `fast_logistic_regression_with_var_cpp` so the estimator works on every sequential design (no CRD-only restriction).
   + Robust & Non-parametric Expansion:
     - Integrated R-estimation (Wilcoxon regression) via `Rfit`, with robust fallback to classical ranks for univariate cases.
     - Full Quantile Regression support (via `quantreg`) within the Compound/IVWC framework.

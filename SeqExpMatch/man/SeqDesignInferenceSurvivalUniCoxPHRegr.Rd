@@ -5,7 +5,9 @@
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
 The methods that support confidence intervals and testing for the mean difference
-in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+in all response types (except Weibull with censoring)
+sequential experimental design estimation and test object
+after the sequential design is completed.
 }
 \examples{
 
@@ -21,7 +23,10 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+seq_des$add_all_subject_responses(
+  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+)
 
 seq_des_inf = SeqDesignInferenceSurvivalUniCoxPHRegr$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
@@ -59,7 +64,8 @@ seq_des_inf$compute_treatment_estimate()
 \if{html}{\out{<a id="method-SeqDesignInferenceSurvivalUniCoxPHRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalUniCoxPHRegr-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalUniCoxPHRegr$new(
   seq_des_obj,
@@ -71,14 +77,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -105,7 +119,10 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+seq_des$add_all_subject_responses(
+  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+)
 
 seq_des_inf = SeqDesignInferenceSurvivalUniCoxPHRegr$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
@@ -134,7 +151,8 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 
 \item{\code{nsim_exact_test}}{The number of randomization vectors. The default is 501.}
 

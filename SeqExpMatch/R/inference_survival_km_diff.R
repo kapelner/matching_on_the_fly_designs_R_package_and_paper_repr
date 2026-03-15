@@ -2,7 +2,9 @@
 #'
 #' @description
 #' The methods that support confidence intervals and testing for the mean difference
-#' in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+#' in all response types (except Weibull with censoring)
+#' sequential experimental design estimation and test object
+#' after the sequential design is completed.
 #'
 #'
 #' @export
@@ -11,13 +13,22 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 	public = list(
 
 		#' @description
-		#' Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' Initialize a sequential experimental design estimation and test object
+		#' after the sequential design is completed.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertResponseType(seq_des_obj$get_response_type(), "survival")
@@ -63,13 +74,15 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' half-width as \eqn{\hat\sigma_i = (\text{upper}_i - \text{lower}_i) / (2 z_{\alpha/2})}.
 		#' The two groups are independent by design, so the SE of the difference is
 		#' \eqn{\sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}, and the CI is
-		#' \eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}.
+		#' \eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 +
+		#' \hat\sigma_C^2}}.
 		#'
 		#' Falls back to \code{compute_bootstrap_confidence_interval} when either group's
 		#' median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
 		#' when the Brookmeyer-Crowley CI bounds are \code{NA}.
 		#'
-		#' @param	alpha		The significance level; the confidence level is 1 - \code{alpha}. Default is 0.05.
+		#' @param alpha           The significance level; the confidence level is 1 - \code{alpha}.
+		#'   Default is 0.05.
 		#'
 		#' @return	A numeric vector of length 2 giving the (lower, upper) confidence bounds
 		#' 			for the difference in median survival times, on the original time scale.
@@ -124,7 +137,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' @description
 		#' Computes a 2-sided p-value via the log rank test
 		#'
-		#' @param	delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
 		#'
@@ -161,7 +175,8 @@ SeqDesignInferenceSurvivalKMDiff = R6::R6Class("SeqDesignInferenceSurvivalKMDiff
 		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
-		#' @param	alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param	nsim_exact_test		The number of randomization vectors. The default is 501.
 		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
 		#' @param	show_progress		Show a text progress indicator.

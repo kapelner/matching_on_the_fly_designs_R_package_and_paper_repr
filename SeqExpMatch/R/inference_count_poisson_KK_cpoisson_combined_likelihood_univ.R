@@ -6,6 +6,21 @@
 #' Jointly maximises L_cond_Poisson(pairs) + L_Poisson(reservoir) via BFGS.
 #'
 #' @export
+#' @examples
+#' set.seed(1)
+#' x_dat <- data.frame(
+#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+#' )
+#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "count", verbose = FALSE)
+#' for (i in seq_len(nrow(x_dat))) {
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#' }
+#' seq_des$add_all_subject_responses(c(0, 1, 1, 2, 2, 3, 3, 4))
+#' infer <- SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood$new(seq_des, verbose
+#' = FALSE)
+#' infer
+#'
 SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood = R6::R6Class("SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
 	inherit = SeqDesignInferenceAbstractKKPoissonCPoissonCombinedLikelihood,
 	public = list(
@@ -25,14 +40,16 @@ SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood = R6::R6Class("Se
 
 		#' @description
 		#' Computes the MLE-based confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			super$compute_mle_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes the MLE-based p-value.
-		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}

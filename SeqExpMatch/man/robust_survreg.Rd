@@ -28,5 +28,12 @@ The Survival regression model object
 }
 \description{
 Performs Survival regression from the original response and censoring vectors
-that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+that if it fails, keeps trying with a different initialization point until a maximum number
+of iterations
+}
+\examples{
+y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
+dead <- c(1, 1, 0, 1, 0, 1)
+x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
+robust_survreg(y, dead, x)
 }

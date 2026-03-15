@@ -12,7 +12,8 @@ robust_survreg_with_surv_object(
 )
 }
 \arguments{
-\item{surv_object}{The survival object (built from the response vector and censoring vector)}
+\item{surv_object}{The survival object (built from the response vector
+and censoring vector)}
 
 \item{cov_matrix_or_vector}{The model matrix}
 
@@ -25,5 +26,11 @@ The Survival regression model object
 }
 \description{
 Performs Survival regression from a survival::Surv object
-that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+that if it fails, keeps trying with a different initialization point until a maximum number
+of iterations
+}
+\examples{
+surv_obj <- survival::Surv(c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0), c(1, 1, 0, 1, 0, 1))
+x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
+robust_survreg_with_surv_object(surv_obj, x)
 }

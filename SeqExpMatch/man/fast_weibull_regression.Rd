@@ -17,7 +17,8 @@ fast_weibull_regression(y, dead, X)
 \value{
 A list containing the following components:
 \describe{
-\item{coefficients}{A numeric vector of the estimated Weibull regression coefficients, including the intercept.}
+\item{coefficients}{A numeric vector of the estimated Weibull regression coefficients,
+including the intercept.}
 \item{log_sigma}{The logarithm of the scale parameter from the Weibull distribution.}
 \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
 }

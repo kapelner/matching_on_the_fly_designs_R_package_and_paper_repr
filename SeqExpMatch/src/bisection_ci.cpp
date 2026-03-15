@@ -25,7 +25,6 @@ using namespace Rcpp;
 //'
 //' @return Numeric vector of length 2: [lower_bound, upper_bound]
 //'
-//' @export
 // [[Rcpp::export]]
 NumericVector bisection_ci_parallel_cpp(
 	Function pval_fn,

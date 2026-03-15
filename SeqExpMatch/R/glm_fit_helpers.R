@@ -33,7 +33,6 @@
 #' }
 #' @name fast_ols_cpp
 #' @rdname fast_ols_cpp
-#' @export
 NULL
 
 #' Fast Ordinary Least Squares (OLS) Regression with Variance (C++ Backend)
@@ -45,7 +44,8 @@ NULL
 #' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable.
-#' @param	j This function will compute the variance of the jth coefficient estimator. Default is 2.
+#' @param j This function will compute the variance of the jth coefficient estimator. Default is
+#'   2.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -70,7 +70,6 @@ NULL
 #'
 #' @name fast_ols_with_var_cpp
 #' @rdname fast_ols_with_var_cpp
-#' @export
 NULL
 
 #' Fast Logistic Regression (R Wrapper)
@@ -232,7 +231,8 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @return	A list containing the following components:
 #' \describe{
-#' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients, including the intercept.}
+#' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients,
+#' including the intercept.}
 #' \item{log_sigma}{The logarithm of the scale parameter from the Weibull distribution.}
 #' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
 #' }
@@ -382,6 +382,10 @@ sanitize_beta_response = function(y){
 #' enable the intermediate fallback.
 #'
 #' @export
+#' @examples
+#' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+#' y <- c(0.15, 0.25, 0.60, 0.75)
+#' fast_beta_regression(Xmm, y)
 fast_beta_regression = function(Xmm, y, start_phi = 10){
 	y = sanitize_beta_response(y)
 	tryCatch({
@@ -439,6 +443,10 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #'
 #' @importFrom	stats vcov
 #' @export
+#' @examples
+#' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+#' y <- c(0.15, 0.25, 0.60, 0.75)
+#' fast_beta_regression_with_var(Xmm, y)
 fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 	y = sanitize_beta_response(y)
 	tryCatch({
@@ -493,6 +501,18 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #' \code{install.packages("glmnet")} before calling this function.
 #'
 #' @export
+#' @examples
+#' if (requireNamespace("glmnet", quietly = TRUE)) {
+#'   Xmm <- matrix(c(-1, 0,
+#'                   0, 1,
+#'                   1, 0,
+#'                   0, 1,
+#'                   1, 0,
+#'                   2, 1), ncol = 2, byrow = TRUE)
+#'   y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
+#'   dead <- c(1, 1, 0, 1, 0, 1)
+#'   fast_coxph_regression(Xmm, y, dead)
+#' }
 fast_coxph_regression = function(Xmm, y, dead){
 	if (!requireNamespace("glmnet", quietly = TRUE)) {
 		stop("Package 'glmnet' is required for fast_coxph_regression. Please install it.")
@@ -516,6 +536,10 @@ fast_coxph_regression = function(Xmm, y, dead){
 #'
 #' @importFrom	stats glm.fit
 #' @importFrom	MASS negative.binomial
+#' @examples
+#' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+#' y <- c(0, 1, 1, 2, 3, 4)
+#' fast_negbin_regression(Xmm, y)
 #' @export
 fast_negbin_regression <- function(Xmm, y) {
 	# if (nrow(Xmm) > 300 & ncol(Xmm) > 5){ #R's canonical version is faster as IRLS is a different algorithm
@@ -539,7 +563,8 @@ fast_negbin_regression <- function(Xmm, y) {
 #'
 #' This function provides a fast implementation of negative binomial regression, wrapping
 #' a C++ backend. It is designed to efficiently estimate regression coefficients for count
-#' data and computes the variance of the second coefficient (assumed to be the treatment effect),
+#' data and computes the variance of the second coefficient (assumed to be the treatment
+#' effect),
 #' assuming all observations are "not censored" (i.e., `dead = 1`).
 #'
 #' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
@@ -558,6 +583,10 @@ fast_negbin_regression <- function(Xmm, y) {
 #' @importFrom	stats glm.fit
 #' @importFrom	MASS negative.binomial
 #' @export
+#' @examples
+#' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+#' y <- c(0, 1, 1, 2, 3, 4)
+#' fast_negbin_regression_with_var(Xmm, y)
 fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 	# Use glm.fit for efficiency
 	mod <- stats::glm.fit(

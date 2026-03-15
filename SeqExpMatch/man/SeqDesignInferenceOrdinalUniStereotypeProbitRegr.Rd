@@ -8,6 +8,21 @@ Stereotype probit inference for ordinal responses. The model exposes a common
 treatment coefficient with category-specific score weights, and inference is
 based on a probit link.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalUniStereotypeProbitRegr$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super class}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceOrdinalUniStereotypeProbitRegr}
 }
@@ -39,6 +54,8 @@ based on a probit link.
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a stereotype probit inference object for a completed ordinal
+sequential design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeProbitRegr$new(
   seq_des_obj,
@@ -47,37 +64,78 @@ based on a probit link.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal response.}
+
+\item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Compute the estimated stereotype probit treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeProbitRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The estimated treatment coefficient.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_mle_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_mle_confidence_interval}{}}}
 \subsection{Method \code{compute_mle_confidence_interval()}}{
+Compute an approximate confidence interval for the treatment effect. If
+the model-based standard error is unavailable, falls back to the bootstrap
+interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeProbitRegr$compute_mle_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level for the interval.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A confidence interval for the treatment effect.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-compute_mle_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+Compute an approximate two-sided p-value for the treatment effect. If
+the model-based standard error is unavailable, falls back to the bootstrap
+p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeProbitRegr$compute_mle_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A two-sided p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeProbitRegr-clone"></a>}}

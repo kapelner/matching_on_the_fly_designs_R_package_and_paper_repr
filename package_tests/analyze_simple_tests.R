@@ -40,20 +40,98 @@ table(X$inference_class)
 X[, beta := as.numeric(beta_T)]
 
 e = exp(1)
+incid_p_control = function(dataset_name){
+	y_i = datasets_and_response_models[[dataset_name]]$y_original$incidence
+	ifelse(y_i > 0, 0.75, 0.25)
+}
+
+incid_p_treated = function(dataset_name){
+	p_c = incid_p_control(dataset_name)
+	plogis(qlogis(p_c) + 1)
+}
+
+prop_y_treated = function(dataset_name){
+	y_p = datasets_and_response_models[[dataset_name]]$y_original$proportion
+	e * y_p / (1 + (e - 1) * y_p)
+}
+
+ordinal_expected_observed = function(y_ord, bt, sd_noise = 0.1){
+	mu = y_ord + bt
+	k_max = max(8L, ceiling(max(mu + 6 * sd_noise)))
+	exp_vals = pnorm((1.5 - mu) / sd_noise)
+	if (k_max >= 2L){
+		for (k in 2:k_max){
+			exp_vals = exp_vals + k * (pnorm((k + 0.5 - mu) / sd_noise) - pnorm((k - 0.5 - mu) / sd_noise))
+		}
+	}
+	exp_vals
+}
+
 # incidence — simple/KK mean diff: probability-scale estimand ≈ 0.183, not 1
 X[beta_T == 1 &
 	response_type == "incidence" &
-	inference_class %in% c("SeqDesignInferenceAllSimpleMeanDiff", "SeqDesignInferenceAllKKCompoundMeanDiff"),
-	beta := (1/2)*3*e/(1+3*e) + (1/2)*e/(3+e) - 0.5]
+	inference_class %in% c(
+		"SeqDesignInferenceAllSimpleMeanDiff",
+		"SeqDesignInferenceAllKKCompoundMeanDiff",
+		"SeqDesignInferenceIncidExactZhang",
+		"SeqDesignInferenceIncidKKExactZhang",
+		"SeqDesignInferenceIncidUnivRiskDiff",
+		"SeqDesignInferenceIncidMultiRiskDiff",
+		"SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff",
+		"SeqDesignInferenceIncidUnivGCompRiskDiff",
+		"SeqDesignInferenceIncidMultiGCompRiskDiff",
+		"SeqDesignInferenceIncidUnivKKGCompRiskDiff",
+		"SeqDesignInferenceIncidMultiKKGCompRiskDiff"
+	),
+	beta := {
+		p_c = incid_p_control(dataset)
+		p_t = incid_p_treated(dataset)
+		mean(p_t - p_c)
+	}, by = dataset]
 
 # incidence — univariate logistic: marginal log-OR ≈ 0.767, not 1
 X[beta_T == 1 & inference_class %in% c("SeqDesignInferenceIncidUnivLogRegr", "SeqDesignInferenceIncidUnivKKGEE"),
-	beta := qlogis((1/2)*3*e/(1+3*e) + (1/2)*e/(3+e))]
+	beta := {
+		p_c = mean(incid_p_control(dataset))
+		p_t = mean(incid_p_treated(dataset))
+		qlogis(p_t) - qlogis(p_c)
+	}, by = dataset]
+
+# incidence — risk-ratio estimands
+X[beta_T == 1 & inference_class %in% c(
+	"SeqDesignInferenceIncidUnivGCompRiskRatio",
+	"SeqDesignInferenceIncidMultiGCompRiskRatio",
+	"SeqDesignInferenceIncidUnivKKGCompRiskRatio",
+	"SeqDesignInferenceIncidMultiKKGCompRiskRatio"
+),
+beta := {
+	p_c = mean(incid_p_control(dataset))
+	p_t = mean(incid_p_treated(dataset))
+	p_t / p_c
+}, by = dataset]
+
+# incidence — modified Poisson estimands are on the log-risk-ratio scale
+X[beta_T == 1 & inference_class %in% c(
+	"SeqDesignInferenceIncidUnivModifiedPoisson",
+	"SeqDesignInferenceIncidMultiModifiedPoisson",
+	"SeqDesignInferenceIncidUnivKKModifiedPoisson",
+	"SeqDesignInferenceIncidMultiKKModifiedPoisson"
+),
+beta := {
+	p_c = mean(incid_p_control(dataset))
+	p_t = mean(incid_p_treated(dataset))
+	log(p_t / p_c)
+}, by = dataset]
 
 
 # proportion — simple/KK mean diff: E[e*y/(1+(e-1)*y)] - E[y]
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("SeqDesignInferenceAllSimpleMeanDiff", "SeqDesignInferenceAllKKCompoundMeanDiff"),
+	inference_class %in% c(
+		"SeqDesignInferenceAllSimpleMeanDiff",
+		"SeqDesignInferenceAllKKCompoundMeanDiff",
+		"SeqDesignInferencePropUniGCompMeanDiff",
+		"SeqDesignInferencePropMultiGCompMeanDiff"
+	),
 	beta := {
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
 		mean(e * y_p / (1 + (e - 1) * y_p)) - mean(y_p)
@@ -61,10 +139,11 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK univ GEE (logit link): marginal log-OR = logit(E[Y_T]) - logit(E[Y_C])
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class == "SeqDesignInferencePropUnivKKGEE",
+	inference_class %in% c("SeqDesignInferencePropUnivKKGEE", "SeqDesignInferencePropUniFractionalLogit"),
 	beta := {
+		y_t = prop_y_treated(dataset)
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
-		qlogis(mean(e * y_p / (1 + (e - 1) * y_p))) - qlogis(mean(y_p))
+		qlogis(mean(y_t)) - qlogis(mean(y_p))
 	}, by = dataset]
 
 # proportion — KK Wilcox: HL estimate ≈ median of within-pair differences
@@ -113,18 +192,98 @@ X[beta_T == 1 & response_type == "survival" &
 		(e - 1) * mean(y_s)
 	}, by = dataset]
 
+# ordinal — observed-score mean difference under the rounding/flooring DGP
+X[beta_T == 1 & response_type == "ordinal" &
+	inference_class %in% c(
+		"SeqDesignInferenceAllSimpleMeanDiff",
+		"SeqDesignInferenceAllKKCompoundMeanDiff",
+		"SeqDesignInferenceOrdinalUniGCompMeanDiff",
+		"SeqDesignInferenceOrdinalMultiGCompMeanDiff"
+	),
+	beta := {
+		y_o = datasets_and_response_models[[dataset]]$y_original$ordinal
+		mean(ordinal_expected_observed(y_o, 1, SD_NOISE) - ordinal_expected_observed(y_o, 0, SD_NOISE))
+	}, by = dataset]
+
+# ordinal — link-scale estimands are not identified from the observed-level
+# additive/rounding DGP used in simple_tests.R
+X[beta_T == 1 & response_type == "ordinal" &
+	inference_class %in% c(
+	"SeqDesignInferenceOrdinalUniAdjCatLogitRegr",
+	"SeqDesignInferenceOrdinalMultiAdjCatLogitRegr",
+	"SeqDesignInferenceOrdinalUniCumulProbitRegr",
+	"SeqDesignInferenceOrdinalMultiCumulProbitRegr",
+	"SeqDesignInferenceOrdinalUniStereotypeLogitRegr",
+	"SeqDesignInferenceOrdinalMultiStereotypeLogitRegr",
+	"SeqDesignInferenceOrdinalUniStereotypeProbitRegr",
+	"SeqDesignInferenceOrdinalMultiStereotypeProbitRegr",
+	"SeqDesignInferenceOrdinalUniPropOddsRegr",
+	"SeqDesignInferenceOrdinalPartialProportionalOdds",
+	"SeqDesignInferenceOrdinalContRatioRegr",
+	"SeqDesignInferenceOrdinalUniCLLRegr",
+	"SeqDesignInferenceOrdinalUnivKKGEE",
+	"SeqDesignInferenceOrdinalUnivKKGLMM",
+	"SeqDesignInferenceOrdinalMultiKKGLMM",
+	"SeqDesignInferenceOrdinalUnivKKGLMMProbit",
+	"SeqDesignInferenceOrdinalMultiKKGLMMProbit",
+	"SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr",
+	"SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
+	"SeqDesignInferenceOrdinalUnivCondContRatioRegr",
+	"SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr"
+	),
+	beta := NA_real_]
+
+# ordinal — rank/sign-style targets are not cleanly identified from the current
+# observed-level DGP without a separate estimand convention
+X[beta_T == 1 & response_type == "ordinal" &
+	inference_class %in% c(
+		"SeqDesignInferenceAllSimpleWilcox",
+		"SeqDesignInferenceAllKKWilcoxIVWC",
+		"SeqDesignInferenceAllKKWilcoxRegrUnivIVWC",
+		"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
+		"SeqDesignInferenceOrdinalPairedSignTest"
+	),
+	beta := NA_real_]
+
 
 #now some are impossible to calculate for real data due to the unknown f(x) model
 X[beta_T == 1 &
 	inference_class %in% c(
 	"SeqDesignInferenceIncidMultiLogRegr",
+	"SeqDesignInferenceIncidUnivKKClogitCombinedLikelihood",
+	"SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood",
+	"SeqDesignInferenceIncidUnivKKClogitIVWC",
+	"SeqDesignInferenceIncidMultiKKClogitIVWC",
 	"SeqDesignInferenceIncidMultiKKGEE",
+	"SeqDesignInferenceIncidUnivKKGLMM",
 	"SeqDesignInferenceIncidMultiKKGLMM",
 	"SeqDesignInferencePropUniBetaRegr",
 	"SeqDesignInferencePropMultiBetaRegr",
+	"SeqDesignInferencePropUnivKKGLMM",
 	"SeqDesignInferencePropMultiKKGEE",
+	"SeqDesignInferencePropMultiKKGLMM",
+	"SeqDesignInferencePropMultiFractionalLogit",
+	"SeqDesignInferencePropUniZeroOneInflatedBetaRegr",
+	"SeqDesignInferencePropMultiZeroOneInflatedBetaRegr",
+	"SeqDesignInferencePropMultiKKQuantileRegrIVWC",
+	"SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood",
+	"SeqDesignInferenceCountUnivHurdlePoissonRegr",
+	"SeqDesignInferenceCountMultiHurdlePoissonRegr",
+	"SeqDesignInferenceCountUnivHurdleNegBinRegr",
+	"SeqDesignInferenceCountMultiHurdleNegBinRegr",
+	"SeqDesignInferenceCountUnivZeroInflatedPoissonRegr",
+	"SeqDesignInferenceCountMultiZeroInflatedPoissonRegr",
+	"SeqDesignInferenceCountUnivZeroInflatedNegBinRegr",
+	"SeqDesignInferenceCountMultiZeroInflatedNegBinRegr",
+	"SeqDesignInferenceSurvivalLogRank",
 	"SeqDesignInferenceSurvivalUniCoxPHRegr",
 	"SeqDesignInferenceSurvivalMultiCoxPHRegr",
+	"SeqDesignInferenceSurvivalUniStratCoxPHRegr",
+	"SeqDesignInferenceSurvivalMultiStratCoxPHRegr",
+	"SeqDesignInferenceSurvivalUniDepCensTransformRegr",
+	"SeqDesignInferenceSurvivalMultiDepCensTransformRegr",
+	"SeqDesignInferenceSurvivalUniWeibullRegr",
+	"SeqDesignInferenceSurvivalMultiWeibullRegr",
 	"SeqDesignInferenceSurvivalUnivKKStratCoxIVWC",
 	"SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood",
 	"SeqDesignInferenceSurvivalMultiKKStratCoxIVWC",

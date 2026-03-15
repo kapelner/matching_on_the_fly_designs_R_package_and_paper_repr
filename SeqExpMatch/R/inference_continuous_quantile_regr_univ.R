@@ -23,7 +23,8 @@ SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContin
 		#' Initialize a quantile-regression inference object for a completed design
 		#' with a continuous response.
 		#' @param seq_des_obj A completed \code{SeqDesign} object with a continuous response.
-		#' @param tau The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
+		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
+		#'   \code{tau = 0.5}
 		#'   estimates the median treatment effect.
 		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
@@ -59,7 +60,8 @@ SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContin
 
 		#' @description
 		#' Computes an approximate confidence interval for the treatment effect.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()

@@ -744,7 +744,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# we adjust the treatment responses downward by delta. We then find the set of all delta values that is above 1 - alpha/2 (i.e. two-sided)
 		# This is accomplished via a bisection algorithm (algorithm 1 of Glazer and Stark, 2025 available at
 		# https://arxiv.org/abs/2405.05238). These confidence intervals are exact to within tolerance \code{pval_epsilon}.
-		# As far as we know, this only works for response type continuous, uncensored survival (where we work in log-time and then
+		# As far as we know, this works for response types continuous, ordinal (cumulative-link or adjacent-category logit/probit estimates), uncensored survival (where we work in log-time and then
 		# return to natural time when finished), count (where we work in log1p-count and then return to natural count when finished) and proportion (where we work in logit-rate and return to rate when finished).
 		#
 		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
@@ -787,31 +787,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
-					# Pre-calculate permutations for speed/monotonicity
 					perms = private$generate_permutations(nsim_exact_test)
 
-					# Use a modestly wider bootstrap CI as starting bounds for bisection
-					# Multiply alpha by 2 to get slightly wider bounds (e.g., 90% CI for alpha=0.05)
 					bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					# Expand the bootstrap CI by 50% on each side to ensure coverage
 					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
 					lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
 					est = self$compute_treatment_estimate()
-					# Fallback: if estimate is not finite (e.g., rank-regression failed),
-					# use the bootstrap CI midpoint to anchor the bisection search.
 					if (!is.finite(est)) {
 						est = (bootstrap_ci[1] + bootstrap_ci[2]) / 2
 					}
 
-					# Check for NA bounds from failed bootstrap
 					if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
 						stop("Bootstrap confidence interval returned NA bounds. Cannot compute randomization-based confidence interval.")
 					}
 
-					# Warm the t0s cache so all bisection p-value calls use the fast path
-					# (linear estimators: t0s(delta) = t0s(0) + delta, no new simulations needed).
-					# If the user already called compute_two_sided_pval_for_treatment_effect_rand(delta=0)
-					# before this CI call, the cache is already populated and this is a no-op.
 					if (is.null(private$cached_values$t0s_rand) ||
 							length(private$cached_values$t0s_rand) < nsim_exact_test) {
 						self$compute_two_sided_pval_for_treatment_effect_rand(
@@ -819,7 +808,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							show_progress = FALSE, permutations = perms)
 					}
 
-					# Use parallel version if num_cores > 1
 					if (private$num_cores > 1) {
 						ci = private$compute_ci_both_bounds_parallel(
 							nsim_exact_test = nsim_exact_test,
@@ -833,7 +821,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							permutations = perms
 						)
 					} else {
-						# Sequential computation for single-core
 						ci = c(
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
 								l = lower_upper_ci_bounds[1],
@@ -858,7 +845,65 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					ci
 				},
 				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidExactZhang for the Zhang method."),
-				ordinal =    stop("Confidence intervals are not supported for randomization tests for ordinal outcomes."),
+				ordinal =    {
+					perms = private$generate_permutations(nsim_exact_test)
+
+					bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
+					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
+					lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
+					est = self$compute_treatment_estimate()
+					if (!is.finite(est)) {
+						est = (bootstrap_ci[1] + bootstrap_ci[2]) / 2
+					}
+
+					if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
+						stop("Bootstrap confidence interval returned NA bounds. Cannot compute randomization-based confidence interval.")
+					}
+
+					if (is.null(private$cached_values$t0s_rand) ||
+							length(private$cached_values$t0s_rand) < nsim_exact_test) {
+						self$compute_two_sided_pval_for_treatment_effect_rand(
+							nsim_exact_test, delta = 0, transform_responses = "none",
+							show_progress = FALSE, permutations = perms)
+					}
+
+					if (private$num_cores > 1) {
+						ci = private$compute_ci_both_bounds_parallel(
+							nsim_exact_test = nsim_exact_test,
+							l_lower = lower_upper_ci_bounds[1],
+							u_lower = est,
+							l_upper = est,
+							u_upper = lower_upper_ci_bounds[2],
+							pval_th = alpha / 2,
+							tol = pval_epsilon,
+							transform_responses = "none",
+							permutations = perms
+						)
+					} else {
+						ci = c(
+							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = lower_upper_ci_bounds[1],
+								u = est,
+								pval_th = alpha / 2,
+								tol = pval_epsilon,
+								transform_responses = "none",
+								lower = TRUE,
+								show_progress = show_progress,
+								permutations = perms),
+							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
+								l = est,
+								u = lower_upper_ci_bounds[2],
+								pval_th = alpha / 2,
+								tol = pval_epsilon,
+								transform_responses = "none",
+								lower = FALSE,
+								show_progress = show_progress,
+								permutations = perms)
+						)
+					}
+					names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, sep = "%")
+					ci
+				},
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
@@ -1361,6 +1406,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					utils::flush.console()
 				}
 			}
-		}
+			}
+
+		)
 	)
-)

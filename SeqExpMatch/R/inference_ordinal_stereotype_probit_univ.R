@@ -6,21 +6,52 @@
 #' based on a probit link.
 #'
 #' @export
+#' @examples
+#' set.seed(1)
+#' x_dat <- data.frame(
+#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+#' )
+#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+#' for (i in seq_len(nrow(x_dat))) {
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#' }
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalUniStereotypeProbitRegr$new(seq_des, verbose = FALSE)
+#' infer
+#'
 SeqDesignInferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("SeqDesignInferenceOrdinalUniStereotypeProbitRegr",
 	inherit = SeqDesignInference,
 	public = list(
 
+		#' @description
+		#' Initialize a stereotype probit inference object for a completed ordinal
+		#' sequential design.
+		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal response.
+		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
+		#' @param verbose Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "ordinal")
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
+		#' @description
+		#' Compute the estimated stereotype probit treatment effect.
+		#'
+		#' @return The estimated treatment coefficient.
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute an approximate confidence interval for the treatment effect. If
+		#' the model-based standard error is unavailable, falls back to the bootstrap
+		#' interval.
+		#' @param alpha Significance level for the interval.
+		#'
+		#' @return A confidence interval for the treatment effect.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -31,6 +62,13 @@ SeqDesignInferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("SeqDesignInferen
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute an approximate two-sided p-value for the treatment effect. If
+		#' the model-based standard error is unavailable, falls back to the bootstrap
+		#' p-value.
+		#' @param delta Null treatment effect to test.
+		#'
+		#' @return A two-sided p-value.
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

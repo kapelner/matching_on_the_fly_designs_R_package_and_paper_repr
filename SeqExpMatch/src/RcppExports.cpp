@@ -909,6 +909,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// gcomp_ordinal_proportional_odds_post_fit_cpp
+List gcomp_ordinal_proportional_odds_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& alpha_hat, int j_treat);
+RcppExport SEXP _SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp(SEXP X_fitSEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_fit(X_fitSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type coef_hat(coef_hatSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type alpha_hat(alpha_hatSEXP);
+    Rcpp::traits::input_parameter< int >::type j_treat(j_treatSEXP);
+    rcpp_result_gen = Rcpp::wrap(gcomp_ordinal_proportional_odds_post_fit_cpp(X_fit, coef_hat, alpha_hat, j_treat));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_column_types_cpp
 CharacterVector get_column_types_cpp(List df);
 RcppExport SEXP _SeqExpMatch_get_column_types_cpp(SEXP dfSEXP) {
@@ -1666,6 +1680,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_gcomp_logistic_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_logistic_post_fit_cpp, 5},
     {"_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp, 5},
     {"_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp, 6},
+    {"_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp, 4},
     {"_SeqExpMatch_get_column_types_cpp", (DL_FUNC) &_SeqExpMatch_get_column_types_cpp, 1},
     {"_SeqExpMatch_columns_have_missingness_cpp", (DL_FUNC) &_SeqExpMatch_columns_have_missingness_cpp, 1},
     {"_SeqExpMatch_create_missingness_indicators_cpp", (DL_FUNC) &_SeqExpMatch_create_missingness_indicators_cpp, 2},

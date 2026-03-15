@@ -5,7 +5,9 @@
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
 The methods that support confidence intervals and testing for the mean difference
-in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
+in all response types (except Weibull with censoring)
+sequential experimental design estimation and test object
+after the sequential design is completed.
 }
 \examples{
 
@@ -103,7 +105,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \if{html}{\out{<a id="method-SeqDesignInferenceSurvivalKMDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalKMDiff-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalKMDiff$new(
   seq_des_obj,
@@ -115,14 +118,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -175,7 +186,8 @@ survival function by default). The per-group SE is back-calculated from the CI
 half-width as \eqn{\hat\sigma_i = (\text{upper}_i - \text{lower}_i) / (2 z_{\alpha/2})}.
 The two groups are independent by design, so the SE of the difference is
 \eqn{\sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}, and the CI is
-\eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}.
+\eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 +
+\hat\sigma_C^2}}.
 
 Falls back to \code{compute_bootstrap_confidence_interval} when either group's
 median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
@@ -187,7 +199,8 @@ when the Brookmeyer-Crowley CI bounds are \code{NA}.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The significance level; the confidence level is 1 - \code{alpha}. Default is 0.05.}
+\item{\code{alpha}}{The significance level; the confidence level is 1 - \code{alpha}.
+Default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -233,7 +246,8 @@ Computes a 2-sided p-value via the log rank test
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{</div>}}
 }
@@ -282,7 +296,8 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 
 \item{\code{nsim_exact_test}}{The number of randomization vectors. The default is 501.}
 

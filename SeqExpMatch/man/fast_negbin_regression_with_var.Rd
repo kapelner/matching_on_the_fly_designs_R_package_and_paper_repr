@@ -26,6 +26,12 @@ A list containing the following components:
 \description{
 This function provides a fast implementation of negative binomial regression, wrapping
 a C++ backend. It is designed to efficiently estimate regression coefficients for count
-data and computes the variance of the second coefficient (assumed to be the treatment effect),
+data and computes the variance of the second coefficient (assumed to be the treatment
+effect),
 assuming all observations are "not censored" (i.e., `dead = 1`).
+}
+\examples{
+Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+y <- c(0, 1, 1, 2, 3, 4)
+fast_negbin_regression_with_var(Xmm, y)
 }

@@ -15,6 +15,21 @@ effect and its variance. The reservoir component treats unmatched subjects as
 independent samples. The two estimates are combined using the standard IVWC
 framework of the package.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "incidence", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(0, 1, 0, 1, 0, 1, 1, 0))
+infer <- SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound} -> \code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff}
 }
@@ -91,7 +106,8 @@ Returns the MLE confidence interval based on pooled variance.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }

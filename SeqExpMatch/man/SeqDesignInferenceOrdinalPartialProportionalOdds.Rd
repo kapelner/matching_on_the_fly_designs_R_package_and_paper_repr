@@ -9,6 +9,21 @@ parallel predictor while user-specified covariates can vary across thresholds.
 This class works on any completed sequential design and reuses the fast Rcpp
 logistic solver after expanding the cumulative logits.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super class}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceOrdinalPartialProportionalOdds}
 }
@@ -19,7 +34,6 @@ logistic solver after expanding the cumulative logits.
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_treatment_estimate()}}
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_mle_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_mle_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_confidence_interval_rand}{\code{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOdds-clone}{\code{SeqDesignInferenceOrdinalPartialProportionalOdds$clone()}}
 }
 }
@@ -30,6 +44,7 @@ logistic solver after expanding the cumulative logits.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
@@ -73,6 +88,9 @@ Retrieves the estimated log-odds shift for the treatment arm.
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The estimated treatment effect.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_mle_confidence_interval"></a>}}
@@ -91,6 +109,9 @@ Computes a Wald-style CI using the beta concentration estimate.
 \item{\code{alpha}}{Significance level for the interval.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A confidence interval for the treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
@@ -111,24 +132,8 @@ Computes a Wald p-value for the (parallel) treatment effect.
 }
 \if{html}{\out{</div>}}
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalPartialProportionalOdds-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
-Randomization-based CIs are not supported for this estimator.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOdds$compute_confidence_interval_rand(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused.}
-}
-\if{html}{\out{</div>}}
+\subsection{Returns}{
+A two-sided p-value.
 }
 }
 \if{html}{\out{<hr>}}

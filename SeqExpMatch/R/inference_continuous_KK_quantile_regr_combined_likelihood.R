@@ -11,10 +11,27 @@ SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqD
 	inherit = SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood,
 	public = list(
 		#' @description	Initialize the inference object.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#'   are assigned and response y is recorded within.
 		#' @param	tau				The quantile level for regression, strictly between 0 and 1. Default is 0.5.
 		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
+		#' @examples
+		#' set.seed(1)
+		#' x_dat <- data.frame(
+		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+		#' )
+		#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+		#' FALSE)
+		#' for (i in seq_len(nrow(x_dat))) {
+		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		#' }
+		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+		#' infer <- SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$new(seq_des, verbose
+		#' = FALSE)
+		#' infer
+		#'
 		initialize = function(seq_des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "continuous")
 			super$initialize(seq_des_obj, tau, identity, num_cores, verbose)

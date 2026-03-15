@@ -11,7 +11,8 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 	public = list(
 		#'
 		#' @description
-		#' Initialize a matching-on-the-fly sequential experimental design which matches based on Kapelner and Krieger (2014) or Morrison and Owen (2025)
+		#' Initialize a matching-on-the-fly sequential experimental design which matches based on
+		#' Kapelner and Krieger (2014) or Morrison and Owen (2025)
 		#'
 		#' @param	response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous" (the default),
@@ -19,26 +20,36 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' 								"proportion",
 		#' 								"count",
 		#' 								"survival".
-		#' 								This package will enforce that all added responses via the \code{add_subject_response} method will be
+		#'                                                                 This package will enforce
+		#' that all added responses via the \code{add_subject_response} method will be
 		#' 								of the appropriate type.
 		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
-		#' @param	include_is_missing_as_a_new_feature	If missing data is present in a variable, should we include another dummy variable for its
-		#' 								missingness in addition to imputing its value? If the feature is type factor, instead of creating
+		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
+		#'   should we include another dummy variable for its
+		#'                                                                 missingness in addition to
+		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param	verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#' @param	lambda   The quantile cutoff of the subject distance distribution for determining matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
-		#' @param	t_0_pct  The percentage of total sample size n where matching begins. If unspecified and \code{morrison = FALSE}, default is 35\%.
-		#' @param	morrison 	Default is \code{FALSE} which implies matching via the KK14 algorithm using \code{lambda} and \code{t_0_pct} matching.
-		#' 						If \code{TRUE}, we use Morrison and Owen (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
-		#' 						settings and matching begins immediately with no wait for a certain reservoir size like in KK14.
-		#' @param	p			The number of covariate features. Must be specified when \code{morrison = TRUE} otherwise do not specify this argument.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
+		#'   matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
+		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified
+		#'   and \code{morrison = FALSE}, default is 35\%.
+		#' @param morrison        Default is \code{FALSE} which implies matching via the KK14
+		#'   algorithm using \code{lambda} and \code{t_0_pct} matching.
+		#'                                                 If \code{TRUE}, we use Morrison and Owen
+		#' (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
+		#'                                                 settings and matching begins immediately
+		#' with no wait for a certain reservoir size like in KK14.
+		#' @param p                       The number of covariate features. Must be specified when
+		#'   \code{morrison = TRUE} otherwise do not specify this argument.
 		#'
 		#' @return	A new `SeqDesignKK14` object
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignKK14$new(response_type = "continuous")
+		#' seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 		#' }
 		#'
 		initialize = function(
@@ -111,7 +122,8 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' @description
 		#' Returns information about the matched pairs and reservoir
 		#'
-		#' @return	An array in the order in which the subject entered with the match number or zero if the subject
+		#' @return An array in the order in which the subject entered with the match number or zero if
+		#'   the subject
 		#'			belonged to the reservoir at the end of the study.
 		#'
 		#' @examples

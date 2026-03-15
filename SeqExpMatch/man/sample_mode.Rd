@@ -15,3 +15,6 @@ The sample mode
 \description{
 Compute sample mode from an array of numbers
 }
+\examples{
+sample_mode(c(1, 2, 2, 3, 3, 3))
+}

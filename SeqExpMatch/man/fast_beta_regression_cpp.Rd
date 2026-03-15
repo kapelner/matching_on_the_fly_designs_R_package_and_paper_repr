@@ -21,7 +21,9 @@ fast_beta_regression_cpp(
 
 \item{start_phi}{Optional starting value for phi.}
 
-\item{compute_std_errs}{Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).}
+\item{compute_std_errs}{Logical, whether to compute and return standard
+errors (currently ignored in this function; use
+\code{fast_beta_regression_with_var_cpp()} for SEs).}
 }
 \value{
 A list with coefficients, phi, and other optimization details.

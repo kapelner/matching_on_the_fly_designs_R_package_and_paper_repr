@@ -11,6 +11,24 @@ Gaussian correlation parameter, allowing the censoring process to be informative
 rather than independent. The treatment effect is reported on the transformed
 log-time scale.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "survival", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(
+  c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0, 3.3, 4.5),
+  c(1, 1, 0, 1, 0, 1, 1, 0)
+)
+infer <- SeqDesignInferenceSurvivalMultiDepCensTransformRegr$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceMLEorKMSummaryTable} -> \code{\link[SeqExpMatch:SeqDesignInferenceSurvivalUniDepCensTransformRegr]{SeqExpMatch::SeqDesignInferenceSurvivalUniDepCensTransformRegr}} -> \code{SeqDesignInferenceSurvivalMultiDepCensTransformRegr}
 }
@@ -42,7 +60,8 @@ log-time scale.
 \if{html}{\out{<a id="method-SeqDesignInferenceSurvivalMultiDepCensTransformRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalMultiDepCensTransformRegr-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalMultiDepCensTransformRegr$new(
   seq_des_obj,
@@ -54,11 +73,15 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference and bootstrap resampling.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}.}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

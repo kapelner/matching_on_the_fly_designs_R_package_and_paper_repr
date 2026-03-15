@@ -4,6 +4,8 @@
 #'
 #' @param	p		The value between 0 and 1 non inclusive
 #' @return	Its corresponding logit value as a real number
+#' @examples
+#' logit(0.25)
 #' @export
 logit = function(p){
 	if (any(p <= 0 | p >= 1, na.rm = TRUE)){
@@ -19,6 +21,8 @@ logit = function(p){
 #' @param	x		Any real number
 #' @return	Its corresponding inverse logit value between 0 and 1 non inclusive
 #' @export
+#' @examples
+#' inv_logit(c(-1, 0, 1))
 inv_logit = function(x){
 	1 / (1 + exp(-x))
 }
@@ -77,7 +81,8 @@ assertNoCensoring = function(any_censoring){
 #' Robust Survival Regression
 #'
 #' Performs Survival regression from the original response and censoring vectors
-#' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+#' that if it fails, keeps trying with a different initialization point until a maximum number
+#' of iterations
 #'
 #' @param	y						The response vector
 #' @param	dead					The censoring vector (1 if dead/uncensored and 0 if censored)
@@ -86,6 +91,11 @@ assertNoCensoring = function(any_censoring){
 #' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
 #' @return	The Survival regression model object
 #' @export
+#' @examples
+#' y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
+#' dead <- c(1, 1, 0, 1, 0, 1)
+#' x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
+#' robust_survreg(y, dead, x)
 robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, num_max_iter = num_max_iter)
 }
@@ -93,13 +103,19 @@ robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_m
 #' Robust Survival Regression
 #'
 #' Performs Survival regression from a survival::Surv object
-#' that if it fails, keeps trying with a different initialization point until a maximum number of iterations
+#' that if it fails, keeps trying with a different initialization point until a maximum number
+#' of iterations
 #'
-#' @param	surv_object			The survival object (built from the response vector and censoring vector)
+#' @param surv_object                     The survival object (built from the response vector
+#'   and censoring vector)
 #' @param	cov_matrix_or_vector  The model matrix
 #' @param	dist  				The parametric distribution form (default is Weibull)
 #' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
 #' @return	The Survival regression model object
+#' @examples
+#' surv_obj <- survival::Surv(c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0), c(1, 1, 0, 1, 0, 1))
+#' x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
+#' robust_survreg_with_surv_object(surv_obj, x)
 #' @export
 robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	surv_reg_formula = surv_object ~ .
@@ -172,12 +188,16 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 
 #' Robust Negative Binomial Regression
 #'
-#' Performs Negative Binomial regression that if it fails, keeps dropping one column from the model matrix until it works
+#' Performs Negative Binomial regression that if it fails, keeps dropping one column from the
+#' model matrix until it works
 #'
 #' @param	form_obj	The formula
 #' @param	data_obj  The data frame to run Negative Binomial regression on
 #' @return	The Negative Binomial regression model object
 #' @export
+#' @examples
+#' dat <- data.frame(y = c(0, 1, 1, 2, 3, 4), x1 = c(-1, 0, 1, 0, 1, 2))
+#' robust_negbinreg(y ~ x1, dat)
 robust_negbinreg = function(form_obj, data_obj){
 	repeat {
 		tryCatch({
@@ -198,6 +218,8 @@ robust_negbinreg = function(form_obj, data_obj){
 #'
 #' @param	data	The array of numbers
 #' @return	The sample mode
+#' @examples
+#' sample_mode(c(1, 2, 2, 3, 3, 3))
 #' @export
 sample_mode = function(data){
 	sample_mode_cpp(data)
@@ -213,6 +235,9 @@ sample_mode = function(data){
 #' @param	symbolic.cor	See GLM documentation
 #' @param	...			Other parameters (currently unused)
 #' @return	The summary of the GLM
+#' @examples
+#' mod <- glm(c(0, 1, 0, 1, 1, 0) ~ c(-1, 0, 1, 0, 1, 2), family = binomial())
+#' summary_glm_lean(mod)$coefficients
 #' @export
 summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, symbolic.cor = FALSE, ...){
 	est.disp <- FALSE
@@ -303,7 +328,6 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 #' @return	The mean of the vector.
 #' @name mean_cpp
 #' @rdname mean_cpp
-#' @export
 #' @examples
 #' \dontrun{
 #' x <- rnorm(100)
@@ -319,7 +343,6 @@ NULL
 #' @return	The variance of the vector.
 #' @name var_cpp
 #' @rdname var_cpp
-#' @export
 #' @examples
 #' \dontrun{
 #' x <- rnorm(100)

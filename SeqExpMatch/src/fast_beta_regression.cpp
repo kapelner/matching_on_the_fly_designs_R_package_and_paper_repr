@@ -114,9 +114,10 @@ public:
 //' @param y Numeric vector of proportions (0 < y < 1).
 //' @param start_beta Optional starting values for beta coefficients.
 //' @param start_phi Optional starting value for phi.
-//' @param compute_std_errs Logical, whether to compute and return standard errors (currently ignored in this function, use _with_var_cpp for SEs).
+//' @param compute_std_errs Logical, whether to compute and return standard
+//'   errors (currently ignored in this function; use
+//'   \code{fast_beta_regression_with_var_cpp()} for SEs).
 //' @return A list with coefficients, phi, and other optimization details.
-//' @export
 // [[Rcpp::export]]
 List fast_beta_regression_cpp(Eigen::MatrixXd X,
 								NumericVector y,
@@ -163,9 +164,9 @@ List fast_beta_regression_cpp(Eigen::MatrixXd X,
 //' @param y Numeric vector of proportions (0 < y < 1).
 //' @param start_beta Optional starting values for beta coefficients.
 //' @param start_phi Optional starting value for phi.
-//' @param compute_std_errs Logical, whether to compute and return standard errors.
+//' @param compute_std_errs Logical, whether to compute and return standard
+//'   errors.
 //' @return A list with coefficients, phi, std_errs, vcov, etc.
-//' @export
 // [[Rcpp::export]]
 List fast_beta_regression_with_var_cpp(Eigen::MatrixXd X,
 									 NumericVector y,

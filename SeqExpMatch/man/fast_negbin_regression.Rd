@@ -21,3 +21,8 @@ This function provides a fast implementation of negative binomial regression by 
 a C++ backend function. It is designed to efficiently estimate regression coefficients
 for count data, assuming all observations are "not censored" (i.e., `dead = 1`).
 }
+\examples{
+Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+y <- c(0, 1, 1, 2, 3, 4)
+fast_negbin_regression(Xmm, y)
+}

@@ -25,6 +25,27 @@ The stacked parameterization uses:
         weighting.
 }
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceContinMultiKKLinCombinedLikelihood$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultiKKLinCombinedLikelihood$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThrough} -> \code{SeqExpMatch::SeqDesignInferenceKKPassThroughCompound} -> \code{SeqDesignInferenceContinMultiKKLinCombinedLikelihood}
 }
@@ -78,6 +99,27 @@ randomization inference.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultiKKLinCombinedLikelihood$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKLinCombinedLikelihood-compute_treatment_estimate"></a>}}

@@ -2,7 +2,8 @@
 % Please edit documentation in R/inference_proportion_KK_quantile_regr_ivwc.R
 \name{SeqDesignInferencePropMultiKKQuantileRegrIVWC}
 \alias{SeqDesignInferencePropMultiKKQuantileRegrIVWC}
-\title{Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion Outcomes)}
+\title{Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)}
 \description{
 A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
 designs with proportion responses. Inference is performed on the \strong{logit (log-odds)
@@ -36,6 +37,21 @@ This class requires the \pkg{quantreg} package, which is listed under \code{Sugg
 and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 \code{install.packages("quantreg")} before using this class.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "proportion", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(0.10, 0.25, 0.20, 0.40, 0.35, 0.55, 0.60, 0.75))
+infer <- SeqDesignInferencePropMultiKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrIVWC} -> \code{SeqDesignInferencePropMultiKKQuantileRegrIVWC}
 }
@@ -67,7 +83,8 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKQuantileRegrIVWC$new(
   seq_des_obj,
@@ -80,17 +97,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{tau}}{The quantile level for regression on the logit scale, strictly between 0 and 1.
-The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
-Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
-different percentile of the treatment effect distribution.}
+\item{\code{tau}}{The quantile level for regression on the logit
+scale, strictly between 0 and 1.
+                          The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
+                          Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
+                          different percentile of the treatment effect distribution.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+                          and bootstrap resampling. The default is 1 for serial computation.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -147,7 +169,8 @@ Computes the MLE-based confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }

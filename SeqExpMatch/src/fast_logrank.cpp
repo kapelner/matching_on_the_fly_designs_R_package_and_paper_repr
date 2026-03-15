@@ -35,7 +35,6 @@ inline bool record_less(const SubjectRecord& a, const SubjectRecord& b) {
 //' @param w Treatment indicators (`1` = treatment, `0` = control).
 //' @return A list with the log-rank score, its variance, a martingale-residual
 //'   mean-difference estimate, and its standard error.
-//' @export
 // [[Rcpp::export]]
 List fast_logrank_stats_cpp(const Eigen::VectorXd& time,
                             const IntegerVector& dead,

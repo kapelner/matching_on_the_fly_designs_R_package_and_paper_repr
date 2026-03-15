@@ -76,7 +76,6 @@ List fast_poisson_core_cpp(const Eigen::MatrixXd& X,
 //' @param maxit Maximum IRLS iterations.
 //' @param tol Convergence tolerance for coefficient updates.
 //' @return A list with coefficients, fitted means, Fisher information, and convergence flag.
-//' @export
 // [[Rcpp::export]]
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
@@ -93,7 +92,6 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 //' @param maxit Maximum IRLS iterations.
 //' @param tol Convergence tolerance for coefficient updates.
 //' @return A list with coefficients and selected coefficient variances.
-//' @export
 // [[Rcpp::export]]
 List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 											  const Eigen::VectorXd& y,
@@ -124,7 +122,6 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 //' @param maxit Maximum IRLS iterations.
 //' @param tol Convergence tolerance for coefficient updates.
 //' @return A list with coefficients, dispersion estimate, and selected coefficient variances.
-//' @export
 // [[Rcpp::export]]
 List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 												   const Eigen::VectorXd& y,

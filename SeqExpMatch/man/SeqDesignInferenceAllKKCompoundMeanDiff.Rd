@@ -13,7 +13,7 @@ Inference for mean difference
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -32,7 +32,7 @@ seq_des_inf$compute_treatment_estimate()
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -51,7 +51,7 @@ seq_des_inf$compute_mle_confidence_interval()
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -96,7 +96,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \if{html}{\out{<a id="method-SeqDesignInferenceAllKKCompoundMeanDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKCompoundMeanDiff-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$new(
   seq_des_obj,
@@ -108,14 +109,22 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -135,7 +144,7 @@ The setting-appropriate (see description) numeric estimate of the treatment effe
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -160,9 +169,12 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_mle_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 
-Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case
-of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
-is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
+Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in
+the case
+of estimat_type "median difference" where a nonparametric bootstrap confidence interval
+(see the \code{controlTest::quantileControlTest} method)
+is employed. Hence these confidence intervals are asymptotically valid and thus approximate
+for any sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_confidence_interval(
   alpha = 0.05
@@ -172,7 +184,8 @@ is employed. Hence these confidence intervals are asymptotically valid and thus 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -182,7 +195,7 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -215,7 +228,8 @@ Computes a 2-sided p-value
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is
+set to zero (the default).}
 }
 \if{html}{\out{</div>}}
 }
@@ -225,7 +239,7 @@ The approximate frequentist p-value
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -261,7 +275,8 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 
 \item{\code{nsim_exact_test}}{The number of randomization vectors. The default is 501.}
 

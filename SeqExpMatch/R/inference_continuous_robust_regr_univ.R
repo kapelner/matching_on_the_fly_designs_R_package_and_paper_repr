@@ -21,11 +21,16 @@ SeqDesignInferenceContinUnivRobustRegr = R6::R6Class("SeqDesignInferenceContinUn
 		#' @description
 		#' Initialize a robust-regression inference object for a completed design
 		#' with a continuous response.
-		#' @param	seq_des_obj		A SeqDesign object whose entire n subjects are assigned and whose continuous response y is recorded.
-		#' @param	method			Robust-regression fitting method for \code{MASS::rlm}; one of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
+		#' @param seq_des_obj             A SeqDesign object whose entire n subjects are assigned and
+		#'   whose continuous response y is recorded.
+		#' @param method                  Robust-regression fitting method for \code{MASS::rlm}; one
+		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
 		#' 							and bootstrap resampling.
-		#' @param	verbose			A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}.
+		#' @param verbose                 A flag indicating whether messages should be displayed to
+		#'   the user. Default is \code{FALSE}.
 		#'
 		#' @examples
 		#' \dontrun{
@@ -55,7 +60,8 @@ SeqDesignInferenceContinUnivRobustRegr = R6::R6Class("SeqDesignInferenceContinUn
 
 		#' @description
 		#' Computes an approximate confidence interval for the treatment effect.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -64,7 +70,8 @@ SeqDesignInferenceContinUnivRobustRegr = R6::R6Class("SeqDesignInferenceContinUn
 
 		#' @description
 		#' Computes an approximate two-sided p-value for the treatment effect.
-		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

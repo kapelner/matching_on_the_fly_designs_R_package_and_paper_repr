@@ -51,7 +51,8 @@ SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("SeqDesignInf
 
 		#' @description
 		#' Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param pval_epsilon Bisection tolerance for CI bounds.
 		compute_mle_confidence_interval = function(alpha = 0.05, pval_epsilon = 1e-7){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)

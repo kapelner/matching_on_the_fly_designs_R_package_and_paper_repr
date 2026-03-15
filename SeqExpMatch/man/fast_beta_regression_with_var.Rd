@@ -37,3 +37,8 @@ with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback o
 \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
 enable the intermediate fallback.
 }
+\examples{
+Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+y <- c(0.15, 0.25, 0.60, 0.75)
+fast_beta_regression_with_var(Xmm, y)
+}

@@ -21,19 +21,23 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 		#' 								"proportion",
 		#' 								"count",
 		#' 								"survival".
-		#' 								This package will enforce that all added responses via the \code{add_subject_response} method will be
+		#'                                                                 This package will enforce
+		#' that all added responses via the \code{add_subject_response} method will be
 		#' 								of the appropriate type.
 		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
-		#' @param	include_is_missing_as_a_new_feature	If missing data is present in a variable, should we include another dummy variable for its
-		#' 								missingness in addition to imputing its value? If the feature is type factor, instead of creating
+		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
+		#'   should we include another dummy variable for its
+		#'                                                                 missingness in addition to
+		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param	verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
+		#' @param verbose A flag indicating whether messages should be
+		#'   displayed to the user. Default is \code{TRUE}.
 		#' @return	A new `SeqDesigniBCRD` object
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesigniBCRD$new(response_type = "continuous")
+		#' seq_des = SeqDesigniBCRD$new(n = 6, response_type = "continuous")
 		#' }
 		#'
 		initialize = function(

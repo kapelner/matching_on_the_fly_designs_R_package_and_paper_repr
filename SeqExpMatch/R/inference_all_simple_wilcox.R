@@ -26,6 +26,20 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		#' @param seq_des_obj  A completed \code{SeqDesign} object.
 		#' @param num_cores    Number of CPU cores for parallel bootstrap/randomization. Default 1.
 		#' @param verbose      Whether to print progress messages. Default \code{FALSE}.
+		#' @examples
+		#' set.seed(1)
+		#' x_dat <- data.frame(
+		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+		#' )
+		#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "continuous", verbose = FALSE)
+		#' for (i in seq_len(nrow(x_dat))) {
+		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		#' }
+		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+		#' infer <- SeqDesignInferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
+		#' infer
+		#'
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			res_type = seq_des_obj$get_response_type()
 			if (res_type == "incidence"){
@@ -46,7 +60,8 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		},
 
 		#' @description
-		#' Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control differences.
+		#' Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
+		#' differences.
 		compute_treatment_estimate = function(){
 			private$shared()
 			private$cached_values$beta_hat_T

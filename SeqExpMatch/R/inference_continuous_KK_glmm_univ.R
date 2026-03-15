@@ -25,10 +25,16 @@ SeqDesignInferenceContinUnivKKGLMM = R6::R6Class("SeqDesignInferenceContinUnivKK
 		#' with a continuous response.
 		#' @param	seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose continuous response y is recorded.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		#' 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		#' 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		#' 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
+		#' @param num_cores The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference and
+		#'   bootstrap resampling.
+		#'   The default is 1 for serial computation. For simple
+		#'   estimators (e.g. mean difference and KK compound),
+		#'   parallelization is achieved with zero-overhead C++ OpenMP.
+		#'   For complex models (e.g. GLMs),
+		#'   parallelization falls back to R's
+		#'   \code{parallel::mclapply}, which incurs
+		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
 		#'
 		#' @examples
@@ -54,14 +60,16 @@ SeqDesignInferenceContinUnivKKGLMM = R6::R6Class("SeqDesignInferenceContinUnivKK
 
 		#' @description
 		#' Computes the MLE-based confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @param alpha The confidence level in the computed confidence
+		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_mle_confidence_interval = function(alpha = 0.05){
 			super$compute_mle_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes the MLE-based p-value.
-		#' @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @param delta The null difference to test against. For any
+		#'   treatment effect at all this is set to zero (the default).
 		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
 			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
 		}

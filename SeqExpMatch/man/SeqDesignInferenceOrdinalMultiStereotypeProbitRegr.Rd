@@ -6,6 +6,21 @@
 \description{
 Stereotype probit inference for ordinal responses using treatment plus observed covariates.
 }
+\examples{
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalMultiStereotypeProbitRegr$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{\link[SeqExpMatch:SeqDesignInferenceOrdinalUniStereotypeProbitRegr]{SeqExpMatch::SeqDesignInferenceOrdinalUniStereotypeProbitRegr}} -> \code{SeqDesignInferenceOrdinalMultiStereotypeProbitRegr}
 }
@@ -37,6 +52,8 @@ Stereotype probit inference for ordinal responses using treatment plus observed 
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalMultiStereotypeProbitRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalMultiStereotypeProbitRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a multivariate stereotype probit inference object for a
+completed ordinal sequential design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalMultiStereotypeProbitRegr$new(
   seq_des_obj,
@@ -45,6 +62,17 @@ Stereotype probit inference for ordinal responses using treatment plus observed 
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal response.}
+
+\item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalMultiStereotypeProbitRegr-clone"></a>}}

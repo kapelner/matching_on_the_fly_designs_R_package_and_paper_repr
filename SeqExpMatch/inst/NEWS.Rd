@@ -15,6 +15,8 @@
       \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), \pkg{parfm} (Frailty), and \pkg{Rfit} (R-estimation).
       \item Support for Stratified Cox and Conditional Poisson regression.
       \item Standalone log-rank inference powered by a new C++ score/variance routine plus automatic covariate-based strata construction.
+      \item Randomization confidence intervals now support ordinal GLM estimators (e.g., cumulative logit/probit) by inverting the exact permutation test for their shared treatment effect, following the Wang & Rosenberger inversion approach.
+      \item Added Partial Proportional-Odds regression for ordinal responses, leveraging the fast Rcpp logistic solver over the stacked cumulative logits so the estimator works on every sequential design without requiring CRD.
       \item Zero-inflated/negative binomial and hurdle negative binomial regression classes plus Poisson/quasi-Poisson inference that now use high-speed Rcpp IRLS solvers with Huber-White variance.
       \item Automated missing data pipeline using \pkg{missRanger} and \pkg{missForest}.
       \item Full support for unequal treatment allocation probabilities (prob_T != 0.5).

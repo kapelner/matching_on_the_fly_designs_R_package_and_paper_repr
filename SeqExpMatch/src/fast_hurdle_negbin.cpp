@@ -109,7 +109,6 @@ public:
 //' @param tol Convergence tolerance for the L-BFGS optimizer.
 //' @return A list with count-component coefficients, treatment variance, dispersion parameter,
 //'   and hurdle-model coefficients.
-//' @export
 // [[Rcpp::export]]
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 									 const Eigen::VectorXd& y,

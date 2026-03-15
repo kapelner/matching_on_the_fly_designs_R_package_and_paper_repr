@@ -78,14 +78,19 @@ with a continuous response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and whose continuous response y is recorded.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and
+whose continuous response y is recorded.}
 
-\item{\code{method}}{Robust-regression fitting method for \code{MASS::rlm}; one of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.}
+\item{\code{method}}{Robust-regression fitting method for \code{MASS::rlm}; one
+of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+                          and bootstrap resampling.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}.}
+\item{\code{verbose}}{A flag indicating whether messages should be displayed to
+the user. Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -131,7 +136,8 @@ Computes an approximate confidence interval for the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -150,7 +156,8 @@ Computes an approximate two-sided p-value for the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{</div>}}
 }

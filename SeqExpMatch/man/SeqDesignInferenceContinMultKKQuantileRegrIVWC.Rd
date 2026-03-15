@@ -35,6 +35,27 @@ This class requires the \pkg{quantreg} package, which is listed under \code{Sugg
 and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 \code{install.packages("quantreg")} before using this class.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceContinMultKKQuantileRegrIVWC$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrIVWC} -> \code{SeqDesignInferenceContinMultKKQuantileRegrIVWC}
 }
@@ -66,7 +87,8 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(
   seq_des_obj,
@@ -79,21 +101,53 @@ Initialize a sequential experimental design estimation and test object after the
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
-\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default \code{tau = 0.5}
-estimates the median treatment effect. Pass a different value (e.g. \code{tau = 0.25} or
-\code{tau = 0.75}) to target the corresponding percentile of the treatment effect distribution.}
+\item{\code{tau}}{The quantile level for regression, strictly between
+  0 and 1. The default \code{tau = 0.5}
+                                                        estimates the median treatment
+effect. Pass a different value (e.g. \code{tau = 0.25} or
+                                                        \code{tau = 0.75}) to target the
+corresponding percentile of the treatment effect distribution.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.}
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+the sampling during randomization-based inference and
+bootstrap resampling.
+The default is 1 for serial computation. For simple
+estimators (e.g. mean difference and KK compound),
+parallelization is achieved with zero-overhead C++ OpenMP.
+For complex models (e.g. GLMs),
+parallelization falls back to R's
+\code{parallel::mclapply}, which incurs
+session-forking overhead.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}}
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrIVWC-compute_confidence_interval_rand"></a>}}
@@ -147,7 +201,8 @@ Computes the MLE-based confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }

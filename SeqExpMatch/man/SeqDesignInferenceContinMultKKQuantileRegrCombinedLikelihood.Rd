@@ -10,6 +10,28 @@ using the treatment indicator and all recorded covariates for continuous respons
 Minimises the joint check-function loss over both data sources simultaneously.
 Inference is based on the stacked combined-likelihood quantile-regression fit.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$new(seq_des, verbose
+= FALSE)
+infer
+
+}
 \section{Super classes}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqExpMatch::SeqDesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::SeqDesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::SeqDesignInferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood}
 }
@@ -54,7 +76,8 @@ Initialize the inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and response y is recorded within.}
+\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+are assigned and response y is recorded within.}
 
 \item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. Default is 0.5.}
 
@@ -64,6 +87,28 @@ Initialize the inference object.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood$new(seq_des, verbose
+= FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood-compute_confidence_interval_rand"></a>}}

@@ -15,3 +15,6 @@ Its corresponding inverse logit value between 0 and 1 non inclusive
 \description{
 Calculates the inverse logit i.e., 1 / (1 + exp(-x))
 }
+\examples{
+inv_logit(c(-1, 0, 1))
+}
