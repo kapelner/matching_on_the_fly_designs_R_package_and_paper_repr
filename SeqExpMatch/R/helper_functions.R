@@ -706,12 +706,15 @@ NULL
 			vcov_full = tryCatch(MASS::ginv(hess_alt), error = function(e) NULL)
 		}
 	}
-	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))) return(NULL)
-
 	param_names = c(colnames(Xfull), "log_phi", "alpha0", "alpha1")
-	rownames(vcov_full) = colnames(vcov_full) = param_names
 	coef_full = best$par
 	names(coef_full) = param_names
+
+	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
+		# Keep the MLE when curvature is too unstable for a usable covariance matrix.
+		vcov_full = matrix(NA_real_, nrow = length(param_names), ncol = length(param_names))
+	}
+	rownames(vcov_full) = colnames(vcov_full) = param_names
 
 	list(
 		coefficients = coef_full,

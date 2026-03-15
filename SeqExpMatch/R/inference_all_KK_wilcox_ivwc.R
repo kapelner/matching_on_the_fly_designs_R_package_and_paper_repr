@@ -23,7 +23,7 @@ SeqDesignInferenceAllKKWilcoxIVWC = R6::R6Class("SeqDesignInferenceAllKKWilcoxIV
 			if (res_type == "incidence"){
 				stop("Rank-based compound inference is not recommended for incidence data; clogit or compound mean difference estimators are preferred.")
 			}
-			assertResponseType(res_type, c("continuous", "count", "proportion", "survival"))
+			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
 			if (!is(seq_des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}

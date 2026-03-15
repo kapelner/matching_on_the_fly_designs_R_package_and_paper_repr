@@ -49,14 +49,15 @@ Suggests:
     nlme,
     doParallel,
     testthat,
-        fixest,
-        parfm,
-        Rfit,
-        glmmTMB,
-        aftgee,
-        glmnet
-    ,
-    quantreg
+    fixest,
+    parfm,
+    Rfit,
+    glmmTMB,
+    aftgee,
+    glmnet,
+    quantreg,
+    multgee,
+    ordinal
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.3
 Collate:
@@ -235,4 +236,27 @@ Collate:
     'inference_survival_dep_cens_transform_multi.R'
     'inference_survival_weibull_univ.R'
     'inference_survival_weibull_multi.R'
+    'inference_ordinal_adj_cat_logit_univ.R'
+    'inference_ordinal_adj_cat_logit_multi.R'
+    'inference_ordinal_cumulative_probit_univ.R'
+    'inference_ordinal_cumulative_probit_multi.R'
+    'inference_ordinal_stereotype_logit_univ.R'
+    'inference_ordinal_stereotype_logit_multi.R'
+    'inference_ordinal_stereotype_probit_univ.R'
+    'inference_ordinal_stereotype_probit_multi.R'
+    'inference_ordinal_cloglog_univ.R'
+    'inference_ordinal_proportional_odds_univ.R'
+    'inference_ordinal_partial_proportional_odds.R'
+    'inference_ordinal_KK_clmm_abstract.R'
+    'inference_ordinal_cond_adj_cat_logit_univ.R'
+    'inference_ordinal_cond_cont_ratio_univ.R'
+    'inference_ordinal_KK_cond_prop_odds_univ.R'
+    'inference_ordinal_KK_cond_prop_odds_combined_univ.R'
+    'inference_ordinal_KK_gee_univ.R'
+    'inference_ordinal_KK_glmm_univ.R'
+    'inference_ordinal_KK_glmm_multi.R'
+    'inference_ordinal_KK_glmm_probit_univ.R'
+    'inference_ordinal_KK_glmm_probit_multi.R'
+    'inference_ordinal_paired_sign_test.R'
+    'inference_ordinal_continuation_ratio_univ.R'
     'zzz.R'

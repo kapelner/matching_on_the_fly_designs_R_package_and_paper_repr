@@ -360,6 +360,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_adjacent_category_logit_cpp
+List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_adjacent_category_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_adjacent_category_logit_with_var_cpp
+List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_adjacent_category_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_with_var_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_beta_regression_cpp
 List fast_beta_regression_cpp(Eigen::MatrixXd X, NumericVector y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
 RcppExport SEXP _SeqExpMatch_fast_beta_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
@@ -387,6 +415,32 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
     Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_beta_regression_with_var_cpp(X, y, start_beta, start_phi, compute_std_errs));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_continuation_ratio_regression_cpp
+List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_continuation_ratio_regression_with_var_cpp
+List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_with_var_cpp(X, y));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -530,6 +584,112 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_ordinal_cloglog_regression_cpp
+List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_cloglog_regression_with_var_cpp
+List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_probit_regression_cpp
+List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_probit_regression_with_var_cpp
+List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_with_var_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_regression_cpp
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_regression_with_var_cpp
+List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// expand_continuation_ratio_data_cpp
+List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K);
+RcppExport SEXP _SeqExpMatch_expand_continuation_ratio_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type strata(strataSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    rcpp_result_gen = Rcpp::wrap(expand_continuation_ratio_data_cpp(y, w, strata, K));
+    return rcpp_result_gen;
+END_RCPP
+}
+// expand_adjacent_category_data_cpp
+List expand_adjacent_category_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K);
+RcppExport SEXP _SeqExpMatch_expand_adjacent_category_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type strata(strataSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    rcpp_result_gen = Rcpp::wrap(expand_adjacent_category_data_cpp(y, w, strata, K));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_poisson_regression_cpp
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
 RcppExport SEXP _SeqExpMatch_fast_poisson_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -605,6 +765,49 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(shuffle_cpp(w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_stereotype_logit_cpp
+List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_stereotype_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_stereotype_logit_with_var_cpp
+List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_stereotype_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_with_var_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_stereotype_profile_loglik_cpp
+double fast_stereotype_profile_loglik_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, double beta_fixed, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_stereotype_profile_loglik_cpp(SEXP XSEXP, SEXP ySEXP, SEXP beta_fixedSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type beta_fixed(beta_fixedSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stereotype_profile_loglik_cpp(X, y, beta_fixed, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -889,6 +1092,31 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(kk21_stepwise_negbin_weights_cpp(X, y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_ordinal_weights_cpp
+NumericVector kk21_ordinal_weights_cpp(const NumericMatrix& X, const NumericVector& y);
+RcppExport SEXP _SeqExpMatch_kk21_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_ordinal_weights_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kk21_stepwise_ordinal_weights_cpp
+NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
+RcppExport SEXP _SeqExpMatch_kk21_stepwise_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(kk21_stepwise_ordinal_weights_cpp(X, y, w));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1398,8 +1626,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
     {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
     {"_SeqExpMatch_efron_redraw_cpp", (DL_FUNC) &_SeqExpMatch_efron_redraw_cpp, 3},
+    {"_SeqExpMatch_fast_adjacent_category_logit_cpp", (DL_FUNC) &_SeqExpMatch_fast_adjacent_category_logit_cpp, 4},
+    {"_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp, 4},
     {"_SeqExpMatch_fast_beta_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_cpp, 5},
     {"_SeqExpMatch_fast_beta_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_with_var_cpp, 5},
+    {"_SeqExpMatch_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_continuation_ratio_regression_cpp, 4},
+    {"_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp, 2},
     {"_SeqExpMatch_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_cpoisson_combined_with_var_cpp, 8},
     {"_SeqExpMatch_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_hurdle_negbin_with_var_cpp, 5},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
@@ -1410,12 +1642,23 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_neg_bin_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_cpp, 5},
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
+    {"_SeqExpMatch_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_cpp, 4},
+    {"_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp, 2},
+    {"_SeqExpMatch_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_cpp, 4},
+    {"_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp, 2},
+    {"_SeqExpMatch_fast_ordinal_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_cpp, 4},
+    {"_SeqExpMatch_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_with_var_cpp, 2},
+    {"_SeqExpMatch_expand_continuation_ratio_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_continuation_ratio_data_cpp, 4},
+    {"_SeqExpMatch_expand_adjacent_category_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_adjacent_category_data_cpp, 4},
     {"_SeqExpMatch_fast_poisson_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_poisson_regression_cpp, 4},
     {"_SeqExpMatch_fast_poisson_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_poisson_regression_with_var_cpp, 5},
     {"_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp, 5},
     {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
     {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
     {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},
+    {"_SeqExpMatch_fast_stereotype_logit_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_logit_cpp, 4},
+    {"_SeqExpMatch_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_logit_with_var_cpp, 4},
+    {"_SeqExpMatch_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_profile_loglik_cpp, 5},
     {"_SeqExpMatch_get_survival_stat_for_group", (DL_FUNC) &_SeqExpMatch_get_survival_stat_for_group, 3},
     {"_SeqExpMatch_get_survival_stat_diff", (DL_FUNC) &_SeqExpMatch_get_survival_stat_diff, 4},
     {"_SeqExpMatch_get_restricted_mean_se_for_group", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_for_group, 2},
@@ -1438,6 +1681,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_kk21_survival_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_survival_weights_cpp, 3},
     {"_SeqExpMatch_kk21_stepwise_beta_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_beta_weights_cpp, 3},
     {"_SeqExpMatch_kk21_stepwise_negbin_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_negbin_weights_cpp, 3},
+    {"_SeqExpMatch_kk21_ordinal_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_ordinal_weights_cpp, 2},
+    {"_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp, 3},
     {"_SeqExpMatch_kk_bootstrap_loop_cpp", (DL_FUNC) &_SeqExpMatch_kk_bootstrap_loop_cpp, 9},
     {"_SeqExpMatch_compute_kk_reservoir_stats_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_reservoir_stats_cpp, 3},
     {"_SeqExpMatch_compute_kk_cluster_ids_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_cluster_ids_cpp, 1},

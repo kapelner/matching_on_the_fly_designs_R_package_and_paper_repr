@@ -107,3 +107,20 @@ test_that("Inference works for survival", {
 	est_strat_cox <- inf_strat_cox$compute_treatment_estimate()
 	expect_true(is.numeric(est_strat_cox))
 })
+
+test_that("Inference works for ordinal partial proportional odds", {
+	n <- 20
+	des <- SeqDesignCRD$new(n = n, response_type = "ordinal")
+	set.seed(10)
+	for (i in 1:n) {
+		des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	}
+	y_levels <- sample(1:4, n, replace = TRUE)
+	des$add_all_subject_responses(y_levels)
+
+	inf_ppod <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(des, nonparallel = c("x"), verbose = FALSE)
+	est_ppod <- inf_ppod$compute_treatment_estimate()
+	expect_true(is.numeric(est_ppod))
+	pval_ppod <- inf_ppod$compute_mle_two_sided_pval_for_treatment_effect()
+	expect_true(is.numeric(pval_ppod))
+})

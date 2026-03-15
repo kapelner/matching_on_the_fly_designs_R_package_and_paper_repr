@@ -42,6 +42,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' @param	survival_use_speedup_for_no_censoring	Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
 		#' 							instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
 		#' 							This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.
+		#' @param	ordinal_use_speedup 	Should we speed up the estimation of the weights in the response = ordinal case via a continuous regression on the ordinal levels coerced to numeric.
+		#' 							instead of a proportional odds model each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
 		#'
 		#' @return	A new `SeqDesignKK21` object
 		#'
@@ -63,7 +65,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			num_boot = NULL,
 			count_use_speedup = TRUE,
 			proportion_use_speedup = TRUE,
-			survival_use_speedup_for_no_censoring = TRUE
+			survival_use_speedup_for_no_censoring = TRUE,
+			ordinal_use_speedup = TRUE
 		){
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p)
 			if (is.null(num_boot)){
@@ -75,9 +78,11 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			assertFlag(count_use_speedup)
 			assertFlag(proportion_use_speedup)
 			assertFlag(survival_use_speedup_for_no_censoring)
+			assertFlag(ordinal_use_speedup)
 			private$count_use_speedup = count_use_speedup
 			private$proportion_use_speedup = proportion_use_speedup
 			private$survival_use_speedup_for_no_censoring = survival_use_speedup_for_no_censoring
+			private$ordinal_use_speedup = ordinal_use_speedup
 			private$uses_covariates = TRUE
 			private$iteration_weights = list()
 		},
@@ -106,6 +111,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		count_use_speedup = NULL,
 		proportion_use_speedup = NULL,
 		survival_use_speedup_for_no_censoring = NULL,
+		ordinal_use_speedup = NULL,
 
 		duplicate = function(){
 			d = super$duplicate()
@@ -115,6 +121,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			d$.__enclos_env__$private$count_use_speedup = private$count_use_speedup
 			d$.__enclos_env__$private$proportion_use_speedup = private$proportion_use_speedup
 			d$.__enclos_env__$private$survival_use_speedup_for_no_censoring = private$survival_use_speedup_for_no_censoring
+			d$.__enclos_env__$private$ordinal_use_speedup = private$ordinal_use_speedup
 			d
 		},
 
@@ -245,6 +252,12 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			if (private$response_type == "proportion" && !private$proportion_use_speedup){
 				return(kk21_beta_weights_cpp(as.matrix(xs), as.numeric(ys)))
 			}
+			if (private$response_type == "ordinal" && private$ordinal_use_speedup){
+				return(kk21_continuous_weights_cpp(as.matrix(xs), as.numeric(ys)))
+			}
+			if (private$response_type == "ordinal" && !private$ordinal_use_speedup){
+				return(kk21_ordinal_weights_cpp(as.matrix(xs), as.numeric(ys)))
+			}
 
 			# Fallback loop for any future response types (should not reach here for current types)
 			raw_weights = array(NA, all_subject_data$rank_all_with_y_scaled)
@@ -336,6 +349,17 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			#if that didn't work, default to OLS and log the survival times... again... this doesn't matter since we are just trying to get weights
 			#and we are not relying on the model assumptions being true, this ignores censoring
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date), deaths_to_date, j)
+		},
+
+		compute_weight_KK21_ordinal = function(xs_to_date, ys_to_date, deaths_to_date, j){
+			#sometimes the ordinal regression is unstable...
+			tryCatch({
+				ordinal_mod = suppressWarnings(MASS::polr(factor(y) ~ x, data = data.frame(x = xs_to_date[, j], y = ys_to_date), Hess = TRUE))
+				summary_ordinal_mod = stats::coef(summary(ordinal_mod))
+				return(ifelse(nrow(summary_ordinal_mod) >= 1, abs(summary_ordinal_mod[1, 3]), .Machine$double.eps))
+			}, error = function(e){})
+			#if that didn't work, default to OLS
+			private$compute_weight_KK21_continuous(xs_to_date, ys_to_date, deaths_to_date, j)
 		}
 
 	)

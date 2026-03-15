@@ -858,6 +858,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					ci
 				},
 				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidExactZhang for the Zhang method."),
+				ordinal =    stop("Confidence intervals are not supported for randomization tests for ordinal outcomes."),
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()

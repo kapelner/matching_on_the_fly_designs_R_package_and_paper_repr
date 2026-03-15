@@ -41,7 +41,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#' @param	survival_use_speedup_for_no_censoring	Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
 		#' 							instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
 		#' 							This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.
-			#' @return	A new `SeqDesignKK21stepwise` object
+		#' @param	ordinal_use_speedup 	Should we speed up the estimation of the weights in the response = ordinal case via a continuous regression on the ordinal levels coerced to numeric.
+		#' 							instead of a proportional odds model each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.
+		#' @return	A new `SeqDesignKK21stepwise` object
 		#'
 		#' @examples
 		#' \dontrun{
@@ -61,9 +63,10 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			num_boot = NULL,
 			count_use_speedup = TRUE,
 			proportion_use_speedup = TRUE,
-			survival_use_speedup_for_no_censoring = TRUE
+			survival_use_speedup_for_no_censoring = TRUE,
+			ordinal_use_speedup = TRUE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring, ordinal_use_speedup)
 		}
 	),
 	private = list(
@@ -105,6 +108,12 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			}
 			if (private$response_type == "proportion" && !private$proportion_use_speedup){
 				return(na0(kk21_stepwise_beta_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+			}
+			if (private$response_type == "ordinal" && private$ordinal_use_speedup){
+				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+			}
+			if (private$response_type == "ordinal" && !private$ordinal_use_speedup){
+				return(na0(kk21_stepwise_ordinal_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
 			}
 
 			# Fallback for future response types (should not reach here for current types)
@@ -219,6 +228,22 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 				ols_mod = lm(log(as.numeric(response_obj)[1 : length(response_obj)]) ~ covariate_data_matrix)
 				abs(stats::coef(suppressWarnings(summary(ols_mod)))[2, 3])
 			})
+		},
+
+		compute_weights_KK21stepwise_ordinal = function(xs, ys, ws, ...){
+			if (!private$ordinal_use_speedup){
+				tryCatch({
+					weight = private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
+						ordinal_mod = suppressWarnings(MASS::polr(factor(response_obj) ~ ., data = data.frame(response_obj = response_obj, covariate_data_matrix), Hess = TRUE))
+						summary_ordinal_mod = stats::coef(summary(ordinal_mod))
+						abs(summary_ordinal_mod[1, 3])
+					})
+					if (!is.na(weight)){
+						return(weight)
+					}
+				}, error = function(e){})
+			}
+			private$compute_weights_KK21stepwise_continuous(xs, ys, ws, ...)
 		}
 	)
 )

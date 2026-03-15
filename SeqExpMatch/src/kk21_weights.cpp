@@ -4,6 +4,7 @@
 #include <limits>
 
 using namespace Rcpp;
+using namespace Eigen;
 
 // [[Rcpp::export]]
 NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X,
@@ -1292,4 +1293,128 @@ NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X,
 	}
 
 	return weights;
+}
+
+// Helper for ordinal t-stat
+static double multivariate_ordinal_tstat(
+    const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
+    int coef_idx = 1
+) {
+    // We can call the newly created fast_ordinal_regression_cpp but from C++ 
+    // we need a C++ way. Since it's in a different file, I'll just re-implement a minimal version here 
+    // or use the R function via Rcpp::Function if I have to.
+    // Better yet, I'll just put the logic here.
+    
+    // For now, to keep it simple and consistent with other weights:
+    // We'll use a series of binary regressions and average them? No, that's not "standard".
+    // I'll just use a call to the R function or implement a simple version.
+    
+    // Actually, I'll just implement a simple univariate ordinal t-stat here for kk21_ordinal_weights_cpp.
+    // And for stepwise, I'll use the multivariate version.
+    
+    // To avoid duplication, I should have put OrdinalRegression in a header.
+    // I'll just use the R function for now to save time and ensure correctness, 
+    // as it's only called once per covariate per subject.
+    
+    Function f("fast_ordinal_regression_with_var_cpp");
+    List res = f(wrap(X), wrap(y));
+    NumericVector b = res["b"];
+    double ssq = res["ssq_b_2"];
+    return std::fabs(b[coef_idx - 1] / std::sqrt(ssq));
+}
+
+// [[Rcpp::export]]
+NumericVector kk21_ordinal_weights_cpp(const NumericMatrix& X,
+                                         const NumericVector& y) {
+    int n = X.nrow();
+    int p = X.ncol();
+    NumericVector weights(p);
+    double eps = std::numeric_limits<double>::epsilon();
+
+    if (n == 0 || p == 0) {
+        std::fill(weights.begin(), weights.end(), eps);
+        return weights;
+    }
+
+    Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+    Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
+
+    for (int j = 0; j < p; ++j) {
+        Eigen::MatrixXd Xmm(n, 1);
+        Xmm.col(0) = X_map.col(j);
+        
+        try {
+            weights[j] = multivariate_ordinal_tstat(Xmm, y_vec, 1);
+        } catch (...) {
+            weights[j] = eps;
+        }
+    }
+
+    return weights;
+}
+
+// [[Rcpp::export]]
+NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X,
+                                                 const NumericVector& y,
+                                                 const NumericVector& w) {
+    int n = X.nrow();
+    int p = X.ncol();
+    NumericVector weights(p, NA_REAL);
+
+    if (n == 0 || p == 0) {
+        return weights;
+    }
+
+    Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+    Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
+    Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
+
+    std::vector<int> selected;
+    selected.reserve(p);
+    std::vector<bool> used(p, false);
+
+    for (int step = 0; step < p; ++step) {
+        double best_stat = -1.0;
+        int best_j = -1;
+        int k = static_cast<int>(selected.size());
+
+        for (int j = 0; j < p; ++j) {
+            if (used[j]) {
+                continue;
+            }
+
+            // Build design matrix: [x_j, selected_covs..., w]
+            // (Ordinal regression handles intercepts internally)
+            Eigen::MatrixXd Xmm(n, k + 2);
+            Xmm.col(0) = X_map.col(j);
+            for (int idx = 0; idx < k; ++idx) {
+                Xmm.col(1 + idx) = X_map.col(selected[idx]);
+            }
+            Xmm.col(k + 1) = w_vec;
+
+            try {
+                double stat = multivariate_ordinal_tstat(Xmm, y_vec, 1);
+                if (!R_finite(stat) || stat < 0) {
+                    stat = 0.0;
+                }
+                if (stat > best_stat) {
+                    best_stat = stat;
+                    best_j = j;
+                }
+            } catch (...) {
+                continue;
+            }
+        }
+
+        if (best_j < 0) {
+            break;
+        }
+
+        weights[best_j] = best_stat;
+        used[best_j] = true;
+        selected.push_back(best_j);
+    }
+
+    return weights;
 }

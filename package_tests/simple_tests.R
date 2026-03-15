@@ -108,8 +108,8 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
 	skip_slow = is(seq_des_inf, "SeqDesignInferencePropMultiBetaRegr") || is(seq_des_inf, "SeqDesignInferencePropUniZeroOneInflatedBetaRegr") || is(seq_des_inf, "SeqDesignInferencePropMultiZeroOneInflatedBetaRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniDepCensTransformRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiDepCensTransformRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiWeibullRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceCountUnivZeroInflatedPoissonRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiZeroInflatedPoissonRegr") || is(seq_des_inf, "SeqDesignInferenceCountUnivZeroInflatedNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiZeroInflatedNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceCountUnivHurdlePoissonRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiHurdlePoissonRegr") || is(seq_des_inf, "SeqDesignInferenceCountUnivHurdleNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceCountMultiHurdleNegBinRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUniCoxPHRegr") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKClaytonCopulaIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKClaytonCopulaIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKLWACoxIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxIVWC") || is(seq_des_inf, "SeqDesignInferenceCountPoissonMultiKKCPoissonIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxRegrMultiIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceCountPoissonMultiKKCPoissonCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKLWACoxCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceContinMultLin") || is(seq_des_inf, "SeqDesignInferenceContinUnivQuantileRegr") || is(seq_des_inf, "SeqDesignInferenceContinMultiQuantileRegr") || is(seq_des_inf, "SeqDesignInferenceContinMultiKKLinIVWC") || is(seq_des_inf, "SeqDesignInferenceContinMultiKKLinCombinedLikelihood")
-	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKClaytonCopulaIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract") || is(seq_des_inf, "SeqDesignInferenceAllSimpleWilcox")
-	skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract") || is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") || is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff")
+	skip_bootstrap = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferenceAbstractKKClaytonCopulaIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceAllKKWilcoxIVWC") || is(seq_des_inf, "SeqDesignInferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract") || is(seq_des_inf, "SeqDesignInferenceAllSimpleWilcox") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGEE") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "SeqDesignInferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "SeqDesignInferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "SeqDesignInferenceOrdinalPairedSignTest") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivCondContRatioRegr") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr")
+	skip_rand      = is(seq_des_inf, "SeqDesignInferenceAbstractKKGEE") || is(seq_des_inf, "SeqDesignInferenceAbstractKKGLMM") || is(seq_des_inf, "SeqDesignInferenceIncidExactZhangAbstract") || is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") || is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGEE") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "SeqDesignInferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "SeqDesignInferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "SeqDesignInferenceOrdinalPairedSignTest") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivCondContRatioRegr") || is(seq_des_inf, "SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
 	skip_rand_pval = is(seq_des_inf, "SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferenceContinMultGLS") || is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") || is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff")
 	skip_ci_rand   = is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") || is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff")
@@ -198,11 +198,13 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 						 													  													  is(seq_des_inf, "SeqDesignInferenceIncidMultiGCompRiskDiff") ||
 						 													  													  is(seq_des_inf, "SeqDesignInferenceIncidUnivGCompRiskRatio") ||
 						 													  													  is(seq_des_inf, "SeqDesignInferenceIncidMultiGCompRiskRatio") ||
-						 													  													  is(seq_des_inf, "SeqDesignInferenceIncidUnivModifiedPoisson") ||
-						 													  													  is(seq_des_inf, "SeqDesignInferenceIncidMultiModifiedPoisson") ||
-						 													  													  is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") ||
-						 													  													  is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff") ||
-						 													  													  is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
+						 													  is(seq_des_inf, "SeqDesignInferenceIncidUnivModifiedPoisson") ||
+						 													  is(seq_des_inf, "SeqDesignInferenceIncidMultiModifiedPoisson") ||
+						 													  is(seq_des_inf, "SeqDesignInferencePropUniGCompMeanDiff") ||
+						 													  is(seq_des_inf, "SeqDesignInferencePropMultiGCompMeanDiff") ||
+						 													  is(seq_des_inf, "SeqDesignInferencePropUniZeroOneInflatedBetaRegr") ||
+						 													  is(seq_des_inf, "SeqDesignInferencePropMultiZeroOneInflatedBetaRegr") ||
+						 													  is(seq_des_inf, "SeqDesignInferenceContinMultGLS")))
 						 													  										if (isTRUE(is_non_fatal)){
 				message("Skipping ", label, " (non-fatal): ", e$message)
 				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
@@ -297,6 +299,12 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			return(as.numeric(stats::rpois(1, lambda = lambda_t)))
 		}
 		if (response_type == "survival") return(pmax(.Machine$double.eps, y_t * exp(bt + eps)))
+		if (response_type == "ordinal"){
+			# For ordinal, we'll just use a simple shift and re-cut if needed, 
+			# but here y_t is already the ordinal level.
+			# Let's just do a simple shift and round.
+			return(as.integer(max(1, round(y_t + bt + eps))))
+		}
 		stop("Unsupported response_type: ", response_type)
 	}
 
@@ -652,7 +660,69 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		inference_banner("SeqDesignInferenceSurvivalMultiStratCoxPHRegr")
 		run_inference_checks(SeqDesignInferenceSurvivalMultiStratCoxPHRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 	}
-}
+
+	if (response_type == "ordinal"){
+		inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
+		run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceAllSimpleWilcox")
+		run_inference_checks(SeqDesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		if (is_kk_design){
+			inference_banner("SeqDesignInferenceAllKKCompoundMeanDiff")
+			run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceAllKKWilcoxIVWC")
+			run_inference_checks(SeqDesignInferenceAllKKWilcoxIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceAllKKWilcoxRegrUnivIVWC")
+			run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrUnivIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceAllKKWilcoxRegrMultiIVWC")
+			run_inference_checks(SeqDesignInferenceAllKKWilcoxRegrMultiIVWC$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivKKGEE")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivKKGEE$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivKKGLMM")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivKKGLMM$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalMultiKKGLMM")
+			run_inference_checks(SeqDesignInferenceOrdinalMultiKKGLMM$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivKKGLMMProbit")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivKKGLMMProbit$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalMultiKKGLMMProbit")
+			run_inference_checks(SeqDesignInferenceOrdinalMultiKKGLMMProbit$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivCondContRatioRegr")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivCondContRatioRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr")
+			run_inference_checks(SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("SeqDesignInferenceOrdinalPairedSignTest")
+			run_inference_checks(SeqDesignInferenceOrdinalPairedSignTest$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		}
+		inference_banner("SeqDesignInferenceOrdinalUniAdjCatLogitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniAdjCatLogitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalMultiAdjCatLogitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalMultiAdjCatLogitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniCumulProbitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniCumulProbitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalMultiCumulProbitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalMultiCumulProbitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniStereotypeLogitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniStereotypeLogitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalMultiStereotypeLogitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalMultiStereotypeLogitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniStereotypeProbitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniStereotypeProbitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalMultiStereotypeProbitRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalMultiStereotypeProbitRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniPropOddsRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniPropOddsRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalPartialProportionalOdds")
+		run_inference_checks(SeqDesignInferenceOrdinalPartialProportionalOdds$new(seq_des_obj, verbose = FALSE, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniPropOddsRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniPropOddsRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		inference_banner("SeqDesignInferenceOrdinalUniCLLRegr")
+		run_inference_checks(SeqDesignInferenceOrdinalUniCLLRegr$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+		}
+		}
+
 
 for (rep_curr in 1:Nrep) {
 	message(paste0("\n\n====== RUNNING REPETITION ", rep_curr, " OF ", Nrep, " ======\n\n"))
@@ -661,7 +731,7 @@ for (rep_curr in 1:Nrep) {
 		message(paste0("\n\n=== Running tests with beta_T = [", beta_T, "] ===\n\n"))
 		for (dataset_name in names(datasets_and_response_models)){
 			message(paste0("\n\n=== Running tests for dataset: ", dataset_name, " ===\n\n"))
-			for (response_type in c("continuous", "incidence", "proportion", "count", "survival")) {
+			for (response_type in c("continuous", "incidence", "proportion", "count", "survival", "ordinal")) {
 				if (!(response_type %in% names(datasets_and_response_models[[dataset_name]]$y_original))) {
 					message(paste0("\n\n  === Skipping response_type: ", response_type, " for dataset: ", dataset_name, " (not found in y_original) ===\n\n"))
 					next

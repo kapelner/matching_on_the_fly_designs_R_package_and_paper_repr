@@ -139,6 +139,14 @@ efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
     .Call(`_SeqExpMatch_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
 }
 
+fast_adjacent_category_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_adjacent_category_logit_cpp`, X, y, maxit, tol)
+}
+
+fast_adjacent_category_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp`, X, y, maxit, tol)
+}
+
 #' Fast Beta Regression using Rcpp and L-BFGS for joint MLE
 #'
 #' @param X Model matrix.
@@ -163,6 +171,14 @@ fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, 
 #' @export
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
     .Call(`_SeqExpMatch_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
+}
+
+fast_continuation_ratio_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_continuation_ratio_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_continuation_ratio_regression_with_var_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp`, X, y)
 }
 
 fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8) {
@@ -246,6 +262,38 @@ fast_ols_with_var_cpp <- function(X, y, j = 2L) {
     .Call(`_SeqExpMatch_fast_ols_with_var_cpp`, X, y, j)
 }
 
+fast_ordinal_cloglog_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
+    .Call(`_SeqExpMatch_fast_ordinal_cloglog_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_ordinal_cloglog_regression_with_var_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp`, X, y)
+}
+
+fast_ordinal_probit_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
+    .Call(`_SeqExpMatch_fast_ordinal_probit_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_ordinal_probit_regression_with_var_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp`, X, y)
+}
+
+fast_ordinal_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
+    .Call(`_SeqExpMatch_fast_ordinal_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_ordinal_regression_with_var_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ordinal_regression_with_var_cpp`, X, y)
+}
+
+expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
+    .Call(`_SeqExpMatch_expand_continuation_ratio_data_cpp`, y, w, strata, K)
+}
+
+expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
+    .Call(`_SeqExpMatch_expand_adjacent_category_data_cpp`, y, w, strata, K)
+}
+
 #' Fast Poisson Regression using Rcpp and IRLS
 #'
 #' @param X Design matrix.
@@ -294,6 +342,18 @@ scale_columns_cpp <- function(X) {
 
 shuffle_cpp <- function(w) {
     .Call(`_SeqExpMatch_shuffle_cpp`, w)
+}
+
+fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_stereotype_logit_cpp`, X, y, maxit, tol)
+}
+
+fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_stereotype_logit_with_var_cpp`, X, y, maxit, tol)
+}
+
+fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
 }
 
 #' Calculates the median or restricted mean survival time for a single group.
@@ -419,6 +479,14 @@ kk21_stepwise_negbin_weights_cpp <- function(X, y, w) {
     .Call(`_SeqExpMatch_kk21_stepwise_negbin_weights_cpp`, X, y, w)
 }
 
+kk21_ordinal_weights_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_kk21_ordinal_weights_cpp`, X, y)
+}
+
+kk21_stepwise_ordinal_weights_cpp <- function(X, y, w) {
+    .Call(`_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp`, X, y, w)
+}
+
 kk_bootstrap_loop_cpp <- function(indices, y, w, X, original_match_indic, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
     .Call(`_SeqExpMatch_kk_bootstrap_loop_cpp`, indices, y, w, X, original_match_indic, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
@@ -461,17 +529,47 @@ mn_constrained_mle_pc_cpp <- function(x_t, n_t, x_c, n_c, delta) {
     .Call(`_SeqExpMatch_mn_constrained_mle_pc_cpp`, x_t, n_t, x_c, n_c, delta)
 }
 
-#' @keywords internal
+#' Miettinen-Nurminen Score Z Statistic for Risk Difference
+#'
+#' Computes the score-style z statistic for testing the null risk difference
+#' \code{p_T - p_C = delta} in two independent binomial samples, using the
+#' Miettinen-Nurminen constrained nuisance estimates.
+#'
+#' @param x_t Number of events in treatment.
+#' @param n_t Number of subjects in treatment.
+#' @param x_c Number of events in control.
+#' @param n_c Number of subjects in control.
+#' @param delta Null risk difference.
+#' @param p_t_obs Observed treatment-arm risk.
+#' @param p_c_obs Observed control-arm risk.
+#' @return The asymptotic z statistic.
+#' @export
 mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_SeqExpMatch_mn_z_statistic_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
 
-#' @keywords internal
+#' Miettinen-Nurminen Two-Sided P Value for Risk Difference
+#'
+#' Evaluates the two-sided asymptotic p-value for the Miettinen-Nurminen score
+#' test of \code{p_T - p_C = delta} in two independent binomial samples.
+#'
+#' @inheritParams mn_z_statistic_cpp
+#' @return The two-sided p-value.
+#' @export
 mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_SeqExpMatch_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
 
-#' @keywords internal
+#' Miettinen-Nurminen Confidence Interval for Risk Difference
+#'
+#' Computes an approximate Miettinen-Nurminen confidence interval for the risk
+#' difference by inverting the score test with a bisection search.
+#'
+#' @inheritParams mn_z_statistic_cpp
+#' @param alpha The confidence level is \code{1 - alpha}.
+#' @param pval_epsilon Bisection tolerance in p-value space.
+#' @return A length-2 numeric vector containing the lower and upper CI bounds.
+#' @export
 mn_ci_cpp <- function(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon) {
     .Call(`_SeqExpMatch_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
 }

@@ -80,7 +80,8 @@ option to use matching parameters of Morrison and Owen (2025)
   num_boot = NULL,
   count_use_speedup = TRUE,
   proportion_use_speedup = TRUE,
-  survival_use_speedup_for_no_censoring = TRUE
+  survival_use_speedup_for_no_censoring = TRUE,
+  ordinal_use_speedup = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -127,6 +128,9 @@ instead of a beta regression each time? This is at the expense of the weights be
 \item{\code{survival_use_speedup_for_no_censoring}}{Should we speed up the estimation of the weights in the response = survival case via a continuous regression on log(y)
 instead of a Weibull AFT regression each time, but only when there is no censoring in the data collected so far?
 This is at the expense of the weights being less accurate when censoring is present. Default is \code{TRUE}.}
+
+\item{\code{ordinal_use_speedup}}{Should we speed up the estimation of the weights in the response = ordinal case via a continuous regression on the ordinal levels coerced to numeric.
+instead of a proportional odds model each time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

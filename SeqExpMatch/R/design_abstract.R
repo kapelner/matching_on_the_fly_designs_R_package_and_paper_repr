@@ -17,7 +17,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# 							"incidence",
 		# 							"proportion",
 		# 							"count",
-		# 							"survival".
+		# 							"survival",
+		# 							"ordinal".
 		# 							This package will enforce that all added responses via the \code{add_subject_response} method will be
 		# 							of the appropriate type.
 		# @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
@@ -36,7 +37,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				n = NULL,
 				verbose = FALSE
 			) {
-			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival"))
+			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
 			assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			assertFlag(include_is_missing_as_a_new_feature)
 			assertFlag(verbose)
@@ -248,6 +249,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 					warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
 					y = .Machine$double.eps
 				}
+			} else if (private$response_type == "ordinal"){
+				if (is.factor(y)){
+					assertFactor(y, ordered = TRUE, any.missing = FALSE)
+					y = as.integer(y)
+				} else {
+					assertCount(y, positive = TRUE, na.ok = FALSE)
+				}
 			}
 			if (dead == 0 & private$response_type != "survival"){
 				stop("censored observations are only available for survival response types")
@@ -292,7 +300,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 			if (is.null(deads)){
 				deads = rep(1, private$t)
 			}
-			assertNumeric(ys, len = private$t)
+			if (private$response_type == "ordinal" && is.factor(ys)){
+				assertFactor(ys, len = private$t, ordered = TRUE, any.missing = FALSE)
+			} else {
+				assertNumeric(ys, len = private$t)
+			}
 			assertNumeric(deads, len = private$t)
 
 			for (t in 1 : private$t){

@@ -35,6 +35,7 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 					"on 0/1 data. Use SeqDesignInferenceAllSimpleMeanDiff or a clogit estimator instead."
 				)
 			}
+			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
 			super$initialize(seq_des_obj, num_cores, verbose)
 			if (private$any_censoring){
 				stop(

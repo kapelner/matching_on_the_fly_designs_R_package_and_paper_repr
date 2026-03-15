@@ -57,7 +57,21 @@ double mn_constrained_mle_pc_cpp(double x_t, double n_t, double x_c, double n_c,
     return (l + u) / 2.0;
 }
 
-//' @keywords internal
+//' Miettinen-Nurminen Score Z Statistic for Risk Difference
+//'
+//' Computes the score-style z statistic for testing the null risk difference
+//' \code{p_T - p_C = delta} in two independent binomial samples, using the
+//' Miettinen-Nurminen constrained nuisance estimates.
+//'
+//' @param x_t Number of events in treatment.
+//' @param n_t Number of subjects in treatment.
+//' @param x_c Number of events in control.
+//' @param n_c Number of subjects in control.
+//' @param delta Null risk difference.
+//' @param p_t_obs Observed treatment-arm risk.
+//' @param p_c_obs Observed control-arm risk.
+//' @return The asymptotic z statistic.
+//' @export
 // [[Rcpp::export]]
 double mn_z_statistic_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs) {
     if (n_t == 0 || n_c == 0) return NA_REAL;
@@ -76,7 +90,14 @@ double mn_z_statistic_cpp(double x_t, double n_t, double x_c, double n_c, double
     return ((p_t_obs - p_c_obs) - delta) / std::sqrt(var_tilde);
 }
 
-//' @keywords internal
+//' Miettinen-Nurminen Two-Sided P Value for Risk Difference
+//'
+//' Evaluates the two-sided asymptotic p-value for the Miettinen-Nurminen score
+//' test of \code{p_T - p_C = delta} in two independent binomial samples.
+//'
+//' @inheritParams mn_z_statistic_cpp
+//' @return The two-sided p-value.
+//' @export
 // [[Rcpp::export]]
 double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs) {
     double z = mn_z_statistic_cpp(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs);
@@ -84,7 +105,16 @@ double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delt
     return 2.0 * R::pnorm(-std::abs(z), 0.0, 1.0, 1, 0);
 }
 
-//' @keywords internal
+//' Miettinen-Nurminen Confidence Interval for Risk Difference
+//'
+//' Computes an approximate Miettinen-Nurminen confidence interval for the risk
+//' difference by inverting the score test with a bisection search.
+//'
+//' @inheritParams mn_z_statistic_cpp
+//' @param alpha The confidence level is \code{1 - alpha}.
+//' @param pval_epsilon Bisection tolerance in p-value space.
+//' @return A length-2 numeric vector containing the lower and upper CI bounds.
+//' @export
 // [[Rcpp::export]]
 NumericVector mn_ci_cpp(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon) {
     double est = p_t_obs - p_c_obs;
