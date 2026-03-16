@@ -596,6 +596,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_ordinal_cauchit_regression_cpp
+List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_ordinal_cauchit_regression_with_var_cpp
+List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
+RcppExport SEXP _SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_with_var_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_ordinal_cloglog_regression_cpp
 List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
 RcppExport SEXP _SeqExpMatch_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -1684,6 +1710,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_neg_bin_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_cpp, 5},
     {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
     {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
+    {"_SeqExpMatch_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cauchit_regression_cpp, 4},
+    {"_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp, 2},
     {"_SeqExpMatch_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_cpp, 4},
     {"_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp, 2},
     {"_SeqExpMatch_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_cpp, 4},

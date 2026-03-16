@@ -1,8 +1,8 @@
-#' Univariate Conditional Continuation-Ratio Inference
+#' Univariate Conditional Continuation-Ratio Inference for KK Designs
 #'
 #' @description
-#' Fits a conditional continuation-ratio logit model for ordinal responses. Each
-#' matched pair is treated as a stratum.
+#' Fits a conditional continuation-ratio logit model for ordinal responses under a KK
+#' matching-on-the-fly design. Each matched pair is treated as a stratum.
 #' Reservoir subjects each form their own unique stratum. The continuation-ratio
 #' model logit(P(Y = k | Y >= k)) is fit by expanding the ordinal response into
 #' binary continuation trials and applying conditional logistic regression.
@@ -14,36 +14,29 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$
-#'   new(
-#'   n = nrow(x_dat),
-#'   response_type = "ordinal",
-#'   verbose = FALSE
-#' )
+#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'   add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUnivCondContRatioRegr$
-#'   new(
-#'   seq_des,
-#'   verbose = FALSE
-#' )
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalUnivKKCondContRatioRegr$new(seq_des, verbose = FALSE)
 #' infer
 #'
-SeqDesignInferenceOrdinalUnivCondContRatioRegr = R6::R6Class("SeqDesignInferenceOrdinalUnivCondContRatioRegr",
+SeqDesignInferenceOrdinalUnivKKCondContRatioRegr = R6::R6Class(
+	"SeqDesignInferenceOrdinalUnivKKCondContRatioRegr",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
 		#' @description
 		#' Initialize a univariate conditional continuation-ratio inference object.
-		#' @param	seq_des_obj		A SeqDesign object.
+		#' @param	seq_des_obj		A SeqDesign object (must be a KK design).
 		#' @param	num_cores			Number of CPU cores.
 		#' @param	verbose			Whether to print progress messages.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(seq_des_obj$get_response_type(), "ordinal")
+			if (!is(seq_des_obj, "SeqDesignKK14")){
+				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
+			}
 			super$initialize(seq_des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
@@ -83,7 +76,8 @@ SeqDesignInferenceOrdinalUnivCondContRatioRegr = R6::R6Class("SeqDesignInference
 	private = list(
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Conditional continuation-ratio estimator: could not compute a finite standard error.")
+				stop(paste0("Conditional continuation-ratio KK estimator: ",
+					"could not compute a finite standard error."))
 			}
 		},
 
@@ -115,7 +109,8 @@ SeqDesignInferenceOrdinalUnivCondContRatioRegr = R6::R6Class("SeqDesignInference
 			num_strata = max(strata_ids)
 
 			# Data expansion for continuation ratio (Rcpp optimized)
-			expanded = expand_continuation_ratio_data_cpp(as.integer(y_ord), as.integer(private$w), as.integer(strata_ids), as.integer(K))
+			expanded = expand_continuation_ratio_data_cpp(as.integer(y_ord),
+				as.integer(private$w), as.integer(strata_ids), as.integer(K))
 			
 			# Fit conditional logistic regression
 			mod = clogit_helper(expanded$y, data.frame(), expanded$w, expanded$strata)

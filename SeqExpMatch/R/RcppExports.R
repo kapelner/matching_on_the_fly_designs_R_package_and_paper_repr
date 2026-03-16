@@ -261,6 +261,14 @@ fast_ols_with_var_cpp <- function(X, y, j = 2L) {
     .Call(`_SeqExpMatch_fast_ols_with_var_cpp`, X, y, j)
 }
 
+fast_ordinal_cauchit_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
+    .Call(`_SeqExpMatch_fast_ordinal_cauchit_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_ordinal_cauchit_regression_with_var_cpp <- function(X, y) {
+    .Call(`_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp`, X, y)
+}
+
 fast_ordinal_cloglog_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
     .Call(`_SeqExpMatch_fast_ordinal_cloglog_regression_cpp`, X, y, maxit, tol)
 }

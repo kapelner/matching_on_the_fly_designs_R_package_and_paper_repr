@@ -23,24 +23,16 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignKK14$
-#'   new(
-#'   n = nrow(x_dat),
-#'   response_type = "ordinal",
-#'   verbose = FALSE
-#' )
+#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'   add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr$
-#'   new(seq_des, verbose =
-#' FALSE)
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr$new(seq_des, verbose = FALSE)
 #' infer
 #'
-SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class("SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
+SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class(
+	"SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
 	inherit = SeqDesignInferenceKKPassThrough,
 	public = list(
 
@@ -93,7 +85,8 @@ SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class("SeqDesign
 	private = list(
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Conditional proportional-odds combined KK estimator: could not compute a finite standard error.")
+				stop(paste0("Conditional proportional-odds combined KK estimator: ",
+					"could not compute a finite standard error."))
 			}
 		},
 
@@ -134,9 +127,9 @@ SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class("SeqDesign
 				idx = ((k - 1L) * n + 1L):(k * n)
 				y_stack[idx] = as.integer(y_ord > k)
 				w_stack[idx] = private$w
-				# Each threshold gets its own set of strata to maintain independence across thresholds 
-				# if we were doing simple pooling, but for conditional logistic, we treat 
-				# (pair, threshold) as the stratum.
+				# Each threshold gets its own set of strata to maintain independence 
+				# across thresholds if we were doing simple pooling, but for 
+				# conditional logistic, we treat (pair, threshold) as the stratum.
 				strata_stack[idx] = strata_ids + (k - 1L) * num_strata
 			}
 
