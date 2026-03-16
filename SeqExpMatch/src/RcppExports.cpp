@@ -477,6 +477,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// exact_jonckheere_terpstra_pval_cpp
+List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y, const IntegerVector& w);
+RcppExport SEXP _SeqExpMatch_exact_jonckheere_terpstra_pval_cpp(SEXP ySEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(exact_jonckheere_terpstra_pval_cpp(y, w));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_logistic_regression_cpp
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
 RcppExport SEXP _SeqExpMatch_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -659,6 +671,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ordinal_gcomp_post_fit_cpp
+List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& alpha_hat, int j_treat);
+RcppExport SEXP _SeqExpMatch_ordinal_gcomp_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_fit(X_fitSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type coef_hat(coef_hatSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type alpha_hat(alpha_hatSEXP);
+    Rcpp::traits::input_parameter< int >::type j_treat(j_treatSEXP);
+    rcpp_result_gen = Rcpp::wrap(ordinal_gcomp_post_fit_cpp(X_fit, y, coef_hat, alpha_hat, j_treat));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1648,6 +1675,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp, 2},
     {"_SeqExpMatch_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_cpoisson_combined_with_var_cpp, 8},
     {"_SeqExpMatch_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_hurdle_negbin_with_var_cpp, 5},
+    {"_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp, 2},
     {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
     {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 3},
     {"_SeqExpMatch_fast_logrank_stats_cpp", (DL_FUNC) &_SeqExpMatch_fast_logrank_stats_cpp, 3},
@@ -1662,6 +1690,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp, 2},
     {"_SeqExpMatch_fast_ordinal_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_cpp, 4},
     {"_SeqExpMatch_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_with_var_cpp, 2},
+    {"_SeqExpMatch_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_ordinal_gcomp_post_fit_cpp, 5},
     {"_SeqExpMatch_expand_continuation_ratio_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_continuation_ratio_data_cpp, 4},
     {"_SeqExpMatch_expand_adjacent_category_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_adjacent_category_data_cpp, 4},
     {"_SeqExpMatch_fast_poisson_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_poisson_regression_cpp, 4},

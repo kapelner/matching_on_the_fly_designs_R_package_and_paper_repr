@@ -1,7 +1,7 @@
 #' Univariate GEE Inference for KK Designs with Count Response
 #'
 #' @description
-#' Fits a Generalized Estimating Equations (GEE) model (via \code{geepack::geeglm})
+#' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for count responses under a KK matching-on-the-fly design using only the
 #' treatment indicator as a predictor (intercept + treatment). A Poisson working
 #' model with a log link is used; the sandwich-robust standard errors remain valid
@@ -10,9 +10,9 @@
 #' treatment estimate is the log incidence-rate ratio (log-IRR).
 #'
 #' @details
-#' This class requires the \pkg{geepack} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("geepack")} before using this class.
+#' This class requires the \pkg{geepack} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{geepack} before using this class.
 #'
 #' @export
 SeqDesignInferenceCountPoissonUnivKKGEE = R6::R6Class("SeqDesignInferenceCountPoissonUnivKKGEE",

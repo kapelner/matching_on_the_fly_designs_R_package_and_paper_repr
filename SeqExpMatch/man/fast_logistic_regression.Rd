@@ -37,7 +37,8 @@ y_log <- rbinom(n, 1, prob)
 
 # Fit logistic regression using fast_logistic_regression
 fit_logistic <- fast_logistic_regression(Xmm = X_log, y = y_log)
-print(fit_logistic$b)
+print(fit_logistic$
+  b)
 
 # Compare with standard R glm()
 glm_fit <- glm(y_log ~ X_log - 1, family = binomial) # -1 because X_log already has intercept

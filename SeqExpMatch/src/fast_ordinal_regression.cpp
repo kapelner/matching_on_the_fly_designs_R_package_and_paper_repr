@@ -8,6 +8,19 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+namespace {
+
+inline double plogis_stable_cpp(double x) {
+    if (x >= 0.0) {
+        const double z = std::exp(-x);
+        return 1.0 / (1.0 + z);
+    }
+    const double z = std::exp(x);
+    return z / (1.0 + z);
+}
+
+}
+
 class OrdinalRegression {
 private:
     const MatrixXd m_X;
@@ -174,6 +187,142 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     return List::create(
         Named("b") = res["b"],
         Named("ssq_b_2") = ssq_b_2
+    );
+}
+
+// [[Rcpp::export]]
+List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
+                                const Eigen::VectorXd& y,
+                                const Eigen::VectorXd& coef_hat,
+                                const Eigen::VectorXd& alpha_hat,
+                                int j_treat) {
+    const int n = X_fit.rows();
+    const int p = X_fit.cols();
+    const int n_alpha = alpha_hat.size();
+    const int j_treat0 = j_treat - 1;
+
+    if (j_treat0 < 0 || j_treat0 >= p) {
+        stop("treatment column index is out of bounds");
+    }
+    if (y.size() != n || coef_hat.size() != p) {
+        stop("dimension mismatch in ordinal_gcomp_post_fit_cpp");
+    }
+
+    VectorXd params(n_alpha + p);
+    params.head(n_alpha) = alpha_hat;
+    params.tail(p) = coef_hat;
+
+    OrdinalRegression model(X_fit, y);
+    MatrixXd H = model.hessian(params);
+    FullPivLU<MatrixXd> lu(H);
+    if (!lu.isInvertible()) {
+        stop("failed to invert ordinal Hessian");
+    }
+    MatrixXd vcov_full = lu.inverse();
+    vcov_full = 0.5 * (vcov_full + vcov_full.transpose());
+
+    for (int j = 0; j < vcov_full.rows(); ++j) {
+        for (int k = 0; k < vcov_full.cols(); ++k) {
+            if (!R_finite(vcov_full(j, k))) {
+                stop("non-finite ordinal covariance");
+            }
+        }
+    }
+
+    MatrixXd X1 = X_fit;
+    MatrixXd X0 = X_fit;
+    X1.col(j_treat0).setOnes();
+    X0.col(j_treat0).setZero();
+    VectorXd eta1 = X1 * coef_hat;
+    VectorXd eta0 = X0 * coef_hat;
+
+    auto compute_mean = [&](const VectorXd& eta_vec) {
+        double total_mean = 0.0;
+        for (int i = 0; i < n; ++i) {
+            double mean_i = 1.0;
+            for (int k = 0; k < n_alpha; ++k) {
+                mean_i += plogis_stable_cpp(eta_vec[i] - alpha_hat[k]);
+            }
+            total_mean += mean_i;
+        }
+        return total_mean / static_cast<double>(n);
+    };
+
+    auto compute_md_from_params = [&](const VectorXd& par) {
+        const VectorXd alpha = par.head(n_alpha);
+        for (int k = 1; k < n_alpha; ++k) {
+            if (alpha[k] <= alpha[k - 1]) return NA_REAL;
+        }
+        const VectorXd beta = par.tail(p);
+        const VectorXd eta1_loc = X1 * beta;
+        const VectorXd eta0_loc = X0 * beta;
+        double mean1_loc = 0.0;
+        double mean0_loc = 0.0;
+        for (int i = 0; i < n; ++i) {
+            double m1 = 1.0;
+            double m0 = 1.0;
+            for (int k = 0; k < n_alpha; ++k) {
+                m1 += plogis_stable_cpp(eta1_loc[i] - alpha[k]);
+                m0 += plogis_stable_cpp(eta0_loc[i] - alpha[k]);
+            }
+            mean1_loc += m1;
+            mean0_loc += m0;
+        }
+        return (mean1_loc - mean0_loc) / static_cast<double>(n);
+    };
+
+    const double mean1 = compute_mean(eta1);
+    const double mean0 = compute_mean(eta0);
+    const double md = mean1 - mean0;
+
+    const double h_step = 1e-5;
+    VectorXd grad_md(params.size());
+    for (int j = 0; j < params.size(); ++j) {
+        VectorXd p_plus = params;
+        VectorXd p_minus = params;
+        p_plus[j] += h_step;
+        p_minus[j] -= h_step;
+        const double f_plus = compute_md_from_params(p_plus);
+        const double f_minus = compute_md_from_params(p_minus);
+        if (!R_finite(f_plus) || !R_finite(f_minus)) {
+            grad_md[j] = NA_REAL;
+        } else {
+            grad_md[j] = (f_plus - f_minus) / (2.0 * h_step);
+        }
+    }
+
+    double se_md = NA_REAL;
+    bool grad_is_finite = true;
+    for (int j = 0; j < grad_md.size(); ++j) {
+        if (!R_finite(grad_md[j])) {
+            grad_is_finite = false;
+            break;
+        }
+    }
+    if (grad_is_finite) {
+        const double var_md = (grad_md.transpose() * vcov_full * grad_md)(0, 0);
+        if (R_finite(var_md) && var_md >= 0.0) {
+            se_md = std::sqrt(var_md);
+        }
+    }
+
+    MatrixXd vcov_beta = vcov_full.block(n_alpha, n_alpha, p, p);
+    VectorXd std_err(p);
+    VectorXd z_vals(p);
+    for (int j = 0; j < p; ++j) {
+        const double var_j = vcov_beta(j, j);
+        std_err[j] = (R_finite(var_j) && var_j >= 0.0) ? std::sqrt(var_j) : NA_REAL;
+        z_vals[j] = (R_finite(std_err[j]) && std_err[j] > 0.0) ? coef_hat[j] / std_err[j] : NA_REAL;
+    }
+
+    return List::create(
+        Named("vcov") = vcov_beta,
+        Named("std_err") = std_err,
+        Named("z_vals") = z_vals,
+        Named("mean1") = mean1,
+        Named("mean0") = mean0,
+        Named("md") = md,
+        Named("se_md") = se_md
     );
 }
 

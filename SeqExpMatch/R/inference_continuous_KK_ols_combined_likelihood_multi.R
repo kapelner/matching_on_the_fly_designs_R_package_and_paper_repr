@@ -28,7 +28,9 @@
 #' The Hessian of the log-likelihood with respect to
 #' \eqn{(\beta_0, \beta_T, \boldsymbol{\beta_{xs}})} is
 #' \eqn{H = -\mathbf{X}'\mathbf{X}/\hat\sigma^2}, stored in
-#' \code{private$cached_values$hessian} for downstream use (CI, p-value).
+#' \code{private$
+#'   cached_values$
+#'   hessian} for downstream use (CI, p-value).
 #'
 #' @export
 SeqDesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("SeqDesignInferenceContinMultOLSKKCombinedLikelihood",

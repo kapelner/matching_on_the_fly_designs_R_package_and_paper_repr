@@ -1,7 +1,7 @@
 #' Multivariate GEE Inference for KK Designs with Survival Response (no censoring)
 #'
 #' @description
-#' Fits a Generalized Estimating Equations (GEE) model (via \code{geepack::geeglm})
+#' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for uncensored survival (time-to-event) responses under a KK matching-on-the-fly
 #' design using the treatment indicator and all recorded covariates as predictors.
 #' A Gamma working model with a log link is used, which is appropriate for positive
@@ -15,7 +15,7 @@
 #' Censored observations are not supported; an error is raised at initialization if
 #' any censoring is detected. This class requires the \pkg{geepack} package, which is
 #' listed under \code{Suggests} and is not installed automatically with
-#' \pkg{SeqExpMatch}. Install it manually with \code{install.packages("geepack")}
+#' \pkg{SeqExpMatch}. Install \pkg{geepack} manually
 #' before using this class.
 #'
 #' @export

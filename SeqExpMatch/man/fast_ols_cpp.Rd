@@ -32,7 +32,8 @@ y_vec <- X_mat \%*\% c(1, 0.5, -0.2) + rnorm(n, sd = 0.5)
 
 # Fit OLS using fast_ols_cpp
 fit_ols <- fast_ols_cpp(X = X_mat, y = y_vec)
-print(fit_ols$b)
+print(fit_ols$
+  b)
 
 # Compare with standard R lm()
 lm_fit <- lm(y_vec ~ X_mat - 1) # -1 because X_mat already has intercept

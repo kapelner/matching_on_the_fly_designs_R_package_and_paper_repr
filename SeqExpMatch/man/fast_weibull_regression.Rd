@@ -42,8 +42,10 @@ dead_weibull <- as.numeric(time_true <= censor_time)
 
 # Fit Weibull regression using fast_weibull_regression
 fit_weibull <- fast_weibull_regression(y = y_weibull, dead = dead_weibull, X = X_weibull)
-print(fit_weibull$coefficients)
-print(fit_weibull$log_sigma)
+print(fit_weibull$
+  coefficients)
+print(fit_weibull$
+  log_sigma)
 
 # Compare with standard R survreg
 library(survival)
@@ -51,6 +53,7 @@ surv_obj <- Surv(y_weibull, dead_weibull)
 df_weibull <- data.frame(time = y_weibull, status = dead_weibull, X = X_weibull)
 survreg_fit <- survreg(surv_obj ~ X, data = df_weibull, dist = "weibull")
 print(coef(survreg_fit))
-print(log(survreg_fit$scale))
+print(log(survreg_fit$
+  scale))
 }
 }

@@ -16,7 +16,8 @@
 #' quantile of the treatment effect distribution — for example the 25th or 75th
 #' percentile — pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 #' \preformatted{
-#'   inf = SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(seq_des, tau = 0.75)
+#'   inf = SeqDesignInferenceContinMultKKQuantileRegrIVWC$
+#'   new(seq_des, tau = 0.75)
 #' }
 #' Any value strictly between 0 and 1 is accepted.
 #'
@@ -28,9 +29,9 @@
 #' valid for location-shift models at all quantiles: shifting y by delta maps the
 #' tau-th quantile treatment effect to delta under the null.
 #'
-#' This class requires the \pkg{quantreg} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("quantreg")} before using this class.
+#' This class requires the \pkg{quantreg} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{quantreg} before using this class.
 #'
 #' @export
 SeqDesignInferenceContinMultKKQuantileRegrIVWC = R6::R6Class("SeqDesignInferenceContinMultKKQuantileRegrIVWC",

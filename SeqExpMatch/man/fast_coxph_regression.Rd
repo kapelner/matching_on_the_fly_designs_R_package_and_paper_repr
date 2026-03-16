@@ -25,9 +25,9 @@ It is designed to efficiently estimate regression coefficients for time-to-event
 without penalization.
 }
 \details{
-This function requires the \pkg{glmnet} package, which is listed under \code{Suggests}
-and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-\code{install.packages("glmnet")} before calling this function.
+This function requires the \pkg{glmnet} package, which is listed in Suggests
+and is not installed automatically with \pkg{SeqExpMatch}.
+Install \pkg{glmnet} before calling this function.
 }
 \examples{
 if (requireNamespace("glmnet", quietly = TRUE)) {

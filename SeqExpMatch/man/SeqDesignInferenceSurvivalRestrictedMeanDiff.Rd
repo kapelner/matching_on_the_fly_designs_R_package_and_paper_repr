@@ -12,25 +12,32 @@ after the sequential design is completed.
 \examples{
 \dontrun{
 # Setup design and add responses
-seq_des = SeqDesignCRD$new(n = 6, response_type = "survival")
+seq_des = SeqDesignCRD$
+  new(n = 6, response_type = "survival")
 X = data.table::data.table(MASS::biopsy[1:6, 2:10])
-for (i in 1:6) seq_des$add_subject_to_experiment_and_assign(X[i, ])
-seq_des$add_all_subject_responses(
+for (i in 1:6) seq_des$
+  add_subject_to_experiment_and_assign(X[i, ])
+seq_des$
+  add_all_subject_responses(
   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
 )
 
 # Initialize inference object
-seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
+seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$
+  new(seq_des)
 
 # compute_treatment_estimate
-seq_des_inf$compute_treatment_estimate()
+seq_des_inf$
+  compute_treatment_estimate()
 
 # compute_mle_confidence_interval
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$
+  compute_mle_confidence_interval()
 
 # compute_mle_two_sided_pval_for_treatment_effect
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$
+  compute_mle_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -55,6 +62,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>

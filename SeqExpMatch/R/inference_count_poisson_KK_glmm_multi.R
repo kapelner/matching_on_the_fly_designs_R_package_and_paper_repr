@@ -1,7 +1,7 @@
 #' Multivariate GLMM Inference for KK Designs with Count Response
 #'
 #' @description
-#' Fits a Generalized Linear Mixed Model (GLMM) via \code{glmmTMB::glmmTMB} for count
+#' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for count
 #' responses under a KK matching-on-the-fly design using the treatment indicator and
 #' all recorded covariates as fixed-effect predictors. A Poisson log-link working
 #' model is used. The matched-pair strata enter the model as a subject-level random
@@ -11,9 +11,9 @@
 #' Z-statistic from the GLMM fixed-effects table.
 #'
 #' @details
-#' This class requires the \pkg{glmmTMB} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("glmmTMB")} before using this class.
+#' This class requires the \pkg{glmmTMB} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{glmmTMB} before using this class.
 #'
 #' @export
 SeqDesignInferenceCountPoissonMultiKKGLMM = R6::R6Class("SeqDesignInferenceCountPoissonMultiKKGLMM",

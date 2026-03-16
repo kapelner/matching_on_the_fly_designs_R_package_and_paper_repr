@@ -4,7 +4,7 @@
 \alias{SeqDesignInferenceCountPoissonMultiKKGLMM}
 \title{Multivariate GLMM Inference for KK Designs with Count Response}
 \description{
-Fits a Generalized Linear Mixed Model (GLMM) via \code{glmmTMB::glmmTMB} for count
+Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for count
 responses under a KK matching-on-the-fly design using the treatment indicator and
 all recorded covariates as fixed-effect predictors. A Poisson log-link working
 model is used. The matched-pair strata enter the model as a subject-level random
@@ -14,9 +14,9 @@ is the conditional log incidence-rate ratio (log-IRR); inference uses the Wald
 Z-statistic from the GLMM fixed-effects table.
 }
 \details{
-This class requires the \pkg{glmmTMB} package, which is listed under \code{Suggests}
-and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-\code{install.packages("glmmTMB")} before using this class.
+This class requires the \pkg{glmmTMB} package, which is listed in Suggests
+and is not installed automatically with \pkg{SeqExpMatch}.
+Install \pkg{glmmTMB} before using this class.
 }
 \examples{
 
@@ -55,6 +55,8 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>

@@ -31,5 +31,6 @@ Same as summary.glm except it doesn't calculate the residuals as this takes a lo
 }
 \examples{
 mod <- glm(c(0, 1, 0, 1, 1, 0) ~ c(-1, 0, 1, 0, 1, 2), family = binomial())
-summary_glm_lean(mod)$coefficients
+summary_glm_lean(mod)$
+  coefficients
 }

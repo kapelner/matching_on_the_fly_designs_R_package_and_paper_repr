@@ -20,9 +20,9 @@
 #' When the model falls back to OLS (no matched pairs), the standard OLS residual df \eqn{n - p}
 #' is used since no correlation parameter is estimated.
 #'
-#' This class requires the \pkg{nlme} package, which is listed under \code{Suggests} and is not
-#' installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("nlme")} before using this class.
+#' This class requires the \pkg{nlme} package, which is listed in Suggests and is not
+#' installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{nlme} before using this class.
 #'
 #' @export
 SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",

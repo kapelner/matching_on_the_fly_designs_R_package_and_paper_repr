@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Internal base class for non-KK zero-inflated and hurdle Poisson regression
-#' models fit via \code{glmmTMB::glmmTMB}. The reported treatment effect is the
+#' models fit using the \pkg{glmmTMB} fitter. The reported treatment effect is the
 #' treatment coefficient from the conditional count component, on the log-rate
 #' scale.
 #'

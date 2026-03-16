@@ -35,8 +35,10 @@ y_vec <- X_mat \%*\% c(1, 0.5, -0.2) + rnorm(n, sd = 0.5)
 
 # Fit OLS with variance using fast_ols_with_var_cpp
 fit_ols_var <- fast_ols_with_var_cpp(X = X_mat, y = y_vec)
-print(fit_ols_var$b)
-print(fit_ols_var$ssq_b_j)
+print(fit_ols_var$
+  b)
+print(fit_ols_var$
+  ssq_b_j)
 }
 
 }

@@ -241,7 +241,8 @@ X[beta_T == 1 & response_type == "ordinal" &
 		"SeqDesignInferenceAllKKWilcoxIVWC",
 		"SeqDesignInferenceAllKKWilcoxRegrUnivIVWC",
 		"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
-		"SeqDesignInferenceOrdinalPairedSignTest"
+		"SeqDesignInferenceOrdinalPairedSignTest",
+		"SeqDesignInferenceOrdinalJonckheereTerpstraTest"
 	),
 	beta := NA_real_]
 

@@ -200,6 +200,10 @@ fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol =
     .Call(`_SeqExpMatch_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
+exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
+    .Call(`_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp`, y, w)
+}
+
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
@@ -279,6 +283,10 @@ fast_ordinal_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
 
 fast_ordinal_regression_with_var_cpp <- function(X, y) {
     .Call(`_SeqExpMatch_fast_ordinal_regression_with_var_cpp`, X, y)
+}
+
+ordinal_gcomp_post_fit_cpp <- function(X_fit, y, coef_hat, alpha_hat, j_treat) {
+    .Call(`_SeqExpMatch_ordinal_gcomp_post_fit_cpp`, X_fit, y, coef_hat, alpha_hat, j_treat)
 }
 
 expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {

@@ -19,7 +19,8 @@ response distributions than the OLS mean-based estimator. To target a different
 quantile of the treatment effect distribution — for example the 25th or 75th
 percentile — pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 \preformatted{
-  inf = SeqDesignInferenceContinMultKKQuantileRegrIVWC$new(seq_des, tau = 0.75)
+  inf = SeqDesignInferenceContinMultKKQuantileRegrIVWC$
+  new(seq_des, tau = 0.75)
 }
 Any value strictly between 0 and 1 is accepted.
 
@@ -31,9 +32,9 @@ The randomization-based confidence interval is inherited from the base class and
 valid for location-shift models at all quantiles: shifting y by delta maps the
 tau-th quantile treatment effect to delta under the null.
 
-This class requires the \pkg{quantreg} package, which is listed under \code{Suggests}
-and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-\code{install.packages("quantreg")} before using this class.
+This class requires the \pkg{quantreg} package, which is listed in Suggests
+and is not installed automatically with \pkg{SeqExpMatch}.
+Install \pkg{quantreg} before using this class.
 }
 \examples{
 
@@ -77,6 +78,8 @@ infer
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>

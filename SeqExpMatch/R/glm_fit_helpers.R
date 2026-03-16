@@ -25,7 +25,8 @@
 #'
 #' # Fit OLS using fast_ols_cpp
 #' fit_ols <- fast_ols_cpp(X = X_mat, y = y_vec)
-#' print(fit_ols$b)
+#' print(fit_ols$
+#'   b)
 #'
 #' # Compare with standard R lm()
 #' lm_fit <- lm(y_vec ~ X_mat - 1) # -1 because X_mat already has intercept
@@ -64,8 +65,10 @@ NULL
 #'
 #' # Fit OLS with variance using fast_ols_with_var_cpp
 #' fit_ols_var <- fast_ols_with_var_cpp(X = X_mat, y = y_vec)
-#' print(fit_ols_var$b)
-#' print(fit_ols_var$ssq_b_j)
+#' print(fit_ols_var$
+#'   b)
+#' print(fit_ols_var$
+#'   ssq_b_j)
 #' }
 #'
 #' @name fast_ols_with_var_cpp
@@ -101,7 +104,8 @@ NULL
 #'
 #' # Fit logistic regression using fast_logistic_regression
 #' fit_logistic <- fast_logistic_regression(Xmm = X_log, y = y_log)
-#' print(fit_logistic$b)
+#' print(fit_logistic$
+#'   b)
 #'
 #' # Compare with standard R glm()
 #' glm_fit <- glm(y_log ~ X_log - 1, family = binomial) # -1 because X_log already has intercept
@@ -164,13 +168,16 @@ fast_logistic_regression = function(Xmm, y){
 #'
 #' # Fit logistic regression with variance using fast_logistic_regression_with_var
 #' fit_logistic_var <- fast_logistic_regression_with_var(Xmm = X_log_var, y = y_log_var)
-#' print(fit_logistic_var$b)
-#' print(fit_logistic_var$ssq_b_j)
+#' print(fit_logistic_var$
+#'   b)
+#' print(fit_logistic_var$
+#'   ssq_b_j)
 #'
 #' # Compare with standard R glm()
 #' glm_fit_var <- glm(y_log_var ~ X_log_var - 1, family = binomial)
 #' # Extract squared standard error of the second coefficient (treatment effect)
-#' glm_ssq_b_2 <- summary(glm_fit_var)$coefficients[2, 2]^2
+#' glm_ssq_b_2 <- summary(glm_fit_var)$
+#'   coefficients[2, 2]^2
 #' print(coef(glm_fit_var))
 #' print(glm_ssq_b_2)
 #' }
@@ -252,8 +259,10 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #'
 #' # Fit Weibull regression using fast_weibull_regression
 #' fit_weibull <- fast_weibull_regression(y = y_weibull, dead = dead_weibull, X = X_weibull)
-#' print(fit_weibull$coefficients)
-#' print(fit_weibull$log_sigma)
+#' print(fit_weibull$
+#'   coefficients)
+#' print(fit_weibull$
+#'   log_sigma)
 #'
 #' # Compare with standard R survreg
 #' library(survival)
@@ -261,7 +270,8 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #' df_weibull <- data.frame(time = y_weibull, status = dead_weibull, X = X_weibull)
 #' survreg_fit <- survreg(surv_obj ~ X, data = df_weibull, dist = "weibull")
 #' print(coef(survreg_fit))
-#' print(log(survreg_fit$scale))
+#' print(log(survreg_fit$
+#'   scale))
 #' }
 #' @export
 fast_weibull_regression = function(y, dead, X){
@@ -376,9 +386,9 @@ sanitize_beta_response = function(y){
 #'
 #' @details
 #' The primary implementation uses a C++ backend. If that fails, the function falls back
-#' to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+#' to \pkg{betareg}, which is listed in Suggests and is not installed automatically
 #' with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
-#' \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+#' \code{logit(y)} is used. Install \pkg{betareg} manually to
 #' enable the intermediate fallback.
 #'
 #' @export
@@ -436,9 +446,9 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #'
 #' @details
 #' The primary implementation uses a C++ backend. If that fails, the function falls back
-#' to \pkg{betareg}, which is listed under \code{Suggests} and is not installed automatically
+#' to \pkg{betareg}, which is listed in Suggests and is not installed automatically
 #' with \pkg{SeqExpMatch}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
-#' \code{logit(y)} is used. Install \pkg{betareg} with \code{install.packages("betareg")} to
+#' \code{logit(y)} is used. Install \pkg{betareg} manually to
 #' enable the intermediate fallback.
 #'
 #' @importFrom	stats vcov
@@ -496,9 +506,9 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #' \item{b}{A numeric vector of the estimated Cox regression coefficients.}
 #'
 #' @details
-#' This function requires the \pkg{glmnet} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("glmnet")} before calling this function.
+#' This function requires the \pkg{glmnet} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{glmnet} before calling this function.
 #'
 #' @export
 #' @examples

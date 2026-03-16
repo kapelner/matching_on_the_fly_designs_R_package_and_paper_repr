@@ -1,7 +1,7 @@
 #' Multivariate GLMM Inference for KK Designs with Proportion Response
 #'
 #' @description
-#' Fits a Generalized Linear Mixed Model (GLMM) via \code{glmmTMB::glmmTMB} for proportion
+#' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for proportion
 #' (continuous values in (0, 1)) responses under a KK matching-on-the-fly design
 #' using the treatment indicator and all recorded covariates as fixed-effect
 #' predictors. A binomial logit working model is used; \code{glmmTMB} accepts continuous
@@ -13,9 +13,9 @@
 #' Z-statistic from the GLMM fixed-effects table.
 #'
 #' @details
-#' This class requires the \pkg{glmmTMB} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("glmmTMB")} before using this class.
+#' This class requires the \pkg{glmmTMB} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{glmmTMB} before using this class.
 #'
 #' @export
 SeqDesignInferencePropMultiKKGLMM = R6::R6Class("SeqDesignInferencePropMultiKKGLMM",

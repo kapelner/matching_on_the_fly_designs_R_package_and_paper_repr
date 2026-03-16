@@ -1,7 +1,7 @@
 #' Univariate Linear Mixed Model Inference for KK Designs with Continuous Response
 #'
 #' @description
-#' Fits a linear mixed model via \code{glmmTMB::glmmTMB} for continuous responses
+#' Fits a linear mixed model using the \pkg{glmmTMB} fitter for continuous responses
 #' under a KK matching-on-the-fly design using only the treatment indicator as a
 #' fixed-effect predictor (intercept + treatment). A Gaussian identity-link working
 #' model is used. The matched-pair strata enter the model as a subject-level random
@@ -11,9 +11,9 @@
 #' mixed-model fixed-effects table.
 #'
 #' @details
-#' This class requires the \pkg{glmmTMB} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("glmmTMB")} before using this class.
+#' This class requires the \pkg{glmmTMB} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{glmmTMB} before using this class.
 #'
 #' @export
 SeqDesignInferenceContinUnivKKGLMM = R6::R6Class("SeqDesignInferenceContinUnivKKGLMM",

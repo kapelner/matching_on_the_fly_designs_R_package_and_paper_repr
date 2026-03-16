@@ -1,7 +1,7 @@
 #' Univariate GLMM Inference for KK Designs with Survival Response (no censoring)
 #'
 #' @description
-#' Fits a Generalized Linear Mixed Model (GLMM) via \code{glmmTMB::glmmTMB} for uncensored
+#' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for uncensored
 #' survival (time-to-event) responses under a KK matching-on-the-fly design using only
 #' the treatment indicator as a fixed-effect predictor (intercept + treatment). A
 #' Gamma log-link working model is used, which is appropriate for positive continuous
@@ -15,7 +15,7 @@
 #' Censored observations are not supported; an error is raised at initialization if
 #' any censoring is detected. This class requires the \pkg{glmmTMB} package, which is
 #' listed under \code{Suggests} and is not installed automatically with
-#' \pkg{SeqExpMatch}. Install it manually with \code{install.packages("glmmTMB")}
+#' \pkg{SeqExpMatch}. Install \pkg{glmmTMB} manually
 #' before using this class.
 #'
 #' @export

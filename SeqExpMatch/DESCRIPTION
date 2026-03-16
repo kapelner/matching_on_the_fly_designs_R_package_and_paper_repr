@@ -57,7 +57,8 @@ Suggests:
     glmnet,
     quantreg,
     multgee,
-    ordinal
+    ordinal,
+    VGAM
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 RoxygenNote: 7.3.3
 Collate:
@@ -245,11 +246,16 @@ Collate:
     'inference_ordinal_stereotype_probit_univ.R'
     'inference_ordinal_stereotype_probit_multi.R'
     'inference_ordinal_cloglog_univ.R'
+    'inference_ordinal_cloglog_multi.R'
     'inference_ordinal_gcomp_abstract.R'
     'inference_ordinal_gcomp_univ.R'
     'inference_ordinal_gcomp_multi.R'
+    'inference_ordinal_ordered_probit.R'
+    'inference_ordinal_jonckheere_terpstra_test.R'
     'inference_ordinal_proportional_odds_univ.R'
-    'inference_ordinal_partial_proportional_odds.R'
+    'inference_ordinal_partial_proportional_odds_abstract.R'
+    'inference_ordinal_partial_proportional_odds_univ.R'
+    'inference_ordinal_partial_proportional_odds_multi.R'
     'inference_ordinal_KK_clmm_abstract.R'
     'inference_ordinal_cond_adj_cat_logit_univ.R'
     'inference_ordinal_cond_cont_ratio_univ.R'

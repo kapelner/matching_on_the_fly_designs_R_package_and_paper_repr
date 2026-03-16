@@ -129,6 +129,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 
 		# @description
+		# Computes an exact confidence interval implementation-specific to the concrete class.
+		# @param ... Parameters passed by subclasses.
+		compute_exact_confidence_interval = function(...){
+			stop("This method is not implemented in ", class(self)[1])
+		},
+
+		# @description
+		# Computes an exact two-sided p-value implementation-specific to the concrete class.
+		# @param ... Parameters passed by subclasses.
+		compute_exact_two_sided_pval_for_treatment_effect = function(...){
+			stop("This method is not implemented in ", class(self)[1])
+		},
+
+		# @description
 		# Creates the boostrap distribution of the estimate for the treatment effect
 		#
 		# @param B						Number of bootstrap samples. The default is 501.

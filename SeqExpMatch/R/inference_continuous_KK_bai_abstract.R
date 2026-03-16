@@ -4,7 +4,7 @@
 # Inference for mean difference
 #
 # @details
-# This class requires the \pkg{nbpMatching} package, which is listed under \code{Suggests}
+# This class requires the \pkg{nbpMatching} package, which is listed in Suggests
 # and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 # \code{install.packages("nbpMatching")} before using this class.
 #

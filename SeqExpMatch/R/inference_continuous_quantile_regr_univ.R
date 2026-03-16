@@ -12,7 +12,7 @@
 #'
 #' This class requires the \pkg{quantreg} package, which is listed under
 #' \code{Suggests} and is not installed automatically with \pkg{SeqExpMatch}.
-#' Install it manually with \code{install.packages("quantreg")} before use.
+#' Install \pkg{quantreg} manually before use.
 #'
 #' @export
 SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContinUnivQuantileRegr",

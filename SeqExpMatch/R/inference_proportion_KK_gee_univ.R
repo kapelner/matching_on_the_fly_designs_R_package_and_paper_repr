@@ -1,7 +1,7 @@
 #' Univariate GEE Inference for KK Designs with Proportion Response
 #'
 #' @description
-#' Fits a Generalized Estimating Equations (GEE) model (via \code{geepack::geeglm})
+#' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for proportion (continuous values in (0, 1)) responses under a KK
 #' matching-on-the-fly design using only the treatment indicator as a predictor
 #' (intercept + treatment). A binomial logit working model is used; although
@@ -16,9 +16,9 @@
 #' robust SE.
 #'
 #' @details
-#' This class requires the \pkg{geepack} package, which is listed under \code{Suggests}
-#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-#' \code{install.packages("geepack")} before using this class.
+#' This class requires the \pkg{geepack} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}.
+#' Install \pkg{geepack} before using this class.
 #'
 #' @export
 SeqDesignInferencePropUnivKKGEE = R6::R6Class("SeqDesignInferencePropUnivKKGEE",

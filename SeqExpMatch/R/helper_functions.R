@@ -237,7 +237,8 @@ sample_mode = function(data){
 #' @return	The summary of the GLM
 #' @examples
 #' mod <- glm(c(0, 1, 0, 1, 1, 0) ~ c(-1, 0, 1, 0, 1, 2), family = binomial())
-#' summary_glm_lean(mod)$coefficients
+#' summary_glm_lean(mod)$
+#'   coefficients
 #' @export
 summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, symbolic.cor = FALSE, ...){
 	est.disp <- FALSE
