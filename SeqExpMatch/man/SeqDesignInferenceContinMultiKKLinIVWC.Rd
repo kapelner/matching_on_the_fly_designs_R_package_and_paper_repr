@@ -38,8 +38,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-new}{\code{SeqDesignInferenceContinMultiKKLinIVWC$new()}}
 \item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-compute_treatment_estimate}{\code{SeqDesignInferenceContinMultiKKLinIVWC$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferenceContinMultiKKLinIVWC$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultiKKLinIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_confidence_interval}{\code{SeqDesignInferenceContinMultiKKLinIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultiKKLinIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceContinMultiKKLinIVWC-clone}{\code{SeqDesignInferenceContinMultiKKLinIVWC$clone()}}
 }
 }
@@ -117,12 +117,12 @@ The estimated treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKLinIVWC$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKLinIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -140,12 +140,12 @@ A confidence interval for the treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKLinIVWC-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKLinIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKLinIVWC$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKLinIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

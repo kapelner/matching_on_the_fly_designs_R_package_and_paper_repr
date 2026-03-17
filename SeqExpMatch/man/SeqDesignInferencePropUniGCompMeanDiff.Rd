@@ -35,8 +35,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-new}{\code{SeqDesignInferencePropUniGCompMeanDiff$new()}}
 \item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_treatment_estimate}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_confidence_interval}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-compute_bootstrap_two_sided_pval}{\code{SeqDesignInferencePropUniGCompMeanDiff$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInferencePropUniGCompMeanDiff-clone}{\code{SeqDesignInferencePropUniGCompMeanDiff$clone()}}
 }
@@ -44,7 +44,6 @@ seq_des_inf$compute_treatment_estimate()
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
@@ -53,6 +52,7 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferencePropGCompAbstract" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferencePropGCompAbstract.html#method-SeqDesignInferencePropGCompAbstract-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferencePropGCompAbstract$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -110,12 +110,12 @@ Computes the standardized marginal mean-difference estimate.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} confidence interval for the marginal mean difference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropUniGCompMeanDiff$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropUniGCompMeanDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -129,12 +129,12 @@ Computes a 1 - \code{alpha} confidence interval for the marginal mean difference
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropUniGCompMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropUniGCompMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided p-value for the marginal mean difference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropUniGCompMeanDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropUniGCompMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

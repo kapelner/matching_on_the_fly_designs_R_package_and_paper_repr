@@ -10,14 +10,14 @@ SeqDesignInferenceAbstractKKModifiedPoisson = R6::R6Class("SeqDesignInferenceAbs
 			private$cached_values$beta_hat_T
 		},
 
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$assert_finite_se()

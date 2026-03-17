@@ -74,7 +74,7 @@ SeqDesignInferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("SeqDesignInf
 		#'   1 - \code{alpha}. The default is 0.05.
 		#'
 		#' @return A confidence interval for the treatment effect.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$fit_combined()
 			private$assert_finite_se()
@@ -87,7 +87,7 @@ SeqDesignInferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("SeqDesignInf
 		#' @param delta The null treatment effect. Defaults to 0.
 		#'
 		#' @return The approximate p-value.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$fit_combined()
 			private$assert_finite_se()

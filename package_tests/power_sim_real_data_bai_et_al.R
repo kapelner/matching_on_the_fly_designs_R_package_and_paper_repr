@@ -91,7 +91,7 @@ for (nsim in 1 : Nsim){
 						infrence_specific = infrence
 					}
 					beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
-					pval = seq_des_inf_obj$compute_mle_two_sided_pval_for_treatment_effect()
+					pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 
 					res = rbind(res, data.frame(
 						data_set = dataset_name,
@@ -110,7 +110,7 @@ for (nsim in 1 : Nsim){
 					seq_des_inf_obj = des_class$new(cur_seq_des_obj, num_cores = num_cores, verbose = FALSE)
 
 					beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
-					pval = seq_des_inf_obj$compute_mle_two_sided_pval_for_treatment_effect()
+					pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 
 					res = rbind(res, data.frame(
 					data_set = dataset_name,

@@ -42,8 +42,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-new}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$new()}}
 \item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-clone}{\code{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$clone()}}
 }
 }
@@ -114,13 +114,13 @@ The estimated treatment coefficient.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a profile-likelihood confidence interval for the stereotype
 treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -138,13 +138,13 @@ A profile-likelihood confidence interval for the treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a profile-likelihood ratio p-value for the stereotype treatment
 effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUniStereotypeLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

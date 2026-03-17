@@ -76,7 +76,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des, test_type = "MLE-or-KM-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#'
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$summary_table)){
 				private$shared()
@@ -112,7 +112,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' seq_des_inf = SeqDesignInferenceContMultOLS$new(seq_des)
 		#' seq_des_inf$compute_two_sided_pval_for_treatment_effect()
 		#'
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 
 			if (delta == 0){

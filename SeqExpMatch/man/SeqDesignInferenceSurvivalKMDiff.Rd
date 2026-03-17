@@ -32,7 +32,7 @@ seq_des_inf$compute_treatment_estimate()
 
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceSurvivalKMDiff$compute_mle_confidence_interval`
+## Method `SeqDesignInferenceSurvivalKMDiff$compute_asymp_confidence_interval`
 ## ------------------------------------------------
 
 \dontrun{
@@ -49,11 +49,11 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceSurvivalKMDiff$compute_mle_two_sided_pval_for_treatment_effect`
+## Method `SeqDesignInferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
 \dontrun{
@@ -70,7 +70,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -82,8 +82,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \itemize{
 \item \href{#method-SeqDesignInferenceSurvivalKMDiff-new}{\code{SeqDesignInferenceSurvivalKMDiff$new()}}
 \item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_treatment_estimate}{\code{SeqDesignInferenceSurvivalKMDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceSurvivalKMDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalKMDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferenceSurvivalKMDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceSurvivalKMDiff-compute_confidence_interval_rand}{\code{SeqDesignInferenceSurvivalKMDiff$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceSurvivalKMDiff-clone}{\code{SeqDesignInferenceSurvivalKMDiff$clone()}}
 }
@@ -176,9 +176,9 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalKMDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalKMDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
 median survival times (treatment minus control).
 
@@ -195,7 +195,9 @@ Falls back to \code{compute_bootstrap_confidence_interval} when either group's
 median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
 when the Brookmeyer-Crowley CI bounds are \code{NA}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalKMDiff$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalKMDiff$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -226,7 +228,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 }
 \if{html}{\out{</div>}}
@@ -235,12 +237,12 @@ seq_des_inf$compute_mle_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalKMDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalKMDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalKMDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -272,7 +274,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }

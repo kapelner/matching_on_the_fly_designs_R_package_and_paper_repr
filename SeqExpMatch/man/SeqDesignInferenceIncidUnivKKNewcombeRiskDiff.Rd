@@ -49,8 +49,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-new}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$new()}}
 \item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_treatment_estimate}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-clone}{\code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$clone()}}
 }
 }
@@ -106,12 +106,12 @@ Returns the IVWC Newcombe estimate.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Returns the MLE confidence interval based on pooled variance.
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns the asymptotic confidence interval based on pooled variance.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -126,12 +126,12 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Returns the MLE p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

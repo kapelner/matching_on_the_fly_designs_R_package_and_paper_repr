@@ -9,7 +9,7 @@
 #' and \code{compute_exact_confidence_interval} methods for uncensored incidence
 #' outcomes under a completely randomized design. Standard estimator-based methods
 #' such as \code{compute_treatment_estimate()} and
-#' \code{compute_mle_confidence_interval()} are intentionally unavailable for this
+#' \code{compute_asymp_confidence_interval()} are intentionally unavailable for this
 #' exact Zhang interface.
 #'
 #' @export
@@ -63,15 +63,15 @@ SeqDesignInferenceIncidExactZhang = R6::R6Class("SeqDesignInferenceIncidExactZha
 		#' @description
 		#' Not implemented for Zhang exact incidence inference.
 		#' @param alpha Significance level.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Not implemented for Zhang exact incidence inference.
 		#' @param delta Null treatment effect to test.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		},
 
 		#' @description

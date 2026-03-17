@@ -29,7 +29,7 @@ seq_des_inf$compute_treatment_estimate()
 
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_confidence_interval`
+## Method `SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_confidence_interval`
 ## ------------------------------------------------
 
 \dontrun{
@@ -43,12 +43,12 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_two_sided_pval_for_treatment_effect`
+## Method `SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
 \dontrun{
@@ -62,7 +62,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -74,8 +74,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \itemize{
 \item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-new}{\code{SeqDesignInferenceContinMultOLSKKIVWC$new()}}
 \item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-compute_treatment_estimate}{\code{SeqDesignInferenceContinMultOLSKKIVWC$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_confidence_interval}{\code{SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceContinMultOLSKKIVWC-clone}{\code{SeqDesignInferenceContinMultOLSKKIVWC$clone()}}
 }
 }
@@ -165,9 +165,9 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 differently for all response types, estimate types, and
 test types.
@@ -176,7 +176,7 @@ Here we use the theory that MLE's computed for GLM's are asymptotically normal.
 Hence these confidence intervals are asymptotically valid
 and thus approximate for any sample size.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -205,7 +205,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 }
@@ -215,12 +215,12 @@ seq_des_inf$compute_mle_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultOLSKKIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultOLSKKIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -249,7 +249,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }

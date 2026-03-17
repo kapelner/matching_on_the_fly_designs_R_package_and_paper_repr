@@ -18,7 +18,7 @@ SeqDesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("SeqDesignInferenceAbst
 		# @param alpha					The confidence level. Default is 0.05.
 		# @param ... 					Additional arguments passed to super.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, ...){
-			self$compute_mle_confidence_interval(alpha)
+			self$compute_asymp_confidence_interval(alpha)
 		}
 	),
 	private = list(

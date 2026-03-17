@@ -29,7 +29,7 @@ SeqDesignInferencePropZeroOneInflatedBetaAbstract = R6::R6Class("SeqDesignInfere
 			private$cached_values$beta_hat_T
 		},
 
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
@@ -39,7 +39,7 @@ SeqDesignInferencePropZeroOneInflatedBetaAbstract = R6::R6Class("SeqDesignInfere
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
@@ -59,7 +59,7 @@ SeqDesignInferencePropZeroOneInflatedBetaAbstract = R6::R6Class("SeqDesignInfere
 				return(list(M))
 			}
 
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			thresholds = c(Inf, 0.95, 0.90, 0.80, 0.70)
 			candidates = list()
 			keys = character()
 			for (thresh in thresholds){
@@ -138,6 +138,11 @@ SeqDesignInferencePropZeroOneInflatedBetaAbstract = R6::R6Class("SeqDesignInfere
 			private$cached_values$full_coefficients = coef_full
 			private$cached_values$full_vcov = vcov_full
 			private$cached_values$summary_table = summary_table
+			private$cached_values$zoib_best_design_matrix = Xmm
+			private$cached_values$zoib_best_fit = list(
+				coefficients = coef_full,
+				vcov = vcov_full
+			)
 		}
 	)
 )

@@ -62,7 +62,7 @@ SeqDesignInferenceIncidUnivNewcombeRiskDiff = R6::R6Class("SeqDesignInferenceInc
 		#' @description
 		#' Computes a 1 - \code{alpha} Newcombe confidence interval.
 		#' @param alpha The significance level.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			counts = private$cached_values$counts
@@ -76,7 +76,7 @@ SeqDesignInferenceIncidUnivNewcombeRiskDiff = R6::R6Class("SeqDesignInferenceInc
 		#' @description
 		#' Computes a two-sided p-value by inverting the Newcombe interval.
 		#' @param delta The null risk difference.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
 			private$shared()
 			counts = private$cached_values$counts

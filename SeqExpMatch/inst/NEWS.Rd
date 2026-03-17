@@ -14,9 +14,14 @@
       \item Standardized all survival-based methodologies to Accelerated Failure Time (AFT) log-time ratios.
       \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), \pkg{parfm} (Frailty), and \pkg{Rfit} (R-estimation).
       \item Support for Stratified Cox and Conditional Poisson regression.
+      \item Added LWA-style marginal Cox and Clayton-copula paired-survival inference for KK designs under both IVWC and Combined Likelihood pooling, plus transformation-model survival inference with dependent censoring.
       \item Standalone log-rank inference powered by a new C++ score/variance routine plus automatic covariate-based strata construction.
+      \item Added Lin-style adjusted estimators, robust regression, and quantile regression support for continuous outcomes across non-KK and KK designs.
+      \item Added new incidence-response families: modified Poisson, marginal standardization / g-computation for risk differences and risk ratios, Miettinen-Nurminen and Newcombe risk-difference inference, log-binomial regression, and binomial identity-link regression.
+      \item Added new count-response families for KK designs: hurdle-Poisson inference under both IVWC and Combined Likelihood pooling.
+      \item Added new proportion-response families: fractional-logit and zero/one-inflated beta regression.
       \item Randomization confidence intervals now support ordinal GLM estimators (e.g., cumulative logit/probit) by inverting the exact permutation test for their shared treatment effect, following the Wang & Rosenberger inversion approach.
-      \item Added Partial Proportional-Odds regression for ordinal responses, leveraging the fast Rcpp logistic solver over the stacked cumulative logits so the estimator works on every sequential design without requiring CRD.
+      \item Expanded ordinal support with cumulative probit, adjacent-category logit, stereotype logit/probit, ridit, paired sign, Jonckheere-Terpstra, partial proportional odds, conditional ordinal KK estimators, and KK ordinal mixed models with both logit and probit links.
       \item Zero-inflated/negative binomial and hurdle negative binomial regression classes plus Poisson/quasi-Poisson inference that now use high-speed Rcpp IRLS solvers with Huber-White variance.
       \item Automated missing data pipeline using \pkg{missRanger} and \pkg{missForest}.
       \item Full support for unequal treatment allocation probabilities (prob_T != 0.5).
@@ -25,7 +30,8 @@
   \subsection{PERFORMANCE AND OPTIMIZATION}{
     \itemize{
       \item Extreme speedups via C++/Eigen/OpenMP implementations of bootstrap and randomization distributions.
-      \item Custom high-speed C++ IRLS solvers for Logistic, Beta, and Negative Binomial regression.
+      \item Custom high-speed C++ IRLS solvers for Logistic, Beta, Negative Binomial, log-binomial, and identity-link binomial regression.
+      \item Added C++ helpers for ordinal g-computation, Jonckheere-Terpstra exact calculations, ridit analysis, and KK grouping / cluster setup for newer pooled models.
       \item Rcpp helper for computing informative survival strata IDs and fast log-rank statistics.
       \item Intelligent thread-control for parallelized inference.
     }
@@ -35,6 +41,8 @@
       \item Standardized global indentation to tabs and modernized Roxygen documentation.
       \item Hidden internal abstract base classes for a streamlined public API.
       \item Robust error handling for small-sample degeneracy and non-convergence.
+      \item Improved randomization-test caching so treatment-assignment draws are reused across repeated p-value and confidence-interval inversion calls, including custom randomization statistics.
+      \item Cleaned up Rd generation issues and removed links to internal abstract classes from compiled help pages.
     }
   }
 }

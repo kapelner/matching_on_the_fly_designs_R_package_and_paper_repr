@@ -204,6 +204,22 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
     .Call(`_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp`, y, w)
 }
 
+fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_log_binomial_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_log_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_log_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+}
+
+fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_identity_binomial_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_identity_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
+    .Call(`_SeqExpMatch_fast_identity_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+}
+
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
@@ -340,6 +356,14 @@ fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 10
     .Call(`_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
+fast_ridit_scores_cpp <- function(y, ref_idx) {
+    .Call(`_SeqExpMatch_fast_ridit_scores_cpp`, y, ref_idx)
+}
+
+fast_ridit_analysis_cpp <- function(y, w, reference = "control") {
+    .Call(`_SeqExpMatch_fast_ridit_analysis_cpp`, y, w, reference)
+}
+
 sample_int_replace_cpp <- function(n, size) {
     .Call(`_SeqExpMatch_sample_int_replace_cpp`, n, size)
 }
@@ -414,6 +438,22 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_SeqExpMatch_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+wilcox_hl_point_estimate_cpp <- function(y, w) {
+    .Call(`_SeqExpMatch_wilcox_hl_point_estimate_cpp`, y, w)
+}
+
+compute_wilcox_hl_bootstrap_parallel_cpp <- function(y, w, indices_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_wilcox_hl_bootstrap_parallel_cpp`, y, w, indices_mat, num_cores)
+}
+
+compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, num_cores) {
+    .Call(`_SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, num_cores)
+}
+
+fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init) {
+    .Call(`_SeqExpMatch_fast_zero_one_inflated_beta_cpp`, Xfull, y, init)
 }
 
 gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
@@ -506,6 +546,10 @@ kk_bootstrap_loop_cpp <- function(indices, y, w, X, original_match_indic, m, dup
 
 compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {
     .Call(`_SeqExpMatch_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
+}
+
+compute_kk_grouping_cpp <- function(match_indic) {
+    .Call(`_SeqExpMatch_compute_kk_grouping_cpp`, match_indic)
 }
 
 compute_kk_cluster_ids_cpp <- function(match_indic) {

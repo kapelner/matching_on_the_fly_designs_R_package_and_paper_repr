@@ -2,18 +2,12 @@
 % Please edit documentation in R/inference_ordinal_jonckheere_terpstra_test.R
 \name{SeqDesignInferenceOrdinalJonckheereTerpstraTest}
 \alias{SeqDesignInferenceOrdinalJonckheereTerpstraTest}
-\title{Jonckheere-Terpstra Test for Ordinal Responses}
+\title{Jonckheere-Terpstra (JT) Test for Ordinal Responses}
 \description{
-Exact Jonckheere-Terpstra rank test for a two-arm ordered alternative with an
+Exact Jonckheere-Terpstra (JT) rank test for a two-arm ordered alternative with an
 ordinal response. For treatment versus control, the test statistic is the
-pairwise superiority score, counting 1 for treatment greater than control and
-0.5 for ties. Under a fixed treatment-arm size, the exact p-value is computed
-by enumerating the tied-score distribution conditional on the observed
-category counts.
-
-This class is test-first: it provides an exact p-value and a simple centered
-superiority estimate, but it does not implement MLE-based or bootstrap-based
-inference.
+sum of Mann-Whitney U counts across groups. This class provides the exact
+distribution-based p-value.
 }
 \examples{
 set.seed(1)
@@ -21,22 +15,14 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- SeqDesignCRD$
-  new(
-  n = nrow(x_dat),
-  response_type = "ordinal",
-  verbose = FALSE
-)
+seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
-  seq_des$
-  add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
-seq_des$
-  add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-infer <- SeqDesignInferenceOrdinalJonckheereTerpstraTest$
-  new(seq_des, verbose = FALSE)
-infer$
-  compute_exact_two_sided_pval_for_treatment_effect()
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalJonckheereTerpstraTest$new(seq_des, verbose = FALSE)
+infer
+
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceOrdinalJonckheereTerpstraTest}
@@ -46,22 +32,22 @@ infer$
 \itemize{
 \item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-new}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$new()}}
 \item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_mle_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_confidence_interval}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_exact_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_confidence_interval_rand}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_confidence_interval_rand()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_two_sided_pval_for_treatment_effect_rand}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_two_sided_pval_for_treatment_effect_rand()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-approximate_bootstrap_distribution_beta_hat_T}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$approximate_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_bootstrap_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_two_sided_pval}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_exact_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-clone}{\code{SeqDesignInferenceOrdinalJonckheereTerpstraTest$clone()}}
 }
 }
 \if{html}{\out{
-<details open><summary>Inherited methods</summary>
+<details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInference$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_asymp_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_asymp_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_asymp_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInference$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::SeqDesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::SeqDesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_confidence_interval_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_confidence_interval_rand'><code>SeqExpMatch::SeqDesignInference$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 </ul>
@@ -71,7 +57,7 @@ infer$
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the exact Jonckheere-Terpstra inference object.
+Initialize the JT test object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$new(
   seq_des_obj,
@@ -83,11 +69,11 @@ Initialize the exact Jonckheere-Terpstra inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal response.}
+\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object.}
 
-\item{\code{num_cores}}{Number of CPU cores for inherited generic infrastructure.}
+\item{\code{num_cores}}{Number of CPU cores.}
 
-\item{\code{verbose}}{Whether to print progress messages.}
+\item{\code{verbose}}{Whether to print progress.}
 }
 \if{html}{\out{</div>}}
 }
@@ -96,184 +82,23 @@ Initialize the exact Jonckheere-Terpstra inference object.
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the centered treatment superiority estimate
-\eqn{P(Y_T > Y_C) + 0.5 P(Y_T = Y_C) - 0.5}.
+Returns the estimated treatment effect (JT superiority measure).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_treatment_estimate()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_mle_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Unused confidence level.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_mle_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Unused null effect.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_confidence_interval}{}}}
-\subsection{Method \code{compute_exact_confidence_interval()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_exact_confidence_interval(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_confidence_interval_rand(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_two_sided_pval_for_treatment_effect_rand}{}}}
-\subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_two_sided_pval_for_treatment_effect_rand(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$approximate_bootstrap_distribution_beta_hat_T(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_bootstrap_confidence_interval(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
-Not implemented for the Jonckheere-Terpstra exact test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_bootstrap_two_sided_pval(
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Unused arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
-Computes the exact two-sided Jonckheere-Terpstra p-value for the null of
-no ordered treatment effect.
+Returns the exact two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalJonckheereTerpstraTest$compute_exact_two_sided_pval_for_treatment_effect(
-  delta = 0
+  
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null effect. Only \code{delta = 0} is supported.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceOrdinalJonckheereTerpstraTest-clone"></a>}}

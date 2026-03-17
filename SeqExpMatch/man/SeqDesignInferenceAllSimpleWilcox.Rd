@@ -47,8 +47,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-new}{\code{SeqDesignInferenceAllSimpleWilcox$new()}}
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_treatment_estimate}{\code{SeqDesignInferenceAllSimpleWilcox$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllSimpleWilcox$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllSimpleWilcox$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_confidence_interval}{\code{SeqDesignInferenceAllSimpleWilcox$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllSimpleWilcox$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceAllSimpleWilcox-clone}{\code{SeqDesignInferenceAllSimpleWilcox$clone()}}
 }
 }
@@ -125,13 +125,15 @@ differences.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a \eqn{1 - \alpha} asymptotic confidence interval based on the normal
 approximation for the HL estimator.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -143,13 +145,13 @@ approximation for the HL estimator.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllSimpleWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Returns a two-sided p-value for \eqn{H_0: \Delta = \delta} using the asymptotic
 normal approximation for the HL estimator.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllSimpleWilcox$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

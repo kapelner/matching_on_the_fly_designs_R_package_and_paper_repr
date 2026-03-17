@@ -19,13 +19,13 @@ SeqDesignInferenceIncidKKGCompAbstract = R6::R6Class("SeqDesignInferenceIncidKKG
 			private$get_effect_estimate()
 		},
 
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_effect_confidence_interval(alpha)
 		},
 
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = NULL){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
 			private$shared()
 			private$compute_effect_pvalue(delta)
 		},

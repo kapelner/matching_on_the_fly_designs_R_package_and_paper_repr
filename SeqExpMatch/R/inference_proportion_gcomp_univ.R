@@ -42,15 +42,15 @@ SeqDesignInferencePropUniGCompMeanDiff = R6::R6Class("SeqDesignInferencePropUniG
 		#' @description
 		#' Computes a 1 - \code{alpha} confidence interval for the marginal mean difference.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes a two-sided p-value for the marginal mean difference.
 		#' @param delta The null mean difference to test against. The default is 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		},
 
 		#' @description

@@ -95,10 +95,10 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#'
 		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_mle_confidence_interval()
+		#' seq_des_inf$compute_asymp_confidence_interval()
 		#' }
 		#'
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 
 			if (is.null(private$cached_values$s_beta_hat_T)){
@@ -130,10 +130,10 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#'
 		#' seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+		#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 		#' }
 		#'
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()

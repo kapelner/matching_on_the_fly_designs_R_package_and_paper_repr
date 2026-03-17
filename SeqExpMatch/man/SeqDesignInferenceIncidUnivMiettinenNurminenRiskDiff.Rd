@@ -41,8 +41,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-new}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$new()}}
 \item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_treatment_estimate}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-clone}{\code{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$clone()}}
 }
 }
@@ -119,12 +119,12 @@ Computes the observed risk-difference estimate.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_confidence_interval(
   alpha = 0.05,
   pval_epsilon = 1e-07
 )}\if{html}{\out{</div>}}
@@ -142,12 +142,12 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided Miettinen-Nurminen score p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

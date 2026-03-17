@@ -70,7 +70,7 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			}
 
 			# Expand the MLE CI (at 2*alpha) by 50% on each side
-			mle_ci   = private$compute_mle_confidence_interval_internal(alpha * 2)
+			mle_ci   = private$compute_asymp_confidence_interval_internal(alpha * 2)
 			ci_width = mle_ci[2] - mle_ci[1]
 			lo_bound = mle_ci[1] - 0.5 * ci_width
 			hi_bound = mle_ci[2] + 0.5 * ci_width
@@ -92,7 +92,7 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 		# -----------------------------------------------------------------------
 
 		compute_treatment_estimate_internal      = function() stop("must implement"),
-		compute_mle_confidence_interval_internal = function(alpha) stop("must implement"),
+		compute_asymp_confidence_interval_internal = function(alpha) stop("must implement"),
 		
 		# Children must implement these to provide the per-component p-values
 		compute_exact_pval_matched_pairs         = function(delta_0) stop("must implement"),

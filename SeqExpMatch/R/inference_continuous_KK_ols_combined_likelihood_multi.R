@@ -86,7 +86,7 @@ SeqDesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("SeqDesignInfe
 		#' \code{compute_treatment_estimate()}.
 		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
 		#' @return Named numeric vector of length 2: lower and upper bounds.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()
@@ -100,7 +100,7 @@ SeqDesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("SeqDesignInfe
 		#' \code{compute_treatment_estimate()}.
 		#' @param delta Null value to test against; default 0.
 		#' @return Numeric scalar p-value.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()

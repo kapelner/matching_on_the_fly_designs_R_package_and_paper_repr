@@ -28,7 +28,7 @@ seq_des_inf$compute_treatment_estimate()
 
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_confidence_interval`
+## Method `SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_confidence_interval`
 ## ------------------------------------------------
 
 \dontrun{
@@ -42,12 +42,12 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_two_sided_pval_for_treatment_effect`
+## Method `SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
 \dontrun{
@@ -61,7 +61,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -73,8 +73,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \itemize{
 \item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-new}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$new()}}
 \item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_treatment_estimate}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_confidence_interval_rand}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceAllKKCompoundMeanDiff-clone}{\code{SeqDesignInferenceAllKKCompoundMeanDiff$clone()}}
 }
@@ -166,9 +166,9 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 
 Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in
@@ -178,7 +178,7 @@ of estimat_type "median difference" where a nonparametric bootstrap confidence i
 is employed. Hence these confidence intervals are asymptotically valid and thus approximate
 for any sample size.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -207,7 +207,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 }
@@ -217,12 +217,12 @@ seq_des_inf$compute_mle_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKCompoundMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKCompoundMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -251,7 +251,7 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }

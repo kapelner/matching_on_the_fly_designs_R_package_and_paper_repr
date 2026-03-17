@@ -121,6 +121,6 @@ test_that("Inference works for ordinal partial proportional odds", {
 	inf_ppod <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(des, nonparallel = c("x"), verbose = FALSE)
 	est_ppod <- inf_ppod$compute_treatment_estimate()
 	expect_true(is.numeric(est_ppod))
-	pval_ppod <- inf_ppod$compute_mle_two_sided_pval_for_treatment_effect()
+	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval_for_treatment_effect()
 	expect_true(is.numeric(pval_ppod))
 })

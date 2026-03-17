@@ -36,7 +36,7 @@ SeqDesignInferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("SeqDesig
 		# @description
 		# Computes the approximate confidence interval.
 		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$fit_combined()
 			private$assert_finite_se()
@@ -46,18 +46,45 @@ SeqDesignInferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("SeqDesig
 		# @description
 		# Computes the approximate p-value.
 		# @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$fit_combined()
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+
+		duplicate = function(verbose = FALSE){
+			i = super$duplicate(verbose = verbose)
+			if (is.null(i)) return(NULL)
+			i$.__enclos_env__$private$rlm_method = private$rlm_method
+			i$.__enclos_env__$private$rlm_force_M = private$rlm_force_M
+			i
 		}
 	),
 
 	private = list(
 		rlm_method = NULL,
+		rlm_force_M = FALSE,
 
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		reduce_design_matrix_once = function(X, j_treat, cache_key){
+			cached = private$cached_values[[cache_key]]
+			if (!is.null(cached)) return(cached)
+
+			qr_X = qr(X)
+			if (qr_X$rank < ncol(X)){
+				keep = qr_X$pivot[seq_len(qr_X$rank)]
+				if (!(j_treat %in% keep)) keep[qr_X$rank] = j_treat
+				keep = sort(unique(keep))
+				X = X[, keep, drop = FALSE]
+				j_treat = which(keep == j_treat)
+			}
+
+			cached = list(X = X, j_treat = j_treat)
+			private$cached_values[[cache_key]] = cached
+			cached
+		},
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
@@ -68,19 +95,47 @@ SeqDesignInferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("SeqDesig
 		fit_rlm = function(X, y, j_treat){
 			if (nrow(X) <= ncol(X)) return(NULL)
 
-			mod = tryCatch({
-				if (identical(private$rlm_method, "M")) {
-					MASS::rlm(x = X, y = y, method = "M", psi = MASS::psi.huber)
-				} else {
-					MASS::rlm(x = X, y = y, method = private$rlm_method)
+			run_rlm = function(method){
+				tryCatch({
+					if (identical(method, "M")) {
+						MASS::rlm(x = X, y = y, method = "M", psi = MASS::psi.huber)
+					} else {
+						MASS::rlm(x = X, y = y, method = method)
+					}
+				}, error = function(e) e)
+			}
+
+			method_to_try = if (isTRUE(private$rlm_force_M)) "M" else private$rlm_method
+			mod = run_rlm(method_to_try)
+			if (inherits(mod, "error") && identical(method_to_try, "MM")){
+				msg = if (length(mod$message) == 0L) "" else mod$message
+				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
+					private$rlm_force_M = TRUE
+					mod = run_rlm("M")
 				}
-			}, error = function(e) NULL)
+			}
+			if (inherits(mod, "error")) return(NULL)
 			if (is.null(mod)) return(NULL)
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+			if ((is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
+				private$rlm_force_M = TRUE
+				mod = run_rlm("M")
+				if (inherits(mod, "error") || is.null(mod)) return(NULL)
+				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+			}
 			if (is.null(coef_table) || nrow(coef_table) < j_treat) return(NULL)
 			beta = as.numeric(coef_table[j_treat, "Value"])
 			se   = as.numeric(coef_table[j_treat, "Std. Error"])
+			if ((!is.finite(beta) || !is.finite(se) || se <= 0) && identical(method_to_try, "MM")){
+				private$rlm_force_M = TRUE
+				mod = run_rlm("M")
+				if (inherits(mod, "error") || is.null(mod)) return(NULL)
+				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+				if (is.null(coef_table) || nrow(coef_table) < j_treat) return(NULL)
+				beta = as.numeric(coef_table[j_treat, "Value"])
+				se   = as.numeric(coef_table[j_treat, "Std. Error"])
+			}
 			if (!is.finite(beta) || !is.finite(se) || se <= 0) return(NULL)
 
 			list(beta = beta, se = se, mod = mod)
@@ -131,14 +186,13 @@ SeqDesignInferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("SeqDesig
 				return(invisible(NULL))
 			}
 
-			qr_X = qr(X_comb)
-			if (qr_X$rank < ncol(X_comb)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(j_treat %in% keep)) keep[qr_X$rank] = j_treat
-				keep = sort(keep)
-				X_comb = X_comb[, keep, drop = FALSE]
-				j_treat = which(keep == j_treat)
-			}
+			reduced = private$reduce_design_matrix_once(
+				X_comb,
+				j_treat,
+				cache_key = "kk_robust_combined_reduced_design"
+			)
+			X_comb = reduced$X
+			j_treat = reduced$j_treat
 
 			fit = private$fit_rlm(X_comb, y_comb, j_treat)
 			if (is.null(fit)){

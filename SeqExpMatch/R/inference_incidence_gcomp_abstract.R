@@ -34,7 +34,7 @@ SeqDesignInferenceIncidGCompAbstract = R6::R6Class("SeqDesignInferenceIncidGComp
 		# @description
 		# Computes a 1 - \code{alpha} confidence interval.
 		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_effect_confidence_interval(alpha)
@@ -43,7 +43,7 @@ SeqDesignInferenceIncidGCompAbstract = R6::R6Class("SeqDesignInferenceIncidGComp
 		# @description
 		# Computes a two-sided p-value for the treatment effect.
 		# @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = NULL){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
 			private$shared()
 			private$compute_effect_pvalue(delta)
 		},

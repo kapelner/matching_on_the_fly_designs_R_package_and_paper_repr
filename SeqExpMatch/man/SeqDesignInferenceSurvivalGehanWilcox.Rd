@@ -41,7 +41,7 @@ seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceSurvivalGehanWilcox$compute_mle_confidence_interval`
+## Method `SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_confidence_interval`
 ## ------------------------------------------------
 
 \dontrun{
@@ -58,11 +58,11 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 
 ## ------------------------------------------------
-## Method `SeqDesignInferenceSurvivalGehanWilcox$compute_mle_two_sided_pval_for_treatment_effect`
+## Method `SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
 \dontrun{
@@ -79,7 +79,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 }
 \section{Super class}{
@@ -90,8 +90,8 @@ seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
 \itemize{
 \item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-new}{\code{SeqDesignInferenceSurvivalGehanWilcox$new()}}
 \item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_treatment_estimate}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_confidence_interval}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_confidence_interval}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-compute_confidence_interval_rand}{\code{SeqDesignInferenceSurvivalGehanWilcox$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceSurvivalGehanWilcox-clone}{\code{SeqDesignInferenceSurvivalGehanWilcox$clone()}}
 }
@@ -174,14 +174,14 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a (1 - alpha)-level confidence interval based on the asymptotic normality
 of the Peto-Prentice weighted martingale residual mean difference. Falls back to
 bootstrap if the SE is unavailable.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalGehanWilcox$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -212,7 +212,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_mle_confidence_interval()
+seq_des_inf$compute_asymp_confidence_interval()
 }
 }
 \if{html}{\out{</div>}}
@@ -221,15 +221,15 @@ seq_des_inf$compute_mle_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalGehanWilcox-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes the Peto-Prentice (Gehan-Wilcoxon) two-sided p-value via
 \code{survival::survdiff(rho = 1)}, which puts greater weight on early events
 relative to the standard log-rank test (\code{rho = 0}).
 For delta != 0, not yet implemented.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalGehanWilcox$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -260,7 +260,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = SeqDesignInferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 }
 \if{html}{\out{</div>}}

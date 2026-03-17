@@ -1,7 +1,7 @@
-#' Jonckheere-Terpstra Test for Ordinal Responses
+#' Jonckheere-Terpstra (JT) Test for Ordinal Responses
 #'
 #' @description
-#' Exact Jonckheere-Terpstra rank test for a two-arm ordered alternative with an
+#' Exact Jonckheere-Terpstra (JT) rank test for a two-arm ordered alternative with an
 #' ordinal response. For treatment versus control, the test statistic is the
 #' sum of Mann-Whitney U counts across groups. This class provides the exact
 #' distribution-based p-value.

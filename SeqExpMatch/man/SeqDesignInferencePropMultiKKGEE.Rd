@@ -48,8 +48,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferencePropMultiKKGEE-new}{\code{SeqDesignInferencePropMultiKKGEE$new()}}
 \item \href{#method-SeqDesignInferencePropMultiKKGEE-compute_treatment_estimate}{\code{SeqDesignInferencePropMultiKKGEE$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferencePropMultiKKGEE-compute_mle_confidence_interval}{\code{SeqDesignInferencePropMultiKKGEE$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferencePropMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferencePropMultiKKGEE$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferencePropMultiKKGEE-compute_asymp_confidence_interval}{\code{SeqDesignInferencePropMultiKKGEE$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferencePropMultiKKGEE-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferencePropMultiKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferencePropMultiKKGEE-clone}{\code{SeqDesignInferencePropMultiKKGEE$clone()}}
 }
 }
@@ -133,12 +133,14 @@ Returns the estimated treatment effect.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKGEE-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKGEE-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Computes the MLE-based confidence interval.
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKGEE-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKGEE-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKGEE$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKGEE$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -151,12 +153,12 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKGEE-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
-Computes the MLE-based p-value.
+\if{html}{\out{<a id="method-SeqDesignInferencePropMultiKKGEE-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferencePropMultiKKGEE-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKGEE$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferencePropMultiKKGEE$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

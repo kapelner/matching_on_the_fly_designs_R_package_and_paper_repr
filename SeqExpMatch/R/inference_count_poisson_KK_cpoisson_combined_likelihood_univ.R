@@ -47,19 +47,19 @@ SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood = R6::R6Class("Se
 		},
 
 		#' @description
-		#' Computes the MLE-based confidence interval.
+		#' Computes the asymptotic confidence interval.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
-		#' Computes the MLE-based p-value.
+		#' Computes the asymptotic p-value.
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	),
 	private = list(

@@ -48,6 +48,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$n = seq_des_obj$get_n()
 			private$num_cores = num_cores
 			private$verbose = verbose
+			private$cached_values$rand_distr_cache = list()
+			private$cached_values$permutations_cache = list()
 			if (private$verbose){
 				cat(paste0(
 					"Initialized inference methods for a ",
@@ -99,10 +101,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
 			# Embed the function into this class as a private function
 		    private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
-		    if (!is.null(custom_randomization_statistic_function)){
+			if (!is.null(custom_randomization_statistic_function)){
 		   	 	# Make sure the function's environment is the class instance so it can access all the data
 				environment(private[["custom_randomization_statistic_function"]]) = environment(self$initialize)
 			}
+			private$cached_values$t0s_rand = NULL
+			private$cached_values$rand_distr_cache = list()
+			private$cached_values$custom_stat_analysis = NULL
 		},
 
 		# @description
@@ -116,16 +121,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# Computes a 1-alpha level frequentist confidence interval
 		# @param alpha					The confidence level.
 		# @return 	A confidence interval
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			stop(class(self)[1], " must implement compute_mle_confidence_interval(alpha)")
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			stop(class(self)[1], " must implement compute_asymp_confidence_interval(alpha)")
 		},
 
 		# @description
 		# Computes a 2-sided p-value
 		# @param delta					The null difference to test against.
 		# @return 	The frequentist p-value
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			stop(class(self)[1], " must implement compute_mle_two_sided_pval_for_treatment_effect(delta)")
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			stop(class(self)[1], " must implement compute_asymp_two_sided_pval_for_treatment_effect(delta)")
 		},
 
 		# @description
@@ -301,7 +306,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#
 		# seq_des_inf = SeqDesignInference$new(seq_des)
-		# seq_des_inf$compute_mle_confidence_interval()
+		# seq_des_inf$compute_asymp_confidence_interval()
 		# }
 		#
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, na.rm = FALSE){
@@ -404,6 +409,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 
+			if (is.null(permutations)) {
+				permutations = private$generate_permutations(nsim_exact_test)
+			}
+
 			bypass_checks = FALSE
 			if (transform_responses == "already_transformed"){
 				transform_responses = "none"
@@ -471,18 +480,50 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 			# Store is_KK flag for use in callback
 			is_KK = private$is_KK
+			custom_stat_analysis = private$analyze_custom_randomization_statistic()
+			use_lightweight_custom_stat = isTRUE(custom_stat_analysis$can_use_lightweight_yw_only)
+			custom_stat_needs_match_data = isTRUE(custom_stat_analysis$needs_match_data)
+			lightweight_custom_context = NULL
+			base_template_y = seq_des_template$.__enclos_env__$private$y
+			base_template_dead = seq_des_template$.__enclos_env__$private$dead
+			if (use_lightweight_custom_stat) {
+				lightweight_custom_context = private$build_lightweight_custom_randomization_context()
+			}
 
 			use_perms = !is.null(permutations) && length(permutations) >= nsim_exact_test
 
-			# If a fast C++ dispatcher exists but permutations weren't provided, generate them now
-			# to avoid falling back to the slow, heavy mclapply R loop.
-			if (!use_perms && private$has_private_method("compute_fast_randomization_distr")) {
-				permutations = private$generate_permutations(nsim_exact_test)
-				use_perms = TRUE
-			}
-
 			# Iteration function that uses thread-local objects
 			run_randomization_iteration <- function(thread_des_obj, thread_inf_obj, perm_idx = NULL){
+				if (use_lightweight_custom_stat && use_perms && !is.null(perm_idx)) {
+					perm_data = permutations[[perm_idx]]
+					w_sim = perm_data$w
+					y_sim = base_template_y
+					if (delta != 0) {
+						if (transform_responses == "log") {
+							y_sim[w_sim == 1] = y_sim[w_sim == 1] * exp(delta)
+						} else if (transform_responses == "logit") {
+							y_sim[w_sim == 1] = inv_logit(logit(y_sim[w_sim == 1]) + delta)
+						} else if (transform_responses == "log1p") {
+							y_sim[w_sim == 1] = (y_sim[w_sim == 1] + 1) * exp(delta) - 1
+						} else {
+							y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
+						}
+					}
+
+					estimate = private$evaluate_lightweight_custom_randomization_statistic(
+						context = lightweight_custom_context,
+						y = y_sim,
+						w = w_sim,
+						dead = base_template_dead
+					)
+					if (identical(estimate, NA_real_)) return(NA_real_)
+					if (is.numeric(estimate) && length(estimate) == 1 && is.finite(estimate)) {
+						return(estimate)
+					}
+					warning("run_randomization_iteration returned unexpected type or length.")
+					return(NA_real_)
+				}
+
 				if (use_perms && !is.null(perm_idx)) {
 					# Use cached w
 					perm_data = permutations[[perm_idx]]
@@ -543,7 +584,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				}
 
 				# For KK designs, recompute match data and match statistics (the latter only if necessary)
-				if (is_KK && private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
+				if (is_KK &&
+						(is.null(private$custom_randomization_statistic_function) || custom_stat_needs_match_data) &&
+						private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
 					# if using cache, match_indic is already set. If not, it comes from thread_des_obj
 					if (!use_perms) {
 						thread_inf_obj$.__enclos_env__$private$match_indic = thread_des_obj$.__enclos_env__$private$match_indic
@@ -593,8 +636,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			# We use a single pair of objects if cores = 1
 			# Parallelizing randomization tests in R can be done via mclapply if needed
 			if (private$num_cores == 1) {
-				thread_des_obj = seq_des_template$duplicate()
-				thread_inf_obj = self$duplicate()
+				thread_des_obj = NULL
+				thread_inf_obj = NULL
+				if (!use_lightweight_custom_stat) {
+					thread_des_obj = seq_des_template$duplicate()
+					thread_inf_obj = self$duplicate()
+				}
 				beta_hat_T_diff_ws = rep(NA_real_, nsim_exact_test)
 				pb = NULL
 				if (isTRUE(show_progress)) {
@@ -628,8 +675,12 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			} else {
 				# Use parallel backend if more than 1 core requested
 				beta_hat_T_diff_ws = unlist(parallel::mclapply(1:nsim_exact_test, function(i) {
-					thread_des_obj = seq_des_template$duplicate()
-					thread_inf_obj = self$duplicate()
+					thread_des_obj = NULL
+					thread_inf_obj = NULL
+					if (!use_lightweight_custom_stat) {
+						thread_des_obj = seq_des_template$duplicate()
+						thread_inf_obj = self$duplicate()
+					}
 					run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = if(use_perms) i else NULL)
 				}, mc.cores = private$num_cores))
 			}
@@ -676,7 +727,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#
 		# seq_des_inf = SeqDesignInference$new(seq_des)
-		# seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect()
+		# seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 		# }
 		#
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
@@ -684,6 +735,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			if (private$seq_des_obj_priv_int$response_type == "incidence"){
 				stop("Randomization tests are not supported for incidence outcomes. Use SeqDesignInferenceIncidExactZhang for the Zhang method.")
 			}
+			if (is.null(permutations)) {
+				permutations = private$generate_permutations(nsim_exact_test)
+			}
+
+			cache_key = private$build_randomization_distribution_cache_key(
+				nsim_exact_test = nsim_exact_test,
+				delta = delta,
+				transform_responses = transform_responses,
+				permutations = permutations
+			)
 
 			# Fast path for linear estimators (continuous, no custom statistic):
 			# t0s(delta) = t0s(0) + delta exactly (mean diff, OLS, KK compound).
@@ -707,16 +768,29 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				))))
 			}
 
-			#approximate the null distribution by computing estimates on many draws of w
-			t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(
-				nsim_exact_test,
-				delta,
-				transform_responses,
-				show_progress = show_progress,
-				permutations = permutations
-			)
+			if (is.null(private$cached_values$rand_distr_cache)) {
+				private$cached_values$rand_distr_cache = list()
+			}
 
-			# Cache t0s when delta=0 on the raw scale for future fast-path use.
+			if (!is.null(cache_key) &&
+					!is.null(private$cached_values$rand_distr_cache[[cache_key]]) &&
+					length(private$cached_values$rand_distr_cache[[cache_key]]) >= nsim_exact_test) {
+				t0s = private$cached_values$rand_distr_cache[[cache_key]][seq_len(nsim_exact_test)]
+			} else {
+				#approximate the null distribution by computing estimates on many draws of w
+				t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(
+					nsim_exact_test,
+					delta,
+					transform_responses,
+					show_progress = show_progress,
+					permutations = permutations
+				)
+				if (!is.null(cache_key)) {
+					private$cached_values$rand_distr_cache[[cache_key]] = t0s
+				}
+			}
+
+			# Cache t0s when delta=0 on the raw scale for future exact-shift fast-path use.
 			if (delta == 0 && transform_responses == "none" && is.null(private[["custom_randomization_statistic_function"]])) {
 				private$cached_values$t0s_rand = t0s
 			}
@@ -782,7 +856,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#
 		# seq_des_inf = SeqDesignInference$new(seq_des)
-		# seq_des_inf$compute_mle_confidence_interval()
+		# seq_des_inf$compute_asymp_confidence_interval()
 		# }
 		#
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
@@ -799,36 +873,139 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				inherits(self, "SeqDesignInferenceAbstractKKGEE") ||
 				inherits(self, "SeqDesignInferenceAbstractKKGLMM")
 
+			build_randomization_ci_search_bounds = function(inf_obj,
+					transform_arg,
+					permutations,
+					target_pval){
+				obj_private = inf_obj$.__enclos_env__$private
+
+				if (transform_arg == "none" &&
+						(is.null(obj_private$cached_values$t0s_rand) ||
+							length(obj_private$cached_values$t0s_rand) < nsim_exact_test)) {
+					inf_obj$compute_two_sided_pval_for_treatment_effect_rand(
+						nsim_exact_test = nsim_exact_test,
+						delta = 0,
+						transform_responses = transform_arg,
+						show_progress = FALSE,
+						permutations = permutations
+					)
+				}
+
+				est = tryCatch(
+					as.numeric(inf_obj$compute_treatment_estimate()),
+					error = function(e) NA_real_
+				)
+				if (length(est) == 0L || !is.finite(est[1])) {
+					est = NA_real_
+				} else {
+					est = est[1]
+				}
+
+				asym_ci = tryCatch(
+					as.numeric(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2)),
+					error = function(e) c(NA_real_, NA_real_)
+				)
+				if (length(asym_ci) < 2L || !all(is.finite(asym_ci[1:2]))) {
+					asym_ci = c(NA_real_, NA_real_)
+				} else {
+					asym_ci = sort(asym_ci[1:2])
+				}
+
+				if (!is.finite(est) && all(is.finite(asym_ci))) {
+					est = mean(asym_ci)
+				}
+
+				if (!all(is.finite(asym_ci))) {
+					y_vals = obj_private$y
+					scale_guess = suppressWarnings(stats::sd(y_vals, na.rm = TRUE))
+					if (!is.finite(scale_guess) || scale_guess <= 0) {
+						scale_guess = suppressWarnings(stats::IQR(y_vals, na.rm = TRUE) / 1.349)
+					}
+					if (!is.finite(scale_guess) || scale_guess <= 0) {
+						scale_guess = 1
+					}
+					if (!is.finite(est)) {
+						est = suppressWarnings(stats::median(y_vals, na.rm = TRUE))
+						if (!is.finite(est)) {
+							est = 0
+						}
+					}
+					asym_ci = c(est - 2 * scale_guess, est + 2 * scale_guess)
+				}
+
+				l = asym_ci[1]
+				u = asym_ci[2]
+				if (l >= est) {
+					l = est - max(abs(u - est), 1)
+				}
+				if (u <= est) {
+					u = est + max(abs(est - l), 1)
+				}
+
+				evaluate_pval = function(delta){
+					pval = tryCatch(
+						as.numeric(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(
+							nsim_exact_test = nsim_exact_test,
+							delta = delta,
+							transform_responses = transform_arg,
+							show_progress = FALSE,
+							permutations = permutations
+						)),
+						error = function(e) NA_real_
+					)
+					if (length(pval) == 0L) {
+						return(NA_real_)
+					}
+					pval[1]
+				}
+
+				expand_bound = function(bound, lower){
+					pval_bound = evaluate_pval(bound)
+					if (is.finite(pval_bound) && pval_bound < target_pval) {
+						return(bound)
+					}
+
+					step = abs(est - bound)
+					if (!is.finite(step) || step <= 0) {
+						step = 1
+					}
+
+					for (iter in seq_len(12L)) {
+						step = step * 2
+						candidate = if (lower) est - step else est + step
+						pval_candidate = evaluate_pval(candidate)
+						bound = candidate
+						if (is.finite(pval_candidate) && pval_candidate < target_pval) {
+							break
+						}
+					}
+					bound
+				}
+
+				list(
+					est = est,
+					l = expand_bound(l, lower = TRUE),
+					u = expand_bound(u, lower = FALSE)
+				)
+			}
+
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
 					perms = private$generate_permutations(nsim_exact_test)
-
-					bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-					lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
-					est = self$compute_treatment_estimate()
-					if (!is.finite(est)) {
-						est = (bootstrap_ci[1] + bootstrap_ci[2]) / 2
-					}
-
-					if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
-						stop("Bootstrap confidence interval returned NA bounds. Cannot compute randomization-based confidence interval.")
-					}
-
-					if (is.null(private$cached_values$t0s_rand) ||
-							length(private$cached_values$t0s_rand) < nsim_exact_test) {
-						self$compute_two_sided_pval_for_treatment_effect_rand(
-							nsim_exact_test, delta = 0, transform_responses = "none",
-							show_progress = FALSE, permutations = perms)
-					}
+					bounds = build_randomization_ci_search_bounds(
+						inf_obj = self,
+						transform_arg = "none",
+						permutations = perms,
+						target_pval = alpha / 2
+					)
 
 					if (private$num_cores > 1) {
 						ci = private$compute_ci_both_bounds_parallel(
 							nsim_exact_test = nsim_exact_test,
-							l_lower = lower_upper_ci_bounds[1],
-							u_lower = est,
-							l_upper = est,
-							u_upper = lower_upper_ci_bounds[2],
+							l_lower = bounds$l,
+							u_lower = bounds$est,
+							l_upper = bounds$est,
+							u_upper = bounds$u,
 							pval_th = alpha / 2,
 							tol = pval_epsilon,
 							transform_responses = "none",
@@ -837,8 +1014,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						ci = c(
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = lower_upper_ci_bounds[1],
-								u = est,
+								l = bounds$l,
+								u = bounds$est,
 								pval_th = alpha / 2,
 								tol = pval_epsilon,
 								transform_responses = "none",
@@ -846,8 +1023,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 								show_progress = show_progress,
 								permutations = perms),
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = est,
-								u = lower_upper_ci_bounds[2],
+								l = bounds$est,
+								u = bounds$u,
 								pval_th = alpha / 2,
 								tol = pval_epsilon,
 								transform_responses = "none",
@@ -861,33 +1038,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				incidence =  stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use SeqDesignInferenceIncidExactZhang for the Zhang method."),
 				ordinal =    {
 					perms = private$generate_permutations(nsim_exact_test)
-
-					bootstrap_ci = self$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-					lower_upper_ci_bounds = c(bootstrap_ci[1] - 0.5 * ci_width, bootstrap_ci[2] + 0.5 * ci_width)
-					est = self$compute_treatment_estimate()
-					if (!is.finite(est)) {
-						est = (bootstrap_ci[1] + bootstrap_ci[2]) / 2
-					}
-
-					if (is.na(lower_upper_ci_bounds[1]) || is.na(lower_upper_ci_bounds[2])) {
-						stop("Bootstrap confidence interval returned NA bounds. Cannot compute randomization-based confidence interval.")
-					}
-
-					if (is.null(private$cached_values$t0s_rand) ||
-							length(private$cached_values$t0s_rand) < nsim_exact_test) {
-						self$compute_two_sided_pval_for_treatment_effect_rand(
-							nsim_exact_test, delta = 0, transform_responses = "none",
-							show_progress = FALSE, permutations = perms)
-					}
+					bounds = build_randomization_ci_search_bounds(
+						inf_obj = self,
+						transform_arg = "none",
+						permutations = perms,
+						target_pval = alpha / 2
+					)
 
 					if (private$num_cores > 1) {
 						ci = private$compute_ci_both_bounds_parallel(
 							nsim_exact_test = nsim_exact_test,
-							l_lower = lower_upper_ci_bounds[1],
-							u_lower = est,
-							l_upper = est,
-							u_upper = lower_upper_ci_bounds[2],
+							l_lower = bounds$l,
+							u_lower = bounds$est,
+							l_upper = bounds$est,
+							u_upper = bounds$u,
 							pval_th = alpha / 2,
 							tol = pval_epsilon,
 							transform_responses = "none",
@@ -896,8 +1060,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						ci = c(
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = lower_upper_ci_bounds[1],
-								u = est,
+								l = bounds$l,
+								u = bounds$est,
 								pval_th = alpha / 2,
 								tol = pval_epsilon,
 								transform_responses = "none",
@@ -905,8 +1069,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 								show_progress = show_progress,
 								permutations = perms),
 							private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = est,
-								u = lower_upper_ci_bounds[2],
+								l = bounds$est,
+								u = bounds$u,
 								pval_th = alpha / 2,
 								tol = pval_epsilon,
 								transform_responses = "none",
@@ -939,31 +1103,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 
 					temp_inf$.__enclos_env__$private$cached_values = list()
-
-					est = temp_inf$compute_treatment_estimate()
-
-					# Bootstrap on transformed data
-					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					if (!all(is.finite(bootstrap_ci))) {
-						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
-					}
-					if (!is.finite(est)) {
-						est = mean(bootstrap_ci)
-					}
-					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-					l = bootstrap_ci[1] - 0.5 * ci_width
-					u = bootstrap_ci[2] + 0.5 * ci_width
-					if (!all(is.finite(c(l, u)))) {
-						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
-					}
+					bounds = build_randomization_ci_search_bounds(
+						inf_obj = temp_inf,
+						transform_arg = transform_arg,
+						permutations = perms,
+						target_pval = alpha / 2
+					)
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
 					# computed simultaneously via an outer fork when private$num_cores > 1.
 					if (private$num_cores > 1) {
 						bound_specs = list(
-							list(l = l, u = est, lower = TRUE),
-							list(l = est, u = u, lower = FALSE)
+							list(l = bounds$l, u = bounds$est, lower = TRUE),
+							list(l = bounds$est, u = bounds$u, lower = FALSE)
 						)
 						results = parallel::mclapply(bound_specs, function(spec) {
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
@@ -976,11 +1129,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$l, u = bounds$est, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = TRUE,
 								show_progress = show_progress, permutations = perms),
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$est, u = bounds$u, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = FALSE,
 								show_progress = show_progress, permutations = perms)
 						)
@@ -1011,31 +1164,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 
 					temp_inf$.__enclos_env__$private$cached_values = list()
-
-					est = temp_inf$compute_treatment_estimate()
-
-					# Bootstrap on transformed data
-					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					if (!all(is.finite(bootstrap_ci))) {
-						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
-					}
-					if (!is.finite(est)) {
-						est = mean(bootstrap_ci)
-					}
-					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-					l = bootstrap_ci[1] - 0.5 * ci_width
-					u = bootstrap_ci[2] + 0.5 * ci_width
-					if (!all(is.finite(c(l, u)))) {
-						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
-					}
+					bounds = build_randomization_ci_search_bounds(
+						inf_obj = temp_inf,
+						transform_arg = transform_arg,
+						permutations = perms,
+						target_pval = alpha / 2
+					)
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
 					# computed simultaneously via an outer fork when private$num_cores > 1.
 					if (private$num_cores > 1) {
 						bound_specs = list(
-							list(l = l, u = est, lower = TRUE),
-							list(l = est, u = u, lower = FALSE)
+							list(l = bounds$l, u = bounds$est, lower = TRUE),
+							list(l = bounds$est, u = bounds$u, lower = FALSE)
 						)
 						results = parallel::mclapply(bound_specs, function(spec) {
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
@@ -1048,11 +1190,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$l, u = bounds$est, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = TRUE,
 								show_progress = show_progress, permutations = perms),
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$est, u = bounds$u, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = FALSE,
 								show_progress = show_progress, permutations = perms)
 						)
@@ -1081,31 +1223,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 
 					temp_inf$.__enclos_env__$private$cached_values = list()
-
-					est = temp_inf$compute_treatment_estimate()
-
-					# Bootstrap on transformed data
-					bootstrap_ci = temp_inf$compute_bootstrap_confidence_interval(alpha * 2, na.rm = TRUE)
-					if (!all(is.finite(bootstrap_ci))) {
-						stop("Bootstrap confidence interval returned non-finite bounds. Cannot compute randomization-based confidence interval.")
-					}
-					if (!is.finite(est)) {
-						est = mean(bootstrap_ci)
-					}
-					ci_width = bootstrap_ci[2] - bootstrap_ci[1]
-					l = bootstrap_ci[1] - 0.5 * ci_width
-					u = bootstrap_ci[2] + 0.5 * ci_width
-					if (!all(is.finite(c(l, u)))) {
-						stop("Randomization CI search bounds are non-finite after bootstrap expansion.")
-					}
+					bounds = build_randomization_ci_search_bounds(
+						inf_obj = temp_inf,
+						transform_arg = transform_arg,
+						permutations = perms,
+						target_pval = alpha / 2
+					)
 
 					# Run inversion on temp_inf which has transformed data.
 					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
 					# computed simultaneously via an outer fork when private$num_cores > 1.
 					if (private$num_cores > 1) {
 						bound_specs = list(
-							list(l = l, u = est, lower = TRUE),
-							list(l = est, u = u, lower = FALSE)
+							list(l = bounds$l, u = bounds$est, lower = TRUE),
+							list(l = bounds$est, u = bounds$u, lower = FALSE)
 						)
 						results = parallel::mclapply(bound_specs, function(spec) {
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
@@ -1118,11 +1249,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = l, u = est, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$l, u = bounds$est, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = TRUE,
 								show_progress = show_progress, permutations = perms),
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
-								l = est, u = u, pval_th = alpha / 2, tol = pval_epsilon,
+								l = bounds$est, u = bounds$u, pval_th = alpha / 2, tol = pval_epsilon,
 								transform_responses = transform_arg, lower = FALSE,
 								show_progress = show_progress, permutations = perms)
 						)
@@ -1159,6 +1290,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			i$.__enclos_env__$private$p = 										private$p
 			i$.__enclos_env__$private$X = 										private$X
 			i$.__enclos_env__$private$custom_randomization_statistic_function = private$custom_randomization_statistic_function
+			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
 			if (!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				environment(i$.__enclos_env__$private$custom_randomization_statistic_function) = environment(i$initialize)
 			}
@@ -1183,6 +1315,177 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		custom_randomization_statistic_function = NULL,
 		cached_values = list(),
 
+	build_randomization_distribution_cache_key = function(nsim_exact_test, delta, transform_responses, permutations){
+		if (is.null(permutations)) {
+			return(NULL)
+		}
+		stat_sig = private$custom_randomization_statistic_signature()
+		perm_sig = private$permutations_signature(permutations, nsim_exact_test)
+		paste(
+			"nsim", as.integer(nsim_exact_test),
+			"delta", formatC(delta, digits = 17, format = "fg", flag = "#"),
+			"transform", transform_responses,
+			"stat", stat_sig,
+			"perm", perm_sig,
+			sep = "|"
+		)
+	},
+
+	custom_randomization_statistic_signature = function(){
+		if (is.null(private$custom_randomization_statistic_function)) {
+			return("default")
+		}
+		private$stable_signature(list(
+			formals = formals(private$custom_randomization_statistic_function),
+			body = body(private$custom_randomization_statistic_function)
+		))
+	},
+
+	permutations_signature = function(permutations, nsim_exact_test){
+		private$stable_signature(list(
+			nsim_exact_test = as.integer(nsim_exact_test),
+			permutations = permutations[seq_len(min(length(permutations), nsim_exact_test))]
+		))
+	},
+
+	stable_signature = function(obj){
+		raw_sig = serialize(obj, NULL, xdr = FALSE)
+		ints = as.integer(raw_sig)
+		if (length(ints) == 0L) {
+			return("0:0:0")
+		}
+
+		modulus = 2147483647
+		h1 = 0
+		h2 = 0
+		step = max(1L, floor(length(ints) / 64L))
+		for (i in seq_along(ints)) {
+			val = ints[i]
+			h1 = (h1 * 131 + val) %% modulus
+			if (i == 1L || i == length(ints) || (i %% step) == 0L) {
+				h2 = (h2 * 65599 + val + i) %% modulus
+			}
+		}
+		paste(length(ints), as.integer(h1), as.integer(h2), sep = ":")
+	},
+
+	extract_dollar_paths = function(expr){
+		paths = list()
+		if (is.call(expr)) {
+			if (identical(expr[[1]], as.name("$")) && length(expr) == 3L) {
+				path = private$resolve_dollar_path(expr)
+				if (!is.null(path)) {
+					paths = c(paths, list(path))
+				}
+			}
+			for (i in seq_along(expr)[-1]) {
+				paths = c(paths, private$extract_dollar_paths(expr[[i]]))
+			}
+		}
+		paths
+	},
+
+	resolve_dollar_path = function(expr){
+		if (is.symbol(expr)) {
+			return(as.character(expr))
+		}
+		if (is.call(expr) && identical(expr[[1]], as.name("$")) && length(expr) == 3L) {
+			parent_path = private$resolve_dollar_path(expr[[2]])
+			child_name = if (is.symbol(expr[[3]])) as.character(expr[[3]]) else NULL
+			if (is.null(parent_path) || is.null(child_name)) {
+				return(NULL)
+			}
+			return(c(parent_path, child_name))
+		}
+		NULL
+	},
+
+	analyze_custom_randomization_statistic = function(){
+		if (!is.null(private$cached_values$custom_stat_analysis)) {
+			return(private$cached_values$custom_stat_analysis)
+		}
+		if (is.null(private$custom_randomization_statistic_function)) {
+			analysis = list(
+				can_use_lightweight_yw_only = FALSE,
+				needs_match_data = TRUE
+			)
+			private$cached_values$custom_stat_analysis = analysis
+			return(analysis)
+		}
+
+		dollar_paths = private$extract_dollar_paths(body(private$custom_randomization_statistic_function))
+		path_strings = vapply(dollar_paths, paste, character(1), collapse = "$")
+
+		allowed_lightweight_paths = c(
+			"private$y",
+			"private$w",
+			"private$dead",
+			"private$seq_des_obj_priv_int",
+			"private$seq_des_obj_priv_int$y",
+			"private$seq_des_obj_priv_int$w",
+			"private$seq_des_obj_priv_int$dead"
+		)
+		references_self = any(vapply(dollar_paths, function(path) length(path) > 0L && identical(path[1], "self"), logical(1)))
+		can_use_lightweight_yw_only =
+			!references_self &&
+			all(path_strings %in% allowed_lightweight_paths)
+
+		match_tokens = c(
+			"match", "reservoir", "pair", "stratum", "strata",
+			"matched", "discordant", "concordant"
+		)
+		needs_match_data = TRUE
+		if (can_use_lightweight_yw_only) {
+			needs_match_data = FALSE
+		} else if (length(path_strings) > 0L) {
+			needs_match_data = any(vapply(match_tokens, function(token) {
+				any(grepl(token, path_strings, fixed = TRUE))
+			}, logical(1)))
+		}
+
+		analysis = list(
+			can_use_lightweight_yw_only = can_use_lightweight_yw_only,
+			needs_match_data = needs_match_data
+		)
+		private$cached_values$custom_stat_analysis = analysis
+		analysis
+	},
+
+	build_lightweight_custom_randomization_context = function(){
+		if (is.null(private$custom_randomization_statistic_function)) {
+			return(NULL)
+		}
+		orig_env = environment(private$custom_randomization_statistic_function)
+		eval_env = new.env(parent = orig_env)
+		private_proxy = new.env(parent = emptyenv())
+		seq_priv_proxy = new.env(parent = emptyenv())
+		private_proxy$seq_des_obj_priv_int = seq_priv_proxy
+		eval_env$private = private_proxy
+		custom_fun = private$custom_randomization_statistic_function
+		environment(custom_fun) = eval_env
+		list(
+			fun = custom_fun,
+			private_proxy = private_proxy,
+			seq_des_obj_priv_int_proxy = seq_priv_proxy
+		)
+	},
+
+	evaluate_lightweight_custom_randomization_statistic = function(context, y, w, dead = NULL){
+		if (is.null(context)) {
+			return(NA_real_)
+		}
+		context$private_proxy$y = y
+		context$private_proxy$w = w
+		context$private_proxy$dead = dead
+		context$seq_des_obj_priv_int_proxy$y = y
+		context$seq_des_obj_priv_int_proxy$w = w
+		context$seq_des_obj_priv_int_proxy$dead = dead
+		tryCatch(
+			context$fun(),
+			error = function(e) NA_real_
+		)
+	},
+
 	has_private_method = function(method_name){
 		method_name %in% names(private)
 	},
@@ -1192,6 +1495,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		},
 
 					generate_permutations = function(nsim_exact_test = 501){
+						cache_key = as.character(as.integer(nsim_exact_test))
+						if (is.null(private$cached_values$permutations_cache)) {
+							private$cached_values$permutations_cache = list()
+						}
+						if (!is.null(private$cached_values$permutations_cache[[cache_key]]) &&
+								length(private$cached_values$permutations_cache[[cache_key]]) >= nsim_exact_test) {
+							return(private$cached_values$permutations_cache[[cache_key]][seq_len(nsim_exact_test)])
+						}
+
 						perms = vector("list", nsim_exact_test)
 						# Use a template design to generate
 						des_temp = private$seq_des_obj$duplicate()
@@ -1206,6 +1518,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 							}
 							perms[[i]] = perm_data
 						}
+						private$cached_values$permutations_cache[[cache_key]] = perms
 						perms
 					},
 			compute_treatment_estimate_during_randomization_inference = function(){			if (is.null(private$custom_randomization_statistic_function)){ #i.e., the default

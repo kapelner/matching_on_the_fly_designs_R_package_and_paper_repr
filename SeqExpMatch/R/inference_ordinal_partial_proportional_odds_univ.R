@@ -8,23 +8,12 @@
 #' @export
 #' @examples
 #' set.seed(1)
-#' seq_des <- SeqDesignCRD$
-#'   new(
-#'     n = 8,
-#'     response_type = "ordinal",
-#'     verbose = FALSE
-#'   )
+#' seq_des <- SeqDesignCRD$new(n = 8, response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(8)) {
-#'   seq_des$
-#'     add_subject_to_experiment_and_assign(data.frame(x1 = i))
+#'   seq_des$add_subject_to_experiment_and_assign(data.frame(x1 = i))
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$
-#'   new(
-#'     seq_des,
-#'     verbose = FALSE
-#'   )
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$new(seq_des, verbose = FALSE)
 #' infer
 SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr = R6::R6Class(
 	"SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr",

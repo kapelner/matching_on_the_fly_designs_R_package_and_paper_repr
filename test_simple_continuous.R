@@ -26,10 +26,10 @@ seq_des_inf1$compute_treatment_estimate()
 cat("Treatment estimate:", seq_des_inf1$compute_treatment_estimate(), "\n")
 
 cat("Computing MLE pval...\n")
-seq_des_inf1$compute_mle_two_sided_pval_for_treatment_effect()
+seq_des_inf1$compute_asymp_two_sided_pval_for_treatment_effect()
 
 cat("Computing MLE CI...\n")
-seq_des_inf1$compute_mle_confidence_interval(0.05)
+seq_des_inf1$compute_asymp_confidence_interval(0.05)
 
 cat("Computing bootstrap CI (B=10)...\n")
 seq_des_inf1$compute_bootstrap_confidence_interval(B = 10, na.rm = TRUE)

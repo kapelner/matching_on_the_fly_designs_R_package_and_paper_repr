@@ -181,15 +181,15 @@ for (rt in response_types) {
 		rand_ci_res <- safe_run_metric(function() inf_obj$compute_confidence_interval_rand())
 		rand_ci_bounds <- extract_ci_bounds(rand_ci_res$value)
 
-		if ("compute_mle_confidence_interval" %in% names(inf_obj)) {
-			mle_ci_res <- safe_run_metric(function() inf_obj$compute_mle_confidence_interval())
+		if ("compute_asymp_confidence_interval" %in% names(inf_obj)) {
+			mle_ci_res <- safe_run_metric(function() inf_obj$compute_asymp_confidence_interval())
 		} else {
 			mle_ci_res <- list(value = NA, error = NA_character_)
 		}
 		mle_ci_bounds <- extract_ci_bounds(mle_ci_res$value)
 
-		if ("compute_mle_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
-			mle_pval_res <- safe_run_metric(function() inf_obj$compute_mle_two_sided_pval_for_treatment_effect())
+		if ("compute_asymp_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
+			mle_pval_res <- safe_run_metric(function() inf_obj$compute_asymp_two_sided_pval_for_treatment_effect())
 		} else {
 			mle_pval_res <- list(value = NA, error = NA_character_)
 		}

@@ -31,13 +31,13 @@ seq_des_inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$
 seq_des_inf$
   compute_treatment_estimate()
 
-# compute_mle_confidence_interval
+# compute_asymp_confidence_interval
 seq_des_inf$
-  compute_mle_confidence_interval()
+  compute_asymp_confidence_interval()
 
-# compute_mle_two_sided_pval_for_treatment_effect
+# compute_asymp_two_sided_pval_for_treatment_effect
 seq_des_inf$
-  compute_mle_two_sided_pval_for_treatment_effect()
+  compute_asymp_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -49,8 +49,8 @@ seq_des_inf$
 \itemize{
 \item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-new}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$new()}}
 \item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_treatment_estimate}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_confidence_interval}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_confidence_interval_rand}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceSurvivalRestrictedMeanDiff-clone}{\code{SeqDesignInferenceSurvivalRestrictedMeanDiff$clone()}}
 }
@@ -121,9 +121,9 @@ The setting-appropriate (see description) numeric estimate of the treatment effe
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 differently for all response types, estimate types, and
 test types.
@@ -132,7 +132,7 @@ Here we use the theory that MLE's computed for GLM's are asymptotically normal.
 Hence these confidence intervals are asymptotically valid
 and thus approximate for any sample size.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -150,12 +150,12 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

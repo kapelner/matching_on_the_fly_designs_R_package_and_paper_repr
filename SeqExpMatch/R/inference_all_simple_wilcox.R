@@ -71,7 +71,7 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		#' Computes a \eqn{1 - \alpha} asymptotic confidence interval based on the normal
 		#' approximation for the HL estimator.
 		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$assert_finite_se()
@@ -82,7 +82,7 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		#' Returns a two-sided p-value for \eqn{H_0: \Delta = \delta} using the asymptotic
 		#' normal approximation for the HL estimator.
 		#' @param delta Null value; default 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$assert_finite_se()
@@ -91,6 +91,69 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 	),
 
 	private = list(
+		hl_point_estimate = function(y_vals, w_vals){
+			wilcox_hl_point_estimate_cpp(as.numeric(y_vals), as.integer(w_vals))
+		},
+
+		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			indices_mat = matrix(-1L, nrow = n, ncol = B)
+
+			for (b in seq_len(B)) {
+				attempt = 1L
+				repeat {
+					i_b = sample_int_replace_cpp(n, n)
+					w_b = w[i_b]
+					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+						indices_mat[, b] = i_b - 1L
+						break
+					}
+					attempt = attempt + 1L
+					if (attempt > max_resample_attempts) {
+						break
+					}
+				}
+			}
+
+			compute_wilcox_hl_bootstrap_parallel_cpp(
+				as.numeric(y),
+				as.integer(w),
+				indices_mat,
+				private$num_cores
+			)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			nsim = length(permutations)
+			w_mat = matrix(0L, nrow = length(y), ncol = nsim)
+			for (i in seq_len(nsim)) {
+				w_mat[, i] = permutations[[i]]$w
+			}
+
+			transform_code =
+				if (identical(transform_responses, "log")) 1L else
+				if (identical(transform_responses, "logit")) 2L else
+				if (identical(transform_responses, "log1p")) 3L else 0L
+
+			compute_wilcox_hl_distr_parallel_cpp(
+				as.numeric(y),
+				w_mat,
+				as.numeric(delta),
+				transform_code,
+				private$num_cores
+			)
+		},
+
+		compute_treatment_estimate_during_randomization_inference = function(){
+			if (is.null(private$custom_randomization_statistic_function)) {
+				private$hl_point_estimate(private$y, private$w)
+			} else {
+				private$custom_randomization_statistic_function()
+			}
+		},
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -117,7 +180,7 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 				return(invisible(NULL))
 			}
 
-			beta = as.numeric(mod$estimate)
+			beta = private$hl_point_estimate(private$y, private$w)
 			ci   = mod$conf.int  # 95% CI by default (conf.level = 0.95)
 			se   = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
 

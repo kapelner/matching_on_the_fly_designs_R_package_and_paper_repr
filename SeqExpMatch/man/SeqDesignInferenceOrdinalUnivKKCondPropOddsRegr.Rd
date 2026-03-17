@@ -23,23 +23,12 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- SeqDesignKK14$
-  new(
-  n = nrow(x_dat),
-  response_type = "ordinal",
-  verbose = FALSE
-)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
-  seq_des$
-  add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
-seq_des$
-  add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-infer <- SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$
-  new(
-  seq_des,
-  verbose = FALSE
-)
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$new(seq_des, verbose = FALSE)
 infer
 
 }
@@ -51,8 +40,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-new}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$new()}}
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_confidence_interval}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-clone}{\code{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$clone()}}
 }
 }
@@ -119,12 +108,12 @@ Returns the estimated treatment effect.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Computes the MLE-based confidence interval.
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -132,19 +121,18 @@ Computes the MLE-based confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is
-\code{1 - alpha}. The default is 0.05.}
+\item{\code{alpha}}{Significance level.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
-Computes the MLE-based p-value.
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -152,8 +140,7 @@ Computes the MLE-based p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect
-at all this is set to zero (the default).}
+\item{\code{delta}}{Null value.}
 }
 \if{html}{\out{</div>}}
 }

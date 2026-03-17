@@ -40,8 +40,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-new}{\code{SeqDesignInferenceAllKKWilcoxIVWC$new()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_treatment_estimate}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval}{\code{SeqDesignInferenceAllKKWilcoxIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-SeqDesignInferenceAllKKWilcoxIVWC-clone}{\code{SeqDesignInferenceAllKKWilcoxIVWC$clone()}}
 }
@@ -118,12 +118,14 @@ Returns the estimated treatment effect (Hodges-Lehmann median shift).
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes the non-parametric confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -136,12 +138,12 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKWilcoxIVWC-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes the non-parametric p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKWilcoxIVWC$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

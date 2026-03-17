@@ -45,7 +45,7 @@ SeqDesignInferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param alpha Significance level for the interval.
 		#'
 		#' @return A confidence interval for the treatment effect.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(
 				alpha,
 				lower = .Machine$double.xmin,
@@ -72,7 +72,7 @@ SeqDesignInferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param delta Null treatment effect to test.
 		#'
 		#' @return A two-sided p-value.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			if (!private$has_finite_se()){

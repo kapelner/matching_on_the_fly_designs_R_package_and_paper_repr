@@ -13,13 +13,31 @@ v2.0.0
     - Achieved package-wide unit consistency by standardizing all survival effects to Accelerated Failure Time (AFT) log-time ratios.
     - Added Shared Gamma Frailty models (via `parfm`) for parametric handling of matched-pair dependencies.
     - Added Stratified Cox Proportional Hazards regression for strata-aware survival analysis.
+    - Added LWA-style marginal Cox inference for KK designs under both IVWC and Combined Likelihood pooling.
+    - Added Clayton-copula paired survival models for KK designs under both IVWC and Combined Likelihood pooling.
+    - Added semiparametric transformation models for survival with dependent censoring.
     - Implemented Conditional Poisson regression for exact matched-pair count inference.
+    - Added KK hurdle-Poisson count inference under both IVWC and Combined Likelihood pooling, combining matched-pair and reservoir information.
     - Added Restricted Mean Survival Time (RMST) difference with robust SEs.
     - Added Gehan-type rank-based AFT models (via `aftgee`).
   + Added a standalone log-rank inference class with C++ score/variance helpers plus automatic stratification helper logic (`compute_survival_strata_ids_cpp`).
+  + Continuous outcomes: added Lin (2013)-style adjusted estimators, robust M-estimation (`MASS::rlm`), and quantile regression support for both non-KK and KK designs, with KK support available under IVWC and Combined Likelihood pooling where appropriate.
+  + Incidence outcomes:
+    - Added modified Poisson risk-ratio estimators for both non-KK and KK designs.
+    - Added marginal standardization / g-computation estimators for both risk differences and risk ratios in non-KK and KK designs.
+    - Added Miettinen-Nurminen and Newcombe risk-difference inference.
+    - Added log-binomial regression for adjusted risk ratios.
+    - Added binomial identity-link regression for adjusted risk differences.
+  + Proportion outcomes:
+    - Added fractional-logit inference.
+    - Added zero/one-inflated beta regression.
   + Extended the Wang & Rosenberger-style randomization confidence interval inversion to ordinal GLM estimators (cumulative logit/probit, adjacent-category, etc.), so computed intervals now use the permutation distribution of their shared treatment parameter.
   + Added zero-inflated negative binomial, hurdle negative binomial, and denominator-aware Poisson/quasi-Poisson inference with new Rcpp solvers for fast score/variance extraction.
-  + Ordinal: Added a partial proportional-odds estimator that allows covariates to vary across thresholds while still estimating a parallel treatment effect, reusing the stacked design with `fast_logistic_regression_with_var_cpp` so the estimator works on every sequential design (no CRD-only restriction).
+  + Ordinal:
+    - Added cumulative probit, adjacent-category logit, stereotype logit, stereotype probit, ridit, paired sign, and Jonckheere-Terpstra inference.
+    - Added partial proportional-odds estimators that allow covariates to vary across thresholds while still estimating a parallel treatment effect, reusing the stacked design with `fast_logistic_regression_with_var_cpp` so the estimator works on every sequential design (no CRD-only restriction).
+    - Added conditional ordinal KK estimators for proportional-odds, continuation-ratio, and adjacent-category formulations.
+    - Added ordinal KK mixed-model inference with both logit and probit links, including multivariate CLMM support.
   + Robust & Non-parametric Expansion:
     - Integrated R-estimation (Wilcoxon regression) via `Rfit`, with robust fallback to classical ranks for univariate cases.
     - Full Quantile Regression support (via `quantreg`) within the Compound/IVWC framework.
@@ -27,6 +45,7 @@ v2.0.0
 
 * EXTREME PERFORMANCE OPTIMIZATION:
   + Developed a suite of high-performance C++ IRLS (Iteratively Reweighted Least Squares) solvers for Logistic, Beta, and Negative Binomial regression.
+  + Extended the C++ solver suite to constrained binomial fits for both log-binomial and identity-link binomial regression, plus fast helpers for ordinal g-computation, Jonckheere-Terpstra exact distributions, ridit analysis, and KK hurdle grouping / cluster setup.
   + Leveraged OpenMP and RcppEigen to achieve orders-of-magnitude speedups in bootstrap and randomization distribution computations.
   + Implemented intelligent thread-control for `glmmTMB` to prevent resource contention in parallelized inference loops.
   + Integrated `fixest::feglm.fit` for lightning-fast fixed-effects estimation.
@@ -35,6 +54,8 @@ v2.0.0
   + Automated missing data pipeline with Design-aware imputation using `missRanger` and `missForest`.
   + Fully validated support for unequal allocation (prob_T != 0.5) across all 40+ inference classes.
   + Hardened error handling for perfect separation, small-sample degeneracy, and non-convergence.
+  + Reworked randomization-test caching so expensive treatment-assignment draws are reused across repeated p-value and CI inversion calls, including custom randomization statistics.
+  + Fixed Rd generation issues, removed links to undocumented abstract classes, and aligned file / class naming across refactored ordinal and incidence inference families.
   + Global codebase cleanup: standardized tab-based indentation, fixed all Roxygen warnings, and cleaned up the NAMESPACE.
 
 v1.1.0 (planned)

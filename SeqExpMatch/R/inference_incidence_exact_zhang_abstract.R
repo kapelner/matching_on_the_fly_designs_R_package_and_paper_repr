@@ -16,14 +16,14 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 		},
 
 		# @description
-		# Returns the MLE-based confidence interval.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		# Returns the asymptotic confidence interval.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			stop(class(self)[1], " only implements compute_exact_two_sided_pval_for_treatment_effect and compute_exact_confidence_interval only. This method is not implemented.")
 		},
 
 		# @description
-		# Returns the MLE-based p-value.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		# Returns the asymptotic p-value.
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			stop(class(self)[1], " only implements compute_exact_two_sided_pval_for_treatment_effect and compute_exact_confidence_interval only. This method is not implemented.")
 		},
 
@@ -80,7 +80,7 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 			private$incid_exact_zhang_treatment_estimate()
 		},
 
-		compute_mle_confidence_interval_internal = function(alpha){
+		compute_asymp_confidence_interval_internal = function(alpha){
 			private$incid_exact_zhang_mle_ci(alpha)
 		},
 

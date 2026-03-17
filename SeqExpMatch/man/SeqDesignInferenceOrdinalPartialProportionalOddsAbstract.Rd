@@ -19,8 +19,8 @@ general R fitters.
 \itemize{
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-new}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$new()}}
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-clone}{\code{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$clone()}}
 }
 }
@@ -85,14 +85,14 @@ The estimated treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Compute a Wald-style confidence interval for the treatment effect. If the
 model-based standard error is unavailable, falls back to the bootstrap
 interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -109,14 +109,14 @@ A confidence interval for the treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Compute a Wald-style two-sided p-value for the treatment effect. If the
 model-based standard error is unavailable, falls back to the bootstrap
 p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

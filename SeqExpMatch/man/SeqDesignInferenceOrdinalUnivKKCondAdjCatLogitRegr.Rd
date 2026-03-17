@@ -2,14 +2,13 @@
 % Please edit documentation in R/inference_ordinal_KK_cond_adj_cat_logit_univ.R
 \name{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr}
 \alias{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr}
-\title{Univariate Conditional Adjacent-Category Inference}
+\title{Univariate Conditional Adjacent-Category Inference for KK Designs}
 \description{
-Fits a conditional adjacent-category logit model for ordinal responses. Each
-matched pair is treated as a stratum.
+Fits a conditional adjacent-category logit model for ordinal responses under a KK
+matching-on-the-fly design. Each matched pair is treated as a stratum.
 Reservoir subjects each form their own unique stratum. The adjacent-category
-model logit(P(Y = k+1 | Y in \{k, k+1\})) is fit by expanding the ordinal
-response into pairs of adjacent categories and applying conditional logistic
-regression.
+model logit(P(Y = k+1 | Y in {k, k+1})) is fit by expanding the ordinal response
+into pairs of adjacent categories and applying conditional logistic regression.
 }
 \examples{
 set.seed(1)
@@ -17,23 +16,12 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- SeqDesignCRD$
-  new(
-  n = nrow(x_dat),
-  response_type = "ordinal",
-  verbose = FALSE
-)
+seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
-  seq_des$
-  add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
-seq_des$
-  add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-infer <- SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr$
-  new(
-  seq_des,
-  verbose = FALSE
-)
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$new(seq_des, verbose = FALSE)
 infer
 
 }
@@ -45,8 +33,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-new}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$new()}}
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_treatment_estimate}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_confidence_interval}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_confidence_interval}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-clone}{\code{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$clone()}}
 }
 }
@@ -82,7 +70,7 @@ Initialize a univariate conditional adjacent-category inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object.}
+\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design).}
 
 \item{\code{num_cores}}{Number of CPU cores.}
 
@@ -102,12 +90,12 @@ Returns the estimated treatment effect.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Computes the MLE-based confidence interval.
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -121,12 +109,12 @@ Computes the MLE-based confidence interval.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
-Computes the MLE-based p-value.
+\if{html}{\out{<a id="method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

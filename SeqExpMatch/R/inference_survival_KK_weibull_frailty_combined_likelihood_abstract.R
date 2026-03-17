@@ -59,7 +59,7 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 		# @description
 		# Returns a 1 - alpha confidence interval for the treatment effect.
 		# @param alpha Significance level; default 0.05 gives a 95% CI.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$assert_finite_se()
@@ -69,7 +69,7 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 		# @description
 		# Returns a 2-sided p-value for H0: beta_T = delta.
 		# @param delta Null value; default 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$assert_finite_se()

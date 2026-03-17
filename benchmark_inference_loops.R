@@ -179,16 +179,16 @@ run_comprehensive_inference_suite <- function(
 			list(name = "compute_confidence_interval_rand", fn = function() inf_obj$compute_confidence_interval_rand(nsim_exact_test = 100))
 		)
 
-		if ("compute_mle_confidence_interval" %in% names(inf_obj)) {
+		if ("compute_asymp_confidence_interval" %in% names(inf_obj)) {
 			metrics[[length(metrics) + 1]] <- list(
-			name = "compute_mle_confidence_interval",
-			fn = function() inf_obj$compute_mle_confidence_interval()
+			name = "compute_asymp_confidence_interval",
+			fn = function() inf_obj$compute_asymp_confidence_interval()
 			)
 		}
-		if ("compute_mle_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
+		if ("compute_asymp_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
 			metrics[[length(metrics) + 1]] <- list(
-			name = "compute_mle_two_sided_pval_for_treatment_effect",
-			fn = function() inf_obj$compute_mle_two_sided_pval_for_treatment_effect()
+			name = "compute_asymp_two_sided_pval_for_treatment_effect",
+			fn = function() inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 			)
 		}
 

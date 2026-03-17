@@ -4,6 +4,13 @@ max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 
 X = fread("package_tests/simple_tests_results_nc_1.csv")
+# Drop every row predating the current run for the zero/one-inflated beta multivariate class.
+# Current run cutoff is fixed as a magic number to avoid pulling historical repeats.
+# Drop every row predating the current run for the zero/one-inflated beta multivariate class.
+# Current run cutoff is fixed as a magic number to avoid pulling historical repeats.
+magic_cutoff_run_row_id = 6324L
+X = X[!(inference_class == "SeqDesignInferencePropMultiZeroOneInflatedBetaRegr" & run_row_id < magic_cutoff_run_row_id)]
+X = X[!(inference_class == "SeqDesignInferenceAllSimpleWilcox" & run_row_id < magic_cutoff_run_row_id)]
 table(X$rep)
 
 
@@ -15,8 +22,10 @@ X[function_run == "compute_confidence_interval_rand", function_run := "ci_rand"]
 X[function_run == "compute_exact_confidence_interval", function_run := "ci_exact"]
 X[function_run == "compute_exact_two_sided_pval_for_treatment_effect", function_run := "pval_exact"]
 X[function_run == "compute_confidence_interval_rand(custom)", function_run := "ci_rand_custom"]
-X[function_run == "compute_mle_confidence_interval", function_run := "ci_mle"]
-X[function_run == "compute_mle_two_sided_pval_for_treatment_effect", function_run := "pval_mle"]
+X[function_run == "compute_mle_confidence_interval", function_run := "ci_asymp"] ####OLD
+X[function_run == "compute_asymp_confidence_interval", function_run := "ci_asymp"]
+X[function_run == "compute_mle_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"] ####OLD
+X[function_run == "compute_asymp_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"]
 X[function_run == "compute_treatment_estimate", function_run := "est"]
 X[function_run == "compute_two_sided_pval_for_treatment_effect_rand", function_run := "pval_rand"]
 X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(custom)", function_run := "pval_rand_custom"]
@@ -24,7 +33,7 @@ X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)",
 table(X$function_run)
 
 #check duration time
-D = X[, .(mean_duration = mean(duration_time_sec)),
+D = X[, .(mean_duration = mean(duration_time_sec), n = .N),
 	by = c("inference_class", "design", "function_run")][order(-mean_duration)]
 D[1:50]
 table(D[1:50]$inference_class)
@@ -67,6 +76,33 @@ ordinal_expected_observed = function(y_ord, bt, sd_noise = 0.1){
 	exp_vals
 }
 
+# continuous — additive-shift estimands remain on the raw outcome scale
+X[beta_T == 1 & response_type == "continuous" &
+	inference_class %in% c(
+		"SeqDesignInferenceBaiAdjustedTKK14",
+		"SeqDesignInferenceBaiAdjustedTKK21",
+		"SeqDesignInferenceContinUnivRobustRegr",
+		"SeqDesignInferenceContinMultiRobustRegr",
+		"SeqDesignInferenceContinUnivQuantileRegr",
+		"SeqDesignInferenceContinMultiQuantileRegr",
+		"SeqDesignInferenceContinMultLin",
+		"SeqDesignInferenceContinMultOLS",
+		"SeqDesignInferenceContinMultGLS",
+		"SeqDesignInferenceContinMultOLSKKCombinedLikelihood",
+		"SeqDesignInferenceContinMultOLSKKIVWC",
+		"SeqDesignInferenceContinMultiKKLinIVWC",
+		"SeqDesignInferenceContinMultiKKLinCombinedLikelihood",
+		"SeqDesignInferenceContinUnivKKGLMM",
+		"SeqDesignInferenceContinMultiKKGLMM",
+		"SeqDesignInferenceContinUnivKKRobustRegrIVWC",
+		"SeqDesignInferenceContinMultiKKRobustRegrIVWC",
+		"SeqDesignInferenceContinUnivKKRobustRegrCombinedLikelihood",
+		"SeqDesignInferenceContinMultiKKRobustRegrCombinedLikelihood",
+		"SeqDesignInferenceContinMultKKQuantileRegrIVWC",
+		"SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood"
+	),
+	beta := 1]
+
 # incidence — simple/KK mean diff: probability-scale estimand ≈ 0.183, not 1
 X[beta_T == 1 &
 	response_type == "incidence" &
@@ -78,8 +114,12 @@ X[beta_T == 1 &
 		"SeqDesignInferenceIncidUnivRiskDiff",
 		"SeqDesignInferenceIncidMultiRiskDiff",
 		"SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff",
+		"SeqDesignInferenceIncidUnivNewcombeRiskDiff",
 		"SeqDesignInferenceIncidUnivGCompRiskDiff",
 		"SeqDesignInferenceIncidMultiGCompRiskDiff",
+		"SeqDesignInferenceIncidUnivBinomialIdentityRiskDiff",
+		"SeqDesignInferenceIncidMultiBinomialIdentityRiskDiff",
+		"SeqDesignInferenceIncidUnivKKNewcombeRiskDiff",
 		"SeqDesignInferenceIncidUnivKKGCompRiskDiff",
 		"SeqDesignInferenceIncidMultiKKGCompRiskDiff"
 	),
@@ -114,6 +154,8 @@ beta := {
 X[beta_T == 1 & inference_class %in% c(
 	"SeqDesignInferenceIncidUnivModifiedPoisson",
 	"SeqDesignInferenceIncidMultiModifiedPoisson",
+	"SeqDesignInferenceIncidUnivLogBinomial",
+	"SeqDesignInferenceIncidMultiLogBinomial",
 	"SeqDesignInferenceIncidUnivKKModifiedPoisson",
 	"SeqDesignInferenceIncidMultiKKModifiedPoisson"
 ),
@@ -161,6 +203,28 @@ X[beta_T == 1 & response_type == "count" &
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		mean(y_c) * (e - 1)
 	}, by = dataset]
+
+# count — log-link regression estimands target the log mean ratio under the DGP
+X[beta_T == 1 & response_type == "count" &
+	inference_class %in% c(
+		"SeqDesignInferenceCountUnivPoissonRegr",
+		"SeqDesignInferenceCountMultiPoissonRegr",
+		"SeqDesignInferenceCountUnivRobustPoissonRegr",
+		"SeqDesignInferenceCountMultiRobustPoissonRegr",
+		"SeqDesignInferenceCountUnivQuasiPoissonRegr",
+		"SeqDesignInferenceCountMultiQuasiPoissonRegr",
+		"SeqDesignInferenceCountUnivNegBinRegr",
+		"SeqDesignInferenceCountMultiNegBinRegr",
+		"SeqDesignInferenceCountPoissonUnivKKGEE",
+		"SeqDesignInferenceCountPoissonMultiKKGEE",
+		"SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
+		"SeqDesignInferenceCountPoissonMultiKKCPoissonCombinedLikelihood",
+		"SeqDesignInferenceCountPoissonUnivKKCPoissonIVWC",
+		"SeqDesignInferenceCountPoissonMultiKKCPoissonIVWC",
+		"SeqDesignInferenceCountPoissonUnivKKGLMM",
+		"SeqDesignInferenceCountPoissonMultiKKGLMM"
+	),
+	beta := 1]
 
 # count — KK Wilcox: HL estimate ≈ (e-1) * median(Y_C)
 X[beta_T == 1 & response_type == "count" &
@@ -218,33 +282,42 @@ X[beta_T == 1 & response_type == "ordinal" &
 	"SeqDesignInferenceOrdinalUniStereotypeProbitRegr",
 	"SeqDesignInferenceOrdinalMultiStereotypeProbitRegr",
 	"SeqDesignInferenceOrdinalUniPropOddsRegr",
+	"SeqDesignInferenceOrdinalUniOrderedProbitRegr",
+	"SeqDesignInferenceOrdinalMultiOrderedProbitRegr",
+	"SeqDesignInferenceOrdinalUniCauchitRegr",
+	"SeqDesignInferenceOrdinalMultiCauchitRegr",
 	"SeqDesignInferenceOrdinalPartialProportionalOdds",
 	"SeqDesignInferenceOrdinalContRatioRegr",
 	"SeqDesignInferenceOrdinalUniCLLRegr",
+	"SeqDesignInferenceOrdinalMultiCLLRegr",
 	"SeqDesignInferenceOrdinalUnivKKGEE",
+	"SeqDesignInferenceOrdinalMultiKKGEE",
 	"SeqDesignInferenceOrdinalUnivKKGLMM",
 	"SeqDesignInferenceOrdinalMultiKKGLMM",
 	"SeqDesignInferenceOrdinalUnivKKGLMMProbit",
 	"SeqDesignInferenceOrdinalMultiKKGLMMProbit",
 	"SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr",
 	"SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
-	"SeqDesignInferenceOrdinalUnivCondContRatioRegr",
-	"SeqDesignInferenceOrdinalUnivCondAdjCatLogitRegr"
+	"SeqDesignInferenceOrdinalUnivKKCondContRatioRegr",
+	"SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr",
+	"SeqDesignInferenceOrdinalRidit"
 	),
 	beta := NA_real_]
 
-# ordinal — rank/sign-style targets are not cleanly identified from the current
-# observed-level DGP without a separate estimand convention
-X[beta_T == 1 & response_type == "ordinal" &
+	# ordinal — rank/sign-style targets are not cleanly identified from the current
+	# observed-level DGP without a separate estimand convention
+	X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
 		"SeqDesignInferenceAllSimpleWilcox",
 		"SeqDesignInferenceAllKKWilcoxIVWC",
 		"SeqDesignInferenceAllKKWilcoxRegrUnivIVWC",
 		"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
 		"SeqDesignInferenceOrdinalPairedSignTest",
-		"SeqDesignInferenceOrdinalJonckheereTerpstraTest"
+		"SeqDesignInferenceOrdinalJonckheereTerpstraTest",
+		"SeqDesignInferenceOrdinalRidit"
 	),
 	beta := NA_real_]
+
 
 
 #now some are impossible to calculate for real data due to the unknown f(x) model
@@ -270,6 +343,10 @@ X[beta_T == 1 &
 	"SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood",
 	"SeqDesignInferenceCountUnivHurdlePoissonRegr",
 	"SeqDesignInferenceCountMultiHurdlePoissonRegr",
+	"SeqDesignInferenceCountUnivKKHurdlePoissonCombinedLikelihood",
+	"SeqDesignInferenceCountMultiKKHurdlePoissonCombinedLikelihood",
+	"SeqDesignInferenceCountUnivKKHurdlePoissonIVWC",
+	"SeqDesignInferenceCountMultiKKHurdlePoissonIVWC",
 	"SeqDesignInferenceCountUnivHurdleNegBinRegr",
 	"SeqDesignInferenceCountMultiHurdleNegBinRegr",
 	"SeqDesignInferenceCountUnivZeroInflatedPoissonRegr",
@@ -285,13 +362,28 @@ X[beta_T == 1 &
 	"SeqDesignInferenceSurvivalMultiDepCensTransformRegr",
 	"SeqDesignInferenceSurvivalUniWeibullRegr",
 	"SeqDesignInferenceSurvivalMultiWeibullRegr",
+	"SeqDesignInferenceSurvivalUnivKKGEE",
+	"SeqDesignInferenceSurvivalMultiKKGammaGEE",
+	"SeqDesignInferenceSurvivalUnivKKGLMM",
+	"SeqDesignInferenceSurvivalMultiKKGammaGLMM",
+	"SeqDesignInferenceSurvivalUnivKKClaytonCopulaIVWC",
+	"SeqDesignInferenceSurvivalMultiKKClaytonCopulaIVWC",
+	"SeqDesignInferenceSurvivalUnivKKLWACoxIVWC",
+	"SeqDesignInferenceSurvivalMultiKKLWACoxIVWC",
 	"SeqDesignInferenceSurvivalUnivKKStratCoxIVWC",
 	"SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood",
 	"SeqDesignInferenceSurvivalMultiKKStratCoxIVWC",
 	"SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood",
+	"SeqDesignInferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood",
+	"SeqDesignInferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
+	"SeqDesignInferenceSurvivalUnivKKLWACoxCombinedLikelihood",
+	"SeqDesignInferenceSurvivalMultiKKLWACoxCombinedLikelihood",
+	"SeqDesignInferenceSurvivalUnivKKWeibullFrailtyIVWC",
 	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC",
+	"SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
 	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
 	"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
+	"SeqDesignInferenceSurvivalUnivKKRankRegrIVWC",
 	"SeqDesignInferenceSurvivalMultiKKRankRegrIVWC",
 	"SeqDesignInferenceSurvivalGehanWilcox"
 	),
@@ -330,14 +422,14 @@ S = X[beta_T == 0 & str_detect(X$function_run, "pval"), .(
 S[, bonf_size_pval := pmin(1, size_pval * .N)][, size_pval := NULL]
 S[11:160]
 
-# 2. `pval_mle` (Size $\approx$ 0.15 - 0.25)
-#   This is the classic failure of parametric MLE inference (like OLS and CoxPH) on real-world datasets, and it perfectly
+# 2. `pval_asymp` (Size $\approx$ 0.15 - 0.25)
+#   This is the classic failure of parametric asymptotic inference (like OLS and CoxPH) on real-world datasets, and it perfectly
 #   highlights why this package's Bootstrap and Randomization tests exist!
 #    * The tests are injecting a treatment effect into real-world datasets (airquality, boston, etc.) without modifying the
 #      underlying covariate relationships.
 #    * Real-world datasets contain severe heteroscedasticity, non-linearities, and unmeasured confounding that strongly
-#      violate the assumptions required by standard MLE standard errors (which assume IID normal/homoscedastic errors).
-#    * Because the MLE standard errors are overly optimistic (too small) on misspecified real-world data, the Wald test
+#      violate the assumptions required by standard asymptotic standard errors (which assume IID normal/homoscedastic errors).
+#    * Because the asymptotic standard errors are overly optimistic (too small) on misspecified real-world data, the Wald test
 #      rejects the true null hypothesis ($H_0: \beta_T = 0$) far too often, leading to the inflated ~20% Type I Error rates.
 
 #check power
@@ -349,7 +441,7 @@ P[!is.na(power)][1:200]
 
 # 1. The Bootstrapped KK OLS (ContinMultOLSKK)
 #   You'll notice that for the continuous KK OLS estimator, only the pval_bootstrap is in this low-power list (~52-54%). Its
-#   pval_rand and pval_mle are completely fine!
+#   pval_rand and pval_asymp are completely fine!
 
 
 #   This is caused by severe structural instability when resampling matched pairs with replacement:

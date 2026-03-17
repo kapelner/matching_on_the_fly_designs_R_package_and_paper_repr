@@ -54,7 +54,7 @@ SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("SeqDesignInf
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param pval_epsilon Bisection tolerance for CI bounds.
-		compute_mle_confidence_interval = function(alpha = 0.05, pval_epsilon = 1e-7){
+		compute_asymp_confidence_interval = function(alpha = 0.05, pval_epsilon = 1e-7){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			counts = private$cached_values$mn_counts
@@ -68,7 +68,7 @@ SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("SeqDesignInf
 		#' @description
 		#' Computes a two-sided Miettinen-Nurminen score p-value.
 		#' @param delta The null treatment effect on the risk-difference scale.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
 			private$shared()
 			counts = private$cached_values$mn_counts

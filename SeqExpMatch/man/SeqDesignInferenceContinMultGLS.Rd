@@ -56,8 +56,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceContinMultGLS-new}{\code{SeqDesignInferenceContinMultGLS$new()}}
 \item \href{#method-SeqDesignInferenceContinMultGLS-compute_treatment_estimate}{\code{SeqDesignInferenceContinMultGLS$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceContinMultGLS-compute_mle_confidence_interval}{\code{SeqDesignInferenceContinMultGLS$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceContinMultGLS-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultGLS$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceContinMultGLS-compute_asymp_confidence_interval}{\code{SeqDesignInferenceContinMultGLS$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceContinMultGLS-clone}{\code{SeqDesignInferenceContinMultGLS$clone()}}
 }
 }
@@ -149,14 +149,14 @@ The setting-appropriate numeric estimate of the treatment effect
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultGLS-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultGLS-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultGLS-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultGLS-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval
 differently for all response types, estimate types, and
 test types.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultGLS$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultGLS$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -172,12 +172,12 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultGLS-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultGLS-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultGLS$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

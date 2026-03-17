@@ -1,7 +1,7 @@
 # Inference for A Sequential Design
 #
 # @description
-# An abstract R6 Class that provides MLE-based tests and intervals for a treatment effect in a sequential design
+# An abstract R6 Class that provides asymptotic tests and intervals for a treatment effect in a sequential design
 # where the common denominator is a summary table from a glm.
 #
 # @keywords internal
@@ -52,7 +52,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
 		#
 		# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
@@ -64,7 +64,7 @@ SeqDesignInferenceMLEorKMSummaryTable = R6::R6Class("SeqDesignInferenceMLEorKMSu
 		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
 		#
 		# @return 	The approximate frequentist p-value
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			if (delta == 0){

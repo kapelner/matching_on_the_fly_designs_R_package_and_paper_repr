@@ -21,24 +21,16 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$
-#'   new(
-#'     n = nrow(x_dat),
-#'     response_type = "ordinal",
-#'     verbose = FALSE
-#'   )
+#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'     add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr$
-#'   new(
-#'     seq_des,
-#'     nonparallel = "x1",
-#'     verbose = FALSE
-#'   )
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr$new(
+#'   seq_des,
+#'   nonparallel = "x1",
+#'   verbose = FALSE
+#' )
 #' infer
 SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 	"SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr",
@@ -52,9 +44,9 @@ SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(seq_des_obj,
-				nonparallel = character(0),
-				num_cores = 1,
-				verbose = FALSE){
+						nonparallel = character(0),
+						num_cores = 1,
+						verbose = FALSE){
 			super$initialize(
 				seq_des_obj = seq_des_obj,
 				nonparallel = nonparallel,
@@ -106,24 +98,16 @@ SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$
-#'   new(
-#'     n = nrow(x_dat),
-#'     response_type = "ordinal",
-#'     verbose = FALSE
-#'   )
+#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'     add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$
-#'   new(
-#'     seq_des,
-#'     nonparallel = "x1",
-#'     verbose = FALSE
-#'   )
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(
+#'   seq_des,
+#'   nonparallel = "x1",
+#'   verbose = FALSE
+#' )
 #' infer
 SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 	"SeqDesignInferenceOrdinalPartialProportionalOdds",
@@ -137,9 +121,9 @@ SeqDesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(seq_des_obj,
-				nonparallel = character(0),
-				num_cores = 1,
-				verbose = FALSE){
+						nonparallel = character(0),
+						num_cores = 1,
+						verbose = FALSE){
 			super$initialize(
 				seq_des_obj = seq_des_obj,
 				nonparallel = nonparallel,

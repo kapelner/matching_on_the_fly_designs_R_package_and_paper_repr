@@ -56,10 +56,10 @@ run_inference_checks = function(seq_des_inf, response_type){
 	}
 
 	seq_des_inf$compute_treatment_estimate()
-	safe_call("compute_mle_two_sided_pval_for_treatment_effect",
-			seq_des_inf$compute_mle_two_sided_pval_for_treatment_effect())
-	safe_call("compute_mle_confidence_interval",
-			seq_des_inf$compute_mle_confidence_interval(0.05))
+	safe_call("compute_asymp_two_sided_pval_for_treatment_effect",
+			seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect())
+	safe_call("compute_asymp_confidence_interval",
+			seq_des_inf$compute_asymp_confidence_interval(0.05))
 	safe_call("compute_bootstrap_confidence_interval",
 			seq_des_inf$compute_bootstrap_confidence_interval(B = 50, na.rm = TRUE))
 	safe_call("compute_bootstrap_two_sided_pval",

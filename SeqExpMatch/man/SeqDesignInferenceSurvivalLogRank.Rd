@@ -47,8 +47,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceSurvivalLogRank-new}{\code{SeqDesignInferenceSurvivalLogRank$new()}}
 \item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_treatment_estimate}{\code{SeqDesignInferenceSurvivalLogRank$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_mle_confidence_interval}{\code{SeqDesignInferenceSurvivalLogRank$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalLogRank$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_asymp_confidence_interval}{\code{SeqDesignInferenceSurvivalLogRank$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceSurvivalLogRank$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceSurvivalLogRank-compute_confidence_interval_rand}{\code{SeqDesignInferenceSurvivalLogRank$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceSurvivalLogRank-clone}{\code{SeqDesignInferenceSurvivalLogRank$clone()}}
 }
@@ -104,14 +104,16 @@ Computes the treatment-effect estimate on the martingale-residual mean-differenc
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalLogRank-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalLogRank-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalLogRank-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalLogRank-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a (1 - alpha)-level confidence interval based on the asymptotic
 normality of the martingale-residual mean-difference estimate.
 Falls back to bootstrap if the estimated standard error is unavailable.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalLogRank$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalLogRank$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -123,12 +125,12 @@ Falls back to bootstrap if the estimated standard error is unavailable.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalLogRank-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalLogRank-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes the standard two-sided log-rank p-value for a zero treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalLogRank$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceSurvivalLogRank$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

@@ -50,8 +50,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-new}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$new()}}
 \item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_treatment_estimate}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_confidence_interval}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_bootstrap_two_sided_pval}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-clone}{\code{SeqDesignInferenceIncidUnivKKGCompRiskRatio$clone()}}
 }
@@ -107,12 +107,12 @@ Computes the standardized marginal risk-ratio estimate.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} confidence interval for the marginal risk ratio.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -126,12 +126,12 @@ Computes a 1 - \code{alpha} confidence interval for the marginal risk ratio.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivKKGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided p-value for the marginal risk ratio.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivKKGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = NULL
 )}\if{html}{\out{</div>}}
 }

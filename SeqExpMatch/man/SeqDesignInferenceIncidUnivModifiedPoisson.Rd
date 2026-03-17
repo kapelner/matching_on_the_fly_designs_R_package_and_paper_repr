@@ -40,8 +40,8 @@ seq_des_inf$compute_treatment_estimate()
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-new}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$new()}}
 \item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_treatment_estimate}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_confidence_interval}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidUnivModifiedPoisson-clone}{\code{SeqDesignInferenceIncidUnivModifiedPoisson$clone()}}
 }
 }
@@ -119,13 +119,13 @@ log-risk-ratio scale.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} confidence interval using the sandwich
 standard error.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivModifiedPoisson$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivModifiedPoisson$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -140,12 +140,12 @@ standard error.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidUnivModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided p-value for the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivModifiedPoisson$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidUnivModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

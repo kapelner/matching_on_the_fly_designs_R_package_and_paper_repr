@@ -58,17 +58,17 @@ SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("SeqD
 		compute_treatment_estimate = function() super$compute_treatment_estimate(),
 
 		#' @description
-		#' Computes the MLE-based confidence interval.
+		#' Computes the asymptotic confidence interval.
 		#' @param alpha Significance level; default 0.05 gives a 95 percent CI.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
-		#' Computes the MLE-based p-value.
+		#' Computes the asymptotic p-value.
 		#' @param delta Null value; default 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	)
 )

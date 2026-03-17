@@ -38,8 +38,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-new}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$new()}}
 \item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_treatment_estimate}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_confidence_interval}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_confidence_interval}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-clone}{\code{SeqDesignInferenceContinMultiKKRobustRegrIVWC$clone()}}
 }
 }
@@ -53,9 +53,9 @@ infer
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_confidence_interval'><code>SeqExpMatch::SeqDesignInference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_exact_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/SeqDesignInferenceKKPassThrough.html#method-SeqDesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::SeqDesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceAbstractKKRobustRegrIVWC" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInferenceAbstractKKRobustRegrIVWC.html#method-SeqDesignInferenceAbstractKKRobustRegrIVWC-duplicate'><code>SeqExpMatch::SeqDesignInferenceAbstractKKRobustRegrIVWC$duplicate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -121,12 +121,12 @@ Returns the estimated treatment effect.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
-Computes the MLE-based confidence interval.
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_mle_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -141,12 +141,12 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
-Computes the MLE-based p-value.
+\if{html}{\out{<a id="method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceContinMultiKKRobustRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceContinMultiKKRobustRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

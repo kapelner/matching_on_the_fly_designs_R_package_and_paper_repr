@@ -62,7 +62,7 @@ SeqDesignInferenceSurvivalLogRank = R6::R6Class("SeqDesignInferenceSurvivalLogRa
 		#' normality of the martingale-residual mean-difference estimate.
 		#' Falls back to bootstrap if the estimated standard error is unavailable.
 		#' @param alpha Significance level.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$compute_shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
@@ -75,7 +75,7 @@ SeqDesignInferenceSurvivalLogRank = R6::R6Class("SeqDesignInferenceSurvivalLogRa
 		#' @description
 		#' Computes the standard two-sided log-rank p-value for a zero treatment effect.
 		#' @param delta Null treatment effect to test against. Only \code{0} is supported.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$compute_shared()
 

@@ -59,15 +59,15 @@ SeqDesignInferenceIncidUnivKKModifiedPoisson = R6::R6Class("SeqDesignInferenceIn
 		#' sandwich standard error.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null treatment effect on the log-risk-ratio scale.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		}
 	),
 

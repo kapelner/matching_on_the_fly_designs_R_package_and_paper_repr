@@ -62,7 +62,7 @@ SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContin
 		#' Computes an approximate confidence interval for the treatment effect.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
@@ -71,7 +71,7 @@ SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContin
 		#' @description
 		#' Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)

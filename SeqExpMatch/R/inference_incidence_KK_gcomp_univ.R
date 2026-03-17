@@ -55,15 +55,15 @@ SeqDesignInferenceIncidUnivKKGCompRiskDiff = R6::R6Class("SeqDesignInferenceInci
 		#' @description
 		#' Computes a 1 - \code{alpha} confidence interval for the marginal risk difference.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes a two-sided p-value for the marginal risk difference.
 		#' @param delta The null risk difference to test against. The default is 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = NULL){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		},
 
 		#' @description
@@ -147,15 +147,15 @@ SeqDesignInferenceIncidUnivKKGCompRiskRatio = R6::R6Class("SeqDesignInferenceInc
 		#' @description
 		#' Computes a 1 - \code{alpha} confidence interval for the marginal risk ratio.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_mle_confidence_interval = function(alpha = 0.05){
-			super$compute_mle_confidence_interval(alpha = alpha)
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
 		},
 
 		#' @description
 		#' Computes a two-sided p-value for the marginal risk ratio.
 		#' @param delta The null risk ratio to test against. The default is 1.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = NULL){
-			super$compute_mle_two_sided_pval_for_treatment_effect(delta = delta)
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
+			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		},
 
 		#' @description

@@ -35,7 +35,7 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 		# @description
 		# Computes a 1 - \code{alpha} confidence interval.
 		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_effect_confidence_interval(alpha)
@@ -44,7 +44,7 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 		# @description
 		# Computes a two-sided p-value for the treatment effect.
 		# @param delta The null mean difference. Defaults to 0.
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
 			private$shared()
 			private$compute_effect_pvalue(delta)
@@ -58,11 +58,63 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
 			assertNumeric(delta, len = 1)
 			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
+		},
+
+		#' @description
+		#' Abbreviated bootstrap sampler that reuses the reduced column layout.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
+			assertCount(B, positive = TRUE)
+			assertCount(max_resample_attempts, positive = TRUE)
+			private$shared()
+			cols = private$gcomp_design_colnames
+			if (is.null(cols)){
+				return(super$approximate_bootstrap_distribution_beta_hat_T(B, max_resample_attempts))
+			}
+
+			X_full = private$build_named_design_matrix()
+			X_fit = X_full[, cols, drop = FALSE]
+			n = nrow(X_fit)
+			y = private$y
+			w = private$w
+
+			draw_sample = function(...){
+				attempt = 1
+				repeat {
+					i_b = sample_int_replace_cpp(n, n)
+					w_b = w[i_b]
+					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) break
+					attempt = attempt + 1
+					if (attempt > max_resample_attempts) return(NA_real_)
+				}
+				X_b = X_fit[i_b, , drop = FALSE]
+				y_b = y[i_b]
+				private$bootstrap_effect_from_sample(X_b, y_b)
+			}
+
+			if (private$num_cores == 1){
+				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
+			} else {
+				unlist(parallel::mclapply(seq_len(B), function(b) draw_sample(), mc.cores = min(2L, private$num_cores)))
+			}
 		}
 	),
 
 	private = list(
+		gcomp_design_colnames = NULL,
+		gcomp_design_j_treat = NULL,
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
+		build_named_design_matrix = function(){
+			X_full = private$build_design_matrix()
+			if (is.null(dim(X_full))){
+				X_full = matrix(X_full, ncol = 2L)
+			}
+			colnames(X_full) = c(
+				"(Intercept)",
+				"treatment",
+				if (ncol(X_full) > 2L) private$get_covariate_names() else NULL
+			)
+			X_full
+		},
 
 		get_covariate_names = function(){
 			X = private$get_X()
@@ -191,6 +243,9 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 				vcov_robust = post_fit$vcov
 				colnames(vcov_robust) = rownames(vcov_robust) = coef_names
 
+				private$gcomp_design_colnames = coef_names
+				private$gcomp_design_j_treat = j_treat
+
 				return(list(
 					X = X_fit,
 					j_treat = j_treat,
@@ -277,6 +332,46 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 			)
 		},
 
+		bootstrap_effect_from_sample = function(X_b, y_b){
+			if (nrow(X_b) == 0) return(NA_real_)
+			mod = tryCatch(
+				suppressWarnings(stats::glm.fit(
+					x = X_b,
+					y = as.numeric(y_b),
+					family = stats::binomial(link = "logit")
+				)),
+				error = function(e) NULL
+			)
+			if (is.null(mod)){
+				return(NA_real_)
+			}
+			coef_hat = as.numeric(mod$coefficients)
+			if (!isTRUE(mod$converged) || length(coef_hat) != ncol(X_b) || any(!is.finite(coef_hat))){
+				return(NA_real_)
+			}
+
+			mu_hat = pmin(pmax(as.numeric(mod$fitted.values), .Machine$double.eps), 1 - .Machine$double.eps)
+			post_fit = tryCatch(
+				gcomp_fractional_logit_post_fit_cpp(
+					X_fit = X_b,
+					y = as.numeric(y_b),
+					coef_hat = coef_hat,
+					mu_hat = mu_hat,
+					j_treat = private$gcomp_design_j_treat
+				),
+				error = function(e) NULL
+			)
+			if (is.null(post_fit)){
+				return(NA_real_)
+			}
+
+			md_val = post_fit$md
+			if (!is.finite(md_val)){
+				return(NA_real_)
+			}
+			md_val
+		},
+
 		compute_effect_confidence_interval = function(alpha){
 			z = stats::qnorm(1 - alpha / 2)
 			est = private$cached_values$md
@@ -302,11 +397,7 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 		shared = function(){
 			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
 
-			X_full = private$build_design_matrix()
-			if (is.null(dim(X_full))){
-				X_full = matrix(X_full, ncol = 2L)
-			}
-			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			X_full = private$build_named_design_matrix()
 
 			fit = private$fit_fractional_logit_with_sandwich(X_full)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL

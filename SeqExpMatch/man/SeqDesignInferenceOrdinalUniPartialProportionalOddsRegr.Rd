@@ -11,23 +11,12 @@ cumulative-logit model and uses the package's fast Rcpp ordinal solver.
 }
 \examples{
 set.seed(1)
-seq_des <- SeqDesignCRD$
-  new(
-    n = 8,
-    response_type = "ordinal",
-    verbose = FALSE
-  )
+seq_des <- SeqDesignCRD$new(n = 8, response_type = "ordinal", verbose = FALSE)
 for (i in seq_len(8)) {
-  seq_des$
-    add_subject_to_experiment_and_assign(data.frame(x1 = i))
+  seq_des$add_subject_to_experiment_and_assign(data.frame(x1 = i))
 }
-seq_des$
-  add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$
-  new(
-    seq_des,
-    verbose = FALSE
-  )
+seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$new(seq_des, verbose = FALSE)
 infer
 }
 \section{Super classes}{
@@ -53,8 +42,8 @@ infer
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::SeqDesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-duplicate'><code>SeqExpMatch::SeqDesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/SeqDesignInference.html#method-SeqDesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::SeqDesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_mle_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceOrdinalPartialProportionalOddsAbstract.html#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_mle_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceOrdinalPartialProportionalOddsAbstract.html#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_mle_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_mle_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_confidence_interval"><a href='../../SeqExpMatch/html/SeqDesignInferenceOrdinalPartialProportionalOddsAbstract.html#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval'><code>SeqExpMatch::SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../SeqExpMatch/html/SeqDesignInferenceOrdinalPartialProportionalOddsAbstract.html#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>SeqExpMatch::SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignInferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_treatment_estimate"><a href='../../SeqExpMatch/html/SeqDesignInferenceOrdinalPartialProportionalOddsAbstract.html#method-SeqDesignInferenceOrdinalPartialProportionalOddsAbstract-compute_treatment_estimate'><code>SeqExpMatch::SeqDesignInferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>

@@ -12,23 +12,12 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignKK14$
-#'   new(
-#'   n = nrow(x_dat),
-#'   response_type = "ordinal",
-#'   verbose = FALSE
-#' )
+#' seq_des <- SeqDesignKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'   add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
-#' seq_des$
-#'   add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalPairedSignTest$
-#'   new(
-#'   seq_des,
-#'   verbose = FALSE
-#' )
+#' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
+#' infer <- SeqDesignInferenceOrdinalPairedSignTest$new(seq_des, verbose = FALSE)
 #' infer
 #'
 SeqDesignInferenceOrdinalPairedSignTest = R6::R6Class("SeqDesignInferenceOrdinalPairedSignTest",
@@ -58,7 +47,7 @@ SeqDesignInferenceOrdinalPairedSignTest = R6::R6Class("SeqDesignInferenceOrdinal
 		#' @description
 		#' Computes the confidence interval for the probability P(T > C).
 		#' @param	alpha					The significance level.
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -66,7 +55,7 @@ SeqDesignInferenceOrdinalPairedSignTest = R6::R6Class("SeqDesignInferenceOrdinal
 		#' @description
 		#' Computes the p-value for the sign test.
 		#' @param	delta					The null difference (must be 0 for sign test).
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (delta != 0) stop("Sign test only supports testing against delta = 0.")
 			private$shared()

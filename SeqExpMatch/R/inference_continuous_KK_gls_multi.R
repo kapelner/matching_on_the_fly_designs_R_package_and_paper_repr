@@ -91,7 +91,7 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		compute_mle_confidence_interval = function(alpha = 0.05){
+		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
@@ -106,7 +106,7 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
-		compute_mle_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			if (is.null(private$cached_values$df)){
 				private$shared()

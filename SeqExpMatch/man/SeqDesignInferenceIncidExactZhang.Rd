@@ -12,7 +12,7 @@ This class provides the \code{compute_exact_two_sided_pval_for_treatment_effect}
 and \code{compute_exact_confidence_interval} methods for uncensored incidence
 outcomes under a completely randomized design. Standard estimator-based methods
 such as \code{compute_treatment_estimate()} and
-\code{compute_mle_confidence_interval()} are intentionally unavailable for this
+\code{compute_asymp_confidence_interval()} are intentionally unavailable for this
 exact Zhang interface.
 }
 \examples{
@@ -49,8 +49,8 @@ infer
 \itemize{
 \item \href{#method-SeqDesignInferenceIncidExactZhang-new}{\code{SeqDesignInferenceIncidExactZhang$new()}}
 \item \href{#method-SeqDesignInferenceIncidExactZhang-compute_treatment_estimate}{\code{SeqDesignInferenceIncidExactZhang$compute_treatment_estimate()}}
-\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval}{\code{SeqDesignInferenceIncidExactZhang$compute_mle_confidence_interval()}}
-\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidExactZhang$compute_mle_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_asymp_confidence_interval}{\code{SeqDesignInferenceIncidExactZhang$compute_asymp_confidence_interval()}}
+\item \href{#method-SeqDesignInferenceIncidExactZhang-compute_asymp_two_sided_pval_for_treatment_effect}{\code{SeqDesignInferenceIncidExactZhang$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-SeqDesignInferenceIncidExactZhang-compute_confidence_interval_rand}{\code{SeqDesignInferenceIncidExactZhang$compute_confidence_interval_rand()}}
 \item \href{#method-SeqDesignInferenceIncidExactZhang-compute_two_sided_pval_for_treatment_effect_rand}{\code{SeqDesignInferenceIncidExactZhang$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-SeqDesignInferenceIncidExactZhang-approximate_bootstrap_distribution_beta_hat_T}{\code{SeqDesignInferenceIncidExactZhang$approximate_bootstrap_distribution_beta_hat_T()}}
@@ -106,12 +106,14 @@ Not implemented for Zhang exact incidence inference.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_mle_confidence_interval}{}}}
-\subsection{Method \code{compute_mle_confidence_interval()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
 Not implemented for Zhang exact incidence inference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_mle_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -123,12 +125,12 @@ Not implemented for Zhang exact incidence inference.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_mle_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_mle_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-SeqDesignInferenceIncidExactZhang-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Not implemented for Zhang exact incidence inference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_mle_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

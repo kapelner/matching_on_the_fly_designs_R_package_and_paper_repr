@@ -695,45 +695,42 @@ NULL
 	}
 
 	start0 = .build_zoib_start(y, Xmm)
-	starts = list(
-		start0,
-		{tmp <- start0; tmp[p + 1L] <- log(5); tmp},
-		{tmp <- start0; tmp[p + 1L] <- log(20); tmp}
-	)
+	starts = list(start0)
 
 	best = NULL
+	best_val = Inf
 	for (start_par in starts){
 		fit = tryCatch(
-			stats::optim(
-				par = start_par,
-				fn = neg_loglik,
-				method = "BFGS",
-				hessian = TRUE,
-				control = list(maxit = 2000, reltol = 1e-9)
-			),
+			fast_zero_one_inflated_beta_cpp(Xfull, y, start_par),
 			error = function(e) NULL
 		)
-		if (is.null(fit) || !is.finite(fit$value)) next
-		if (is.null(best) || fit$value < best$value) best = fit
+		if (is.null(fit) || !is.finite(fit$neg_loglik)) next
+		if (is.null(best) || fit$neg_loglik < best_val){
+			best = fit
+			best_val = fit$neg_loglik
+		}
 	}
 	if (is.null(best)) return(NULL)
 
-	hess = best$hessian
-	vcov_full = tryCatch(solve(hess), error = function(e) NULL)
+	best_params = as.numeric(best$coefficients)
+	param_names = c(colnames(Xfull), "log_phi", "alpha0", "alpha1")
+	coef_full = best_params
+	names(coef_full) = param_names
+
+	vcov_full = best$vcov
+	if (!is.matrix(vcov_full) || any(dim(vcov_full) != length(param_names))){
+		vcov_full = NULL
+	}
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
-		vcov_full = tryCatch(numDeriv::hessian(neg_loglik, best$par), error = function(e) NULL)
+		vcov_full = tryCatch(numDeriv::hessian(neg_loglik, best_params), error = function(e) NULL)
 		vcov_full = tryCatch(solve(vcov_full), error = function(e) NULL)
 	}
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
-		hess_alt = tryCatch(numDeriv::hessian(neg_loglik, best$par), error = function(e) NULL)
+		hess_alt = tryCatch(numDeriv::hessian(neg_loglik, best_params), error = function(e) NULL)
 		if (!is.null(hess_alt)){
 			vcov_full = tryCatch(MASS::ginv(hess_alt), error = function(e) NULL)
 		}
 	}
-	param_names = c(colnames(Xfull), "log_phi", "alpha0", "alpha1")
-	coef_full = best$par
-	names(coef_full) = param_names
-
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
 		# Keep the MLE when curvature is too unstable for a usable covariance matrix.
 		vcov_full = matrix(NA_real_, nrow = length(param_names), ncol = length(param_names))

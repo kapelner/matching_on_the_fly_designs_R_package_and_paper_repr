@@ -110,7 +110,7 @@ run_simulation = function(i, data_set, beta_T, design, morison, n){
 		}
 
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
-		pval = seq_des_inf_obj$compute_mle_two_sided_pval_for_treatment_effect()
+		pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 
 		res = rbind(res, data.frame(
 			i = i,
@@ -129,7 +129,7 @@ run_simulation = function(i, data_set, beta_T, design, morison, n){
 		des_inf_class = get(des_inf)
 		seq_des_inf_obj = des_inf_class$new(seq_des_obj, verbose = FALSE)
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
-		pval = seq_des_inf_obj$compute_mle_two_sided_pval_for_treatment_effect()
+		pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 		res = rbind(res, data.frame(
 		i = i,
 		data_set = data_set,
