@@ -204,6 +204,11 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
     .Call(`_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp`, y, w)
 }
 
+#' Fast KK Wilcoxon Statistic for Multiple Permutations
+compute_kk_wilcox_distr_parallel_cpp <- function(y, w_mat, match_indic_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, match_indic_mat, num_cores)
+}
+
 fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_SeqExpMatch_fast_log_binomial_regression_cpp`, X, y, maxit, tol)
 }
@@ -448,6 +453,17 @@ compute_wilcox_kk_ivwc_bootstrap_parallel_cpp <- function(y, w, match_indic, ind
     .Call(`_SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp`, y, w, match_indic, indices_mat, match_indic_mat, num_cores)
 }
 
+#' Fast Wilcoxon Rank Sum Statistic for Multiple Permutations
+#'
+#' @param y The response vector (already shifted by delta if necessary).
+#' @param w_mat Matrix of permutations (n x nsim).
+#' @param num_cores Number of cores to use.
+#'
+#' @return A vector of rank-sum statistics (mean differences in ranks).
+compute_wilcox_distr_parallel_cpp <- function(y, w_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_wilcox_distr_parallel_cpp`, y, w_mat, num_cores)
+}
+
 fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init) {
     .Call(`_SeqExpMatch_fast_zero_one_inflated_beta_cpp`, Xfull, y, init)
 }
@@ -642,8 +658,8 @@ newcombe_paired_ci_cpp <- function(n11, n10, n01, n00, alpha) {
     .Call(`_SeqExpMatch_newcombe_paired_ci_cpp`, n11, n10, n01, n00, alpha)
 }
 
-compute_ols_distr_parallel_cpp <- function(y, X_covars, w_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_ols_distr_parallel_cpp`, y, X_covars, w_mat, num_cores)
+compute_ols_distr_parallel_cpp <- function(y, X_covars, w_mat, delta, num_cores) {
+    .Call(`_SeqExpMatch_compute_ols_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
 }
 
 compute_ols_bootstrap_parallel_cpp <- function(y, X_covars, w, indices_mat, num_cores) {
@@ -660,6 +676,36 @@ compute_pair_distance_matrix_cpp <- function(pair_avg, weights) {
 
 compute_lambda_squ_cpp <- function(d_i, halves) {
     .Call(`_SeqExpMatch_compute_lambda_squ_cpp`, d_i, halves)
+}
+
+#' Pocock-Simon Minimization Allocation Logic
+#'
+#' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
+#'               Each row corresponds to a specific level of a specific covariate.
+#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
+#'                           the current subject belongs to.
+#' @param weights A numeric vector of weights for each covariate.
+#' @param p_best The probability of assigning the treatment that minimizes the imbalance.
+#' @param prob_T Target probability for treatment (usually 0.5).
+#'
+#' @return The assigned treatment (0 or 1).
+#' @export
+pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
+    .Call(`_SeqExpMatch_pocock_simon_assign_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
+}
+
+#' Pocock-Simon Minimization Redraw Assignments
+#'
+#' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.
+#' @param num_levels_total Total number of levels across all covariates.
+#' @param weights A numeric vector of weights for each covariate.
+#' @param p_best The probability of assigning the treatment that minimizes the imbalance.
+#' @param prob_T Target probability for treatment (usually 0.5).
+#'
+#' @return An integer vector of treatment assignments.
+#' @export
+pocock_simon_redraw_w_cpp <- function(x_levels_matrix, num_levels_total, weights, p_best, prob_T) {
+    .Call(`_SeqExpMatch_pocock_simon_redraw_w_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T)
 }
 
 qr_reduce_full_rank_cpp <- function(X) {
@@ -704,6 +750,14 @@ sample_mode_cpp <- function(data) {
 
 compute_simple_mean_diff_parallel_cpp <- function(y_mat, w_mat, num_cores) {
     .Call(`_SeqExpMatch_compute_simple_mean_diff_parallel_cpp`, y_mat, w_mat, num_cores)
+}
+
+spbr_redraw_w_cpp <- function(strata_keys_sexp, block_size_sexp, prob_T_sexp) {
+    .Call(`_SeqExpMatch_spbr_redraw_w_cpp`, strata_keys_sexp, block_size_sexp, prob_T_sexp)
+}
+
+stratified_bootstrap_indices_cpp <- function(strata_keys_sexp) {
+    .Call(`_SeqExpMatch_stratified_bootstrap_indices_cpp`, strata_keys_sexp)
 }
 
 #' Compute automatic survival strata IDs from low-cardinality covariates

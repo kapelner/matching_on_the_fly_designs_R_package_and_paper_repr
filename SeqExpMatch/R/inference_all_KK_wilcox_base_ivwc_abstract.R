@@ -23,6 +23,53 @@ SeqDesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("SeqDesignInferenceAbst
 	),
 	private = list(
 
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+
+			nsim = length(permutations)
+			n = length(y)
+
+			w_mat = matrix(0L, nrow = n, ncol = nsim)
+			match_indic_mat = matrix(0L, nrow = n, ncol = nsim)
+			
+			for (i in 1:nsim) {
+				w_mat[, i] = permutations[[i]]$w
+				
+				# Optimization: check if match_indic is already in permutation cache
+				if (!is.null(permutations[[i]]$match_indic)) {
+					match_indic_mat[, i] = permutations[[i]]$match_indic
+				} else {
+					# Fallback to match_cache
+					w_key = private$stable_signature(permutations[[i]]$w)
+					if (!is.null(private$cached_values$match_cache[[w_key]])) {
+						match_indic_mat[, i] = private$cached_values$match_cache[[w_key]]
+					} else {
+						# If truly not matched yet, we must fall back to the slow path 
+						# for this call, or compute it once.
+						return(NULL)
+					}
+				}
+			}
+
+			y_sim = as.numeric(y)
+			if (delta != 0) {
+				# Apply shift to treated subjects in y before ranking
+				# (This is safe because we re-rank inside the C++ loop)
+				# But wait, compute_kk_wilcox_distr_parallel_cpp doesn't take delta yet.
+				# Let's pass delta=0 and handle the shift here since it's vectorized.
+				# But we can't shift yet because w is a matrix.
+				return(NULL) # Fallback for delta != 0 for now to ensure correctness
+			}
+
+			res = compute_kk_wilcox_distr_parallel_cpp(
+				y_sim,
+				w_mat,
+				match_indic_mat,
+				private$num_cores
+			)
+			return(res)
+		},
+
 		# Override the per-permutation statistic to avoid the O(n^2) conf.int = TRUE cost.
 		# Uses standardized Wilcoxon W statistics (conf.int = FALSE, O(n log n)) as the
 		# rank test statistic; monotone with the HL / rank-regression estimate under the null.

@@ -80,8 +80,8 @@ bm_safe = function(label, expr) {
     res = tryCatch({
         eval(expr)
         t_end = proc.time()[["elapsed"]]
-        duration = t_end - t_start
-        cat(sprintf("(%.2fs) ", duration))
+        duration = round(t_end - t_start, 3)
+        cat(sprintf("(%.3fs) ", duration))
         duration
     }, error = function(e) {
         cat(sprintf("(ERROR: %s) ", e$message))

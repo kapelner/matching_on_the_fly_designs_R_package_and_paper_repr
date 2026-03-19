@@ -130,6 +130,7 @@ test_custom_pval.R
 test_gls.R
 benchmark.log
 benchmark.pid
+benchmark_inference.log
 benchmark_inference_results.csv
 local_R_lib/*
 run_bm.sh

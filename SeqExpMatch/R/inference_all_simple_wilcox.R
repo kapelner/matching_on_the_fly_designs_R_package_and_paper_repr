@@ -128,23 +128,31 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			nsim = length(permutations)
-			w_mat = matrix(0L, nrow = length(y), ncol = nsim)
-			for (i in seq_len(nsim)) {
+			n = length(y)
+
+			w_mat = matrix(0L, nrow = n, ncol = nsim)
+			for (i in 1:nsim) {
 				w_mat[, i] = permutations[[i]]$w
 			}
 
-			transform_code =
-				if (identical(transform_responses, "log")) 1L else
-				if (identical(transform_responses, "logit")) 2L else
-				if (identical(transform_responses, "log1p")) 3L else 0L
+			y_sim = as.numeric(y)
+			# Wilcoxon is rank-based, so we can shift y before ranking.
+			# (SeqDesignInference handles transforms like log/logit before passing y here)
+			
+			res = compute_wilcox_distr_parallel_cpp(y_sim, w_mat, private$num_cores)
+			# Note: if delta != 0, we'd need to re-rank for each permutation if we were being 
+			# strict, but for simple Wilcoxon rank sum, if the sharp null is additive on the 
+			# scale of y, then y_T - delta = y_C. 
+			# Actually, we can just pass the shifted y to the C++ ranker.
+			
+			if (delta != 0) {
+				# For non-linear rank stats with delta, the fast path is trickier because 
+				# ranks change per permutation. Let's fall back to R for delta != 0 
+				# for Wilcoxon to ensure correctness unless we implement per-perm ranking in C++.
+				return(NULL) 
+			}
 
-			compute_wilcox_hl_distr_parallel_cpp(
-				as.numeric(y),
-				w_mat,
-				as.numeric(delta),
-				transform_code,
-				private$num_cores
-			)
+			return(res)
 		},
 
 		compute_treatment_estimate_during_randomization_inference = function(){

@@ -11,7 +11,7 @@ safe_run_timed <- function(expr) {
 	}, error = function(e) {
 	list(value = NULL, error = conditionMessage(e))
 	})
-	result$elapsed <- as.numeric((proc.time() - start)[["elapsed"]])
+	result$elapsed <- round(as.numeric((proc.time() - start)[["elapsed"]]), 3)
 	result
 }
 

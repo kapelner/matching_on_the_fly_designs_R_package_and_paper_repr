@@ -237,6 +237,18 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
 
     NumericVector results(nsim, NA_REAL);
 
+    // Pre-calculate shifted responses for treatment group once
+    std::vector<double> y_shifted(n);
+    if (delta != 0.0) {
+        for (int i = 0; i < n; ++i) {
+            if (R_finite(y[i])) {
+                y_shifted[i] = apply_shift(y[i], delta, transform_code);
+            } else {
+                y_shifted[i] = NA_REAL;
+            }
+        }
+    }
+
 #ifdef _OPENMP
     if (num_cores > 1) {
         omp_set_num_threads(num_cores);
@@ -251,19 +263,16 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
         y_c.reserve(n);
 
         for (int i = 0; i < n; ++i) {
-            double y_val = y[i];
-            if (!R_finite(y_val)) {
+            const double y_orig = y[i];
+            if (!R_finite(y_orig)) {
                 continue;
             }
 
             const int w_val = w_mat(i, b);
             if (w_val == 1) {
-                if (delta != 0.0) {
-                    y_val = apply_shift(y_val, delta, transform_code);
-                }
-                y_t.push_back(y_val);
+                y_t.push_back(delta != 0.0 ? y_shifted[i] : y_orig);
             } else if (w_val == 0) {
-                y_c.push_back(y_val);
+                y_c.push_back(y_orig);
             }
         }
 

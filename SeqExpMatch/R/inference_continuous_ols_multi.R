@@ -175,11 +175,9 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 				w_mat[, i] = permutations[[i]]$w
 			}
 
-			if (delta != 0) return(NULL)
-
 			X_covars = private$get_X()
 
-			res = compute_ols_distr_parallel_cpp(y, X_covars, w_mat, private$num_cores)
+			res = compute_ols_distr_parallel_cpp(y, X_covars, w_mat, as.numeric(delta), private$num_cores)
 			return(res)
 		},
 

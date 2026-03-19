@@ -177,10 +177,11 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 				w_mat[, i] = permutations[[i]]$w
 			}
 
-			y_shifted = copy(y)
-			if (delta != 0) return(NULL)
-
-			y_mat = matrix(y_shifted, nrow = n, ncol = nsim)
+			y_mat = matrix(y, nrow = n, ncol = nsim)
+			if (delta != 0) {
+				# Apply shift vectorized across the whole matrix where w=1
+				y_mat[w_mat == 1] = y_mat[w_mat == 1] + delta
+			}
 
 			res = compute_simple_mean_diff_parallel_cpp(y_mat, w_mat, private$num_cores)
 			return(res)

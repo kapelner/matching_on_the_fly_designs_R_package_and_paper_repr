@@ -13,6 +13,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::MatrixXd& X_covars,
 	const Eigen::MatrixXi& w_mat,
+	double delta,
 	int num_cores) {
 
 	int nsim = w_mat.cols();
@@ -27,24 +28,53 @@ NumericVector compute_ols_distr_parallel_cpp(
 	}
 #endif
 
+	// MEMOIZATION Strategy:
+	// Let X = [1 | w | X_c]. X'X is:
+	// [ n      | sum(w) | 1'X_c   ]
+	// [ sum(w) | sum(w) | w'X_c   ]
+	// [ X_c'1  | X_c'w  | X_c'X_c ]
+	//
+	// Most blocks are constant.
+	double sum_1 = (double)n;
+	Eigen::VectorXd Xt_1 = X_covars.colwise().sum(); // X_c'1
+	Eigen::MatrixXd XtX_c = X_covars.transpose() * X_covars; // X_c'X_c
+	
 #pragma omp parallel for schedule(dynamic)
 	for (int b = 0; b < nsim; ++b) {
 		Eigen::VectorXi w = w_mat.col(b);
-
-		// Construct the design matrix
-		Eigen::MatrixXd X_full(n, p_full);
-		X_full.col(0).setOnes();
-		X_full.col(1) = w.cast<double>();
-		if (p_covars > 0) {
-			X_full.rightCols(p_covars) = X_covars;
+		Eigen::VectorXd w_d = w.cast<double>();
+		
+		// Shift y if delta != 0
+		Eigen::VectorXd y_sim = y;
+		if (delta != 0) {
+			for (int i = 0; i < n; ++i) {
+				if (w[i] == 1) y_sim[i] += delta;
+			}
 		}
 
-		// OLS via LDLT
-		Eigen::MatrixXd XtX = X_full.transpose() * X_full;
-		Eigen::VectorXd Xty = X_full.transpose() * y;
+		double sum_w = w_d.sum();
+		Eigen::VectorXd Xt_w = X_covars.transpose() * w_d; // X_c'w
+
+		Eigen::MatrixXd XtX(p_full, p_full);
+		XtX(0, 0) = sum_1;
+		XtX(0, 1) = sum_w;
+		XtX.row(0).tail(p_covars) = Xt_1.transpose();
+		
+		XtX(1, 0) = sum_w;
+		XtX(1, 1) = sum_w; // w'w = sum(w) since w is binary
+		XtX.row(1).tail(p_covars) = Xt_w.transpose();
+		
+		XtX.col(0).tail(p_covars) = Xt_1;
+		XtX.col(1).tail(p_covars) = Xt_w;
+		XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
+
+		Eigen::VectorXd Xty(p_full);
+		Xty[0] = y_sim.sum();
+		Xty[1] = w_d.dot(y_sim);
+		Xty.tail(p_covars) = X_covars.transpose() * y_sim;
 
 		Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-		results[b] = beta[1]; // Treatment effect is the 2nd coefficient
+		results[b] = beta[1];
 	}
 
 	return results;

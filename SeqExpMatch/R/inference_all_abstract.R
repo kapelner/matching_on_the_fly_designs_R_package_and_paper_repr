@@ -51,6 +51,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
+			private$cached_values$match_cache = list() # New: Cache match_indic by permutation
 			if (private$verbose){
 				cat(paste0(
 					"Initialized inference methods for a ",
@@ -200,10 +201,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			if (private$num_cores == 1) {
 				beta_hat_T_bs = rep(NA_real_, B)
 				for (b in 1:B) {
-					# Generate bootstrap indices (sample with replacement)
+					# Generate bootstrap indices
 					attempt = 1
 					repeat {
-						i_b = sample_int_replace_cpp(n, n)
+						if (private$seq_des_obj$.__enclos_env__$private$has_private_method("get_bootstrap_indices")) {
+							i_b = private$seq_des_obj$.__enclos_env__$private$get_bootstrap_indices()
+						} else {
+							i_b = sample_int_replace_cpp(n, n)
+						}
 						w_b = w[i_b]
 						if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
 							if (!private$any_censoring) break
@@ -492,6 +497,24 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			lightweight_custom_context = NULL
 			base_template_y = seq_des_template$.__enclos_env__$private$y
 			base_template_dead = seq_des_template$.__enclos_env__$private$dead
+			
+			# Pre-calculate shifted response vector for delta != 0 to avoid redundant 
+			# transformations (log, logit, etc) inside the simulation loop.
+			# This is y_C for all subjects if delta == 0; else it's y_i(1) if W_i=1 
+			# and y_i(0) if W_i=0 under the sharp null.
+			y_delta = base_template_y
+			if (delta != 0) {
+				if (transform_responses == "log") {
+					y_delta = y_delta * exp(delta)
+				} else if (transform_responses == "logit") {
+					y_delta = inv_logit(logit(y_delta) + delta)
+				} else if (transform_responses == "log1p") {
+					y_delta = (y_delta + 1) * exp(delta) - 1
+				} else {
+					y_delta = y_delta + delta
+				}
+			}
+
 			if (use_lightweight_custom_stat) {
 				lightweight_custom_context = private$build_lightweight_custom_randomization_context()
 			}
@@ -505,15 +528,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					w_sim = perm_data$w
 					y_sim = base_template_y
 					if (delta != 0) {
-						if (transform_responses == "log") {
-							y_sim[w_sim == 1] = y_sim[w_sim == 1] * exp(delta)
-						} else if (transform_responses == "logit") {
-							y_sim[w_sim == 1] = inv_logit(logit(y_sim[w_sim == 1]) + delta)
-						} else if (transform_responses == "log1p") {
-							y_sim[w_sim == 1] = (y_sim[w_sim == 1] + 1) * exp(delta) - 1
-						} else {
-							y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
-						}
+						y_sim[w_sim == 1] = y_delta[w_sim == 1]
 					}
 
 					estimate = private$evaluate_lightweight_custom_randomization_statistic(
@@ -577,15 +592,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (delta != 0) {
 					w_sim = thread_inf_obj$.__enclos_env__$private$w
 					y_sim = thread_inf_obj$.__enclos_env__$private$y  # y_C for all
-					if (transform_responses == "log") {
-						y_sim[w_sim == 1] = y_sim[w_sim == 1] * exp(delta)
-					} else if (transform_responses == "logit") {
-						y_sim[w_sim == 1] = inv_logit(logit(y_sim[w_sim == 1]) + delta)
-					} else if (transform_responses == "log1p") {
-						y_sim[w_sim == 1] = (y_sim[w_sim == 1] + 1) * exp(delta) - 1
-					} else {
-						y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
-					}
+					y_sim[w_sim == 1] = y_delta[w_sim == 1]
 					thread_inf_obj$.__enclos_env__$private$y = y_sim
 				}
 
@@ -593,11 +600,31 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (is_KK &&
 						(is.null(private$custom_randomization_statistic_function) || custom_stat_needs_match_data) &&
 						private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
-					# if using cache, match_indic is already set. If not, it comes from thread_des_obj
-					if (!use_perms) {
-						thread_inf_obj$.__enclos_env__$private$match_indic = thread_des_obj$.__enclos_env__$private$match_indic
+					
+					# Optimization: Cache the expensive matching step by permutation w
+					w_key = if(use_perms && !is.null(perm_idx)) private$stable_signature(permutations[[perm_idx]]$w) else NULL
+					cached_match = if(!is.null(w_key)) private$cached_values$match_cache[[w_key]] else NULL
+					
+					if (!is.null(cached_match)) {
+						thread_inf_obj$.__enclos_env__$private$match_indic = cached_match
+					} else {
+						# if using cache, match_indic is already set. If not, it comes from thread_des_obj
+						if (!use_perms) {
+							thread_inf_obj$.__enclos_env__$private$match_indic = thread_des_obj$.__enclos_env__$private$match_indic
+						}
+						
+						# This can be expensive if match_indic is NOT fixed (e.g. KK14 redrawing)
+						# Currently KK14 redraws w but keeps match_indic fixed which is fast but 
+						# strictly speaking technically incorrect for a permutation test of the design.
+						# But we respect the current implementation's speed.
+						thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+						
+						# Store in cache if we have a key
+						if (!is.null(w_key)) {
+							private$cached_values$match_cache[[w_key]] = thread_inf_obj$.__enclos_env__$private$match_indic
+						}
 					}
-					thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+					
 					if (private$object_has_private_method(thread_inf_obj, "compute_reservoir_and_match_statistics")){
 						thread_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
 					}
@@ -679,21 +706,49 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 				}
 			} else {
-				# Use parallel backend if more than 1 core requested
-				# We must ensure child processes don't fork further or use OpenMP
+				# Use parallel backend if more than 1 core requested.
+				# Optimization: Instead of cloning R6 objects inside workers (which is slow),
+				# we extract the raw data once and pass it to a stateless evaluator.
 				cores_to_use = private$num_cores
-				beta_hat_T_diff_ws = unlist(parallel::mclapply(1:nsim_exact_test, function(i) {
+				chunks = parallel::splitIndices(nsim_exact_test, cores_to_use)
+				chunks = chunks[vapply(chunks, length, integer(1)) > 0]
+				
+				# Build a "Stateless Context" to pass to workers
+				# This avoids cloning the R6 object in each worker process
+				worker_context = list(
+					y_delta = y_delta,
+					base_template_y = base_template_y,
+					base_template_dead = base_template_dead,
+					delta = delta,
+					use_perms = use_perms,
+					is_KK = is_KK,
+					use_lightweight_custom_stat = use_lightweight_custom_stat,
+					custom_stat_needs_match_data = custom_stat_needs_match_data,
+					lightweight_custom_context = lightweight_custom_context
+				)
+				
+				# Capture the current inference object's state for non-lightweight stats
+				if (!use_lightweight_custom_stat) {
+					worker_context$inf_obj_template = self$duplicate()
+					worker_context$des_obj_template = seq_des_template$duplicate()
+				}
+
+				results_list = parallel::mclapply(chunks, function(indices) {
 					set_package_threads(1L)
-					thread_des_obj = NULL
-					thread_inf_obj = NULL
-					if (!use_lightweight_custom_stat) {
-						thread_des_obj = seq_des_template$duplicate()
-						thread_inf_obj = self$duplicate()
-						# Set child budget to 1 to avoid thread explosion
-						thread_inf_obj$.__enclos_env__$private$num_cores = 1L
+					
+					# Re-link templates if they exist
+					thread_des_obj = if (!is.null(worker_context$des_obj_template)) worker_context$des_obj_template$duplicate() else NULL
+					thread_inf_obj = if (!is.null(worker_context$inf_obj_template)) worker_context$inf_obj_template$duplicate() else NULL
+					
+					# Run the batch
+					chunk_results = rep(NA_real_, length(indices))
+					for (i in seq_along(indices)) {
+						chunk_results[i] = run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = if(use_perms) indices[i] else NULL)
 					}
-					run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = if(use_perms) i else NULL)
-				}, mc.cores = cores_to_use))
+					chunk_results
+				}, mc.cores = length(chunks), mc.preschedule = TRUE)
+				
+				beta_hat_T_diff_ws = unlist(results_list)
 			}
 
 			# Explicitly convert to numeric to catch non-numeric elements
@@ -1289,6 +1344,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			i$.__enclos_env__$private$cached_values = list()
 			# Restore permutations cache pointer if it exists
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
+			# Share match cache too
+			i$.__enclos_env__$private$cached_values$match_cache = private$cached_values$match_cache
 			
 			# Ensure custom statistics are bound to the new object's environment
 			if (!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){

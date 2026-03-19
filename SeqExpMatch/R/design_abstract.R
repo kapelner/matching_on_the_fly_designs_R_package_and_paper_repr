@@ -684,18 +684,21 @@ SeqDesign = R6::R6Class("SeqDesign",
 			}
 
 			#now let's drop any columns that don't have any variation
+			#we need to be careful: count_unique_values_cpp takes a List (data.table)
+			#so it should be fine with factors/characters.
 			num_unique_values_per_column = count_unique_values_cpp(private$Ximp)
 			private$Ximp = private$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 
 			#for nonblank data frames...
 			if (ncol(private$Ximp) > 0){
-				#now we need to convert character features into factors
-				col_types = get_column_types_cpp(private$Ximp)
-				idx_cols_to_convert_to_factor = which(col_types == "character")
-				private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
-
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				private$X = as.matrix(private$Ximp) #model.matrix(~ ., private$Ximp)
+				#Use model.matrix to ensure everything is numeric (expanding factors into dummies)
+				#The "-1" removes the intercept column
+				private$X = model.matrix(~ ., data = private$Ximp)[, -1, drop = FALSE]
+				# Ensure it is a numeric matrix (not character)
+				if (is.character(private$X)){
+					stop("model.matrix returned a character matrix - this should not happen.")
+				}
 				private$X = drop_linearly_dependent_cols(private$X)$M
 
 				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
@@ -787,6 +790,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 
 		assign_wt_CRD = function(){
 			rbinom(1, 1, private$prob_T)
+		},
+
+		has_private_method = function(method_name) {
+			exists(method_name, envir = self$.__enclos_env__$private, inherits = FALSE)
 		}
 	)
 )

@@ -437,6 +437,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		Efron =        SeqDesignEfron$new(       response_type = response_type, n = n),
 		Atkinson =     SeqDesignAtkinson$new(    response_type = response_type, n = n),
 		iBCRD =        SeqDesigniBCRD$new(       response_type = response_type, n = n),
+		SPBR =         SeqDesignSPBR$new(        strata_cols = names(X_design)[1:min(2, ncol(X_design))], block_size = 4, response_type = response_type, n = n),
 		stop("Unsupported design_type: ", design_type)
 	)
 	for (t in 1 : n){
@@ -905,7 +906,7 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				log_progress(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
-				for (design_type in c("CRD", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise")) {
+				for (design_type in c("CRD", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR")) {
 					log_progress(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 					log_progress(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))

@@ -78,6 +78,8 @@ Collate:
     'design_KK21_stepwise.R'
     'design_crd.R'
     'design_ibcrd.R'
+    'design_pocock_simon.R'
+    'design_spbr.R'
     'inference_all_abstract.R'
     'inference_all_KK_passthrough_abstract.R'
     'inference_all_KK_passthrough_compound_abstract.R'
