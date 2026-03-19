@@ -39,16 +39,6 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 		},
 
 		# @description
-		# Returns a 1 - alpha confidence interval for the treatment effect.
-		# @param alpha Significance level; default 0.05 gives a 95 percent CI.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
-			private$assert_finite_se()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-
-		# @description
 		# Returns a 2-sided p-value for H0: beta_T = delta.
 		# @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
@@ -58,14 +48,95 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 			if (delta == 0){
 				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
-				stop("Testing non-zero delta is not yet implemented for this class.")
+				# For non-zero delta, we can still use the same logic if we have beta_hat_T and s_beta_hat_T
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			}
+		},
+
+		# @description
+		# Duplicates the object while preserving caches.
+		# @param verbose Whether the duplicate should be verbose.
+		duplicate = function(verbose = FALSE){
+			inf_obj = super$duplicate(verbose = verbose)
+			inf_obj
 		}
 	),
 
 	private = list(
 
+		filtered_cov_cache = NULL,
+		best_Xmm_colnames = NULL,
+		best_par = NULL,
+
+		# Overridden to use the best design matrix and starting parameters from the initial fit
+		# to speed up randomization-based inference.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			# Ensure we have the best design and parameters from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared()
+			}
+
+			# If we still don't have it (e.g., initial fit failed), fall back to standard
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate())
+			}
+
+			# Use the same design matrix columns as the original fit
+			X_data = private$get_X()
+			Xmm_cols = private$best_Xmm_colnames
+			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			Xmm = cbind(w = private$w, X_cov)
+
+			match_indic = private$match_indic
+			if (is.null(match_indic)) match_indic = rep(0L, private$n)
+			match_indic[is.na(match_indic)] = 0L
+
+			# Use the best parameters from the original fit as the ONLY starting point
+			# This significantly speeds up each randomization draw.
+			fit = .fit_clayton_weibull_aft(
+				y = private$y,
+				dead = private$dead,
+				Xmm = Xmm,
+				pair_id = match_indic,
+				include_singletons = TRUE,
+				starts = list(private$best_par)
+			)
+
+			if (!is.null(fit) && is.finite(fit$beta)){
+				return(fit$beta)
+			}
+			NA_real_
+			},
+
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		# Pre-calculate filtered covariate matrices to avoid redundant correlation checks
+		# during repeated calls (e.g., in randomization inference).
+		filtered_covariate_candidates = function(){
+			if (!is.null(private$filtered_cov_cache)){
+				return(private$filtered_cov_cache)
+			}
+
+			X_cov_orig = as.matrix(private$X)
+			if (is.null(colnames(X_cov_orig))){
+				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
+			}
+
+			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			candidates = list()
+			keys = character()
+
+			for (thresh in thresholds){
+				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+				key = if (ncol(X_cov) > 0) paste(colnames(X_cov), collapse = "|") else ""
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = X_cov
+					keys = c(keys, key)
+				}
+			}
+			private$filtered_cov_cache = candidates
+			candidates
+		},
 
 		design_matrix_candidates = function(){
 			if (!is.null(private$cached_values$clayton_design_candidates)){
@@ -79,16 +150,10 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 				return(private$cached_values$clayton_design_candidates)
 			}
 
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			cov_candidates = private$filtered_covariate_candidates()
 			candidates = list()
-			keys = character()
-			X_cov_orig = as.matrix(private$X)
-			if (is.null(colnames(X_cov_orig))){
-				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
-			}
 
-			for (thresh in thresholds){
-				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+			for (X_cov in cov_candidates){
 				if (ncol(X_cov) == 0L){
 					M = matrix(private$w, ncol = 1)
 					colnames(M) = "w"
@@ -103,15 +168,11 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 					}
 					colnames(M)[1] = "w"
 				}
-				key = paste(colnames(M), collapse = "|")
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = M
-					keys = c(keys, key)
-				}
+				candidates[[length(candidates) + 1L]] = M
 			}
 
 			private$cached_values$clayton_design_candidates = candidates
-			private$cached_values$clayton_design_candidates
+			candidates
 		},
 
 		assert_finite_se = function(){
@@ -139,6 +200,8 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 					private$cached_values$beta_hat_T = fit$beta
 					private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
 					private$cached_values$theta_hat = fit$theta
+					private$best_par = fit$best_par
+					private$best_Xmm_colnames = colnames(Xcand)
 					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
 				}

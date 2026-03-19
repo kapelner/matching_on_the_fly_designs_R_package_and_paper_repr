@@ -187,6 +187,43 @@ SeqDesignInferenceAllKKWilcoxIVWC = R6::R6Class("SeqDesignInferenceAllKKWilcoxIV
 
 			private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
+		},
+
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic){
+			# Generate bootstrap indices for KK design in R first
+			# (Easier than doing the complex KK resampling logic in C++)
+			indices_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
+			match_indic_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
+
+			for (b in 1:B) {
+				i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+				if (m > 0) {
+					pairs_to_include = sample(1:m, m, replace = TRUE)
+					i_matched_b = integer(0)
+					match_indic_b_matched = integer(0)
+					for (new_pair_id in 1:m) {
+						original_pair_id = pairs_to_include[new_pair_id]
+						pair_indices = which(match_indic == original_pair_id)
+						i_matched_b = c(i_matched_b, pair_indices)
+						match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+					}
+				} else {
+					i_matched_b = integer(0)
+					match_indic_b_matched = integer(0)
+				}
+				
+				indices_mat[, b] = c(i_reservoir_b, i_matched_b)
+				match_indic_mat[, b] = c(rep(0L, n_reservoir), match_indic_b_matched)
+			}
+
+			compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
+				as.numeric(y),
+				as.integer(w),
+				as.integer(match_indic),
+				indices_mat,
+				match_indic_mat,
+				private$num_cores
+			)
 		}
 	)
 )

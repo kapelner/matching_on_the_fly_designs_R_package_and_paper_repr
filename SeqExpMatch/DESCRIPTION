@@ -2,10 +2,14 @@ Package: SeqExpMatch
 Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly
 Version: 2.0.0
-Authors@R: c(
-            person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre", "cph"), comment = c(ORCID = "0000-0001-5985-6792")),
-            person("Abba", "Krieger", email = "krieger@wharton.upenn.edu", role = "ctb")
-           )
+Authors@R: c(person(given = "Adam",
+                  family = "Kapelner",
+                  role = c("aut", "cre", "cph"),
+                  email = "kapelner@qc.cuny.edu",
+                  comment = c(ORCID = "0000-0001-5985-6792")),
+           person(given = "Abba",
+                  family = "Krieger",
+                  role = "ctb"))
 Description: Generates the following sequential two-arm experimental designs:
     (1) completely randomized (Bernoulli)
     (2) balanced completely randomized
@@ -28,8 +32,8 @@ Encoding: UTF-8
 Depends:
     R (>= 3.5.0)
 LinkingTo:
-	Rcpp,
-    RcppEigen	
+    Rcpp,
+    RcppEigen
 Imports:
     R6,
     checkmate,

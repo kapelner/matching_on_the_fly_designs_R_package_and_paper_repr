@@ -56,6 +56,19 @@ SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 
 	private = list(
 
+		# Overridden to avoid the heavy summary() call during randomization iterations.
+		# Extracts the coefficient for "w" directly from the fit.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			mod = private$fit_gee()
+			if (is.null(mod)) return(NA_real_)
+			
+			beta = coef(mod)
+			if ("w" %in% names(beta)){
+				return(as.numeric(beta["w"]))
+			}
+			NA_real_
+		},
+
 		# Abstract: subclasses must return the expected response type string.
 		gee_response_type = function() stop(class(self)[1], " must implement gee_response_type()"),
 

@@ -47,6 +47,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$is_KK = is(seq_des_obj, "SeqDesignKK14") #SeqDesignKK14 is the base class of all KK designs
 			private$n = seq_des_obj$get_n()
 			private$num_cores = num_cores
+			set_package_threads(num_cores)
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
@@ -249,7 +250,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				return(beta_hat_T_bs)
 			} else {
 				# Parallel bootstrap execution for R loop fallback
+				cores_to_use = private$num_cores
 				beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+					set_package_threads(1L)
 					attempt = 1
 					repeat {
 						i_b = sample_int_replace_cpp(n, n)
@@ -269,6 +272,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}
 
 					boot_inf_obj = self$duplicate()
+					# Set child budget to 1 to avoid thread explosion
+					boot_inf_obj$.__enclos_env__$private$num_cores = 1L
+					
 					boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 					boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 					boot_inf_obj$.__enclos_env__$private$w = w[i_b]
@@ -280,7 +286,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 					}, error = function(e) {
 						NA_real_
 					})
-				}, mc.cores = private$num_cores))
+				}, mc.cores = cores_to_use))
 				return(beta_hat_T_bs)
 			}
 		},
@@ -674,15 +680,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				}
 			} else {
 				# Use parallel backend if more than 1 core requested
+				# We must ensure child processes don't fork further or use OpenMP
+				cores_to_use = private$num_cores
 				beta_hat_T_diff_ws = unlist(parallel::mclapply(1:nsim_exact_test, function(i) {
+					set_package_threads(1L)
 					thread_des_obj = NULL
 					thread_inf_obj = NULL
 					if (!use_lightweight_custom_stat) {
 						thread_des_obj = seq_des_template$duplicate()
 						thread_inf_obj = self$duplicate()
+						# Set child budget to 1 to avoid thread explosion
+						thread_inf_obj$.__enclos_env__$private$num_cores = 1L
 					}
 					run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = if(use_perms) i else NULL)
-				}, mc.cores = private$num_cores))
+				}, mc.cores = cores_to_use))
 			}
 
 			# Explicitly convert to numeric to catch non-numeric elements
@@ -1270,27 +1281,16 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# @param verbose 	A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
 		# @return 			A new `SeqDesignInference` object with the same data
 		duplicate = function(verbose = FALSE){
-			i = tryCatch({
-				do.call(get(class(self)[1])$new, args = list(
-					seq_des_obj = private$seq_des_obj,
-					num_cores = private$num_cores,
-					verbose = verbose # Pass verbose here
-				))
-			}, error = function(e) {
-				if (verbose) {
-					cat("      Error during R6 object duplication:", e$message, "\n")
-				}
-				NULL # Return NULL on error
-			})
-			if (is.null(i)) return(NULL) # If construction failed, return NULL
-
-			i$.__enclos_env__$private$seq_des_obj_priv_int = 					private$seq_des_obj_priv_int
-			i$.__enclos_env__$private$any_censoring = 							private$any_censoring
-			i$.__enclos_env__$private$n = 										private$n
-			i$.__enclos_env__$private$p = 										private$p
-			i$.__enclos_env__$private$X = 										private$X
-			i$.__enclos_env__$private$custom_randomization_statistic_function = private$custom_randomization_statistic_function
+			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
+			# This is much faster as it avoids constructor overhead and re-validations.
+			i = self$clone()
+			i$.__enclos_env__$private$verbose = verbose
+			# Clear transient caches but keep heavy data pointers
+			i$.__enclos_env__$private$cached_values = list()
+			# Restore permutations cache pointer if it exists
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
+			
+			# Ensure custom statistics are bound to the new object's environment
 			if (!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				environment(i$.__enclos_env__$private$custom_randomization_statistic_function) = environment(i$initialize)
 			}
@@ -1619,8 +1619,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				list(l = l_lower, u = u_lower, lower = TRUE),
 				list(l = l_upper, u = u_upper, lower = FALSE)
 			)
+			# Allocation: give each bound half the cores.
+			# If num_cores=10, each bound child gets 5 cores.
+			# Inner loops will then use their allocated budget.
+			child_budget = max(1L, as.integer(floor(private$num_cores / 2)))
+
 			results = parallel::mclapply(bound_specs, function(spec) {
-				private$num_cores = 1L  # each forked child runs its bound serially
+				# Set child budget before calling bisection
+				private$num_cores = child_budget
+				set_package_threads(child_budget)
 				private$compute_ci_by_inverting_the_randomization_test_iteratively(
 					nsim_exact_test,
 					l                  = spec$l,

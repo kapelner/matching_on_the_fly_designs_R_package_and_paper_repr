@@ -156,11 +156,7 @@ SeqDesignInferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("SeqDe
 		fit_hurdle_model = function(model_data){
 			dat = model_data$dat
 			has_pairs = isTRUE(model_data$has_pairs)
-			glmm_control = if (private$num_cores > 1) {
-				glmmTMB::glmmTMBControl(parallel = 1L)
-			} else {
-				glmmTMB::glmmTMBControl()
-			}
+			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
 
 			formula_cond = private$build_cond_formula(dat, has_pairs = has_pairs)
 			formula_zi = private$build_zi_formula(dat, has_pairs = has_pairs)

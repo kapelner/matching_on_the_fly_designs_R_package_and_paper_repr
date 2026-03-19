@@ -56,9 +56,6 @@ SeqDesignInferenceAbstractKKRobustRegrIVWC = R6::R6Class("SeqDesignInferenceAbst
 
 		duplicate = function(verbose = FALSE){
 			i = super$duplicate(verbose = verbose)
-			if (is.null(i)) return(NULL)
-			i$.__enclos_env__$private$rlm_method = private$rlm_method
-			i$.__enclos_env__$private$rlm_force_M = private$rlm_force_M
 			i
 		}
 	),

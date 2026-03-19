@@ -86,6 +86,132 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
+		# Overridden to use the faster coxph+survreg approximation during randomization inference
+		# for the univariate case, avoiding the heavy parfm overhead.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			if (private$include_covariates()){
+				# Multivariate already uses coxph+survreg which is fast
+				return(self$compute_treatment_estimate())
+			}
+
+			# For univariate, use the fast approximation instead of parfm
+			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+
+			match_indic = private$match_indic
+			if (is.null(match_indic)) match_indic = rep(0L, private$n)
+			match_indic[is.na(match_indic)] = 0L
+
+			cluster_id = match_indic
+			reservoir_idx = which(cluster_id == 0L)
+			if (length(reservoir_idx) > 0L){
+				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
+			}
+
+			dat = data.frame(
+				time    = private$y,
+				event   = private$dead,
+				w       = private$w,
+				cluster = factor(cluster_id)
+			)
+
+			res = private$fit_fast_approx(dat)
+			if (!is.null(res) && is.finite(res$beta_aft)){
+				return(res$beta_aft)
+			}
+			NA_real_
+		},
+
+		# High-speed bootstrap implementation using the coxph+survreg approximation.
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic) {
+			dead = private$dead
+			X = if (private$include_covariates()) as.matrix(private$X) else NULL
+			if (!is.null(X) && is.null(colnames(X))) colnames(X) = paste0("x", seq_len(ncol(X)))
+			cov_str = if (!is.null(X)) paste(colnames(X), collapse = " + ") else NULL
+
+			cores_to_use = private$num_cores
+
+			beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+				# Resample reservoir
+				i_res_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+
+				# Resample matched pairs
+				if (m > 0) {
+					pairs_b = sample(1:m, m, replace = TRUE)
+					i_match_b = integer(0)
+					cluster_b = integer(0)
+					for (new_id in 1:m) {
+						orig_id = pairs_b[new_id]
+						idx = which(match_indic == orig_id)
+						i_match_b = c(i_match_b, idx)
+						cluster_b = c(cluster_b, rep(new_id, length(idx)))
+					}
+				} else {
+					i_match_b = integer(0)
+					cluster_b = integer(0)
+				}
+
+				i_all = c(i_res_b, i_match_b)
+				# Unique cluster IDs for singletons
+				cluster_id = c(m + seq_along(i_res_b), cluster_b)
+
+				dat_b = data.frame(
+					time = y[i_all],
+					event = dead[i_all],
+					w = w[i_all],
+					cluster = factor(cluster_id)
+				)
+				if (!is.null(X)) dat_b = cbind(dat_b, X[i_all, , drop = FALSE])
+
+				res = private$fit_fast_approx(dat_b, cov_str)
+				if (!is.null(res) && is.finite(res$beta_aft)) res$beta_aft else NA_real_
+			}, mc.cores = cores_to_use))
+			beta_hat_T_bs
+		},
+
+		# Fast approximation using semi-parametric coxph with frailty + univariate survreg for rho
+		fit_fast_approx = function(dat, cov_str = NULL){
+			cox_formula = if (is.null(cov_str)){
+				survival::Surv(time, event) ~ w + survival::frailty(cluster, distribution = "gamma")
+			} else {
+				as.formula(paste("survival::Surv(time, event) ~ w +", cov_str,
+				                 "+ survival::frailty(cluster, distribution = 'gamma')"))
+			}
+
+			cox_mod = tryCatch(survival::coxph(cox_formula, data = dat), error = function(e) NULL)
+			if (is.null(cox_mod) && !is.null(cov_str)){
+				# Fallback: drop covariates
+				cox_mod = tryCatch(
+					survival::coxph(survival::Surv(time, event) ~ w +
+					                survival::frailty(cluster, distribution = "gamma"),
+					                data = dat),
+					error = function(e) NULL
+				)
+			}
+			if (is.null(cox_mod)) return(NULL)
+
+			cox_coef = tryCatch(summary(cox_mod)$coefficients, error = function(e) NULL)
+			if (is.null(cox_coef) || !("w" %in% rownames(cox_coef))) return(NULL)
+			beta_ph = cox_coef["w", "coef"]
+			se_ph   = cox_coef["w", "se(coef)"]
+
+			survreg_formula = if (is.null(cov_str)){
+				survival::Surv(time, event) ~ w
+			} else {
+				as.formula(paste("survival::Surv(time, event) ~ w +", cov_str))
+			}
+
+			survreg_mod = tryCatch(survival::survreg(survreg_formula, data = dat, dist = "weibull"), error = function(e) NULL)
+			if (is.null(survreg_mod) && !is.null(cov_str)){
+				survreg_mod = tryCatch(survival::survreg(survival::Surv(time, event) ~ w,
+				                                         data = dat, dist = "weibull"),
+				                       error = function(e) NULL)
+			}
+			if (is.null(survreg_mod)) return(NULL)
+
+			rho = 1 / survreg_mod$scale
+			list(beta_aft = -beta_ph / rho, ssq_aft = (se_ph / rho)^2)
+		},
+
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				stop("Weibull Frailty combined-likelihood: could not compute a finite standard error.")
@@ -124,65 +250,15 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 				dat = cbind(dat, X_all)
 				cov_str = paste(colnames(X_all), collapse = " + ")
 
-				# Multivariate: coxph with gamma frailty for PH coef;
-				# survreg on all data for Weibull shape rho; AFT via delta method.
-				cox_formula = as.formula(paste(
-					"survival::Surv(time, event) ~ w +", cov_str,
-					"+ survival::frailty(cluster, distribution = 'gamma')"))
-				cox_mod = tryCatch(
-					survival::coxph(cox_formula, data = dat),
-					error = function(e) NULL
-				)
-				if (is.null(cox_mod)){
-					# Fallback: drop covariates
-					cox_mod = tryCatch(
-						survival::coxph(
-							survival::Surv(time, event) ~ w +
-								survival::frailty(cluster, distribution = "gamma"),
-							data = dat),
-						error = function(e) NULL
-					)
-				}
-				if (is.null(cox_mod)){
+				res = private$fit_fast_approx(dat, cov_str)
+				if (is.null(res)){
 					private$cached_values$beta_hat_T   = NA_real_
 					private$cached_values$s_beta_hat_T = NA_real_
 					private$cached_values$is_z         = TRUE
 					return(invisible(NULL))
 				}
-
-				cox_coef = tryCatch(summary(cox_mod)$coefficients, error = function(e) NULL)
-				if (is.null(cox_coef) || !("w" %in% rownames(cox_coef))){
-					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z         = TRUE
-					return(invisible(NULL))
-				}
-				beta_ph = cox_coef["w", "coef"]
-				se_ph   = cox_coef["w", "se(coef)"]
-
-				survreg_formula = as.formula(paste("survival::Surv(time, event) ~ w +", cov_str))
-				survreg_mod = tryCatch(
-					survival::survreg(survreg_formula, data = dat, dist = "weibull"),
-					error = function(e) NULL
-				)
-				if (is.null(survreg_mod)){
-					# Fallback: univariate survreg for rho
-					survreg_mod = tryCatch(
-						survival::survreg(survival::Surv(time, event) ~ w,
-							data = dat, dist = "weibull"),
-						error = function(e) NULL
-					)
-				}
-				if (is.null(survreg_mod)){
-					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z         = TRUE
-					return(invisible(NULL))
-				}
-				rho = 1 / survreg_mod$scale
-
-				alpha_aft     = -beta_ph / rho
-				ssq_alpha_aft = (se_ph / rho)^2
+				alpha_aft     = res$beta_aft
+				ssq_alpha_aft = res$ssq_aft
 			} else {
 				# Univariate: parfm parametric Weibull gamma-frailty on all data
 				# (singleton clusters for reservoir subjects degenerate to standard Weibull).

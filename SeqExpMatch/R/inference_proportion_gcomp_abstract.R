@@ -78,6 +78,7 @@ SeqDesignInferencePropGCompAbstract = R6::R6Class("SeqDesignInferencePropGCompAb
 			w = private$w
 
 			draw_sample = function(...){
+				set_package_threads(1L)
 				attempt = 1
 				repeat {
 					i_b = sample_int_replace_cpp(n, n)

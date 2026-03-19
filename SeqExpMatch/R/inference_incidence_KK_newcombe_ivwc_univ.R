@@ -92,6 +92,25 @@ SeqDesignInferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("SeqDesignInferenceI
 			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$match_indic, private$y, private$X)
 		},
 
+		pool_estimates_ivwc = function(est1, var1, est2, var2){
+			ok1 = is.finite(est1) && is.finite(var1) && var1 > 0
+			ok2 = is.finite(est2) && is.finite(var2) && var2 > 0
+
+			if (ok1 && ok2){
+				w1 = var2 / (var1 + var2)
+				return(list(
+					estimate = w1 * est1 + (1 - w1) * est2,
+					variance = var1 * var2 / (var1 + var2)
+				))
+			} else if (ok1){
+				return(list(estimate = est1, variance = var1))
+			} else if (ok2){
+				return(list(estimate = est2, variance = var2))
+			} else {
+				return(list(estimate = NA_real_, variance = NA_real_))
+			}
+		},
+
 		shared_combined = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()

@@ -163,11 +163,7 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 				pair_group = factor(match_indic[matched_idx])
 			)
 
-			glmm_control = if (private$num_cores > 1) {
-				glmmTMB::glmmTMBControl(parallel = 1L)
-			} else {
-				glmmTMB::glmmTMBControl()
-			}
+			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
 
 			formula_cond = private$build_glmm_formula(dat)
 			mod = tryCatch(

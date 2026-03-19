@@ -33,7 +33,7 @@ NumericVector base_bootstrap_loop_cpp(
 //   }
 // #endif
 
-// #pragma omp parallel if(num_cores > 1) // Temporarily disable OpenMP for debugging
+// #pragma omp parallel if(num_cores > 1) // Temporarily disable OpenMP plugin for debugging
 	{
 	SEXP thread_inf_obj_sexp;
 	bool inf_obj_valid = false;
@@ -61,7 +61,7 @@ NumericVector base_bootstrap_loop_cpp(
 	}
 
 
-// #pragma omp for schedule(dynamic) // Temporarily disable OpenMP for debugging
+// #pragma omp for schedule(dynamic) // Temporarily disable OpenMP plugin for debugging
 	for (int b = 0; b < B; ++b) {
 		// Get bootstrap indices for this sample
 		IntegerVector i_b = indices(b, _);

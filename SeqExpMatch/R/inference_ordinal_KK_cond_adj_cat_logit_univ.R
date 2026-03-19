@@ -4,7 +4,8 @@
 #' Fits a conditional adjacent-category logit model for ordinal responses under a KK
 #' matching-on-the-fly design. Each matched pair is treated as a stratum.
 #' Reservoir subjects each form their own unique stratum. The adjacent-category
-#' model logit(P(Y = k+1 | Y in {k, k+1})) is fit by expanding the ordinal response
+#' model logit(P(Y = k+1 | Y in \{k, k+1\})) is fit by expanding the ordinal
+#' response
 #' into pairs of adjacent categories and applying conditional logistic regression.
 #'
 #' @export
@@ -19,7 +20,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 #'
 SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr = R6::R6Class(

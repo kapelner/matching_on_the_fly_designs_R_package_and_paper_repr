@@ -13,7 +13,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(data.frame(x1 = i))
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr = R6::R6Class(
 	"SeqDesignInferenceOrdinalUniPartialProportionalOddsRegr",

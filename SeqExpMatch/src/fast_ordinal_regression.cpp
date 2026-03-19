@@ -172,8 +172,15 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     MatrixXd H = model.hessian(params);
     
     FullPivLU<MatrixXd> lu(H);
+    List output = List::create(
+        Named("b") = res["b"],
+        Named("alpha") = res["alpha"],
+        Named("params") = params
+    );
     if (!lu.isInvertible()) {
-        return List::create(Named("b") = res["b"], Named("ssq_b_2") = NA_REAL);
+        output["ssq_b_2"] = NA_REAL;
+        output["vcov"] = R_NilValue;
+        return output;
     }
     
     MatrixXd cov_mat = lu.inverse();
@@ -184,10 +191,9 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     // In our params, it's at index n_alpha
     double ssq_b_2 = (p >= 1) ? cov_mat(n_alpha, n_alpha) : NA_REAL;
 
-    return List::create(
-        Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_2
-    );
+    output["vcov"] = cov_mat;
+    output["ssq_b_2"] = ssq_b_2;
+    return output;
 }
 
 // [[Rcpp::export]]

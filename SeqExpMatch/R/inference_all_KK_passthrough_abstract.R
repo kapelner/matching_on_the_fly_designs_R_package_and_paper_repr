@@ -151,7 +151,9 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 					return(beta_hat_T_bs)
 				} else {
 					# Parallel bootstrap execution for KK designs
+					cores_to_use = private$num_cores
 					beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+						set_package_threads(1L)
 						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 
 						if (m > 0) {
@@ -173,6 +175,9 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 						match_indic_b = c(rep(0, n_reservoir), match_indic_b_matched)
 
 						boot_inf_obj = self$duplicate()
+						# Set child budget to 1 to avoid thread explosion
+						boot_inf_obj$.__enclos_env__$private$num_cores = 1L
+						
 						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
@@ -189,7 +194,7 @@ SeqDesignInferenceKKPassThrough = R6::R6Class("SeqDesignInferenceKKPassThrough",
 						}, error = function(e) {
 							NA_real_
 						})
-					}, mc.cores = private$num_cores))
+					}, mc.cores = cores_to_use))
 					return(beta_hat_T_bs)
 				}
 			}

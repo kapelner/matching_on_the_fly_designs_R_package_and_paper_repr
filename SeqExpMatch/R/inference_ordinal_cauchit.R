@@ -15,7 +15,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalUniCauchitRegr$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalUniCauchitRegr$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 #'
 SeqDesignInferenceOrdinalUniCauchitRegr = R6::R6Class("SeqDesignInferenceOrdinalUniCauchitRegr",
@@ -73,7 +74,8 @@ SeqDesignInferenceOrdinalUniCauchitRegr = R6::R6Class("SeqDesignInferenceOrdinal
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalMultiCauchitRegr$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalMultiCauchitRegr$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 #'
 SeqDesignInferenceOrdinalMultiCauchitRegr = R6::R6Class("SeqDesignInferenceOrdinalMultiCauchitRegr",

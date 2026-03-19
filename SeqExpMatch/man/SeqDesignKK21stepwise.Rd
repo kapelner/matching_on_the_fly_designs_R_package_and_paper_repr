@@ -74,6 +74,7 @@ Kapelner and Krieger (2021) with option to use matching parameters of Morrison a
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
+  num_cores = 1,
   verbose = FALSE,
   lambda = NULL,
   t_0_pct = NULL,
@@ -109,6 +110,10 @@ imputing its value? If the feature is type factor, instead of creating
                                 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during
+randomization-based inference and bootstrap resampling. The default is 1 for serial
+computation.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}

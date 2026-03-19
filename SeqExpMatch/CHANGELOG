@@ -1,3 +1,7 @@
+v2.1.0 (planned)
+* Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
+* Support for other sequential designs
+
 v2.0.0
 * MAJOR ARCHITECTURAL REVOLUTION:
   + Unified all inference methodologies under a strict R6 class hierarchy, centered on the abstract `SeqDesignInference` base.
@@ -7,7 +11,7 @@ v2.0.0
   + Standardized class naming conventions (e.g., `...IVWC`, `...CombinedLikelihood`) for clear API navigation.
   + Hidden all internal abstract base classes from the public R help system to simplify user discovery.
 
-* STATISTICAL METHODOLOGY BREAKTHROUGHS:
+* STATISTICAL METHODOLOGY ADDITIONS:
   + Zhang (2026) Exact Inference: Full implementation of the exact test-inversion algorithm for distribution-free inference in incidence (log-odds) and quantile regression (median shifts).
   + Survival & Count Advancements:
     - Achieved package-wide unit consistency by standardizing all survival effects to Accelerated Failure Time (AFT) log-time ratios.
@@ -43,27 +47,32 @@ v2.0.0
     - Full Quantile Regression support (via `quantreg`) within the Compound/IVWC framework.
     - Comprehensive GEE and GLMM support for all response types, utilizing `glmmTMB` for superior random-effects stability.
 
-* EXTREME PERFORMANCE OPTIMIZATION:
+* PERFORMANCE OPTIMIZATION:
   + Developed a suite of high-performance C++ IRLS (Iteratively Reweighted Least Squares) solvers for Logistic, Beta, and Negative Binomial regression.
   + Extended the C++ solver suite to constrained binomial fits for both log-binomial and identity-link binomial regression, plus fast helpers for ordinal g-computation, Jonckheere-Terpstra exact distributions, ridit analysis, and KK hurdle grouping / cluster setup.
   + Leveraged OpenMP and RcppEigen to achieve orders-of-magnitude speedups in bootstrap and randomization distribution computations.
   + Implemented intelligent thread-control for `glmmTMB` to prevent resource contention in parallelized inference loops.
   + Integrated `fixest::feglm.fit` for lightning-fast fixed-effects estimation.
+  + Modernized the high-speed Negative Binomial regression solver (`fast_negbin_regression.cpp`) using the L-BFGS algorithm for significantly improved convergence stability and performance.
+  + Enhanced `fast_beta_regression_with_var` to return the precision parameter `phi`, improving diagnostic visibility and test consistency.
+  + Implemented a specialized randomization-draw optimizer for Clayton Copula models that reuses initial MLE estimates and design configurations, achieving up to 30x speedups in exact inference and confidence interval inversion.
+  + Optimized Weibull frailty models (both Combined Likelihood and IVWC) by implementing a high-speed `coxph` + `survreg` approximation for resampling draws, reducing bootstrap and randomization CI execution times by over 95%.
+  + Accelerated GLMM (`glmmTMB`) and GEE (`geepack`) randomization inference by extracting parameters directly from fit objects, bypassing expensive summary table computations during permutations.
+  + Implemented high-speed inference object duplication using `self$clone()` to bypass constructor overhead during large-scale bootstrap and randomization runs.
 
-* PRODUCTION-GRADE RELIABILITY:
+* PRODUCTION-GRADE RELIABILITY & BUG FIXES:
   + Automated missing data pipeline with Design-aware imputation using `missRanger` and `missForest`.
   + Fully validated support for unequal allocation (prob_T != 0.5) across all 40+ inference classes.
   + Hardened error handling for perfect separation, small-sample degeneracy, and non-convergence.
   + Reworked randomization-test caching so expensive treatment-assignment draws are reused across repeated p-value and CI inversion calls, including custom randomization statistics.
-  + Fixed Rd generation issues, removed links to undocumented abstract classes, and aligned file / class naming across refactored ordinal and incidence inference families.
+  + Fixed a critical "attempt to apply non-function" error in `SeqDesignInferenceIncidUnivKKNewcombeRiskDiff` by implementing the missing `pool_estimates_ivwc` private method.
+  + Resolved `num_cores` assertion failures in `SeqDesign` initialization across all subclasses (`SeqDesignCRD`, `SeqDesigniBCRD`, `SeqDesignEfron`, etc.), ensuring parallelization parameters are correctly handled during object creation.
+  + Corrected Rd documentation line-width issues that were causing truncation in PDF manuals by consolidating method examples and applying strategic line breaks in R6 class documentation.
+  + Fixed a missing function error in `SeqDesignInferenceOrdinalRidit` by implementing the parallelized C++ routines `compute_ridit_distr_parallel_cpp` and `compute_ridit_bootstrap_parallel_cpp`.
+  + Synchronized package tests with architectural updates, fixing broken argument permutations and output expectations in GLM tests.
+  + Standardized the `DESCRIPTION` file to satisfy CRAN requirements, including proper `Author` and `Maintainer` fields and valid DCF formatting.
   + Global codebase cleanup: standardized tab-based indentation, fixed all Roxygen warnings, and cleaned up the NAMESPACE.
-
-v1.1.0 (planned)
-* Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
-* Support for inverting randomization tests to create nonparametric confidence intervals
-* Support for KK simple and regression estimators (that use a linear combination of matches and reservoir estimators) for incidence, count, proportion and survival response types for equal and unequal allocation experiments
-* Support for the count response with censoring
-* Support for Aalen additive regression model for censored data
+  + Implemented automated `src` directory cleanup to prevent the inclusion of compiled object files in source distributions.
 
 v1.0.0
 * Support for general response types: 

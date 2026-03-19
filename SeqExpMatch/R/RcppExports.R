@@ -253,19 +253,11 @@ matrix_rank_cpp <- function(A, tol = 1e-12) {
     .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
 }
 
-#' Fast Negative Binomial Regression with standard deviations using Rcpp and L-BFGS
-#'
-#' @param X Design matrix.
-#' @param y Response vector.
-#' @param maxit Maximum iterations.
-#' @param eps_f Convergence tolerance for function value.
-#' @param eps_g Convergence tolerance for gradient.
-#' @return A list with coefficients, theta, log-likelihood, and Hessian.
-fast_neg_bin_with_var_cpp <- function(X, y, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+fast_neg_bin_with_var_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5) {
     .Call(`_SeqExpMatch_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g)
 }
 
-fast_neg_bin_cpp <- function(X, y, maxit = 100L, eps_f = 1e-8, eps_g = 1e-5) {
+fast_neg_bin_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5) {
     .Call(`_SeqExpMatch_fast_neg_bin_cpp`, X, y, maxit, eps_f, eps_g)
 }
 
@@ -450,6 +442,10 @@ compute_wilcox_hl_bootstrap_parallel_cpp <- function(y, w, indices_mat, num_core
 
 compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, num_cores) {
     .Call(`_SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, num_cores)
+}
+
+compute_wilcox_kk_ivwc_bootstrap_parallel_cpp <- function(y, w, match_indic, indices_mat, match_indic_mat, num_cores) {
+    .Call(`_SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp`, y, w, match_indic, indices_mat, match_indic_mat, num_cores)
 }
 
 fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init) {
@@ -676,6 +672,14 @@ qr_reduce_preserve_cols_cpp <- function(X, required_cols) {
 
 randomization_loop_cpp <- function(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
     .Call(`_SeqExpMatch_randomization_loop_cpp`, nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+}
+
+compute_ridit_distr_parallel_cpp <- function(y, w_mat, reference, num_cores) {
+    .Call(`_SeqExpMatch_compute_ridit_distr_parallel_cpp`, y, w_mat, reference, num_cores)
+}
+
+compute_ridit_bootstrap_parallel_cpp <- function(y, w, indices_mat, reference, num_cores) {
+    .Call(`_SeqExpMatch_compute_ridit_bootstrap_parallel_cpp`, y, w, indices_mat, reference, num_cores)
 }
 
 ols_hc2_post_fit_cpp <- function(X_fit, y, coef_hat, j_treat) {

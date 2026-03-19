@@ -29,6 +29,9 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
+		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
+		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param weighted_coin_prob The probability of Efron's weighted coin. Default is \code{NULL}
@@ -46,10 +49,11 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
+			num_cores = 1,
 			verbose = FALSE,
 			weighted_coin_prob = NULL
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			self$assert_fixed_sample()
 
 			if (is.null(weighted_coin_prob)){
@@ -66,7 +70,6 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 
 		duplicate = function(){
 			d = super$duplicate()
-			d$.__enclos_env__$private$weighted_coin_prob = private$weighted_coin_prob
 			d
 		},
 

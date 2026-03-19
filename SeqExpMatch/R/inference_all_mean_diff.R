@@ -8,6 +8,23 @@
 #'
 #'
 #' @export
+#' @examples
+#' \dontrun{
+#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+#'
+#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$
+#'   new(seq_des)
+#' seq_des_inf$compute_treatment_estimate()
+#' seq_des_inf$compute_asymp_confidence_interval()
+#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+#' }
 SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMeanDiff",
 	inherit = SeqDesignInference,
 	public = list(
@@ -38,21 +55,6 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#' Computes the appropriate estimate for mean difference
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
-		#' }
 		#'
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_hat_T)){
@@ -85,21 +87,6 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_asymp_confidence_interval()
-		#' }
-		#'
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (is.null(private$cached_values$s_beta_hat_T)){
@@ -118,21 +105,6 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6)
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-		#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-		#' }
 		#'
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)

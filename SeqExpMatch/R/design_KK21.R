@@ -31,6 +31,9 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
+		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
+		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
@@ -81,6 +84,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
+			num_cores = 1,
 			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -92,7 +96,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			survival_use_speedup_for_no_censoring = TRUE,
 			ordinal_use_speedup = TRUE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose, lambda, t_0_pct, morrison, p)
 			if (is.null(num_boot)){
 				num_boot = 500
 			} else {
@@ -139,13 +143,6 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 
 		duplicate = function(){
 			d = super$duplicate()
-			d$.__enclos_env__$private$covariate_weights = private$covariate_weights
-			d$.__enclos_env__$private$iteration_weights = private$iteration_weights
-			d$.__enclos_env__$private$num_boot = private$num_boot
-			d$.__enclos_env__$private$count_use_speedup = private$count_use_speedup
-			d$.__enclos_env__$private$proportion_use_speedup = private$proportion_use_speedup
-			d$.__enclos_env__$private$survival_use_speedup_for_no_censoring = private$survival_use_speedup_for_no_censoring
-			d$.__enclos_env__$private$ordinal_use_speedup = private$ordinal_use_speedup
 			d
 		},
 

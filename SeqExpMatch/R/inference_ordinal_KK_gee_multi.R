@@ -18,7 +18,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalMultiKKGEE$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalMultiKKGEE$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 #' }
 #'

@@ -59,14 +59,144 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 			if (delta == 0){
 				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			} else {
-				stop("Testing non-zero delta is not yet implemented for this class.")
+				# For non-zero delta, we can still use the same logic if we have beta_hat_T and s_beta_hat_T
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 			}
+		},
+
+		# @description
+		# Duplicates the object while preserving caches.
+		# @param verbose Whether the duplicate should be verbose.
+		duplicate = function(verbose = FALSE){
+			inf_obj = super$duplicate(verbose = verbose)
+			inf_obj
+		},
+
+		# @description
+		# Overridden to use the best design matrix and starting parameters from the initial fit
+		# to speed up randomization-based inference.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			# Ensure we have the best design and parameters from the original data
+			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+				private$shared()
+			}
+
+			# If we still don't have enough (e.g., initial fit failed), fall back to standard
+			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+				return(self$compute_treatment_estimate())
+			}
+
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+			KKstats = private$cached_values$KKstats
+			m = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+
+			X_data = private$get_X()
+
+			# Matched pairs component
+			beta_m = NA_real_
+			ssq_m = NA_real_
+			if (m > 0 && !is.null(private$best_Xmm_colnames_matched)){
+				match_indic = private$match_indic
+				if (is.null(match_indic)) match_indic = rep(0L, private$n)
+				match_indic[is.na(match_indic)] = 0L
+				i_matched = which(match_indic > 0L)
+
+				X_cov = X_data[i_matched, intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
+				Xmm = cbind(w = private$w[i_matched], X_cov)
+
+				fit_m = .fit_clayton_weibull_aft(
+					y = private$y[i_matched],
+					dead = private$dead[i_matched],
+					Xmm = Xmm,
+					pair_id = match_indic[i_matched],
+					include_singletons = FALSE,
+					starts = list(private$best_par_matched)
+				)
+				if (!is.null(fit_m) && is.finite(fit_m$beta) && is.finite(fit_m$ssq) && fit_m$ssq > 0){
+					beta_m = fit_m$beta
+					ssq_m = fit_m$ssq
+				}
+			}
+
+			# Reservoir component
+			beta_r = NA_real_
+			ssq_r = NA_real_
+			if (nRT > 0 && nRC > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
+				match_indic = private$match_indic
+				if (is.null(match_indic)) match_indic = rep(0L, private$n)
+				match_indic[is.na(match_indic)] = 0L
+				i_reservoir = which(match_indic == 0L)
+
+				X_cov = X_data[i_reservoir, intersect(private$best_Xmm_colnames_reservoir, colnames(X_data)), drop = FALSE]
+				Xmm = cbind(w = private$w[i_reservoir], X_cov)
+
+				fit_r = .fit_standard_weibull_aft_from_matrix(
+					y = private$y[i_reservoir],
+					dead = private$dead[i_reservoir],
+					Xmm = Xmm
+				)
+				if (!is.null(fit_r) && is.finite(fit_r$beta) && is.finite(fit_r$ssq) && fit_r$ssq > 0){
+					beta_r = fit_r$beta
+					ssq_r = fit_r$ssq
+				}
+			}
+
+			# Inverse-variance weighted pooling
+			m_ok = is.finite(beta_m) && is.finite(ssq_m)
+			r_ok = is.finite(beta_r) && is.finite(ssq_r)
+
+			if (m_ok && r_ok){
+				w_star = ssq_r / (ssq_r + ssq_m)
+				return(w_star * beta_m + (1 - w_star) * beta_r)
+			} else if (m_ok){
+				return(beta_m)
+			} else if (r_ok){
+				return(beta_r)
+			}
+			NA_real_
 		}
 	),
 
 	private = list(
 
+		filtered_cov_cache = NULL,
+		best_Xmm_colnames_matched = NULL,
+		best_par_matched = NULL,
+		best_Xmm_colnames_reservoir = NULL,
+
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		# Pre-calculate filtered covariate matrices to avoid redundant correlation checks
+		# during repeated calls (e.g., in randomization inference).
+		filtered_covariate_candidates = function(){
+			if (!is.null(private$filtered_cov_cache)){
+				return(private$filtered_cov_cache)
+			}
+
+			X_cov_orig = as.matrix(private$X)
+			if (is.null(colnames(X_cov_orig))){
+				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
+			}
+
+			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			candidates = list()
+			keys = character()
+
+			for (thresh in thresholds){
+				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+				key = if (ncol(X_cov) > 0) paste(colnames(X_cov), collapse = "|") else ""
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = X_cov
+					keys = c(keys, key)
+				}
+			}
+			private$filtered_cov_cache = candidates
+			candidates
+		},
 
 		design_matrix_candidates = function(){
 			if (!is.null(private$cached_values$clayton_design_candidates)){
@@ -80,16 +210,10 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 				return(private$cached_values$clayton_design_candidates)
 			}
 
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			cov_candidates = private$filtered_covariate_candidates()
 			candidates = list()
-			keys = character()
-			X_cov_orig = as.matrix(private$X)
-			if (is.null(colnames(X_cov_orig))){
-				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
-			}
 
-			for (thresh in thresholds){
-				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+			for (X_cov in cov_candidates){
 				if (ncol(X_cov) == 0L){
 					M = matrix(private$w, ncol = 1)
 					colnames(M) = "w"
@@ -104,15 +228,11 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 					}
 					colnames(M)[1] = "w"
 				}
-				key = paste(colnames(M), collapse = "|")
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = M
-					keys = c(keys, key)
-				}
+				candidates[[length(candidates) + 1L]] = M
 			}
 
 			private$cached_values$clayton_design_candidates = candidates
-			private$cached_values$clayton_design_candidates
+			candidates
 		},
 
 		shared = function(){
@@ -186,6 +306,8 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 					private$cached_values$beta_T_matched = fit$beta
 					private$cached_values$ssq_beta_T_matched = fit$ssq
 					private$cached_values$theta_matched = fit$theta
+					private$best_par_matched = fit$best_par
+					private$best_Xmm_colnames_matched = colnames(Xcand)
 					return(invisible(NULL))
 				}
 			}
@@ -208,6 +330,7 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
 					private$cached_values$beta_T_reservoir = fit$beta
 					private$cached_values$ssq_beta_T_reservoir = fit$ssq
+					private$best_Xmm_colnames_reservoir = colnames(Xcand)
 					return(invisible(NULL))
 				}
 			}

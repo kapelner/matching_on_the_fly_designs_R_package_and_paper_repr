@@ -31,18 +31,31 @@
     \itemize{
       \item Extreme speedups via C++/Eigen/OpenMP implementations of bootstrap and randomization distributions.
       \item Custom high-speed C++ IRLS solvers for Logistic, Beta, Negative Binomial, log-binomial, and identity-link binomial regression.
+      \item Upgraded the Negative Binomial IRLS solver to use the L-BFGS algorithm for superior convergence stability.
+      \item Enhanced \code{fast_beta_regression_with_var} to return the precision parameter \code{phi}.
       \item Added C++ helpers for ordinal g-computation, Jonckheere-Terpstra exact calculations, ridit analysis, and KK grouping / cluster setup for newer pooled models.
       \item Rcpp helper for computing informative survival strata IDs and fast log-rank statistics.
       \item Intelligent thread-control for parallelized inference.
+      \item Implemented a specialized randomization-draw optimizer for Clayton Copula models that reuses initial MLE estimates and design configurations, achieving significant speedups in exact inference and confidence interval inversion.
+      \item Optimized Weibull frailty models (Combined Likelihood and IVWC) by implementing a high-speed approximation for resampling draws, reducing bootstrap and randomization CI times by over 95\% for univariate settings.
+      \item Accelerated GLMM and GEE randomization inference by bypassing expensive summary table computations during permutations.
+      \item Implemented high-speed inference object duplication using \code{self$clone()} to bypass constructor overhead during large-scale resampling runs.
     }
   }
-  \subsection{ROBUSTNESS AND USABILITY}{
+  \subsection{ROBUSTNESS, USABILITY, AND BUG FIXES}{
     \itemize{
       \item Standardized global indentation to tabs and modernized Roxygen documentation.
       \item Hidden internal abstract base classes for a streamlined public API.
       \item Robust error handling for small-sample degeneracy and non-convergence.
       \item Improved randomization-test caching so treatment-assignment draws are reused across repeated p-value and confidence-interval inversion calls, including custom randomization statistics.
       \item Cleaned up Rd generation issues and removed links to internal abstract classes from compiled help pages.
+      \item Fixed a critical "attempt to apply non-function" error in \code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff} by implementing the missing \code{pool_estimates_ivwc} method.
+      \item Resolved \code{num_cores} assertion failures during \code{SeqDesign} initialization across all subclasses, ensuring correct handling of parallelization parameters.
+      \item Corrected Rd documentation line-width issues by consolidating method examples and applying strategic line breaks in R6 documentation.
+      \item Implemented missing C++ parallelization routines for Ridit analysis bootstrap and randomization distributions.
+      \item Fixed broken test cases related to argument permutations and output structure in fast GLM solvers.
+      \item Standardized the \code{DESCRIPTION} file with proper Author/Maintainer fields and fixed DCF formatting for CRAN compliance.
+      \item Added automated \code{src} directory cleanup to the build process.
     }
   }
 }

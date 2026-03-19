@@ -95,11 +95,7 @@ SeqDesignInferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("SeqDesignInfe
 			formula_cond = private$build_formula(dat)
 			formula_zi = private$build_zi_formula(dat)
 
-			glmm_control = if (private$num_cores > 1) {
-				glmmTMB::glmmTMBControl(parallel = 1L)
-			} else {
-				glmmTMB::glmmTMBControl()
-			}
+			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
 
 			mod = tryCatch(
 				suppressWarnings(suppressMessages(

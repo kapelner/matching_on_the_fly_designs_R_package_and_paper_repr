@@ -6,6 +6,7 @@ cpp_compile.txt
 SeqExpMatch/src/*.o
 SeqExpMatch/src/*.dll
 SeqExpMatch/src/*.so
+SeqExpMatch/src/symbols.rds
 Rlib/*
 
 # History files
@@ -127,3 +128,10 @@ package_tests/simple_tests_results_nc_1.csv
 package_tests/simple_tests_results_nc_2.csv
 test_custom_pval.R
 test_gls.R
+benchmark.log
+benchmark.pid
+benchmark_inference_results.csv
+local_R_lib/*
+run_bm.sh
+test_bg.log
+test_minimal_bm.R

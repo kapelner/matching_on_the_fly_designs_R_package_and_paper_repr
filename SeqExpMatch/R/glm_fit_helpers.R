@@ -461,13 +461,13 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 	y = sanitize_beta_response(y)
 	tryCatch({
 	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi)
-	list(b = mod$coefficients, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
+	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
 	if (!requireNamespace("betareg", quietly = TRUE)) {
 		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
 		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-		return(list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
+		return(list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
 	}
 	# create a data frame for betareg, removing the intercept from Xmm
 	data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
@@ -481,11 +481,11 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 		})
 		# Get the variance of the j-th coefficient
 		vcov_matrix <- vcov(fit)
-		list(b = coef(fit), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
+		list(b = coef(fit), phi = as.numeric(coef(fit)["(phi)"]), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
 	}, error = function(e2) {
 		warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
 		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-		list(b = mod$b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
+		list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
 	})
 	})
 }

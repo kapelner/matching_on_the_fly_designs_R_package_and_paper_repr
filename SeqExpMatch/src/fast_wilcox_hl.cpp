@@ -60,6 +60,66 @@ double hl_from_groups(const std::vector<double>& y_t, const std::vector<double>&
     return median_in_place(diffs);
 }
 
+// Signed-rank HL estimate: median of Walsh averages of differences
+double hl_signed_rank(const std::vector<double>& pair_diffs) {
+    if (pair_diffs.empty()) {
+        return NA_REAL;
+    }
+
+    size_t m = pair_diffs.size();
+    std::vector<double> walsh_avgs;
+    walsh_avgs.reserve(m * (m + 1) / 2);
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = i; j < m; ++j) {
+            walsh_avgs.push_back(0.5 * (pair_diffs[i] + pair_diffs[j]));
+        }
+    }
+
+    return median_in_place(walsh_avgs);
+}
+
+// Simplified variance estimate for HL based on asymptotic normality of Wilcoxon stat
+// This is a proxy for the SE back-calculated from CI width.
+// For large n, SE(HL) is proportional to 1/sqrt(n)
+// We'll use a robust sample-based approach if possible, but for IVWC weights, 
+// even a consistent relative variance is helpful.
+// Better: implement the actual Wilcoxon SE formula for the statistic and scale it.
+double estimate_hl_ssq_rank_sum(const std::vector<double>& y_t, const std::vector<double>& y_c) {
+    if (y_t.size() < 2 || y_c.size() < 2) return NA_REAL;
+    // Use a simple heuristic: variance of pairwise differences / effective n
+    // This is often a good proxy for the HL variance.
+    double sum = 0;
+    double sum_sq = 0;
+    int count = 0;
+    for (double yt : y_t) {
+        for (double yc : y_c) {
+            double d = yt - yc;
+            sum += d;
+            sum_sq += d * d;
+            count++;
+        }
+    }
+    double var_diffs = (sum_sq - (sum * sum) / count) / (count - 1);
+    return var_diffs / (y_t.size() + y_c.size());
+}
+
+double estimate_hl_ssq_signed_rank(const std::vector<double>& pair_diffs) {
+    if (pair_diffs.size() < 2) return NA_REAL;
+    double sum = 0;
+    double sum_sq = 0;
+    int count = 0;
+    for (size_t i = 0; i < pair_diffs.size(); ++i) {
+        for (size_t j = i; j < pair_diffs.size(); ++j) {
+            double a = 0.5 * (pair_diffs[i] + pair_diffs[j]);
+            sum += a;
+            sum_sq += a * a;
+            count++;
+        }
+    }
+    double var_walsh = (sum_sq - (sum * sum) / count) / (count - 1);
+    return var_walsh / pair_diffs.size();
+}
+
 double apply_shift(double y_val, double delta, int transform_code) {
     if (transform_code == 1) {
         return y_val * std::exp(delta);
@@ -208,6 +268,82 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
         }
 
         results[b] = hl_from_groups(y_t, y_c);
+    }
+
+    return results;
+}
+
+// [[Rcpp::export]]
+NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
+    const NumericVector& y,
+    const IntegerVector& w,
+    const IntegerVector& match_indic,
+    const IntegerMatrix& indices_mat,
+    const IntegerMatrix& match_indic_mat,
+    int num_cores) {
+
+    int B = indices_mat.ncol();
+    int n = y.size();
+    NumericVector results(B, NA_REAL);
+
+#ifdef _OPENMP
+    if (num_cores > 1) {
+        omp_set_num_threads(num_cores);
+    }
+#endif
+
+#pragma omp parallel for schedule(dynamic)
+    for (int b = 0; b < B; ++b) {
+        std::vector<double> pair_diffs;
+        std::vector<double> res_y_t;
+        std::vector<double> res_y_c;
+
+        // Process resampled data for this bootstrap iteration
+        // We need to group by the new match_indic_mat
+        std::map<int, std::vector<size_t>> pairs;
+        for (int i = 0; i < n; ++i) {
+            int mid = match_indic_mat(i, b);
+            int idx = indices_mat(i, b) - 1;
+            if (mid == 0) {
+                if (w[idx] == 1) res_y_t.push_back(y[idx]);
+                else res_y_c.push_back(y[idx]);
+            } else {
+                pairs[mid].push_back(idx);
+            }
+        }
+
+        for (auto const& [mid, idxs] : pairs) {
+            if (idxs.size() == 2) {
+                int idx1 = idxs[0];
+                int idx2 = idxs[1];
+                if (w[idx1] == 1 && w[idx2] == 0) {
+                    pair_diffs.push_back(y[idx1] - y[idx2]);
+                } else if (w[idx1] == 0 && w[idx2] == 1) {
+                    pair_diffs.push_back(y[idx2] - y[idx1]);
+                }
+            }
+        }
+
+        // Compute component estimates
+        double beta_m = hl_signed_rank(pair_diffs);
+        double ssq_m = estimate_hl_ssq_signed_rank(pair_diffs);
+        
+        double beta_r = hl_from_groups(res_y_t, res_y_c);
+        double ssq_r = estimate_hl_ssq_rank_sum(res_y_t, res_y_c);
+
+        bool m_ok = R_finite(beta_m) && R_finite(ssq_m) && ssq_m > 0;
+        bool r_ok = R_finite(beta_r) && R_finite(ssq_r) && ssq_r > 0;
+
+        if (m_ok && r_ok) {
+            double w_star = ssq_r / (ssq_r + ssq_m);
+            results[b] = w_star * beta_m + (1.0 - w_star) * beta_r;
+        } else if (m_ok) {
+            results[b] = beta_m;
+        } else if (r_ok) {
+            results[b] = beta_r;
+        } else {
+            results[b] = NA_REAL;
+        }
     }
 
     return results;

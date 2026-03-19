@@ -74,7 +74,7 @@ test_that("fast_beta_regression_mle matches betareg", {
 	y = pmax(pmin(y, 1 - 1e-6), 1e-6)
 
 	# fast version
-	fast_mod <- SeqExpMatch:::fast_beta_regression_mle(y, X_int, compute_std_errs = TRUE)
+	fast_mod <- SeqExpMatch:::fast_beta_regression_with_var_cpp(X_int, y, compute_std_errs = TRUE)
 
 	# canonical version
 	canon_mod <- betareg::betareg(y ~ X)
@@ -89,7 +89,7 @@ test_that("fast_beta_regression_mle matches betareg", {
 	expect_equal(as.numeric(fast_mod$std_errs[1:3]), as.numeric(summary(canon_mod)$coefficients$mean[, "Std. Error"]), tolerance = 0.1)
 })
 
-test_that("fast_neg_bin_with_censoring_with_sd_cpp matches MASS::glm.nb", {
+test_that("fast_neg_bin_with_var_cpp matches MASS::glm.nb", {
 	set.seed(123)
 	n <- 200
 	p <- 2
@@ -100,9 +100,8 @@ test_that("fast_neg_bin_with_censoring_with_sd_cpp matches MASS::glm.nb", {
 	theta_true <- 2.0
 
 	y <- MASS::rnegbin(n, mu = mu, theta = theta_true)
-	dead <- rep(1L, n)
 
-	fast_mod <- SeqExpMatch:::fast_neg_bin_with_censoring_with_var_cpp(X_int, y, dead)
+	fast_mod <- SeqExpMatch:::fast_neg_bin_with_var_cpp(X_int, y)
 
 	# canonical version
 	canon_mod <- MASS::glm.nb(y ~ X)
@@ -113,6 +112,6 @@ test_that("fast_neg_bin_with_censoring_with_sd_cpp matches MASS::glm.nb", {
 	# Check standard error for treatment (second column)
 	canon_se_w = summary(canon_mod)$coefficients[2, "Std. Error"]
 	# Extract ssq_b_2 safely
-	ssq_b_2 = if ("ssq_b_2" %in% names(fast_mod)) fast_mod$ssq_b_2 else diag(solve(fast_mod$hess_fisher_info_matrix))[2]
+	ssq_b_2 = diag(solve(fast_mod$hess_fisher_info_matrix))[2]
 	expect_equal(as.numeric(sqrt(ssq_b_2)), as.numeric(canon_se_w), tolerance = 0.05)
 })

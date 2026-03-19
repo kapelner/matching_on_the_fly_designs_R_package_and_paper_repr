@@ -163,7 +163,6 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 
 	duplicate = function(){
 		i = super$duplicate()
-		i$.__enclos_env__$private$convex_flag = private$convex_flag
 		i
 	},
 

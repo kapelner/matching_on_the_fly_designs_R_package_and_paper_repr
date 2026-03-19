@@ -26,7 +26,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr$new(
+#' infer <- SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr$
+#'   new(
 #'   seq_des,
 #'   nonparallel = "x1",
 #'   verbose = FALSE
@@ -103,7 +104,8 @@ SeqDesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$new(
+#' infer <- SeqDesignInferenceOrdinalPartialProportionalOdds$
+#'   new(
 #'   seq_des,
 #'   nonparallel = "x1",
 #'   verbose = FALSE

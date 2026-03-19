@@ -56,6 +56,20 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 
 	private = list(
 
+		# Overridden to avoid the heavy summary() call during randomization iterations.
+		# Extracts the fixed-effect coefficient for "w" directly from the fit.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			mod = private$fit_glmm()
+			if (is.null(mod)) return(NA_real_)
+			
+			# glmmTMB fixed effects for the conditional model
+			beta = glmmTMB::fixef(mod)$cond
+			if ("w" %in% names(beta)){
+				return(as.numeric(beta["w"]))
+			}
+			NA_real_
+		},
+
 		# Abstract: subclasses must return the expected response type string.
 		glmm_response_type = function() stop(class(self)[1], " must implement glmm_response_type()"),
 
@@ -109,13 +123,9 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
 			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
 
-			# Use internal glmmTMB parallelism only if we are not already in an outer
-			# parallel loop (num_cores == 1). This prevents CPU over-subscription.
-			glmm_control = if (private$num_cores > 1) {
-				glmmTMB::glmmTMBControl(parallel = 1L)
-			} else {
-				glmmTMB::glmmTMBControl()
-			}
+			# Respect the core budget provided by the user. If we are in an outer 
+			# parallel loop (e.g. mclapply), private$num_cores will be 1L.
+			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
 
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(

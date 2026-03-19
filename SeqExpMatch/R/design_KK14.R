@@ -30,6 +30,9 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
+		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
+		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
@@ -57,13 +60,14 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
+			num_cores = 1,
 			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
 			morrison = FALSE,
 			p = NULL
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			self$assert_even_allocation()
 			private$assert_KK_and_morrison_parameters_correct(lambda, t_0_pct, morrison, p)
 			private$morrison = morrison
@@ -157,12 +161,6 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 
 		duplicate = function(){
 			d = super$duplicate()
-			d$.__enclos_env__$private$morrison = 		private$morrison
-			d$.__enclos_env__$private$t_0 = 			private$t_0
-			d$.__enclos_env__$private$lambda = 			private$lambda
-			d$.__enclos_env__$private$p = 				private$p
-			d$.__enclos_env__$private$compute_lambda = 	private$compute_lambda
-			d$.__enclos_env__$private$match_indic = 	private$match_indic
 			d
 		},
 

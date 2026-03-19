@@ -124,3 +124,27 @@ test_that("Inference works for ordinal partial proportional odds", {
 	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval_for_treatment_effect()
 	expect_true(is.numeric(pval_ppod))
 })
+
+test_that("Inference works for incidence KK Newcombe IVWC", {
+	n <- 20
+	set.seed(1)
+	x_dat <- data.frame(x1 = rnorm(n), x2 = rbinom(n, 1, 0.5))
+	y <- rbinom(n, 1, 0.5)
+
+	seq_des <- SeqDesignKK14$new(n = n, response_type = "incidence", verbose = FALSE)
+	for (i in 1:n) {
+		seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+	}
+	seq_des$add_all_subject_responses(y)
+
+	inf <- SeqDesignInferenceIncidUnivKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
+	est <- inf$compute_treatment_estimate()
+	expect_true(is.numeric(est))
+	
+	ci <- inf$compute_asymp_confidence_interval()
+	expect_true(is.numeric(ci))
+	expect_length(ci, 2)
+	
+	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	expect_true(is.numeric(pval))
+})

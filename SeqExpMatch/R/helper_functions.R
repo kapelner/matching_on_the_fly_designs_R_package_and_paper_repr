@@ -1,3 +1,25 @@
+set_package_threads = function(num_cores) {
+	# Ensure it's an integer
+	n = as.integer(num_cores)
+	
+	# R packages with global thread setters
+	if (requireNamespace("data.table", quietly = TRUE)) {
+		data.table::setDTthreads(n)
+	}
+	if (requireNamespace("fixest", quietly = TRUE)) {
+		fixest::setFixest_nthreads(n)
+	}
+	
+	# Environment variables for OpenMP and BLAS/LAPACK
+	# This helps prevent thread explosion in child processes
+	# that call multi-threaded native libraries.
+	Sys.setenv(OMP_NUM_THREADS = n)
+	Sys.setenv(MKL_NUM_THREADS = n)
+	Sys.setenv(OPENBLAS_NUM_THREADS = n)
+	Sys.setenv(VECLIB_MAXIMUM_THREADS = n)
+	Sys.setenv(NUMEXPR_NUM_THREADS = n)
+}
+
 #' Logit
 #'
 #' Calculates the logit i.e., log(p / (1 - p))
@@ -743,7 +765,7 @@ NULL
 	)
 }
 
-.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE){
+.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL){
 	y = as.numeric(y)
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
@@ -763,9 +785,26 @@ NULL
 	rows_used = sort(unique(c(pair_rows, singleton_rows)))
 	if (length(rows_used) == 0L || sum(dead[rows_used]) == 0L) return(NULL)
 
-	start = .extract_survreg_start(y[rows_used], dead[rows_used], Xmm[rows_used, , drop = FALSE])
 	Xfull = cbind("(Intercept)" = 1, Xmm)
 	num_beta = ncol(Xfull)
+
+	# Pre-extract constant indices and values for the likelihood function to avoid overhead
+	has_pairs = nrow(pair_idx) > 0L
+	if (has_pairs){
+		i1 = pair_idx[, 1]
+		i2 = pair_idx[, 2]
+		d1 = dead[i1]
+		d2 = dead[i2]
+		mask00 = d1 == 0L & d2 == 0L
+		mask10 = d1 == 1L & d2 == 0L
+		mask01 = d1 == 0L & d2 == 1L
+		mask11 = d1 == 1L & d2 == 1L
+	}
+	has_singletons = length(singleton_rows) > 0L
+	if (has_singletons){
+		d_sg = dead[singleton_rows]
+		d_sg_comp = 1 - d_sg
+	}
 
 	neg_loglik = function(par){
 		log_sigma = par[num_beta + 1L]
@@ -782,22 +821,13 @@ NULL
 		log_f = margin_terms$log_f
 
 		loglik = 0
-		if (nrow(pair_idx) > 0L){
-			i1 = pair_idx[, 1]
-			i2 = pair_idx[, 2]
-			d1 = dead[i1]
-			d2 = dead[i2]
+		if (has_pairs){
 			H1 = H[i1]
 			H2 = H[i2]
 			logf1 = log_f[i1]
 			logf2 = log_f[i2]
 			logA = .clayton_copula_logA(H1, H2, theta)
-			pair_ll = numeric(nrow(pair_idx))
-
-			mask00 = d1 == 0L & d2 == 0L
-			mask10 = d1 == 1L & d2 == 0L
-			mask01 = d1 == 0L & d2 == 1L
-			mask11 = d1 == 1L & d2 == 1L
+			pair_ll = numeric(length(i1))
 
 			pair_ll[mask00] = -(1 / theta) * logA[mask00]
 			pair_ll[mask10] = logf1[mask10] + (-1 / theta - 1) * logA[mask10] + (theta + 1) * H1[mask10]
@@ -809,8 +839,8 @@ NULL
 			loglik = loglik + sum(pair_ll)
 		}
 
-		if (length(singleton_rows) > 0L){
-			sg_ll = dead[singleton_rows] * log_f[singleton_rows] - (1 - dead[singleton_rows]) * H[singleton_rows]
+		if (has_singletons){
+			sg_ll = d_sg * log_f[singleton_rows] - d_sg_comp * H[singleton_rows]
 			if (any(!is.finite(sg_ll))) return(1e100)
 			loglik = loglik + sum(sg_ll)
 		}
@@ -819,14 +849,20 @@ NULL
 		-loglik
 	}
 
-	start_par_base = c(unname(start$beta), start$log_sigma)
-	starts = list(
-		c(start_par_base, log(0.10)),
-		c(start_par_base, log(0.50)),
-		c(start_par_base, log(1.50))
-	)
+	if (is.null(starts)){
+		start = .extract_survreg_start(y[rows_used], dead[rows_used], Xmm[rows_used, , drop = FALSE])
+		start_par_base = c(unname(start$beta), start$log_sigma)
+		starts = list(
+			c(start_par_base, log(0.10)),
+			c(start_par_base, log(0.50)),
+			c(start_par_base, log(1.50))
+		)
+	}
 
 	best = NULL
+	# Use a slightly coarser tolerance for randomization draws if nsim is high
+	control_list = list(maxit = 2000, reltol = 1e-9)
+
 	for (start_par in starts){
 		fit = tryCatch(
 			stats::optim(
@@ -834,7 +870,7 @@ NULL
 				fn = neg_loglik,
 				method = "BFGS",
 				hessian = TRUE,
-				control = list(maxit = 2000, reltol = 1e-9)
+				control = control_list
 			),
 			error = function(e) NULL
 		)
@@ -854,18 +890,29 @@ NULL
 			beta = as.numeric(beta_hat["w"]),
 			ssq = NA_real_,
 			theta = exp(best$par[num_beta + 2L]),
-			log_sigma = best$par[num_beta + 1L]
+			log_sigma = best$par[num_beta + 1L],
+			best_par = best$par
 		))
 	}
 
 	rownames(vcov_full) = colnames(vcov_full) = c(colnames(Xfull), "log_sigma", "log_theta")
 	ssq = as.numeric(vcov_full["w", "w"])
-	if (!is.finite(beta_hat["w"]) || !is.finite(ssq) || ssq <= 0) return(NULL)
+	if (!is.finite(beta_hat["w"]) || !is.finite(ssq) || ssq <= 0) {
+		# If w is not finite or ssq is not valid, we still return the best_par for potential reuse
+		return(list(
+			beta = as.numeric(beta_hat["w"]),
+			ssq = NA_real_,
+			theta = exp(best$par[num_beta + 2L]),
+			log_sigma = best$par[num_beta + 1L],
+			best_par = best$par
+		))
+	}
 
 	list(
 		beta = as.numeric(beta_hat["w"]),
 		ssq = ssq,
 		theta = exp(best$par[num_beta + 2L]),
-		log_sigma = best$par[num_beta + 1L]
+		log_sigma = best$par[num_beta + 1L],
+		best_par = best$par
 	)
 }

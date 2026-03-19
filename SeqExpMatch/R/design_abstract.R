@@ -35,6 +35,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
+				num_cores = 1,
 				verbose = FALSE
 			) {
 			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
@@ -42,6 +43,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			assertFlag(include_is_missing_as_a_new_feature)
 			assertFlag(verbose)
 			assertCount(n, null.ok = TRUE)
+			assertCount(num_cores, positive = TRUE)
 
 			if (is.null(n)){
 				private$fixed_sample = FALSE
@@ -54,6 +56,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$prob_T = prob_T
 			private$response_type = response_type
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
+			private$num_cores = num_cores
+			set_package_threads(num_cores)
 			private$verbose = verbose
 
 			if (private$fixed_sample){
@@ -585,26 +589,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# @return 			A new `SeqDesign` object with the same data
 		duplicate = function(verbose = FALSE){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
-			seq_design_class_constructor = get(class(self)[1])$new
-			d = do.call(seq_design_class_constructor, args = list(
-				response_type = 						private$response_type,
-				prob_T = 								private$prob_T,
-				include_is_missing_as_a_new_feature = 	private$include_is_missing_as_a_new_feature,
-				verbose = 								verbose,
-				n = 									private$n
-			))
-			#we are assuming the experiment is complete so we have private$t = 0 initialized
-			d$.__enclos_env__$private$p_raw_t = 				private$p_raw_t
-			d$.__enclos_env__$private$Xraw = 					private$Xraw
-			d$.__enclos_env__$private$Ximp = 					private$Ximp
-			d$.__enclos_env__$private$X = 						private$X
-			d$.__enclos_env__$private$y = 						private$y
-			d$.__enclos_env__$private$dead = 					private$dead
-			d$.__enclos_env__$private$w = 						private$w
-			d$.__enclos_env__$private$t = 						private$t
-			d$.__enclos_env__$private$fixed_sample = 			private$fixed_sample
-			d$.__enclos_env__$private$y_i_t_i = 				private$y_i_t_i
-			d$.__enclos_env__$private$uses_covariates = 		private$uses_covariates
+			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
+			# This is much faster as it avoids constructor overhead and re-validations.
+			d = self$clone()
+			d$.__enclos_env__$private$verbose = verbose
 			d
 		}
 	),
@@ -623,6 +611,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		prob_T = NULL,
 		response_type = NULL,
 		fixed_sample = NULL,
+		num_cores = NULL,
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
@@ -680,15 +669,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
 				private$Ximp = tryCatch({
 										if (any(!is.na(private$y))){
-											suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE)[, 1 : ncol(private$Ximp)])
+											suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE, num.threads = private$num_cores)[, 1 : ncol(private$Ximp)])
 										} else {
-											suppressWarnings(missRanger(private$Ximp, verbose = FALSE))
+											suppressWarnings(missRanger(private$Ximp, verbose = FALSE, num.threads = private$num_cores))
 										}
 									}, error = function(e){
 										if (any(!is.na(private$y))){
-											suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]))$ximp[, 1 : ncol(private$Ximp)])
+											suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), num.threads = private$num_cores)$ximp[, 1 : ncol(private$Ximp)])
 										} else {
-											suppressWarnings(missForest(private$Ximp)$ximp)
+											suppressWarnings(missForest(private$Ximp, num.threads = private$num_cores)$ximp)
 										}
 									}
 								)

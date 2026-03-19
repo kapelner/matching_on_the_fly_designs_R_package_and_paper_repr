@@ -10,11 +10,6 @@ sequential experimental design estimation and test object
 after the sequential design is completed.
 }
 \examples{
-
-## ------------------------------------------------
-## Method `SeqDesignInferenceAllSimpleMeanDiff$compute_treatment_estimate`
-## ------------------------------------------------
-
 \dontrun{
 seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
@@ -25,48 +20,12 @@ seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$
+  new(seq_des)
 seq_des_inf$compute_treatment_estimate()
-}
-
-
-## ------------------------------------------------
-## Method `SeqDesignInferenceAllSimpleMeanDiff$compute_asymp_confidence_interval`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = SeqDesignCRD$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
 seq_des_inf$compute_asymp_confidence_interval()
-}
-
-
-## ------------------------------------------------
-## Method `SeqDesignInferenceAllSimpleMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = SeqDesignCRD$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
 seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
-
 }
 \section{Super class}{
 \code{SeqExpMatch::SeqDesignInference} -> \code{SeqDesignInferenceAllSimpleMeanDiff}
@@ -146,27 +105,6 @@ Computes the appropriate estimate for mean difference
 \subsection{Returns}{
 The setting-appropriate (see description) numeric estimate of the treatment effect
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleMeanDiff-compute_asymp_confidence_interval"></a>}}
@@ -196,27 +134,6 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 \subsection{Returns}{
 A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-seq_des_inf$compute_asymp_confidence_interval()
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
@@ -241,27 +158,6 @@ treatment effect at all this is set to zero (the default).}
 \subsection{Returns}{
 The approximate frequentist p-value
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
-seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignInferenceAllSimpleMeanDiff-compute_confidence_interval_rand"></a>}}

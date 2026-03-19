@@ -31,6 +31,9 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
+		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
+		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
@@ -80,6 +83,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
+			num_cores = 1,
 			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -91,7 +95,7 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 			survival_use_speedup_for_no_censoring = TRUE,
 			ordinal_use_speedup = TRUE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring, ordinal_use_speedup)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring, ordinal_use_speedup)
 		}
 	),
 	private = list(

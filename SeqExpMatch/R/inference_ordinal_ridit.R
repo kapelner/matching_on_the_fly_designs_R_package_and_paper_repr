@@ -19,7 +19,8 @@
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$add_all_subject_responses(as.integer(c(1, 2, 2, 3, 3, 4, 4, 5)))
-#' infer <- SeqDesignInferenceOrdinalRidit$new(seq_des, verbose = FALSE)
+#' infer <- SeqDesignInferenceOrdinalRidit$
+#'   new(seq_des, verbose = FALSE)
 #' infer
 #'
 SeqDesignInferenceOrdinalRidit = R6::R6Class("SeqDesignInferenceOrdinalRidit",
@@ -111,6 +112,56 @@ SeqDesignInferenceOrdinalRidit = R6::R6Class("SeqDesignInferenceOrdinalRidit",
 			private$cached_values$s_beta_hat_T = res$se
 			private$cached_values$scores       = res$scores
 			private$cached_values$is_z         = TRUE
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			# Standard Ridit doesn't easily support delta != 0 or transformations 
+			# in the fast C++ path yet.
+			if (delta != 0 || transform_responses != "none") {
+				return(NULL)
+			}
+
+			nsim = length(permutations)
+			w_mat = matrix(0L, nrow = length(y), ncol = nsim)
+			for (i in seq_len(nsim)) {
+				w_mat[, i] = permutations[[i]]$w
+			}
+
+			compute_ridit_distr_parallel_cpp(
+				as.integer(y),
+				w_mat,
+				private$reference,
+				private$num_cores
+			)
+		},
+
+		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w){
+			# Generate bootstrap indices
+			indices_mat = matrix(NA_integer_, nrow = n, ncol = B)
+			for (b in 1:B) {
+				attempt = 1
+				repeat {
+					i_b = sample_int_replace_cpp(n, n)
+					w_b = w[i_b]
+					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
+						indices_mat[, b] = i_b
+						break
+					}
+					attempt = attempt + 1
+					if (attempt > max_resample_attempts) {
+						indices_mat[, b] = -1L # Mark as failed
+						break
+					}
+				}
+			}
+
+			compute_ridit_bootstrap_parallel_cpp(
+				as.integer(y),
+				as.integer(w),
+				indices_mat,
+				private$reference,
+				private$num_cores
+			)
 		}
 	)
 )
