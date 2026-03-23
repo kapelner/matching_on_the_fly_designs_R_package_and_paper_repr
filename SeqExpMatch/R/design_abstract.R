@@ -1,16 +1,15 @@
-# A Sequential Design
+# A Design
 #
 # @description
-# An R6 Class encapsulating the data and functionality for a sequential experimental design.
-# This class takes care of data initialization and sequential assignments. The class object
-# should be saved securely after each assignment e.g. on an encrypted cloud server.
+# An abstract R6 Class encapsulating the data and functionality for an experimental design.
+# This class takes care of data storage and response handling.
 #
 # @keywords internal
-SeqDesign = R6::R6Class("SeqDesign",
+Design = R6::R6Class("Design",
 	public = list(
 		#
 		# @description
-		# Initialize a sequential experimental design
+		# Initialize an experimental design
 		#
 		# @param response_type 	The data type of response values which must be one of the following:
 		# 							"continuous" (the default),
@@ -28,7 +27,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		# @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
 		#
-		# @return 			A new `SeqDesign` object of the specific type
+		# @return 			A new `Design` object
 		#
 		initialize = function(
 				response_type = "continuous",
@@ -78,20 +77,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 
 		# @description
-		# Add subject-specific measurements for the next subject entrant and return this new subject's treatment assignment
+		# Add subject-specific measurements for the next subject entrant
 		#
 		# @param x_new 			A row of the data frame corresponding to the new subject to be added (must be type data.table).
 		# @param allow_new_cols	Should we allow new/different features than previously seen in previous subjects in the
 		# 							new subject's covariates? Default is \code{TRUE}.
 		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 100, response_type = "continuous")
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# }
-		#
-		add_subject_to_experiment_and_assign = function(x_new){
-			#cat("    add_subject_to_experiment_and_assign", class(self)[1], " t", private$t, "\n")
+		add_subject = function(x_new, allow_new_cols = TRUE){
 			assertClass(x_new, "data.frame")
 			x_new = as.data.table(x_new)
 			if (nrow(x_new) != 1){
@@ -179,29 +171,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 			if (private$t > (ncol(private$Xraw) + 2) & private$uses_covariates){ #we only need to impute if we need the X's to make the allocation decisions
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			}
-
-			#now make the assignment
-			if (private$fixed_sample){
-				private$w[private$t] = private$assign_wt()
-			} else {
-				private$w = c(private$w, private$assign_wt())
-			}
-			private$w[private$t]
-		},
-
-		# @description
-		# Prints the current assignment to screen. Should be called after \code{add_subject_to_experiment_and_assign}.
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 100, response_type = "continuous")
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$print_current_subject_assignment()
-		# }
-		#
-		print_current_subject_assignment = function(){
-			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
 		},
 
 		# @description
@@ -212,17 +181,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# @param y 	 The response value which must be appropriate for the response_type.
 		# @param dead	 If the response is censored, enter 0 for this value. This is only necessary to specify for response type
 		# 				 "survival" otherwise do not specify this argument (as it will default to 1).
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignKK21$new(n = 100, response_type = "continuous")
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#
-		# seq_des$add_subject_response(4.71, 1)
-		# #works
-		# seq_des$add_subject_response(4.71, 2)
-		# #fails
-		# }
 		#
 		add_subject_response = function(t, y, dead = 1) {
 			assertNumeric(t, len = 1) #make sure it's length one here
@@ -286,19 +244,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# 					alive (survival value is censored). This is only necessary for response type
 		# 				 	"survival" otherwise do not specify and the value
 		# 					will default to 1.
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		# }
 		#
 		add_all_subject_responses = function(ys, deads = NULL) {
 			if (is.null(deads)){
@@ -317,38 +262,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 
 		# @description
-		# For those who wish to use this package for analysis on already-completed experimental data
-		#
-		# @param w 		The binary responses as a numeric vector of length equal to the number of subjects in the study
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(response_type = "continuous")
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#
-		# seq_des$add_all_subject_assignments(c(0, 1, 0, 1, 0, 1))
-		# }
-		#
-		add_all_subject_assignments = function(w) {
-			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
-			private$w = w
-		},
-
-		# @description
 		# Check if this design was initialized with a fixed sample size n
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		# seq_des$is_fixed_sample_size() #returns TRUE
-		# seq_des = SeqDesignCRD$new(response_type = "continuous")
-		# seq_des$is_fixed_sample_size() #returns FALSE
-		# }
 		#
 		is_fixed_sample_size = function(){
 			private$fixed_sample
@@ -359,29 +273,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# in the w vector and all n responses in the y vector are recorded), i.e. throws
 		# descriptive error if the experiment is incomplete.
 		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#
-		# #if run, it would throw an error since all of the covariate vectors are not yet recorded
-		# #seq_des$assert_experiment_completed()
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#
-		# #if run, it would throw an error since the responses are not yet recorded
-		# #seq_des$assert_experiment_completed()
-		#
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des$assert_experiment_completed() #no response means the assert is true
-		# }
 		assert_experiment_completed = function(){
-			#cat("SeqDesign assert_experiment_completed\n")
+			#cat("Design assert_experiment_completed\n")
 			if (private$fixed_sample & private$all_assignments_not_yet_allocated()){
 				stop("This experiment is incomplete as all n assignments aren't administered yet.")
 			}
@@ -395,28 +288,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		# in the w vector and all n responses in the y vector are recorded).
 		#
 		# @return	\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#
-		# #returns FALSE since all of the covariate vectors are not yet recorded
-		# seq_des$check_experiment_completed()
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#
-		# #returns FALSE since the responses are not yet recorded
-		# seq_des$check_experiment_completed()
-		#
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des$check_experiment_completed() #returns TRUE
-		# }
 		#
 		check_experiment_completed = function(){
 			if (private$fixed_sample & private$all_assignments_not_yet_allocated(self$t)){
@@ -433,15 +304,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#
 		# @return	\code{TRUE} if 50-50, \code{FALSE} otherwise.
 		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		# seq_des$assert_even_allocation() #returns TRUE
-		# seq_des = SeqDesignCRD$new(
-		#   n = 6, prob_T = 0.4, response_type = "continuous"
-		# )
-		# seq_des$assert_even_allocation() #returns FALSE
-		# }
 		assert_even_allocation = function(){
 			if (private$prob_T != 0.5){
 		 		stop("This type of design currently only works with even treatment allocation, i.e. you must set prob_T = 0.5 upon initialization")
@@ -454,13 +316,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#
 		# @return	\code{TRUE} if 50-50, \code{FALSE} otherwise.
 		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(response_type = "continuous", n = 6)
-		# seq_des$assert_fixed_sample() #returns TRUE
-		# seq_des = SeqDesignCRD$new(response_type = "continuous")
-		# seq_des$assert_fixed_sample() #returns FALSE
-		# }
 		assert_fixed_sample = function(){
 			if (!private$fixed_sample){
 				stop("This type of design currently only works with fixed sample, i.e., you must specify n upon initialization")
@@ -472,35 +327,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 		#
 		# @return	\code{TRUE} if there are any censored responses, \code{FALSE} otherwise.
 		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#
-		# #returns FALSE since all of the covariate vectors are not yet recorded
-		# seq_des$check_experiment_completed()
-		#
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#
-		# #returns FALSE since the responses are not yet recorded
-		# seq_des$check_experiment_completed()
-		#
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des$any_censoring() #returns FALSE
-		# }
-		#
 		any_censoring = function(){
 			sum(private$dead) < length(private$dead)
 		},
 
 		# @description Get t
 		#
-		# @return 			The current number of subjects in this sequential experiment (begins at zero).
+		# @return 			The current number of subjects in this experiment (begins at zero).
 		#
 		get_t = function(){
 			private$t
@@ -523,11 +356,17 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$Ximp
 		},
 
+		# @description Get X matrix
+		#
+		# @return 			A numeric matrix of subject data with number of rows n (the number of subjects) and number of
+		# 					columns p (the number of characteristics measured for each subject).
+		get_X = function(){
+			private$X
+		},
+
 		# @description Get y
 		#
-		# @return 			A numeric vector of subject responses with number of entries n (the number of subjects). During
-		# 					the KK21 designs the experimenter fills these values in when they are measured.
-		# 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).
+		# @return 			A numeric vector of subject responses with number of entries n (the number of subjects).
 		get_y = function(){
 			private$y
 		},
@@ -552,45 +391,51 @@ SeqDesign = R6::R6Class("SeqDesign",
 
 		# @description Get dead
 		#
-		# @return 			A binary vector of whether the subject is dead with number of entries n (the number of subjects). This
-		# 					vector is filled in only for \code{response_type} values "survival". The value
-		# 					of 1 indicates uncensored (as the subject died) and a value 0 indicates the real survival value is censored
-		# 					as the subject is still alive at the time of measurement. This follows the same convention as the \code{event}
-		# 					argument in the canonical \code{survival} package in the constructor \code{survival::Surv}. During
-		# 					the KK21 designs the experimenter fills these values in when they are measured.
-		# 					For non-KK21 designs, this vector can be set at anytime (but must be set before inference is desired).
+		# @return 			A binary vector of whether the subject is dead with number of entries n (the number of subjects).
 		get_dead = function(){
 			private$dead
 		},
 
 		# @description Get probability of treatment
 		#
-		# @return 			The experimenter-specified probability a subject becomes wtated to the treatment arm.
+		# @return 			The experimenter-specified probability a subject becomes treated to the treatment arm.
 		get_prob_T = function(){
 			private$prob_T
 		},
 
 		# @description Get response type
 		#
-		# @return 			The experimenter-specified response type which is one of the following:
-		# 							"continuous",
-		# 							"incidence",
-		# 							"proportion",
-		# 							"count",
-		# 							"survival"
+		# @return 			The experimenter-specified response type
 		get_response_type = function(){
 			private$response_type
+		},
+
+		# @description Check whether this design uses blocking / matched-group structure
+		#
+		# @return 			\code{TRUE} if this design stores grouping information in \code{m}, \code{FALSE} otherwise.
+		is_blocking_design = function(){
+			!is.null(private$m)
+		},
+
+		# @description Check whether this blocking design has equal-sized blocks
+		#
+		# @return 			\code{TRUE} if all observed blocks have the same size, \code{FALSE} otherwise.
+		is_complete_blocking_design = function(){
+			if (!self$is_blocking_design()){
+				return(FALSE)
+			}
+			block_sizes = as.integer(table(private$m))
+			length(block_sizes) > 0 && length(unique(block_sizes)) == 1
 		},
 
 		# @description
 		# Duplicate this design object
 		#
 		# @param verbose 	A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
-		# @return 			A new `SeqDesign` object with the same data
+		# @return 			A new `Design` object with the same data
 		duplicate = function(verbose = FALSE){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
 			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
-			# This is much faster as it avoids constructor overhead and re-validations.
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
 			d
@@ -608,6 +453,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 		w = numeric(),
 		y = numeric(),
 		dead = numeric(),
+		m = NULL,
 		prob_T = NULL,
 		response_type = NULL,
 		fixed_sample = NULL,
@@ -618,13 +464,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
 
 		redraw_w_according_to_design = function(){
-			for (t in 1 : private$t){
-				private$w[t] = private$assign_wt()
-			}
+			stop("Must be implemented by subclass.")
 		},
 
 		all_assignments_allocated = function(){
-			#cat("SeqDesign all_assignments_allocated\n")
 			if (private$fixed_sample){
 				private$t >= private$n
 			} else {
@@ -637,7 +480,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 		},
 
 		all_responses_not_yet_recorded = function(){
-			#cat("SeqDesign all_responses_not_yet_recorded\n")
 			sum(!is.na(private$y)) != length(private$w)
 		},
 
@@ -651,13 +493,13 @@ SeqDesign = R6::R6Class("SeqDesign",
 				if (private$include_is_missing_as_a_new_feature){
 					missing_cols_idx = which(column_has_missingness)
 					if (length(missing_cols_idx) > 0){
-					# Use C++ function to create missingness indicators efficiently
-					missingness_indicators = create_missingness_indicators_cpp(private$Ximp, missing_cols_idx)
+						# Use C++ function to create missingness indicators efficiently
+						missingness_indicators = create_missingness_indicators_cpp(private$Ximp, missing_cols_idx)
 
-					# Add the new columns to Ximp
-					for (col_name in names(missingness_indicators)) {
-						private$Ximp[[col_name]] = missingness_indicators[[col_name]]
-					}
+						# Add the new columns to Ximp
+						for (col_name in names(missingness_indicators)) {
+							private$Ximp[[col_name]] = missingness_indicators[[col_name]]
+						}
 					}
 				}
 
@@ -684,16 +526,12 @@ SeqDesign = R6::R6Class("SeqDesign",
 			}
 
 			#now let's drop any columns that don't have any variation
-			#we need to be careful: count_unique_values_cpp takes a List (data.table)
-			#so it should be fine with factors/characters.
 			num_unique_values_per_column = count_unique_values_cpp(private$Ximp)
 			private$Ximp = private$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 
 			#for nonblank data frames...
 			if (ncol(private$Ximp) > 0){
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				#Use model.matrix to ensure everything is numeric (expanding factors into dummies)
-				#The "-1" removes the intercept column
 				private$X = model.matrix(~ ., data = private$Ximp)[, -1, drop = FALSE]
 				# Ensure it is a numeric matrix (not character)
 				if (is.character(private$X)){
@@ -753,42 +591,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 			cpp_result
 		},
 
-		# remove_linearly_dependent_covariates_and_compute_info = function(is, scaled = FALSE){
-		# 	if (length(is) == 0){
-		# 		list(Xint = matrix(NA, nrow = 0, ncol = ncol(private$X)), rank = 0, xt = as.numeric(private$X[private$t, ]))
-		# 	} else {
-		# 		Xint = as.matrix(private$X[is, , drop = FALSE])
-
-		# 		#we first kill columns that have no variation
-		# 		js = which_cols_vary_cpp(Xint)
-		# 		Xint = Xint[, js, drop = FALSE]
-		# 		xt = as.numeric(private$X[private$t, js])
-
-		# 		if (scaled & length(is) > 1){
-		# 			#we need to scale all data including the tth
-		# 			Xint = rbind(Xint, xt)
-		# 			Xint_colnames = colnames(Xint)
-		# 			Xint = scale_columns_cpp(as.matrix(Xint))
-		# 			colnames(Xint) = Xint_colnames
-		# 			#if the column is all one unique value, it goes NaN after scaling, so we have to patch that up
-		# 			Xint[is.nan(Xint)] = 0
-		# 		}
-
-		# 		drop_obj = private$drop_linearly_dependent_cols(as.matrix(Xint))
-		# 		Xint = drop_obj$M
-		# 		xt = xt[drop_obj$js] #make sure xt comports with Xint!
-		# 		rank = matrix_rank_cpp(as.matrix(Xint))
-
-		# 		if (scaled & length(is) > 1){
-		# 			list(Xint = Xint[1 : (nrow(Xint) - 1), , drop = FALSE], rank = rank, xt = Xint[nrow(Xint), ])
-		# 		} else {
-		# 			list(Xint = Xint, rank = rank, xt = xt)
-		# 		}
-		# 	}
-		# },
-
-
-		assign_wt_CRD = function(){
+		assign_wt_Bernoulli = function(){
 			rbinom(1, 1, private$prob_T)
 		},
 

@@ -14,46 +14,18 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		#' Initialize a matching-on-the-fly sequential experimental design which matches based on
 		#' Kapelner and Krieger (2014) or Morrison and Owen (2025)
 		#'
-		#' @param	response_type 	The data type of response values which must be one of the following:
-		#' 								"continuous" (the default),
-		#' 								"incidence",
-		#' 								"proportion",
-		#' 								"count",
-		#' 								"survival".
-		#'                                                                 This package will enforce
-		#' that all added responses via the \code{add_subject_response} method will be
-		#' 								of the appropriate type.
-		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
-		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
-		#'   should we include another dummy variable for its
-		#'                                                                 missingness in addition to
-		#' imputing its value? If the feature is type factor, instead of creating
-		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
-		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
-		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
-		#'   computation.
-		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{TRUE}.
-		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
-		#'   matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
-		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified
-		#'   and \code{morrison = FALSE}, default is 35\%.
-		#' @param morrison        Default is \code{FALSE} which implies matching via the KK14
-		#'   algorithm using \code{lambda} and \code{t_0_pct} matching.
-		#'                                                 If \code{TRUE}, we use Morrison and Owen
-		#' (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
-		#'                                                 settings and matching begins immediately
-		#' with no wait for a certain reservoir size like in KK14.
-		#' @param p                       The number of covariate features. Must be specified when
-		#'   \code{morrison = TRUE} otherwise do not specify this argument.
+		#' @param	response_type 	The data type of response values.
+		#' @param	prob_T	The probability of the treatment assignment.
+		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
+		#' @param	n			The sample size.
+		#' @param num_cores The number of CPU cores.
+		#' @param verbose A flag for verbosity.
+		#' @param lambda   The quantile cutoff.
+		#' @param t_0_pct  The percentage where matching begins.
+		#' @param morrison        Flag for Morrison formula.
+		#' @param p                       The number of covariate features.
 		#'
 		#' @return	A new `SeqDesignKK14` object
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-		#' }
 		#'
 		initialize = function(
 			response_type = "continuous",
@@ -74,13 +46,13 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			private$uses_covariates = TRUE
 			if (morrison){
 				private$p = p
-				if (super$is_fixed_sample_size()){
+				if (self$is_fixed_sample_size()){
 	              	private$compute_lambda = function(){private$n^(-1 / (2 * private$p))}
 	            } else {
 	              	private$compute_lambda = function(){private$t^(-1 / (2 * private$p))}
 	            }
 			} else {
-				private$match_indic = array(NA, n)
+				private$m = array(NA, n)
 				private$lambda = ifelse(is.null(lambda), 0.1, lambda) #10% is the default
 				private$compute_lambda = function(){private$lambda}
 				private$t_0 = round(ifelse(is.null(t_0_pct), 0.35, t_0_pct) * n) #35% is the default
@@ -89,34 +61,14 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 
 		#' @description
 		#' This returns a list with useful matching statistics.
-		#'
-		#' @return	A list with the following data: \code{num_matches}, \code{prop_subjects_matched},
-		#' 			\code{num_subjects_remaining_in_reservoir}, \code{prop_subjects_remaining_in_reservoir}.
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-		#'
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#'
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des$matching_statistics()
-		#' }
-		#'
 		matching_statistics = function(){
 			if (private$t == 0){
 				stop("The experiment has not begun yet")
 			}
-			num_subjects_matched = sum(private$match_indic != 0, na.rm = TRUE)
+			num_subjects_matched = sum(private$m != 0, na.rm = TRUE)
 			num_subjects_remaining_in_reservoir = private$t - num_subjects_matched
 			list(
-				num_matches = length(unique(private$match_indic[private$match_indic != 0])) ,
+				num_matches = length(unique(private$m[private$m != 0])) ,
 				prop_subjects_matched = num_subjects_matched / private$t,
 				num_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir,
 				prop_subjects_remaining_in_reservoir = num_subjects_remaining_in_reservoir / private$t
@@ -124,40 +76,17 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		},
 
 		#' @description
-		#' Returns information about the matched pairs and reservoir
-		#'
-		#' @return An array in the order in which the subject entered with the match number or zero if
-		#'   the subject
-		#'			belonged to the reservoir at the end of the study.
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-		#'
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#'
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des$get_match_indic()
-		#' }
-		#'
-		get_match_indic = function(){
-	    	private$match_indic
-		}
+		#' Returns the grouping vector `m`
+		get_m = function(){ private$m }
 	),
 	private = list(
+		m = NULL,
 		uses_covariates = TRUE,
 		morrison = NULL,
-		t_0 = 0, # not null for function consistency when not defined
+		t_0 = 0,
 		lambda = NULL,
 		p = NULL,
 		compute_lambda = NULL,
-		match_indic = NA, #works for Morrison and non-Morrison
 
 		duplicate = function(){
 			d = super$duplicate()
@@ -179,65 +108,47 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		},
 
 		too_early_to_match = function(){
-			sum(private$match_indic == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) |
+			sum(private$m == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) |
 							(!private$morrison & private$t <= private$t_0)
 		},
 
 		assign_wt = function(){
 			wt = 	if (private$too_early_to_match()){
-						#we're early, so randomize
-						private$match_indic[private$t] = 0 #zero means "reservoir", >0 means match number
-						private$assign_wt_CRD()
+						private$m[private$t] = 0 
+						rbinom(1, 1, private$prob_T)
 					} else {
 						all_subject_data = private$compute_all_subject_data()
-						# cat("else\n")
-						#first calculate the threshold we're operating at
-						#when inverting, ensure full rank by adding eps * I
 						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
-
-						#now iterate over all items in reservoir and take the minimum distance x
-						reservoir_indices = which(private$match_indic == 0)
-#						sqd_distances_times_two = array(NA, length(reservoir_indices))
-#						for (r in 1 : length(reservoir_indices)){
-#							x_r_x_new_delta = all_subject_data$xt_prev - all_subject_data$X_prev[reservoir_indices[r], ]
-#							sqd_distances_times_two[r] = t(x_r_x_new_delta) %*% S_xs_inv %*% x_r_x_new_delta
-#						}
+						reservoir_indices = which(private$m == 0)
 						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
 						    all_subject_data$xt_prev,
 						    all_subject_data$X_prev,
 						    reservoir_indices,
 						    S_xs_inv
 						)
-#						cat("assign_wt t =", private$t, "\n")
-						#comput cutoff threshold
 						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
 						n = self$get_n()
 						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
-						#find minimum distance index
-						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))
-						if (length(sqd_distances_times_two[min_sqd_dist_index]) > 1 || length(T_cutoff_sq) > 1){
-							min_sqd_dist_index = min_sqd_dist_index[1] #if there's a tie, just take the first one
-						}
-						#if it's smaller than the threshold, we're in business: match it
+						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))[1]
+						
 						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
-							match_num = max(private$match_indic, na.rm = TRUE) + 1
-							private$match_indic[reservoir_indices[min_sqd_dist_index]] = match_num
-							private$match_indic[private$t] = match_num
-							#assign opposite
+							match_num = max(private$m, na.rm = TRUE) + 1
+							private$m[reservoir_indices[min_sqd_dist_index]] = match_num
+							private$m[private$t] = match_num
 							1 - private$w[reservoir_indices[min_sqd_dist_index]]
-						} else { #otherwise, randomize and add it to the reservoir
-							private$match_indic[private$t] = 0
-							private$assign_wt_CRD()
+						} else {
+							private$m[private$t] = 0
+							rbinom(1, 1, private$prob_T)
 						}
 					}
-			if (is.na(private$match_indic[private$t])){
+			if (is.na(private$m[private$t])){
 				stop("no match data recorded")
 			}
 			wt
 		},
 
 		redraw_w_according_to_design = function(){
-			private$w = redraw_w_kk14_cpp(private$match_indic, private$w)
+			private$w[1:private$t] = redraw_w_kk14_cpp(private$m, private$w)
 		}
 	)
 )
