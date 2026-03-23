@@ -262,6 +262,16 @@ Design = R6::R6Class("Design",
 		},
 
 		# @description
+		# For those who wish to use this package for analysis on already-completed experimental data
+		#
+		# @param w 		The binary responses as a numeric vector of length equal to the number of subjects in the study
+		#
+		add_all_subject_assignments = function(w) {
+			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			private$w = w
+		},
+
+		# @description
 		# Check if this design was initialized with a fixed sample size n
 		#
 		is_fixed_sample_size = function(){
@@ -408,6 +418,13 @@ Design = R6::R6Class("Design",
 		# @return 			The experimenter-specified response type
 		get_response_type = function(){
 			private$response_type
+		},
+
+		# @description Whether this design supports redraw-based resampling
+		#
+		# @return 			\code{TRUE} if the design can redraw treatment assignments for resampling procedures.
+		supports_resampling = function(){
+			FALSE
 		},
 
 		# @description Check whether this design uses blocking / matched-group structure
