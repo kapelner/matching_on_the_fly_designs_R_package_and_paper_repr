@@ -31,7 +31,8 @@ Imports:
     methods,
     MASS,
     pbmcapply,
-    nbpMatching
+    nbpMatching,
+    randomizr
 Suggests:
     aftgee,
     betareg,
@@ -47,7 +48,6 @@ Suggests:
     parfm,
     pbmcapply,
     quantreg,
-    randomizr,
     Rfit,
     testthat,
     VGAM,
@@ -63,8 +63,10 @@ Collate:
     'design_seq_abstract.R'
     'design_fixed_bernoulli.R'
     'design_fixed_binary_match.R'
+    'design_fixed_blocked_cluster.R'
     'design_fixed_blocking.R'
     'design_fixed_cluster.R'
+    'design_fixed_d_optimal.R'
     'design_fixed_factorial.R'
     'design_fixed_greedy.R'
     'design_fixed_ibcrd.R'

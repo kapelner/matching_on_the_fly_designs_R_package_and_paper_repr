@@ -2,11 +2,24 @@
 #'
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed stratified blocking experimental design.
+#' This design ensures balance within specified strata using the \pkg{randomizr} package.
 #'
 #' @export
 FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 	inherit = FixedDesign,
 	public = list(
+		#' @description
+		#' Initialize a fixed stratified blocking experimental design
+		#'
+		#' @param strata_cols A character vector of column names to use for stratification.
+		#' @param	response_type 	The data type of response values.
+		#' @param	prob_T	The probability of the treatment assignment.
+		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
+		#' @param	n			The sample size.
+		#' @param num_cores The number of CPU cores.
+		#' @param verbose A flag for verbosity.
+		#' @return	A new `FixedDesignBlocking` object
+		#'
 		initialize = function(
 						strata_cols,
 						response_type = "continuous",
@@ -24,6 +37,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
+			
 			strata_keys = vapply(1:private$t, function(i) {
 				vals = vapply(private$strata_cols, function(col) {
 					val = private$Xraw[i, ][[col]]
@@ -32,15 +46,11 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 				paste(vals, collapse = "|")
 			}, character(1))
 			
-			unique_keys = unique(strata_keys)
-			strata_indices = lapply(unique_keys, function(key) which(strata_keys == key))
-			
-			generate_permutations_blocking_cpp(
-				as.integer(self$get_n()),
-				as.integer(r),
-				as.numeric(private$prob_T),
-				strata_indices
-			)$w_mat
+			# Use randomizr::block_ra for canonical stratified blocking
+			# We want numeric 0/1. block_ra returns a factor/numeric vector.
+			w_mat = replicate(r, as.numeric(as.character(randomizr::block_ra(blocks = strata_keys, prob = private$prob_T))))
+			storage.mode(w_mat) = "numeric"
+			w_mat
 		}
 	),
 	private = list(
