@@ -633,6 +633,14 @@ compute_ols_bootstrap_parallel_cpp <- function(y, X_covars, w, indices_mat, num_
     .Call(`_SeqExpMatch_compute_ols_bootstrap_parallel_cpp`, y, X_covars, w, indices_mat, num_cores)
 }
 
+d_optimal_search_cpp <- function(P, nsim, n_T) {
+    .Call(`_SeqExpMatch_d_optimal_search_cpp`, P, nsim, n_T)
+}
+
+a_optimal_search_cpp <- function(P, H, nsim, n_T) {
+    .Call(`_SeqExpMatch_a_optimal_search_cpp`, P, H, nsim, n_T)
+}
+
 compute_pair_averages_cpp <- function(X, m_vec, m) {
     .Call(`_SeqExpMatch_compute_pair_averages_cpp`, X, m_vec, m)
 }
@@ -659,6 +667,22 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
 #' @export
 pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
     .Call(`_SeqExpMatch_pocock_simon_assign_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
+}
+
+#' Pocock-Simon Minimization Assignment and Update
+#'
+#' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
+#'               Modified in place.
+#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
+#'                           the current subject belongs to.
+#' @param weights A numeric vector of weights for each covariate.
+#' @param p_best The probability of assigning the treatment that minimizes the imbalance.
+#' @param prob_T Target probability for treatment (usually 0.5).
+#'
+#' @return The assigned treatment (0 or 1).
+#' @export
+pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
+    .Call(`_SeqExpMatch_pocock_simon_assign_and_update_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
 }
 
 #' Pocock-Simon Minimization Redraw Assignments

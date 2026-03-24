@@ -67,6 +67,31 @@ int pocock_simon_assign_cpp(NumericMatrix counts, IntegerVector subject_levels_i
   }
 }
 
+//' Pocock-Simon Minimization Assignment and Update
+//'
+//' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
+//'               Modified in place.
+//' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
+//'                           the current subject belongs to.
+//' @param weights A numeric vector of weights for each covariate.
+//' @param p_best The probability of assigning the treatment that minimizes the imbalance.
+//' @param prob_T Target probability for treatment (usually 0.5).
+//'
+//' @return The assigned treatment (0 or 1).
+//' @export
+// [[Rcpp::export]]
+int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T) {
+  int w = pocock_simon_assign_cpp(counts, subject_levels_idx, weights, p_best, prob_T);
+  
+  // Update counts in place
+  for (int j = 0; j < subject_levels_idx.size(); ++j) {
+    int row_idx = subject_levels_idx[j] - 1;
+    counts(row_idx, w)++;
+  }
+  
+  return w;
+}
+
 //' Pocock-Simon Minimization Redraw Assignments
 //'
 //' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.

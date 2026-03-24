@@ -48,6 +48,24 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 				assertNumeric(weights, len = length(strata_cols), lower = 0)
 				private$weights = weights
 			}
+		},
+
+		assign_wt = function(){
+			private$ensure_factor_metadata()
+			subject_levels_idx = private$get_subject_levels_idx(private$Xraw[private$t, ])
+			
+			if (is.null(private$counts)){
+				private$counts = matrix(0, nrow = private$num_levels_total, ncol = 2)
+			}
+			
+			# Call Rcpp function that assigns and updates counts in-place
+			pocock_simon_assign_and_update_cpp(
+				private$counts, 
+				as.integer(subject_levels_idx), 
+				private$weights, 
+				private$p_best, 
+				private$prob_T
+			)
 		}
 	),
 
@@ -55,29 +73,10 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 		strata_cols = NULL,
 		weights = NULL,
 		p_best = NULL,
-		factor_levels = list(), # list of levels for each strata_col
+		factor_levels = list(), 
 		num_levels_total = NULL,
-		level_offsets = NULL,   # offset in the counts matrix for each covariate
-
-		assign_wt = function(){
-			# Ensure we have factor levels precomputed
-			private$ensure_factor_metadata()
-			
-			# Current subject data
-			x_new = private$Xraw[private$t, ]
-			subject_levels_idx = private$get_subject_levels_idx(x_new)
-			
-			# Current counts
-			counts = private$compute_current_counts()
-			
-			pocock_simon_assign_cpp(
-				counts, 
-				as.integer(subject_levels_idx), 
-				private$weights, 
-				private$p_best, 
-				private$prob_T
-			)
-		},
+		level_offsets = NULL,   
+		counts = NULL, # State: num_levels_total x 2
 
 		ensure_factor_metadata = function(){
 			if (length(private$factor_levels) == 0){
@@ -88,7 +87,7 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 					col = private$strata_cols[i]
 					vals = private$Xraw[[col]]
 					lvls = levels(as.factor(vals))
-					if (length(lvls) == 0) lvls = "NA" # Fallback
+					if (length(lvls) == 0) lvls = "NA"
 					private$factor_levels[[col]] = lvls
 					private$level_offsets[i] = offset
 					offset = offset + length(lvls)
@@ -104,40 +103,27 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 				val = as.character(x_row[[col]])
 				if (is.na(val)) val = "NA"
 				
-				lvl_idx = which(private$factor_levels[[col]] == val)
-				if (length(lvl_idx) == 0) lvl_idx = 1 # Should not happen if ensure_factor_metadata works
+				# Use match() for faster lookup
+				lvl_idx = match(val, private$factor_levels[[col]])
+				if (is.na(lvl_idx)) lvl_idx = 1
 				
 				indices[i] = private$level_offsets[i] + lvl_idx
 			}
 			indices
 		},
 
-		compute_current_counts = function(){
-			# Matrix of num_levels_total x 2
-			counts = matrix(0, nrow = private$num_levels_total, ncol = 2)
-			if (private$t <= 1) return(counts)
-			
-			# We only count subjects 1 to t-1
-			for (i in 1 : (private$t - 1)){
-				w_i = private$w[i]
-				if (is.na(w_i)) next
-				
-				idx = private$get_subject_levels_idx(private$Xraw[i, ])
-				for (j in idx){
-					counts[j, w_i + 1] = counts[j, w_i + 1] + 1
-				}
-			}
-			counts
-		},
-
 		redraw_w_according_to_design = function(){
 			private$ensure_factor_metadata()
+			# Reset incremental counts
+			private$counts = matrix(0, nrow = private$num_levels_total, ncol = 2)
+			
 			n = private$t
 			x_levels_matrix = matrix(NA_integer_, nrow = n, ncol = length(private$strata_cols))
 			for (i in 1 : n){
 				x_levels_matrix[i, ] = private$get_subject_levels_idx(private$Xraw[i, ])
 			}
 			
+			# Redraw entire vector using optimized C++ loop
 			private$w[1:n] = pocock_simon_redraw_w_cpp(
 				x_levels_matrix,
 				as.integer(private$num_levels_total),
@@ -145,6 +131,13 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 				private$p_best,
 				private$prob_T
 			)
+			
+			# Re-calculate final incremental counts state
+			for (i in 1 : n){
+				w_i = private$w[i]
+				idx = x_levels_matrix[i, ]
+				for (j in idx) private$counts[j, w_i + 1] = private$counts[j, w_i + 1] + 1
+			}
 		},
 
 		get_bootstrap_indices = function() {

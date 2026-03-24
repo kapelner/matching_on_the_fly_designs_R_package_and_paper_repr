@@ -1793,6 +1793,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// d_optimal_search_cpp
+IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T);
+RcppExport SEXP _SeqExpMatch_d_optimal_search_cpp(SEXP PSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type P(PSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(d_optimal_search_cpp(P, nsim, n_T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// a_optimal_search_cpp
+IntegerMatrix a_optimal_search_cpp(const Eigen::MatrixXd& P, const Eigen::MatrixXd& H, int nsim, int n_T);
+RcppExport SEXP _SeqExpMatch_a_optimal_search_cpp(SEXP PSEXP, SEXP HSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type P(PSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type H(HSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(a_optimal_search_cpp(P, H, nsim, n_T));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_pair_averages_cpp
 NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X, const IntegerVector& m_vec, const int m);
 RcppExport SEXP _SeqExpMatch_compute_pair_averages_cpp(SEXP XSEXP, SEXP m_vecSEXP, SEXP mSEXP) {
@@ -1842,6 +1869,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type p_best(p_bestSEXP);
     Rcpp::traits::input_parameter< double >::type prob_T(prob_TSEXP);
     rcpp_result_gen = Rcpp::wrap(pocock_simon_assign_cpp(counts, subject_levels_idx, weights, p_best, prob_T));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pocock_simon_assign_and_update_cpp
+int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T);
+RcppExport SEXP _SeqExpMatch_pocock_simon_assign_and_update_cpp(SEXP countsSEXP, SEXP subject_levels_idxSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type subject_levels_idx(subject_levels_idxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< double >::type p_best(p_bestSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_T(prob_TSEXP);
+    rcpp_result_gen = Rcpp::wrap(pocock_simon_assign_and_update_cpp(counts, subject_levels_idx, weights, p_best, prob_T));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2247,10 +2289,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_newcombe_paired_ci_cpp", (DL_FUNC) &_SeqExpMatch_newcombe_paired_ci_cpp, 5},
     {"_SeqExpMatch_compute_ols_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ols_distr_parallel_cpp, 5},
     {"_SeqExpMatch_compute_ols_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ols_bootstrap_parallel_cpp, 5},
+    {"_SeqExpMatch_d_optimal_search_cpp", (DL_FUNC) &_SeqExpMatch_d_optimal_search_cpp, 3},
+    {"_SeqExpMatch_a_optimal_search_cpp", (DL_FUNC) &_SeqExpMatch_a_optimal_search_cpp, 4},
     {"_SeqExpMatch_compute_pair_averages_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_averages_cpp, 3},
     {"_SeqExpMatch_compute_pair_distance_matrix_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_distance_matrix_cpp, 2},
     {"_SeqExpMatch_compute_lambda_squ_cpp", (DL_FUNC) &_SeqExpMatch_compute_lambda_squ_cpp, 2},
     {"_SeqExpMatch_pocock_simon_assign_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_assign_cpp, 5},
+    {"_SeqExpMatch_pocock_simon_assign_and_update_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_assign_and_update_cpp, 5},
     {"_SeqExpMatch_pocock_simon_redraw_w_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_redraw_w_cpp, 5},
     {"_SeqExpMatch_qr_reduce_full_rank_cpp", (DL_FUNC) &_SeqExpMatch_qr_reduce_full_rank_cpp, 1},
     {"_SeqExpMatch_qr_reduce_preserve_cols_cpp", (DL_FUNC) &_SeqExpMatch_qr_reduce_preserve_cols_cpp, 2},
