@@ -26,10 +26,6 @@ FixedDesign = R6::R6Class("FixedDesign",
 
 		supports_resampling = function(){
 			class(self)[1] != "FixedDesign"
-		},
-
-		draw_ws_according_to_design = function(r = 100){
-			stop("Must be implemented by subclass.")
 		}
 	),
 

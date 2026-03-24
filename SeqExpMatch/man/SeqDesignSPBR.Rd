@@ -45,6 +45,7 @@ An R6 Class encapsulating the data and functionality for a stratified permuted b
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>

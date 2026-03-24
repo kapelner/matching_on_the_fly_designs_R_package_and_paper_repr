@@ -5,6 +5,7 @@
 \title{A stratified blocking Fixed Design}
 \description{
 An R6 Class encapsulating the data and functionality for a fixed stratified blocking experimental design.
+This design ensures balance within specified strata using the \pkg{randomizr} package.
 }
 \section{Super classes}{
 \code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignBlocking}
@@ -51,6 +52,7 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 \if{html}{\out{<a id="method-FixedDesignBlocking-new"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignBlocking-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed stratified blocking experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$new(
   strata_cols,
@@ -63,6 +65,28 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
+
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{num_cores}}{The number of CPU cores.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `FixedDesignBlocking` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBlocking-draw_ws_according_to_design"></a>}}

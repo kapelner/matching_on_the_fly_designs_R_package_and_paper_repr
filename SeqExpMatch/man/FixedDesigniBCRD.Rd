@@ -5,6 +5,7 @@
 \title{A balanced completely randomized Fixed Design}
 \description{
 An R6 Class encapsulating the data and functionality for a fixed balanced completely randomized experimental design.
+This design ensures balanced allocation using the \pkg{randomizr} package.
 }
 \section{Super classes}{
 \code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesigniBCRD}

@@ -16,7 +16,6 @@ is commonly used in clinical trials to prevent predictability of treatment assig
 \itemize{
 \item \href{#method-SeqDesignRandomBlockSize-new}{\code{SeqDesignRandomBlockSize$new()}}
 \item \href{#method-SeqDesignRandomBlockSize-assign_wt}{\code{SeqDesignRandomBlockSize$assign_wt()}}
-\item \href{#method-SeqDesignRandomBlockSize-draw_one_w}{\code{SeqDesignRandomBlockSize$draw_one_w()}}
 \item \href{#method-SeqDesignRandomBlockSize-clone}{\code{SeqDesignRandomBlockSize$clone()}}
 }
 }
@@ -48,6 +47,7 @@ is commonly used in clinical trials to prevent predictability of treatment assig
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-draw_ws_according_to_design'><code>SeqExpMatch::SeqDesign$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -109,15 +109,6 @@ A new `SeqDesignRandomBlockSize` object
 \subsection{Method \code{assign_wt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignRandomBlockSize$assign_wt()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignRandomBlockSize-draw_one_w"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignRandomBlockSize-draw_one_w}{}}}
-\subsection{Method \code{draw_one_w()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignRandomBlockSize$draw_one_w()}\if{html}{\out{</div>}}
 }
 
 }

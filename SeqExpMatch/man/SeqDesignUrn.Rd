@@ -16,7 +16,6 @@ decreases as the number of subjects in that group increases.
 \itemize{
 \item \href{#method-SeqDesignUrn-new}{\code{SeqDesignUrn$new()}}
 \item \href{#method-SeqDesignUrn-assign_wt}{\code{SeqDesignUrn$assign_wt()}}
-\item \href{#method-SeqDesignUrn-draw_one_w}{\code{SeqDesignUrn$draw_one_w()}}
 \item \href{#method-SeqDesignUrn-clone}{\code{SeqDesignUrn$clone()}}
 }
 }
@@ -48,6 +47,7 @@ decreases as the number of subjects in that group increases.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-draw_ws_according_to_design'><code>SeqExpMatch::SeqDesign$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -98,15 +98,6 @@ A new `SeqDesignUrn` object
 \subsection{Method \code{assign_wt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignUrn$assign_wt()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignUrn-draw_one_w"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignUrn-draw_one_w}{}}}
-\subsection{Method \code{draw_one_w()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignUrn$draw_one_w()}\if{html}{\out{</div>}}
 }
 
 }

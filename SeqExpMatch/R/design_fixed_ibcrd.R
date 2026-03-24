@@ -2,6 +2,7 @@
 #'
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed balanced completely randomized experimental design.
+#' This design ensures balanced allocation using the \pkg{randomizr} package.
 #'
 #' @export
 FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
@@ -20,11 +21,10 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
-			generate_permutations_ibcrd_cpp(
-				as.integer(self$get_n()),
-				as.integer(r),
-				as.numeric(private$prob_T)
-			)$w_mat
+			# Use randomizr::complete_ra for canonical complete randomization
+			w_mat = replicate(r, as.numeric(as.character(randomizr::complete_ra(N = self$get_n(), prob = private$prob_T))))
+			storage.mode(w_mat) = "numeric"
+			w_mat
 		}
 	)
 )

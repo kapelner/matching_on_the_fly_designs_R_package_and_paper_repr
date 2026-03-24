@@ -2,6 +2,7 @@
 #'
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed completely randomized experimental design.
+#' This design ensures independent randomization using the \pkg{randomizr} package.
 #'
 #' @export
 FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
@@ -20,11 +21,10 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
-			generate_permutations_bernoulli_cpp(
-				as.integer(self$get_n()),
-				as.integer(r),
-				as.numeric(private$prob_T)
-			)$w_mat
+			# Use randomizr::simple_ra for canonical simple randomization
+			w_mat = replicate(r, as.numeric(as.character(randomizr::simple_ra(N = self$get_n(), prob = private$prob_T))))
+			storage.mode(w_mat) = "numeric"
+			w_mat
 		}
 	)
 )

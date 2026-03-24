@@ -26,7 +26,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 
 		add_subject_to_experiment_and_assign = function(x_new){
 			self$add_subject(x_new)
-			w_t = private$assign_wt()
+			w_t = self$assign_wt()
 			if (private$fixed_sample){
 				private$w[private$t] = w_t
 			} else {
@@ -69,7 +69,7 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$w = rep(NA_real_, private$t)
 			}
 			for (t in 1 : private$t){
-				private$w[t] = private$assign_wt() 
+				private$w[t] = self$assign_wt()
 			}
 		}
 	)

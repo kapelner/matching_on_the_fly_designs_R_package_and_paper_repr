@@ -442,6 +442,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		FixedBernoulli = FixedDesignBernoulli$new( response_type = response_type, n = n),
 		FixediBCRD =     FixedDesigniBCRD$new(     response_type = response_type, n = n),
 		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = names(X_design)[1:min(2, ncol(X_design))], response_type = response_type, n = n),
+		FixedCluster =   FixedDesignCluster$new(   cluster_col = names(X_design)[1], response_type = response_type, n = n),
+		FixedBlockedCluster = FixedDesignBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = names(X_design)[1], response_type = response_type, n = n),
 		FixedBinaryMatch = FixedDesignBinaryMatch$new( response_type = response_type, n = n),
 		FixedGreedy =    FixedDesignGreedy$new(    response_type = response_type, n = n),
 		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n),
@@ -928,7 +930,7 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				log_progress(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
-				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy")) {
+				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedCluster", "FixedBlockedCluster", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy")) {
 					log_progress(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 					log_progress(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))
