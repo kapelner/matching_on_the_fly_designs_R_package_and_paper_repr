@@ -174,3 +174,22 @@ test_that("FixedDesignDOptimal works", {
 	expect_equal(dim(W), c(n, 5))
 	expect_true(all(colSums(W) == n/2))
 })
+
+test_that("FixedDesignAOptimal works", {
+	n = 20
+	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
+	des = FixedDesignAOptimal$new(n = n, verbose = FALSE)
+	for (i in 1:n) {
+		des$add_subject(X[i, , drop = FALSE])
+	}
+	
+	des$randomize()
+	w = des$get_w()
+	expect_length(w, n)
+	expect_equal(sum(w), n/2)
+
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W) == n/2))
+})

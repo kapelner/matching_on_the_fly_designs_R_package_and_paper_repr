@@ -61,6 +61,7 @@ Collate:
     'design_abstract.R'
     'design_fixed_abstract.R'
     'design_seq_abstract.R'
+    'design_fixed_a_optimal.R'
     'design_fixed_bernoulli.R'
     'design_fixed_binary_match.R'
     'design_fixed_blocked_cluster.R'
