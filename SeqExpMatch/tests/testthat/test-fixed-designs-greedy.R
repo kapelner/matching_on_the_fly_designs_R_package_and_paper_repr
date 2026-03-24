@@ -21,7 +21,7 @@ test_that("FixedDesignRerandomization works", {
 	n = 10
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
 	# Use a very high cutoff so it finds it quickly
-	des = FixedDesignRerandomization$new(n = n, obj_val_cutoff_to_include = 100, verbose = FALSE)
+	des = FixedDesignRerandomization$new(n = n, obj_val_cutoff = 100, verbose = FALSE)
 	for (i in 1:n) {
 		des$add_subject(X[i, , drop = FALSE])
 	}

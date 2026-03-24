@@ -13,7 +13,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T	The probability of the treatment assignment.
-		#' @param obj_val_cutoff_to_include 	The maximum allowable objective value.
+		#' @param obj_val_cutoff 	The maximum allowable objective value.
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
@@ -25,7 +25,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		initialize = function(
 				response_type = "continuous",
 				prob_T = 0.5,
-				obj_val_cutoff_to_include = NULL,
+				obj_val_cutoff = NULL,
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
@@ -33,7 +33,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				verbose = FALSE
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
-			private$obj_val_cutoff_to_include = obj_val_cutoff_to_include
+			private$obj_val_cutoff = obj_val_cutoff
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
@@ -75,7 +75,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 	),
 
 	private = list(
-		obj_val_cutoff_to_include = NULL,
+		obj_val_cutoff = NULL,
 		objective = NULL,
 		S_inv = NULL,
 
@@ -112,7 +112,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				
 				obj_val = private$compute_obj(X, w_cand)
 				
-				if (is.null(private$obj_val_cutoff_to_include) || obj_val <= private$obj_val_cutoff_to_include || attempts >= max_attempts){
+				if (is.null(private$obj_val_cutoff) || obj_val <= private$obj_val_cutoff || attempts >= max_attempts){
 					if (private$verbose && attempts >= max_attempts){
 						warning("Rerandomization reached max attempts without finding a design below cutoff.")
 					}

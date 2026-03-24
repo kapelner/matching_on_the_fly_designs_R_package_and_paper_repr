@@ -64,7 +64,11 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				}, mc.cores = private$num_cores)
 				return(do.call(cbind, w_list))
 			} else {
-				return(super$draw_ws_according_to_design(r))
+				w_mat = matrix(NA_real_, nrow = n, ncol = r)
+				for (j in 1:r){
+					w_mat[, j] = private$run_one_greedy_search()
+				}
+				return(w_mat)
 			}
 		}
 	),
@@ -77,7 +81,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			n = self$get_n()
 			X = private$X[1:n, , drop = FALSE]
 			
-			# Precompute S_inv if needed (for the single-run case)
+			# Ensure S_inv is available
 			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
 				S = var(X)
 				if (abs(det(S)) < 1e-10){

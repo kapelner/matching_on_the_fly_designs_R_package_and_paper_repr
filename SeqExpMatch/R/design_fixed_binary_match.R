@@ -42,45 +42,37 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			private$ensure_pairs_computed()
 			
 			n = self$get_n()
-			if (is.null(private$indices_pairs)){
+			if (is.null(private$m)){
 				# Fallback if no covariates: just BCRD
 				private$w[1:n] = sample(c(rep(1, n / 2), rep(0, n / 2)))
 				return()
 			}
 
-			private$w[1:n] = private$generate_one_binary_match_w()
+			# Use C++ for fast generation
+			res = generate_permutations_kk_cpp(as.integer(private$m), 1, as.numeric(private$prob_T))
+			private$w[1:n] = res$w_mat[, 1]
 		},
 
 		draw_ws_according_to_design = function(r = 100){
 			private$ensure_pairs_computed()
 			n = self$get_n()
-			if (is.null(private$indices_pairs)){
+			if (is.null(private$m)){
+				# Fallback BCRD
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
 
-			# This is very fast so parallelization is likely not needed, but good for large r
-			if (private$num_cores > 1 && r > 1000 && requireNamespace("pbmcapply", quietly = TRUE)){
-				w_list = pbmcapply::pbmclapply(1:r, function(i) {
-					private$generate_one_binary_match_w()
-				}, mc.cores = private$num_cores)
-				return(do.call(cbind, w_list))
-			} else {
-				w_mat = matrix(NA_real_, nrow = n, ncol = r)
-				for (j in 1:r){
-					w_mat[, j] = private$generate_one_binary_match_w()
-				}
-				return(w_mat)
-			}
+			# Use C++ for fast generation of many replicates
+			res = generate_permutations_kk_cpp(as.integer(private$m), as.integer(r), as.numeric(private$prob_T))
+			return(res$w_mat)
 		}
 	),
 
 	private = list(
 		mahal_match = NULL,
-		indices_pairs = NULL,
 
 		ensure_pairs_computed = function(){
 			n = self$get_n()
-			if (is.null(private$indices_pairs) && !is.null(private$X) && ncol(private$X) > 0){
+			if (is.null(private$m) && !is.null(private$X) && ncol(private$X) > 0){
 				X = private$X[1:n, , drop = FALSE]
 				if (private$mahal_match){
 					S_X = var(X)
@@ -100,28 +92,20 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				}
 				
 				diag(D) = .Machine$double.xmax
+				
+				# API call to nbpMatching::nonbimatch
 				dist_obj = nbpMatching::distancematrix(D)
 				match_obj = nbpMatching::nonbimatch(dist_obj)
 				matches = match_obj$matches
-				private$indices_pairs = matrix(as.integer(as.matrix(matches[, c("Group1.Row", "Group2.Row")])), ncol = 2)
-			}
-		},
-
-		generate_one_binary_match_w = function(){
-			n = self$get_n()
-			new_w = rep(NA_real_, n)
-			num_pairs = nrow(private$indices_pairs)
-			for (i in 1 : num_pairs){
-				pair = private$indices_pairs[i, ]
-				if (runif(1) < 0.5){
-					new_w[pair[1]] = 1
-					new_w[pair[2]] = 0
-				} else {
-					new_w[pair[1]] = 0
-					new_w[pair[2]] = 1
+				
+				# Convert to m vector (pair IDs)
+				m_vec = rep(NA_integer_, n)
+				for (i in 1 : nrow(matches)){
+					m_vec[as.integer(matches$Group1.Row[i])] = i
+					m_vec[as.integer(matches$Group2.Row[i])] = i
 				}
+				private$m = m_vec
 			}
-			new_w
 		}
 	)
 )
