@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignBlocking-new}{\code{FixedDesignBlocking$new()}}
-\item \href{#method-FixedDesignBlocking-redraw_w_according_to_design}{\code{FixedDesignBlocking$redraw_w_according_to_design()}}
+\item \href{#method-FixedDesignBlocking-draw_ws_according_to_design}{\code{FixedDesignBlocking$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignBlocking-clone}{\code{FixedDesignBlocking$clone()}}
 }
 }
@@ -28,7 +28,6 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_even_allocation'><code>SeqExpMatch::FixedDesign$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_experiment_completed'><code>SeqExpMatch::FixedDesign$assert_experiment_completed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_fixed_sample'><code>SeqExpMatch::FixedDesign$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-draw_ws_according_to_design'><code>SeqExpMatch::FixedDesign$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-duplicate'><code>SeqExpMatch::FixedDesign$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_X"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_X'><code>SeqExpMatch::FixedDesign$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_X_imp'><code>SeqExpMatch::FixedDesign$get_X_imp()</code></a></span></li>
@@ -42,6 +41,7 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -64,11 +64,11 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignBlocking-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignBlocking-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
+\if{html}{\out{<a id="method-FixedDesignBlocking-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignBlocking-draw_ws_according_to_design}{}}}
+\subsection{Method \code{draw_ws_according_to_design()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
 }

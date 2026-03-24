@@ -130,20 +130,6 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 		#' @return	For KK21 designs, the running values of the weights for each covariate.
 		get_covariate_weights = function(){
 			private$covariate_weights
-		}
-	),
-	private = list(
-		covariate_weights = NULL,
-		iteration_weights = NULL,
-		num_boot = NULL,
-		count_use_speedup = NULL,
-		proportion_use_speedup = NULL,
-		survival_use_speedup_for_no_censoring = NULL,
-		ordinal_use_speedup = NULL,
-
-		duplicate = function(){
-			d = super$duplicate()
-			d
 		},
 
 		assign_wt = function(){
@@ -151,7 +137,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 						#we're early or the reservoir is empty, so randomize
 						#cat("    assign_wt", class(self)[1], " t", private$t, "\n")
 						private$m[private$t] = 0
-						self$assign_wt_Bernoulli()
+						private$assign_wt_Bernoulli()
 					} else if (is.null(private$X) | (sum(!is.na(private$y)) < 2 * (ncol(private$X) + 2))){
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
@@ -239,12 +225,27 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 				stop("no match data recorded")
 			}
 			wt
+		}
+	),
+	private = list(
+		covariate_weights = NULL,
+		iteration_weights = NULL,
+		num_boot = NULL,
+		count_use_speedup = NULL,
+		proportion_use_speedup = NULL,
+		survival_use_speedup_for_no_censoring = NULL,
+		ordinal_use_speedup = NULL,
+
+		duplicate = function(){
+			d = super$duplicate()
+			d
 		},
 
 		compute_weights = function(all_subject_data){
 			xs = all_subject_data$X_all_with_y_scaled
-			ys = all_subject_data$y_all
-			deads = all_subject_data$dead_all
+			i_y_present = which(!is.na(private$y))
+			ys = private$y[i_y_present]
+			deads = private$dead[i_y_present]
 
 			if (private$too_early_to_match()){
 				return(rep(1, all_subject_data$rank_all_with_y_scaled))

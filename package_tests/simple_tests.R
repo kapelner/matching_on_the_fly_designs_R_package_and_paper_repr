@@ -434,17 +434,38 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		KK21 =         SeqDesignKK21$new(        response_type = response_type, n = n),
 		KK21stepwise = SeqDesignKK21stepwise$new(response_type = response_type, n = n),
 		KK14 =         SeqDesignKK14$new(        response_type = response_type, n = n),
-		Bernoulli =          SeqDesignBernoulli$new(         response_type = response_type, n = n),
+		Bernoulli =    SeqDesignBernoulli$new(   response_type = response_type, n = n),
 		Efron =        SeqDesignEfron$new(       response_type = response_type, n = n),
 		Atkinson =     SeqDesignAtkinson$new(    response_type = response_type, n = n),
 		iBCRD =        SeqDesigniBCRD$new(       response_type = response_type, n = n),
 		SPBR =         SeqDesignSPBR$new(        strata_cols = names(X_design)[1:min(2, ncol(X_design))], block_size = 4, response_type = response_type, n = n),
+		FixedBernoulli = FixedDesignBernoulli$new( response_type = response_type, n = n),
+		FixediBCRD =     FixedDesigniBCRD$new(     response_type = response_type, n = n),
+		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = names(X_design)[1:min(2, ncol(X_design))], response_type = response_type, n = n),
+		FixedBinaryMatch = FixedDesignBinaryMatch$new( response_type = response_type, n = n),
+		FixedGreedy =    FixedDesignGreedy$new(    response_type = response_type, n = n),
+		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n),
+		FixedMatchingGreedy = FixedDesignMatchingGreedyPairSwitching$new( response_type = response_type, n = n),
 		stop("Unsupported design_type: ", design_type)
 	)
-	for (t in 1 : n){
-		w_t = seq_des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
-		y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
-		seq_des_obj$add_subject_response(t, y_t, dead[t])
+	
+	if (inherits(seq_des_obj, "SeqDesign")){
+		for (t in 1 : n){
+			w_t = seq_des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
+			y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
+			seq_des_obj$add_subject_response(t, y_t, dead[t])
+		}
+	} else {
+		# It is a FixedDesign but not a SeqDesign
+		for (t in 1 : n){
+			seq_des_obj$add_subject(X_design[t, , drop = FALSE])
+		}
+		seq_des_obj$randomize()
+		w = seq_des_obj$get_w()
+		for (t in 1 : n){
+			y_t = apply_treatment_effect_and_noise(y[t], w[t], response_type)
+			seq_des_obj$add_subject_response(t, y_t, dead[t])
+		}
 	}
 
 	is_kk_design = design_type %in% c("KK21", "KK21stepwise", "KK14")
@@ -907,7 +928,7 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				log_progress(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
-				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR")) {
+				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy")) {
 					log_progress(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 					log_progress(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))

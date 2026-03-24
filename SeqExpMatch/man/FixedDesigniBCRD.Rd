@@ -13,7 +13,6 @@ An R6 Class encapsulating the data and functionality for a fixed balanced comple
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesigniBCRD-new}{\code{FixedDesigniBCRD$new()}}
-\item \href{#method-FixedDesigniBCRD-redraw_w_according_to_design}{\code{FixedDesigniBCRD$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesigniBCRD-draw_ws_according_to_design}{\code{FixedDesigniBCRD$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesigniBCRD-clone}{\code{FixedDesigniBCRD$clone()}}
 }
@@ -42,6 +41,7 @@ An R6 Class encapsulating the data and functionality for a fixed balanced comple
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -59,15 +59,6 @@ An R6 Class encapsulating the data and functionality for a fixed balanced comple
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesigniBCRD-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesigniBCRD-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$redraw_w_according_to_design()}\if{html}{\out{</div>}}
 }
 
 }

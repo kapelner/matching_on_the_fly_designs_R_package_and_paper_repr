@@ -14,7 +14,6 @@ This design pairs subjects based on covariate distances and randomizes within pa
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignBinaryMatch-new}{\code{FixedDesignBinaryMatch$new()}}
-\item \href{#method-FixedDesignBinaryMatch-redraw_w_according_to_design}{\code{FixedDesignBinaryMatch$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignBinaryMatch-draw_ws_according_to_design}{\code{FixedDesignBinaryMatch$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignBinaryMatch-clone}{\code{FixedDesignBinaryMatch$clone()}}
 }
@@ -43,6 +42,7 @@ This design pairs subjects based on covariate distances and randomizes within pa
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -86,15 +86,6 @@ Initialize a binary match fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignBinaryMatch` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignBinaryMatch-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignBinaryMatch-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBinaryMatch$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBinaryMatch-draw_ws_according_to_design"></a>}}

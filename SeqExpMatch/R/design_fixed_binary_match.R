@@ -2,7 +2,8 @@
 #'
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed binary match experimental design.
-#' This design pairs subjects based on covariate distances and randomizes within pairs.
+#' This class is a thin wrapper around the \pkg{GreedyExperimentalDesign}
+#' binary-match search API.
 #'
 #' @export
 FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
@@ -26,71 +27,63 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				prob_T = 0.5,
 				mahal_match = FALSE,
 				include_is_missing_as_a_new_feature = TRUE,
-				n = NULL,
+				n,
 				num_cores = 1,
 				verbose = FALSE
 			) {
 			if (prob_T != 0.5){
 				stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
 			}
+			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			private$mahal_match = mahal_match
 			private$uses_covariates = TRUE
 		},
 
+		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
+
 		draw_ws_according_to_design = function(r = 100){
-			private$ensure_pairs_computed()
+			assertCount(r, positive = TRUE)
+			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
+			self$assert_experiment_completed()
+
 			n = self$get_n()
-			if (is.null(private$m)){
-				# Fallback BCRD
-				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
+			if (n %% 2 != 0){
+				stop("Binary match designs require an even number of subjects.")
 			}
 
-			# Use C++ for fast generation of many replicates
-			res = generate_permutations_kk_cpp(as.integer(private$m), as.integer(r), as.numeric(private$prob_T))
-			return(res$w_mat)
+			private$covariate_impute_if_necessary_and_then_create_model_matrix()
+			X = private$X[1:n, , drop = FALSE]
+			binary_match_structure = GreedyExperimentalDesign::computeBinaryMatchStructure(
+				X = X,
+				mahal_match = private$mahal_match
+			)
+			search_obj = GreedyExperimentalDesign::initBinaryMatchExperimentalDesignSearchObject(
+				binary_match_structure = binary_match_structure,
+				max_designs = r,
+				wait = TRUE,
+				start = TRUE,
+				num_cores = private$num_cores,
+				verbose = private$verbose
+			)
+			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(
+				search_obj,
+				form = "one_zero"
+			)
+			if (is.vector(w_mat)) {
+				w_mat = matrix(w_mat, nrow = n, ncol = 1)
+			}
+			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
+				stop("resultsBinaryMatchSearch returned an unexpected allocation matrix shape.")
+			}
+			storage.mode(w_mat) = "numeric"
+			w_mat[, seq_len(r), drop = FALSE]
 		}
 	),
 
 	private = list(
-		mahal_match = NULL,
-
-		ensure_pairs_computed = function(){
-			n = self$get_n()
-			if (is.null(private$m) && !is.null(private$X) && ncol(private$X) > 0){
-				X = private$X[1:n, , drop = FALSE]
-				if (private$mahal_match){
-					S_X = var(X)
-					if (abs(det(S_X)) < 1e-10){
-						S_X = S_X + diag(1e-6, ncol(X))
-					}
-					S_X_inv = solve(S_X)
-					D = matrix(0, n, n)
-					for (i in 1 : (n - 1)){
-						for (j in (i + 1) : n){
-							xdiff = X[i, ] - X[j, ]
-							D[i, j] = D[j, i] = xdiff %*% (S_X_inv %*% xdiff)
-						}
-					}
-				} else {
-					D = as.matrix(dist(X))^2
-				}
-				
-				diag(D) = .Machine$double.xmax
-				
-				# API call to nbpMatching::nonbimatch
-				dist_obj = nbpMatching::distancematrix(D)
-				match_obj = nbpMatching::nonbimatch(dist_obj)
-				matches = match_obj$matches
-				
-				# Convert to m vector (pair IDs)
-				m_vec = rep(NA_integer_, n)
-				for (i in 1 : nrow(matches)){
-					m_vec[as.integer(matches$Group1.Row[i])] = i
-					m_vec[as.integer(matches$Group2.Row[i])] = i
-				}
-				private$m = m_vec
-			}
-		}
+		mahal_match = NULL
 	)
 )

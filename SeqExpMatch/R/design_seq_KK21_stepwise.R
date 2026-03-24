@@ -102,9 +102,10 @@ SeqDesignKK21stepwise = R6::R6Class("SeqDesignKK21stepwise",
 
 		compute_weights = function(all_subject_data){ #stepwise function
 			xs = all_subject_data$X_all_with_y_scaled
-			ys = all_subject_data$y_all
-			ws = all_subject_data$w_all_with_y_scaled
-			deads = all_subject_data$dead_all
+			i_y_present = which(!is.na(private$y))
+			ys = private$y[i_y_present]
+			ws = private$w[i_y_present]
+			deads = private$dead[i_y_present]
 			# The C++ stepwise functions initialize all weights to NA and fill them as each
 			# step succeeds. When perfect separation (or rank deficiency) causes an early
 			# break, the remaining features retain NA. Replace NA with 0 so those features

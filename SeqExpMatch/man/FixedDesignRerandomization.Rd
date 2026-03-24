@@ -14,7 +14,6 @@ This design generates random allocations and only accepts those that meet a cova
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignRerandomization-new}{\code{FixedDesignRerandomization$new()}}
-\item \href{#method-FixedDesignRerandomization-redraw_w_according_to_design}{\code{FixedDesignRerandomization$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-draw_ws_according_to_design}{\code{FixedDesignRerandomization$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-clone}{\code{FixedDesignRerandomization$clone()}}
 }
@@ -43,6 +42,7 @@ This design generates random allocations and only accepts those that meet a cova
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -56,7 +56,7 @@ Initialize a rerandomization fixed experimental design
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignRerandomization$new(
   response_type = "continuous",
   prob_T = 0.5,
-  obj_val_cutoff_to_include = NULL,
+  obj_val_cutoff = NULL,
   objective = "mahal_dist",
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
@@ -72,7 +72,7 @@ Initialize a rerandomization fixed experimental design
 
 \item{\code{prob_T}}{The probability of the treatment assignment.}
 
-\item{\code{obj_val_cutoff_to_include}}{The maximum allowable objective value.}
+\item{\code{obj_val_cutoff}}{The maximum allowable objective value.}
 
 \item{\code{objective}}{The objective function to use. Default is "mahal_dist".}
 
@@ -89,15 +89,6 @@ Initialize a rerandomization fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignRerandomization` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignRerandomization-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignRerandomization-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignRerandomization$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignRerandomization-draw_ws_according_to_design"></a>}}

@@ -1581,7 +1581,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				if (is.null(private$seq_des_obj_priv_int$X)){
 					private$seq_des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
 				}
-				private$X = private$seq_des_obj_priv_int$compute_all_subject_data()$X_all
+				X_all = private$seq_des_obj_priv_int$compute_all_subject_data()$X_all
+				colnames(X_all) = colnames(private$seq_des_obj_priv_int$X)
+				private$X = X_all
 			}
 			private$X
 		},

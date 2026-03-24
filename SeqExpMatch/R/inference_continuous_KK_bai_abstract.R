@@ -110,7 +110,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	compute_asymp_confidence_interval = function(alpha = 0.05){
 		assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 		if (is.null(private$cached_values$beta_hat_T)){
-		private$compute_treatment_estimate()
+		self$compute_treatment_estimate()
 		}
 		if (is.null(private$cached_values$s_beta_hat_T)){
 		private$shared()
@@ -146,7 +146,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 		assertNumeric(delta)
 		if (is.null(private$cached_values$beta_hat_T)){
-		private$compute_treatment_estimate()
+		self$compute_treatment_estimate()
 		}
 		if (is.null(private$cached_values$s_beta_hat_T)){
 		private$shared()

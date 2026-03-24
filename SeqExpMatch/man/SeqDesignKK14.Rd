@@ -17,6 +17,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \item \href{#method-SeqDesignKK14-new}{\code{SeqDesignKK14$new()}}
 \item \href{#method-SeqDesignKK14-matching_statistics}{\code{SeqDesignKK14$matching_statistics()}}
 \item \href{#method-SeqDesignKK14-get_m}{\code{SeqDesignKK14$get_m()}}
+\item \href{#method-SeqDesignKK14-assign_wt}{\code{SeqDesignKK14$assign_wt()}}
 \item \href{#method-SeqDesignKK14-clone}{\code{SeqDesignKK14$clone()}}
 }
 }
@@ -46,7 +47,6 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assign_wt"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assign_wt'><code>SeqExpMatch::SeqDesign$assign_wt()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-redraw_w_according_to_design'><code>SeqExpMatch::SeqDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
@@ -120,6 +120,15 @@ This returns a list with useful matching statistics.
 Returns the grouping vector `m`
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$get_m()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignKK14-assign_wt"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK14-assign_wt}{}}}
+\subsection{Method \code{assign_wt()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$assign_wt()}\if{html}{\out{</div>}}
 }
 
 }

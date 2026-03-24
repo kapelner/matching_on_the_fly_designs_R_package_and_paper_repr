@@ -50,8 +50,20 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$w = rep(NA_real_, private$t)
 			}
 			for (t in 1 : private$t){
-				private$w[t] = self$assign_wt() 
+				private$w[t] = self$assign_wt()
 			}
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			n = private$t
+			w_mat = matrix(NA_integer_, nrow = n, ncol = r)
+			w_saved = private$w
+			for (b in 1:r) {
+				self$redraw_w_according_to_design()
+				w_mat[, b] = as.integer(private$w[1:n])
+			}
+			private$w = w_saved
+			w_mat
 		}
 	),
 

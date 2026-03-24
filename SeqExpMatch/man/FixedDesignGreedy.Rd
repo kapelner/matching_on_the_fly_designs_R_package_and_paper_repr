@@ -14,7 +14,6 @@ This design starts with a random allocation and greedily switches pairs to optim
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignGreedy-new}{\code{FixedDesignGreedy$new()}}
-\item \href{#method-FixedDesignGreedy-redraw_w_according_to_design}{\code{FixedDesignGreedy$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-draw_ws_according_to_design}{\code{FixedDesignGreedy$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-clone}{\code{FixedDesignGreedy$clone()}}
 }
@@ -43,6 +42,7 @@ This design starts with a random allocation and greedily switches pairs to optim
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -86,15 +86,6 @@ Initialize a greedy search fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignGreedy` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignGreedy-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignGreedy-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignGreedy$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignGreedy-draw_ws_according_to_design"></a>}}

@@ -77,7 +77,46 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 
 		#' @description
 		#' Returns the grouping vector `m`
-		get_m = function(){ private$m }
+		get_m = function(){ private$m },
+
+		draw_ws_according_to_design = function(r = 100){
+			generate_permutations_kk_cpp(as.integer(private$m), as.integer(r), as.numeric(private$prob_T))
+		},
+
+		assign_wt = function(){
+			wt = 	if (private$too_early_to_match()){
+						private$m[private$t] = 0
+						rbinom(1, 1, private$prob_T)
+					} else {
+						all_subject_data = private$compute_all_subject_data()
+						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
+						reservoir_indices = which(private$m == 0)
+						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
+						    all_subject_data$xt_prev,
+						    all_subject_data$X_prev,
+						    reservoir_indices,
+						    S_xs_inv
+						)
+						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
+						n = self$get_n()
+						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
+						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))[1]
+
+						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
+							match_num = max(private$m, na.rm = TRUE) + 1
+							private$m[reservoir_indices[min_sqd_dist_index]] = match_num
+							private$m[private$t] = match_num
+							1 - private$w[reservoir_indices[min_sqd_dist_index]]
+						} else {
+							private$m[private$t] = 0
+							rbinom(1, 1, private$prob_T)
+						}
+					}
+			if (is.na(private$m[private$t])){
+				stop("no match data recorded")
+			}
+			wt
+		}
 	),
 	private = list(
 		m = NULL,
@@ -110,41 +149,6 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		too_early_to_match = function(){
 			sum(private$m == 0, na.rm = TRUE) == 0 | private$t <= (ncol(private$Xraw) + 2) |
 							(!private$morrison & private$t <= private$t_0)
-		},
-
-		assign_wt = function(){
-			wt = 	if (private$too_early_to_match()){
-						private$m[private$t] = 0 
-						rbinom(1, 1, private$prob_T)
-					} else {
-						all_subject_data = private$compute_all_subject_data()
-						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
-						reservoir_indices = which(private$m == 0)
-						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
-						    all_subject_data$xt_prev,
-						    all_subject_data$X_prev,
-						    reservoir_indices,
-						    S_xs_inv
-						)
-						F_crit =  qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
-						n = self$get_n()
-						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
-						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))[1]
-						
-						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
-							match_num = max(private$m, na.rm = TRUE) + 1
-							private$m[reservoir_indices[min_sqd_dist_index]] = match_num
-							private$m[private$t] = match_num
-							1 - private$w[reservoir_indices[min_sqd_dist_index]]
-						} else {
-							private$m[private$t] = 0
-							rbinom(1, 1, private$prob_T)
-						}
-					}
-			if (is.na(private$m[private$t])){
-				stop("no match data recorded")
-			}
-			wt
 		},
 
 		redraw_w_according_to_design = function(){

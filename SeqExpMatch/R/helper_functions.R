@@ -27,6 +27,12 @@ set_package_threads = function(num_cores) {
 	Sys.setenv(NUMEXPR_NUM_THREADS = n)
 }
 
+assert_greedy_experimental_design_installed = function(caller) {
+	if (!requireNamespace("GreedyExperimentalDesign", quietly = TRUE)) {
+		stop("Package 'GreedyExperimentalDesign' is required for ", caller, ".")
+	}
+}
+
 #' Logit
 #'
 #' Calculates the logit i.e., log(p / (1 - p))

@@ -39,9 +39,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			if (prob_T != 0.5) {
 				stop("FixedDesignMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
 			}
-			if (!requireNamespace("GreedyExperimentalDesign", quietly = TRUE)) {
-				stop("Package 'GreedyExperimentalDesign' is required for FixedDesignMatchingGreedyPairSwitching.")
-			}
+			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
 
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 
@@ -58,6 +56,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 
 		draw_ws_according_to_design = function(r = 100){
 			assertCount(r, positive = TRUE)
+			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
 			self$assert_experiment_completed()
 
 			n = self$get_n()
@@ -67,16 +66,12 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			X = private$X[1:n, , drop = FALSE]
-
-			if (is.null(X) || ncol(X) == 0) {
-				w_mat = replicate(r, sample(c(rep(1, n / 2), rep(0, n / 2))))
-				return(matrix(as.numeric(w_mat), nrow = n, ncol = r))
-			}
+			search_budget = max(as.integer(r), as.integer(private$max_designs))
 
 			search_obj = GreedyExperimentalDesign::initBinaryMatchFollowedByGreedyExperimentalDesignSearchObject(
 				X = X,
 				diff_method = private$diff_method,
-				max_designs = r,
+				max_designs = search_budget,
 				objective = private$objective,
 				wait = private$wait,
 				start = TRUE,
@@ -84,15 +79,10 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				verbose = private$verbose
 			)
 
-			w_mat = tryCatch(
-				GreedyExperimentalDesign::resultsBinaryMatchThenGreedySearch(
-					search_obj,
-					max_vectors = r,
-					form = "one_zero"
-				),
-				error = function(e) {
-					GreedyExperimentalDesign::resultsBinaryMatchThenGreedySearch(search_obj, max_vectors = r)
-				}
+			w_mat = GreedyExperimentalDesign::resultsBinaryMatchThenGreedySearch(
+				search_obj,
+				max_vectors = r,
+				form = "one_zero"
 			)
 
 			w_mat = private$extract_allocation_matrix(w_mat, n = n, r = r)
@@ -129,20 +119,10 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
-			if (is.matrix(w_mat) && nrow(w_mat) != n && ncol(w_mat) == n) {
-				w_mat = t(w_mat)
-			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n) {
+			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
 				stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
 			}
-
-			if (all(w_mat %in% c(-1, 1), na.rm = TRUE)) {
-				w_mat = (w_mat + 1) / 2
-			}
-
-			if (ncol(w_mat) < r) {
-				stop("resultsBinaryMatchThenGreedySearch returned fewer allocation vectors than requested.")
-			}
+			storage.mode(w_mat) = "numeric"
 			w_mat[, seq_len(r), drop = FALSE]
 		}
 	)
