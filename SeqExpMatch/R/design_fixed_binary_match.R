@@ -38,21 +38,6 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			private$uses_covariates = TRUE
 		},
 
-		redraw_w_according_to_design = function(){
-			private$ensure_pairs_computed()
-			
-			n = self$get_n()
-			if (is.null(private$m)){
-				# Fallback if no covariates: just BCRD
-				private$w[1:n] = sample(c(rep(1, n / 2), rep(0, n / 2)))
-				return()
-			}
-
-			# Use C++ for fast generation
-			res = generate_permutations_kk_cpp(as.integer(private$m), 1, as.numeric(private$prob_T))
-			private$w[1:n] = res$w_mat[, 1]
-		},
-
 		draw_ws_according_to_design = function(r = 100){
 			private$ensure_pairs_computed()
 			n = self$get_n()

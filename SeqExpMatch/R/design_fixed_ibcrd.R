@@ -18,11 +18,6 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 		},
 
-		redraw_w_according_to_design = function(){
-			n_T_total = round(private$t * private$prob_T)
-			private$w[1:private$t] = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$t - n_T_total)))
-		},
-
 		draw_ws_according_to_design = function(r = 100){
 			generate_permutations_ibcrd_cpp(
 				as.integer(self$get_n()),

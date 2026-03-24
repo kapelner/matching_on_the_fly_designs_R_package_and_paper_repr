@@ -100,16 +100,11 @@ FixedDesign = R6::R6Class("FixedDesign",
 		},
 
 		redraw_w_according_to_design = function(){
-			stop("Must be implemented by subclass.")
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
 		},
 
 		draw_ws_according_to_design = function(r = 100){
-			w_mat = matrix(NA_real_, nrow = self$get_n(), ncol = r)
-			for (j in 1 : r){
-				self$redraw_w_according_to_design()
-				w_mat[, j] = self$get_w()
-			}
-			w_mat
+			stop("Must be implemented by subclass.")
 		},
 
 		add_subject_response = function(t, y, dead = 1) {

@@ -38,10 +38,6 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			private$uses_covariates = TRUE
 		},
 
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = private$run_one_greedy_search()
-		},
-
 		draw_ws_according_to_design = function(r = 100){
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){

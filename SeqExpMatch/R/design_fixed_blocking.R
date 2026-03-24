@@ -21,27 +21,6 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 			private$strata_cols = strata_cols
 		},
 
-		redraw_w_according_to_design = function(){
-			strata_keys = vapply(1:private$t, function(i) {
-				vals = vapply(private$strata_cols, function(col) {
-					val = private$Xraw[i, ][[col]]
-					if (is.na(val)) "NA" else as.character(val)
-				}, character(1))
-				paste(vals, collapse = "|")
-			}, character(1))
-			
-			unique_keys = unique(strata_keys)
-			new_w = rep(NA_real_, private$t)
-			
-			for (key in unique_keys) {
-				idxs = which(strata_keys == key)
-				m = length(idxs)
-				n_T = round(m * private$prob_T)
-				new_w[idxs] = sample(c(rep(1, n_T), rep(0, m - n_T)))
-			}
-			private$w[1:private$t] = new_w
-		},
-
 		draw_ws_according_to_design = function(r = 100){
 			strata_keys = vapply(1:private$t, function(i) {
 				vals = vapply(private$strata_cols, function(col) {
