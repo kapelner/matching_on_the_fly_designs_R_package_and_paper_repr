@@ -37,6 +37,16 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 					rbinom(1, 1, private$prob_T)
 				})
 			}
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			generate_permutations_atkinson_cpp(
+				as.matrix(private$X[1:private$t, , drop = FALSE]),
+				as.integer(private$t),
+				as.integer(ncol(private$Xraw)),
+				as.numeric(private$prob_T),
+				as.integer(r)
+			)$w_mat
 		}
 	),
 	private = list(

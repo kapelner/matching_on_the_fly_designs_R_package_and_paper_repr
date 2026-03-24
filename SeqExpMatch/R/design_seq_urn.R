@@ -50,7 +50,11 @@ SeqDesignUrn = R6::R6Class("SeqDesignUrn",
 			prob_T = (private$alpha + private$beta * nC) / (2 * private$alpha + private$beta * (nT + nC))
 			
 			rbinom(1, 1, prob_T)
-		},
+		}
+	),
+	private = list(
+		alpha = NULL,
+		beta = NULL,
 
 		redraw_w_according_to_design = function(){
 			# Sequential simulation of the urn process
@@ -65,9 +69,5 @@ SeqDesignUrn = R6::R6Class("SeqDesignUrn",
 			}
 			private$w[1:private$t] = new_w
 		}
-	),
-	private = list(
-		alpha = NULL,
-		beta = NULL
 	)
 )

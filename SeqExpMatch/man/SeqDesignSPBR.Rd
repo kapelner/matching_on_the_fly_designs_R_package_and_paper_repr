@@ -7,44 +7,44 @@
 An R6 Class encapsulating the data and functionality for a stratified permuted block sequential experimental design.
 }
 \section{Super classes}{
-\code{SeqExpMatch::FixedDesign} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignSPBR}
+\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignSPBR-new}{\code{SeqDesignSPBR$new()}}
 \item \href{#method-SeqDesignSPBR-assign_wt}{\code{SeqDesignSPBR$assign_wt()}}
+\item \href{#method-SeqDesignSPBR-draw_ws_according_to_design}{\code{SeqDesignSPBR$draw_ws_according_to_design()}}
 \item \href{#method-SeqDesignSPBR-clone}{\code{SeqDesignSPBR$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-add_all_subject_assignments'><code>SeqExpMatch::FixedDesign$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>SeqExpMatch::FixedDesign$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="add_subject"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-add_subject'><code>SeqExpMatch::FixedDesign$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-add_subject_response'><code>SeqExpMatch::FixedDesign$add_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="any_censoring"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-any_censoring'><code>SeqExpMatch::FixedDesign$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_even_allocation'><code>SeqExpMatch::FixedDesign$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_experiment_completed'><code>SeqExpMatch::FixedDesign$assert_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-assert_fixed_sample'><code>SeqExpMatch::FixedDesign$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-draw_ws_according_to_design'><code>SeqExpMatch::FixedDesign$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-duplicate'><code>SeqExpMatch::FixedDesign$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_X"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_X'><code>SeqExpMatch::FixedDesign$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_X_imp'><code>SeqExpMatch::FixedDesign$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_X_raw'><code>SeqExpMatch::FixedDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_dead'><code>SeqExpMatch::FixedDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_n"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_n'><code>SeqExpMatch::FixedDesign$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_prob_T'><code>SeqExpMatch::FixedDesign$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_response_type'><code>SeqExpMatch::FixedDesign$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_t"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_t'><code>SeqExpMatch::FixedDesign$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_w"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_w'><code>SeqExpMatch::FixedDesign$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="get_y"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-get_y'><code>SeqExpMatch::FixedDesign$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-is_fixed_sample_size'><code>SeqExpMatch::FixedDesign$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_assignments'><code>SeqExpMatch::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_responses'><code>SeqExpMatch::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject'><code>SeqExpMatch::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject_response"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject_response'><code>SeqExpMatch::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="any_censoring"><a href='../../SeqExpMatch/html/Design.html#method-Design-any_censoring'><code>SeqExpMatch::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_all_subjects_arrived'><code>SeqExpMatch::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_even_allocation'><code>SeqExpMatch::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_experiment_completed'><code>SeqExpMatch::Design$assert_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_fixed_sample'><code>SeqExpMatch::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-check_experiment_completed'><code>SeqExpMatch::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="duplicate"><a href='../../SeqExpMatch/html/Design.html#method-Design-duplicate'><code>SeqExpMatch::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X'><code>SeqExpMatch::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_imp"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_imp'><code>SeqExpMatch::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_raw"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_raw'><code>SeqExpMatch::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_dead"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_dead'><code>SeqExpMatch::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_n"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_n'><code>SeqExpMatch::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_prob_T"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_prob_T'><code>SeqExpMatch::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_response_type"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_response_type'><code>SeqExpMatch::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_t"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_t'><code>SeqExpMatch::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-redraw_w_according_to_design'><code>SeqExpMatch::SeqDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -73,6 +73,15 @@ An R6 Class encapsulating the data and functionality for a stratified permuted b
 \subsection{Method \code{assign_wt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignSPBR$assign_wt()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignSPBR-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignSPBR-draw_ws_according_to_design}{}}}
+\subsection{Method \code{draw_ws_according_to_design()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignSPBR$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
 }

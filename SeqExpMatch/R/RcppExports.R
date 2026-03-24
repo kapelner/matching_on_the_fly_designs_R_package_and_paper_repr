@@ -443,6 +443,10 @@ generate_permutations_pocock_simon_cpp <- function(x_levels_matrix, num_levels_t
     .Call(`_SeqExpMatch_generate_permutations_pocock_simon_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T, nsim)
 }
 
+generate_permutations_cluster_cpp <- function(n, nsim, prob_T, cluster_indices) {
+    .Call(`_SeqExpMatch_generate_permutations_cluster_cpp`, n, nsim, prob_T, cluster_indices)
+}
+
 generate_permutations_spbr_cpp <- function(strata_keys, block_size, prob_T, nsim) {
     .Call(`_SeqExpMatch_generate_permutations_spbr_cpp`, strata_keys, block_size, prob_T, nsim)
 }

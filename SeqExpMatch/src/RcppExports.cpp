@@ -1289,6 +1289,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// generate_permutations_cluster_cpp
+List generate_permutations_cluster_cpp(int n, int nsim, double prob_T, List cluster_indices);
+RcppExport SEXP _SeqExpMatch_generate_permutations_cluster_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP cluster_indicesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_T(prob_TSEXP);
+    Rcpp::traits::input_parameter< List >::type cluster_indices(cluster_indicesSEXP);
+    rcpp_result_gen = Rcpp::wrap(generate_permutations_cluster_cpp(n, nsim, prob_T, cluster_indices));
+    return rcpp_result_gen;
+END_RCPP
+}
 // generate_permutations_spbr_cpp
 List generate_permutations_spbr_cpp(const CharacterVector& strata_keys, int block_size, double prob_T, int nsim);
 RcppExport SEXP _SeqExpMatch_generate_permutations_spbr_cpp(SEXP strata_keysSEXP, SEXP block_sizeSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
@@ -2196,6 +2210,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SeqExpMatch_generate_permutations_efron_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_efron_cpp, 4},
     {"_SeqExpMatch_generate_permutations_atkinson_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_atkinson_cpp, 5},
     {"_SeqExpMatch_generate_permutations_pocock_simon_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_pocock_simon_cpp, 6},
+    {"_SeqExpMatch_generate_permutations_cluster_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_cluster_cpp, 4},
     {"_SeqExpMatch_generate_permutations_spbr_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_spbr_cpp, 4},
     {"_SeqExpMatch_get_column_types_cpp", (DL_FUNC) &_SeqExpMatch_get_column_types_cpp, 1},
     {"_SeqExpMatch_columns_have_missingness_cpp", (DL_FUNC) &_SeqExpMatch_columns_have_missingness_cpp, 1},

@@ -31,6 +31,10 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			} else {
 				rbinom(1, 1, private$prob_T)
 			}
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			generate_permutations_efron_cpp(as.integer(private$t), as.integer(r), as.numeric(private$prob_T), as.numeric(private$weighted_coin_prob))$w_mat
 		}
 	),
 	private = list(

@@ -20,10 +20,14 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 		},
 
 		assign_wt = function(){
-			n_T_total = round(private$n * private$prob_T) 
+			n_T_total = round(private$n * private$prob_T)
 			nT = sum(private$w == 1, na.rm = TRUE)
 			nC = sum(private$w == 0, na.rm = TRUE)
 			sample(c(rep(1, n_T_total - nT), rep(0, private$n - n_T_total - nC)), 1)
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			generate_permutations_ibcrd_cpp(as.integer(private$t), as.integer(r), as.numeric(private$prob_T))$w_mat
 		}
 	),
 	private = list(

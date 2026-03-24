@@ -31,7 +31,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @return A new `SeqDesignInference` object.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertClass(seq_des_obj, "FixedDesign")
+			assertClass(seq_des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
 			seq_des_obj$assert_experiment_completed()
@@ -588,7 +588,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 				} else {
 					# Redraw treatment assignments
-					thread_des_obj$.__enclos_env__$private$redraw_w_according_to_design()
+						thread_des_obj$.__enclos_env__$private$draw_one_w()
 
 					# Update inference object with new assignments
 					thread_inf_obj$.__enclos_env__$private$seq_des_obj_priv_int = thread_des_obj$.__enclos_env__$private

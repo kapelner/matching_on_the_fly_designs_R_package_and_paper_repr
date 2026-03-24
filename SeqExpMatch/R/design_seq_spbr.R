@@ -39,6 +39,13 @@ SeqDesignSPBR = R6::R6Class("SeqDesignSPBR",
 			w_t = block[1]
 			private$strata_states[[key]] = block[-1]
 			w_t
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			strata_keys = vapply(1:private$t, function(i) {
+				private$get_strata_key(private$Xraw[i, ])
+			}, character(1))
+			generate_permutations_spbr_cpp(as.character(unname(strata_keys)), as.integer(private$block_size), as.numeric(private$prob_T), as.integer(r))$w_mat
 		}
 	),
 	private = list(

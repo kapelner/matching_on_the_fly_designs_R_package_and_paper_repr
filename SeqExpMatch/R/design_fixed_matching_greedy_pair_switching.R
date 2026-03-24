@@ -50,10 +50,6 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			private$uses_covariates = TRUE
 		},
 
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
-
 		draw_ws_according_to_design = function(r = 100){
 			assertCount(r, positive = TRUE)
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
@@ -96,6 +92,10 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		objective = NULL,
 		wait = NULL,
 		diff_method = NULL,
+		
+		draw_one_w = function(){
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
 
 		extract_allocation_matrix = function(res, n, r){
 			if (is.matrix(res)) {

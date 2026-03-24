@@ -81,6 +81,20 @@ SeqDesignRandomBlockSize = R6::R6Class("SeqDesignRandomBlockSize",
 			w_t = block[1]
 			private$strata_states[[key]] = block[-1]
 			w_t
+		}
+	),
+	private = list(
+		strata_cols = NULL,
+		block_sizes = NULL,
+		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
+
+		get_strata_key = function(x_row) {
+			# Concatenate strata column values into a key string
+			vals = vapply(private$strata_cols, function(col) {
+				val = x_row[[col]]
+				if (is.na(val)) "NA" else as.character(val)
+			}, character(1))
+			paste(vals, collapse = "|")
 		},
 
 		redraw_w_according_to_design = function(){
@@ -99,20 +113,6 @@ SeqDesignRandomBlockSize = R6::R6Class("SeqDesignRandomBlockSize",
 				as.integer(private$block_sizes), 
 				as.numeric(private$prob_T)
 			)
-		}
-	),
-	private = list(
-		strata_cols = NULL,
-		block_sizes = NULL,
-		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
-
-		get_strata_key = function(x_row) {
-			# Concatenate strata column values into a key string
-			vals = vapply(private$strata_cols, function(col) {
-				val = x_row[[col]]
-				if (is.na(val)) "NA" else as.character(val)
-			}, character(1))
-			paste(vals, collapse = "|")
 		},
 
 		get_bootstrap_indices = function() {

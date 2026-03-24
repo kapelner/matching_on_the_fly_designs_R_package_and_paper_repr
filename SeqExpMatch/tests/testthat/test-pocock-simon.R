@@ -45,8 +45,7 @@ test_that("SeqDesignPocockSimon redraw works", {
 		des$add_subject_to_experiment_and_assign(data.frame(v1 = sample(c("A", "B"), 1), v2 = sample(c("X", "Y"), 1)))
 	}
 	
-	# Internal method call for testing redraw
-	des$.__enclos_env__$private$redraw_w_according_to_design()
+	des$randomize()
 	w_new <- des$get_w()
 	
 	expect_equal(length(w_new), n)

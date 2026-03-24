@@ -264,6 +264,23 @@ List generate_permutations_pocock_simon_cpp(const IntegerMatrix& x_levels_matrix
 }
 
 // [[Rcpp::export]]
+List generate_permutations_cluster_cpp(int n, int nsim, double prob_T, List cluster_indices) {
+  IntegerMatrix w_mat(n, nsim);
+  int* w_ptr = w_mat.begin();
+  int num_clusters = cluster_indices.size();
+  for (int b = 0; b < nsim; ++b) {
+    int* w_col = w_ptr + (size_t)b * n;
+    for (int c = 0; c < num_clusters; ++c) {
+      IntegerVector idxs = cluster_indices[c];
+      int w_cluster = (R::unif_rand() < prob_T) ? 1 : 0;
+      int m = idxs.size();
+      for (int i = 0; i < m; ++i) w_col[idxs[i] - 1] = w_cluster;
+    }
+  }
+  return List::create(_["w_mat"] = w_mat, _["m_mat"] = R_NilValue);
+}
+
+// [[Rcpp::export]]
 List generate_permutations_spbr_cpp(const CharacterVector& strata_keys, int block_size, double prob_T, int nsim) {
   int n = strata_keys.size();
   IntegerMatrix w_mat(n, nsim);

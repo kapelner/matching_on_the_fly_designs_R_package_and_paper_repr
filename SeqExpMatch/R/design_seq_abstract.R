@@ -7,7 +7,7 @@
 # @keywords internal
 #' @export
 SeqDesign = R6::R6Class("SeqDesign",
-	inherit = FixedDesign,
+	inherit = Design,
 	public = list(
 		initialize = function(
 				response_type = "continuous",
@@ -30,7 +30,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 			if (private$fixed_sample){
 				private$w[private$t] = w_t
 			} else {
-				private$w = c(private$w, w_t)
+				if (length(private$w) < private$t) {
+					private$w = c(private$w, w_t)
+				} else {
+					private$w[private$t] = w_t
+				}
 			}
 			private$w[private$t]
 		},
@@ -39,10 +43,21 @@ SeqDesign = R6::R6Class("SeqDesign",
 			stop("Must be implemented by subclass.")
 		},
 
-		print_current_subject_assignment = function(){
-			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
+		draw_ws_according_to_design = function(r = 100){
+			w_mat = matrix(NA_real_, nrow = private$t, ncol = r)
+			for (j in 1 : r){
+				private$redraw_w_according_to_design()
+				w_mat[, j] = private$w[1:private$t]
+			}
+			w_mat
 		},
 
+		print_current_subject_assignment = function(){
+			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
+		}
+	),
+
+	private = list(
 		redraw_w_according_to_design = function(){
 			if (private$fixed_sample) {
 				private$w = rep(NA_real_, private$n)
@@ -50,23 +65,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$w = rep(NA_real_, private$t)
 			}
 			for (t in 1 : private$t){
-				private$w[t] = self$assign_wt()
+				# This is a bit of a hack since private$t is at the end, 
+				# but most subclasses override redraw_w_according_to_design anyway.
+				private$w[t] = self$assign_wt() 
 			}
-		},
-
-		draw_ws_according_to_design = function(r = 100){
-			n = private$t
-			w_mat = matrix(NA_integer_, nrow = n, ncol = r)
-			w_saved = private$w
-			for (b in 1:r) {
-				self$redraw_w_according_to_design()
-				w_mat[, b] = as.integer(private$w[1:n])
-			}
-			private$w = w_saved
-			w_mat
 		}
-	),
-
-	private = list(
 	)
 )
