@@ -156,4 +156,7 @@ test_pbmclapply_interactive.R
 test_random_block_size.R
 test_raw.out
 2025_paper_simulation_code/simulation.tar.gz
+collate_greedy.txt
+collate_urn.txt
+test_fixed_greedy.R
 

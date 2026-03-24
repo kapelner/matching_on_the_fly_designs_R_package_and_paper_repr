@@ -20,6 +20,14 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 
 		redraw_w_according_to_design = function(){
 			private$w[1:private$t] = rbinom(private$t, 1, private$prob_T)
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			generate_permutations_bernoulli_cpp(
+				as.integer(self$get_n()),
+				as.integer(r),
+				as.numeric(private$prob_T)
+			)$w_mat
 		}
 	)
 )

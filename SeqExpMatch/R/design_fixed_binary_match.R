@@ -39,23 +39,51 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		},
 
 		redraw_w_according_to_design = function(){
-			n = self$get_n()
-			if (n %% 2 != 0){
-				stop("Binary match designs require an even number of subjects")
-			}
+			private$ensure_pairs_computed()
 			
-			if (is.null(private$X) || ncol(private$X) == 0){
+			n = self$get_n()
+			if (is.null(private$indices_pairs)){
 				# Fallback if no covariates: just BCRD
 				private$w[1:n] = sample(c(rep(1, n / 2), rep(0, n / 2)))
 				return()
 			}
 
+			private$w[1:n] = private$generate_one_binary_match_w()
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			private$ensure_pairs_computed()
+			n = self$get_n()
 			if (is.null(private$indices_pairs)){
-				# Compute pairs once
+				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
+			}
+
+			# This is very fast so parallelization is likely not needed, but good for large r
+			if (private$num_cores > 1 && r > 1000 && requireNamespace("pbmcapply", quietly = TRUE)){
+				w_list = pbmcapply::pbmclapply(1:r, function(i) {
+					private$generate_one_binary_match_w()
+				}, mc.cores = private$num_cores)
+				return(do.call(cbind, w_list))
+			} else {
+				w_mat = matrix(NA_real_, nrow = n, ncol = r)
+				for (j in 1:r){
+					w_mat[, j] = private$generate_one_binary_match_w()
+				}
+				return(w_mat)
+			}
+		}
+	),
+
+	private = list(
+		mahal_match = NULL,
+		indices_pairs = NULL,
+
+		ensure_pairs_computed = function(){
+			n = self$get_n()
+			if (is.null(private$indices_pairs) && !is.null(private$X) && ncol(private$X) > 0){
 				X = private$X[1:n, , drop = FALSE]
 				if (private$mahal_match){
 					S_X = var(X)
-					# Add small ridge if singular
 					if (abs(det(S_X)) < 1e-10){
 						S_X = S_X + diag(1e-6, ncol(X))
 					}
@@ -71,23 +99,16 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 					D = as.matrix(dist(X))^2
 				}
 				
-				# Ensure diagonal is infinity
 				diag(D) = .Machine$double.xmax
-				
-				# Use nbpMatching
-				# nbpMatching::nonbimatch expects a distance matrix object
 				dist_obj = nbpMatching::distancematrix(D)
 				match_obj = nbpMatching::nonbimatch(dist_obj)
-				
-				# Extract pairs
 				matches = match_obj$matches
-				private$indices_pairs = as.matrix(matches[, c("Group1.Row", "Group2.Row")])
-				# Ensure 1-based indexing if not already (nbpMatching uses row names/indices)
-				# Actually row names in matches are from the original D matrix
-				private$indices_pairs = matrix(as.integer(private$indices_pairs), ncol = 2)
+				private$indices_pairs = matrix(as.integer(as.matrix(matches[, c("Group1.Row", "Group2.Row")])), ncol = 2)
 			}
+		},
 
-			# Randomize within pairs
+		generate_one_binary_match_w = function(){
+			n = self$get_n()
 			new_w = rep(NA_real_, n)
 			num_pairs = nrow(private$indices_pairs)
 			for (i in 1 : num_pairs){
@@ -100,12 +121,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 					new_w[pair[2]] = 1
 				}
 			}
-			private$w[1:n] = new_w
+			new_w
 		}
-	),
-
-	private = list(
-		mahal_match = NULL,
-		indices_pairs = NULL
 	)
 )

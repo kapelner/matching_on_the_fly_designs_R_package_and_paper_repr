@@ -39,14 +39,16 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		},
 
 		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = private$run_one_greedy_search()
+		},
+
+		draw_ws_according_to_design = function(r = 100){
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
-				# Fallback if no covariates: just BCRD
-				private$w[1:n] = sample(c(rep(1, n / 2), rep(0, n / 2)))
-				return()
+				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
 
-			# Precompute inverse covariance for Mahalanobis if needed
+			# Precompute S_inv if needed
 			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
 				X = private$X[1:n, , drop = FALSE]
 				S = var(X)
@@ -56,8 +58,34 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				private$S_inv = solve(S)
 			}
 
+			if (private$num_cores > 1 && requireNamespace("pbmcapply", quietly = TRUE)){
+				w_list = pbmcapply::pbmclapply(1:r, function(i) {
+					private$run_one_greedy_search()
+				}, mc.cores = private$num_cores)
+				return(do.call(cbind, w_list))
+			} else {
+				return(super$draw_ws_according_to_design(r))
+			}
+		}
+	),
+
+	private = list(
+		objective = NULL,
+		S_inv = NULL,
+
+		run_one_greedy_search = function(){
+			n = self$get_n()
 			X = private$X[1:n, , drop = FALSE]
 			
+			# Precompute S_inv if needed (for the single-run case)
+			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+				S = var(X)
+				if (abs(det(S)) < 1e-10){
+					S = S + diag(1e-6, ncol(X))
+				}
+				private$S_inv = solve(S)
+			}
+
 			# Initial BCRD
 			w_curr = sample(c(rep(1, n / 2), rep(0, n / 2)))
 			obj_curr = private$compute_obj(X, w_curr)
@@ -66,13 +94,10 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				best_obj = obj_curr
 				best_switch = NULL
 				
-				# Find all pairs (i, j) where w_i = 1 and w_j = 0
 				t_idxs = which(w_curr == 1)
 				c_idxs = which(w_curr == 0)
 				
 				improved = FALSE
-				# This is O(n^2) per iteration. For large n, this is slow in R.
-				# But for typical clinical trials (n < 200), it's acceptable.
 				for (i in t_idxs){
 					for (j in c_idxs){
 						# Try switching
@@ -98,14 +123,8 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 					break
 				}
 			}
-			
-			private$w[1:n] = w_curr
-		}
-	),
-
-	private = list(
-		objective = NULL,
-		S_inv = NULL,
+			w_curr
+		},
 
 		compute_obj = function(X, w){
 			if (private$objective == "mahal_dist"){

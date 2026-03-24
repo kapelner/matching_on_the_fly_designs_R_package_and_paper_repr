@@ -31,7 +31,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @return A new `SeqDesignInference` object.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertClass(seq_des_obj, "Design")
+			assertClass(seq_des_obj, "FixedDesign")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
 			seq_des_obj$assert_experiment_completed()

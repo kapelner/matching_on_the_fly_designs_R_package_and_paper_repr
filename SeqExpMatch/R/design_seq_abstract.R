@@ -5,8 +5,9 @@
 # This class takes care of sequential assignments.
 #
 # @keywords internal
+#' @export
 SeqDesign = R6::R6Class("SeqDesign",
-	inherit = Design,
+	inherit = FixedDesign,
 	public = list(
 		initialize = function(
 				response_type = "continuous",
@@ -40,10 +41,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 
 		print_current_subject_assignment = function(){
 			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
-		}
-	),
+		},
 
-	private = list(
 		redraw_w_according_to_design = function(){
 			if (private$fixed_sample) {
 				private$w = rep(NA_real_, private$n)
@@ -51,10 +50,11 @@ SeqDesign = R6::R6Class("SeqDesign",
 				private$w = rep(NA_real_, private$t)
 			}
 			for (t in 1 : private$t){
-				# This is a bit of a hack since private$t is at the end, 
-				# but most subclasses override redraw_w_according_to_design anyway.
-				private$w[t] = private$assign_wt() 
+				private$w[t] = self$assign_wt() 
 			}
 		}
+	),
+
+	private = list(
 	)
 )

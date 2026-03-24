@@ -11,8 +11,10 @@ test_that("FixedDesignBinaryMatch works", {
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
 	
-	# Check it's actually matching (simple heuristic: distances within pairs should be small)
-	# This is hard to test deterministically, but we can check it runs.
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W) == n/2))
 })
 
 test_that("FixedDesignRerandomization works", {
@@ -28,6 +30,11 @@ test_that("FixedDesignRerandomization works", {
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
+
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W) == n/2))
 })
 
 test_that("FixedDesignGreedy works", {
@@ -42,4 +49,49 @@ test_that("FixedDesignGreedy works", {
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
+
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W) == n/2))
+})
+
+test_that("FixedDesigniBCRD works", {
+	n = 10
+	des = FixedDesigniBCRD$new(n = n, verbose = FALSE)
+	for (i in 1:n) {
+		des$add_subject(data.frame(x1 = i))
+	}
+	
+	des$randomize()
+	w = des$get_w()
+	expect_length(w, n)
+	expect_equal(sum(w), n/2)
+
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W) == n/2))
+})
+
+test_that("FixedDesignBlocking works", {
+	n = 12
+	X = data.frame(strata = rep(c("A", "B"), each = 6), x1 = rnorm(n))
+	des = FixedDesignBlocking$new(strata_cols = "strata", n = n, verbose = FALSE)
+	for (i in 1:n) {
+		des$add_subject(X[i, , drop = FALSE])
+	}
+	
+	des$randomize()
+	w = des$get_w()
+	expect_length(w, n)
+	# Check balance within strata
+	expect_equal(sum(w[1:6]), 3)
+	expect_equal(sum(w[7:12]), 3)
+
+	# Test draw_ws
+	W = des$draw_ws_according_to_design(r = 5)
+	expect_equal(dim(W), c(n, 5))
+	expect_true(all(colSums(W[1:6, ]) == 3))
+	expect_true(all(colSums(W[7:12, ]) == 3))
 })

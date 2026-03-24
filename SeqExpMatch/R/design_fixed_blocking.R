@@ -40,6 +40,26 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 				new_w[idxs] = sample(c(rep(1, n_T), rep(0, m - n_T)))
 			}
 			private$w[1:private$t] = new_w
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			strata_keys = vapply(1:private$t, function(i) {
+				vals = vapply(private$strata_cols, function(col) {
+					val = private$Xraw[i, ][[col]]
+					if (is.na(val)) "NA" else as.character(val)
+				}, character(1))
+				paste(vals, collapse = "|")
+			}, character(1))
+			
+			unique_keys = unique(strata_keys)
+			strata_indices = lapply(unique_keys, function(key) which(strata_keys == key))
+			
+			generate_permutations_blocking_cpp(
+				as.integer(self$get_n()),
+				as.integer(r),
+				as.numeric(private$prob_T),
+				strata_indices
+			)$w_mat
 		}
 	),
 	private = list(

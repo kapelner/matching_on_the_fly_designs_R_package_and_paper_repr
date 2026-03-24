@@ -151,7 +151,7 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 						#we're early or the reservoir is empty, so randomize
 						#cat("    assign_wt", class(self)[1], " t", private$t, "\n")
 						private$m[private$t] = 0
-						private$assign_wt_Bernoulli()
+						self$assign_wt_Bernoulli()
 					} else if (is.null(private$X) | (sum(!is.na(private$y)) < 2 * (ncol(private$X) + 2))){
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points

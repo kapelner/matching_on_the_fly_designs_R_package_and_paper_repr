@@ -39,15 +39,54 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		},
 
 		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = private$generate_one_rerandomized_w()
+		},
+
+		draw_ws_according_to_design = function(r = 100){
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
-				# Fallback if no covariates: just BCRD
 				n_T = round(n * private$prob_T)
-				private$w[1:n] = sample(c(rep(1, n_T), rep(0, n - n_T)))
-				return()
+				return(replicate(r, sample(c(rep(1, n_T), rep(0, n - n_T)))))
 			}
 
-			# Precompute inverse covariance for Mahalanobis if needed
+			# Precompute S_inv if needed
+			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+				X = private$X[1:n, , drop = FALSE]
+				S = var(X)
+				if (abs(det(S)) < 1e-10){
+					S = S + diag(1e-6, ncol(X))
+				}
+				private$S_inv = solve(S)
+			}
+
+			if (private$num_cores > 1 && requireNamespace("pbmcapply", quietly = TRUE)){
+				w_list = pbmcapply::pbmclapply(1:r, function(i) {
+					private$generate_one_rerandomized_w()
+				}, mc.cores = private$num_cores)
+				return(do.call(cbind, w_list))
+			} else {
+				w_mat = matrix(NA_real_, nrow = n, ncol = r)
+				for (j in 1:r){
+					w_mat[, j] = private$generate_one_rerandomized_w()
+				}
+				return(w_mat)
+			}
+		}
+	),
+
+	private = list(
+		obj_val_cutoff_to_include = NULL,
+		objective = NULL,
+		S_inv = NULL,
+
+		generate_one_rerandomized_w = function(){
+			n = self$get_n()
+			if (is.null(private$X) || ncol(private$X) == 0){
+				n_T = round(n * private$prob_T)
+				return(sample(c(rep(1, n_T), rep(0, n - n_T))))
+			}
+
+			# Ensure S_inv is available
 			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
 				X = private$X[1:n, , drop = FALSE]
 				S = var(X)
@@ -61,40 +100,29 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 			n_T = round(n * private$prob_T)
 			
 			attempts = 0
-			max_attempts = 10000 # Safety break
+			max_attempts = 10000 
 			
 			repeat {
 				attempts = attempts + 1
-				# Generate candidate w
 				if (private$prob_T == 0.5){
-					# BCRD is better for rerandomization usually
 					w_cand = sample(c(rep(1, n_T), rep(0, n - n_T)))
 				} else {
 					w_cand = rbinom(n, 1, private$prob_T)
 				}
 				
-				# Compute objective
 				obj_val = private$compute_obj(X, w_cand)
 				
 				if (is.null(private$obj_val_cutoff_to_include) || obj_val <= private$obj_val_cutoff_to_include || attempts >= max_attempts){
-					private$w[1:n] = w_cand
 					if (private$verbose && attempts >= max_attempts){
 						warning("Rerandomization reached max attempts without finding a design below cutoff.")
 					}
-					break
+					return(w_cand)
 				}
 			}
-		}
-	),
-
-	private = list(
-		obj_val_cutoff_to_include = NULL,
-		objective = NULL,
-		S_inv = NULL,
+		},
 
 		compute_obj = function(X, w){
 			if (private$objective == "mahal_dist"){
-				# Mahal dist = (x_T_bar - x_C_bar)' S^-1 (x_T_bar - x_C_bar)
 				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
 				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
 				diff = x_T_bar - x_C_bar

@@ -26,7 +26,7 @@ Adam Kapelner and Abba Krieger A Matching Procedure for Sequential
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/kapelner/SeqExpMatch}
+  \item \url{https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr}
 }
 
 }
