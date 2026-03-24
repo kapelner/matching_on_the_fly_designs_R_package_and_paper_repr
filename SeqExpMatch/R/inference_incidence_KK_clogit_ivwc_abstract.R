@@ -112,14 +112,14 @@ SeqDesignInferenceAbstractKKClogitIVWC = R6::R6Class("SeqDesignInferenceAbstract
 		},
 
 		clogit_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_matched = which(match_indic > 0)
+			i_matched = which(m_vec > 0)
 			y_m       = private$y[i_matched]
 			w_m       = private$w[i_matched]
-			strata_m  = match_indic[i_matched]
+			strata_m  = m_vec[i_matched]
 			X_m       = if (private$include_covariates()) as.data.frame(private$X[i_matched, , drop = FALSE]) else data.frame()
 
 			mod = clogit_helper(y_m, X_m, w_m, strata_m)

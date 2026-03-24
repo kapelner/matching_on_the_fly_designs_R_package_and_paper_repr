@@ -7,6 +7,9 @@ using namespace Rcpp;
 using namespace Eigen;
 using namespace LBFGSpp;
 
+// Forward declaration from fast_logistic_regression.cpp
+ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8);
+
 namespace {
 
 double clamp_exp_arg_hnb(double eta) {
@@ -97,18 +100,6 @@ public:
 
 }
 
-//' Fast Hurdle Negative Binomial Count-Component Regression with variance
-//'
-//' Fits the hurdle indicator model on all subjects via logistic regression and the
-//' zero-truncated negative binomial count component on positive counts via L-BFGS.
-//'
-//' @param Xmm Design matrix.
-//' @param y Count response vector.
-//' @param j Index of the coefficient for which to compute the variance.
-//' @param maxit Maximum optimization iterations for the truncated NB fit.
-//' @param tol Convergence tolerance for the L-BFGS optimizer.
-//' @return A list with count-component coefficients, treatment variance, dispersion parameter,
-//'   and hurdle-model coefficients.
 // [[Rcpp::export]]
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 									 const Eigen::VectorXd& y,
@@ -119,20 +110,20 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	const int p = Xmm.cols();
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
-	NumericVector hurdle_b(p, NA_REAL);
+	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p, NA_REAL);
 	double hurdle_ssq_b_j = NA_REAL;
 	double hurdle_ssq_b_2 = NA_REAL;
 	bool hurdle_converged = false;
+    
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-		List hurdle_fit = fast_logistic_regression_with_var_cpp(Xmm, y_pos_ind, j);
-		hurdle_b = hurdle_fit["b"];
-		hurdle_ssq_b_j = as<double>(hurdle_fit["ssq_b_j"]);
-		hurdle_ssq_b_2 = as<double>(hurdle_fit["ssq_b_2"]);
-		hurdle_converged = true;
+        ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind);
+		hurdle_b = hurdle_res.b;
+		hurdle_ssq_b_j = compute_diagonal_inverse_entry(hurdle_res.XtWX, j);
+		if (p >= 2) hurdle_ssq_b_2 = compute_diagonal_inverse_entry(hurdle_res.XtWX, 2);
+		hurdle_converged = hurdle_res.converged;
 	}
 
 	std::vector<int> pos_rows;
-	pos_rows.reserve(n);
 	for (int i = 0; i < n; ++i) {
 		if (y[i] > 0.0) pos_rows.push_back(i);
 	}
@@ -165,16 +156,15 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	TruncatedNegBinCount fun(X_pos, y_pos);
 	LBFGSParam<double> lbfgs_params;
 	lbfgs_params.epsilon = tol;
-	lbfgs_params.epsilon_rel = tol;
 	lbfgs_params.max_iterations = maxit;
 
 	LBFGSSolver<double> solver(lbfgs_params);
 	double neg_ll = NA_REAL;
-	int status = 0;
+	bool converged = false;
 	try {
-		solver.minimize(fun, params, neg_ll);
+		int niter = solver.minimize(fun, params, neg_ll);
+        converged = (niter < maxit);
 	} catch (const std::exception& e) {
-		status = -1;
 		Rcpp::warning(e.what());
 	}
 
@@ -184,8 +174,8 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	double ssq_b_j = NA_REAL;
 	double ssq_b_2 = NA_REAL;
 	if (H.allFinite()) {
-		ssq_b_j = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(H, j);
-		if (p >= 2) ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(H, 2);
+		ssq_b_j = compute_diagonal_inverse_entry(H, j);
+		if (p >= 2) ssq_b_2 = compute_diagonal_inverse_entry(H, 2);
 	}
 
 	return List::create(
@@ -193,7 +183,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		Named("ssq_b_j") = ssq_b_j,
 		Named("ssq_b_2") = ssq_b_2,
 		Named("theta_hat") = theta_hat,
-		Named("converged") = (status == 0),
+		Named("converged") = converged,
 		Named("hurdle_b") = hurdle_b,
 		Named("hurdle_ssq_b_j") = hurdle_ssq_b_j,
 		Named("hurdle_ssq_b_2") = hurdle_ssq_b_2,

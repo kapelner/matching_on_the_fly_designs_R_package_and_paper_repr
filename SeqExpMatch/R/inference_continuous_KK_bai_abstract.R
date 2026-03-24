@@ -41,7 +41,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	#
 	# @examples
 	# \dontrun{
-	# seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+	# seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -94,7 +94,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	#
 	# @examples
 	# \dontrun{
-	# seq_des = SeqDesignCRD$new(n = 6)
+	# seq_des = SeqDesignBernoulli$new(n = 6)
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -130,7 +130,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	#
 	# @examples
 	# \dontrun{
-	# seq_des = SeqDesignCRD$new(n = 6)
+	# seq_des = SeqDesignBernoulli$new(n = 6)
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -160,6 +160,34 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 
 	private = list(
 	convex_flag = NULL,
+
+	compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+		if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+		
+		# Optimization: Ensure matching stats are calculated once
+		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+		KKstats = private$cached_values$KKstats
+		m = KKstats$m
+		
+		# Ensure pairing of pairs is pre-calculated
+		halves = private$compute_halves()
+		halves_idx = if (nrow(halves) > 0) suppressWarnings(matrix(as.integer(as.matrix(halves[, c(1, 3)])), ncol = 2)) else matrix(0L, 0, 2)
+		
+		w_mat = permutations$w_mat
+		m_mat = permutations$m_mat
+		
+		# The Bai statistic is the treatment estimate itself (beta_hat_T)
+		res = compute_bai_distr_parallel_cpp(
+			as.numeric(y),
+			w_mat,
+			m_mat,
+			as.numeric(delta),
+			halves_idx,
+			as.logical(private$convex_flag),
+			private$num_cores
+		)
+		return(res)
+	},
 
 	duplicate = function(){
 		i = super$duplicate()
@@ -247,12 +275,14 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 	},
 
 	compute_halves = function(){
+		if (!is.null(private$cached_values$halves)) return(private$cached_values$halves)
+		
 		m = private$cached_values$KKstats$m
 		if (m < 2) return(data.frame()) # Cannot make pairs of pairs if there's < 2 pairs
 
 		X = private$get_X()
 
-		pair_avg = compute_pair_averages_cpp(X, private$seq_des_obj_priv_int$match_indic, m)
+		pair_avg = compute_pair_averages_cpp(X, private$seq_des_obj_priv_int$m, m)
 
 		weights = private$seq_des_obj_priv_int$covariate_weights
 		if (is.null(weights) || length(weights) != ncol(pair_avg)){
@@ -270,6 +300,7 @@ SeqDesignInferenceBaiAdjustedT = R6::R6Class("SeqDesignInferenceBaiAdjustedT",
 		ghost_row = which(halves[, 3] == "ghost")
 		if (length(ghost_row) > 0) halves = halves[-ghost_row, ]
 		}
+		private$cached_values$halves = halves
 		halves
 	}
 	)

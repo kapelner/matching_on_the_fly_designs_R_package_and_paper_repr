@@ -5,7 +5,7 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X,
-										const IntegerVector& match_indic,
+										const IntegerVector& m_vec,
 										const int m) {
 	int n = X.nrow();
 	int p = X.ncol();
@@ -14,7 +14,7 @@ NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X,
 	IntegerVector counts(m);
 
 	for (int i = 0; i < n; ++i) {
-	int id = match_indic[i];
+	int id = m_vec[i];
 	if (id > 0 && id <= m) {
 		int idx = id - 1;
 		counts[idx] += 1;

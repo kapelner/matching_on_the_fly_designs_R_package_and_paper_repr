@@ -2,7 +2,7 @@
 #
 # @description
 # Fits a single joint Cox model over all KK design data for survival responses.
-# Reservoir subjects (match_indic == 0) share stratum 0 (common baseline hazard);
+# Reservoir subjects (m_vec == 0) share stratum 0 (common baseline hazard);
 # matched subjects belong to their own pair stratum (strata 1..m), which conditions
 # away each pair's baseline hazard identically to stratified Cox.
 #
@@ -74,9 +74,9 @@ SeqDesignInferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("SeqDesignI
 				private$compute_basic_match_data()
 			}
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
 			# Reservoir subjects get stratum 0 (shared baseline);
 			# matched subjects get their pair ID as stratum.
@@ -84,7 +84,7 @@ SeqDesignInferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("SeqDesignI
 				y       = private$y,
 				dead    = private$dead,
 				w       = private$w,
-				stratum = match_indic
+				stratum = m_vec
 			)
 
 			formula_str = "survival::Surv(y, dead) ~ w + strata(stratum)"

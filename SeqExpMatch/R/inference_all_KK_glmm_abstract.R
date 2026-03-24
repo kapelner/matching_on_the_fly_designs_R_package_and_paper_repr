@@ -51,6 +51,24 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 			} else {
 				stop("TO-DO")
 			}
+		},
+
+		# @description
+		# Overridden to provide a warning about slowness.
+		# @param nsim_exact_test		Number of randomization iterations.
+		# @param ... 					Additional arguments passed to super.
+		compute_confidence_interval_rand = function(nsim_exact_test = 501, ...){
+			warning("Randomization-based confidence intervals for GLMM models are extremely slow because they require many hundreds or thousands of model fits. Consider using asymptotic or bootstrap intervals instead.")
+			super$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, ...)
+		},
+
+		# @description
+		# Overridden to provide a warning about slowness.
+		# @param nsim_exact_test		Number of randomization iterations.
+		# @param ... 					Additional arguments passed to super.
+		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, ...){
+			warning("Randomization-based p-values for GLMM models are slow because they require many model fits.")
+			super$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, ...)
 		}
 	),
 
@@ -59,7 +77,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the fixed-effect coefficient for "w" directly from the fit.
 		compute_treatment_estimate_during_randomization_inference = function(){
-			mod = private$fit_glmm()
+			mod = private$fit_glmm(se = FALSE)
 			if (is.null(mod)) return(NA_real_)
 			
 			# glmmTMB fixed effects for the conditional model
@@ -87,7 +105,7 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			mod = private$fit_glmm()
+			mod = private$fit_glmm(se = TRUE)
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
@@ -107,14 +125,14 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 				stop("GLMM: non-finite standard error (possible separation or singular random-effect fit).")
 		},
 
-		fit_glmm = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+		fit_glmm = function(se = TRUE){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			# Build group ID: matched pairs share their match_indic value;
-			# reservoir subjects (match_indic == 0) each get a unique singleton ID.
-			group_id = match_indic
+			# Build group ID: matched pairs share their m_vec value;
+			# reservoir subjects (m_vec == 0) each get a unique singleton ID.
+			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
@@ -133,7 +151,8 @@ SeqDesignInferenceAbstractKKGLMM = R6::R6Class("SeqDesignInferenceAbstractKKGLMM
 						glmm_formula,
 						family  = private$glmm_family(),
 						data    = dat,
-						control = glmm_control
+						control = glmm_control,
+						se      = se
 					)
 				)))
 				mod

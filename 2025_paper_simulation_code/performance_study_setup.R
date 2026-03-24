@@ -14,7 +14,7 @@ nsim_exact_test = 501
 
 
 response_types = c("continuous", "incidence", "proportion", "count", "survival")
-designs = c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")
+designs = c("Bernoulli", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")
 test_types = c("MLE-or-KM-based", "randomization-exact")
 # covariate_distributions = c("unif")
 

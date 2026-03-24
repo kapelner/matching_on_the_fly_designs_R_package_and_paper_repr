@@ -74,15 +74,18 @@ List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y,
   if (w.size() != n) stop("dimension mismatch in exact_jonckheere_terpstra_pval_cpp");
   if (n == 0) stop("empty input in exact_jonckheere_terpstra_pval_cpp");
 
+  const int* y_ptr = y.begin();
+  const int* w_ptr = w.begin();
+
   int n_treat = 0;
   int n_control = 0;
   for (int i = 0; i < n; ++i) {
-    if (IntegerVector::is_na(y[i]) || IntegerVector::is_na(w[i])) {
+    if (IntegerVector::is_na(y_ptr[i]) || IntegerVector::is_na(w_ptr[i])) {
       stop("missing values are not allowed in exact_jonckheere_terpstra_pval_cpp");
     }
-    if (w[i] == 1) {
+    if (w_ptr[i] == 1) {
       ++n_treat;
-    } else if (w[i] == 0) {
+    } else if (w_ptr[i] == 0) {
       ++n_control;
     } else {
       stop("treatment assignments must be 0/1 in exact_jonckheere_terpstra_pval_cpp");
@@ -92,7 +95,8 @@ List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y,
     stop("both treatment arms must be present in exact_jonckheere_terpstra_pval_cpp");
   }
 
-  std::vector<int> levels = as<std::vector<int> >(clone(y));
+  std::vector<int> levels(n);
+  for(int i=0; i<n; ++i) levels[i] = y_ptr[i];
   std::sort(levels.begin(), levels.end());
   levels.erase(std::unique(levels.begin(), levels.end()), levels.end());
   const int K = static_cast<int>(levels.size());
@@ -101,10 +105,10 @@ List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y,
   std::vector<int> treat_counts_obs(static_cast<std::size_t>(K), 0);
 
   for (int i = 0; i < n; ++i) {
-    const int yi = y[i];
+    const int yi = y_ptr[i];
     const int k = static_cast<int>(std::lower_bound(levels.begin(), levels.end(), yi) - levels.begin());
     ++total_counts[static_cast<std::size_t>(k)];
-    if (w[i] == 1) ++treat_counts_obs[static_cast<std::size_t>(k)];
+    if (w_ptr[i] == 1) ++treat_counts_obs[static_cast<std::size_t>(k)];
   }
 
   const int stat2_obs = compute_jt_statistic2_from_counts(treat_counts_obs, total_counts);
@@ -115,9 +119,7 @@ List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y,
 
   double p_lower = 0.0;
   double p_upper = 0.0;
-  for (std::map<int, double>::const_iterator it = stat_prob.begin(); it != stat_prob.end(); ++it) {
-    const int stat2 = it->first;
-    const double prob = it->second;
+  for (auto const& [stat2, prob] : stat_prob) {
     if (stat2 <= stat2_obs) p_lower += prob;
     if (stat2 >= stat2_obs) p_upper += prob;
   }

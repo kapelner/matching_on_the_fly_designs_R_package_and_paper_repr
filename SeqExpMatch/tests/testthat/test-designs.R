@@ -1,6 +1,6 @@
-test_that("SeqDesignCRD works", {
+test_that("SeqDesignBernoulli works", {
 	# Fixed sample
-	des <- SeqDesignCRD$new(n = 10, verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = 10, verbose = FALSE)
 	expect_true(des$is_fixed_sample_size())
 	expect_equal(des$get_n(), 10)
 
@@ -13,7 +13,7 @@ test_that("SeqDesignCRD works", {
 	expect_equal(des$get_y()[1], 0.5)
 
 	# Not fixed sample
-	des <- SeqDesignCRD$new(n = NULL, verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = NULL, verbose = FALSE)
 	expect_false(des$is_fixed_sample_size())
 	des$add_subject_to_experiment_and_assign(x_new)
 	expect_equal(des$get_t(), 1)
@@ -66,7 +66,7 @@ test_that("SeqDesigniBCRD works", {
 test_that("Response types work", {
 	types <- c("continuous", "incidence", "proportion", "count", "survival")
 	for (rt in types) {
-	des <- SeqDesignCRD$new(n = 10, response_type = rt, verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = 10, response_type = rt, verbose = FALSE)
 	expect_equal(des$get_response_type(), rt)
 
 	x_new <- data.frame(x1 = rnorm(1))
@@ -86,5 +86,28 @@ test_that("Response types work", {
 		des$add_subject_response(1, val)
 	}
 	expect_equal(des$get_y()[1], val)
+	}
+})
+
+test_that("m is only populated for blocking and KK designs", {
+	bernoulli_des <- SeqDesignBernoulli$new(n = 4, verbose = FALSE)
+	bernoulli_des$add_subject_to_experiment_and_assign(data.frame(x1 = 0))
+	expect_null(bernoulli_des$get_m())
+
+	blocking_des <- FixedDesignBlocking$new(strata_cols = "stratum", n = 4, verbose = FALSE)
+	blocking_des$add_subject(data.frame(stratum = "A"))
+	blocking_des$add_subject(data.frame(stratum = "A"))
+	blocking_des$add_subject(data.frame(stratum = "B"))
+	blocking_des$add_subject(data.frame(stratum = "B"))
+	expect_equal(blocking_des$get_m(), c(1L, 1L, 2L, 2L))
+
+	for (des in list(
+		SeqDesignKK14$new(n = 6, verbose = FALSE),
+		SeqDesignKK21$new(n = 6, verbose = FALSE),
+		SeqDesignKK21stepwise$new(n = 6, verbose = FALSE)
+	)) {
+		expect_true(is.null(des$get_m()) || is.integer(des$get_m()) || is.numeric(des$get_m()))
+		des$add_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+		expect_true(is.null(des$get_m()) || is.integer(des$get_m()) || is.numeric(des$get_m()))
 	}
 })

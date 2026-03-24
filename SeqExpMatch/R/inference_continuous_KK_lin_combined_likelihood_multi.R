@@ -105,7 +105,7 @@ SeqDesignInferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("SeqDesignInf
 				n = private$n,
 				y = private$y,
 				w = private$w,
-				match_indic = private$match_indic
+				m_vec = private$m
 			)
 		},
 

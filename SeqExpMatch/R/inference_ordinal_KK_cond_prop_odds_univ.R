@@ -107,8 +107,8 @@ SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-			match_indic = private$match_indic
-			m = max(match_indic, na.rm = TRUE)
+			m_vec = private$m
+			m = max(m_vec, na.rm = TRUE)
 			if (m == 0){
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
@@ -128,10 +128,10 @@ SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 			n_thresholds = K - 1L
 			
 			# Filter to matched only
-			matched_idx = which(match_indic > 0)
+			matched_idx = which(m_vec > 0)
 			y_m = y_ord[matched_idx]
 			w_m = private$w[matched_idx]
-			strata_m = match_indic[matched_idx]
+			strata_m = m_vec[matched_idx]
 			n_m = length(matched_idx)
 
 			y_stack = integer(n_m * n_thresholds)

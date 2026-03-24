@@ -23,7 +23,7 @@ robust standard error with residual degrees of freedom \eqn{n - p}.
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 20, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 20, response_type = "continuous")
 for (i in 1 : 20){
   seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
@@ -99,7 +99,7 @@ the user. Default is \code{FALSE}.}
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 20, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 20, response_type = "continuous")
 for (i in 1 : 20){
   seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }

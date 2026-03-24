@@ -1,12 +1,12 @@
-#include <Rcpp.h>
+#include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <optimization/LBFGS.h>
 #include <Rmath.h>
 
-// [[Rcpp::depends(RcppEigen)]]
-
 using namespace Rcpp;
 using namespace LBFGSpp;
+
+namespace {
 
 class NBLogLik {
 private:
@@ -34,24 +34,14 @@ public:
         for (int i = 0; i < m_n; ++i) {
             double mu_i = mu[i];
             double yi = m_y[i];
-            
-            // Negative log-likelihood
             neg_ll -= R::dnbinom_mu(yi, theta, mu_i, true);
-
-            // Gradient components
             double coef = yi - mu_i * (yi + theta) / (theta + mu_i);
             score_beta += coef * m_X.row(i).transpose();
-
-            double dlogf_dtheta =
-                R::digamma(yi + theta) - R::digamma(theta) +
-                std::log(theta) - std::log(theta + mu_i) +
-                1.0 - (yi + theta) / (theta + mu_i);
+            double dlogf_dtheta = R::digamma(yi + theta) - R::digamma(theta) + std::log(theta) - std::log(theta + mu_i) + 1.0 - (yi + theta) / (theta + mu_i);
             score_log_theta += theta * dlogf_dtheta;
         }
-
         grad.head(m_p) = -score_beta;
         grad[m_p] = -score_log_theta;
-
         return neg_ll;
     }
 
@@ -60,10 +50,8 @@ public:
         Eigen::MatrixXd H(total_p, total_p);
         H.setZero();
         double h = 1e-6;
-
         Eigen::VectorXd grad_at_params(total_p);
         operator()(params, grad_at_params);
-
         for (int i = 0; i < total_p; ++i) {
             Eigen::VectorXd p_plus = params;
             p_plus[i] += h;
@@ -76,15 +64,11 @@ public:
     }
 };
 
-// [[Rcpp::export]]
-List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
-                                Eigen::VectorXi y,
-                                int maxit = 1000,
-                                double eps_f = 1e-8,
-                                double eps_g = 1e-5) {
+ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, int maxit = 1000, double eps_g = 1e-5) {
     int p = X.cols();
+    ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
-    params[p] = 0.0; // log(theta) = 0 -> theta = 1
+    params[p] = 0.0; 
 
     NBLogLik fun(X, y);
     LBFGSParam<double> lbfgs_params;
@@ -95,17 +79,29 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
     double neg_ll;
     int niter = solver.minimize(fun, params, neg_ll);
 
-    Eigen::VectorXd beta = params.head(p);
-    double theta = std::exp(params[p]);
-    Eigen::MatrixXd H = fun.hessian(params);
+    res.b = params.head(p);
+    res.dispersion = std::exp(params[p]); // theta
+    res.XtWX = fun.hessian(params); // Hessian
+    res.converged = (niter < maxit);
+    res.sigma2_hat = -neg_ll; // using sigma2_hat to store logLik temporarily
+    return res;
+}
 
+} // namespace
+
+// [[Rcpp::export]]
+List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
+                                Eigen::VectorXi y,
+                                int maxit = 1000,
+                                double eps_f = 1e-8,
+                                double eps_g = 1e-5) {
+    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g);
     return List::create(
-        Named("b") = beta,
-        Named("theta_hat") = theta,
-        Named("logLik") = -neg_ll,
-        Named("converged") = (niter < maxit),
-        Named("hess_fisher_info_matrix") = H,
-        Named("niter") = niter
+        Named("b") = res.b,
+        Named("theta_hat") = res.dispersion,
+        Named("logLik") = res.sigma2_hat,
+        Named("converged") = res.converged,
+        Named("hess_fisher_info_matrix") = res.XtWX
     );
 }
 
@@ -115,11 +111,11 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         int maxit = 1000,
                         double eps_f = 1e-8,
                         double eps_g = 1e-5) {
-    List res = fast_neg_bin_with_var_cpp(X, y, maxit, eps_f, eps_g);
+    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g);
     return List::create(
-        Named("b") = res["b"],
-        Named("theta_hat") = res["theta_hat"],
-        Named("logLik") = res["logLik"],
-        Named("converged") = res["converged"]
+        Named("b") = res.b,
+        Named("theta_hat") = res.dispersion,
+        Named("logLik") = res.sigma2_hat,
+        Named("converged") = res.converged
     );
 }

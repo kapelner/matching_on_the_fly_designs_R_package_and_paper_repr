@@ -14,7 +14,7 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+#' seq_des <- SeqDesignBernoulli$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
@@ -115,48 +115,48 @@ SeqDesignInferenceOrdinalRidit = R6::R6Class("SeqDesignInferenceOrdinalRidit",
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
-			# Standard Ridit doesn't easily support delta != 0 or transformations 
-			# in the fast C++ path yet.
-			if (delta != 0 || transform_responses != "none") {
-				return(NULL)
-			}
-
-			nsim = length(permutations)
-			w_mat = matrix(0L, nrow = length(y), ncol = nsim)
-			for (i in seq_len(nsim)) {
-				w_mat[, i] = permutations[[i]]$w
-			}
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			if (delta != 0 || transform_responses != "none") return(NULL)
 
 			compute_ridit_distr_parallel_cpp(
 				as.integer(y),
-				w_mat,
+				permutations$w_mat,
 				private$reference,
 				private$num_cores
 			)
 		},
 
-		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w){
+		compute_fast_bootstrap_distr = function(B, ...){
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			# KK designs use design-aware resampling not available via these args; fall back to R loop.
+			if (private$is_KK) return(NULL)
+
+			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			args = list(...)
+			max_resample_attempts = args[[1]]
+			n = args[[2]]
+			y = args[[3]]
+			dead = args[[4]]
+			w = args[[5]]
+
 			# Generate bootstrap indices
 			indices_mat = matrix(NA_integer_, nrow = n, ncol = B)
 			for (b in 1:B) {
 				attempt = 1
 				repeat {
-					i_b = sample_int_replace_cpp(n, n)
+					i_b = sample(n, n, replace = TRUE)
 					w_b = w[i_b]
 					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) {
-						indices_mat[, b] = i_b
+						indices_mat[, b] = i_b - 1L
 						break
 					}
 					attempt = attempt + 1
-					if (attempt > max_resample_attempts) {
-						indices_mat[, b] = -1L # Mark as failed
-						break
-					}
+					if (attempt > max_resample_attempts) break
 				}
 			}
 
 			compute_ridit_bootstrap_parallel_cpp(
-				as.integer(y),
+				as.numeric(y),
 				as.integer(w),
 				indices_mat,
 				private$reference,

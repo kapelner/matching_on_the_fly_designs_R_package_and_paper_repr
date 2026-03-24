@@ -12,7 +12,7 @@ after the sequential design is completed.
 \examples{
 \dontrun{
 # Setup design and add responses
-seq_des = SeqDesignCRD$
+seq_des = SeqDesignBernoulli$
   new(n = 6, response_type = "survival")
 X = data.table::data.table(MASS::biopsy[1:6, 2:10])
 for (i in 1:6) seq_des$

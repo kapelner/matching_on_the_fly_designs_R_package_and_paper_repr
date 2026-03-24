@@ -59,7 +59,7 @@ SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the coefficient for "w" directly from the fit.
 		compute_treatment_estimate_during_randomization_inference = function(){
-			mod = private$fit_gee()
+			mod = private$fit_gee(std_err = FALSE)
 			if (is.null(mod)) return(NA_real_)
 			
 			beta = coef(mod)
@@ -86,18 +86,24 @@ SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			mod = private$fit_gee()
+			mod = private$fit_gee(std_err = TRUE)
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
-			private$cached_values$beta_hat_T   = as.numeric(coef(mod)["w"])
-			se = as.numeric(summary(mod)$coefficients["w", "Std.err"])
-			# Store NA when the SE is non-finite; SE-dependent methods detect this via assert_finite_se()
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z         = TRUE
+			
+			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+			if (is.null(coef_table) || !("w" %in% rownames(coef_table))){
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+			} else {
+				private$cached_values$beta_hat_T   = as.numeric(coef_table["w", "Estimate"])
+				se = as.numeric(coef_table["w", "Std.err"])
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			}
+			private$cached_values$is_z = TRUE
 		},
 
 		assert_finite_se = function(){
@@ -105,14 +111,14 @@ SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 				stop("GEE: non-finite standard error (possible separation or insufficient data).")
 		},
 
-		fit_gee = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+		fit_gee = function(std_err = TRUE){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			# Build group ID: matched pairs share their match_indic value;
-			# reservoir subjects (match_indic == 0) each get a unique singleton ID.
-			group_id = match_indic
+			# Build group ID: matched pairs share their m_vec value;
+			# reservoir subjects (m_vec == 0) each get a unique singleton ID.
+			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
@@ -130,7 +136,8 @@ SeqDesignInferenceAbstractKKGEE = R6::R6Class("SeqDesignInferenceAbstractKKGEE",
 						family = private$gee_family(),
 						data   = dat,
 						id     = id_sorted,
-						corstr = "exchangeable"
+						corstr = "exchangeable",
+						std.err = std_err
 					)
 				)))
 				mod

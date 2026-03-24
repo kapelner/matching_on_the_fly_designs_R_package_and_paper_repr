@@ -1,9 +1,9 @@
 # Inference for A Sequential Design
 #
 # @description
-# An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a sequential design.
-# This class takes a \code{SeqDesign} object as an input where this object
-# contains data for a fully completed sequential experiment (i.e. all treatment
+# An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a completed design.
+# This class takes a completed \code{Design} object as an input where this object
+# contains data for a fully completed experiment (i.e. all treatment
 # assignments were allocated and all responses were collected). Then the user
 # specifies the type of estimation (mean_difference-or-medians or default_regression) and the type
 # of sampling assumption (i.e. the superpopulation assumption leading to MLE-or-KM-based inference or
@@ -18,10 +18,10 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	public = list(
 		# Begin Inference
 		# @description
-		# Initialize a sequential experimental design estimation and test object after the sequential design is completed.
+		# Initialize an estimation and test object after the design is completed.
 		#
 		#
-		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# @param seq_des_obj		A completed \code{Design} object whose entire n subjects are assigned and response y is recorded within.
 
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
 		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
@@ -31,7 +31,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @return A new `SeqDesignInference` object.
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertClass(seq_des_obj, "SeqDesign")
+			assertClass(seq_des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
 			seq_des_obj$assert_experiment_completed()
@@ -46,12 +46,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			private$dead = private$seq_des_obj_priv_int$dead
 			private$is_KK = is(seq_des_obj, "SeqDesignKK14") #SeqDesignKK14 is the base class of all KK designs
 			private$n = seq_des_obj$get_n()
+			private$prob_T = seq_des_obj$get_prob_T()
+			private$supports_design_resampling = isTRUE(seq_des_obj$supports_resampling())
 			private$num_cores = num_cores
 			set_package_threads(num_cores)
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
-			private$cached_values$match_cache = list() # New: Cache match_indic by permutation
+			private$cached_values$m_cache = list() # New: Cache m_vec by permutation
 			if (private$verbose){
 				cat(paste0(
 					"Initialized inference methods for a ",
@@ -75,13 +77,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @param custom_randomization_statistic_function	A function that is run that returns a scalar value representing the statistic of interest
 		#													which is computed during each iteration sampling from the null distribution as w is drawn
-		#													drawn from the design. This function is embedded into this class and has write access to all of
-		#													its data and functions (both public and private) so be careful! Setting this to NULL removes
+			#													drawn from the design. This function is embedded into this class and has write access to all of
+			#													its data and functions (both public and private) so be careful! Setting this to NULL removes
 		#													whatever function was set previously essentially. When there is no custom function, the default
 		#													\code{self$compute_treatment_estimate()} will be run.
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -164,7 +166,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -180,6 +182,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# }
 		#
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
+			private$assert_design_supports_resampling("Bootstrap inference")
 			assertCount(B, positive = TRUE)
 			assertCount(max_resample_attempts, positive = TRUE)
 
@@ -199,6 +202,11 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 			# Pure R bootstrap implementation (fallback for GLMs or when C++ fast-path is unavailable)
 			if (private$num_cores == 1) {
+				pb = NULL
+				if (private$verbose) {
+					pb = utils::txtProgressBar(min = 0, max = B, style = 3)
+					on.exit(close(pb), add = TRUE)
+				}
 				beta_hat_T_bs = rep(NA_real_, B)
 				for (b in 1:B) {
 					# Generate bootstrap indices
@@ -220,43 +228,36 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						if (attempt > max_resample_attempts) break
 					}
 
-					# Create bootstrap sample
-					y_b = y[i_b]
-					dead_b = dead[i_b]
-					X_b = X[i_b, , drop = FALSE]
-
-					# Create a duplicate inference object for this bootstrap sample
-					boot_inf_obj = self$duplicate()
-
-					# Update the bootstrap object with resampled data
-					boot_inf_obj$.__enclos_env__$private$y = y_b
-					boot_inf_obj$.__enclos_env__$private$dead = dead_b
-					boot_inf_obj$.__enclos_env__$private$w = w_b
-					boot_inf_obj$.__enclos_env__$private$X = X_b
-					boot_inf_obj$.__enclos_env__$private$cached_values = list()
-
-					# Compute treatment estimate on bootstrap sample
 					if (attempt > max_resample_attempts) {
 						if (private$verbose) {
 							cat("      Bootstrap sample", b, "failed: unable to draw both treatment groups after", max_resample_attempts, "attempts\n")
 						}
 						beta_hat_T_bs[b] = NA_real_
 					} else {
-						beta_hat_T_bs[b] = tryCatch({
-							boot_inf_obj$compute_treatment_estimate()
-						}, error = function(e) {
-							if (private$verbose) {
-								cat("      Bootstrap sample", b, "failed:", e$message, "\n")
-							}
-							NA_real_
-						})
+						y_b = y[i_b]
+						dead_b = dead[i_b]
+						X_b = X[i_b, , drop = FALSE]
+						boot_inf_obj = self$duplicate()
+						boot_inf_obj$.__enclos_env__$private$y = y_b
+						boot_inf_obj$.__enclos_env__$private$dead = dead_b
+						boot_inf_obj$.__enclos_env__$private$w = w_b
+						boot_inf_obj$.__enclos_env__$private$X = X_b
+						boot_inf_obj$.__enclos_env__$private$cached_values = list()
+						beta_hat_T_bs[b] = tryCatch({ boot_inf_obj$compute_treatment_estimate() }, error = function(e) NA_real_)
 					}
+					if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 				}
 				return(beta_hat_T_bs)
 			} else {
 				# Parallel bootstrap execution for R loop fallback
 				cores_to_use = private$num_cores
-				beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+				
+				mclapply_fn = parallel::mclapply
+				if (private$verbose && requireNamespace("pbmcapply", quietly = TRUE)) {
+					mclapply_fn = pbmcapply::pbmclapply
+				}
+
+				beta_hat_T_bs = unlist(mclapply_fn(1:B, function(b) {
 					set_package_threads(1L)
 					attempt = 1
 					repeat {
@@ -307,7 +308,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -347,7 +348,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -402,7 +403,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -417,6 +418,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#   geom_histogram(aes(x = beta_hat_T_diff_ws))
 		# }
 		compute_beta_hat_T_randomization_distr_under_sharp_null = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL){
+			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(delta)
 			assertCount(nsim_exact_test, positive = TRUE)
 
@@ -519,12 +521,26 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				lightweight_custom_context = private$build_lightweight_custom_randomization_context()
 			}
 
-			use_perms = !is.null(permutations) && length(permutations) >= nsim_exact_test
+				# The new matrix format stores all permutations as columns of w_mat / m_mat.
+			# The old list format stored them as a list of length >= nsim_exact_test.
+			use_perms = !is.null(permutations) && (
+				!is.null(permutations$w_mat) ||          # new matrix format
+				length(permutations) >= nsim_exact_test  # old list-of-objects format
+			)
+			# Helper: extract the i-th permutation as a list(w, m_vec).
+			get_perm_data = if (!is.null(permutations$w_mat)) {
+				function(i) list(
+					w           = permutations$w_mat[, i],
+					m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, i] else NULL
+				)
+			} else {
+				function(i) permutations[[i]]
+			}
 
 			# Iteration function that uses thread-local objects
 			run_randomization_iteration <- function(thread_des_obj, thread_inf_obj, perm_idx = NULL){
 				if (use_lightweight_custom_stat && use_perms && !is.null(perm_idx)) {
-					perm_data = permutations[[perm_idx]]
+					perm_data = get_perm_data(perm_idx)
 					w_sim = perm_data$w
 					y_sim = base_template_y
 					if (delta != 0) {
@@ -547,22 +563,22 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 				if (use_perms && !is.null(perm_idx)) {
 					# Use cached w
-					perm_data = permutations[[perm_idx]]
+					perm_data = get_perm_data(perm_idx)
 
 					# Update design object directly with cached assignments so custom stats
 					# accessing seq_des_obj_priv_int$w get the permuted w.
 					thread_des_obj$.__enclos_env__$private$w = perm_data$w
-					if (is_KK && private$object_has_private_method(thread_des_obj, "match_indic")){
-						thread_des_obj$.__enclos_env__$private$match_indic = perm_data$match_indic
+					if (is_KK && private$object_has_private_method(thread_des_obj, "m")){
+						thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
 					}
 
 					# Update inference object directly with cached assignments
 					thread_inf_obj$.__enclos_env__$private$w = perm_data$w
-					if (is_KK && private$object_has_private_method(thread_inf_obj, "match_indic")){
-						thread_inf_obj$.__enclos_env__$private$match_indic = perm_data$match_indic
+					if (is_KK && private$object_has_private_method(thread_inf_obj, "m")){
+						thread_inf_obj$.__enclos_env__$private$m = perm_data$m_vec
 					}
 
-					# We still need to link the design object private environment if not already linked,
+					# We still need to link the design object private$m environment if not already linked,
 					# or ensure y/dead are correct.
 					# thread_des_obj is not used for redraw here, but its 'y' and 'dead' are used below.
 					# ensure thread_inf_obj has the correct y/dead from thread_des_obj (which has the delta shift).
@@ -576,7 +592,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 
 					# Update inference object with new assignments
 					thread_inf_obj$.__enclos_env__$private$seq_des_obj_priv_int = thread_des_obj$.__enclos_env__$private
-					# Also update the direct private fields that compute_treatment_estimate uses
+					# Also update the direct private$m fields that compute_treatment_estimate uses
 					thread_inf_obj$.__enclos_env__$private$y = thread_des_obj$.__enclos_env__$private$y
 					thread_inf_obj$.__enclos_env__$private$w = thread_des_obj$.__enclos_env__$private$w
 					thread_inf_obj$.__enclos_env__$private$dead = thread_des_obj$.__enclos_env__$private$dead
@@ -602,26 +618,26 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
 					
 					# Optimization: Cache the expensive matching step by permutation w
-					w_key = if(use_perms && !is.null(perm_idx)) private$stable_signature(permutations[[perm_idx]]$w) else NULL
-					cached_match = if(!is.null(w_key)) private$cached_values$match_cache[[w_key]] else NULL
+					w_key = if(use_perms && !is.null(perm_idx)) private$stable_signature(perm_data$w) else NULL
+					cached_match = if(!is.null(w_key)) private$cached_values$m_cache[[w_key]] else NULL
 					
 					if (!is.null(cached_match)) {
-						thread_inf_obj$.__enclos_env__$private$match_indic = cached_match
+						thread_inf_obj$.__enclos_env__$private$m = cached_match
 					} else {
-						# if using cache, match_indic is already set. If not, it comes from thread_des_obj
+						# if using cache, m_vec is already set. If not, it comes from thread_des_obj
 						if (!use_perms) {
-							thread_inf_obj$.__enclos_env__$private$match_indic = thread_des_obj$.__enclos_env__$private$match_indic
+							thread_inf_obj$.__enclos_env__$private$m = thread_des_obj$.__enclos_env__$private$m
 						}
 						
-						# This can be expensive if match_indic is NOT fixed (e.g. KK14 redrawing)
-						# Currently KK14 redraws w but keeps match_indic fixed which is fast but 
+						# This can be expensive if m_vec is NOT fixed (e.g. KK14 redrawing)
+						# Currently KK14 redraws w but keeps m_vec fixed which is fast but 
 						# strictly speaking technically incorrect for a permutation test of the design.
 						# But we respect the current implementation's speed.
 						thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 						
 						# Store in cache if we have a key
 						if (!is.null(w_key)) {
-							private$cached_values$match_cache[[w_key]] = thread_inf_obj$.__enclos_env__$private$match_indic
+							private$cached_values$m_cache[[w_key]] = thread_inf_obj$.__enclos_env__$private$m
 						}
 					}
 					
@@ -665,91 +681,37 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				}
 			}
 
-			# Pure R implementation for robustness
-			# We use a single pair of objects if cores = 1
-			# Parallelizing randomization tests in R can be done via mclapply if needed
-			if (private$num_cores == 1) {
-				thread_des_obj = NULL
-				thread_inf_obj = NULL
-				if (!use_lightweight_custom_stat) {
-					thread_des_obj = seq_des_template$duplicate()
-					thread_inf_obj = self$duplicate()
-				}
-				beta_hat_T_diff_ws = rep(NA_real_, nsim_exact_test)
-				pb = NULL
-				if (isTRUE(show_progress)) {
-					pb = utils::txtProgressBar(min = 0, max = nsim_exact_test, style = 3)
-					on.exit(close(pb), add = TRUE)
-				}
-				collected = 0
-				total_attempts = 0
-				max_attempts = nsim_exact_test * 10L
-
-				# If using cache, we just iterate through indices
-				if (use_perms) {
-					for (i in 1:nsim_exact_test) {
-						val = run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = i)
-						beta_hat_T_diff_ws[i] = val
-						if (!is.null(pb)) utils::setTxtProgressBar(pb, i)
-					}
-				} else {
-					while (collected < nsim_exact_test && total_attempts < max_attempts) {
-						val = run_randomization_iteration(thread_des_obj, thread_inf_obj)
-						total_attempts = total_attempts + 1L
-						if (!is.na(val)) {
-							collected = collected + 1L
-							beta_hat_T_diff_ws[collected] = val
-							if (!is.null(pb)) {
-								utils::setTxtProgressBar(pb, collected)
-							}
-						}
-					}
-				}
-			} else {
-				# Use parallel backend if more than 1 core requested.
-				# Optimization: Instead of cloning R6 objects inside workers (which is slow),
-				# we extract the raw data once and pass it to a stateless evaluator.
-				cores_to_use = private$num_cores
-				chunks = parallel::splitIndices(nsim_exact_test, cores_to_use)
-				chunks = chunks[vapply(chunks, length, integer(1)) > 0]
-				
-				# Build a "Stateless Context" to pass to workers
-				# This avoids cloning the R6 object in each worker process
-				worker_context = list(
-					y_delta = y_delta,
-					base_template_y = base_template_y,
-					base_template_dead = base_template_dead,
-					delta = delta,
-					use_perms = use_perms,
-					is_KK = is_KK,
-					use_lightweight_custom_stat = use_lightweight_custom_stat,
-					custom_stat_needs_match_data = custom_stat_needs_match_data,
-					lightweight_custom_context = lightweight_custom_context
-				)
-				
-				# Capture the current inference object's state for non-lightweight stats
-				if (!use_lightweight_custom_stat) {
-					worker_context$inf_obj_template = self$duplicate()
-					worker_context$des_obj_template = seq_des_template$duplicate()
-				}
-
-				results_list = parallel::mclapply(chunks, function(indices) {
-					set_package_threads(1L)
-					
-					# Re-link templates if they exist
-					thread_des_obj = if (!is.null(worker_context$des_obj_template)) worker_context$des_obj_template$duplicate() else NULL
-					thread_inf_obj = if (!is.null(worker_context$inf_obj_template)) worker_context$inf_obj_template$duplicate() else NULL
-					
-					# Run the batch
-					chunk_results = rep(NA_real_, length(indices))
-					for (i in seq_along(indices)) {
-						chunk_results[i] = run_randomization_iteration(thread_des_obj, thread_inf_obj, perm_idx = if(use_perms) indices[i] else NULL)
-					}
-					chunk_results
-				}, mc.cores = length(chunks), mc.preschedule = TRUE)
-				
-				beta_hat_T_diff_ws = unlist(results_list)
+			# R loop implementation
+			# When using the lightweight custom stat path with pre-computed permutations,
+			# thread objects are not needed (the iteration uses only y/w vectors directly).
+			need_thread_objs = !(use_lightweight_custom_stat && use_perms)
+			
+			# Multi-core: Use parallel::mclapply (or pbmclapply)
+			cores_to_use = private$num_cores
+			
+			mclapply_fn = parallel::mclapply
+			if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) {
+				mclapply_fn = pbmcapply::pbmclapply
 			}
+
+			# PRE-CLONE templates in the master process to avoid contention during fork
+			inf_template = if (need_thread_objs) self$duplicate() else NULL
+			des_template = if (need_thread_objs) seq_des_template$duplicate() else NULL
+
+			# Optimization: Pre-compute match data if it's fixed (like in KK14)
+			if (!is.null(inf_template) && is_KK && private$object_has_private_method(inf_template, "compute_basic_match_data"))
+				inf_template$.__enclos_env__$private$compute_basic_match_data()
+
+			beta_hat_T_diff_ws = unlist(mclapply_fn(1:nsim_exact_test, function(idx) {
+				set_package_threads(1L)
+
+				# Workers clone once per task (NULL when lightweight custom stat path)
+				worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
+				worker_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
+				if (!is.null(worker_inf)) worker_inf$.__enclos_env__$private$num_cores = 1L
+
+				run_randomization_iteration(worker_des, worker_inf, perm_idx = if(use_perms) idx else NULL)
+			}, mc.cores = cores_to_use))
 
 			# Explicitly convert to numeric to catch non-numeric elements
 			if (!is.numeric(beta_hat_T_diff_ws)) {
@@ -783,7 +745,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -797,6 +759,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# }
 		#
 		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
+			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
 			if (private$seq_des_obj_priv_int$response_type == "incidence"){
 				stop("Randomization tests are not supported for incidence outcomes. Use SeqDesignInferenceIncidExactZhang for the Zhang method.")
@@ -912,7 +875,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -926,6 +889,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		# }
 		#
 		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
@@ -1055,6 +1019,13 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				)
 			}
 
+			# Skip parallel CI computation when the fast C++ randomization path is available:
+			# each bisection call takes < 1ms via OpenMP, but mclapply fork overhead (~33ms)
+			# plus duplicate() cost (~35ms per KK object, called twice) overwhelm any benefit.
+			use_parallel_ci = private$num_cores > 1L &&
+				!(private$has_private_method("compute_fast_randomization_distr") &&
+				  is.null(private[["custom_randomization_statistic_function"]]))
+
 			switch(private$seq_des_obj_priv_int$response_type,
 				continuous = {
 					perms = private$generate_permutations(nsim_exact_test)
@@ -1065,7 +1036,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						target_pval = alpha / 2
 					)
 
-					if (private$num_cores > 1) {
+					if (use_parallel_ci) {
 						ci = private$compute_ci_both_bounds_parallel(
 							nsim_exact_test = nsim_exact_test,
 							l_lower = bounds$l,
@@ -1111,7 +1082,7 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						target_pval = alpha / 2
 					)
 
-					if (private$num_cores > 1) {
+					if (use_parallel_ci) {
 						ci = private$compute_ci_both_bounds_parallel(
 							nsim_exact_test = nsim_exact_test,
 							l_lower = bounds$l,
@@ -1151,10 +1122,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				count =      {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
-					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
-					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
-					# mclapply when private$num_cores > 1 (see parallel branch below).
-					temp_inf$.__enclos_env__$private$num_cores = 1L
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
@@ -1176,22 +1143,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						target_pval = alpha / 2
 					)
 
-					# Run inversion on temp_inf which has transformed data.
-					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
-					# computed simultaneously via an outer fork when private$num_cores > 1.
-					if (private$num_cores > 1) {
-						bound_specs = list(
-							list(l = bounds$l, u = bounds$est, lower = TRUE),
-							list(l = bounds$est, u = bounds$u, lower = FALSE)
+					if (use_parallel_ci) {
+						ci = private$compute_ci_both_bounds_parallel(
+							nsim_exact_test = nsim_exact_test,
+							l_lower = bounds$l,
+							u_lower = bounds$est,
+							l_upper = bounds$est,
+							u_upper = bounds$u,
+							pval_th = alpha / 2,
+							tol = pval_epsilon,
+							transform_responses = transform_arg,
+							permutations = perms,
+							inf_obj = temp_inf
 						)
-						results = parallel::mclapply(bound_specs, function(spec) {
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-								nsim_exact_test, l = spec$l, u = spec$u,
-								pval_th = alpha / 2, tol = pval_epsilon,
-								transform_responses = transform_arg, lower = spec$lower,
-								show_progress = FALSE, permutations = perms)
-						}, mc.cores = min(2L, private$num_cores))
-						ci = c(results[[1]], results[[2]])
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
@@ -1209,10 +1173,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				proportion = {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
-					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
-					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
-					# mclapply when private$num_cores > 1 (see parallel branch below).
-					temp_inf$.__enclos_env__$private$num_cores = 1L
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
@@ -1237,22 +1197,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						target_pval = alpha / 2
 					)
 
-					# Run inversion on temp_inf which has transformed data.
-					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
-					# computed simultaneously via an outer fork when private$num_cores > 1.
-					if (private$num_cores > 1) {
-						bound_specs = list(
-							list(l = bounds$l, u = bounds$est, lower = TRUE),
-							list(l = bounds$est, u = bounds$u, lower = FALSE)
+					if (use_parallel_ci) {
+						ci = private$compute_ci_both_bounds_parallel(
+							nsim_exact_test = nsim_exact_test,
+							l_lower = bounds$l,
+							u_lower = bounds$est,
+							l_upper = bounds$est,
+							u_upper = bounds$u,
+							pval_th = alpha / 2,
+							tol = pval_epsilon,
+							transform_responses = transform_arg,
+							permutations = perms,
+							inf_obj = temp_inf
 						)
-						results = parallel::mclapply(bound_specs, function(spec) {
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-								nsim_exact_test, l = spec$l, u = spec$u,
-								pval_th = alpha / 2, tol = pval_epsilon,
-								transform_responses = transform_arg, lower = spec$lower,
-								show_progress = FALSE, permutations = perms)
-						}, mc.cores = min(2L, private$num_cores))
-						ci = c(results[[1]], results[[2]])
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
@@ -1270,10 +1227,6 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				survival =   {
 					# Create a temporary object with transformed responses
 					temp_inf = self$duplicate()
-					# Prevent fork-unsafe nested mclapply: bootstrap and bisection run serially on
-					# temp_inf (num_cores=1). Both bounds are still computed in parallel via an outer
-					# mclapply when private$num_cores > 1 (see parallel branch below).
-					temp_inf$.__enclos_env__$private$num_cores = 1L
 					# Cache permutations for speed
 					perms = temp_inf$.__enclos_env__$private$generate_permutations(nsim_exact_test)
 
@@ -1296,22 +1249,19 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 						target_pval = alpha / 2
 					)
 
-					# Run inversion on temp_inf which has transformed data.
-					# Each bound's bisection is serial (temp_inf$num_cores=1); both bounds may be
-					# computed simultaneously via an outer fork when private$num_cores > 1.
-					if (private$num_cores > 1) {
-						bound_specs = list(
-							list(l = bounds$l, u = bounds$est, lower = TRUE),
-							list(l = bounds$est, u = bounds$u, lower = FALSE)
+					if (use_parallel_ci) {
+						ci = private$compute_ci_both_bounds_parallel(
+							nsim_exact_test = nsim_exact_test,
+							l_lower = bounds$l,
+							u_lower = bounds$est,
+							l_upper = bounds$est,
+							u_upper = bounds$u,
+							pval_th = alpha / 2,
+							tol = pval_epsilon,
+							transform_responses = transform_arg,
+							permutations = perms,
+							inf_obj = temp_inf
 						)
-						results = parallel::mclapply(bound_specs, function(spec) {
-							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-								nsim_exact_test, l = spec$l, u = spec$u,
-								pval_th = alpha / 2, tol = pval_epsilon,
-								transform_responses = transform_arg, lower = spec$lower,
-								show_progress = FALSE, permutations = perms)
-						}, mc.cores = min(2L, private$num_cores))
-						ci = c(results[[1]], results[[2]])
 					} else {
 						ci = c(
 							temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(nsim_exact_test,
@@ -1345,11 +1295,20 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			# Restore permutations cache pointer if it exists
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
 			# Share match cache too
-			i$.__enclos_env__$private$cached_values$match_cache = private$cached_values$match_cache
+			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			
-			# Ensure custom statistics are bound to the new object's environment
+			# Ensure custom statistics are bound to the new object's environment.
+			# Use assign()+unlockBinding() because R6's clone() may lock this binding in
+			# the cloned private$m env, making the nested replacement-function form fail.
 			if (!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
-				environment(i$.__enclos_env__$private$custom_randomization_statistic_function) = environment(i$initialize)
+				clone_private = i$.__enclos_env__$private
+				fn = clone_private$custom_randomization_statistic_function
+				environment(fn) = environment(i$initialize)
+				field = "custom_randomization_statistic_function"
+				if (bindingIsLocked(field, clone_private)) {
+					unlockBinding(field, clone_private)
+				}
+				assign(field, fn, envir = clone_private)
 			}
 			i
 		}
@@ -1358,12 +1317,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 	private = list(
 		seq_des_obj = NULL,
 		seq_des_obj_priv_int = NULL,
+		m = NULL,
 		is_KK = NULL,
+		supports_design_resampling = FALSE,
 		any_censoring = NULL,
 		num_cores = NULL,
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
+		prob_T = NULL,
 		y = NULL,
 		w = NULL,
 		dead = NULL,
@@ -1376,8 +1338,17 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		if (is.null(permutations)) {
 			return(NULL)
 		}
+		
+		# Optimization: Check for pre-computed signature on the permutations object
+		perm_sig = attr(permutations, "sig")
+		if (is.null(perm_sig)) {
+			# Only compute once if missing
+			perm_sig = private$permutations_signature(permutations, nsim_exact_test)
+			attr(permutations, "sig") = perm_sig
+		}
+
 		stat_sig = private$custom_randomization_statistic_signature()
-		perm_sig = private$permutations_signature(permutations, nsim_exact_test)
+		
 		paste(
 			"nsim", as.integer(nsim_exact_test),
 			"delta", formatC(delta, digits = 17, format = "fg", flag = "#"),
@@ -1405,9 +1376,9 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		))
 	},
 
-	stable_signature = function(obj){
-		raw_sig = serialize(obj, NULL, xdr = FALSE)
-		ints = as.integer(raw_sig)
+		stable_signature = function(obj){
+			raw_sig = serialize(obj, NULL, xdr = FALSE)
+			ints = as.integer(raw_sig)
 		if (length(ints) == 0L) {
 			return("0:0:0")
 		}
@@ -1423,8 +1394,18 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				h2 = (h2 * 65599 + val + i) %% modulus
 			}
 		}
-		paste(length(ints), as.integer(h1), as.integer(h2), sep = ":")
-	},
+			paste(length(ints), as.integer(h1), as.integer(h2), sep = ":")
+		},
+
+		next_generated_permutation_signature = function(cache_key){
+			counter = private$cached_values$generated_permutation_sig_counter
+			if (is.null(counter)) {
+				counter = 0L
+			}
+			counter = counter + 1L
+			private$cached_values$generated_permutation_sig_counter = counter
+			paste("generated", cache_key, counter, sep = ":")
+		},
 
 	extract_dollar_paths = function(expr){
 		paths = list()
@@ -1547,34 +1528,40 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		method_name %in% names(private)
 	},
 
-			object_has_private_method = function(obj, method_name){
-			method_name %in% names(obj$.__enclos_env__$private)
-		},
+	object_has_private_method = function(obj, method_name){
+		method_name %in% names(obj$.__enclos_env__$private)
+	},
+
+	assert_design_supports_resampling = function(method_family){
+		if (isTRUE(private$supports_design_resampling)) {
+			return(invisible(NULL))
+		}
+		stop(
+			method_family,
+			" is not available for plain FixedDesign objects because the base FixedDesign class does not define a treatment-assignment redraw mechanism. Use asymptotic / MLE-style inference or a concrete design subclass."
+		)
+	},
 
 					generate_permutations = function(nsim_exact_test = 501){
+						private$assert_design_supports_resampling("Randomization inference")
 						cache_key = as.character(as.integer(nsim_exact_test))
 						if (is.null(private$cached_values$permutations_cache)) {
 							private$cached_values$permutations_cache = list()
 						}
-						if (!is.null(private$cached_values$permutations_cache[[cache_key]]) &&
-								length(private$cached_values$permutations_cache[[cache_key]]) >= nsim_exact_test) {
-							return(private$cached_values$permutations_cache[[cache_key]][seq_len(nsim_exact_test)])
+						if (!is.null(private$cached_values$permutations_cache[[cache_key]])) {
+							return(private$cached_values$permutations_cache[[cache_key]])
 						}
 
-						perms = vector("list", nsim_exact_test)
-						# Use a template design to generate
-						des_temp = private$seq_des_obj$duplicate()
-
-						for (i in 1:nsim_exact_test){
-							des_temp$.__enclos_env__$private$redraw_w_according_to_design()
-							perm_data = list(
-								w = des_temp$.__enclos_env__$private$w
-							)
-							if (private$is_KK){
-								perm_data$match_indic = des_temp$.__enclos_env__$private$match_indic
-							}
-							perms[[i]] = perm_data
+						perms = private$seq_des_obj$draw_ws_according_to_design(nsim_exact_test)
+						if (is.matrix(perms)) {
+							perms = list(w_mat = perms, match_indic_mat = NULL)
 						}
+						
+						# Internal permutations only need an object-unique signature so the
+						# randomization cache can distinguish permutation sets without hashing
+						# the full matrices, which is expensive for large nsim.
+						attr(perms, "sig") = private$next_generated_permutation_signature(cache_key)
+						
 						private$cached_values$permutations_cache[[cache_key]] = perms
 						perms
 					},
@@ -1666,26 +1653,25 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 			2 * min(probs)
 		},
 
-		# Parallel computation of both CI bounds using OpenMP
-		compute_ci_both_bounds_parallel = function(nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, permutations = NULL){
+		# Parallel computation of both CI bounds with a per-bound core budget.
+		compute_ci_both_bounds_parallel = function(nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, permutations = NULL, inf_obj = self){
 			# Compute both CI bounds in parallel using mclapply (fork-based).
 			# Calling R functions from OpenMP threads is unsafe; mclapply gives each
 			# child its own R interpreter (copy-on-write fork), so it is safe even when
-			# private$cached_values$t0s_rand is read by both children simultaneously.
+			# caches are read by both children simultaneously.
 			bound_specs = list(
 				list(l = l_lower, u = u_lower, lower = TRUE),
 				list(l = l_upper, u = u_upper, lower = FALSE)
 			)
-			# Allocation: give each bound half the cores.
-			# If num_cores=10, each bound child gets 5 cores.
-			# Inner loops will then use their allocated budget.
-			child_budget = max(1L, as.integer(floor(private$num_cores / 2)))
+			# Allocation: give each bound child 1 core for its inner loops to avoid fork+OpenMP deadlocks.
+			child_budget = 1L
+			inf_template = inf_obj$duplicate()
 
 			results = parallel::mclapply(bound_specs, function(spec) {
-				# Set child budget before calling bisection
-				private$num_cores = child_budget
-				set_package_threads(child_budget)
-				private$compute_ci_by_inverting_the_randomization_test_iteratively(
+				worker_inf = inf_template$duplicate()
+				worker_inf$.__enclos_env__$private$num_cores = 1L
+				set_package_threads(1L)
+				worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
 					nsim_exact_test,
 					l                  = spec$l,
 					u                  = spec$u,

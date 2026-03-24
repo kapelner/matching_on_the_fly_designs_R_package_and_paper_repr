@@ -33,7 +33,7 @@ extract_ci_bounds <- function(value) {
 # Set seed for reproducibility
 set.seed(123)
 
-designs <- c("SeqDesignCRD", "SeqDesigniBCRD", "SeqDesignEfron", "SeqDesignAtkinson", "SeqDesignKK14", "SeqDesignKK21", "SeqDesignKK21stepwise")
+designs <- c("SeqDesignBernoulli", "SeqDesigniBCRD", "SeqDesignEfron", "SeqDesignAtkinson", "SeqDesignKK14", "SeqDesignKK21", "SeqDesignKK21stepwise")
 response_types <- c("continuous", "incidence", "count", "proportion", "survival")
 
 inf_by_res_type <- list(

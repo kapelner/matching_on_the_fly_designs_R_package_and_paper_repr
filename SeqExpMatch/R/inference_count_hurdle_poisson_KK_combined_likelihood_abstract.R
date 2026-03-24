@@ -110,11 +110,11 @@ SeqDesignInferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("SeqDe
 		},
 
 		build_model_data = function(){
-			if (is.null(private$match_indic)){
-				private$match_indic = rep(0L, private$n)
+			if (is.null(private$m)){
+				private$m = rep(0L, private$n)
 			}
-			match_indic = as.integer(private$match_indic)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = as.integer(private$m)
+			m_vec[is.na(m_vec)] = 0L
 
 			pred_df = private$predictors_df()
 			if (!("w" %in% colnames(pred_df))){
@@ -131,7 +131,7 @@ SeqDesignInferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("SeqDe
 			pred_df = as.data.frame(X_reduced[, -1, drop = FALSE])
 			colnames(pred_df)[1] = "w"
 
-			grouping = compute_kk_grouping_cpp(match_indic)
+			grouping = compute_kk_grouping_cpp(m_vec)
 			dat = data.frame(
 				y = private$y,
 				pred_df,

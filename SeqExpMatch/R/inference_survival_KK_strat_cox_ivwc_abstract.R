@@ -118,15 +118,15 @@ SeqDesignInferenceAbstractKKStratCoxIVWC = R6::R6Class("SeqDesignInferenceAbstra
 		},
 
 		strat_cox_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_matched = which(match_indic > 0)
+			i_matched = which(m_vec > 0)
 			y_m       = private$y[i_matched]
 			dead_m    = private$dead[i_matched]
 			w_m       = private$w[i_matched]
-			strata_m  = match_indic[i_matched]
+			strata_m  = m_vec[i_matched]
 
 			# Filter strata that have no events (provide no information for Cox partial likelihood)
 			strata_with_events = unique(strata_m[dead_m == 1])
@@ -173,10 +173,10 @@ SeqDesignInferenceAbstractKKStratCoxIVWC = R6::R6Class("SeqDesignInferenceAbstra
 		cox_for_reservoir = function(){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
-			match_indic_safe = private$match_indic
-			if (is.null(match_indic_safe)) match_indic_safe = rep(0L, private$n)
-			match_indic_safe[is.na(match_indic_safe)] = 0L
-			dead_r = private$dead[match_indic_safe == 0]
+			m_vec_safe = private$m
+			if (is.null(m_vec_safe)) m_vec_safe = rep(0L, private$n)
+			m_vec_safe[is.na(m_vec_safe)] = 0L
+			dead_r = private$dead[m_vec_safe == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)

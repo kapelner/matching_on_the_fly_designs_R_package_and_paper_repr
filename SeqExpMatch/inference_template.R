@@ -30,7 +30,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD", response_type = "continuous")
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "Bernoulli", response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -64,7 +64,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#'
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "Bernoulli")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -100,7 +100,7 @@ SeqDesignInferenceContMultOLS = R6::R6Class("SeqDesignInferenceContMultOLS",
 		#' @return	The approximate frequentist p-value
 		#'
 		#' @examples
-		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "CRD")
+		#' seq_des = SeqDesign$new(n = 6, p = 10, design = "Bernoulli")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])

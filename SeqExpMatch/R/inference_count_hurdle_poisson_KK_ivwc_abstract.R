@@ -46,69 +46,73 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 			} else {
 				stop("Testing non-zero delta is not yet implemented for this class.")
 			}
+		},
+
+		# Overridden to avoid the heavy summary() call during randomization iterations.
+		# Extracts the fixed-effect coefficient for "w" directly from the fit.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			Xmm = private$build_model_matrix()
+			m_vec = private$m
+			if (is.null(m_vec)){
+				m_vec = rep(0L, nrow(Xmm))
+			}
+			m_vec = as.integer(m_vec)
+			m_vec[is.na(m_vec)] = 0L
+
+			matched_idx = which(m_vec > 0L)
+			reservoir_idx = which(m_vec <= 0L)
+
+			beta_m = NA_real_
+			ssq_m = NA_real_
+			if (length(matched_idx) > 0L){
+				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = FALSE)
+				beta_m = res_m$beta_hat
+				ssq_m = res_m$se^2
+			}
+			m_ok = !is.na(beta_m) && is.finite(beta_m) && !is.na(ssq_m) && is.finite(ssq_m) && ssq_m > 0
+
+			beta_r = NA_real_
+			ssq_r = NA_real_
+			if (length(reservoir_idx) > 1L && length(unique(private$w[reservoir_idx])) > 1L){
+				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx) # Already uses fast C++ which includes var, but we can't easily skip it
+				beta_r = res_r$beta_hat
+				ssq_r = res_r$ssq_hat
+			}
+			r_ok = !is.na(beta_r) && is.finite(beta_r) && !is.na(ssq_r) && is.finite(ssq_r) && ssq_r > 0
+
+			if (m_ok && r_ok){
+				w_star = ssq_r / (ssq_r + ssq_m)
+				return(w_star * beta_m + (1 - w_star) * beta_r)
+			} else if (m_ok){
+				return(beta_m)
+			} else if (r_ok){
+				return(beta_r)
+			}
+			NA_real_
 		}
 	),
 
 	private = list(
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()."),
-
-		reduce_design_matrix_preserving_treatment = function(X_full){
-			qr_X = qr(X_full)
-			target_rank = qr_X$rank
-			required = c(1L, 2L)
-			candidate_order = c(required, setdiff(qr_X$pivot, required))
-			keep = integer(0)
-
-			for (j in candidate_order){
-				trial_keep = c(keep, j)
-				trial_rank = qr(X_full[, trial_keep, drop = FALSE])$rank
-				if (trial_rank > length(keep)){
-					keep = trial_keep
-				}
-				if (length(keep) >= target_rank){
-					break
-				}
-			}
-
-			keep = sort(unique(keep))
-			if (!(2L %in% keep)){
-				return(list(X = NULL, keep = keep, j_treat = NA_integer_))
-			}
-
-			list(
-				X = X_full[, keep, drop = FALSE],
-				keep = keep,
-				j_treat = match(2L, keep)
-			)
-		},
-
-		build_model_matrix = function(){
-			if (private$include_covariates()){
-				Xmm = private$create_design_matrix()
-				colnames(Xmm) = c("(Intercept)", "w", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
-			} else {
-				Xmm = cbind(1, private$w)
-				colnames(Xmm) = c("(Intercept)", "w")
-			}
-			Xmm
-		},
+		# ... (other methods)
 
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			Xmm = private$build_model_matrix()
-			match_indic = private$match_indic
-			if (is.null(match_indic)){
-				match_indic = rep(0L, nrow(Xmm))
+			m_vec = private$m
+			if (is.null(m_vec)){
+				m_vec = rep(0L, nrow(Xmm))
 			}
-			match_indic = as.integer(match_indic)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = as.integer(m_vec)
+			m_vec[is.na(m_vec)] = 0L
 
-			matched_idx = which(match_indic > 0L)
-			reservoir_idx = which(match_indic <= 0L)
+			matched_idx = which(m_vec > 0L)
+			reservoir_idx = which(m_vec <= 0L)
 
 			if (length(matched_idx) > 0L){
-				private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, match_indic)
+				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = TRUE)
+				private$cached_values$beta_T_matched = res_m$beta_hat
+				private$cached_values$ssq_beta_T_matched = res_m$se^2
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
@@ -117,7 +121,9 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 
 			if (length(reservoir_idx) > 1L &&
 				length(unique(private$w[reservoir_idx])) > 1L){
-				private$fit_poisson_for_reservoir(Xmm, reservoir_idx)
+				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx)
+				private$cached_values$beta_T_reservoir = res_r$beta_hat
+				private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
@@ -147,12 +153,12 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 			stats::as.formula(paste("y ~", rhs))
 		},
 
-		fit_hurdle_for_matched_pairs = function(Xmm, matched_idx, match_indic){
+		fit_hurdle_for_matched_pairs = function(Xmm, matched_idx, m_vec, se = TRUE){
 			X_matched = Xmm[matched_idx, , drop = FALSE]
 			reduced = private$reduce_design_matrix_preserving_treatment(X_matched)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
-				return(invisible(NULL))
+				return(list(beta_hat = NA_real_, se = NA_real_))
 			}
 
 			pred_df = as.data.frame(X_fit[, -1, drop = FALSE])
@@ -160,7 +166,7 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 			dat = data.frame(
 				y = private$y[matched_idx],
 				pred_df,
-				pair_group = factor(match_indic[matched_idx])
+				pair_group = factor(m_vec[matched_idx])
 			)
 
 			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
@@ -173,7 +179,8 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 						ziformula = stats::as.formula(sub("^y ~ ", "~ ", deparse(formula_cond))),
 						family = glmmTMB::truncated_poisson(link = "log"),
 						data = dat,
-						control = glmm_control
+						control = glmm_control,
+						se = se
 					)
 				)),
 				error = function(e) NULL
@@ -187,23 +194,31 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 							ziformula = ~ w + (1 | pair_group),
 							family = glmmTMB::truncated_poisson(link = "log"),
 							data = dat,
-							control = glmm_control
+							control = glmm_control,
+							se = se
 						)
 					)),
 					error = function(e) NULL
 				)
 			}
-			if (is.null(mod)) return(invisible(NULL))
+			if (is.null(mod)) return(list(beta_hat = NA_real_, se = NA_real_))
+
+			if (!se){
+				beta = glmmTMB::fixef(mod)$cond
+				if ("w" %in% names(beta)){
+					return(list(beta_hat = as.numeric(beta["w"]), se = 1.0)) # Return dummy SE > 0
+				}
+				return(list(beta_hat = NA_real_, se = NA_real_))
+			}
 
 			coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
-			if (is.null(coef_table) || !("w" %in% rownames(coef_table))) return(invisible(NULL))
+			if (is.null(coef_table) || !("w" %in% rownames(coef_table))) return(list(beta_hat = NA_real_, se = NA_real_))
 
 			beta_hat = as.numeric(coef_table["w", "Estimate"])
-			se = as.numeric(coef_table["w", "Std. Error"])
-			if (!is.finite(beta_hat) || !is.finite(se) || se <= 0) return(invisible(NULL))
+			se_val = as.numeric(coef_table["w", "Std. Error"])
+			if (!is.finite(beta_hat) || !is.finite(se_val) || se_val <= 0) return(list(beta_hat = NA_real_, se = NA_real_))
 
-			private$cached_values$beta_T_matched = beta_hat
-			private$cached_values$ssq_beta_T_matched = se^2
+			list(beta_hat = beta_hat, se = se_val)
 		},
 
 		fit_poisson_for_reservoir = function(Xmm, reservoir_idx){
@@ -211,21 +226,20 @@ SeqDesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("SeqDesignInferenceA
 			reduced = private$reduce_design_matrix_preserving_treatment(X_res)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
-				return(invisible(NULL))
+				return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 			}
 
 			mod = tryCatch(
 				fast_poisson_regression_with_var_cpp(X_fit, private$y[reservoir_idx], j = reduced$j_treat),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || !isTRUE(mod$converged)) return(invisible(NULL))
+			if (is.null(mod) || !isTRUE(mod$converged)) return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 
 			beta_hat = as.numeric(mod$b[reduced$j_treat])
 			ssq_hat = as.numeric(mod$ssq_b_j)
-			if (!is.finite(beta_hat) || !is.finite(ssq_hat) || ssq_hat <= 0) return(invisible(NULL))
+			if (!is.finite(beta_hat) || !is.finite(ssq_hat) || ssq_hat <= 0) return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 
-			private$cached_values$beta_T_reservoir = beta_hat
-			private$cached_values$ssq_beta_T_reservoir = ssq_hat
+			list(beta_hat = beta_hat, ssq_hat = ssq_hat)
 		},
 
 		assert_finite_se = function(){

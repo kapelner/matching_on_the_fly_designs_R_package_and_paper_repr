@@ -89,15 +89,15 @@ all_betas_and_correlations = c(all_betas_and_correlations, list(setting = list(r
 #Then, how do we analyze the resulting data to obtain an effect size and significance level?
 #Everything uncommented becomes part of the simulation
 randomization_types = c(
- "crd_ttest",						#completely randomized design (CRD)							#analyzed via t-test
- "crd_lin",						#completely randomized design (CRD)							#analyzed via OLS
- "crd_exact",						#completely randomized design (CRD)							#analyzed via classic permutation test
- "crd_exact_lin",					#completely randomized design (CRD)							#analyzed via classic permutation test with OLS estimate
+ "crd_ttest",						#completely randomized design (Bernoulli)							#analyzed via t-test
+ "crd_lin",						#completely randomized design (Bernoulli)							#analyzed via OLS
+ "crd_exact",						#completely randomized design (Bernoulli)							#analyzed via classic permutation test
+ "crd_exact_lin",					#completely randomized design (Bernoulli)							#analyzed via classic permutation test with OLS estimate
 
- "bcrd_ttest",					#completely randomized design (CRD)							#analyzed via t-test
- "bcrd_lin",						#completely randomized design (CRD)							#analyzed via OLS
- "bcrd_exact",					#completely randomized design (CRD)							#analyzed via classic permutation test
- "bcrd_exact_lin",				#completely randomized design (CRD)							#analyzed via classic permutation test with OLS estimate
+ "bcrd_ttest",					#completely randomized design (Bernoulli)							#analyzed via t-test
+ "bcrd_lin",						#completely randomized design (Bernoulli)							#analyzed via OLS
+ "bcrd_exact",					#completely randomized design (Bernoulli)							#analyzed via classic permutation test
+ "bcrd_exact_lin",				#completely randomized design (Bernoulli)							#analyzed via classic permutation test with OLS estimate
 
  "atkinson_ttest",				#Atkinson's optimal design									#analyzed via t-test
  "atkinson_lin",					#Atkinson's optimal design									#analyzed via OLS
@@ -143,11 +143,11 @@ randomization_types = c(
 # "seq_match_weighted_bootstrap_exact_orthog",
 # "seq_match_weighted_bootstrap_exact_orthog_lin",
 # "seq_match_weighted_bootstrap_orthog",
-#	"post_match_crd_kk",			#Post Matching Design with CRD assignment					#analyzed via classic test of Section 2.3.1, Equation 4
+#	"post_match_crd_kk",			#Post Matching Design with Bernoulli assignment					#analyzed via classic test of Section 2.3.1, Equation 4
 #	"post_match_strat_kk",			#Post Matching Design with stratified assignment			#analyzed via classic test of Section 2.3.1, Equation 4
-# "post_match_crd_kk_lin",		#Post Matching Design with CRD assignment					#analyzed via modified OLS of Section 2.3.2, Equation 6
+# "post_match_crd_kk_lin",		#Post Matching Design with Bernoulli assignment					#analyzed via modified OLS of Section 2.3.2, Equation 6
 # "post_match_strat_kk_lin",		#Post Matching Design with stratified assignment			#analyzed via modified OLS of Section 2.3.2, Equation 6
-#	"post_match_crd_kk_exact",		#Post Matching Design with CRD assignment					#analyzed via permutation test of Section 2.3.3
+#	"post_match_crd_kk_exact",		#Post Matching Design with Bernoulli assignment					#analyzed via permutation test of Section 2.3.3
 #	"post_match_strat_kk_exact"		#Post Matching Design with stratified assignment			#analyzed via permutation test of Section 2.3.3
 
 #what do we measure for each set of simulations?

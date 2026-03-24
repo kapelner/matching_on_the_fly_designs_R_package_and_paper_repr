@@ -4,7 +4,8 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector efron_redraw_cpp(int t, double prob_T, double weighted_coin_prob) {
-	NumericVector w(t);
+	std::vector<double> results_vec(t);
+    double* w_ptr = results_vec.data();
 
 	// RNG scope for proper random number generation
 	RNGScope scope;
@@ -34,13 +35,13 @@ NumericVector efron_redraw_cpp(int t, double prob_T, double weighted_coin_prob) 
 	// Flip biased coin
 	double u = R::unif_rand();
 	if (u < assignment_prob) {
-		w[i] = 1.0;
+		w_ptr[i] = 1.0;
 		n_T++;
 	} else {
-		w[i] = 0.0;
+		w_ptr[i] = 0.0;
 		n_C++;
 	}
 	}
 
-	return w;
+	return wrap(results_vec);
 }

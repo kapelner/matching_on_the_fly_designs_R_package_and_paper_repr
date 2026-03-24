@@ -31,7 +31,7 @@ SeqDesignInferenceContinUnivQuantileRegr = R6::R6Class("SeqDesignInferenceContin
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 20, response_type = "continuous")
+		#' seq_des = SeqDesignBernoulli$new(n = 20, response_type = "continuous")
 		#' for (t in 1:20) {
 		#'   x_t = data.frame(x1 = rnorm(1))
 		#'   w_t = seq_des$add_subject_to_experiment_and_assign(x_t)

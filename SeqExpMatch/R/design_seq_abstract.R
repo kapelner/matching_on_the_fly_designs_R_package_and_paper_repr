@@ -6,7 +6,7 @@
 #
 # @keywords internal
 SeqDesign = R6::R6Class("SeqDesign",
-	inherit = FixedDesign,
+	inherit = Design,
 	public = list(
 		initialize = function(
 				response_type = "continuous",
@@ -17,6 +17,10 @@ SeqDesign = R6::R6Class("SeqDesign",
 				verbose = FALSE
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+		},
+
+		supports_resampling = function(){
+			TRUE
 		},
 
 		add_subject_to_experiment_and_assign = function(x_new){

@@ -4,9 +4,9 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic, const NumericVector& w) {
+NumericVector redraw_w_kk14_cpp(const IntegerVector& m_vec, const NumericVector& w) {
 	(void)w; // Unused; kept for ABI consistency with generated RcppExports.
-	int n = match_indic.size();
+	int n = m_vec.size();
 	NumericVector w_out(n);
 	double sum_w;
 	double sum_w_reservoir;
@@ -15,7 +15,7 @@ NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic, const NumericV
 
 	int m = 0;
 	for (int i = 0; i < n; ++i) {
-	int id = match_indic[i];
+	int id = m_vec[i];
 	if (id > m) {
 		m = id;
 	}
@@ -27,7 +27,7 @@ NumericVector redraw_w_kk14_cpp(const IntegerVector& match_indic, const NumericV
 	reservoir.reserve(n);
 
 	for (int i = 0; i < n; ++i) {
-	int id = match_indic[i];
+	int id = m_vec[i];
 	if (id > 0 && id <= m) {
 		int idx = id - 1;
 		if (idx1[idx] == -1) {

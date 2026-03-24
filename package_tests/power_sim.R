@@ -45,7 +45,7 @@ for (nsim in 1 : Nsim){
 	y = array(NA, n)
 
 	#test all designs
-	for (d in c("CRD", "BCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")){
+	for (d in c("Bernoulli", "BCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")){
 		seq_des_obj = SeqDesign$new(n, p, d, verbose = FALSE)
 
 		for (t in 1 : n){

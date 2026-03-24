@@ -1,4 +1,6 @@
 #include <RcppEigen.h>
+#include <vector>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -10,9 +12,9 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector compute_ols_distr_parallel_cpp(
-	const Eigen::VectorXd& y,
+	const NumericVector& y,
 	const Eigen::MatrixXd& X_covars,
-	const Eigen::MatrixXi& w_mat,
+	const IntegerMatrix& w_mat,
 	double delta,
 	int num_cores) {
 
@@ -20,40 +22,41 @@ NumericVector compute_ols_distr_parallel_cpp(
 	int n = y.size();
 	int p_covars = X_covars.cols();
 	int p_full = p_covars + 2; // Intercept + w + covars
-	NumericVector results(nsim);
+	
+	std::vector<double> results_vec(nsim);
+	
+	const double* y_ptr = y.begin();
+	const int* w_ptr = w_mat.begin();
+	double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP
-	if (num_cores > 1) {
-		omp_set_num_threads(num_cores);
-	}
+	omp_set_num_threads(num_cores);
 #endif
 
-	// MEMOIZATION Strategy:
-	// Let X = [1 | w | X_c]. X'X is:
-	// [ n      | sum(w) | 1'X_c   ]
-	// [ sum(w) | sum(w) | w'X_c   ]
-	// [ X_c'1  | X_c'w  | X_c'X_c ]
-	//
-	// Most blocks are constant.
+	// MEMOIZATION
 	double sum_1 = (double)n;
-	Eigen::VectorXd Xt_1 = X_covars.colwise().sum(); // X_c'1
-	Eigen::MatrixXd XtX_c = X_covars.transpose() * X_covars; // X_c'X_c
+	Eigen::VectorXd Xt_1 = X_covars.colwise().sum();
+	Eigen::MatrixXd XtX_c = X_covars.transpose() * X_covars;
 	
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
 	for (int b = 0; b < nsim; ++b) {
-		Eigen::VectorXi w = w_mat.col(b);
-		Eigen::VectorXd w_d = w.cast<double>();
+		const int* w_col = w_ptr + (size_t)b * n;
 		
-		// Shift y if delta != 0
-		Eigen::VectorXd y_sim = y;
-		if (delta != 0) {
-			for (int i = 0; i < n; ++i) {
-				if (w[i] == 1) y_sim[i] += delta;
-			}
+		Eigen::VectorXd w_d(n);
+		Eigen::VectorXd y_sim(n);
+		double sum_w = 0;
+		double sum_y = 0;
+		
+		for (int i = 0; i < n; ++i) {
+			double w_val = (double)w_col[i];
+			w_d[i] = w_val;
+			sum_w += w_val;
+			double y_val = y_ptr[i] + (w_col[i] == 1 ? delta : 0.0);
+			y_sim[i] = y_val;
+			sum_y += y_val;
 		}
 
-		double sum_w = w_d.sum();
-		Eigen::VectorXd Xt_w = X_covars.transpose() * w_d; // X_c'w
+		Eigen::VectorXd Xt_w = X_covars.transpose() * w_d;
 
 		Eigen::MatrixXd XtX(p_full, p_full);
 		XtX(0, 0) = sum_1;
@@ -61,7 +64,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 		XtX.row(0).tail(p_covars) = Xt_1.transpose();
 		
 		XtX(1, 0) = sum_w;
-		XtX(1, 1) = sum_w; // w'w = sum(w) since w is binary
+		XtX(1, 1) = sum_w;
 		XtX.row(1).tail(p_covars) = Xt_w.transpose();
 		
 		XtX.col(0).tail(p_covars) = Xt_1;
@@ -69,68 +72,89 @@ NumericVector compute_ols_distr_parallel_cpp(
 		XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
 
 		Eigen::VectorXd Xty(p_full);
-		Xty[0] = y_sim.sum();
+		Xty[0] = sum_y;
 		Xty[1] = w_d.dot(y_sim);
 		Xty.tail(p_covars) = X_covars.transpose() * y_sim;
 
 		Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-		results[b] = beta[1];
+		res_ptr[b] = beta[1];
 	}
 
-	return results;
+	return wrap(results_vec);
 }
 
+// Bootstrap OLS: for each column of indices_mat (0-based row indices, -1 = NA bootstrap),
+// resample y/w/X_covars and return the OLS treatment coefficient.
 // [[Rcpp::export]]
 NumericVector compute_ols_bootstrap_parallel_cpp(
-	const Eigen::VectorXd& y,
+	const NumericVector& y,
 	const Eigen::MatrixXd& X_covars,
-	const Eigen::VectorXi& w,
-	const Eigen::MatrixXi& indices_mat, // B columns, each is n rows of indices (0-based)
+	const IntegerVector& w,
+	const IntegerMatrix& indices_mat,
 	int num_cores) {
 
 	int B = indices_mat.cols();
-	int n = y.size();
+	int n_boot = indices_mat.rows(); // bootstrap sample size (= n for simple bootstrap)
 	int p_covars = X_covars.cols();
-	int p_full = p_covars + 2; // Intercept + w + covars
-	NumericVector results(B);
+	int p_full = p_covars + 2; // intercept + w + covars
+
+	std::vector<double> results_vec(B, NA_REAL);
+
+	const double* y_ptr = y.begin();
+	const int* w_ptr = w.begin();
+	const int* idx_ptr = indices_mat.begin();
 
 #ifdef _OPENMP
-	if (num_cores > 1) {
-		omp_set_num_threads(num_cores);
-	}
+	omp_set_num_threads(num_cores);
 #endif
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(static)
 	for (int b = 0; b < B; ++b) {
-		Eigen::VectorXi idx = indices_mat.col(b);
+		const int* idx_col = idx_ptr + (size_t)b * n_boot;
+		if (idx_col[0] < 0) { results_vec[b] = NA_REAL; continue; }
 
-		// Check if there are any NAs (which we encoded as -1 if failed max attempts)
-		if (idx[0] == -1) {
-			results[b] = NA_REAL;
-			continue;
+		Eigen::VectorXd y_b(n_boot);
+		Eigen::VectorXd w_b(n_boot);
+		Eigen::MatrixXd X_b(n_boot, p_covars);
+
+		double sum_1 = (double)n_boot;
+		double sum_w = 0.0, sum_y = 0.0;
+
+		for (int i = 0; i < n_boot; ++i) {
+			int idx = idx_col[i];
+			y_b[i] = y_ptr[idx];
+			double wv = (double)w_ptr[idx];
+			w_b[i] = wv;
+			sum_w += wv;
+			sum_y += y_b[i];
+			X_b.row(i) = X_covars.row(idx);
 		}
 
-		// Construct the resampled design matrix and y vector
-		Eigen::VectorXd y_b(n);
-		Eigen::MatrixXd X_full_b(n, p_full);
+		Eigen::VectorXd Xt_1 = X_b.colwise().sum();
+		Eigen::VectorXd Xt_w = X_b.transpose() * w_b;
+		Eigen::MatrixXd XtX_c = X_b.transpose() * X_b;
 
-		for (int i = 0; i < n; ++i) {
-			int row_idx = idx[i];
-			y_b[i] = y[row_idx];
-			X_full_b(i, 0) = 1.0; // Intercept
-			X_full_b(i, 1) = static_cast<double>(w[row_idx]);
-			if (p_covars > 0) {
-				X_full_b.row(i).tail(p_covars) = X_covars.row(row_idx);
-			}
-		}
+		Eigen::MatrixXd XtX(p_full, p_full);
+		XtX(0, 0) = sum_1;
+		XtX(0, 1) = sum_w;
+		XtX.row(0).tail(p_covars) = Xt_1.transpose();
 
-		// OLS via LDLT
-		Eigen::MatrixXd XtX = X_full_b.transpose() * X_full_b;
-		Eigen::VectorXd Xty = X_full_b.transpose() * y_b;
+		XtX(1, 0) = sum_w;
+		XtX(1, 1) = sum_w;
+		XtX.row(1).tail(p_covars) = Xt_w.transpose();
+
+		XtX.col(0).tail(p_covars) = Xt_1;
+		XtX.col(1).tail(p_covars) = Xt_w;
+		XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
+
+		Eigen::VectorXd Xty(p_full);
+		Xty[0] = sum_y;
+		Xty[1] = w_b.dot(y_b);
+		Xty.tail(p_covars) = X_b.transpose() * y_b;
 
 		Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-		results[b] = beta[1]; // Treatment effect is the 2nd coefficient
+		results_vec[b] = beta[1];
 	}
 
-	return results;
+	return wrap(results_vec);
 }

@@ -75,7 +75,7 @@ exp_settings = data.table(expand.grid(
 	dataset_name = names(datasets_and_response_models),
 	beta_T = c("zero", "nonzero"),
 	response_type = c("continuous", "incidence", "count", "proportion", "survival"),
-	d = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD"), #c("KK14", "iBCRD"), #
+	d = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "Bernoulli"), #c("KK14", "iBCRD"), #
 	n = ns,
 	n_rep = 1 : Nrep
 ))
@@ -325,7 +325,7 @@ fwrite(res, file = paste0("seq_exp_match_sims.csv"))
 # mean(yts)
 # mean(ycs)
 
-# res[response_type == "continuous" & estimate_type == "simple_mean_difference" & beta_T == 0 & design == "CRD"]
+# res[response_type == "continuous" & estimate_type == "simple_mean_difference" & beta_T == 0 & design == "Bernoulli"]
 
 
 
@@ -391,12 +391,12 @@ gc()
 table(all_res$n_rep)
 
 
-all_res[, design := factor(design, levels = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD"))]
+all_res[, design := factor(design, levels = c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "Bernoulli"))]
 all_res[abs(beta_hat_T) > 100, beta_hat_T := NA]
 all_res[is.na(beta_hat_T), ci_a := NA]
 all_res[is.na(beta_hat_T) > 100, ci_b := NA]
 all_res[, covers := as.numeric(ci_a <= beta_T & beta_T <= ci_b)]
-all_res[, design := factor(design, levels = rev(c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "CRD")))]
+all_res[, design := factor(design, levels = rev(c("KK21stepwise", "KK21", "KK14", "Atkinson", "Efron", "iBCRD", "Bernoulli")))]
 
 all_res[, estimate_type := stri_replace_all_regex(estimate_type, "continuous_regression_with_covariates", "continuous_multivariate_regression")]
 all_res[, estimate_type := stri_replace_all_regex(estimate_type, "incidence_logistic_regression", "incidence_multivariate_logistic_regression")]

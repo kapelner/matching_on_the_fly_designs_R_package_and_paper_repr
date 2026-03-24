@@ -16,7 +16,7 @@ after the sequential design is completed.
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -35,7 +35,7 @@ seq_des_inf$compute_treatment_estimate()
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -54,7 +54,7 @@ seq_des_inf$compute_asymp_confidence_interval()
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -149,7 +149,7 @@ The setting-appropriate (see description) numeric estimate of the treatment effe
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -197,7 +197,7 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -241,7 +241,7 @@ The approximate frequentist p-value
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])

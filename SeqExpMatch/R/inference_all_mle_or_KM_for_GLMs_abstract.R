@@ -37,7 +37,7 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -69,7 +69,7 @@ SeqDesignInferenceMLEorKMforGLMs = R6::R6Class("SeqDesignInferenceMLEorKMforGLMs
 		#
 		# @examples
 		# \dontrun{
-		# seq_des = SeqDesignCRD$new(n = 6)
+		# seq_des = SeqDesignBernoulli$new(n = 6)
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])

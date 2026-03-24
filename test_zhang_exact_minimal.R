@@ -7,7 +7,7 @@ n = 20
 X = data.frame(x = rnorm(n))
 y = rbinom(n, 1, 0.5)
 
-seq_des = SeqDesignCRD$new(response_type = "incidence", n = n)
+seq_des = SeqDesignBernoulli$new(response_type = "incidence", n = n)
 for (i in 1:n){
     seq_des$add_subject_to_experiment_and_assign(X[i, , drop=FALSE])
 }

@@ -150,8 +150,8 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 			wt = 	if (private$too_early_to_match()){
 						#we're early or the reservoir is empty, so randomize
 						#cat("    assign_wt", class(self)[1], " t", private$t, "\n")
-						private$match_indic[private$t] = 0
-						private$assign_wt_CRD()
+						private$m[private$t] = 0
+						private$assign_wt_Bernoulli()
 					} else if (is.null(private$X) | (sum(!is.na(private$y)) < 2 * (ncol(private$X) + 2))){
 						#This is the number of responses collected before
 						#the algorithm begins estimating the covariate-specific weights. If left unspecified this defaults to \code{2 * (p + 2)} i.e. two data points
@@ -174,13 +174,13 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 						#cat("    assign_wt_KK21 using sorted weights t", private$t, "weights", sort(weights), "\n")
 
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy
-						reservoir_indices = which(private$match_indic == 0)
+						reservoir_indices = which(private$m == 0)
 						weighted_features = colnames(all_subject_data$X_all_with_y_scaled)
 						available_features = colnames(all_subject_data$X_all_scaled)
 						common_weighted_features = intersect(weighted_features, available_features)
 							if (length(common_weighted_features) == 0){
-								private$match_indic[private$t] = 0
-								private$assign_wt_CRD()
+								private$m[private$t] = 0
+								private$assign_wt_Bernoulli()
 							} else {
 								x_new = all_subject_data$xt_all_scaled[common_weighted_features]
 								X_all_scaled_col_subset = all_subject_data$X_all_scaled[, common_weighted_features, drop = FALSE]
@@ -223,19 +223,19 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 								}
 								#  (a) if it's smaller than the threshold, we're in business: match it
 								if (weighted_sqd_distances[min_weighted_sqd_dist_index] < min_weighted_dsqd_cutoff_sq){
-									new_match_id = max(private$match_indic, na.rm = TRUE) + 1 #the ID of a new match
-									private$match_indic[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
-									private$match_indic[private$t] = new_match_id
+									new_match_id = max(private$m, na.rm = TRUE) + 1 #the ID of a new match
+									private$m[reservoir_indices[min_weighted_sqd_dist_index]] = new_match_id
+									private$m[private$t] = new_match_id
 									#assign opposite
 									1 - private$w[reservoir_indices[min_weighted_sqd_dist_index]]
 								# (b) otherwise, randomize and add it to the reservoir
 								} else {
-									private$match_indic[private$t] = 0
-									private$assign_wt_CRD()
+									private$m[private$t] = 0
+									private$assign_wt_Bernoulli()
 								}
 							}
 					}
-			if (is.na(private$match_indic[private$t])){ #this should never happen
+			if (is.na(private$m[private$t])){ #this should never happen
 				stop("no match data recorded")
 			}
 			wt

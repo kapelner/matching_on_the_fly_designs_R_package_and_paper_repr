@@ -42,7 +42,7 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+		#' seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -78,7 +78,7 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+		#' seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -111,7 +111,7 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+		#' seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -132,14 +132,22 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 	),
 
 	private = list(
-		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			# KK designs use design-aware resampling not available via these args; fall back to R loop.
+			if (private$is_KK) return(NULL)
+
+			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			args = list(...)
+			max_resample_attempts = args[[1]]
+			n = args[[2]]
+			y = args[[3]]
+			dead = args[[4]]
+			w = args[[5]]
 
 			indices_mat = matrix(0L, nrow = n, ncol = B)
-
 			for (b in 1:B) {
 				attempt = 1
-				i_b = NULL
 				repeat {
 					i_b = sample(n, n, replace = TRUE)
 					w_b = w[i_b]
@@ -167,17 +175,11 @@ SeqDesignInferenceContinMultOLS = R6::R6Class("SeqDesignInferenceContinMultOLS",
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
-			nsim = length(permutations)
-			n = length(y)
-
-			w_mat = matrix(0L, nrow = n, ncol = nsim)
-			for (i in 1:nsim) {
-				w_mat[, i] = permutations[[i]]$w
-			}
-
+			# Optimization: w_mat is already pre-computed in generate_permutations
+			w_mat = permutations$w_mat
 			X_covars = private$get_X()
 
-			res = compute_ols_distr_parallel_cpp(y, X_covars, w_mat, as.numeric(delta), private$num_cores)
+			res = compute_ols_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), private$num_cores)
 			return(res)
 		},
 

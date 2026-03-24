@@ -8,7 +8,7 @@
 #' @export
 #' @examples
 #' set.seed(1)
-#' seq_des <- SeqDesignCRD$new(n = 8, response_type = "ordinal", verbose = FALSE)
+#' seq_des <- SeqDesignBernoulli$new(n = 8, response_type = "ordinal", verbose = FALSE)
 #' for (i in seq_len(8)) {
 #'   seq_des$add_subject_to_experiment_and_assign(data.frame(x1 = i))
 #' }

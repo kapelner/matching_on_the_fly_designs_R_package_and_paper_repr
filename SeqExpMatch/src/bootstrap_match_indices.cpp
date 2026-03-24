@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-IntegerMatrix bootstrap_match_indices_cpp(
-	const IntegerVector& match_indic,
+IntegerMatrix bootstrap_m_indices_cpp(
+	const IntegerVector& m_vec,
 	const IntegerVector& i_reservoir,
 	int n_reservoir,
 	int m,
@@ -19,8 +19,8 @@ IntegerMatrix bootstrap_match_indices_cpp(
 
 	std::vector< std::array<int, 2> > match_pairs(m);
 	std::vector<int> count(m, 0);
-	for (int idx = 0; idx < match_indic.size(); ++idx) {
-	int match_id = match_indic[idx];
+	for (int idx = 0; idx < m_vec.size(); ++idx) {
+	int match_id = m_vec[idx];
 	if (match_id > 0 && match_id <= m) {
 		int pos = count[match_id - 1]++;
 		if (pos < 2) {
@@ -50,7 +50,7 @@ IntegerMatrix bootstrap_match_indices_cpp(
 }
 
 List compute_zhang_match_data_cpp(const IntegerVector& w,
-								  const IntegerVector& match_indic,
+								  const IntegerVector& m_vec,
 								  const NumericVector& y,
 								  const NumericMatrix& X);
 
@@ -59,7 +59,7 @@ List match_stats_from_indices_cpp(
 	const NumericVector& y,
 	const NumericVector& w,
 	const NumericMatrix& X,
-	const IntegerVector& original_match_indic, // Changed name
+	const IntegerVector& original_m_vec, // Changed name
 	const IntegerVector& i_b,
 	int m
 ) {
@@ -68,13 +68,13 @@ List match_stats_from_indices_cpp(
 	NumericVector y_sample(n_rows);
 	NumericVector w_sample(n_rows);
 	NumericMatrix X_sample(n_rows, p);
-	IntegerVector match_indic_sample(n_rows); // This will hold the resampled match_indic
+	IntegerVector m_vec_sample(n_rows); // This will hold the resampled m_vec
 
 	for (int i = 0; i < n_rows; ++i) {
 	int idx = i_b[i] - 1;
 	y_sample[i] = y[idx];
 	w_sample[i] = w[idx];
-	match_indic_sample[i] = original_match_indic[idx]; // Corrected resampling
+	m_vec_sample[i] = original_m_vec[idx]; // Corrected resampling
 	for (int j = 0; j < p; ++j) {
 		X_sample(i, j) = X(idx, j);
 	}
@@ -82,7 +82,7 @@ List match_stats_from_indices_cpp(
 
 	List match_data = compute_zhang_match_data_cpp(
 		as<IntegerVector>(w_sample),
-		match_indic_sample,
+		m_vec_sample,
 		y_sample,
 		X_sample
 	);

@@ -39,7 +39,7 @@ v2.0.0
   + Added zero-inflated negative binomial, hurdle negative binomial, and denominator-aware Poisson/quasi-Poisson inference with new Rcpp solvers for fast score/variance extraction.
   + Ordinal:
     - Added cumulative probit, adjacent-category logit, stereotype logit, stereotype probit, ridit, paired sign, and Jonckheere-Terpstra inference.
-    - Added partial proportional-odds estimators that allow covariates to vary across thresholds while still estimating a parallel treatment effect, reusing the stacked design with `fast_logistic_regression_with_var_cpp` so the estimator works on every sequential design (no CRD-only restriction).
+    - Added partial proportional-odds estimators that allow covariates to vary across thresholds while still estimating a parallel treatment effect, reusing the stacked design with `fast_logistic_regression_with_var_cpp` so the estimator works on every sequential design (no Bernoulli-only restriction).
     - Added conditional ordinal KK estimators for proportional-odds, continuation-ratio, and adjacent-category formulations.
     - Added ordinal KK mixed-model inference with both logit and probit links, including multivariate CLMM support.
   + Robust & Non-parametric Expansion:
@@ -66,7 +66,7 @@ v2.0.0
   + Hardened error handling for perfect separation, small-sample degeneracy, and non-convergence.
   + Reworked randomization-test caching so expensive treatment-assignment draws are reused across repeated p-value and CI inversion calls, including custom randomization statistics.
   + Fixed a critical "attempt to apply non-function" error in `SeqDesignInferenceIncidUnivKKNewcombeRiskDiff` by implementing the missing `pool_estimates_ivwc` private method.
-  + Resolved `num_cores` assertion failures in `SeqDesign` initialization across all subclasses (`SeqDesignCRD`, `SeqDesigniBCRD`, `SeqDesignEfron`, etc.), ensuring parallelization parameters are correctly handled during object creation.
+  + Resolved `num_cores` assertion failures in `SeqDesign` initialization across all subclasses (`SeqDesignBernoulli`, `SeqDesigniBCRD`, `SeqDesignEfron`, etc.), ensuring parallelization parameters are correctly handled during object creation.
   + Corrected Rd documentation line-width issues that were causing truncation in PDF manuals by consolidating method examples and applying strategic line breaks in R6 class documentation.
   + Fixed a missing function error in `SeqDesignInferenceOrdinalRidit` by implementing the parallelized C++ routines `compute_ridit_distr_parallel_cpp` and `compute_ridit_bootstrap_parallel_cpp`.
   + Synchronized package tests with architectural updates, fixing broken argument permutations and output expectations in GLM tests.
@@ -120,7 +120,7 @@ v1.0.0
     
 v0.1.0
 * Initial Release with support for continuous response type and equal allocation (50-50 treatment/control) only
-* Support for designs CRD, BCRD, Atkinson, KK14, KK21, KK21stepwise 
+* Support for designs Bernoulli, BCRD, Atkinson, KK14, KK21, KK21stepwise 
 * Support for the following parameter estimation / via estimator:
     - additive treatment effect / simple difference of sample means
     - additive treatment effect / OLS estimator with covariates

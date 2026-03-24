@@ -12,8 +12,10 @@
 
 using namespace Rcpp;
 
+namespace {
+
 // Helper to compute ridit scores and levels from a reference set
-void get_ridit_map(const std::vector<int>& y_ref, 
+void get_ridit_map_cpp(const std::vector<int>& y_ref, 
                   std::map<int, double>& ridit_map, 
                   std::vector<int>& levels) {
     int n_ref = y_ref.size();
@@ -27,7 +29,6 @@ void get_ridit_map(const std::vector<int>& y_ref,
     for (auto const& [level, count] : counts) {
         levels.push_back(level);
     }
-    // std::map keys are already sorted
     
     double cumulative_p = 0.0;
     for (int level : levels) {
@@ -37,11 +38,10 @@ void get_ridit_map(const std::vector<int>& y_ref,
     }
 }
 
-double compute_mean_ridit_with_map(const std::vector<int>& y_target,
+double compute_mean_ridit_with_map_cpp(const std::vector<int>& y_target,
                                   const std::map<int, double>& ridit_map,
                                   const std::vector<int>& levels) {
-    if (y_target.empty()) return NA_REAL;
-    if (ridit_map.empty()) return NA_REAL;
+    if (y_target.empty() || ridit_map.empty()) return NA_REAL;
 
     double sum_t = 0.0;
     for (int val : y_target) {
@@ -62,8 +62,7 @@ double compute_mean_ridit_with_map(const std::vector<int>& y_target,
     return sum_t / y_target.size();
 }
 
-// Full analysis for one realization
-double compute_single_ridit_estimate(const std::vector<int>& y_b, 
+double compute_single_ridit_estimate_cpp(const std::vector<int>& y_b, 
                                    const std::vector<int>& w_b, 
                                    const std::string& reference) {
     int n = y_b.size();
@@ -86,10 +85,12 @@ double compute_single_ridit_estimate(const std::vector<int>& y_b,
     
     std::map<int, double> ridit_map;
     std::vector<int> levels;
-    get_ridit_map(y_ref, ridit_map, levels);
+    get_ridit_map_cpp(y_ref, ridit_map, levels);
     
-    return compute_mean_ridit_with_map(y_t, ridit_map, levels) - 0.5;
+    return compute_mean_ridit_with_map_cpp(y_t, ridit_map, levels) - 0.5;
 }
+
+} // namespace
 
 // [[Rcpp::export]]
 NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y, 
@@ -98,42 +99,46 @@ NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y,
                                              int num_cores) {
     int nsim = w_mat.cols();
     int n = y.size();
-    NumericVector results(nsim);
+    std::vector<double> results_vec(nsim, NA_REAL);
+    double* res_ptr = results_vec.data();
     
-    std::vector<int> y_std(n);
-    for(int i=0; i<n; ++i) y_std[i] = y[i];
+    const int* y_ptr = y.begin();
+    const int* w_mat_ptr = w_mat.begin();
 
-    // Precompute if pooled
+    std::vector<int> y_std(n);
+    for(int i=0; i<n; ++i) y_std[i] = y_ptr[i];
+
     bool is_pooled = (reference == "pooled");
     std::map<int, double> global_ridit_map;
     std::vector<int> global_levels;
     if (is_pooled) {
-        get_ridit_map(y_std, global_ridit_map, global_levels);
+        get_ridit_map_cpp(y_std, global_ridit_map, global_levels);
     }
 
 #ifdef _OPENMP
-    if (num_cores > 1) omp_set_num_threads(num_cores);
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(dynamic)
     for (int b = 0; b < nsim; ++b) {
+        const int* w_col = w_mat_ptr + (size_t)b * n;
         std::vector<int> y_t;
         std::vector<int> w_b(n);
         for(int i=0; i<n; ++i) {
-            int wb = w_mat(i, b);
+            int wb = w_col[i];
             w_b[i] = wb;
             if (wb == 1) y_t.push_back(y_std[i]);
         }
         
         if (is_pooled) {
-            if (y_t.empty()) results[b] = NA_REAL;
-            else results[b] = compute_mean_ridit_with_map(y_t, global_ridit_map, global_levels) - 0.5;
+            if (y_t.empty()) res_ptr[b] = NA_REAL;
+            else res_ptr[b] = compute_mean_ridit_with_map_cpp(y_t, global_ridit_map, global_levels) - 0.5;
         } else {
-            results[b] = compute_single_ridit_estimate(y_std, w_b, reference);
+            res_ptr[b] = compute_single_ridit_estimate_cpp(y_std, w_b, reference);
         }
     }
     
-    return results;
+    return wrap(results_vec);
 }
 
 // [[Rcpp::export]]
@@ -142,30 +147,37 @@ NumericVector compute_ridit_bootstrap_parallel_cpp(const IntegerVector& y,
                                                  const IntegerMatrix& indices_mat, 
                                                  std::string reference, 
                                                  int num_cores) {
-    int B = indices_mat.cols();
+    int B = indices_mat.ncol();
     int n = y.size();
-    NumericVector results(B);
+    std::vector<double> results_vec(B, NA_REAL);
+    double* res_ptr = results_vec.data();
+
+    const int* y_ptr = y.begin();
+    const int* w_ptr = w.begin();
+    const int* idx_mat_ptr = indices_mat.begin();
 
 #ifdef _OPENMP
-    if (num_cores > 1) omp_set_num_threads(num_cores);
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(dynamic)
     for (int b = 0; b < B; ++b) {
-        if (indices_mat(0, b) == -1) {
-            results[b] = NA_REAL;
+        const int* idx_col = idx_mat_ptr + (size_t)b * n;
+        if (idx_col[0] == -1) {
+            res_ptr[b] = NA_REAL;
             continue;
         }
         
         std::vector<int> y_b(n);
         std::vector<int> w_b(n);
         for (int i = 0; i < n; ++i) {
-            int idx = indices_mat(i, b) - 1; // 1-indexed to 0-indexed
-            y_b[i] = y[idx];
-            w_b[i] = w[idx];
+            int idx = idx_col[i] - 1; // 1-indexed to 0-indexed
+            if (idx < 0 || idx >= n) continue;
+            y_b[i] = y_ptr[idx];
+            w_b[i] = w_ptr[idx];
         }
-        results[b] = compute_single_ridit_estimate(y_b, w_b, reference);
+        res_ptr[b] = compute_single_ridit_estimate_cpp(y_b, w_b, reference);
     }
     
-    return results;
+    return wrap(results_vec);
 }

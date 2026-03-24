@@ -3,15 +3,15 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-List compute_kk_grouping_cpp(const IntegerVector& match_indic) {
-  const int n = match_indic.size();
+List compute_kk_grouping_cpp(const IntegerVector& m_vec) {
+  const int n = m_vec.size();
   IntegerVector cluster_id(n);
   NumericVector pair_active(n);
   NumericVector reservoir_ind(n);
 
   int max_match = 0;
   for (int i = 0; i < n; ++i) {
-    int match_id = match_indic[i];
+    int match_id = m_vec[i];
     if (match_id == NA_INTEGER) {
       match_id = 0;
     }
@@ -22,7 +22,7 @@ List compute_kk_grouping_cpp(const IntegerVector& match_indic) {
 
   int next_id = max_match;
   for (int i = 0; i < n; ++i) {
-    int match_id = match_indic[i];
+    int match_id = m_vec[i];
     if (match_id == NA_INTEGER) {
       match_id = 0;
     }
@@ -46,7 +46,7 @@ List compute_kk_grouping_cpp(const IntegerVector& match_indic) {
 }
 
 // [[Rcpp::export]]
-IntegerVector compute_kk_cluster_ids_cpp(const IntegerVector& match_indic) {
-  List grouping = compute_kk_grouping_cpp(match_indic);
+IntegerVector compute_kk_cluster_ids_cpp(const IntegerVector& m_vec) {
+  List grouping = compute_kk_grouping_cpp(m_vec);
   return grouping["cluster_id"];
 }

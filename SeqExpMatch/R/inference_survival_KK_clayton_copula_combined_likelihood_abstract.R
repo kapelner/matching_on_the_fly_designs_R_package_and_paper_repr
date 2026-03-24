@@ -87,9 +87,9 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
 			Xmm = cbind(w = private$w, X_cov)
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
 			# Use the best parameters from the original fit as the ONLY starting point
 			# This significantly speeds up each randomization draw.
@@ -97,7 +97,7 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 				y = private$y,
 				dead = private$dead,
 				Xmm = Xmm,
-				pair_id = match_indic,
+				pair_id = m_vec,
 				include_singletons = TRUE,
 				starts = list(private$best_par)
 			)
@@ -184,16 +184,16 @@ SeqDesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("SeqDe
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
 			for (Xcand in private$design_matrix_candidates()){
 				fit = .fit_clayton_weibull_aft(
 					y = private$y,
 					dead = private$dead,
 					Xmm = Xcand,
-					pair_id = match_indic,
+					pair_id = m_vec,
 					include_singletons = TRUE
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){

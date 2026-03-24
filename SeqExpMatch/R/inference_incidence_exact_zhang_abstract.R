@@ -117,11 +117,11 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 		},
 
 		compute_combined_exact_pval = function(delta_0, combination_method = "Fisher"){
-			# Design validation: only CRD and KK supported by this method
-			is_crd = is(private$seq_des_obj, "SeqDesignCRD")
+			# Design validation: only Bernoulli and KK supported by this method
+			is_bernoulli = is(private$seq_des_obj, "SeqDesignBernoulli")
 			is_kk  = is(private$seq_des_obj, "SeqDesignKK14")
-			if (!is_crd && !is_kk){
-				stop("Zhang incidence inference is only supported for CRD (SeqDesignCRD) and KK (SeqDesignKK14 or subclass) designs.")
+			if (!is_bernoulli && !is_kk){
+				stop("Zhang incidence inference is only supported for Bernoulli (SeqDesignBernoulli) and KK (SeqDesignKK14 or subclass) designs.")
 			}
 
 			exact_stats = private$get_exact_zhang_stats()
@@ -131,12 +131,12 @@ SeqDesignInferenceIncidExactZhangAbstract = R6::R6Class("SeqDesignInferenceIncid
 			private$combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
 		},
 
-		# Default: no matched-pair test (CRD designs have m = 0 always;
+		# Default: no matched-pair test (Bernoulli designs have m = 0 always;
 		# KK-specific exact classes override this method when needed).
 		compute_exact_pval_matched_pairs = function(delta_0) NA_real_,
 
 		# Exact Fisher test under H0: OR_reservoir = exp(delta_0).
-		# For CRD designs (KKstats = NULL) all subjects are treated as the reservoir.
+		# For Bernoulli designs (KKstats = NULL) all subjects are treated as the reservoir.
 		compute_exact_pval_reservoir = function(delta_0){
 			exact_stats = private$get_exact_zhang_stats()
 			if (exact_stats$nRT == 0L || exact_stats$nRC == 0L) return(NA_real_)

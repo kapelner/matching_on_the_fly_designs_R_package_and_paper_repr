@@ -4,7 +4,7 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List compute_kk_lin_match_data_cpp(const IntegerVector& w,
-                                   const IntegerVector& match_indic,
+                                   const IntegerVector& m_vec,
                                    const NumericVector& y,
                                    const NumericMatrix& X) {
   const int n = w.size();
@@ -13,7 +13,7 @@ List compute_kk_lin_match_data_cpp(const IntegerVector& w,
   int n_reservoir = 0;
 
   for (int i = 0; i < n; ++i) {
-    int match_id = match_indic[i];
+    int match_id = m_vec[i];
     if (match_id == NA_INTEGER) {
       match_id = 0;
     }
@@ -33,7 +33,7 @@ List compute_kk_lin_match_data_cpp(const IntegerVector& w,
   std::vector<int> found_c(static_cast<std::size_t>(m), 0);
 
   for (int i = 0; i < n; ++i) {
-    int match_id = match_indic[i];
+    int match_id = m_vec[i];
     if (match_id == NA_INTEGER || match_id <= 0) {
       continue;
     }
@@ -69,7 +69,7 @@ List compute_kk_lin_match_data_cpp(const IntegerVector& w,
   int nRC = 0;
 
   for (int i = 0, reservoir_index = 0; i < n; ++i) {
-    int match_id = match_indic[i];
+    int match_id = m_vec[i];
     if (match_id == NA_INTEGER) {
       match_id = 0;
     }

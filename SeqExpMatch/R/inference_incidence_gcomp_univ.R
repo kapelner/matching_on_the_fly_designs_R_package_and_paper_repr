@@ -19,7 +19,7 @@ SeqDesignInferenceIncidUnivGCompRiskDiff = R6::R6Class("SeqDesignInferenceIncidU
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 20, response_type = "incidence")
+		#' seq_des = SeqDesignBernoulli$new(n = 20, response_type = "incidence")
 		#' for (i in 1:20) {
 		#' 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
 		#' 	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
@@ -92,7 +92,7 @@ SeqDesignInferenceIncidUnivGCompRiskDiff = R6::R6Class("SeqDesignInferenceIncidU
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$
+#' seq_des <- SeqDesignBernoulli$
 #'   new(
 #'   n = nrow(x_dat),
 #'   response_type = "incidence",

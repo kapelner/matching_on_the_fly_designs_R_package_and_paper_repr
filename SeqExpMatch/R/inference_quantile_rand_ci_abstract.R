@@ -2,7 +2,7 @@
 #
 # @description
 # Provides \code{compute_confidence_interval_rand()}
-# via Zhang's combined test-inversion method for both CRD (\eqn{m = 0},
+# via Zhang's combined test-inversion method for both Bernoulli (\eqn{m = 0},
 # all subjects in the reservoir) and KK matching-on-the-fly designs
 # (\eqn{m > 0}).
 #

@@ -12,7 +12,7 @@ source("package_tests/_dataset_load.R")
 
 dataset_name = "diamonds"
 response_type = "continuous"
-design_type = "CRD"
+design_type = "Bernoulli"
 B_samples = 10000
 beta_T = 1
 SD_NOISE = 0.1
@@ -31,7 +31,7 @@ y = D$y_original[[response_type]]
 cat("Initializing design ", design_type, " for dataset ", dataset_name, " (n = ", n, ")...
 ", sep="")
 
-seq_des_obj = SeqDesignCRD$new(response_type = response_type, n = n)
+seq_des_obj = SeqDesignBernoulli$new(response_type = response_type, n = n)
 
 for (t in 1 : n){
 	w_t = seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])

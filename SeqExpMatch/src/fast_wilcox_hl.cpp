@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <map>
 
 // [[Rcpp::plugins(openmp)]]
 
@@ -60,7 +61,6 @@ double hl_from_groups(const std::vector<double>& y_t, const std::vector<double>&
     return median_in_place(diffs);
 }
 
-// Signed-rank HL estimate: median of Walsh averages of differences
 double hl_signed_rank(const std::vector<double>& pair_diffs) {
     if (pair_diffs.empty()) {
         return NA_REAL;
@@ -78,16 +78,8 @@ double hl_signed_rank(const std::vector<double>& pair_diffs) {
     return median_in_place(walsh_avgs);
 }
 
-// Simplified variance estimate for HL based on asymptotic normality of Wilcoxon stat
-// This is a proxy for the SE back-calculated from CI width.
-// For large n, SE(HL) is proportional to 1/sqrt(n)
-// We'll use a robust sample-based approach if possible, but for IVWC weights, 
-// even a consistent relative variance is helpful.
-// Better: implement the actual Wilcoxon SE formula for the statistic and scale it.
 double estimate_hl_ssq_rank_sum(const std::vector<double>& y_t, const std::vector<double>& y_c) {
     if (y_t.size() < 2 || y_c.size() < 2) return NA_REAL;
-    // Use a simple heuristic: variance of pairwise differences / effective n
-    // This is often a good proxy for the HL variance.
     double sum = 0;
     double sum_sq = 0;
     int count = 0;
@@ -137,28 +129,19 @@ double apply_shift(double y_val, double delta, int transform_code) {
 
 // [[Rcpp::export]]
 double wilcox_hl_point_estimate_cpp(const NumericVector& y, const IntegerVector& w) {
-    if (y.size() != w.size()) {
-        stop("y and w must have the same length");
-    }
-
     std::vector<double> y_t;
     std::vector<double> y_c;
     y_t.reserve(y.size());
     y_c.reserve(y.size());
 
-    for (int i = 0; i < y.size(); ++i) {
-        if (!R_finite(y[i])) {
-            continue;
-        }
-        if (w[i] == 1) {
-            y_t.push_back(y[i]);
-        } else if (w[i] == 0) {
-            y_c.push_back(y[i]);
-        }
-    }
+    const double* y_ptr = y.begin();
+    const int* w_ptr = w.begin();
+    int n = y.size();
 
-    if (y_t.empty() || y_c.empty()) {
-        return NA_REAL;
+    for (int i = 0; i < n; ++i) {
+        if (!std::isfinite(y_ptr[i])) continue;
+        if (w_ptr[i] == 1) y_t.push_back(y_ptr[i]);
+        else if (w_ptr[i] == 0) y_c.push_back(y_ptr[i]);
     }
 
     return hl_from_groups(y_t, y_c);
@@ -173,22 +156,22 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
 
     const int n = y.size();
     const int B = indices_mat.ncol();
-    if (w.size() != n || indices_mat.nrow() != n) {
-        stop("dimension mismatch in compute_wilcox_hl_bootstrap_parallel_cpp");
-    }
-
-    NumericVector results(B, NA_REAL);
+    
+    std::vector<double> results_vec(B, NA_REAL);
+    const double* y_ptr = y.begin();
+    const int* w_ptr = w.begin();
+    const int* idx_ptr = indices_mat.begin();
+    double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP
-    if (num_cores > 1) {
-        omp_set_num_threads(num_cores);
-    }
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(dynamic)
     for (int b = 0; b < B; ++b) {
-        if (indices_mat(0, b) < 0) {
-            results[b] = NA_REAL;
+        const int* idx_col = idx_ptr + (size_t)b * n;
+        if (idx_col[0] < 0) {
+            res_ptr[b] = NA_REAL;
             continue;
         }
 
@@ -198,27 +181,20 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
         y_c.reserve(n);
 
         for (int i = 0; i < n; ++i) {
-            const int idx = indices_mat(i, b);
-            if (idx < 0 || idx >= n) {
-                y_t.clear();
-                y_c.clear();
-                break;
-            }
-            const double y_val = y[idx];
-            if (!R_finite(y_val)) {
-                continue;
-            }
-            if (w[idx] == 1) {
-                y_t.push_back(y_val);
-            } else if (w[idx] == 0) {
-                y_c.push_back(y_val);
-            }
+            const int idx = idx_col[i];
+            if (idx < 0 || idx >= n) continue;
+            
+            const double y_val = y_ptr[idx];
+            if (!std::isfinite(y_val)) continue;
+            
+            if (w_ptr[idx] == 1) y_t.push_back(y_val);
+            else if (w_ptr[idx] == 0) y_c.push_back(y_val);
         }
 
-        results[b] = hl_from_groups(y_t, y_c);
+        res_ptr[b] = hl_from_groups(y_t, y_c);
     }
 
-    return results;
+    return wrap(results_vec);
 }
 
 // [[Rcpp::export]]
@@ -231,91 +207,89 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
 
     const int n = y.size();
     const int nsim = w_mat.ncol();
-    if (w_mat.nrow() != n) {
-        stop("dimension mismatch in compute_wilcox_hl_distr_parallel_cpp");
-    }
+    
+    std::vector<double> results_vec(nsim, NA_REAL);
+    const double* y_ptr = y.begin();
+    const int* w_ptr = w_mat.begin();
+    double* res_ptr = results_vec.data();
 
-    NumericVector results(nsim, NA_REAL);
-
-    // Pre-calculate shifted responses for treatment group once
     std::vector<double> y_shifted(n);
     if (delta != 0.0) {
         for (int i = 0; i < n; ++i) {
-            if (R_finite(y[i])) {
-                y_shifted[i] = apply_shift(y[i], delta, transform_code);
-            } else {
-                y_shifted[i] = NA_REAL;
-            }
+            if (std::isfinite(y_ptr[i])) y_shifted[i] = apply_shift(y_ptr[i], delta, transform_code);
+            else y_shifted[i] = NA_REAL;
         }
     }
 
 #ifdef _OPENMP
-    if (num_cores > 1) {
-        omp_set_num_threads(num_cores);
-    }
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(dynamic)
     for (int b = 0; b < nsim; ++b) {
+        const int* w_col = w_ptr + (size_t)b * n;
         std::vector<double> y_t;
         std::vector<double> y_c;
         y_t.reserve(n);
         y_c.reserve(n);
 
         for (int i = 0; i < n; ++i) {
-            const double y_orig = y[i];
-            if (!R_finite(y_orig)) {
-                continue;
-            }
+            if (!std::isfinite(y_ptr[i])) continue;
 
-            const int w_val = w_mat(i, b);
-            if (w_val == 1) {
-                y_t.push_back(delta != 0.0 ? y_shifted[i] : y_orig);
-            } else if (w_val == 0) {
-                y_c.push_back(y_orig);
+            if (w_col[i] == 1) {
+                y_t.push_back(delta != 0.0 ? y_shifted[i] : y_ptr[i]);
+            } else if (w_col[i] == 0) {
+                y_c.push_back(y_ptr[i]);
             }
         }
 
-        results[b] = hl_from_groups(y_t, y_c);
+        res_ptr[b] = hl_from_groups(y_t, y_c);
     }
 
-    return results;
+    return wrap(results_vec);
 }
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
     const NumericVector& y,
     const IntegerVector& w,
-    const IntegerVector& match_indic,
+    const IntegerVector& m_vec,
     const IntegerMatrix& indices_mat,
-    const IntegerMatrix& match_indic_mat,
+    const IntegerMatrix& m_mat,
     int num_cores) {
 
     int B = indices_mat.ncol();
     int n = y.size();
-    NumericVector results(B, NA_REAL);
+    
+    std::vector<double> results_vec(B, NA_REAL);
+    const double* y_ptr = y.begin();
+    const int* w_ptr = w.begin();
+    const int* idx_ptr = indices_mat.begin();
+    const int* m_ptr = m_mat.begin();
+    double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP
-    if (num_cores > 1) {
-        omp_set_num_threads(num_cores);
-    }
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(dynamic)
     for (int b = 0; b < B; ++b) {
+        const int* idx_col = idx_ptr + (size_t)b * n;
+        const int* m_col = m_ptr + (size_t)b * n;
+        
         std::vector<double> pair_diffs;
         std::vector<double> res_y_t;
         std::vector<double> res_y_c;
 
-        // Process resampled data for this bootstrap iteration
-        // We need to group by the new match_indic_mat
         std::map<int, std::vector<size_t>> pairs;
         for (int i = 0; i < n; ++i) {
-            int mid = match_indic_mat(i, b);
-            int idx = indices_mat(i, b) - 1;
+            int mid = m_col[i];
+            int idx = idx_col[i] - 1;
+            if (idx < 0) continue;
+            
             if (mid == 0) {
-                if (w[idx] == 1) res_y_t.push_back(y[idx]);
-                else res_y_c.push_back(y[idx]);
+                if (w_ptr[idx] == 1) res_y_t.push_back(y_ptr[idx]);
+                else res_y_c.push_back(y_ptr[idx]);
             } else {
                 pairs[mid].push_back(idx);
             }
@@ -325,35 +299,28 @@ NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
             if (idxs.size() == 2) {
                 int idx1 = idxs[0];
                 int idx2 = idxs[1];
-                if (w[idx1] == 1 && w[idx2] == 0) {
-                    pair_diffs.push_back(y[idx1] - y[idx2]);
-                } else if (w[idx1] == 0 && w[idx2] == 1) {
-                    pair_diffs.push_back(y[idx2] - y[idx1]);
-                }
+                if (w_ptr[idx1] == 1 && w_ptr[idx2] == 0) pair_diffs.push_back(y_ptr[idx1] - y_ptr[idx2]);
+                else if (w_ptr[idx1] == 0 && w_ptr[idx2] == 1) pair_diffs.push_back(y_ptr[idx2] - y_ptr[idx1]);
             }
         }
 
-        // Compute component estimates
         double beta_m = hl_signed_rank(pair_diffs);
         double ssq_m = estimate_hl_ssq_signed_rank(pair_diffs);
-        
         double beta_r = hl_from_groups(res_y_t, res_y_c);
         double ssq_r = estimate_hl_ssq_rank_sum(res_y_t, res_y_c);
 
-        bool m_ok = R_finite(beta_m) && R_finite(ssq_m) && ssq_m > 0;
-        bool r_ok = R_finite(beta_r) && R_finite(ssq_r) && ssq_r > 0;
+        bool m_ok = std::isfinite(beta_m) && std::isfinite(ssq_m) && ssq_m > 0;
+        bool r_ok = std::isfinite(beta_r) && std::isfinite(ssq_r) && ssq_r > 0;
 
         if (m_ok && r_ok) {
             double w_star = ssq_r / (ssq_r + ssq_m);
-            results[b] = w_star * beta_m + (1.0 - w_star) * beta_r;
+            res_ptr[b] = w_star * beta_m + (1.0 - w_star) * beta_r;
         } else if (m_ok) {
-            results[b] = beta_m;
+            res_ptr[b] = beta_m;
         } else if (r_ok) {
-            results[b] = beta_r;
-        } else {
-            results[b] = NA_REAL;
+            res_ptr[b] = beta_r;
         }
     }
 
-    return results;
+    return wrap(results_vec);
 }

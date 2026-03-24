@@ -1,6 +1,6 @@
 test_that("Inference works for continuous", {
 	n <- 10
-	des <- SeqDesignCRD$new(n = n, response_type = "continuous", verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
 	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
@@ -20,7 +20,7 @@ test_that("Inference works for continuous", {
 
 test_that("Inference works for incidence", {
 	n <- 30
-	des <- SeqDesignCRD$new(n = n, response_type = "incidence", verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
 	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
@@ -34,7 +34,7 @@ test_that("Inference works for incidence", {
 
 test_that("Inference works for count", {
 	n <- 20
-	des <- SeqDesignCRD$new(n = n, response_type = "count", verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
 	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
@@ -66,7 +66,7 @@ test_that("Inference works for count", {
 
 test_that("Inference works for proportion", {
 	n <- 10
-	des <- SeqDesignCRD$new(n = n, response_type = "proportion", verbose = FALSE)
+	des <- SeqDesignBernoulli$new(n = n, response_type = "proportion", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
 	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
@@ -80,7 +80,7 @@ test_that("Inference works for proportion", {
 
 test_that("Inference works for survival", {
 	n <- 20
-	des <- SeqDesignCRD$new(n = n, response_type = "survival")
+	des <- SeqDesignBernoulli$new(n = n, response_type = "survival")
 	set.seed(1)
 	for (i in 1:n) {
 	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
@@ -110,7 +110,7 @@ test_that("Inference works for survival", {
 
 test_that("Inference works for ordinal partial proportional odds", {
 	n <- 20
-	des <- SeqDesignCRD$new(n = n, response_type = "ordinal")
+	des <- SeqDesignBernoulli$new(n = n, response_type = "ordinal")
 	set.seed(10)
 	for (i in 1:n) {
 		des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))

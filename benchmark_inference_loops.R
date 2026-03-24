@@ -15,7 +15,7 @@ safe_run_timed <- function(expr) {
 	result
 }
 
-designs <- c("SeqDesignCRD", "SeqDesignEfron", "SeqDesignAtkinson", "SeqDesignKK14", "SeqDesignKK21", "SeqDesignKK21stepwise", "SeqDesigniBCRD")
+designs <- c("SeqDesignBernoulli", "SeqDesignEfron", "SeqDesignAtkinson", "SeqDesignKK14", "SeqDesignKK21", "SeqDesignKK21stepwise", "SeqDesigniBCRD")
 
 inf_by_res_type <- list(
 	continuous = c(

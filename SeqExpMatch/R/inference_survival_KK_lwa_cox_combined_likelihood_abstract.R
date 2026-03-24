@@ -87,11 +87,11 @@ SeqDesignInferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("SeqDesignInf
 				private$compute_basic_match_data()
 			}
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			cluster_id = match_indic
+			cluster_id = m_vec
 			reservoir_idx = which(cluster_id == 0L)
 			if (length(reservoir_idx) > 0L){
 				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)

@@ -5,41 +5,48 @@
 \title{A stratified permuted block Sequential Design (SPBR)}
 \description{
 An R6 Class encapsulating the data and functionality for a stratified permuted block sequential experimental design.
-This design ensures balance within specified strata using permuted blocks.
 }
-\section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignSPBR}
+\section{Super classes}{
+\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignSPBR-new}{\code{SeqDesignSPBR$new()}}
+\item \href{#method-SeqDesignSPBR-assign_wt}{\code{SeqDesignSPBR$assign_wt()}}
 \item \href{#method-SeqDesignSPBR-clone}{\code{SeqDesignSPBR$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_assignments'><code>SeqExpMatch::SeqDesign$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_responses'><code>SeqExpMatch::SeqDesign$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_response'><code>SeqExpMatch::SeqDesign$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_assignments'><code>SeqExpMatch::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_responses'><code>SeqExpMatch::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject'><code>SeqExpMatch::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject_response"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject_response'><code>SeqExpMatch::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="any_censoring"><a href='../../SeqExpMatch/html/Design.html#method-Design-any_censoring'><code>SeqExpMatch::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_even_allocation'><code>SeqExpMatch::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_experiment_completed'><code>SeqExpMatch::Design$assert_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_fixed_sample'><code>SeqExpMatch::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-check_experiment_completed'><code>SeqExpMatch::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="duplicate"><a href='../../SeqExpMatch/html/Design.html#method-Design-duplicate'><code>SeqExpMatch::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X'><code>SeqExpMatch::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_imp"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_imp'><code>SeqExpMatch::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_raw"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_raw'><code>SeqExpMatch::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_dead"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_dead'><code>SeqExpMatch::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_n"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_n'><code>SeqExpMatch::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_prob_T"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_prob_T'><code>SeqExpMatch::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_response_type"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_response_type'><code>SeqExpMatch::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_t"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_t'><code>SeqExpMatch::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_blocking_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_blocking_design'><code>SeqExpMatch::Design$is_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_complete_blocking_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_complete_blocking_design'><code>SeqExpMatch::Design$is_complete_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-draw_ws_according_to_design'><code>SeqExpMatch::FixedDesign$draw_ws_according_to_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="any_censoring"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-any_censoring'><code>SeqExpMatch::SeqDesign$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_even_allocation'><code>SeqExpMatch::SeqDesign$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_experiment_completed'><code>SeqExpMatch::SeqDesign$assert_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_fixed_sample'><code>SeqExpMatch::SeqDesign$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-check_experiment_completed'><code>SeqExpMatch::SeqDesign$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-duplicate'><code>SeqExpMatch::SeqDesign$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_imp'><code>SeqExpMatch::SeqDesign$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_response_type'><code>SeqExpMatch::SeqDesign$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_t"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_t'><code>SeqExpMatch::SeqDesign$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_w"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_w'><code>SeqExpMatch::SeqDesign$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_y"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_y'><code>SeqExpMatch::SeqDesign$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-is_fixed_sample_size'><code>SeqExpMatch::SeqDesign$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
 </ul>
 </details>
@@ -48,7 +55,6 @@ This design ensures balance within specified strata using permuted blocks.
 \if{html}{\out{<a id="method-SeqDesignSPBR-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignSPBR-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a stratified permuted block sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignSPBR$new(
   strata_cols,
@@ -62,37 +68,15 @@ Initialize a stratified permuted block sequential experimental design
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
-
-\item{\code{block_size}}{The size of the permuted blocks. Must be a multiple of the inverse of \code{prob_T} to ensure integer treatment/control counts.}
-
-\item{\code{response_type}}{The data type of response values which must be one of the following:
-"continuous" (the default),
-"incidence",
-"proportion",
-"count",
-"survival",
-"ordinal".}
-
-\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
-should we include another dummy variable for its missingness? Default is \code{TRUE}.}
-
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is \code{FALSE}.}
 }
-\if{html}{\out{</div>}}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignSPBR-assign_wt"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignSPBR-assign_wt}{}}}
+\subsection{Method \code{assign_wt()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignSPBR$assign_wt()}\if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-A new `SeqDesignSPBR` object
-}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignSPBR-clone"></a>}}

@@ -60,13 +60,13 @@ SeqDesignInferenceAbstractKKMarginalIncid = R6::R6Class("SeqDesignInferenceAbstr
 			cluster_id = private$cached_values$cluster_id
 			if (!is.null(cluster_id)) return(cluster_id)
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)){
-				match_indic = rep(0L, private$n)
+			m_vec = private$m
+			if (is.null(m_vec)){
+				m_vec = rep(0L, private$n)
 			}
-			match_indic = as.integer(match_indic)
-			match_indic[is.na(match_indic)] = 0L
-			cluster_id = compute_kk_cluster_ids_cpp(match_indic)
+			m_vec = as.integer(m_vec)
+			m_vec[is.na(m_vec)] = 0L
+			cluster_id = compute_kk_cluster_ids_cpp(m_vec)
 			private$cached_values$cluster_id = cluster_id
 			cluster_id
 		}

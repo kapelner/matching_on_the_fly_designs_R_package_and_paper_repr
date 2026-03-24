@@ -35,7 +35,7 @@ save(res, file = "all_sim_data.RData")
 load("all_sim_data.RData")
 res[, inference_method := sub("result_\\d*_(.*$)", "\\1", filename, perl = TRUE)]
 res[design == "KK14" & test_type == "randomization-exact" & inference_method == "survival_multivariate_weibull_regression" & nsim == 1][, .(inference_type = sub("result_\\d*_(.*$)", "\\1", filename,perl=TRUE))]
-res[, design := factor(design, levels = c("CRD", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))]
+res[, design := factor(design, levels = c("Bernoulli", "iBCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))]
 res = res[!is.na(res$p_val), ]
 res_summ_pval = res[, .(avg_p_val = mean(p_val < 0.05), num_sim = .N), by = c("n", "design", "test_type", "inference_method", "prob_of_adding_response", "betaT")]
 res_summ_pval[, pval_test := 2 * pnorm(-abs(avg_p_val - 0.05) / sqrt(0.05 * .95 / num_sim))]

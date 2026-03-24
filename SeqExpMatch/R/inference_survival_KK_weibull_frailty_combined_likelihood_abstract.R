@@ -97,11 +97,11 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 			# For univariate, use the fast approximation instead of parfm
 			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			cluster_id = match_indic
+			cluster_id = m_vec
 			reservoir_idx = which(cluster_id == 0L)
 			if (length(reservoir_idx) > 0L){
 				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
@@ -122,7 +122,7 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 		},
 
 		# High-speed bootstrap implementation using the coxph+survreg approximation.
-		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic) {
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			dead = private$dead
 			X = if (private$include_covariates()) as.matrix(private$X) else NULL
 			if (!is.null(X) && is.null(colnames(X))) colnames(X) = paste0("x", seq_len(ncol(X)))
@@ -141,7 +141,7 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 					cluster_b = integer(0)
 					for (new_id in 1:m) {
 						orig_id = pairs_b[new_id]
-						idx = which(match_indic == orig_id)
+						idx = which(m_vec == orig_id)
 						i_match_b = c(i_match_b, idx)
 						cluster_b = c(cluster_b, rep(new_id, length(idx)))
 					}
@@ -225,13 +225,13 @@ SeqDesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("SeqD
 				private$compute_basic_match_data()
 			}
 
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
 			# Cluster IDs: matched subjects keep their pair ID;
-			# reservoir subjects (match_indic == 0) each get a unique singleton ID.
-			cluster_id = match_indic
+			# reservoir subjects (m_vec == 0) each get a unique singleton ID.
+			cluster_id = m_vec
 			reservoir_idx = which(cluster_id == 0L)
 			if (length(reservoir_idx) > 0L){
 				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)

@@ -100,10 +100,10 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 			beta_m = NA_real_
 			ssq_m = NA_real_
 			if (m > 0 && !is.null(private$best_Xmm_colnames_matched)){
-				match_indic = private$match_indic
-				if (is.null(match_indic)) match_indic = rep(0L, private$n)
-				match_indic[is.na(match_indic)] = 0L
-				i_matched = which(match_indic > 0L)
+				m_vec = private$m
+				if (is.null(m_vec)) m_vec = rep(0L, private$n)
+				m_vec[is.na(m_vec)] = 0L
+				i_matched = which(m_vec > 0L)
 
 				X_cov = X_data[i_matched, intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
 				Xmm = cbind(w = private$w[i_matched], X_cov)
@@ -112,7 +112,7 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 					y = private$y[i_matched],
 					dead = private$dead[i_matched],
 					Xmm = Xmm,
-					pair_id = match_indic[i_matched],
+					pair_id = m_vec[i_matched],
 					include_singletons = FALSE,
 					starts = list(private$best_par_matched)
 				)
@@ -126,10 +126,10 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 			beta_r = NA_real_
 			ssq_r = NA_real_
 			if (nRT > 0 && nRC > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
-				match_indic = private$match_indic
-				if (is.null(match_indic)) match_indic = rep(0L, private$n)
-				match_indic[is.na(match_indic)] = 0L
-				i_reservoir = which(match_indic == 0L)
+				m_vec = private$m
+				if (is.null(m_vec)) m_vec = rep(0L, private$n)
+				m_vec[is.na(m_vec)] = 0L
+				i_reservoir = which(m_vec == 0L)
 
 				X_cov = X_data[i_reservoir, intersect(private$best_Xmm_colnames_reservoir, colnames(X_data)), drop = FALSE]
 				Xmm = cbind(w = private$w[i_reservoir], X_cov)
@@ -287,11 +287,11 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 		},
 
 		clayton_copula_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_matched = which(match_indic > 0L)
+			i_matched = which(m_vec > 0L)
 			if (length(i_matched) == 0L) return(invisible(NULL))
 
 			for (Xcand in private$design_matrix_candidates()){
@@ -299,7 +299,7 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 					y = private$y[i_matched],
 					dead = private$dead[i_matched],
 					Xmm = Xcand[i_matched, , drop = FALSE],
-					pair_id = match_indic[i_matched],
+					pair_id = m_vec[i_matched],
 					include_singletons = FALSE
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
@@ -314,11 +314,11 @@ SeqDesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("SeqDesignInferenceA
 		},
 
 		weibull_for_reservoir = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_reservoir = which(match_indic == 0L)
+			i_reservoir = which(m_vec == 0L)
 			if (length(i_reservoir) == 0L) return(invisible(NULL))
 
 			for (Xcand in private$design_matrix_candidates()){

@@ -19,7 +19,7 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			super$initialize(seq_des_obj, num_cores, verbose)
 			# For KK designs set up match data eagerly (mirrors SeqDesignInferenceKKPassThrough)
 			if (is(seq_des_obj, "SeqDesignKK14")){
-				private$match_indic = seq_des_obj$.__enclos_env__$private$match_indic
+				private$m = seq_des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
 			}
 		}
@@ -27,7 +27,7 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 
 	private = list(
 
-		match_indic = NULL,
+		m = NULL,
 
 		# -----------------------------------------------------------------------
 		# KK match-data setup (mirrors SeqDesignInferenceKKPassThrough)
@@ -37,15 +37,15 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			if (is.null(private$X)){
 				private$X = private$get_X()
 			}
-			match_indic = private$match_indic
-			if (is.null(match_indic)){
-				match_indic = rep(0, private$n)
+			m_vec = private$m
+			if (is.null(m_vec)){
+				m_vec = rep(0, private$n)
 			}
-			match_indic[is.na(match_indic)] = 0
+			m_vec[is.na(m_vec)] = 0
 			y = private$y
 			w = private$w
 
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(w, match_indic, y, private$X)
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(w, m_vec, y, private$X)
 		},
 
 		# -----------------------------------------------------------------------
@@ -75,16 +75,27 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 			lo_bound = mle_ci[1] - 0.5 * ci_width
 			hi_bound = mle_ci[2] + 0.5 * ci_width
 
-			p_fn = function(delta_0){
-				p_M = if (m > 0)             private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
-				p_R = if (nRT > 0 && nRC > 0) private$compute_exact_pval_reservoir(delta_0)    else NA_real_
-				private$combine_exact_pvals(p_M, p_R, m, nRT, nRC, combination_method)
+			if (private$num_cores > 1L) {
+				private$compute_zhang_ci_bounds_parallel(
+					est = est,
+					lo_bound = lo_bound,
+					hi_bound = hi_bound,
+					alpha = alpha,
+					pval_epsilon = pval_epsilon,
+					combination_method = combination_method
+				)
+			} else {
+				p_fn = function(delta_0){
+					p_M = if (m > 0)              private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
+					p_R = if (nRT > 0 && nRC > 0) private$compute_exact_pval_reservoir(delta_0)     else NA_real_
+					private$combine_exact_pvals(p_M, p_R, m, nRT, nRC, combination_method)
+				}
+
+				lower = private$bisect_ci_boundary(p_fn, inside = est, outside = lo_bound, pval_th = alpha, tol = pval_epsilon)
+				upper = private$bisect_ci_boundary(p_fn, inside = est, outside = hi_bound, pval_th = alpha, tol = pval_epsilon)
+
+				c(lower, upper)
 			}
-
-			lower = private$bisect_ci_boundary(p_fn, inside = est, outside = lo_bound, pval_th = alpha, tol = pval_epsilon)
-			upper = private$bisect_ci_boundary(p_fn, inside = est, outside = hi_bound, pval_th = alpha, tol = pval_epsilon)
-
-			c(lower, upper)
 		},
 
 		# -----------------------------------------------------------------------
@@ -153,6 +164,43 @@ SeqDesignInferenceAbstractZhangCombinedBase = R6::R6Class("SeqDesignInferenceAbs
 				}
 			}
 			(inside + outside) / 2
+		},
+
+		compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
+			bound_specs = list(
+				list(inside = est, outside = lo_bound),
+				list(inside = est, outside = hi_bound)
+			)
+			child_budget = max(1L, as.integer(floor(private$num_cores / 2)))
+			inf_template = self$duplicate()
+
+			results = parallel::mclapply(bound_specs, function(spec){
+				worker_inf = inf_template$duplicate()
+				worker_inf$.__enclos_env__$private$num_cores = child_budget
+				set_package_threads(child_budget)
+
+				worker_private = worker_inf$.__enclos_env__$private
+				exact_stats = worker_private$get_exact_zhang_stats()
+				m = exact_stats$m
+				nRT = exact_stats$nRT
+				nRC = exact_stats$nRC
+
+				p_fn = function(delta_0){
+					p_M = if (m > 0)              worker_private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
+					p_R = if (nRT > 0 && nRC > 0) worker_private$compute_exact_pval_reservoir(delta_0)     else NA_real_
+					worker_private$combine_exact_pvals(p_M, p_R, m, nRT, nRC, combination_method)
+				}
+
+				worker_private$bisect_ci_boundary(
+					p_fn = p_fn,
+					inside = spec$inside,
+					outside = spec$outside,
+					pval_th = alpha,
+					tol = pval_epsilon
+				)
+			}, mc.cores = min(2L, private$num_cores))
+
+			c(results[[1]], results[[2]])
 		}
 	)
 )

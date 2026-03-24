@@ -181,11 +181,11 @@ SeqDesignInferenceAbstractKKLWACoxIVWC = R6::R6Class("SeqDesignInferenceAbstract
 		},
 
 		lwa_cox_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_matched = which(match_indic > 0)
+			i_matched = which(m_vec > 0)
 			if (length(i_matched) == 0L) return(invisible(NULL))
 
 			fit = private$fit_cox_model(
@@ -193,7 +193,7 @@ SeqDesignInferenceAbstractKKLWACoxIVWC = R6::R6Class("SeqDesignInferenceAbstract
 				dead = private$dead[i_matched],
 				w = private$w[i_matched],
 				X = private$X[i_matched, , drop = FALSE],
-				cluster = match_indic[i_matched],
+				cluster = m_vec[i_matched],
 				robust = TRUE
 			)
 			if (is.null(fit)) return(invisible(NULL))
@@ -203,11 +203,11 @@ SeqDesignInferenceAbstractKKLWACoxIVWC = R6::R6Class("SeqDesignInferenceAbstract
 		},
 
 		cox_for_reservoir = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_reservoir = which(match_indic == 0L)
+			i_reservoir = which(m_vec == 0L)
 			if (length(i_reservoir) == 0L) return(invisible(NULL))
 
 			fit = private$fit_cox_model(

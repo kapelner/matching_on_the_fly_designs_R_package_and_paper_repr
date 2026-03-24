@@ -1,3 +1,10 @@
+# Helper for parallel progress bars
+print_progress = function(pb, i, total) {
+	if (!is.null(pb)) {
+		utils::setTxtProgressBar(pb, i)
+	}
+}
+
 set_package_threads = function(num_cores) {
 	# Ensure it's an integer
 	n = as.integer(num_cores)
@@ -373,20 +380,20 @@ NULL
 #' }
 NULL
 
-.compute_kk_basic_match_data = function(X, n, y, w, match_indic){
-	if (is.null(match_indic)){
-		match_indic = rep(0, n)
+.compute_kk_basic_match_data = function(X, n, y, w, m_vec){
+	if (is.null(m_vec)){
+		m_vec = rep(0, n)
 	}
-	match_indic[is.na(match_indic)] = 0
-	compute_zhang_match_data_cpp(w, match_indic, y, X)
+	m_vec[is.na(m_vec)] = 0
+	compute_zhang_match_data_cpp(w, m_vec, y, X)
 }
 
-.compute_kk_lin_basic_match_data = function(X, n, y, w, match_indic){
-	if (is.null(match_indic)){
-		match_indic = rep(0, n)
+.compute_kk_lin_basic_match_data = function(X, n, y, w, m_vec){
+	if (is.null(m_vec)){
+		m_vec = rep(0, n)
 	}
-	match_indic[is.na(match_indic)] = 0
-	compute_kk_lin_match_data_cpp(w, match_indic, y, X)
+	m_vec[is.na(m_vec)] = 0
+	compute_kk_lin_match_data_cpp(w, m_vec, y, X)
 }
 
 .extract_se_from_rq_fit = function(fit, coef_name){

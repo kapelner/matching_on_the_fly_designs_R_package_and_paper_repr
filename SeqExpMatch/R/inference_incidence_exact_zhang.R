@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Provides incidence-specific exact inference based on the Zhang (2026) combined
-#' method. For CRD designs this uses the reservoir exact test only.
+#' method. For Bernoulli designs this uses the reservoir exact test only.
 #'
 #' @details
 #' This class provides the \code{compute_exact_two_sided_pval_for_treatment_effect}
@@ -19,7 +19,7 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- SeqDesignCRD$
+#' seq_des <- SeqDesignBernoulli$
 #'   new(
 #'   n = nrow(x_dat),
 #'   response_type = "incidence",
@@ -111,7 +111,7 @@ SeqDesignInferenceIncidExactZhang = R6::R6Class("SeqDesignInferenceIncidExactZha
 
 		#' @description
 		#' Computes the exact Zhang confidence interval for the log-odds treatment
-		#' effect under CRD.
+		#' effect under Bernoulli.
 		#' @param alpha Significance level; the interval covers \code{1 - alpha}.
 		#' @param pval_epsilon Bisection convergence tolerance.
 		#' @param combination_method Combination rule for component p-values.
@@ -125,7 +125,7 @@ SeqDesignInferenceIncidExactZhang = R6::R6Class("SeqDesignInferenceIncidExactZha
 
 		#' @description
 		#' Computes the exact Zhang two-sided p-value for the log-odds treatment
-		#' effect under CRD.
+		#' effect under Bernoulli.
 		#' @param delta Null treatment effect (log-odds ratio) to test.
 		#' @param combination_method Combination rule for component p-values.
 		compute_exact_two_sided_pval_for_treatment_effect = function(delta = 0, combination_method = "Fisher"){
@@ -139,8 +139,8 @@ SeqDesignInferenceIncidExactZhang = R6::R6Class("SeqDesignInferenceIncidExactZha
 	private = list(
 
 		assert_supported_design = function(seq_des_obj){
-			if (!is(seq_des_obj, "SeqDesignCRD")){
-				stop(class(self)[1], " requires a completely randomized design (SeqDesignCRD). Use SeqDesignInferenceIncidKKExactZhang for KK matching-on-the-fly designs.")
+			if (!is(seq_des_obj, "SeqDesignBernoulli")){
+				stop(class(self)[1], " requires a completely randomized design (SeqDesignBernoulli). Use SeqDesignInferenceIncidKKExactZhang for KK matching-on-the-fly designs.")
 			}
 		}
 	)

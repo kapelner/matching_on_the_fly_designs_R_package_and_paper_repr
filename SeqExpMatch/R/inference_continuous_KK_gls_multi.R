@@ -117,9 +117,9 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 
 	private = list(
 		shared = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
 			full_X_matrix = private$create_design_matrix()
 			# Full matrix has Intercept, w, and covariates.
@@ -130,7 +130,7 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 
 			dat = data.frame(y = private$y, X_model)
 
-			m = max(match_indic)
+			m = max(m_vec)
 			if (m == 0L) {
 				# No matched pairs — degenerate GLS equals OLS, so run OLS directly.
 				mod_ols = lm(y ~ ., data = dat)
@@ -143,7 +143,7 @@ SeqDesignInferenceContinMultGLS = R6::R6Class("SeqDesignInferenceContinMultGLS",
 			}
 
 			# Matched pairs share a group_id; reservoir subjects each get a unique one.
-			group_id = match_indic
+			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L) {
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)

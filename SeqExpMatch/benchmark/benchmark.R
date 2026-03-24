@@ -8,11 +8,11 @@ set.seed(123)
 n = 50
 p = 5
 
-cat("Debugging Bootstrap NAs for CRD continuous SimpleMeanDiff\n")
+cat("Debugging Bootstrap NAs for Bernoulli continuous SimpleMeanDiff\n")
 
 # Define Designs
 design_constructors = list(
-	"CRD" = function(type) SeqDesignCRD$new(response_type = type)
+	"Bernoulli" = function(type) SeqDesignBernoulli$new(response_type = type)
 )
 
 # Inference classes mapped by response type
@@ -30,7 +30,7 @@ generate_data = function(n, p, type) {
 	list(X = X_dt, y = y, dead = dead)
 }
 
-des_name = "CRD"
+des_name = "Bernoulli"
 resp_type = "continuous"
 inf_name = "SimpleMeanDiff"
 

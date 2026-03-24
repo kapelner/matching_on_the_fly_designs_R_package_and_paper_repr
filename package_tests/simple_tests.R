@@ -246,6 +246,7 @@ safe_call = function(label, expr){
 		}, error = function(e){
 			msg = if (length(e$message) == 0L) "" else e$message
 			is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
+					 grepl("must implement", msg, fixed = TRUE) ||
 						 grepl("not enough discordant pairs", msg, ignore.case = TRUE) ||
 						 grepl("Degenerate confidence interval", msg, fixed = TRUE) ||
 						 grepl("inconsistent estimator units", msg, ignore.case = TRUE) ||
@@ -433,7 +434,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		KK21 =         SeqDesignKK21$new(        response_type = response_type, n = n),
 		KK21stepwise = SeqDesignKK21stepwise$new(response_type = response_type, n = n),
 		KK14 =         SeqDesignKK14$new(        response_type = response_type, n = n),
-		CRD =          SeqDesignCRD$new(         response_type = response_type, n = n),
+		Bernoulli =          SeqDesignBernoulli$new(         response_type = response_type, n = n),
 		Efron =        SeqDesignEfron$new(       response_type = response_type, n = n),
 		Atkinson =     SeqDesignAtkinson$new(    response_type = response_type, n = n),
 		iBCRD =        SeqDesigniBCRD$new(       response_type = response_type, n = n),
@@ -514,7 +515,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (response_type == "incidence"){
 		inference_banner("SeqDesignInferenceAllSimpleMeanDiff")
 		run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-		if (design_type == "CRD"){
+		if (design_type == "Bernoulli"){
 			inference_banner("SeqDesignInferenceIncidExactZhang")
 			run_inference_checks(SeqDesignInferenceIncidExactZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		}
@@ -906,7 +907,7 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				log_progress(paste0("\n\n  === Running tests for response_type: ", response_type, " ===\n\n"))
-				for (design_type in c("CRD", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR")) {
+				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR")) {
 					log_progress(paste0("\n\n    === Running tests for design: ", design_type, " ==="))
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 					log_progress(paste0("\n\n  === Finished tests for design_type: ", design_type, " ===\n\n"))

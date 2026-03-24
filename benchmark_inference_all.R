@@ -29,13 +29,13 @@ pval_epsilon = 0.05
 beta_T = 0.2
 SD_NOISE = 0.1
 
-prepare_seq_des_obj = function(response_type, dataset_name = "airquality") {
+prepare_seq_des_obj = function(response_type, dataset_name = "airquality", design_class = SeqDesignKK14) {
     D = datasets_and_response_models[[dataset_name]]
     X_design = as.data.frame(D$X)
     n = min(nrow(X_design), MAX_N_DATASET)
     y = D$y_original[[response_type]]
     
-    seq_des_obj = SeqDesignKK14$new(response_type = response_type, n = n)
+    seq_des_obj = design_class$new(response_type = response_type, n = n)
     
     for (t in 1:n) {
         w_t = seq_des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
@@ -73,18 +73,19 @@ categorized_classes = list(
 results_file = "benchmark_inference_results.csv"
 if (file.exists(results_file)) file.remove(results_file)
 
-bm_safe = function(label, expr) {
-    cat(sprintf("%s ", label))
+bm_safe = function(label, expr, env = parent.frame()) {
+    cat(sprintf("%s\n", label))
     flush.console()
     t_start = proc.time()[["elapsed"]]
     res = tryCatch({
-        eval(expr)
+        eval(expr, envir = env)
+        
         t_end = proc.time()[["elapsed"]]
         duration = round(t_end - t_start, 3)
-        cat(sprintf("(%.3fs) ", duration))
+        cat(sprintf(" (%.3fs) ", duration))
         duration
     }, error = function(e) {
-        cat(sprintf("(ERROR: %s) ", e$message))
+        cat(sprintf(" (ERROR: %s) ", e$message))
         NA
     })
     res
@@ -95,7 +96,8 @@ for (response_type in names(categorized_classes)) {
     flush.console()
     if (!(response_type %in% names(datasets_and_response_models$airquality$y_original))) next
     
-    seq_des_obj = prepare_seq_des_obj(response_type)
+    seq_des_obj_kk14 = prepare_seq_des_obj(response_type, design_class = SeqDesignKK14)
+    seq_des_obj_kk21 = prepare_seq_des_obj(response_type, design_class = SeqDesignKK21)
     
     for (inf_class_name in unique(categorized_classes[[response_type]])) {
         if (inf_class_name == "SeqDesignInferenceAllKKCompoundMeanDiff") next
@@ -109,32 +111,58 @@ for (response_type in names(categorized_classes)) {
             next
         }
         
+        # Decide which design object to use
+        current_seq_des_obj = if (grepl("TKK21", inf_class_name)) seq_des_obj_kk21 else seq_des_obj_kk14
+        
+        # Skip slow randomization CI for heavy models
+        is_heavy_model = grepl("GLMM|GEE|QuantileRegr", inf_class_name)
+        if (response_type != "continuous" && grepl("Wilcox", inf_class_name)) {
+            is_heavy_model = TRUE
+        }
+        
         for (num_cores in CORE_COUNTS) {
             cat(sprintf("    num_cores = %d: ", num_cores))
             flush.console()
             
             # 1. boot (New object)
-            inf_obj = tryCatch(inf_class$new(seq_des_obj, num_cores = num_cores), error = function(e) NULL)
-            boot_time = if (!is.null(inf_obj)) bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE))) else NA
+            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            boot_time = if (!is.null(inf_obj)) {
+                bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE)))
+            } else NA
             
             # 2. ci (New object)
-            inf_obj = tryCatch(inf_class$new(seq_des_obj, num_cores = num_cores), error = function(e) NULL)
-            ci_time = if (!is.null(inf_obj)) bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))) else NA
+            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
+                bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+            } else NA
             
             # 3. custom_ci (New object)
-            inf_obj = tryCatch(inf_class$new(seq_des_obj, num_cores = num_cores), error = function(e) NULL)
-            custom_ci_time = if (!is.null(inf_obj)) {
-                inf_obj$set_custom_randomization_statistic_function(custom_rand_stat)
+            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
+                tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
                 bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
-            inf_obj = tryCatch(inf_class$new(seq_des_obj, num_cores = num_cores), error = function(e) NULL)
-            rand_time = if (!is.null(inf_obj)) bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))) else NA
+            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
+                bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE)))
+            } else NA
             
             # 5. ci_after_rand (REUSE object from rand)
-            ci_after_rand_time = if (!is.null(inf_obj)) bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))) else NA
+            ci_after_rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
+                bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+            } else NA
             
+            # 6. asymp (Asymptotic p-value/CI)
+            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            asymp_pval_time = if (!is.null(inf_obj)) {
+                bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
+            } else NA
+            asymp_ci_time = if (!is.null(inf_obj)) {
+                bm_safe("asymp_ci", quote(inf_obj$compute_asymp_confidence_interval()))
+            } else NA
+
             row = data.table(
                 num_cores = num_cores,
                 response_type = response_type,
@@ -143,7 +171,9 @@ for (response_type in names(categorized_classes)) {
                 rand_pval_time = rand_time,
                 rand_ci_time = ci_time,
                 rand_custom_ci_time = custom_ci_time,
-                rand_ci_after_rand_time = ci_after_rand_time
+                rand_ci_after_rand_time = ci_after_rand_time,
+                asymp_pval_time = asymp_pval_time,
+                asymp_ci_time = asymp_ci_time
             )
             
             fwrite(row, results_file, append = file.exists(results_file))
@@ -160,7 +190,9 @@ if (file.exists(results_file)) {
         avg_rand_pval = mean(rand_pval_time, na.rm = TRUE),
         avg_rand_ci = mean(rand_ci_time, na.rm = TRUE),
         avg_rand_custom_ci = mean(rand_custom_ci_time, na.rm = TRUE),
-        avg_ci_after_rand = mean(rand_ci_after_rand_time, na.rm = TRUE)
+        avg_ci_after_rand = mean(rand_ci_after_rand_time, na.rm = TRUE),
+        avg_asymp_pval = mean(asymp_pval_time, na.rm = TRUE),
+        avg_asymp_ci = mean(asymp_ci_time, na.rm = TRUE)
     ), by = .(num_cores)]
     print(summary_table)
 }

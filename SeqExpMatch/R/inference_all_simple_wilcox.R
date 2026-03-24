@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Non-parametric inference based on the two-sample Wilcoxon rank-sum test
-#' (Mann-Whitney U) for any sequential experimental design (CRD, Efron, iBCRD,
+#' (Mann-Whitney U) for any sequential experimental design (Bernoulli, Efron, iBCRD,
 #' or KK). The treatment effect estimate is the Hodges-Lehmann pseudo-median of
 #' all pairwise treatment-minus-control response differences. Inference uses the
 #' asymptotic normal approximation for the HL estimator.
@@ -32,7 +32,7 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 		#' )
-		#' seq_des <- SeqDesignCRD$new(n = nrow(x_dat), response_type = "continuous", verbose = FALSE)
+		#' seq_des <- SeqDesignBernoulli$new(n = nrow(x_dat), response_type = "continuous", verbose = FALSE)
 		#' for (i in seq_len(nrow(x_dat))) {
 		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 		#' }
@@ -95,8 +95,18 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 			wilcox_hl_point_estimate_cpp(as.numeric(y_vals), as.integer(w_vals))
 		},
 
-		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			# KK designs use design-aware resampling not available via these args; fall back to R loop.
+			if (private$is_KK) return(NULL)
+
+			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			args = list(...)
+			max_resample_attempts = args[[1]]
+			n = args[[2]]
+			y = args[[3]]
+			dead = args[[4]]
+			w = args[[5]]
 
 			indices_mat = matrix(-1L, nrow = n, ncol = B)
 
@@ -110,15 +120,13 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 						break
 					}
 					attempt = attempt + 1L
-					if (attempt > max_resample_attempts) {
-						break
-					}
+					if (attempt > max_resample_attempts) break
 				}
 			}
 
 			compute_wilcox_hl_bootstrap_parallel_cpp(
-				as.numeric(y),
-				as.integer(w),
+				as.numeric(private$y),
+				as.integer(private$w),
 				indices_mat,
 				private$num_cores
 			)
@@ -127,31 +135,23 @@ SeqDesignInferenceAllSimpleWilcox = R6::R6Class("SeqDesignInferenceAllSimpleWilc
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
-			nsim = length(permutations)
-			n = length(y)
-
-			w_mat = matrix(0L, nrow = n, ncol = nsim)
-			for (i in 1:nsim) {
-				w_mat[, i] = permutations[[i]]$w
-			}
+			# Optimization: w_mat is already pre-computed in generate_permutations
+			w_mat = permutations$w_mat
+			nsim = ncol(w_mat)
 
 			y_sim = as.numeric(y)
-			# Wilcoxon is rank-based, so we can shift y before ranking.
-			# (SeqDesignInference handles transforms like log/logit before passing y here)
 			
-			res = compute_wilcox_distr_parallel_cpp(y_sim, w_mat, private$num_cores)
-			# Note: if delta != 0, we'd need to re-rank for each permutation if we were being 
-			# strict, but for simple Wilcoxon rank sum, if the sharp null is additive on the 
-			# scale of y, then y_T - delta = y_C. 
-			# Actually, we can just pass the shifted y to the C++ ranker.
-			
-			if (delta != 0) {
-				# For non-linear rank stats with delta, the fast path is trickier because 
-				# ranks change per permutation. Let's fall back to R for delta != 0 
-				# for Wilcoxon to ensure correctness unless we implement per-perm ranking in C++.
-				return(NULL) 
+			# Map transform_responses to transform_code
+			t_code = 0L # none
+			if (transform_responses == "log") {
+				t_code = 1L
+			} else if (transform_responses == "logit") {
+				t_code = 2L
+			} else if (transform_responses == "log1p") {
+				t_code = 3L
 			}
-
+			
+			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, private$num_cores)
 			return(res)
 		},
 

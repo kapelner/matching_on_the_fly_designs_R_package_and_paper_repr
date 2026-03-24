@@ -147,15 +147,15 @@ SeqDesignInferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("SeqDesignInferen
 		},
 
 		aftgee_for_matched_pairs = function(){
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			i_matched = which(match_indic > 0)
+			i_matched = which(m_vec > 0)
 			y_m       = private$y[i_matched]
 			dead_m    = private$dead[i_matched]
 			w_m       = private$w[i_matched]
-			strata_m  = match_indic[i_matched]
+			strata_m  = m_vec[i_matched]
 
 			# Filter strata that have no events (aftgee needs at least some events)
 			if (sum(dead_m) < 2) return(invisible(NULL))
@@ -187,7 +187,7 @@ SeqDesignInferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("SeqDesignInferen
 		aftgee_for_reservoir = function(){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
-			dead_r = private$dead[private$match_indic == 0]
+			dead_r = private$dead[private$m == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 
 			if (sum(dead_r) < 2) return(invisible(NULL))

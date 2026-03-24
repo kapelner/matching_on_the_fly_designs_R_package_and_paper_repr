@@ -79,7 +79,7 @@ static double compute_atkinson_weight(
 	int cols = rank_prev + 2;
 
 	if (rows == 0 || cols < 2) {
-		return 0.5;  // Will use CRD
+		return 0.5;  // Will use Bernoulli
 	}
 
 	// Build design matrix [w, 1, X_prev]
@@ -96,7 +96,7 @@ static double compute_atkinson_weight(
 	MatrixXd XwtXw = XprevWT.transpose() * XprevWT;
 	FullPivLU<MatrixXd> lu(XwtXw);
 	if (!lu.isInvertible()) {
-		return 0.5;  // Will use CRD
+		return 0.5;  // Will use Bernoulli
 	}
 
 	MatrixXd M = static_cast<double>(t - 1) * lu.inverse();
@@ -116,7 +116,7 @@ static double compute_atkinson_weight(
 
 	double A = row_segment.dot(xt_full);
 	if (A == 0 || !std::isfinite(A)) {
-		return 0.5;  // Will use CRD
+		return 0.5;  // Will use Bernoulli
 	}
 
 	double val = M(0, 0) / A + 1.0;
@@ -131,18 +131,19 @@ static double compute_atkinson_weight(
 NumericVector atkinson_redraw_batch_cpp(
 	const Eigen::MatrixXd& X,     // Full covariate matrix (n x p), already numeric
 	int n,                         // Number of subjects
-	int p_raw,                     // Number of raw covariates (for early-subject CRD threshold)
-	double prob_T = 0.5           // Treatment probability for CRD
+	int p_raw,                     // Number of raw covariates (for early-subject Bernoulli threshold)
+	double prob_T = 0.5           // Treatment probability for Bernoulli
 ) {
-	NumericVector w(n);
+	std::vector<double> results_vec(n);
+    double* w_ptr = results_vec.data();
 
-	// Threshold for using CRD (early subjects)
-	int crd_threshold = p_raw + 2 + 1;
+	// Threshold for using Bernoulli (early subjects)
+	int bernoulli_threshold = p_raw + 2 + 1;
 
 	for (int t = 1; t <= n; ++t) {
-		// For early subjects, use CRD
-		if (t <= crd_threshold) {
-			w[t - 1] = R::rbinom(1, prob_T);
+		// For early subjects, use Bernoulli
+		if (t <= bernoulli_threshold) {
+			w_ptr[t - 1] = (R::unif_rand() < prob_T) ? 1.0 : 0.0;
 			continue;
 		}
 
@@ -150,7 +151,7 @@ NumericVector atkinson_redraw_batch_cpp(
 		std::vector<int> var_cols = which_cols_vary_subset(X, t);
 
 		if (var_cols.empty()) {
-			w[t - 1] = R::rbinom(1, prob_T);
+			w_ptr[t - 1] = (R::unif_rand() < prob_T) ? 1.0 : 0.0;
 			continue;
 		}
 
@@ -161,7 +162,7 @@ NumericVector atkinson_redraw_batch_cpp(
 		std::vector<int> indep_cols = find_independent_cols(X_var);
 
 		if (indep_cols.empty()) {
-			w[t - 1] = R::rbinom(1, prob_T);
+			w_ptr[t - 1] = (R::unif_rand() < prob_T) ? 1.0 : 0.0;
 			continue;
 		}
 
@@ -183,7 +184,7 @@ NumericVector atkinson_redraw_batch_cpp(
 		// Get previous weights
 		VectorXd w_prev(t - 1);
 		for (int i = 0; i < t - 1; ++i) {
-			w_prev(i) = w[i];
+			w_prev(i) = w_ptr[i];
 		}
 
 		int rank_prev = X_prev.cols();
@@ -192,8 +193,8 @@ NumericVector atkinson_redraw_batch_cpp(
 		double prob = compute_atkinson_weight(w_prev, X_prev, xt_prev, rank_prev, t);
 
 		// Draw assignment
-		w[t - 1] = R::rbinom(1, prob);
+		w_ptr[t - 1] = (R::unif_rand() < prob) ? 1.0 : 0.0;
 	}
 
-	return w;
+	return wrap(results_vec);
 }

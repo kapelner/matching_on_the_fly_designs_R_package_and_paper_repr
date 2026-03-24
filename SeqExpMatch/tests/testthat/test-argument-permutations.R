@@ -59,17 +59,17 @@ test_that("robust_survreg_with_surv_object fallback and optimization", {
 })
 
 test_that("create_design_matrix consistency", {
-	# We test this by initializing an inference object and checking the private method
+	# We test this by initializing an inference object and checking the private$m method
 	set.seed(1)
 	n <- 20
-	seq_des <- SeqDesignCRD$new(n = n, response_type = "continuous")
+	seq_des <- SeqDesignBernoulli$new(n = n, response_type = "continuous")
 	X <- data.frame(x1 = rnorm(n))
 	for(i in 1:n) seq_des$add_subject_to_experiment_and_assign(X[i, , drop=FALSE])
 	seq_des$add_all_subject_responses(rnorm(n))
 
 	inf_obj <- SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
 
-	# Access private method
+	# Access private$m method
 	dm <- inf_obj$.__enclos_env__$private$create_design_matrix()
 
 	expect_equal(nrow(dm), n)

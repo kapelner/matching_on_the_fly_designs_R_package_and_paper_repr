@@ -2,7 +2,7 @@
 #
 # @description
 # An abstract base class providing shared quantile regression logic for KK matching-on-the-fly
-# designs. Subclasses override the \code{transform_y_fn} private field to apply a response
+# designs. Subclasses override the \code{transform_y_fn} private$m field to apply a response
 # transformation before quantile regression (e.g., \code{identity} for continuous,
 # \code{qlogis} for proportion outcomes).
 #

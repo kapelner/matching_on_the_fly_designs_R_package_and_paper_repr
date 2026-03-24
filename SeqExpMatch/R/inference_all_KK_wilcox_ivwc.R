@@ -189,39 +189,43 @@ SeqDesignInferenceAllKKWilcoxIVWC = R6::R6Class("SeqDesignInferenceAllKKWilcoxIV
 			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
-		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic){
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec){
 			# Generate bootstrap indices for KK design in R first
-			# (Easier than doing the complex KK resampling logic in C++)
 			indices_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
-			match_indic_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
+			m_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
+			w_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
 
 			for (b in 1:B) {
 				i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+				w_b_res = w[i_reservoir_b]
+				
+				i_matched_b = integer(0)
+				m_vec_b_matched = integer(0)
+				w_b_matched = integer(0)
+				
 				if (m > 0) {
 					pairs_to_include = sample(1:m, m, replace = TRUE)
-					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
 					for (new_pair_id in 1:m) {
 						original_pair_id = pairs_to_include[new_pair_id]
-						pair_indices = which(match_indic == original_pair_id)
+						pair_indices = which(m_vec == original_pair_id)
 						i_matched_b = c(i_matched_b, pair_indices)
-						match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+						m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
+						w_b_matched = c(w_b_matched, w[pair_indices])
 					}
-				} else {
-					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
 				}
 				
+				w_mat[, b] = c(w_b_res, w_b_matched)
+				m_mat[, b] = c(rep(0L, n_reservoir), m_vec_b_matched)
+				# Note: y is retrieved inside C++ using indices_mat
 				indices_mat[, b] = c(i_reservoir_b, i_matched_b)
-				match_indic_mat[, b] = c(rep(0L, n_reservoir), match_indic_b_matched)
 			}
 
 			compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
 				as.numeric(y),
 				as.integer(w),
-				as.integer(match_indic),
-				indices_mat,
-				match_indic_mat,
+				as.integer(m_vec),
+				indices_mat, # Back to 1-based, let C++ handle it if needed or check impl
+				m_mat,
 				private$num_cores
 			)
 		}

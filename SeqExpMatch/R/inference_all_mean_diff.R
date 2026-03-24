@@ -10,7 +10,7 @@
 #' @export
 #' @examples
 #' \dontrun{
-#' seq_des = SeqDesignCRD$new(n = 6, response_type = "continuous")
+#' seq_des = SeqDesignBernoulli$new(n = 6, response_type = "continuous")
 #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 #' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -132,16 +132,24 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 	),
 
 			private = list(
-		compute_fast_bootstrap_distr = function(B, max_resample_attempts, n, y, dead, w) {
+		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			# KK designs use design-aware resampling not available via these args; fall back to R loop.
+			if (private$is_KK) return(NULL)
 
-			y_mat = matrix(0.0, nrow = n, ncol = B)
-			w_mat = matrix(0L, nrow = n, ncol = B)
+			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			args = list(...)
+			max_resample_attempts = args[[1]]
+			n = args[[2]]
+			y = args[[3]]
+			dead = args[[4]]
+			w = args[[5]]
+
+			y_mat = matrix(NA_real_, nrow = n, ncol = B)
+			w_mat = matrix(NA_integer_, nrow = n, ncol = B)
 
 			for (b in 1:B) {
 				attempt = 1
-				i_b = NULL
-				w_b = NULL
 				repeat {
 					i_b = sample(n, n, replace = TRUE)
 					w_b = w[i_b]
@@ -153,37 +161,29 @@ SeqDesignInferenceAllSimpleMeanDiff = R6::R6Class("SeqDesignInferenceAllSimpleMe
 					attempt = attempt + 1
 					if (attempt > max_resample_attempts) break
 				}
-
-				if (attempt > max_resample_attempts) {
-					w_mat[, b] = rep(0L, n)
-				} else {
+				if (attempt <= max_resample_attempts) {
 					y_mat[, b] = y[i_b]
 					w_mat[, b] = w_b
 				}
 			}
 
-			res = compute_simple_mean_diff_parallel_cpp(y_mat, w_mat, private$num_cores)
+			# Vectorized mean-diff per bootstrap sample: mean(y_b[w_b==1]) - mean(y_b[w_b==0])
+			is_T = (w_mat == 1L)
+			has_val = !is.na(w_mat)
+			nT = colSums(is_T, na.rm = TRUE)
+			nC = colSums(!is_T & has_val, na.rm = TRUE)
+			sum_yT = colSums(y_mat * is_T, na.rm = TRUE)
+			sum_yC = colSums(y_mat * (!is_T) * has_val, na.rm = TRUE)
+			res = ifelse(nT > 0 & nC > 0, sum_yT / nT - sum_yC / nC, NA_real_)
 			return(res)
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
-			nsim = length(permutations)
-			n = length(y)
-
-			w_mat = matrix(0L, nrow = n, ncol = nsim)
-			for (i in 1:nsim) {
-				w_mat[, i] = permutations[[i]]$w
-			}
-
-			y_mat = matrix(y, nrow = n, ncol = nsim)
-			if (delta != 0) {
-				# Apply shift vectorized across the whole matrix where w=1
-				y_mat[w_mat == 1] = y_mat[w_mat == 1] + delta
-			}
-
-			res = compute_simple_mean_diff_parallel_cpp(y_mat, w_mat, private$num_cores)
+			# Optimization: w_mat is already pre-computed in generate_permutations
+			w_mat = permutations$w_mat
+			res = compute_simple_mean_diff_parallel_cpp(as.numeric(y), w_mat, as.numeric(delta), private$num_cores)
 			return(res)
 		},
 

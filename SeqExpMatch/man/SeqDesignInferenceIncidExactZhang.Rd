@@ -5,7 +5,7 @@
 \title{Exact incidence inference via Zhang's combined reservoir test}
 \description{
 Provides incidence-specific exact inference based on the Zhang (2026) combined
-method. For CRD designs this uses the reservoir exact test only.
+method. For Bernoulli designs this uses the reservoir exact test only.
 }
 \details{
 This class provides the \code{compute_exact_two_sided_pval_for_treatment_effect}
@@ -21,7 +21,7 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- SeqDesignCRD$
+seq_des <- SeqDesignBernoulli$
   new(
   n = nrow(x_dat),
   response_type = "incidence",
@@ -237,7 +237,7 @@ Not implemented for Zhang exact incidence inference.
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
 Computes the exact Zhang confidence interval for the log-odds treatment
-effect under CRD.
+effect under Bernoulli.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_exact_confidence_interval(
   alpha = 0.05,
@@ -263,7 +263,7 @@ effect under CRD.
 \if{latex}{\out{\hypertarget{method-SeqDesignInferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
 Computes the exact Zhang two-sided p-value for the log-odds treatment
-effect under CRD.
+effect under Bernoulli.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignInferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect(
   delta = 0,

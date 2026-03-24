@@ -26,45 +26,42 @@ SeqDesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("SeqDesignInferenceAbst
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
-			nsim = length(permutations)
-			n = length(y)
+			# Optimization: w_mat and m_mat are already pre-computed matrices
+			w_mat = permutations$w_mat
+			m_mat = permutations$m_mat
+			nsim = ncol(w_mat)
 
-			w_mat = matrix(0L, nrow = n, ncol = nsim)
-			match_indic_mat = matrix(0L, nrow = n, ncol = nsim)
-			
-			for (i in 1:nsim) {
-				w_mat[, i] = permutations[[i]]$w
-				
-				# Optimization: check if match_indic is already in permutation cache
-				if (!is.null(permutations[[i]]$match_indic)) {
-					match_indic_mat[, i] = permutations[[i]]$match_indic
-				} else {
-					# Fallback to match_cache
-					w_key = private$stable_signature(permutations[[i]]$w)
-					if (!is.null(private$cached_values$match_cache[[w_key]])) {
-						match_indic_mat[, i] = private$cached_values$match_cache[[w_key]]
-					} else {
-						# If truly not matched yet, we must fall back to the slow path 
-						# for this call, or compute it once.
-						return(NULL)
+			# Check if all matchings are identical (common in KK14)
+			is_fixed_matching = TRUE
+			if (nsim > 1) {
+				first_match = m_mat[, 1]
+				for (j in 2:min(nsim, 5)) {
+					if (!all(m_mat[, j] == first_match)) {
+						is_fixed_matching = FALSE
+						break
 					}
 				}
 			}
 
 			y_sim = as.numeric(y)
-			if (delta != 0) {
-				# Apply shift to treated subjects in y before ranking
-				# (This is safe because we re-rank inside the C++ loop)
-				# But wait, compute_kk_wilcox_distr_parallel_cpp doesn't take delta yet.
-				# Let's pass delta=0 and handle the shift here since it's vectorized.
-				# But we can't shift yet because w is a matrix.
-				return(NULL) # Fallback for delta != 0 for now to ensure correctness
+			
+			# Map transform_responses to transform_code
+			t_code = 0L # none
+			if (transform_responses == "log") {
+				t_code = 1L
+			} else if (transform_responses == "logit") {
+				t_code = 2L
+			} else if (transform_responses == "log1p") {
+				t_code = 3L
 			}
-
+			
 			res = compute_kk_wilcox_distr_parallel_cpp(
 				y_sim,
 				w_mat,
-				match_indic_mat,
+				m_mat,
+				as.numeric(delta),
+				t_code,
+				is_fixed_matching,
 				private$num_cores
 			)
 			return(res)
@@ -86,12 +83,19 @@ SeqDesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("SeqDesignInferenceAbst
 			# Matched pairs: signed-rank W (standardized)
 			diffs = KKstats$y_matched_diffs
 			m_pairs = length(diffs)
-			if (m_pairs > 0 && !all(diffs == 0)){
-				W_m = tryCatch(wilcox.test(diffs, conf.int = FALSE)$statistic, error = function(e) NA_real_)
-				if (is.finite(W_m)){
+			if (m_pairs > 0){
+				# Optimization: manually compute Wilcoxon rank sum statistic to avoid R overhead
+				# This is equivalent to wilcox.test(diffs)$statistic
+				abs_diffs = abs(diffs)
+				signs = sign(diffs)
+				if (!all(signs == 0)){
+					# Fast ranking
+					rks = rank(abs_diffs, ties.method = "average")
+					W_plus = sum(rks[signs > 0]) + 0.5 * sum(rks[signs == 0])
+					
 					E_W = m_pairs * (m_pairs + 1) / 4
 					V_W = m_pairs * (m_pairs + 1) * (2 * m_pairs + 1) / 24
-					stat = stat + (W_m - E_W) / sqrt(V_W)
+					stat = stat + (W_plus - E_W) / sqrt(V_W)
 					n_components = n_components + 1
 				}
 			}
@@ -102,15 +106,14 @@ SeqDesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("SeqDesignInferenceAbst
 			if (nRT > 0 && nRC > 0){
 				y_r = KKstats$y_reservoir
 				w_r = KKstats$w_reservoir
-				yT = y_r[w_r == 1]
-				yC = y_r[w_r == 0]
-				W_r = tryCatch(wilcox.test(yT, yC, conf.int = FALSE)$statistic, error = function(e) NA_real_)
-				if (is.finite(W_r)){
-					E_W = nRT * nRC / 2
-					V_W = nRT * nRC * (nRT + nRC + 1) / 12
-					stat = stat + (W_r - E_W) / sqrt(V_W)
-					n_components = n_components + 1
-				}
+				# Optimization: use rank() directly
+				rks_r = rank(y_r, ties.method = "average")
+				W_r = sum(rks_r[w_r == 1])
+				
+				E_W = nRT * (nRT + nRC + 1) / 2
+				V_W = nRT * nRC * (nRT + nRC + 1) / 12
+				stat = stat + (W_r - E_W) / sqrt(V_W)
+				n_components = n_components + 1
 			}
 
 			if (n_components == 0L) NA_real_ else stat

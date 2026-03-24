@@ -34,7 +34,7 @@ SeqDesignInferenceContinUnivRobustRegr = R6::R6Class("SeqDesignInferenceContinUn
 		#'
 		#' @examples
 		#' \dontrun{
-		#' seq_des = SeqDesignCRD$new(n = 20, response_type = "continuous")
+		#' seq_des = SeqDesignBernoulli$new(n = 20, response_type = "continuous")
 		#' for (i in 1 : 20){
 		#'   seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 		#' }

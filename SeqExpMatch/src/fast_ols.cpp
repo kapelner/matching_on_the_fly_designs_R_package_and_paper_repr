@@ -1,37 +1,44 @@
 #include "_helper_functions.h"
+#include <RcppEigen.h>
+
 using namespace Rcpp;
+
+// Internal pure C++ logic
+ModelResult fast_ols_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
+    ModelResult res;
+    res.XtWX = X.transpose() * X; // XtWX is just XtX here
+    Eigen::VectorXd Xty = X.transpose() * y;
+    res.b = res.XtWX.ldlt().solve(Xty);
+    return res;
+}
 
 // [[Rcpp::export]]
 List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
-	// Use normal equations with LDLT for speed (X'X)beta = X'y
-	Eigen::MatrixXd XtX = X.transpose() * X;
-	Eigen::VectorXd Xty = X.transpose() * y;
-
-	// LDLT is much faster than QR for small to medium problems
-	Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-
-	return List::create(
-	Named("b") = beta,
-	Named("XtX") = XtX  // Return XtX for reuse in variance computation
-	);
+    ModelResult res = fast_ols_internal(X, y);
+    return List::create(
+        Named("b") = res.b,
+        Named("XtX") = res.XtWX
+    );
 }
 
 // [[Rcpp::export]]
 List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2) {
-	int n = X.rows();
-	int p = X.cols();
-	List mod = fast_ols_cpp(X, y);
-	Eigen::VectorXd beta = mod["b"];
-	Eigen::MatrixXd XtX = mod["XtX"];
+    int n = X.rows();
+    int p = X.cols();
+    ModelResult res = fast_ols_internal(X, y);
 
-	// Residuals and RSS
-	Eigen::VectorXd e = y - X * beta;
-	double sse = e.squaredNorm();
-	double sigma2_hat = sse / (n - p);
+    Eigen::VectorXd e = y - X * res.b;
+    double sse = e.squaredNorm();
+    res.sigma2_hat = sse / (n - p);
 
-	// Compute variance using the XtX we already have
-	mod["ssq_b_j"] = sigma2_hat * eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtX, j);
-	mod["ssq_b_2"] = (X.cols() >= 2) ? (sigma2_hat * eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtX, 2)) : NA_REAL;
-	mod["sigma2_hat"] = sigma2_hat;
-	return mod;
+    res.ssq_b_j = res.sigma2_hat * compute_diagonal_inverse_entry(res.XtWX, j);
+    res.ssq_b_2 = (X.cols() >= 2) ? (res.sigma2_hat * compute_diagonal_inverse_entry(res.XtWX, 2)) : NA_REAL;
+
+    return List::create(
+        Named("b") = res.b,
+        Named("XtX") = res.XtWX,
+        Named("ssq_b_j") = res.ssq_b_j,
+        Named("ssq_b_2") = res.ssq_b_2,
+        Named("sigma2_hat") = res.sigma2_hat
+    );
 }

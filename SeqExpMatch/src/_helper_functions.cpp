@@ -5,8 +5,7 @@ using namespace Rcpp;
 //typedef Eigen::Map<Eigen::MatrixXd> MapMat;
 //typedef Eigen::Map<Eigen::VectorXd> MapVec;
 
-// [[Rcpp::export]]
-double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j) {
+double compute_diagonal_inverse_entry(const Eigen::MatrixXd& M, int j) {
 	Eigen::VectorXd b = Eigen::VectorXd::Unit(M.rows(), j - 1);
 
 	// Prefer a direct LDLT decomposition for well-behaved symmetric systems.
@@ -31,6 +30,11 @@ double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::Matri
 	}
 
 	return x(j - 1);
+}
+
+// [[Rcpp::export]]
+double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j) {
+    return compute_diagonal_inverse_entry(M, j);
 }
 
 // [[Rcpp::export]]

@@ -76,7 +76,7 @@
     \itemize{
       \item Initial Release.
       \item Support for continuous response types.
-      \item Support for standard designs: CRD, BCRD, Atkinson, KK14, and KK21.
+      \item Support for standard designs: Bernoulli, BCRD, Atkinson, KK14, and KK21.
     }
   }
 }

@@ -22,7 +22,7 @@ incidence methods already in the package.
 ## ------------------------------------------------
 
 \dontrun{
-seq_des = SeqDesignCRD$new(n = 20, response_type = "incidence")
+seq_des = SeqDesignBernoulli$new(n = 20, response_type = "incidence")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
@@ -90,7 +90,7 @@ completed design with an incidence response.
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-seq_des = SeqDesignCRD$new(n = 20, response_type = "incidence")
+seq_des = SeqDesignBernoulli$new(n = 20, response_type = "incidence")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)

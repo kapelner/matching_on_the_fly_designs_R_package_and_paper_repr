@@ -132,14 +132,14 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 	),
 
 	private = list(
-		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, match_indic) {
+		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			# Only safe for simple additive/linear combinations right now.
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			n = length(y)
 			y_mat = matrix(0.0, nrow = n, ncol = B)
 			w_mat = matrix(0L, nrow = n, ncol = B)
-			match_indic_mat = matrix(0L, nrow = n, ncol = B)
+			m_mat = matrix(0L, nrow = n, ncol = B)
 
 			for (b in 1:B) {
 				# Resample reservoir with replacement
@@ -149,16 +149,16 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 				if (m > 0) {
 					pairs_to_include = sample(1:m, m, replace = TRUE)
 					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
+					m_vec_b_matched = integer(0)
 					for (new_pair_id in 1:m) {
 						original_pair_id = pairs_to_include[new_pair_id]
-						pair_indices = which(match_indic == original_pair_id)
+						pair_indices = which(m_vec == original_pair_id)
 						i_matched_b = c(i_matched_b, pair_indices)
-						match_indic_b_matched = c(match_indic_b_matched, new_pair_id, new_pair_id)
+						m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
 					}
 				} else {
 					i_matched_b = integer(0)
-					match_indic_b_matched = integer(0)
+					m_vec_b_matched = integer(0)
 				}
 
 				# Combine reservoir and matched indices
@@ -166,13 +166,13 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 
 				y_mat[, b] = y[i_b]
 				w_mat[, b] = w[i_b]
-				match_indic_mat[, b] = c(rep(0L, n_reservoir), match_indic_b_matched)
+				m_mat[, b] = c(rep(0L, n_reservoir), m_vec_b_matched)
 			}
 
 			res = compute_kk_compound_bootstrap_parallel_cpp(
 				y_mat,
 				w_mat,
-				match_indic_mat,
+				m_mat,
 				private$num_cores
 			)
 
@@ -180,54 +180,24 @@ SeqDesignInferenceAllKKCompoundMeanDiff = R6::R6Class("SeqDesignInferenceAllKKCo
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
-			# Only safe for simple additive/linear combinations right now.
-			# If a custom statistic is provided, fall back to slow R evaluation.
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			if (delta != 0) return(NULL)
 
-			nsim = length(permutations)
 			n = length(y)
-
-			w_mat = matrix(0L, nrow = n, ncol = nsim)
-			match_indic_mat = matrix(0L, nrow = n, ncol = nsim)
-
-			for (i in 1:nsim) {
-				w_mat[, i] = permutations[[i]]$w
-
-				mi = permutations[[i]]$match_indic
-				if (is.null(mi)) {
-					mi = rep(0L, n)
-				}
-				mi[is.na(mi)] = 0L
-				match_indic_mat[, i] = mi
+			w_mat = permutations$w_mat
+			m_mat = permutations$m_mat
+			if (is.null(m_mat)) {
+				m_mat = matrix(0L, nrow = n, ncol = ncol(w_mat))
+			} else {
+				m_mat[is.na(m_mat)] = 0L
 			}
 
-			# Apply the delta shift to y BEFORE passing to C++
-			y_shifted = copy(y)
-			if (delta != 0) {
-				# For the actual math in the C++ function, we simulate what the data
-				# looks like *under the null hypothesis*. The R base class already
-				# did the `seq_des_template$y[w==1] - delta` to shift the overall population.
-				# However, in the slow R loop, it adds delta *back* to the permuted
-				# treatment subjects so the null distribution is centered at delta.
-				# We must reproduce this addition in R before handing off to C++,
-				# or handle it in C++. We will handle it in C++ since we need `w_sim` to do it.
-				# WAIT! If we handle it in C++, we have to duplicate that logic.
-				# Alternatively, since we are doing linear estimators (mean diffs),
-				# `t0s(delta) = t0s(0) + delta`. The base class handles this perfectly!
-				# If delta != 0, it won't even call this function usually, it'll just shift t0s_ref.
-				# If it DOES call it, we can just return NULL and let the robust R loop handle it,
-				# because this is only a bottleneck for the initial delta=0 generation!
-				if (delta != 0) return(NULL)
-			}
-
-			# Call the fast C++ implementation
 			res = compute_kk_compound_distr_parallel_cpp(
-				y_shifted,
+				as.numeric(y),
 				w_mat,
-				match_indic_mat,
+				m_mat,
 				private$num_cores
 			)
-
 			return(res)
 		},
 

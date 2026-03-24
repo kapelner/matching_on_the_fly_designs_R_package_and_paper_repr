@@ -89,7 +89,7 @@ SeqDesignInferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("SeqDesignInferenceI
 				private$X = private$get_X()
 			}
 			# Use the optimized Zhang helper to get counts
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$match_indic, private$y, private$X)
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$X)
 		},
 
 		pool_estimates_ivwc = function(est1, var1, est2, var2){

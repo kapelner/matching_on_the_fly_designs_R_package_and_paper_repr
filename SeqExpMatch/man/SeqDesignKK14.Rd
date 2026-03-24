@@ -8,92 +8,49 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `SeqDesignKK14$new`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-}
-
-
-## ------------------------------------------------
-## Method `SeqDesignKK14$matching_statistics`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des$matching_statistics()
-}
-
-
-## ------------------------------------------------
-## Method `SeqDesignKK14$get_match_indic`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des$get_match_indic()
-}
-
-}
-\section{Super class}{
-\code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
+\section{Super classes}{
+\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignKK14-new}{\code{SeqDesignKK14$new()}}
 \item \href{#method-SeqDesignKK14-matching_statistics}{\code{SeqDesignKK14$matching_statistics()}}
-\item \href{#method-SeqDesignKK14-get_match_indic}{\code{SeqDesignKK14$get_match_indic()}}
+\item \href{#method-SeqDesignKK14-get_m}{\code{SeqDesignKK14$get_m()}}
 \item \href{#method-SeqDesignKK14-clone}{\code{SeqDesignKK14$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_assignments'><code>SeqExpMatch::SeqDesign$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_all_subject_responses'><code>SeqExpMatch::SeqDesign$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_response"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_response'><code>SeqExpMatch::SeqDesign$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_assignments'><code>SeqExpMatch::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_responses'><code>SeqExpMatch::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject'><code>SeqExpMatch::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject_response"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject_response'><code>SeqExpMatch::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="any_censoring"><a href='../../SeqExpMatch/html/Design.html#method-Design-any_censoring'><code>SeqExpMatch::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_even_allocation'><code>SeqExpMatch::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_experiment_completed'><code>SeqExpMatch::Design$assert_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_fixed_sample'><code>SeqExpMatch::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-check_experiment_completed'><code>SeqExpMatch::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="duplicate"><a href='../../SeqExpMatch/html/Design.html#method-Design-duplicate'><code>SeqExpMatch::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X'><code>SeqExpMatch::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_imp"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_imp'><code>SeqExpMatch::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_raw"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_raw'><code>SeqExpMatch::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_dead"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_dead'><code>SeqExpMatch::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_n"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_n'><code>SeqExpMatch::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_prob_T"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_prob_T'><code>SeqExpMatch::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_response_type"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_response_type'><code>SeqExpMatch::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_t"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_t'><code>SeqExpMatch::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_blocking_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_blocking_design'><code>SeqExpMatch::Design$is_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_complete_blocking_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_complete_blocking_design'><code>SeqExpMatch::Design$is_complete_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-draw_ws_according_to_design'><code>SeqExpMatch::FixedDesign$draw_ws_according_to_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="any_censoring"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-any_censoring'><code>SeqExpMatch::SeqDesign$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_even_allocation'><code>SeqExpMatch::SeqDesign$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_experiment_completed'><code>SeqExpMatch::SeqDesign$assert_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assert_fixed_sample'><code>SeqExpMatch::SeqDesign$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-check_experiment_completed'><code>SeqExpMatch::SeqDesign$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="duplicate"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-duplicate'><code>SeqExpMatch::SeqDesign$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_imp"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_imp'><code>SeqExpMatch::SeqDesign$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_X_raw"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_X_raw'><code>SeqExpMatch::SeqDesign$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_dead"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_dead'><code>SeqExpMatch::SeqDesign$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_n"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_n'><code>SeqExpMatch::SeqDesign$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_prob_T"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_prob_T'><code>SeqExpMatch::SeqDesign$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_response_type"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_response_type'><code>SeqExpMatch::SeqDesign$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_t"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_t'><code>SeqExpMatch::SeqDesign$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_w"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_w'><code>SeqExpMatch::SeqDesign$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="get_y"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-get_y'><code>SeqExpMatch::SeqDesign$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-is_fixed_sample_size'><code>SeqExpMatch::SeqDesign$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="assign_wt"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-assign_wt'><code>SeqExpMatch::SeqDesign$assign_wt()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
 </ul>
 </details>
@@ -122,65 +79,31 @@ Kapelner and Krieger (2014) or Morrison and Owen (2025)
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{The data type of response values which must be one of the following:
-                                "continuous" (the default),
-                                "incidence",
-                                "proportion",
-                                "count",
-                                "survival".
-                                                                This package will enforce
-that all added responses via the \code{add_subject_response} method will be
-                                of the appropriate type.}
+\item{\code{response_type}}{The data type of response values.}
 
-\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
+\item{\code{prob_T}}{The probability of the treatment assignment.}
 
-\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
-  should we include another dummy variable for its
-                                                                missingness in addition to
-imputing its value? If the feature is type factor, instead of creating
-                                a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+\item{\code{n}}{The sample size.}
 
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling during
-randomization-based inference and bootstrap resampling. The default is 1 for serial
-computation.}
+\item{\code{num_cores}}{The number of CPU cores.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
+\item{\code{verbose}}{A flag for verbosity.}
 
-\item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining
-matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
+\item{\code{lambda}}{The quantile cutoff.}
 
-\item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified
-and \code{morrison = FALSE}, default is 35\%.}
+\item{\code{t_0_pct}}{The percentage where matching begins.}
 
-\item{\code{morrison}}{Default is \code{FALSE} which implies matching via the KK14
-  algorithm using \code{lambda} and \code{t_0_pct} matching.
-                                                If \code{TRUE}, we use Morrison and Owen
-(2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
-                                                settings and matching begins immediately
-with no wait for a certain reservoir size like in KK14.}
+\item{\code{morrison}}{Flag for Morrison formula.}
 
-\item{\code{p}}{The number of covariate features. Must be specified when
-\code{morrison = TRUE} otherwise do not specify this argument.}
+\item{\code{p}}{The number of covariate features.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A new `SeqDesignKK14` object
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK14-matching_statistics"></a>}}
@@ -191,67 +114,14 @@ This returns a list with useful matching statistics.
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$matching_statistics()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A list with the following data: \code{num_matches}, \code{prop_subjects_matched},
-			\code{num_subjects_remaining_in_reservoir}, \code{prop_subjects_remaining_in_reservoir}.
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des$matching_statistics()
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignKK14-get_match_indic"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignKK14-get_match_indic}{}}}
-\subsection{Method \code{get_match_indic()}}{
-Returns information about the matched pairs and reservoir
+\if{html}{\out{<a id="method-SeqDesignKK14-get_m"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK14-get_m}{}}}
+\subsection{Method \code{get_m()}}{
+Returns the grouping vector `m`
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$get_match_indic()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-An array in the order in which the subject entered with the match number or zero if
-  the subject
-		belonged to the reservoir at the end of the study.
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = SeqDesignKK14$new(n = 6, response_type = "continuous")
-
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des$get_match_indic()
-}
-
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$get_m()}\if{html}{\out{</div>}}
 }
 
 }

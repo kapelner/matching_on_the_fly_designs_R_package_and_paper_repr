@@ -74,13 +74,13 @@ SeqDesignInferenceOrdinalUnivKKGEE = R6::R6Class("SeqDesignInferenceOrdinalUnivK
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			
-			match_indic = private$match_indic
-			if (is.null(match_indic)) match_indic = rep(0L, private$n)
-			match_indic[is.na(match_indic)] = 0L
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			m_vec[is.na(m_vec)] = 0L
 
-			# Build group ID: matched pairs share their match_indic value;
-			# reservoir subjects (match_indic == 0) each get a unique singleton ID.
-			group_id = match_indic
+			# Build group ID: matched pairs share their m_vec value;
+			# reservoir subjects (m_vec == 0) each get a unique singleton ID.
+			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
