@@ -56,12 +56,7 @@ SeqDesignRandomBlockSize = R6::R6Class("SeqDesignRandomBlockSize",
 					stop("All block_sizes must result in an integer number of treatment assignments (bs * prob_T).")
 				}
 			}
-		}
-	),
-	private = list(
-		strata_cols = NULL,
-		block_sizes = NULL,
-		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
+		},
 
 		assign_wt = function(){
 			key = "overall"
@@ -86,7 +81,12 @@ SeqDesignRandomBlockSize = R6::R6Class("SeqDesignRandomBlockSize",
 			w_t = block[1]
 			private$strata_states[[key]] = block[-1]
 			w_t
-		},
+		}
+	),
+	private = list(
+		strata_cols = NULL,
+		block_sizes = NULL,
+		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
 
 		get_strata_key = function(x_row) {
 			# Concatenate strata column values into a key string
