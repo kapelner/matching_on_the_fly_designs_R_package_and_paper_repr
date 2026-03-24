@@ -1,0 +1,124 @@
+#' A Greedy Search Fixed Design
+#'
+#' @description
+#' An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
+#' This design starts with a random allocation and greedily switches pairs to optimize covariate balance.
+#'
+#' @export
+FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
+	inherit = FixedDesign,
+	public = list(
+		#' @description
+		#' Initialize a greedy search fixed experimental design
+		#'
+		#' @param response_type 	The data type of response values.
+		#' @param prob_T	The probability of the treatment assignment. Must be 0.5.
+		#' @param objective 	The objective function to use. Default is "mahal_dist".
+		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
+		#' @param n			The sample size.
+		#' @param num_cores	The number of CPU cores.
+		#' @param verbose	Flag for verbosity.
+		#'
+		#' @return 			A new `FixedDesignGreedy` object
+		#'
+		initialize = function(
+				response_type = "continuous",
+				prob_T = 0.5,
+				objective = "mahal_dist",
+				include_is_missing_as_a_new_feature = TRUE,
+				n = NULL,
+				num_cores = 1,
+				verbose = FALSE
+			) {
+			if (prob_T != 0.5){
+				stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
+			}
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			private$objective = objective
+			private$uses_covariates = TRUE
+		},
+
+		redraw_w_according_to_design = function(){
+			n = self$get_n()
+			if (is.null(private$X) || ncol(private$X) == 0){
+				# Fallback if no covariates: just BCRD
+				private$w[1:n] = sample(c(rep(1, n / 2), rep(0, n / 2)))
+				return()
+			}
+
+			# Precompute inverse covariance for Mahalanobis if needed
+			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+				X = private$X[1:n, , drop = FALSE]
+				S = var(X)
+				if (abs(det(S)) < 1e-10){
+					S = S + diag(1e-6, ncol(X))
+				}
+				private$S_inv = solve(S)
+			}
+
+			X = private$X[1:n, , drop = FALSE]
+			
+			# Initial BCRD
+			w_curr = sample(c(rep(1, n / 2), rep(0, n / 2)))
+			obj_curr = private$compute_obj(X, w_curr)
+			
+			repeat {
+				best_obj = obj_curr
+				best_switch = NULL
+				
+				# Find all pairs (i, j) where w_i = 1 and w_j = 0
+				t_idxs = which(w_curr == 1)
+				c_idxs = which(w_curr == 0)
+				
+				improved = FALSE
+				# This is O(n^2) per iteration. For large n, this is slow in R.
+				# But for typical clinical trials (n < 200), it's acceptable.
+				for (i in t_idxs){
+					for (j in c_idxs){
+						# Try switching
+						w_cand = w_curr
+						w_cand[i] = 0
+						w_cand[j] = 1
+						
+						obj_cand = private$compute_obj(X, w_cand)
+						
+						if (obj_cand < best_obj){
+							best_obj = obj_cand
+							best_switch = c(i, j)
+							improved = TRUE
+						}
+					}
+				}
+				
+				if (improved){
+					w_curr[best_switch[1]] = 0
+					w_curr[best_switch[2]] = 1
+					obj_curr = best_obj
+				} else {
+					break
+				}
+			}
+			
+			private$w[1:n] = w_curr
+		}
+	),
+
+	private = list(
+		objective = NULL,
+		S_inv = NULL,
+
+		compute_obj = function(X, w){
+			if (private$objective == "mahal_dist"){
+				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
+				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
+				diff = x_T_bar - x_C_bar
+				return(as.numeric(diff %*% private$S_inv %*% diff))
+			} else if (private$objective == "abs_sum_diff"){
+				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
+				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
+				return(sum(abs(x_T_bar - x_C_bar)))
+			}
+			stop("Unsupported objective")
+		}
+	)
+)
