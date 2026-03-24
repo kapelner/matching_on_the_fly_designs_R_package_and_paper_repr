@@ -39,6 +39,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		},
 
 		draw_ws_according_to_design = function(r = 100){
+			self$assert_all_subjects_arrived()
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))

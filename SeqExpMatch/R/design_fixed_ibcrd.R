@@ -19,6 +19,7 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 		},
 
 		draw_ws_according_to_design = function(r = 100){
+			self$assert_all_subjects_arrived()
 			generate_permutations_ibcrd_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),

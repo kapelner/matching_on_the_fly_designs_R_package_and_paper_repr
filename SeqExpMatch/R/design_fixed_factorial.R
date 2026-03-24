@@ -1,0 +1,68 @@
+#' A Factorial Fixed Design
+#'
+#' @description
+#' An R6 Class encapsulating the data and functionality for a fixed factorial experimental design.
+#' This design handles multiple treatment factors and balances assignments across all factor combinations.
+#'
+#' @export
+FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
+	inherit = FixedDesign,
+	public = list(
+		#' @description
+		#' Initialize a factorial fixed experimental design
+		#'
+		#' @param factors 	A list where names are factor names and values are number of levels (e.g. list(A=2, B=2)).
+		#' @param response_type 	The data type of response values.
+		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
+		#' @param n			The sample size.
+		#' @param num_cores	The number of CPU cores.
+		#' @param verbose	Flag for verbosity.
+		#'
+		#' @return 			A new `FixedDesignFactorial` object
+		initialize = function(
+				factors,
+				response_type = "continuous",
+				include_is_missing_as_a_new_feature = TRUE,
+				n = NULL,
+				num_cores = 1,
+				verbose = FALSE
+			) {
+			assertList(factors, types = "numeric", min.len = 1)
+			# We don't use prob_T in the standard way here, as we have multiple factors
+			# But base Design needs it. We'll set it to 0.5.
+			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			private$factors = factors
+			
+			# Precompute all combinations
+			private$combinations = expand.grid(lapply(factors, function(l) 1:l))
+			private$num_combinations = nrow(private$combinations)
+		},
+
+		draw_ws_according_to_design = function(r = 100){
+			self$assert_all_subjects_arrived()
+			n = self$get_n()
+			
+			# Standard balanced factorial: each combination appears n / num_combinations times
+			base_alloc = rep(1:private$num_combinations, length.out = n)
+			
+			w_mat = matrix(NA_integer_, nrow = n, ncol = r)
+			for (j in 1:r){
+				w_mat[, j] = sample(base_alloc)
+			}
+			w_mat
+		},
+
+		# Overwrite get_w to return a data frame of factor assignments
+		get_w_factorial = function(){
+			w_idx = self$get_w()
+			if (length(w_idx) == 0 || any(is.na(w_idx))) return(NULL)
+			private$combinations[w_idx, , drop = FALSE]
+		}
+	),
+
+	private = list(
+		factors = NULL,
+		combinations = NULL,
+		num_combinations = NULL
+	)
+)

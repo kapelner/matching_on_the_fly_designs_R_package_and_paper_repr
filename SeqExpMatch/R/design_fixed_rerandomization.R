@@ -1,9 +1,8 @@
 #' A Rerandomization Fixed Design
 #'
 #' @description
-#' An R6 Class encapsulating the data and functionality for a fixed rerandomization
-#' experimental design. This class is a thin wrapper around the
-#' \pkg{GreedyExperimentalDesign} rerandomization search API.
+#' An R6 Class encapsulating the data and functionality for a fixed rerandomization experimental design.
+#' This design generates random allocations and only accepts those that meet a covariate balance criterion.
 #'
 #' @export
 FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
@@ -29,62 +28,108 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				obj_val_cutoff = NULL,
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
-				n,
+				n = NULL,
 				num_cores = 1,
 				verbose = FALSE
 			) {
-			assert_greedy_experimental_design_installed("FixedDesignRerandomization")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			private$obj_val_cutoff = obj_val_cutoff
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
 
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
-
 		draw_ws_according_to_design = function(r = 100){
-			assertCount(r, positive = TRUE)
-			assert_greedy_experimental_design_installed("FixedDesignRerandomization")
-			self$assert_experiment_completed()
-
+			self$assert_all_subjects_arrived()
 			n = self$get_n()
-			private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			X = private$X[1:n, , drop = FALSE]
-			search_obj = GreedyExperimentalDesign::initRerandomizationExperimentalDesignObject(
-				X = X,
-				obj_val_cutoff_to_include = private$obj_val_cutoff,
-				max_designs = r,
-				objective = private$objective,
-				wait = TRUE,
-				start = TRUE,
-				num_cores = private$num_cores,
-				verbose = private$verbose
-			)
-			res = GreedyExperimentalDesign::resultsRerandomizationSearch(search_obj)
-			if (!is.list(res) || is.null(res$designs)) {
-				stop("resultsRerandomizationSearch returned an unsupported result structure.")
+			if (is.null(private$X) || ncol(private$X) == 0){
+				n_T = round(n * private$prob_T)
+				return(replicate(r, sample(c(rep(1, n_T), rep(0, n - n_T)))))
 			}
-			w_mat = res$designs
-			if (is.vector(w_mat)) {
-				w_mat = matrix(w_mat, nrow = n, ncol = 1)
-			} else if (nrow(w_mat) != n && ncol(w_mat) == n) {
-				w_mat = t(w_mat)
+
+			# Precompute S_inv if needed
+			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+				X = private$X[1:n, , drop = FALSE]
+				S = var(X)
+				if (abs(det(S)) < 1e-10){
+					S = S + diag(1e-6, ncol(X))
+				}
+				private$S_inv = solve(S)
 			}
-			if (all(w_mat %in% c(-1, 1), na.rm = TRUE)) {
-				w_mat = (w_mat + 1) / 2
+
+			if (private$num_cores > 1 && requireNamespace("pbmcapply", quietly = TRUE)){
+				w_list = pbmcapply::pbmclapply(1:r, function(i) {
+					private$generate_one_rerandomized_w()
+				}, mc.cores = private$num_cores)
+				return(do.call(cbind, w_list))
+			} else {
+				w_mat = matrix(NA_real_, nrow = n, ncol = r)
+				for (j in 1:r){
+					w_mat[, j] = private$generate_one_rerandomized_w()
+				}
+				return(w_mat)
 			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-				stop("resultsRerandomizationSearch returned an unexpected allocation matrix shape.")
-			}
-			storage.mode(w_mat) = "numeric"
-			w_mat[, seq_len(r), drop = FALSE]
 		}
 	),
 
 	private = list(
 		obj_val_cutoff = NULL,
-		objective = NULL
+		objective = NULL,
+		S_inv = NULL,
+
+		generate_one_rerandomized_w = function(){
+			n = self$get_n()
+			if (is.null(private$X) || ncol(private$X) == 0){
+				n_T = round(n * private$prob_T)
+				return(sample(c(rep(1, n_T), rep(0, n - n_T))))
+			}
+
+			# Ensure S_inv is available
+			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+				X = private$X[1:n, , drop = FALSE]
+				S = var(X)
+				if (abs(det(S)) < 1e-10){
+					S = S + diag(1e-6, ncol(X))
+				}
+				private$S_inv = solve(S)
+			}
+
+			X = private$X[1:n, , drop = FALSE]
+			n_T = round(n * private$prob_T)
+			
+			attempts = 0
+			max_attempts = 10000 
+			
+			repeat {
+				attempts = attempts + 1
+				if (private$prob_T == 0.5){
+					w_cand = sample(c(rep(1, n_T), rep(0, n - n_T)))
+				} else {
+					w_cand = rbinom(n, 1, private$prob_T)
+				}
+				
+				obj_val = private$compute_obj(X, w_cand)
+				
+				if (is.null(private$obj_val_cutoff) || obj_val <= private$obj_val_cutoff || attempts >= max_attempts){
+					if (private$verbose && attempts >= max_attempts){
+						warning("Rerandomization reached max attempts without finding a design below cutoff.")
+					}
+					return(w_cand)
+				}
+			}
+		},
+
+		compute_obj = function(X, w){
+			if (private$objective == "mahal_dist"){
+				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
+				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
+				diff = x_T_bar - x_C_bar
+				return(as.numeric(diff %*% private$S_inv %*% diff))
+			} else if (private$objective == "abs_sum_diff"){
+				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
+				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
+				return(sum(abs(x_T_bar - x_C_bar)))
+			}
+			stop("Unsupported objective")
+		}
 	)
 )

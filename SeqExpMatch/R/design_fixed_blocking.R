@@ -19,9 +19,11 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 			assertCharacter(strata_cols, min.len = 1)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			private$strata_cols = strata_cols
+			private$uses_covariates = TRUE
 		},
 
 		draw_ws_according_to_design = function(r = 100){
+			self$assert_all_subjects_arrived()
 			strata_keys = vapply(1:private$t, function(i) {
 				vals = vapply(private$strata_cols, function(col) {
 					val = private$Xraw[i, ][[col]]
