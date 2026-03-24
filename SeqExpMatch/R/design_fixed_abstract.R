@@ -62,7 +62,7 @@ FixedDesign = R6::R6Class("FixedDesign",
 			}
 			# Default implementation loops redraw_w_according_to_design.
 			# Most concrete designs override this with a faster path.
-			w_mat = matrix(NA_real_, nrow = self$get_n(), ncol = r)
+			w_mat = matrix(NA_real_, nrow = private$n, ncol = r)
 			for (j in 1 : r){
 				self$redraw_w_according_to_design()
 				w_mat[, j] = self$get_w()

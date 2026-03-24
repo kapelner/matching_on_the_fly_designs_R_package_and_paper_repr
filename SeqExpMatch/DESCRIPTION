@@ -74,7 +74,7 @@ Collate:
     'design_seq_KK21.R'
     'design_seq_KK21_stepwise.R'
     'design_seq_pocock_simon.R'
-    'design_seq_random_block_size.R'
+    'design_random_block_size.R'
     'design_seq_spbr.R'
     'inference_all_abstract.R'
     'inference_all_KK_compound_mean_diff.R'
