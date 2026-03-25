@@ -39,8 +39,8 @@ SeqDesign = R6::R6Class("SeqDesign",
 			private$w[private$t]
 		},
 
-		randomize = function(){
-			private$redraw_w_according_to_design()
+		assign_wt = function(){
+			stop("Must be implemented by subclass.")
 		},
 
 		draw_ws_according_to_design = function(r = 100){
@@ -58,10 +58,6 @@ SeqDesign = R6::R6Class("SeqDesign",
 	),
 
 	private = list(
-		assign_wt = function(){
-			stop("Must be implemented by subclass.")
-		},
-
 		redraw_w_according_to_design = function(){
 			if (private$fixed_sample) {
 				private$w = rep(NA_real_, private$n)

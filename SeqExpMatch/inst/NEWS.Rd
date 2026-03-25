@@ -49,7 +49,7 @@
       \item Robust error handling for small-sample degeneracy and non-convergence.
       \item Improved randomization-test caching so treatment-assignment draws are reused across repeated p-value and confidence-interval inversion calls, including custom randomization statistics.
       \item Cleaned up Rd generation issues and removed links to internal abstract classes from compiled help pages.
-      \item Fixed a critical "attempt to apply non-function" error in \code{SeqDesignInferenceIncidUnivKKNewcombeRiskDiff} by implementing the missing \code{pool_estimates_ivwc} method.
+      \item Fixed a critical "attempt to apply non-function" error in \code{DesignInferenceIncidUnivKKNewcombeRiskDiff} by implementing the missing \code{pool_estimates_ivwc} method.
       \item Resolved \code{num_cores} assertion failures during \code{SeqDesign} initialization across all subclasses, ensuring correct handling of parallelization parameters.
       \item Corrected Rd documentation line-width issues by consolidating method examples and applying strategic line breaks in R6 documentation.
       \item Implemented missing C++ parallelization routines for Ridit analysis bootstrap and randomization distributions.

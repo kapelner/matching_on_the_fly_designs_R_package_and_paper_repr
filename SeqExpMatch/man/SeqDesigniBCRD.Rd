@@ -5,9 +5,10 @@
 \title{An incomplete / balanced completely randomized Sequential Design}
 \description{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
+This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesigniBCRD}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesigniBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -43,9 +44,9 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-redraw_w_according_to_design'><code>SeqExpMatch::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -54,6 +55,7 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 \if{html}{\out{<a id="method-SeqDesigniBCRD-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesigniBCRD-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a balanced sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesigniBCRD$new(
   response_type = "continuous",
@@ -65,24 +67,59 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{num_cores}}{The number of CPU cores to use.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `SeqDesigniBCRD` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesigniBCRD-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesigniBCRD-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesigniBCRD$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesigniBCRD-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesigniBCRD-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to balanced randomization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesigniBCRD$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesigniBCRD-clone"></a>}}

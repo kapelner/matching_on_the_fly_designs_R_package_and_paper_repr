@@ -5,10 +5,9 @@
 \title{A stratified blocking Fixed Design}
 \description{
 An R6 Class encapsulating the data and functionality for a fixed stratified blocking experimental design.
-This design ensures balance within specified strata using the \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignBlocking}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignBlocking}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -44,6 +43,7 @@ This design ensures balance within specified strata using the \pkg{randomizr} pa
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -55,7 +55,6 @@ This design ensures balance within specified strata using the \pkg{randomizr} pa
 Initialize a fixed stratified blocking experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$new(
-  strata_cols,
   response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
@@ -68,11 +67,9 @@ Initialize a fixed stratified blocking experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
 
-\item{\code{response_type}}{The data type of response values.}
-
-\item{\code{prob_T}}{The probability of the treatment assignment.}
+\item{\code{prob_T}}{Probability of treatment assignment.}
 
 \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
@@ -92,10 +89,21 @@ A new `FixedDesignBlocking` object
 \if{html}{\out{<a id="method-FixedDesignBlocking-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignBlocking-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to stratified blocking.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$draw_ws_according_to_design(r)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBlocking-clone"></a>}}

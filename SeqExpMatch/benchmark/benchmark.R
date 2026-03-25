@@ -18,7 +18,7 @@ design_constructors = list(
 # Inference classes mapped by response type
 inference_map = list(
 	"continuous" = list(
-	"SimpleMeanDiff" = SeqDesignInferenceAllSimpleMeanDiff
+	"SimpleMeanDiff" = DesignInferenceAllSimpleMeanDiff
 	)
 )
 

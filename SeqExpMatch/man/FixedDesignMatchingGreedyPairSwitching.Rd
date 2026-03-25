@@ -9,12 +9,13 @@ binary matches and then improves the matched design with greedy pair switching
 using the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignMatchingGreedyPairSwitching}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignMatchingGreedyPairSwitching}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-new}{\code{FixedDesignMatchingGreedyPairSwitching$new()}}
+\item \href{#method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design}{\code{FixedDesignMatchingGreedyPairSwitching$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{FixedDesignMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-clone}{\code{FixedDesignMatchingGreedyPairSwitching$clone()}}
 }
@@ -99,13 +100,34 @@ A new \code{FixedDesignMatchingGreedyPairSwitching} object.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the binary match followed by greedy switching design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignMatchingGreedyPairSwitching$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to binary match followed by greedy switching.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-clone"></a>}}

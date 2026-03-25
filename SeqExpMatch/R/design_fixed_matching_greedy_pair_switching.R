@@ -50,6 +50,18 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			private$uses_covariates = TRUE
 		},
 
+		#' @description
+		#' Redraw treatment assignments according to the binary match followed by greedy switching design.
+		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
+
+		#' @description
+		#' Draw multiple treatment assignment vectors according to binary match followed by greedy switching.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			assertCount(r, positive = TRUE)
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")

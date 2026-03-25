@@ -38,44 +38,44 @@ response_types <- c("continuous", "incidence", "count", "proportion", "survival"
 
 inf_by_res_type <- list(
 	continuous = c(
-	"SeqDesignInferenceAllSimpleMeanDiff",
-	"SeqDesignInferenceAllKKCompoundMeanDiff",
-	"SeqDesignInferenceContinMultOLS",
-	"SeqDesignInferenceContinMultOLSKK",
-	"SeqDesignInferenceBaiAdjustedTKK14",
-	"SeqDesignInferenceBaiAdjustedTKK21"
+	"DesignInferenceAllSimpleMeanDiff",
+	"DesignInferenceAllKKCompoundMeanDiff",
+	"DesignInferenceContinMultOLS",
+	"DesignInferenceContinMultOLSKK",
+	"DesignInferenceBaiAdjustedTKK14",
+	"DesignInferenceBaiAdjustedTKK21"
 	),
 	incidence = c(
-	"SeqDesignInferenceAllSimpleMeanDiff",
-	"SeqDesignInferenceAllKKCompoundMeanDiff",
-	"SeqDesignInferenceIncidUnivLogRegr",
-	"SeqDesignInferenceIncidMultiLogRegr"
+	"DesignInferenceAllSimpleMeanDiff",
+	"DesignInferenceAllKKCompoundMeanDiff",
+	"DesignInferenceIncidUnivLogRegr",
+	"DesignInferenceIncidMultiLogRegr"
 	),
 	count = c(
-	"SeqDesignInferenceAllSimpleMeanDiff",
-	"SeqDesignInferenceAllKKCompoundMeanDiff",
-	"SeqDesignInferenceCountUnivNegBinRegr",
-	"SeqDesignInferenceCountMultiNegBinRegr"
+	"DesignInferenceAllSimpleMeanDiff",
+	"DesignInferenceAllKKCompoundMeanDiff",
+	"DesignInferenceCountUnivNegBinRegr",
+	"DesignInferenceCountMultiNegBinRegr"
 	),
 	proportion = c(
-	"SeqDesignInferenceAllSimpleMeanDiff",
-	"SeqDesignInferenceAllKKCompoundMeanDiff",
-	"SeqDesignInferencePropUniBetaRegr",
-	"SeqDesignInferencePropMultiBetaRegr"
+	"DesignInferenceAllSimpleMeanDiff",
+	"DesignInferenceAllKKCompoundMeanDiff",
+	"DesignInferencePropUniBetaRegr",
+	"DesignInferencePropMultiBetaRegr"
 	),
 	survival = c(
-	"SeqDesignInferenceSurvivalKMDiff",
-	"SeqDesignInferenceSurvivalRestrictedMeanDiff",
-	"SeqDesignInferenceSurvivalUniWeibullRegr",
-	"SeqDesignInferenceSurvivalMultiWeibullRegr",
-	"SeqDesignInferenceSurvivalUniCoxPHRegr",
-	"SeqDesignInferenceSurvivalMultiCoxPHRegr"
+	"DesignInferenceSurvivalKMDiff",
+	"DesignInferenceSurvivalRestrictedMeanDiff",
+	"DesignInferenceSurvivalUniWeibullRegr",
+	"DesignInferenceSurvivalMultiWeibullRegr",
+	"DesignInferenceSurvivalUniCoxPHRegr",
+	"DesignInferenceSurvivalMultiCoxPHRegr"
 	)
 )
 
 inference_design_requirements <- list(
-	SeqDesignInferenceBaiAdjustedTKK14 = "SeqDesignKK14",
-	SeqDesignInferenceBaiAdjustedTKK21 = c("SeqDesignKK21", "SeqDesignKK21stepwise")
+	DesignInferenceBaiAdjustedTKK14 = "SeqDesignKK14",
+	DesignInferenceBaiAdjustedTKK21 = c("SeqDesignKK21", "SeqDesignKK21stepwise")
 )
 
 n <- 100
@@ -131,7 +131,7 @@ for (rt in response_types) {
 		}
 		}
 		if (is.null(skip_reason) &&
-			inf_name == "SeqDesignInferenceContinMultOLSKK" &&
+			inf_name == "DesignInferenceContinMultOLSKK" &&
 			!any(vapply(c("SeqDesignKK14", "SeqDesignKK21"), function(cl) inherits(des_obj, cl), logical(1)))) {
 		skip_reason <- "Skipped: design must inherit SeqDesignKK14 or SeqDesignKK21"
 		}

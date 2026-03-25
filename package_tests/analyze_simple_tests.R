@@ -9,8 +9,8 @@ X = fread("package_tests/simple_tests_results_nc_1.csv")
 # Drop every row predating the current run for the zero/one-inflated beta multivariate class.
 # Current run cutoff is fixed as a magic number to avoid pulling historical repeats.
 magic_cutoff_run_row_id = 6324L
-X = X[!(inference_class == "SeqDesignInferencePropMultiZeroOneInflatedBetaRegr" & run_row_id < magic_cutoff_run_row_id)]
-X = X[!(inference_class == "SeqDesignInferenceAllSimpleWilcox" & run_row_id < magic_cutoff_run_row_id)]
+X = X[!(inference_class == "DesignInferencePropMultiZeroOneInflatedBetaRegr" & run_row_id < magic_cutoff_run_row_id)]
+X = X[!(inference_class == "DesignInferenceAllSimpleWilcox" & run_row_id < magic_cutoff_run_row_id)]
 table(X$rep)
 
 
@@ -79,27 +79,27 @@ ordinal_expected_observed = function(y_ord, bt, sd_noise = 0.1){
 # continuous — additive-shift estimands remain on the raw outcome scale
 X[beta_T == 1 & response_type == "continuous" &
 	inference_class %in% c(
-		"SeqDesignInferenceBaiAdjustedTKK14",
-		"SeqDesignInferenceBaiAdjustedTKK21",
-		"SeqDesignInferenceContinUnivRobustRegr",
-		"SeqDesignInferenceContinMultiRobustRegr",
-		"SeqDesignInferenceContinUnivQuantileRegr",
-		"SeqDesignInferenceContinMultiQuantileRegr",
-		"SeqDesignInferenceContinMultLin",
-		"SeqDesignInferenceContinMultOLS",
-		"SeqDesignInferenceContinMultGLS",
-		"SeqDesignInferenceContinMultOLSKKCombinedLikelihood",
-		"SeqDesignInferenceContinMultOLSKKIVWC",
-		"SeqDesignInferenceContinMultiKKLinIVWC",
-		"SeqDesignInferenceContinMultiKKLinCombinedLikelihood",
-		"SeqDesignInferenceContinUnivKKGLMM",
-		"SeqDesignInferenceContinMultiKKGLMM",
-		"SeqDesignInferenceContinUnivKKRobustRegrIVWC",
-		"SeqDesignInferenceContinMultiKKRobustRegrIVWC",
-		"SeqDesignInferenceContinUnivKKRobustRegrCombinedLikelihood",
-		"SeqDesignInferenceContinMultiKKRobustRegrCombinedLikelihood",
-		"SeqDesignInferenceContinMultKKQuantileRegrIVWC",
-		"SeqDesignInferenceContinMultKKQuantileRegrCombinedLikelihood"
+		"DesignInferenceBaiAdjustedTKK14",
+		"DesignInferenceBaiAdjustedTKK21",
+		"DesignInferenceContinUnivRobustRegr",
+		"DesignInferenceContinMultiRobustRegr",
+		"DesignInferenceContinUnivQuantileRegr",
+		"DesignInferenceContinMultiQuantileRegr",
+		"DesignInferenceContinMultLin",
+		"DesignInferenceContinMultOLS",
+		"DesignInferenceContinMultGLS",
+		"DesignInferenceContinMultOLSKKCombinedLikelihood",
+		"DesignInferenceContinMultOLSKKIVWC",
+		"DesignInferenceContinMultiKKLinIVWC",
+		"DesignInferenceContinMultiKKLinCombinedLikelihood",
+		"DesignInferenceContinUnivKKGLMM",
+		"DesignInferenceContinMultiKKGLMM",
+		"DesignInferenceContinUnivKKRobustRegrIVWC",
+		"DesignInferenceContinMultiKKRobustRegrIVWC",
+		"DesignInferenceContinUnivKKRobustRegrCombinedLikelihood",
+		"DesignInferenceContinMultiKKRobustRegrCombinedLikelihood",
+		"DesignInferenceContinMultKKQuantileRegrIVWC",
+		"DesignInferenceContinMultKKQuantileRegrCombinedLikelihood"
 	),
 	beta := 1]
 
@@ -107,21 +107,21 @@ X[beta_T == 1 & response_type == "continuous" &
 X[beta_T == 1 &
 	response_type == "incidence" &
 	inference_class %in% c(
-		"SeqDesignInferenceAllSimpleMeanDiff",
-		"SeqDesignInferenceAllKKCompoundMeanDiff",
-		"SeqDesignInferenceIncidExactZhang",
-		"SeqDesignInferenceIncidKKExactZhang",
-		"SeqDesignInferenceIncidUnivRiskDiff",
-		"SeqDesignInferenceIncidMultiRiskDiff",
-		"SeqDesignInferenceIncidUnivMiettinenNurminenRiskDiff",
-		"SeqDesignInferenceIncidUnivNewcombeRiskDiff",
-		"SeqDesignInferenceIncidUnivGCompRiskDiff",
-		"SeqDesignInferenceIncidMultiGCompRiskDiff",
-		"SeqDesignInferenceIncidUnivBinomialIdentityRiskDiff",
-		"SeqDesignInferenceIncidMultiBinomialIdentityRiskDiff",
-		"SeqDesignInferenceIncidUnivKKNewcombeRiskDiff",
-		"SeqDesignInferenceIncidUnivKKGCompRiskDiff",
-		"SeqDesignInferenceIncidMultiKKGCompRiskDiff"
+		"DesignInferenceAllSimpleMeanDiff",
+		"DesignInferenceAllKKCompoundMeanDiff",
+		"DesignInferenceIncidExactZhang",
+		"DesignInferenceIncidKKExactZhang",
+		"DesignInferenceIncidUnivRiskDiff",
+		"DesignInferenceIncidMultiRiskDiff",
+		"DesignInferenceIncidUnivMiettinenNurminenRiskDiff",
+		"DesignInferenceIncidUnivNewcombeRiskDiff",
+		"DesignInferenceIncidUnivGCompRiskDiff",
+		"DesignInferenceIncidMultiGCompRiskDiff",
+		"DesignInferenceIncidUnivBinomialIdentityRiskDiff",
+		"DesignInferenceIncidMultiBinomialIdentityRiskDiff",
+		"DesignInferenceIncidUnivKKNewcombeRiskDiff",
+		"DesignInferenceIncidUnivKKGCompRiskDiff",
+		"DesignInferenceIncidMultiKKGCompRiskDiff"
 	),
 	beta := {
 		p_c = incid_p_control(dataset)
@@ -130,7 +130,7 @@ X[beta_T == 1 &
 	}, by = dataset]
 
 # incidence — univariate logistic: marginal log-OR ≈ 0.767, not 1
-X[beta_T == 1 & inference_class %in% c("SeqDesignInferenceIncidUnivLogRegr", "SeqDesignInferenceIncidUnivKKGEE"),
+X[beta_T == 1 & inference_class %in% c("DesignInferenceIncidUnivLogRegr", "DesignInferenceIncidUnivKKGEE"),
 	beta := {
 		p_c = mean(incid_p_control(dataset))
 		p_t = mean(incid_p_treated(dataset))
@@ -139,10 +139,10 @@ X[beta_T == 1 & inference_class %in% c("SeqDesignInferenceIncidUnivLogRegr", "Se
 
 # incidence — risk-ratio estimands
 X[beta_T == 1 & inference_class %in% c(
-	"SeqDesignInferenceIncidUnivGCompRiskRatio",
-	"SeqDesignInferenceIncidMultiGCompRiskRatio",
-	"SeqDesignInferenceIncidUnivKKGCompRiskRatio",
-	"SeqDesignInferenceIncidMultiKKGCompRiskRatio"
+	"DesignInferenceIncidUnivGCompRiskRatio",
+	"DesignInferenceIncidMultiGCompRiskRatio",
+	"DesignInferenceIncidUnivKKGCompRiskRatio",
+	"DesignInferenceIncidMultiKKGCompRiskRatio"
 ),
 beta := {
 	p_c = mean(incid_p_control(dataset))
@@ -152,12 +152,12 @@ beta := {
 
 # incidence — modified Poisson estimands are on the log-risk-ratio scale
 X[beta_T == 1 & inference_class %in% c(
-	"SeqDesignInferenceIncidUnivModifiedPoisson",
-	"SeqDesignInferenceIncidMultiModifiedPoisson",
-	"SeqDesignInferenceIncidUnivLogBinomial",
-	"SeqDesignInferenceIncidMultiLogBinomial",
-	"SeqDesignInferenceIncidUnivKKModifiedPoisson",
-	"SeqDesignInferenceIncidMultiKKModifiedPoisson"
+	"DesignInferenceIncidUnivModifiedPoisson",
+	"DesignInferenceIncidMultiModifiedPoisson",
+	"DesignInferenceIncidUnivLogBinomial",
+	"DesignInferenceIncidMultiLogBinomial",
+	"DesignInferenceIncidUnivKKModifiedPoisson",
+	"DesignInferenceIncidMultiKKModifiedPoisson"
 ),
 beta := {
 	p_c = mean(incid_p_control(dataset))
@@ -169,10 +169,10 @@ beta := {
 # proportion — simple/KK mean diff: E[e*y/(1+(e-1)*y)] - E[y]
 X[beta_T == 1 & response_type == "proportion" &
 	inference_class %in% c(
-		"SeqDesignInferenceAllSimpleMeanDiff",
-		"SeqDesignInferenceAllKKCompoundMeanDiff",
-		"SeqDesignInferencePropUniGCompMeanDiff",
-		"SeqDesignInferencePropMultiGCompMeanDiff"
+		"DesignInferenceAllSimpleMeanDiff",
+		"DesignInferenceAllKKCompoundMeanDiff",
+		"DesignInferencePropUniGCompMeanDiff",
+		"DesignInferencePropMultiGCompMeanDiff"
 	),
 	beta := {
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
@@ -181,7 +181,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK univ GEE (logit link): marginal log-OR = logit(E[Y_T]) - logit(E[Y_C])
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("SeqDesignInferencePropUnivKKGEE", "SeqDesignInferencePropUniFractionalLogit"),
+	inference_class %in% c("DesignInferencePropUnivKKGEE", "DesignInferencePropUniFractionalLogit"),
 	beta := {
 		y_t = prop_y_treated(dataset)
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
@@ -190,7 +190,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK Wilcox: HL estimate ≈ median of within-pair differences
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
+	inference_class %in% c("DesignInferenceAllKKWilcoxIVWC", "DesignInferenceAllKKWilcoxRegrUnivIVWC"),
 	beta := {
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
 		median(e * y_p / (1 + (e - 1) * y_p) - y_p)
@@ -198,7 +198,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # count — simple/KK mean diff: E[Y_C] * (e - 1)
 X[beta_T == 1 & response_type == "count" &
-	inference_class %in% c("SeqDesignInferenceAllSimpleMeanDiff", "SeqDesignInferenceAllKKCompoundMeanDiff"),
+	inference_class %in% c("DesignInferenceAllSimpleMeanDiff", "DesignInferenceAllKKCompoundMeanDiff"),
 	beta := {
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		mean(y_c) * (e - 1)
@@ -207,41 +207,41 @@ X[beta_T == 1 & response_type == "count" &
 # count — log-link regression estimands target the log mean ratio under the DGP
 X[beta_T == 1 & response_type == "count" &
 	inference_class %in% c(
-		"SeqDesignInferenceCountUnivPoissonRegr",
-		"SeqDesignInferenceCountMultiPoissonRegr",
-		"SeqDesignInferenceCountUnivRobustPoissonRegr",
-		"SeqDesignInferenceCountMultiRobustPoissonRegr",
-		"SeqDesignInferenceCountUnivQuasiPoissonRegr",
-		"SeqDesignInferenceCountMultiQuasiPoissonRegr",
-		"SeqDesignInferenceCountUnivNegBinRegr",
-		"SeqDesignInferenceCountMultiNegBinRegr",
-		"SeqDesignInferenceCountPoissonUnivKKGEE",
-		"SeqDesignInferenceCountPoissonMultiKKGEE",
-		"SeqDesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
-		"SeqDesignInferenceCountPoissonMultiKKCPoissonCombinedLikelihood",
-		"SeqDesignInferenceCountPoissonUnivKKCPoissonIVWC",
-		"SeqDesignInferenceCountPoissonMultiKKCPoissonIVWC",
-		"SeqDesignInferenceCountPoissonUnivKKGLMM",
-		"SeqDesignInferenceCountPoissonMultiKKGLMM"
+		"DesignInferenceCountUnivPoissonRegr",
+		"DesignInferenceCountMultiPoissonRegr",
+		"DesignInferenceCountUnivRobustPoissonRegr",
+		"DesignInferenceCountMultiRobustPoissonRegr",
+		"DesignInferenceCountUnivQuasiPoissonRegr",
+		"DesignInferenceCountMultiQuasiPoissonRegr",
+		"DesignInferenceCountUnivNegBinRegr",
+		"DesignInferenceCountMultiNegBinRegr",
+		"DesignInferenceCountPoissonUnivKKGEE",
+		"DesignInferenceCountPoissonMultiKKGEE",
+		"DesignInferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
+		"DesignInferenceCountPoissonMultiKKCPoissonCombinedLikelihood",
+		"DesignInferenceCountPoissonUnivKKCPoissonIVWC",
+		"DesignInferenceCountPoissonMultiKKCPoissonIVWC",
+		"DesignInferenceCountPoissonUnivKKGLMM",
+		"DesignInferenceCountPoissonMultiKKGLMM"
 	),
 	beta := 1]
 
 # count — KK Wilcox: HL estimate ≈ (e-1) * median(Y_C)
 X[beta_T == 1 & response_type == "count" &
-	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
+	inference_class %in% c("DesignInferenceAllKKWilcoxIVWC", "DesignInferenceAllKKWilcoxRegrUnivIVWC"),
 	beta := {
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		(e - 1) * median(y_c)
 	}, by = dataset]
 
 # survival — KM median diff: (e - 1) * median(Y_C)
-X[beta_T == 1 & inference_class == "SeqDesignInferenceSurvivalKMDiff",
+X[beta_T == 1 & inference_class == "DesignInferenceSurvivalKMDiff",
 	beta := {
 		y_s = datasets_and_response_models[[dataset]]$y_original$survival
 		(e - 1) * median(y_s)
 	}, by = dataset]
 
-X[beta_T == 1 & inference_class == "SeqDesignInferenceSurvivalRestrictedMeanDiff",
+X[beta_T == 1 & inference_class == "DesignInferenceSurvivalRestrictedMeanDiff",
 	beta := {
 		y_s = datasets_and_response_models[[dataset]]$y_original$survival
 		tau = quantile(y_s, 0.95)
@@ -250,7 +250,7 @@ X[beta_T == 1 & inference_class == "SeqDesignInferenceSurvivalRestrictedMeanDiff
 
 # survival — KK compound mean diff: (e-1) * mean(Y_C)
 X[beta_T == 1 & response_type == "survival" &
-	inference_class == "SeqDesignInferenceAllKKCompoundMeanDiff",
+	inference_class == "DesignInferenceAllKKCompoundMeanDiff",
 	beta := {
 		y_s = datasets_and_response_models[[dataset]]$y_original$survival
 		(e - 1) * mean(y_s)
@@ -259,10 +259,10 @@ X[beta_T == 1 & response_type == "survival" &
 # ordinal — observed-score mean difference under the rounding/flooring DGP
 X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
-		"SeqDesignInferenceAllSimpleMeanDiff",
-		"SeqDesignInferenceAllKKCompoundMeanDiff",
-		"SeqDesignInferenceOrdinalUniGCompMeanDiff",
-		"SeqDesignInferenceOrdinalMultiGCompMeanDiff"
+		"DesignInferenceAllSimpleMeanDiff",
+		"DesignInferenceAllKKCompoundMeanDiff",
+		"DesignInferenceOrdinalUniGCompMeanDiff",
+		"DesignInferenceOrdinalMultiGCompMeanDiff"
 	),
 	beta := {
 		y_o = datasets_and_response_models[[dataset]]$y_original$ordinal
@@ -273,34 +273,34 @@ X[beta_T == 1 & response_type == "ordinal" &
 # additive/rounding DGP used in simple_tests.R
 X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
-	"SeqDesignInferenceOrdinalUniAdjCatLogitRegr",
-	"SeqDesignInferenceOrdinalMultiAdjCatLogitRegr",
-	"SeqDesignInferenceOrdinalUniCumulProbitRegr",
-	"SeqDesignInferenceOrdinalMultiCumulProbitRegr",
-	"SeqDesignInferenceOrdinalUniStereotypeLogitRegr",
-	"SeqDesignInferenceOrdinalMultiStereotypeLogitRegr",
-	"SeqDesignInferenceOrdinalUniStereotypeProbitRegr",
-	"SeqDesignInferenceOrdinalMultiStereotypeProbitRegr",
-	"SeqDesignInferenceOrdinalUniPropOddsRegr",
-	"SeqDesignInferenceOrdinalUniOrderedProbitRegr",
-	"SeqDesignInferenceOrdinalMultiOrderedProbitRegr",
-	"SeqDesignInferenceOrdinalUniCauchitRegr",
-	"SeqDesignInferenceOrdinalMultiCauchitRegr",
-	"SeqDesignInferenceOrdinalPartialProportionalOdds",
-	"SeqDesignInferenceOrdinalContRatioRegr",
-	"SeqDesignInferenceOrdinalUniCLLRegr",
-	"SeqDesignInferenceOrdinalMultiCLLRegr",
-	"SeqDesignInferenceOrdinalUnivKKGEE",
-	"SeqDesignInferenceOrdinalMultiKKGEE",
-	"SeqDesignInferenceOrdinalUnivKKGLMM",
-	"SeqDesignInferenceOrdinalMultiKKGLMM",
-	"SeqDesignInferenceOrdinalUnivKKGLMMProbit",
-	"SeqDesignInferenceOrdinalMultiKKGLMMProbit",
-	"SeqDesignInferenceOrdinalUnivKKCondPropOddsRegr",
-	"SeqDesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
-	"SeqDesignInferenceOrdinalUnivKKCondContRatioRegr",
-	"SeqDesignInferenceOrdinalUnivKKCondAdjCatLogitRegr",
-	"SeqDesignInferenceOrdinalRidit"
+	"DesignInferenceOrdinalUniAdjCatLogitRegr",
+	"DesignInferenceOrdinalMultiAdjCatLogitRegr",
+	"DesignInferenceOrdinalUniCumulProbitRegr",
+	"DesignInferenceOrdinalMultiCumulProbitRegr",
+	"DesignInferenceOrdinalUniStereotypeLogitRegr",
+	"DesignInferenceOrdinalMultiStereotypeLogitRegr",
+	"DesignInferenceOrdinalUniStereotypeProbitRegr",
+	"DesignInferenceOrdinalMultiStereotypeProbitRegr",
+	"DesignInferenceOrdinalUniPropOddsRegr",
+	"DesignInferenceOrdinalUniOrderedProbitRegr",
+	"DesignInferenceOrdinalMultiOrderedProbitRegr",
+	"DesignInferenceOrdinalUniCauchitRegr",
+	"DesignInferenceOrdinalMultiCauchitRegr",
+	"DesignInferenceOrdinalPartialProportionalOdds",
+	"DesignInferenceOrdinalContRatioRegr",
+	"DesignInferenceOrdinalUniCLLRegr",
+	"DesignInferenceOrdinalMultiCLLRegr",
+	"DesignInferenceOrdinalUnivKKGEE",
+	"DesignInferenceOrdinalMultiKKGEE",
+	"DesignInferenceOrdinalUnivKKGLMM",
+	"DesignInferenceOrdinalMultiKKGLMM",
+	"DesignInferenceOrdinalUnivKKGLMMProbit",
+	"DesignInferenceOrdinalMultiKKGLMMProbit",
+	"DesignInferenceOrdinalUnivKKCondPropOddsRegr",
+	"DesignInferenceOrdinalUnivKKCondPropOddsCombinedRegr",
+	"DesignInferenceOrdinalUnivKKCondContRatioRegr",
+	"DesignInferenceOrdinalUnivKKCondAdjCatLogitRegr",
+	"DesignInferenceOrdinalRidit"
 	),
 	beta := NA_real_]
 
@@ -308,13 +308,13 @@ X[beta_T == 1 & response_type == "ordinal" &
 	# observed-level DGP without a separate estimand convention
 	X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
-		"SeqDesignInferenceAllSimpleWilcox",
-		"SeqDesignInferenceAllKKWilcoxIVWC",
-		"SeqDesignInferenceAllKKWilcoxRegrUnivIVWC",
-		"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
-		"SeqDesignInferenceOrdinalPairedSignTest",
-		"SeqDesignInferenceOrdinalJonckheereTerpstraTest",
-		"SeqDesignInferenceOrdinalRidit"
+		"DesignInferenceAllSimpleWilcox",
+		"DesignInferenceAllKKWilcoxIVWC",
+		"DesignInferenceAllKKWilcoxRegrUnivIVWC",
+		"DesignInferenceAllKKWilcoxRegrMultiIVWC",
+		"DesignInferenceOrdinalPairedSignTest",
+		"DesignInferenceOrdinalJonckheereTerpstraTest",
+		"DesignInferenceOrdinalRidit"
 	),
 	beta := NA_real_]
 
@@ -323,75 +323,75 @@ X[beta_T == 1 & response_type == "ordinal" &
 #now some are impossible to calculate for real data due to the unknown f(x) model
 X[beta_T == 1 &
 	inference_class %in% c(
-	"SeqDesignInferenceIncidMultiLogRegr",
-	"SeqDesignInferenceIncidUnivKKClogitCombinedLikelihood",
-	"SeqDesignInferenceIncidMultiKKClogitCombinedLikelihood",
-	"SeqDesignInferenceIncidUnivKKClogitIVWC",
-	"SeqDesignInferenceIncidMultiKKClogitIVWC",
-	"SeqDesignInferenceIncidMultiKKGEE",
-	"SeqDesignInferenceIncidUnivKKGLMM",
-	"SeqDesignInferenceIncidMultiKKGLMM",
-	"SeqDesignInferencePropUniBetaRegr",
-	"SeqDesignInferencePropMultiBetaRegr",
-	"SeqDesignInferencePropUnivKKGLMM",
-	"SeqDesignInferencePropMultiKKGEE",
-	"SeqDesignInferencePropMultiKKGLMM",
-	"SeqDesignInferencePropMultiFractionalLogit",
-	"SeqDesignInferencePropUniZeroOneInflatedBetaRegr",
-	"SeqDesignInferencePropMultiZeroOneInflatedBetaRegr",
-	"SeqDesignInferencePropMultiKKQuantileRegrIVWC",
-	"SeqDesignInferencePropMultiKKQuantileRegrCombinedLikelihood",
-	"SeqDesignInferenceCountUnivHurdlePoissonRegr",
-	"SeqDesignInferenceCountMultiHurdlePoissonRegr",
-	"SeqDesignInferenceCountUnivKKHurdlePoissonCombinedLikelihood",
-	"SeqDesignInferenceCountMultiKKHurdlePoissonCombinedLikelihood",
-	"SeqDesignInferenceCountUnivKKHurdlePoissonIVWC",
-	"SeqDesignInferenceCountMultiKKHurdlePoissonIVWC",
-	"SeqDesignInferenceCountUnivHurdleNegBinRegr",
-	"SeqDesignInferenceCountMultiHurdleNegBinRegr",
-	"SeqDesignInferenceCountUnivZeroInflatedPoissonRegr",
-	"SeqDesignInferenceCountMultiZeroInflatedPoissonRegr",
-	"SeqDesignInferenceCountUnivZeroInflatedNegBinRegr",
-	"SeqDesignInferenceCountMultiZeroInflatedNegBinRegr",
-	"SeqDesignInferenceSurvivalLogRank",
-	"SeqDesignInferenceSurvivalUniCoxPHRegr",
-	"SeqDesignInferenceSurvivalMultiCoxPHRegr",
-	"SeqDesignInferenceSurvivalUniStratCoxPHRegr",
-	"SeqDesignInferenceSurvivalMultiStratCoxPHRegr",
-	"SeqDesignInferenceSurvivalUniDepCensTransformRegr",
-	"SeqDesignInferenceSurvivalMultiDepCensTransformRegr",
-	"SeqDesignInferenceSurvivalUniWeibullRegr",
-	"SeqDesignInferenceSurvivalMultiWeibullRegr",
-	"SeqDesignInferenceSurvivalUnivKKGEE",
-	"SeqDesignInferenceSurvivalMultiKKGammaGEE",
-	"SeqDesignInferenceSurvivalUnivKKGLMM",
-	"SeqDesignInferenceSurvivalMultiKKGammaGLMM",
-	"SeqDesignInferenceSurvivalUnivKKClaytonCopulaIVWC",
-	"SeqDesignInferenceSurvivalMultiKKClaytonCopulaIVWC",
-	"SeqDesignInferenceSurvivalUnivKKLWACoxIVWC",
-	"SeqDesignInferenceSurvivalMultiKKLWACoxIVWC",
-	"SeqDesignInferenceSurvivalUnivKKStratCoxIVWC",
-	"SeqDesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood",
-	"SeqDesignInferenceSurvivalMultiKKStratCoxIVWC",
-	"SeqDesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood",
-	"SeqDesignInferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood",
-	"SeqDesignInferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
-	"SeqDesignInferenceSurvivalUnivKKLWACoxCombinedLikelihood",
-	"SeqDesignInferenceSurvivalMultiKKLWACoxCombinedLikelihood",
-	"SeqDesignInferenceSurvivalUnivKKWeibullFrailtyIVWC",
-	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyIVWC",
-	"SeqDesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
-	"SeqDesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
-	"SeqDesignInferenceAllKKWilcoxRegrMultiIVWC",
-	"SeqDesignInferenceSurvivalUnivKKRankRegrIVWC",
-	"SeqDesignInferenceSurvivalMultiKKRankRegrIVWC",
-	"SeqDesignInferenceSurvivalGehanWilcox"
+	"DesignInferenceIncidMultiLogRegr",
+	"DesignInferenceIncidUnivKKClogitCombinedLikelihood",
+	"DesignInferenceIncidMultiKKClogitCombinedLikelihood",
+	"DesignInferenceIncidUnivKKClogitIVWC",
+	"DesignInferenceIncidMultiKKClogitIVWC",
+	"DesignInferenceIncidMultiKKGEE",
+	"DesignInferenceIncidUnivKKGLMM",
+	"DesignInferenceIncidMultiKKGLMM",
+	"DesignInferencePropUniBetaRegr",
+	"DesignInferencePropMultiBetaRegr",
+	"DesignInferencePropUnivKKGLMM",
+	"DesignInferencePropMultiKKGEE",
+	"DesignInferencePropMultiKKGLMM",
+	"DesignInferencePropMultiFractionalLogit",
+	"DesignInferencePropUniZeroOneInflatedBetaRegr",
+	"DesignInferencePropMultiZeroOneInflatedBetaRegr",
+	"DesignInferencePropMultiKKQuantileRegrIVWC",
+	"DesignInferencePropMultiKKQuantileRegrCombinedLikelihood",
+	"DesignInferenceCountUnivHurdlePoissonRegr",
+	"DesignInferenceCountMultiHurdlePoissonRegr",
+	"DesignInferenceCountUnivKKHurdlePoissonCombinedLikelihood",
+	"DesignInferenceCountMultiKKHurdlePoissonCombinedLikelihood",
+	"DesignInferenceCountUnivKKHurdlePoissonIVWC",
+	"DesignInferenceCountMultiKKHurdlePoissonIVWC",
+	"DesignInferenceCountUnivHurdleNegBinRegr",
+	"DesignInferenceCountMultiHurdleNegBinRegr",
+	"DesignInferenceCountUnivZeroInflatedPoissonRegr",
+	"DesignInferenceCountMultiZeroInflatedPoissonRegr",
+	"DesignInferenceCountUnivZeroInflatedNegBinRegr",
+	"DesignInferenceCountMultiZeroInflatedNegBinRegr",
+	"DesignInferenceSurvivalLogRank",
+	"DesignInferenceSurvivalUniCoxPHRegr",
+	"DesignInferenceSurvivalMultiCoxPHRegr",
+	"DesignInferenceSurvivalUniStratCoxPHRegr",
+	"DesignInferenceSurvivalMultiStratCoxPHRegr",
+	"DesignInferenceSurvivalUniDepCensTransformRegr",
+	"DesignInferenceSurvivalMultiDepCensTransformRegr",
+	"DesignInferenceSurvivalUniWeibullRegr",
+	"DesignInferenceSurvivalMultiWeibullRegr",
+	"DesignInferenceSurvivalUnivKKGEE",
+	"DesignInferenceSurvivalMultiKKGammaGEE",
+	"DesignInferenceSurvivalUnivKKGLMM",
+	"DesignInferenceSurvivalMultiKKGammaGLMM",
+	"DesignInferenceSurvivalUnivKKClaytonCopulaIVWC",
+	"DesignInferenceSurvivalMultiKKClaytonCopulaIVWC",
+	"DesignInferenceSurvivalUnivKKLWACoxIVWC",
+	"DesignInferenceSurvivalMultiKKLWACoxIVWC",
+	"DesignInferenceSurvivalUnivKKStratCoxIVWC",
+	"DesignInferenceSurvivalUnivKKStratCoxCombinedLikelihood",
+	"DesignInferenceSurvivalMultiKKStratCoxIVWC",
+	"DesignInferenceSurvivalMultiKKStratCoxCombinedLikelihood",
+	"DesignInferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood",
+	"DesignInferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
+	"DesignInferenceSurvivalUnivKKLWACoxCombinedLikelihood",
+	"DesignInferenceSurvivalMultiKKLWACoxCombinedLikelihood",
+	"DesignInferenceSurvivalUnivKKWeibullFrailtyIVWC",
+	"DesignInferenceSurvivalMultiKKWeibullFrailtyIVWC",
+	"DesignInferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
+	"DesignInferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
+	"DesignInferenceAllKKWilcoxRegrMultiIVWC",
+	"DesignInferenceSurvivalUnivKKRankRegrIVWC",
+	"DesignInferenceSurvivalMultiKKRankRegrIVWC",
+	"DesignInferenceSurvivalGehanWilcox"
 	),
 	beta := NA_real_]
 
 # survival — KK Wilcox: censored survival times bias the HL estimate
 X[beta_T == 1 & response_type == "survival" &
-	inference_class %in% c("SeqDesignInferenceAllKKWilcoxIVWC", "SeqDesignInferenceAllKKWilcoxRegrUnivIVWC"),
+	inference_class %in% c("DesignInferenceAllKKWilcoxIVWC", "DesignInferenceAllKKWilcoxRegrUnivIVWC"),
 	beta := NA_real_]
 table(X$beta, useNA = "always")
 

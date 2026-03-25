@@ -19,7 +19,7 @@ for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+inf = DesignInferenceAllSimpleMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
@@ -31,7 +31,7 @@ for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = SeqDesignInferenceIncidUnivLogRegr$new(seq_des)
+inf = DesignInferenceIncidUnivLogRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
@@ -43,7 +43,7 @@ for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = SeqDesignInferencePropUniBetaRegr$new(seq_des)
+inf = DesignInferencePropUniBetaRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
@@ -55,7 +55,7 @@ for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = SeqDesignInferenceCountUnivNegBinRegr$new(seq_des)
+inf = DesignInferenceCountUnivNegBinRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
@@ -67,7 +67,7 @@ for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = SeqDesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
+inf = DesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 

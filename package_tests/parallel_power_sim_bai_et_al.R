@@ -89,7 +89,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 	#cat("nsim:", i, ", 2\n")
 	for(inference in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
 	#cat(inference, "\n")
-	des_inf = paste0("SeqDesignInference", inference)
+	des_inf = paste0("DesignInference", inference)
 	if(inference == "BaiAdjustedT"){
 		des_inf = paste0(des_inf, design)
 		des_inf_class = get(des_inf)

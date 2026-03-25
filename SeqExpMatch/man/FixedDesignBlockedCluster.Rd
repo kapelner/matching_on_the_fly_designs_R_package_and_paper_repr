@@ -8,12 +8,13 @@ An R6 Class encapsulating the data and functionality for a fixed blocked and clu
 This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignBlockedCluster}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignBlockedCluster}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignBlockedCluster-new}{\code{FixedDesignBlockedCluster$new()}}
+\item \href{#method-FixedDesignBlockedCluster-redraw_w_according_to_design}{\code{FixedDesignBlockedCluster$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignBlockedCluster-draw_ws_according_to_design}{\code{FixedDesignBlockedCluster$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignBlockedCluster-clone}{\code{FixedDesignBlockedCluster$clone()}}
 }
@@ -92,13 +93,34 @@ A new `FixedDesignBlockedCluster` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignBlockedCluster-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignBlockedCluster-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the blocked cluster randomized design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlockedCluster$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBlockedCluster-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignBlockedCluster-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to blocked cluster randomization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlockedCluster$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBlockedCluster-clone"></a>}}

@@ -50,6 +50,10 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 			}
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group using minimization.
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			private$ensure_factor_metadata()
 			subject_levels_idx = private$get_subject_levels_idx(private$Xraw[private$t, ])
@@ -66,52 +70,34 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 				private$p_best, 
 				private$prob_T
 			)
-		}
-	),
-
-	private = list(
-		strata_cols = NULL,
-		weights = NULL,
-		p_best = NULL,
-		factor_levels = list(), 
-		num_levels_total = NULL,
-		level_offsets = NULL,   
-		counts = NULL, # State: num_levels_total x 2
-
-		ensure_factor_metadata = function(){
-			if (length(private$factor_levels) == 0){
-				offset = 0
-				private$level_offsets = numeric(length(private$strata_cols))
-				
-				for (i in 1 : length(private$strata_cols)){
-					col = private$strata_cols[i]
-					vals = private$Xraw[[col]]
-					lvls = levels(as.factor(vals))
-					if (length(lvls) == 0) lvls = "NA"
-					private$factor_levels[[col]] = lvls
-					private$level_offsets[i] = offset
-					offset = offset + length(lvls)
-				}
-				private$num_levels_total = offset
-			}
 		},
 
-		get_subject_levels_idx = function(x_row){
-			indices = numeric(length(private$strata_cols))
-			for (i in 1 : length(private$strata_cols)){
-				col = private$strata_cols[i]
-				val = as.character(x_row[[col]])
-				if (is.na(val)) val = "NA"
-				
-				# Use match() for faster lookup
-				lvl_idx = match(val, private$factor_levels[[col]])
-				if (is.na(lvl_idx)) lvl_idx = 1
-				
-				indices[i] = private$level_offsets[i] + lvl_idx
+		#' @description
+		#' Draw multiple treatment assignment vectors according to Pocock & Simon design.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
+		draw_ws_according_to_design = function(r = 100){
+			private$ensure_factor_metadata()
+			n = self$get_n()
+			x_levels_matrix = matrix(NA_integer_, nrow = n, ncol = length(private$strata_cols))
+			for (i in 1 : n){
+				x_levels_matrix[i, ] = private$get_subject_levels_idx(private$Xraw[i, ])
 			}
-			indices
+
+			generate_permutations_pocock_simon_cpp(
+				x_levels_matrix,
+				as.integer(private$num_levels_total),
+				private$weights,
+				private$p_best,
+				private$prob_T,
+				as.integer(r)
+			)$w_mat
 		},
 
+		#' @description
+		#' Redraw treatment assignments according to the Pocock & Simon design.
 		redraw_w_according_to_design = function(){
 			private$ensure_factor_metadata()
 			# Reset incremental counts
@@ -138,7 +124,10 @@ SeqDesignPocockSimon = R6::R6Class("SeqDesignPocockSimon",
 				idx = x_levels_matrix[i, ]
 				for (j in idx) private$counts[j, w_i + 1] = private$counts[j, w_i + 1] + 1
 			}
-		},
+		}
+	),
+
+	private = list(
 
 		get_bootstrap_indices = function() {
 			sample_int_replace_cpp(private$t, private$t)

@@ -20,7 +20,7 @@ seq_des = SeqDesignKK21stepwise$new(n = 6, response_type = "continuous")
 
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{\link[SeqExpMatch:SeqDesignKK21]{SeqExpMatch::SeqDesignKK21}} -> \code{SeqDesignKK21stepwise}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{\link[SeqExpMatch:SeqDesignKK21]{SeqExpMatch::SeqDesignKK21}} -> \code{SeqDesignKK21stepwise}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -54,13 +54,11 @@ seq_des = SeqDesignKK21stepwise$new(n = 6, response_type = "continuous")
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-redraw_w_according_to_design'><code>SeqExpMatch::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-draw_ws_according_to_design'><code>SeqExpMatch::SeqDesignKK14$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="get_m"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-get_m'><code>SeqExpMatch::SeqDesignKK14$get_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="matching_statistics"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-matching_statistics'><code>SeqExpMatch::SeqDesignKK14$matching_statistics()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK21" data-id="assign_wt"><a href='../../SeqExpMatch/html/SeqDesignKK21.html#method-SeqDesignKK21-assign_wt'><code>SeqExpMatch::SeqDesignKK21$assign_wt()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK21" data-id="get_covariate_weights"><a href='../../SeqExpMatch/html/SeqDesignKK21.html#method-SeqDesignKK21-get_covariate_weights'><code>SeqExpMatch::SeqDesignKK21$get_covariate_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK21" data-id="get_iteration_weights"><a href='../../SeqExpMatch/html/SeqDesignKK21.html#method-SeqDesignKK21-get_iteration_weights'><code>SeqExpMatch::SeqDesignKK21$get_iteration_weights()</code></a></span></li>

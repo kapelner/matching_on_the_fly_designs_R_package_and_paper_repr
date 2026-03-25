@@ -8,12 +8,13 @@ An R6 Class encapsulating the data and functionality for a fixed factorial exper
 This design handles multiple treatment factors and balances assignments across all factor combinations.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignFactorial}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignFactorial}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignFactorial-new}{\code{FixedDesignFactorial$new()}}
+\item \href{#method-FixedDesignFactorial-redraw_w_according_to_design}{\code{FixedDesignFactorial$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignFactorial-draw_ws_according_to_design}{\code{FixedDesignFactorial$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignFactorial-get_w_factorial}{\code{FixedDesignFactorial$get_w_factorial()}}
 \item \href{#method-FixedDesignFactorial-clone}{\code{FixedDesignFactorial$clone()}}
@@ -87,22 +88,47 @@ A new `FixedDesignFactorial` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignFactorial-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignFactorial-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the factorial design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignFactorial$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignFactorial-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignFactorial-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to balanced factorial randomization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignFactorial$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignFactorial-get_w_factorial"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignFactorial-get_w_factorial}{}}}
 \subsection{Method \code{get_w_factorial()}}{
+Get the data frame of factor assignments for each subject.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignFactorial$get_w_factorial()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A data frame with n rows and columns corresponding to factors.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignFactorial-clone"></a>}}

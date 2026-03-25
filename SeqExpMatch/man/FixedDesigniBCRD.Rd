@@ -5,16 +5,16 @@
 \title{A balanced completely randomized Fixed Design}
 \description{
 An R6 Class encapsulating the data and functionality for a fixed balanced completely randomized experimental design.
-This design ensures balanced allocation using the \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesigniBCRD}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesigniBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesigniBCRD-new}{\code{FixedDesigniBCRD$new()}}
 \item \href{#method-FixedDesigniBCRD-draw_ws_according_to_design}{\code{FixedDesigniBCRD$draw_ws_according_to_design()}}
+\item \href{#method-FixedDesigniBCRD-redraw_w_according_to_design}{\code{FixedDesigniBCRD$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesigniBCRD-clone}{\code{FixedDesigniBCRD$clone()}}
 }
 }
@@ -52,6 +52,7 @@ This design ensures balanced allocation using the \pkg{randomizr} package.
 \if{html}{\out{<a id="method-FixedDesigniBCRD-new"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesigniBCRD-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed balanced completely randomized experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$new(
   response_type = "continuous",
@@ -63,13 +64,54 @@ This design ensures balanced allocation using the \pkg{randomizr} package.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{num_cores}}{The number of CPU cores.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `FixedDesigniBCRD` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesigniBCRD-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesigniBCRD-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to balanced randomization.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$draw_ws_according_to_design(r)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesigniBCRD-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesigniBCRD-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the balanced completely randomized design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$redraw_w_according_to_design()}\if{html}{\out{</div>}}
 }
 
 }

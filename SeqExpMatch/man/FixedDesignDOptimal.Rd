@@ -9,12 +9,13 @@ This design searches for an allocation that maximizes the determinant of the inf
 (equivalent to minimizing the variance of the parameter estimates).
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignDOptimal}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignDOptimal}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignDOptimal-new}{\code{FixedDesignDOptimal$new()}}
+\item \href{#method-FixedDesignDOptimal-redraw_w_according_to_design}{\code{FixedDesignDOptimal$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignDOptimal-draw_ws_according_to_design}{\code{FixedDesignDOptimal$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignDOptimal-clone}{\code{FixedDesignDOptimal$clone()}}
 }
@@ -87,13 +88,34 @@ A new `FixedDesignDOptimal` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignDOptimal-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignDOptimal-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the D-optimal search fixed design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignDOptimal$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignDOptimal-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignDOptimal-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw treatment assignments according to the D-optimal search fixed design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignDOptimal$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignDOptimal-clone"></a>}}

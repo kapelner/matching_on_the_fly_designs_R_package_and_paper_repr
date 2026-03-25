@@ -58,7 +58,7 @@ prepare_seq_des_obj = function(response_type, dataset_name = "airquality", desig
 }
 
 namespace_content = readLines("SeqExpMatch/NAMESPACE")
-inf_classes = grep("^export\\(SeqDesignInference", namespace_content, value = TRUE)
+inf_classes = grep("^export\\(DesignInference", namespace_content, value = TRUE)
 inf_classes = gsub("export\\(|\\)", "", inf_classes)
 
 categorized_classes = list(
@@ -100,7 +100,7 @@ for (response_type in names(categorized_classes)) {
     seq_des_obj_kk21 = prepare_seq_des_obj(response_type, design_class = SeqDesignKK21)
     
     for (inf_class_name in unique(categorized_classes[[response_type]])) {
-        if (inf_class_name == "SeqDesignInferenceAllKKCompoundMeanDiff") next
+        if (inf_class_name == "DesignInferenceAllKKCompoundMeanDiff") next
         
         cat(sprintf("  %s:\n", inf_class_name))
         flush.console()
@@ -130,13 +130,16 @@ for (response_type in names(categorized_classes)) {
                 bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE)))
             } else NA
             
-            # 2. ci (New object)
+            # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
+            w_original = current_seq_des_obj$.__enclos_env__$private$w
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
-            
-            # 3. custom_ci (New object)
+
+            # 3. custom_ci (New object, reset design cache for cold measurement)
+            current_seq_des_obj$.__enclos_env__$private$X = NULL
+            current_seq_des_obj$.__enclos_env__$private$w = w_original
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)

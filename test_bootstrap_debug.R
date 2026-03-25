@@ -20,8 +20,8 @@ for (t in 1 : n){
 	seq_des_obj$add_subject_response(t, y[t], dead[t])
 }
 
-cat("Creating SeqDesignInferenceAllKKCompoundMeanDiff...\n")
-inf2 = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+cat("Creating DesignInferenceAllKKCompoundMeanDiff...\n")
+inf2 = DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
 
 cat("Computing treatment estimate...\n")
 te = inf2$compute_treatment_estimate()

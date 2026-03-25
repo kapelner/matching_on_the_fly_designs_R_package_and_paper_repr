@@ -97,7 +97,7 @@ run_simulation = function(i, data_set, beta_T, design, morison, n){
 	#cat("nsim:", i, ", 2\n")
 	for(infrence in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
 	#cat(infrence, "\n")
-	des_inf = paste0("SeqDesignInference", infrence)
+	des_inf = paste0("DesignInference", infrence)
 	if(infrence == "BaiAdjustedT"){
 		des_inf = paste0(des_inf, design)
 		des_inf_class = get(des_inf)

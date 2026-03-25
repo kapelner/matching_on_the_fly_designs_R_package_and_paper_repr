@@ -5,30 +5,27 @@
 # This class takes care of data storage and response handling.
 #
 # @keywords internal
+#' An Abstract Experimental Design
+#'
+#' @description
+#' An abstract R6 Class encapsulating the data and functionality for an experimental design.
+#' This class takes care of data storage and response handling.
+#'
+#' @keywords internal
+#' @export
 Design = R6::R6Class("Design",
 	public = list(
-		#
-		# @description
-		# Initialize an experimental design
-		#
-		# @param response_type 	The data type of response values which must be one of the following:
-		# 							"continuous" (the default),
-		# 							"incidence",
-		# 							"proportion",
-		# 							"count",
-		# 							"survival",
-		# 							"ordinal".
-		# 							This package will enforce that all added responses via the \code{add_subject_response} method will be
-		# 							of the appropriate type.
-		# @param prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
-		# @param include_is_missing_as_a_new_feature	If missing data is present in a variable, should we include another dummy variable for its
-		# 												missingness in addition to imputing its value? If the feature is type factor, instead of creating
-		# 												a new column, we allow missingness to be its own level. The default is \code{TRUE}.
-		# @param n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		# @param verbose	A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}.
-		#
-		# @return 			A new `Design` object
-		#
+		#' @description
+		#' Initialize an experimental design
+		#'
+		#' @param response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param prob_T	Probability of treatment assignment.
+		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
+		#' @param n			The sample size (if fixed).
+		#' @param num_cores Number of CPU cores.
+		#' @param verbose	Flag for verbosity.
+		#'
+		#' @return 			A new `Design` object
 		initialize = function(
 				response_type = "continuous",
 				prob_T = 0.5,
@@ -76,13 +73,11 @@ Design = R6::R6Class("Design",
 			}
 		},
 
-		# @description
-		# Add subject-specific measurements for the next subject entrant
-		#
-		# @param x_new 			A row of the data frame corresponding to the new subject to be added (must be type data.table).
-		# @param allow_new_cols	Should we allow new/different features than previously seen in previous subjects in the
-		# 							new subject's covariates? Default is \code{TRUE}.
-		#
+		#' @description
+		#' Add subject-specific measurements for the next subject entrant
+		#'
+		#' @param x_new 			A row of the data frame corresponding to the new subject.
+		#' @param allow_new_cols	Allow new features in the new subject's covariates.
 		add_subject = function(x_new, allow_new_cols = TRUE){
 			assertClass(x_new, "data.frame")
 			x_new = as.data.table(x_new)
@@ -173,15 +168,12 @@ Design = R6::R6Class("Design",
 			}
 		},
 
-		# @description
-		# For CARA designs, add subject response for the a subject
-		#
-		# @param t 	 The subject index for which to attach a response (beginning with 1, ending with n). You cannot add responses
-		# 				 for subjects that have not yet been added to the experiment via the \code{add_subject_to_experiment_and_assign} method.
-		# @param y 	 The response value which must be appropriate for the response_type.
-		# @param dead	 If the response is censored, enter 0 for this value. This is only necessary to specify for response type
-		# 				 "survival" otherwise do not specify this argument (as it will default to 1).
-		#
+		#' @description
+		#' For CARA designs, add subject response for the a subject
+		#'
+		#' @param t 	 The subject index.
+		#' @param y 	 The response value.
+		#' @param dead	 If the response is censored (0 for survival).
 		add_subject_response = function(t, y, dead = 1) {
 			assertNumeric(t, len = 1) #make sure it's length one here
 			assertNumeric(y, len = 1) #make sure it's length one here
@@ -235,16 +227,11 @@ Design = R6::R6Class("Design",
 			private$y_i_t_i[[t]] = private$t
 		},
 
-		# @description
-		# For non-CARA designs, add all subject responses (usually done at the end of the study)
-		#
-		# @param ys 		The responses as a numeric vector of length n
-		# @param deads	    The binary vector of length n where 1 indicates the the subject
-		# 					is dead (survival value is uncensored) and 0 indicates the subject is
-		# 					alive (survival value is censored). This is only necessary for response type
-		# 				 	"survival" otherwise do not specify and the value
-		# 					will default to 1.
-		#
+		#' @description
+		#' For non-CARA designs, add all subject responses
+		#'
+		#' @param ys 		The responses as a numeric vector.
+		#' @param deads	    The binary vector indicating if dead/censored.
 		add_all_subject_responses = function(ys, deads = NULL) {
 			if (is.null(deads)){
 				deads = rep(1, private$t)
@@ -261,37 +248,33 @@ Design = R6::R6Class("Design",
 			}
 		},
 
-		# @description
-		# For those who wish to use this package for analysis on already-completed experimental data
-		#
-		# @param w 		The binary responses as a numeric vector of length equal to the number of subjects in the study
-		#
+		#' @description
+		#' For analysis on already-completed experimental data
+		#'
+		#' @param w 		The binary responses.
 		add_all_subject_assignments = function(w) {
 			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
 			private$w = w
 		},
 
-		# @description
-		# Check if this design was initialized with a fixed sample size n
-		#
+		#' @description
+		#' Check if this design was initialized with a fixed sample size n
+		#'
+		#' @return TRUE if fixed.
 		is_fixed_sample_size = function(){
 			private$fixed_sample
 		},
 
-		# @description
-		# Asserts if all subjects arrived.
-		#
+		#' @description
+		#' Asserts if all subjects arrived.
 		assert_all_subjects_arrived = function(){
 			if (private$fixed_sample & private$t < private$n){
 				stop("This experiment is incomplete as all n subjects haven't arrived yet.")
 			}
 		},
 
-		# @description
-		# Asserts if the experiment is completed (all n assignments are assigned
-		# in the w vector and all n responses in the y vector are recorded), i.e. throws
-		# descriptive error if the experiment is incomplete.
-		#
+		#' @description
+		#' Asserts if the experiment is completed.
 		assert_experiment_completed = function(){
 			self$assert_all_subjects_arrived()
 			if (sum(!is.na(private$y)) != length(private$w)){
@@ -299,12 +282,10 @@ Design = R6::R6Class("Design",
 			}
 		},
 
-		# @description
-		# Checks if the experiment is completed (all n assignments are assigned
-		# in the w vector and all n responses in the y vector are recorded).
-		#
-		# @return	\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
-		#
+		#' @description
+		#' Checks if the experiment is completed.
+		#'
+		#' @return	\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
 		check_experiment_completed = function(){
 			if (private$fixed_sample & private$t < private$n){
 				FALSE
@@ -315,128 +296,117 @@ Design = R6::R6Class("Design",
 			}
 		},
 
-		# @description
-		# Checks if the experiment has a 50-50 allocation to treatment and control
-		#
-		# @return	\code{TRUE} if 50-50, \code{FALSE} otherwise.
-		#
+		#' @description
+		#' Checks if the experiment has a 50-50 allocation.
 		assert_even_allocation = function(){
 			if (private$prob_T != 0.5){
 		 		stop("This type of design currently only works with even treatment allocation, i.e. you must set prob_T = 0.5 upon initialization")
 		 	}
 		},
 
-		#
-		# @description
-		# Checks if the experiment has a 50-50 allocation to treatment and control
-		#
-		# @return	\code{TRUE} if 50-50, \code{FALSE} otherwise.
-		#
+		#' @description
+		#' Checks if the experiment has a fixed sample size.
 		assert_fixed_sample = function(){
 			if (!private$fixed_sample){
 				stop("This type of design currently only works with fixed sample, i.e., you must specify n upon initialization")
 			}
 		},
 
-		# @description
-		# Checks if the experiment has any censored responses
-		#
-		# @return	\code{TRUE} if there are any censored responses, \code{FALSE} otherwise.
-		#
+		#' @description
+		#' Checks if the experiment has any censored responses
+		#'
+		#' @return	\code{TRUE} if any censored.
 		any_censoring = function(){
 			sum(private$dead) < length(private$dead)
 		},
 
-		# @description Get t
-		#
-		# @return 			The current number of subjects in this experiment (begins at zero).
-		#
+		#' @description Get t
+		#'
+		#' @return 			The current number of subjects.
 		get_t = function(){
 			private$t
 		},
 
-		# @description Get raw X information
-		#
-		# @return 			A data frame (data.table object) of subject data with number of rows n (the number of subjects) and number of
-		# 					columns p (the number of characteristics measured for each subject). This data frame is filled in
-		# 					sequentially by the experimenter and thus will have data present for rows 1...t (i.e. the number of subjects in the
-		# 					experiment currently) but otherwise will be missing.
+		#' @description Get raw X information
+		#'
+		#' @return 			A data frame of subject data.
 		get_X_raw = function(){
 			private$Xraw
 		},
 
-		# @description Get imputed X information
-		#
-		# @return 		Same as \code{Xraw} except with imputations for missing values (if necessary) and deletions of linearly dependent columns
+		#' @description Get imputed X information
+		#'
+		#' @return 		Same as \code{Xraw} except with imputations.
 		get_X_imp = function(){
 			private$Ximp
 		},
 
-		# @description Get X matrix
-		#
-		# @return 			A numeric matrix of subject data with number of rows n (the number of subjects) and number of
-		# 					columns p (the number of characteristics measured for each subject).
+		#' @description Get X matrix
+		#'
+		#' @return 			A numeric matrix of subject data.
 		get_X = function(){
 			private$X
 		},
 
-		# @description Get y
-		#
-		# @return 			A numeric vector of subject responses with number of entries n (the number of subjects).
+		#' @description Get y
+		#'
+		#' @return 			A numeric vector of subject responses.
 		get_y = function(){
 			private$y
 		},
 
-		# @description Get w
-		#
-		# @return 			A binary vector of subject assignments with number of entries n (the number of subjects).
-		# 					This vector is filled in sequentially by this package (similar to X) and will have assignments present for
-		# 					entries 1...t (i.e. the number of subjects in the experiment currently) but otherwise will be missing.
+		#' @description Get w
+		#'
+		#' @return 			A binary vector of subject assignments.
 		get_w = function(){
 			private$w
 		},
 
-		# @description Get n, the sample size
-		#
-		# If n is fixed, it returns n, if n is not fixed, it returns the current number of subjects, t
-		#
-		# @return 			The number of subjects
+		#' @description Get n, the sample size
+		#'
+		#' @return 			The number of subjects.
 		get_n = function(){
 			ifelse(private$fixed_sample, private$n, private$t)
 		},
 
-		# @description Get dead
-		#
-		# @return 			A binary vector of whether the subject is dead with number of entries n (the number of subjects).
+		#' @description Get dead
+		#'
+		#' @return 			A binary vector of whether the subject is dead.
 		get_dead = function(){
 			private$dead
 		},
 
-		# @description Get probability of treatment
-		#
-		# @return 			The experimenter-specified probability a subject becomes treated to the treatment arm.
+		#' @description Get probability of treatment
+		#'
+		#' @return 			The specified probability.
 		get_prob_T = function(){
 			private$prob_T
 		},
 
-		# @description Get response type
-		#
-		# @return 			The experimenter-specified response type
+		#' @description Get response type
+		#'
+		#' @return 			The specified response type.
 		get_response_type = function(){
 			private$response_type
 		},
 
-		# @description
-		# Duplicate this design object
-		#
-		# @param verbose 	A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
-		# @return 			A new `Design` object with the same data
+		#' @description
+		#' Duplicate this design object
+		#'
+		#' @param verbose 	A flag for verbosity.
+		#' @return 			A new `Design` object with the same data
 		duplicate = function(verbose = FALSE){
 			self$assert_experiment_completed() #can't duplicate without the experiment being done
 			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
 			d
+		},
+
+		#' @description
+		#' Redraw treatment assignments according to the design.
+		redraw_w_according_to_design = function(){
+			stop("Must be implemented by subclass.")
 		}
 	),
 

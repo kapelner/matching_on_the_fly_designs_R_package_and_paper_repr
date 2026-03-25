@@ -38,6 +38,18 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			private$uses_covariates = TRUE
 		},
 
+		#' @description
+		#' Redraw treatment assignments according to the greedy search design.
+		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = private$run_one_greedy_search()
+		},
+
+		#' @description
+		#' Draw multiple treatment assignment vectors.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			n = self$get_n()

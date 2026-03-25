@@ -8,6 +8,18 @@
 SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 	inherit = SeqDesign,
 	public = list(
+		#' @description
+		#' Initialize an Atkinson sequential experimental design
+		#'
+		#' @param	response_type 	The data type of response values.
+		#' @param	prob_T	The probability of the treatment assignment.
+		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
+		#' @param	n			The sample size.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag for verbosity.
+		#'
+		#' @return 			A new `SeqDesignAtkinson` object
+		#'
 		initialize = function(
 						response_type = "continuous",
 						prob_T = 0.5,
@@ -19,9 +31,13 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			#if it's too early in the trial or if all the assignments are the same, then randomize
-			if (private$t <= ncol(private$Xraw) + 2 + 1 | length(unique(private$t)) == 1){
+			if (private$t <= ncol(private$Xraw) + 2 + 1){
 				rbinom(1, 1, private$prob_T)
 			} else {
 				all_subject_data = private$compute_all_subject_data()
@@ -39,6 +55,12 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 			}
 		},
 
+		#' @description
+		#' Draw multiple treatment assignment vectors.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			generate_permutations_atkinson_cpp(
 				as.matrix(private$X[1:private$t, , drop = FALSE]),
@@ -47,9 +69,10 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 				as.numeric(private$prob_T),
 				as.integer(r)
 			)$w_mat
-		}
-	),
-	private = list(
+		},
+
+		#' @description
+		#' Redraw treatment assignments according to the Atkinson design.
 		redraw_w_according_to_design = function(){
 			private$w[1:private$t] = atkinson_redraw_batch_cpp(
 				as.matrix(private$X[1:private$t, , drop = FALSE]),
@@ -58,5 +81,7 @@ SeqDesignAtkinson = R6::R6Class("SeqDesignAtkinson",
 				private$prob_T
 			)
 		}
+	),
+	private = list(
 	)
 )

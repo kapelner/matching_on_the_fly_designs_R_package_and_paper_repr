@@ -46,7 +46,7 @@ for (cores in 1:6) {
 Benchmarking C++ OpenMP simple bootstrap with %d core(s) and B = %d...
 ", cores, B_samples))
 
-	seq_des_inf = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = cores)
+	seq_des_inf = DesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = cores)
 
 	start_time = proc.time()[["elapsed"]]
 

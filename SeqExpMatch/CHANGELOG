@@ -4,7 +4,7 @@ v2.1.0 (planned)
 
 v2.0.0
 * MAJOR ARCHITECTURAL REVOLUTION:
-  + Unified all inference methodologies under a strict R6 class hierarchy, centered on the abstract `SeqDesignInference` base.
+  + Unified all inference methodologies under a strict R6 class hierarchy, centered on the abstract `DesignInference` base.
   + Implemented a dual-strategy pooling framework for all KK matching-on-the-fly designs:
     - IVWC (Inverse-Variance Weighted Combination): Rigorous variance-weighted pooling of independent matched-pair and reservoir estimators.
     - Combined Likelihood: Joint modeling across the entire dataset using design-aware constraints and efficient likelihood aggregation.
@@ -65,10 +65,10 @@ v2.0.0
   + Fully validated support for unequal allocation (prob_T != 0.5) across all 40+ inference classes.
   + Hardened error handling for perfect separation, small-sample degeneracy, and non-convergence.
   + Reworked randomization-test caching so expensive treatment-assignment draws are reused across repeated p-value and CI inversion calls, including custom randomization statistics.
-  + Fixed a critical "attempt to apply non-function" error in `SeqDesignInferenceIncidUnivKKNewcombeRiskDiff` by implementing the missing `pool_estimates_ivwc` private method.
+  + Fixed a critical "attempt to apply non-function" error in `DesignInferenceIncidUnivKKNewcombeRiskDiff` by implementing the missing `pool_estimates_ivwc` private method.
   + Resolved `num_cores` assertion failures in `SeqDesign` initialization across all subclasses (`SeqDesignBernoulli`, `SeqDesigniBCRD`, `SeqDesignEfron`, etc.), ensuring parallelization parameters are correctly handled during object creation.
   + Corrected Rd documentation line-width issues that were causing truncation in PDF manuals by consolidating method examples and applying strategic line breaks in R6 class documentation.
-  + Fixed a missing function error in `SeqDesignInferenceOrdinalRidit` by implementing the parallelized C++ routines `compute_ridit_distr_parallel_cpp` and `compute_ridit_bootstrap_parallel_cpp`.
+  + Fixed a missing function error in `DesignInferenceOrdinalRidit` by implementing the parallelized C++ routines `compute_ridit_distr_parallel_cpp` and `compute_ridit_bootstrap_parallel_cpp`.
   + Synchronized package tests with architectural updates, fixing broken argument permutations and output expectations in GLM tests.
   + Standardized the `DESCRIPTION` file to satisfy CRAN requirements, including proper `Author` and `Maintainer` fields and valid DCF formatting.
   + Global codebase cleanup: standardized tab-based indentation, fixed all Roxygen warnings, and cleaned up the NAMESPACE.

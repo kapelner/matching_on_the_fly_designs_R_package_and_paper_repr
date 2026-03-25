@@ -125,13 +125,17 @@ SeqDesignKK21 = R6::R6Class("SeqDesignKK21",
 
 
 		#' @description
-		#' Get covariate weights
+		#' Get the covariate weights calculated at the current iteration.
 		#'
-		#' @return	For KK21 designs, the running values of the weights for each covariate.
+		#' @return	A numeric vector of weights.
 		get_covariate_weights = function(){
 			private$covariate_weights
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group using the KK21 algorithm.
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			wt = 	if (private$too_early_to_match()){
 						#we're early or the reservoir is empty, so randomize

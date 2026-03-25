@@ -40,6 +40,10 @@ SeqDesignUrn = R6::R6Class("SeqDesignUrn",
 			private$beta = beta
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			# Probability of Treatment based on current counts
 			# In Wei's Urn, P(T) = (alpha + beta * nC) / (2 * alpha + beta * (nT + nC))
@@ -50,12 +54,22 @@ SeqDesignUrn = R6::R6Class("SeqDesignUrn",
 			prob_T = (private$alpha + private$beta * nC) / (2 * private$alpha + private$beta * (nT + nC))
 			
 			rbinom(1, 1, prob_T)
-		}
-	),
-	private = list(
-		alpha = NULL,
-		beta = NULL,
+		},
 
+		#' @description
+		#' Draw multiple treatment assignment vectors according to Wei's Urn design.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
+		draw_ws_according_to_design = function(r = 100){
+			# For Urn, we can't use simple C++ permutations if it's dynamic.
+			# Fallback to super which calls redraw_w_according_to_design r times.
+			super$draw_ws_according_to_design(r)
+		},
+
+		#' @description
+		#' Redraw treatment assignments according to the Urn design.
 		redraw_w_according_to_design = function(){
 			# Sequential simulation of the urn process
 			new_w = rep(NA_real_, private$t)
@@ -69,5 +83,9 @@ SeqDesignUrn = R6::R6Class("SeqDesignUrn",
 			}
 			private$w[1:private$t] = new_w
 		}
+	),
+	private = list(
+		alpha = NULL,
+		beta = NULL
 	)
 )

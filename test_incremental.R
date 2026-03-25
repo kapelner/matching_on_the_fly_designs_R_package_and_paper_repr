@@ -125,17 +125,17 @@ run_tests_for_response = function(response_type){
 
 	if (response_type == "continuous"){
 	cat("  About to run inference checks\n")
-	cat("  Creating SeqDesignInferenceAllSimpleMeanDiff\n")
-	run_inference_checks(SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj), response_type)
-	cat("  Done with SeqDesignInferenceAllSimpleMeanDiff\n")
+	cat("  Creating DesignInferenceAllSimpleMeanDiff\n")
+	run_inference_checks(DesignInferenceAllSimpleMeanDiff$new(seq_des_obj), response_type)
+	cat("  Done with DesignInferenceAllSimpleMeanDiff\n")
 
-	cat("  Creating SeqDesignInferenceAllKKCompoundMeanDiff\n")
-	run_inference_checks(SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj), response_type)
-	cat("  Done with SeqDesignInferenceAllKKCompoundMeanDiff\n")
+	cat("  Creating DesignInferenceAllKKCompoundMeanDiff\n")
+	run_inference_checks(DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj), response_type)
+	cat("  Done with DesignInferenceAllKKCompoundMeanDiff\n")
 
-	cat("  Creating SeqDesignInferenceContinMultOLSKK\n")
-	run_inference_checks(SeqDesignInferenceContinMultOLSKK$new(seq_des_obj), response_type)
-	cat("  Done with SeqDesignInferenceContinMultOLSKK\n")
+	cat("  Creating DesignInferenceContinMultOLSKK\n")
+	run_inference_checks(DesignInferenceContinMultOLSKK$new(seq_des_obj), response_type)
+	cat("  Done with DesignInferenceContinMultOLSKK\n")
 	}
 
 	cat("  Finished run_tests_for_response\n")

@@ -8,12 +8,13 @@ An R6 Class encapsulating the data and functionality for a fixed greedy experime
 This design starts with a random allocation and greedily switches pairs to optimize covariate balance.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignGreedy}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignGreedy}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignGreedy-new}{\code{FixedDesignGreedy$new()}}
+\item \href{#method-FixedDesignGreedy-redraw_w_according_to_design}{\code{FixedDesignGreedy$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-draw_ws_according_to_design}{\code{FixedDesignGreedy$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-clone}{\code{FixedDesignGreedy$clone()}}
 }
@@ -89,13 +90,34 @@ A new `FixedDesignGreedy` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignGreedy-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignGreedy-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the greedy search design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignGreedy$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignGreedy-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignGreedy-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignGreedy$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignGreedy-clone"></a>}}

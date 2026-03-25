@@ -1,13 +1,24 @@
 #' Efron's (1971) Biased Coin Sequential Design
 #'
 #' @description
-#' An R6 Class encapsulating the data and functionality for a sequential experimental design.
-#' This class takes care of data initialization and sequential assignments.
+#' An R6 Class encapsulating the data and functionality for Efron's biased coin sequential experimental design.
 #'
 #' @export
 SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 	inherit = SeqDesign,
 	public = list(
+		#' @description
+		#' Initialize an Efron biased coin sequential experimental design
+		#'
+		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param	prob_T	Probability of treatment assignment.
+		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
+		#' @param	n			The sample size.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag for verbosity.
+		#' @param weighted_coin_prob The probability of assigning to the under-represented group.
+		#'
+		#' @return	A new `SeqDesignEfron` object
 		initialize = function(
 						response_type = "continuous",
 						prob_T = 0.5,
@@ -21,27 +32,51 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			private$weighted_coin_prob = weighted_coin_prob
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
-			n_T = sum(private$w, na.rm = TRUE)
-			n_C = private$t - n_T
-			if (n_T * private$prob_T > n_C * (1 - private$prob_T)){
-				rbinom(1, 1, 1 - private$weighted_coin_prob)
-			} else if (n_T * private$prob_T < n_C * (1 - private$prob_T)){
-				rbinom(1, 1, private$weighted_coin_prob)
+			#if it's the first subject or if balance is equal, then Bernoulli
+			nT = sum(private$w == 1, na.rm = TRUE)
+			nC = sum(private$w == 0, na.rm = TRUE)
+			
+			if (nT == nC){
+				self$assign_wt_Bernoulli()
 			} else {
-				rbinom(1, 1, private$prob_T)
+				#assign to the group with fewer subjects with probability weighted_coin_prob
+				if (nT > nC){
+					rbinom(1, 1, 1 - private$weighted_coin_prob)
+				} else {
+					rbinom(1, 1, private$weighted_coin_prob)
+				}
 			}
 		},
 
+		#' @description
+		#' Draw multiple treatment assignment vectors according to Efron's design.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			generate_permutations_efron_cpp(as.integer(private$t), as.integer(r), as.numeric(private$prob_T), as.numeric(private$weighted_coin_prob))$w_mat
+			generate_permutations_efron_cpp(
+				as.integer(self$get_n()),
+				as.integer(r),
+				as.numeric(private$prob_T),
+				as.numeric(private$weighted_coin_prob)
+			)$w_mat
 		}
 	),
 	private = list(
 		weighted_coin_prob = NULL,
 
 		redraw_w_according_to_design = function(){
-			private$w[1:private$t] = efron_redraw_cpp(private$t, private$prob_T, private$weighted_coin_prob)
+			private$w[1:private$t] = efron_redraw_cpp(
+				private$t,
+				private$prob_T,
+				private$weighted_coin_prob
+			)
 		}
 	)
 )

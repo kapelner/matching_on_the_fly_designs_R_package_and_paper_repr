@@ -8,12 +8,13 @@ An R6 Class encapsulating the data and functionality for a fixed rerandomization
 This design generates random allocations and only accepts those that meet a covariate balance criterion.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignRerandomization}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignRerandomization}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignRerandomization-new}{\code{FixedDesignRerandomization$new()}}
+\item \href{#method-FixedDesignRerandomization-redraw_w_according_to_design}{\code{FixedDesignRerandomization$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-draw_ws_according_to_design}{\code{FixedDesignRerandomization$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-clone}{\code{FixedDesignRerandomization$clone()}}
 }
@@ -92,13 +93,34 @@ A new `FixedDesignRerandomization` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesignRerandomization-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesignRerandomization-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the rerandomization design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignRerandomization$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignRerandomization-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignRerandomization-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignRerandomization$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignRerandomization-clone"></a>}}

@@ -19,7 +19,7 @@ test_that("Different designs work with continuous response", {
 	des$add_all_subject_responses(rnorm(n))
 
 	# Check if we can run a simple inference
-	inf <- SeqDesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
+	inf <- DesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_true(is.numeric(inf$compute_treatment_estimate()), info = paste("Design:", name))
 	}
 })
@@ -34,7 +34,7 @@ test_that("KK14 with Morrison works", {
 	}
 	des$add_all_subject_responses(rnorm(n))
 
-	inf <- SeqDesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
+	inf <- DesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_true(is.numeric(inf$compute_treatment_estimate()))
 })
 
@@ -49,7 +49,7 @@ test_that("Multivariate inference works", {
 	des$add_all_subject_responses(rnorm(n))
 
 	# Continuous MultOLS
-	inf_cont <- SeqDesignInferenceContinMultOLS$new(des, verbose = FALSE)
+	inf_cont <- DesignInferenceContinMultOLS$new(des, verbose = FALSE)
 	expect_true(is.numeric(inf_cont$compute_treatment_estimate()))
 
 	# Incidence MultiLogRegr
@@ -58,7 +58,7 @@ test_that("Multivariate inference works", {
 	des_inc$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 	}
 	des_inc$add_all_subject_responses(rbinom(n, 1, 0.5))
-	inf_inc <- SeqDesignInferenceIncidMultiLogRegr$new(des_inc, verbose = FALSE)
+	inf_inc <- DesignInferenceIncidMultiLogRegr$new(des_inc, verbose = FALSE)
 	expect_true(is.numeric(inf_inc$compute_treatment_estimate()))
 
 	# Count MultiNegBinRegr
@@ -67,7 +67,7 @@ test_that("Multivariate inference works", {
 	des_count$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 	}
 	des_count$add_all_subject_responses(rpois(n, 5))
-	inf_count <- SeqDesignInferenceCountMultiNegBinRegr$new(des_count, verbose = FALSE)
+	inf_count <- DesignInferenceCountMultiNegBinRegr$new(des_count, verbose = FALSE)
 	expect_true(is.numeric(inf_count$compute_treatment_estimate()))
 })
 
@@ -80,7 +80,7 @@ test_that("Generated permutations support randomization p-values", {
 	}
 	des$add_all_subject_responses(rnorm(n))
 
-	inf <- SeqDesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
+	inf <- DesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	perms <- inf$.__enclos_env__$private$generate_permutations(64)
 
 	expect_true(is.character(attr(perms, "sig")))
@@ -105,9 +105,9 @@ test_that("KK designs with KK inference work", {
 	)
 
 	inf_classes <- list(
-	KK14 = SeqDesignInferenceBaiAdjustedTKK14,
-	KK21 = SeqDesignInferenceBaiAdjustedTKK21,
-	KK21stepwise = SeqDesignInferenceBaiAdjustedTKK21
+	KK14 = DesignInferenceBaiAdjustedTKK14,
+	KK21 = DesignInferenceBaiAdjustedTKK21,
+	KK21stepwise = DesignInferenceBaiAdjustedTKK21
 	)
 
 	for (name in names(designs)) {

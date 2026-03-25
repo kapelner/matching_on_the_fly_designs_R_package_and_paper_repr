@@ -60,7 +60,7 @@ test_that("SeqDesignSPBR Stratification and Randomization", {
   cat("Testing stratified bootstrap...\n")
   # Use an inference class to trigger bootstrap
   seq_des$add_all_subject_responses(rnorm(n))
-  inf_obj = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des)
+  inf_obj = DesignInferenceAllSimpleMeanDiff$new(seq_des)
   
   # Capture the indices by overriding or just checking the property
   # We'll just run it to make sure it doesn't crash

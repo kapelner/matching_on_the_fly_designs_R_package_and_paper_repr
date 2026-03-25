@@ -8,12 +8,15 @@ An R6 Class encapsulating the data and functionality for a Pocock & Simon sequen
 This design minimizes the imbalance across treatments for multiple covariates.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignPocockSimon}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignPocockSimon}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignPocockSimon-new}{\code{SeqDesignPocockSimon$new()}}
+\item \href{#method-SeqDesignPocockSimon-assign_wt}{\code{SeqDesignPocockSimon$assign_wt()}}
+\item \href{#method-SeqDesignPocockSimon-draw_ws_according_to_design}{\code{SeqDesignPocockSimon$draw_ws_according_to_design()}}
+\item \href{#method-SeqDesignPocockSimon-redraw_w_according_to_design}{\code{SeqDesignPocockSimon$redraw_w_according_to_design()}}
 \item \href{#method-SeqDesignPocockSimon-clone}{\code{SeqDesignPocockSimon$clone()}}
 }
 }
@@ -43,9 +46,7 @@ This design minimizes the imbalance across treatments for multiple covariates.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-draw_ws_according_to_design'><code>SeqExpMatch::SeqDesign$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -95,6 +96,49 @@ Initialize a Pocock & Simon sequential experimental design
 \subsection{Returns}{
 A new `SeqDesignPocockSimon` object
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignPocockSimon-assign_wt"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignPocockSimon-assign_wt}{}}}
+\subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group using minimization.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignPocockSimon$assign_wt()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignPocockSimon-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignPocockSimon-draw_ws_according_to_design}{}}}
+\subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to Pocock & Simon design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignPocockSimon$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SeqDesignPocockSimon-redraw_w_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignPocockSimon-redraw_w_according_to_design}{}}}
+\subsection{Method \code{redraw_w_according_to_design()}}{
+Redraw treatment assignments according to the Pocock & Simon design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignPocockSimon$redraw_w_according_to_design()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignPocockSimon-clone"></a>}}

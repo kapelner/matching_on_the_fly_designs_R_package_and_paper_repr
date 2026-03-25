@@ -4,11 +4,10 @@
 \alias{SeqDesignEfron}
 \title{Efron's (1971) Biased Coin Sequential Design}
 \description{
-An R6 Class encapsulating the data and functionality for a sequential experimental design.
-This class takes care of data initialization and sequential assignments.
+An R6 Class encapsulating the data and functionality for Efron's biased coin sequential experimental design.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignEfron}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignEfron}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -44,9 +43,9 @@ This class takes care of data initialization and sequential assignments.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-redraw_w_according_to_design'><code>SeqExpMatch::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -55,6 +54,7 @@ This class takes care of data initialization and sequential assignments.
 \if{html}{\out{<a id="method-SeqDesignEfron-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignEfron-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an Efron biased coin sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignEfron$new(
   response_type = "continuous",
@@ -67,24 +67,61 @@ This class takes care of data initialization and sequential assignments.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{num_cores}}{The number of CPU cores to use.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{weighted_coin_prob}}{The probability of assigning to the under-represented group.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `SeqDesignEfron` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignEfron-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignEfron-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignEfron$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignEfron-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignEfron-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to Efron's design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignEfron$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignEfron-clone"></a>}}

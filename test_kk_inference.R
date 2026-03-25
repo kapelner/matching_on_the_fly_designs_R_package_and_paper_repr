@@ -16,9 +16,9 @@ for (t in 1:n) {
 	seq_des_obj$add_subject_response(t, y[t], 1)
 }
 
-cat("Creating SeqDesignInferenceAllKKCompoundMeanDiff...\n")
+cat("Creating DesignInferenceAllKKCompoundMeanDiff...\n")
 tryCatch({
-	seq_des_inf <- SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+	seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
 	cat("SUCCESS: Created inference object\n")
 
 	cat("Computing treatment estimate...\n")

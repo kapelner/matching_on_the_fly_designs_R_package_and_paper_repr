@@ -9,16 +9,14 @@ This class takes care of data initialization and sequential assignments. The cla
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{SeqDesignKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-SeqDesignKK14-new}{\code{SeqDesignKK14$new()}}
-\item \href{#method-SeqDesignKK14-matching_statistics}{\code{SeqDesignKK14$matching_statistics()}}
-\item \href{#method-SeqDesignKK14-get_m}{\code{SeqDesignKK14$get_m()}}
-\item \href{#method-SeqDesignKK14-draw_ws_according_to_design}{\code{SeqDesignKK14$draw_ws_according_to_design()}}
 \item \href{#method-SeqDesignKK14-assign_wt}{\code{SeqDesignKK14$assign_wt()}}
+\item \href{#method-SeqDesignKK14-draw_ws_according_to_design}{\code{SeqDesignKK14$draw_ws_according_to_design()}}
 \item \href{#method-SeqDesignKK14-clone}{\code{SeqDesignKK14$clone()}}
 }
 }
@@ -47,9 +45,9 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-redraw_w_according_to_design'><code>SeqExpMatch::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -58,8 +56,7 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \if{html}{\out{<a id="method-SeqDesignKK14-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK14-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a matching-on-the-fly sequential experimental design which matches based on
-Kapelner and Krieger (2014) or Morrison and Owen (2025)
+Initialize a KK14 sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$new(
   response_type = "continuous",
@@ -78,25 +75,25 @@ Kapelner and Krieger (2014) or Morrison and Owen (2025)
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{The data type of response values.}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
 
-\item{\code{prob_T}}{The probability of the treatment assignment.}
+\item{\code{prob_T}}{Probability of treatment assignment.}
 
 \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
 \item{\code{n}}{The sample size.}
 
-\item{\code{num_cores}}{The number of CPU cores.}
+\item{\code{num_cores}}{The number of CPU cores to use.}
 
 \item{\code{verbose}}{A flag for verbosity.}
 
-\item{\code{lambda}}{The quantile cutoff.}
+\item{\code{lambda}}{The penalty parameter for covariate imbalance.}
 
-\item{\code{t_0_pct}}{The percentage where matching begins.}
+\item{\code{t_0_pct}}{The percentage of subjects to allocate before matching begins.}
 
-\item{\code{morrison}}{Flag for Morrison formula.}
+\item{\code{morrison}}{If TRUE, use Morrison's method for matching.}
 
-\item{\code{p}}{The number of covariate features.}
+\item{\code{p}}{The number of covariates to use for matching.}
 }
 \if{html}{\out{</div>}}
 }
@@ -105,42 +102,37 @@ A new `SeqDesignKK14` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignKK14-matching_statistics"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignKK14-matching_statistics}{}}}
-\subsection{Method \code{matching_statistics()}}{
-This returns a list with useful matching statistics.
+\if{html}{\out{<a id="method-SeqDesignKK14-assign_wt"></a>}}
+\if{latex}{\out{\hypertarget{method-SeqDesignKK14-assign_wt}{}}}
+\subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$matching_statistics()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignKK14-get_m"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignKK14-get_m}{}}}
-\subsection{Method \code{get_m()}}{
-Returns the grouping vector `m`
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$get_m()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK14-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK14-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to KK14 design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SeqDesignKK14-assign_wt"></a>}}
-\if{latex}{\out{\hypertarget{method-SeqDesignKK14-assign_wt}{}}}
-\subsection{Method \code{assign_wt()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK14$assign_wt()}\if{html}{\out{</div>}}
+\if{html}{\out{</div>}}
 }
-
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK14-clone"></a>}}

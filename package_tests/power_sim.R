@@ -57,7 +57,7 @@ for (nsim in 1 : Nsim){
 
 		for (test_type in c("normal-based", "randomization-exact")){
 		for (estimate_type in c("difference-in-means", "OLS")){
-			seq_des_inf_obj = SeqDesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
+			seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
 
 			beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 			pval = seq_des_inf_obj$compute_pval_for_no_treatment_effect(nsim_exact_test = nsim_exact_test)

@@ -31,7 +31,7 @@ for (t in 1:n) {
 }
 
 cat("Step 10: Creating inference object\n")
-seq_des_inf <- SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
 
 cat("Step 11: Computing treatment estimate\n")
 result <- seq_des_inf$compute_treatment_estimate()

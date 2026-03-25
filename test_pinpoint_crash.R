@@ -23,18 +23,18 @@ for (t in 1 : n){
 
 cat("Subjects added successfully\n")
 
-cat("Testing SeqDesignInferenceAllSimpleMeanDiff...\n")
-inf1 = SeqDesignInferenceAllSimpleMeanDiff$new(seq_des_obj)
+cat("Testing DesignInferenceAllSimpleMeanDiff...\n")
+inf1 = DesignInferenceAllSimpleMeanDiff$new(seq_des_obj)
 cat("  Created successfully\n")
 cat("  Treatment estimate:", inf1$compute_treatment_estimate(), "\n")
 
-cat("\nNow testing SeqDesignInferenceAllKKCompoundMeanDiff...\n")
+cat("\nNow testing DesignInferenceAllKKCompoundMeanDiff...\n")
 cat("  About to call $new()...\n")
 flush.console()
 
 # Try with R-level error handling
 result = tryCatch({
-	inf2 = SeqDesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+	inf2 = DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
 	cat("  Created successfully!\n")
 	inf2
 }, error = function(e) {

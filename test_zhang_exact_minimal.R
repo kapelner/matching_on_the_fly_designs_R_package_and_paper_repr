@@ -13,7 +13,7 @@ for (i in 1:n){
 }
 seq_des$add_all_subject_responses(y)
 
-inf = SeqDesignInferenceIncidExactZhang$new(seq_des)
+inf = DesignInferenceIncidExactZhang$new(seq_des)
 
 cat("Testing compute_exact_two_sided_pval_for_treatment_effect()...
 ")

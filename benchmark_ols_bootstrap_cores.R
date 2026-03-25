@@ -46,7 +46,7 @@ for (cores in 1:6) {
 Benchmarking C++ OpenMP OLS bootstrap with %d core(s) and B = %d...
 ", cores, B_samples))
 
-	seq_des_inf = SeqDesignInferenceContinMultOLS$new(seq_des_obj, num_cores = cores)
+	seq_des_inf = DesignInferenceContinMultOLS$new(seq_des_obj, num_cores = cores)
 
 	start_time = proc.time()[["elapsed"]]
 

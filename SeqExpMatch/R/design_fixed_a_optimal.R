@@ -12,14 +12,14 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 		#' @description
 		#' Initialize an A-optimal search fixed experimental design
 		#'
-		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment. Must be 0.5 for exchange search.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
-		#' @param verbose	Flag for verbosity.
+		#' @param response_type "continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param prob_T Probability of treatment assignment (default 0.5).
+		#' @param include_is_missing_as_a_new_feature Flag for missingness indicators.
+		#' @param n Sample size (if fixed).
+		#' @param num_cores Number of CPU cores.
+		#' @param verbose Flag for verbosity.
 		#'
-		#' @return 			A new `FixedDesignAOptimal` object
+		#' @return A new `FixedDesignAOptimal` object
 		#'
 		initialize = function(
 				response_type = "continuous",
@@ -36,6 +36,18 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 			private$uses_covariates = TRUE
 		},
 
+		#' @description
+		#' Redraw treatment assignments according to the A-optimal search fixed design.
+		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
+
+		#' @description
+		#' Draw treatment assignments according to the A-optimal search fixed design.
+		#'
+		#' @param r Number of designs to draw.
+		#'
+		#' @return A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			n = self$get_n()
@@ -43,79 +55,37 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
 
-			if (private$num_cores > 1 && requireNamespace("pbmcapply", quietly = TRUE)){
-				w_list = pbmcapply::pbmclapply(1:r, function(i) {
-					private$run_one_a_optimal_search()
-				}, mc.cores = private$num_cores)
-				return(do.call(cbind, w_list))
-			} else {
-				w_mat = matrix(NA_real_, nrow = n, ncol = r)
-				for (j in 1:r){
-					w_mat[, j] = private$run_one_a_optimal_search()
-				}
-				return(w_mat)
+			if (is.null(private$P)){
+				X = private$X[1:n, , drop = FALSE]
+				Z0 = cbind(1, X)
+				
+				# P = Z0 (Z0'Z0)^-1 Z0'
+				Z0_qr = qr(Z0)
+				Q = qr.Q(Z0_qr)
+				private$P = Q %*% t(Q)
+				
+				# H = Z0 (Z0'Z0)^-2 Z0'
+				# (Z0'Z0)^-1 = R^-1 Q' Q (R')^-1 = R^-1 (R')^-1
+				# (Z0'Z0)^-2 = R^-1 (R')^-1 R^-1 (R')^-1
+				# Actually, let M = (Z0'Z0)^-1
+				# H = Z0 M^2 Z0'
+				R = qr.R(Z0_qr)
+				# M = solve(t(R) %*% R) # If R is small (p+1 x p+1)
+				M = tryCatch(solve(t(R) %*% R), error = function(e) MASS::ginv(t(R) %*% R))
+				H_kernel = M %*% M
+				private$H = Z0 %*% H_kernel %*% t(Z0)
 			}
+
+			# Use C++ speedup
+			res = a_optimal_search_cpp(private$P, private$H, as.integer(r), as.integer(round(n * private$prob_T)))
+			w_mat = res
+			storage.mode(w_mat) = "numeric"
+			w_mat
 		}
 	),
 
 	private = list(
-		run_one_a_optimal_search = function(){
-			n = self$get_n()
-			X = private$X[1:n, , drop = FALSE]
-			# Augmented matrix including intercept
-			Z0 = cbind(1, X)
-			
-			# Initial BCRD
-			w_curr = sample(c(rep(1, n / 2), rep(0, n / 2)))
-			
-			compute_obj = function(w){
-				Z = cbind(Z0, w)
-				# Tr( (Z'Z)^-1 )
-				# We use pseudo-inverse if singular
-				ZtZ = t(Z) %*% Z
-				inv = tryCatch(solve(ZtZ), error = function(e) MASS::ginv(ZtZ))
-				sum(diag(inv))
-			}
-			
-			obj_curr = compute_obj(w_curr)
-			
-			repeat {
-				best_obj = obj_curr
-				best_switch = NULL
-				
-				t_idxs = which(w_curr == 1)
-				c_idxs = which(w_curr == 0)
-				
-				improved = FALSE
-				# A-optimal update is more expensive than D-optimal because we don't have
-				# a simple quadratic form for the trace of the inverse.
-				# However, we can use the Woodbury identity if needed.
-				# For n small, we'll just recompute.
-				for (i in t_idxs){
-					for (j in c_idxs){
-						w_cand = w_curr
-						w_cand[i] = 0
-						w_cand[j] = 1
-						
-						obj_cand = compute_obj(w_cand)
-						
-						if (obj_cand < best_obj - 1e-10){
-							best_obj = obj_cand
-							best_switch = c(i, j)
-							improved = TRUE
-						}
-					}
-				}
-				
-				if (improved){
-					w_curr[best_switch[1]] = 0
-					w_curr[best_switch[2]] = 1
-					obj_curr = best_obj
-				} else {
-					break
-				}
-			}
-			w_curr
-		}
+		P = NULL, # Projection matrix
+		H = NULL  # Trace-inverse kernel matrix
 	)
 )

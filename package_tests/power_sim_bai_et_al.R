@@ -80,7 +80,7 @@ for (nsim in 1 : Nsim){
 				}
 
 				for(infrence in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
-				des = paste0("SeqDesignInference", infrence)
+				des = paste0("DesignInference", infrence)
 				if(infrence == "BaiAdjustedT"){
 					des = paste0(des, d)
 					des_class = get(des)

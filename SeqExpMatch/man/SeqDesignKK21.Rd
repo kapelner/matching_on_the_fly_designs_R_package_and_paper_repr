@@ -20,7 +20,7 @@ seq_des = SeqDesignKK21$new(n = 6, response_type = "continuous")
 
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{SeqDesignKK21}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{SeqExpMatch::SeqDesign} -> \code{\link[SeqExpMatch:SeqDesignKK14]{SeqExpMatch::SeqDesignKK14}} -> \code{SeqDesignKK21}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -57,13 +57,11 @@ seq_des = SeqDesignKK21$new(n = 6, response_type = "continuous")
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/Design.html#method-Design-redraw_w_according_to_design'><code>SeqExpMatch::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="add_subject_to_experiment_and_assign"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-add_subject_to_experiment_and_assign'><code>SeqExpMatch::SeqDesign$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="print_current_subject_assignment"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-print_current_subject_assignment'><code>SeqExpMatch::SeqDesign$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="randomize"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-randomize'><code>SeqExpMatch::SeqDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/SeqDesign.html#method-SeqDesign-supports_resampling'><code>SeqExpMatch::SeqDesign$supports_resampling()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="draw_ws_according_to_design"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-draw_ws_according_to_design'><code>SeqExpMatch::SeqDesignKK14$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="get_m"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-get_m'><code>SeqExpMatch::SeqDesignKK14$get_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="SeqDesignKK14" data-id="matching_statistics"><a href='../../SeqExpMatch/html/SeqDesignKK14.html#method-SeqDesignKK14-matching_statistics'><code>SeqExpMatch::SeqDesignKK14$matching_statistics()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -202,23 +200,27 @@ A list of weights.
 \if{html}{\out{<a id="method-SeqDesignKK21-get_covariate_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK21-get_covariate_weights}{}}}
 \subsection{Method \code{get_covariate_weights()}}{
-Get covariate weights
+Get the covariate weights calculated at the current iteration.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK21$get_covariate_weights()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-For KK21 designs, the running values of the weights for each covariate.
+A numeric vector of weights.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK21-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-SeqDesignKK21-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group using the KK21 algorithm.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SeqDesignKK21$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SeqDesignKK21-clone"></a>}}

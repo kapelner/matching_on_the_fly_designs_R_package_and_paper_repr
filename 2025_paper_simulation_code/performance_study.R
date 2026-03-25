@@ -92,7 +92,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 		tryCatch({
 		estimand = ifelse(betaT == 0, 0, estimands_betaT_one[[response_type]][[inference_method]])
 
-		seq_des_inf_obj = SeqDesignInference$new(seq_des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
+		seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
 
 		estimate = seq_des_inf_obj$compute_treatment_estimate()
 

@@ -4,11 +4,10 @@
 \alias{FixedDesignBernoulli}
 \title{A completely randomized / Bernoulli Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed completely randomized experimental design.
-This design ensures independent randomization using the \pkg{randomizr} package.
+An R6 Class encapsulating the data and functionality for a fixed Bernoulli experimental design.
 }
 \section{Super classes}{
-\code{SeqExpMatch::Design} -> \code{SeqExpMatch::FixedDesign} -> \code{FixedDesignBernoulli}
+\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignBernoulli}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -44,6 +43,7 @@ This design ensures independent randomization using the \pkg{randomizr} package.
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="redraw_w_according_to_design"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-redraw_w_according_to_design'><code>SeqExpMatch::FixedDesign$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -52,6 +52,7 @@ This design ensures independent randomization using the \pkg{randomizr} package.
 \if{html}{\out{<a id="method-FixedDesignBernoulli-new"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignBernoulli-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed Bernoulli experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBernoulli$new(
   response_type = "continuous",
@@ -63,15 +64,46 @@ This design ensures independent randomization using the \pkg{randomizr} package.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{num_cores}}{The number of CPU cores.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `FixedDesignBernoulli` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBernoulli-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignBernoulli-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to Bernoulli randomization.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBernoulli$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBernoulli$draw_ws_according_to_design(r)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBernoulli-clone"></a>}}

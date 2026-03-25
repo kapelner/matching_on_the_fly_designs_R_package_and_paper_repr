@@ -58,6 +58,10 @@ SeqDesignRandomBlockSize = R6::R6Class("SeqDesignRandomBlockSize",
 			}
 		},
 
+		#' @description
+		#' Assign the next subject to a treatment group
+		#'
+		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			key = "overall"
 			if (private$uses_covariates) {

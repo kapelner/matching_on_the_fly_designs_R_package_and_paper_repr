@@ -38,6 +38,18 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 			private$num_combinations = nrow(private$combinations)
 		},
 
+		#' @description
+		#' Redraw treatment assignments according to the factorial design.
+		redraw_w_according_to_design = function(){
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
+
+		#' @description
+		#' Draw multiple treatment assignment vectors according to balanced factorial randomization.
+		#'
+		#' @param r 	The number of designs to draw.
+		#'
+		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			n = self$get_n()
@@ -52,7 +64,10 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 			w_mat
 		},
 
-		# Overwrite get_w to return a data frame of factor assignments
+		#' @description
+		#' Get the data frame of factor assignments for each subject.
+		#'
+		#' @return A data frame with n rows and columns corresponding to factors.
 		get_w_factorial = function(){
 			w_idx = self$get_w()
 			if (length(w_idx) == 0 || any(is.na(w_idx))) return(NULL)
