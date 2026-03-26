@@ -8,7 +8,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractQuantileRandCI = R6::R6Class("DesignInferenceAbstractQuantileRandCI",
-	inherit = DesignInference,
+	inherit = DesignInferenceKKPassThroughCompound,
 	public = list(
 
 		# @description

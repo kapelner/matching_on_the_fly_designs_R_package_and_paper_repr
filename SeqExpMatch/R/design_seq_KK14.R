@@ -59,6 +59,10 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
 						#now find the best match in the reservoir
 						reservoir_indices = which(private$m[1 : (private$t - 1)] == 0)
+						if (length(reservoir_indices) == 0){
+							private$m[private$t] = 0
+							return(private$assign_wt_Bernoulli())
+						}
 						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
 							all_subject_data$xt_prev,
 							all_subject_data$X_prev,

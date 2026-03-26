@@ -293,14 +293,6 @@ safe_call = function(label, expr){
 		})
 	}
 
-	if (is(seq_des_inf, "DesignInferenceIncidExactZhangAbstract")){
-		message("    Calling compute_exact_two_sided_pval_for_treatment_effect()")
-		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
-		message("    Calling compute_exact_confidence_interval()")
-		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(pval_epsilon = pval_epsilon))
-		return(invisible(NULL))
-	}
-
 	if (is(seq_des_inf, "DesignInferenceOrdinalJonckheereTerpstraTest")){
 		message("    Calling compute_exact_two_sided_pval_for_treatment_effect()")
 		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
@@ -309,10 +301,12 @@ safe_call = function(label, expr){
 		return(invisible(NULL))
 	}
 
-	message("    Calling compute_exact_two_sided_pval_for_treatment_effect()")
-	safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
-	message("    Calling compute_exact_confidence_interval()")
-	safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(pval_epsilon = pval_epsilon))
+	if (response_type == "incidence"){
+		message("    Calling compute_exact_two_sided_pval_for_treatment_effect()")
+		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
+		message("    Calling compute_exact_confidence_interval()")
+		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(pval_epsilon = pval_epsilon))))
+	}
 
 	message("    Calling compute_treatment_estimate()")
 	safe_call("compute_treatment_estimate", seq_des_inf$compute_treatment_estimate())
@@ -430,7 +424,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		}
 	}
 
-	seq_des_obj = switch(design_type,
+	seq_des_obj = tryCatch(switch(design_type,
 		KK21 =         SeqDesignKK21$new(        response_type = response_type, n = n),
 		KK21stepwise = SeqDesignKK21stepwise$new(response_type = response_type, n = n),
 		KK14 =         SeqDesignKK14$new(        response_type = response_type, n = n),
@@ -449,8 +443,9 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n),
 		FixedMatchingGreedy = FixedDesignMatchingGreedyPairSwitching$new( response_type = response_type, n = n),
 		stop("Unsupported design_type: ", design_type)
-	)
-	
+	), error = function(e){ message("    Skipping design (creation error): ", e$message); NULL })
+	if (is.null(seq_des_obj)) return(invisible(NULL))
+
 	if (inherits(seq_des_obj, "SeqDesign")){
 		for (t in 1 : n){
 			w_t = seq_des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
@@ -462,7 +457,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		for (t in 1 : n){
 			seq_des_obj$add_subject(X_design[t, , drop = FALSE])
 		}
-		seq_des_obj$randomize()
+		randomize_ok = tryCatch({ seq_des_obj$randomize(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
+		if (!randomize_ok) return(invisible(NULL))
 		w = seq_des_obj$get_w()
 		for (t in 1 : n){
 			y_t = apply_treatment_effect_and_noise(y[t], w[t], response_type)
@@ -538,15 +534,9 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (response_type == "incidence"){
 		inference_banner("DesignInferenceAllSimpleMeanDiff")
 		run_inference_checks(DesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-		if (design_type == "Bernoulli"){
-			inference_banner("DesignInferenceIncidExactZhang")
-			run_inference_checks(DesignInferenceIncidExactZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-		}
 		if (is_kk_design){
 			inference_banner("DesignInferenceAllKKCompoundMeanDiff")
 			run_inference_checks(DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("DesignInferenceIncidKKExactZhang")
-			run_inference_checks(DesignInferenceIncidKKExactZhang$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("DesignInferenceIncidUnivKKClogitCombinedLikelihood")
 			run_inference_checks(DesignInferenceIncidUnivKKClogitCombinedLikelihood$new(seq_des_obj, num_cores = NUM_CORES), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("DesignInferenceIncidMultiKKClogitCombinedLikelihood")

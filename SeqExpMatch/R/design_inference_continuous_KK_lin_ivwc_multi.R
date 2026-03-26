@@ -50,7 +50,10 @@ DesignInferenceContinMultiKKLinIVWC = R6::R6Class("DesignInferenceContinMultiKKL
 		#' @return The estimated treatment effect.
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_T_reservoir) && is.null(private$cached_values$beta_T_matched)){
-				private$shared_for_compute_estimate()
+				private$compute_estimate_from_matched_and_reservoir(
+					private$lin_for_matched_pairs,
+					private$lin_for_reservoir
+				)
 			}
 			if (is.null(private$cached_values$beta_hat_T)){
 				ssq_m = private$cached_values$ssq_beta_T_matched
@@ -110,17 +113,6 @@ DesignInferenceContinMultiKKLinIVWC = R6::R6Class("DesignInferenceContinMultiKKL
 				w = private$w,
 				m_vec = private$m
 			)
-		},
-
-		shared_for_compute_estimate = function(){
-			if (private$only_matches()){
-				private$lin_for_matched_pairs()
-			} else if (private$only_reservoir()){
-				private$lin_for_reservoir()
-			} else {
-				private$lin_for_matched_pairs()
-				private$lin_for_reservoir()
-			}
 		},
 
 		shared_for_inference = function(){

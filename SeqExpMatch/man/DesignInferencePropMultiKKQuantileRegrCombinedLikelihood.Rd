@@ -37,7 +37,7 @@ infer
 
 }
 \section{Super classes}{
-\code{SeqExpMatch::DesignInference} -> \code{SeqExpMatch::DesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::DesignInferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{DesignInferencePropMultiKKQuantileRegrCombinedLikelihood}
+\code{SeqExpMatch::DesignInference} -> \code{SeqExpMatch::DesignInferenceKKPassThrough} -> \code{SeqExpMatch::DesignInferenceKKPassThroughCompound} -> \code{SeqExpMatch::DesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::DesignInferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{DesignInferencePropMultiKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -53,7 +53,6 @@ infer
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::DesignInference$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>SeqExpMatch::DesignInference$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="compute_bootstrap_confidence_interval"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-compute_bootstrap_confidence_interval'><code>SeqExpMatch::DesignInference$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="compute_bootstrap_two_sided_pval"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-compute_bootstrap_two_sided_pval'><code>SeqExpMatch::DesignInference$compute_bootstrap_two_sided_pval()</code></a></span></li>
@@ -62,6 +61,7 @@ infer
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-compute_two_sided_pval_for_treatment_effect_rand'><code>SeqExpMatch::DesignInference$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="duplicate"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-duplicate'><code>SeqExpMatch::DesignInference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInference" data-id="set_custom_randomization_statistic_function"><a href='../../SeqExpMatch/html/DesignInference.html#method-DesignInference-set_custom_randomization_statistic_function'><code>SeqExpMatch::DesignInference$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="DesignInferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../SeqExpMatch/html/DesignInferenceKKPassThrough.html#method-DesignInferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>SeqExpMatch::DesignInferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}

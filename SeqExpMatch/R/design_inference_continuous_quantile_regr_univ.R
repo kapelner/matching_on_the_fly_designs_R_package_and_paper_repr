@@ -85,20 +85,6 @@ DesignInferenceContinUnivQuantileRegr = R6::R6Class("DesignInferenceContinUnivQu
 			cbind(1, private$w)
 		},
 
-		reduce_design_matrix_preserving_treatment = function(X_full){
-			reduced = qr_reduce_preserve_cols_cpp(X_full, c(1L, 2L))
-			keep = reduced$keep
-			if (!(2L %in% keep)){
-				return(list(X = NULL, keep = keep, j_treat = NA_integer_))
-			}
-
-			list(
-				X = reduced$X_reduced,
-				keep = keep,
-				j_treat = match(2L, keep)
-			)
-		},
-
 		set_failed_fit_cache = function(){
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_

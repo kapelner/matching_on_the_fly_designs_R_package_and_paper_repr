@@ -95,6 +95,17 @@ DesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("DesignInferenceAbstrac
 	private = list(
 		# ... (other methods)
 
+		build_model_matrix = function(){
+			if (private$include_covariates()){
+				Xmm = private$create_design_matrix()
+				colnames(Xmm) = c("(Intercept)", "w", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
+			} else {
+				Xmm = cbind(1, private$w)
+				colnames(Xmm) = c("(Intercept)", "w")
+			}
+			Xmm
+		},
+
 		shared = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 

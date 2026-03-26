@@ -87,36 +87,6 @@ DesignInferencePropUniFractionalLogit = R6::R6Class("DesignInferencePropUniFract
 			x_names
 		},
 
-		reduce_design_matrix_preserving_treatment = function(X_full){
-			qr_X = qr(X_full)
-			target_rank = qr_X$rank
-			required = c(1L, 2L)
-			candidate_order = c(required, setdiff(qr_X$pivot, required))
-			keep = integer(0)
-
-			for (j in candidate_order){
-				trial_keep = c(keep, j)
-				trial_rank = qr(X_full[, trial_keep, drop = FALSE])$rank
-				if (trial_rank > length(keep)){
-					keep = trial_keep
-				}
-				if (length(keep) >= target_rank){
-					break
-				}
-			}
-
-			keep = sort(unique(keep))
-			if (!(2L %in% keep)){
-				return(list(X = NULL, keep = keep, j_treat = NA_integer_))
-			}
-
-			list(
-				X = X_full[, keep, drop = FALSE],
-				keep = keep,
-				j_treat = match(2L, keep)
-			)
-		},
-
 		select_covariate_to_drop = function(X_curr, coef_hat){
 			covariate_cols = seq.int(3L, ncol(X_curr))
 			if (length(covariate_cols) == 0L) return(NA_integer_)

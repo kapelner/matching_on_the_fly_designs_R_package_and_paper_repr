@@ -89,36 +89,6 @@ DesignInferenceIncidUnivModifiedPoisson = R6::R6Class("DesignInferenceIncidUnivM
 			x_names
 		},
 
-		reduce_design_matrix_preserving_treatment = function(X_full){
-			qr_X = qr(X_full)
-			target_rank = qr_X$rank
-			required = c(1L, 2L)
-			candidate_order = c(required, setdiff(qr_X$pivot, required))
-			keep = integer(0)
-
-			for (j in candidate_order){
-				trial_keep = c(keep, j)
-				trial_rank = qr(X_full[, trial_keep, drop = FALSE])$rank
-				if (trial_rank > length(keep)){
-					keep = trial_keep
-				}
-				if (length(keep) >= target_rank){
-					break
-				}
-			}
-
-			keep = sort(unique(keep))
-			if (!(2L %in% keep)){
-				return(list(X = NULL, keep = keep, j_treat = NA_integer_))
-			}
-
-			list(
-				X = X_full[, keep, drop = FALSE],
-				keep = keep,
-				j_treat = match(2L, keep)
-			)
-		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				stop("Modified Poisson estimator: could not compute a finite sandwich standard error.")

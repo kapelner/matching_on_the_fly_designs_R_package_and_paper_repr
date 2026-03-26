@@ -56,31 +56,6 @@ DesignInferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("DesignInferenceC
 			data.frame(w = private$w)
 		},
 
-		reduce_design_matrix_preserving_treatment = function(X_full){
-			qr_X = qr(X_full)
-			target_rank = qr_X$rank
-			required = c(1L, 2L)
-			candidate_order = c(required, setdiff(qr_X$pivot, required))
-			keep = integer(0)
-
-			for (j in candidate_order){
-				trial_keep = c(keep, j)
-				trial_rank = qr(X_full[, trial_keep, drop = FALSE])$rank
-				if (trial_rank > length(keep)){
-					keep = trial_keep
-				}
-				if (length(keep) >= target_rank){
-					break
-				}
-			}
-
-			keep = sort(unique(keep))
-			if (!(2L %in% keep)){
-				return(NULL)
-			}
-			X_full[, keep, drop = FALSE]
-		},
-
 		build_formula = function(dat){
 			fixed_terms = setdiff(colnames(dat), "y")
 			stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))
@@ -133,7 +108,7 @@ DesignInferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("DesignInferenceC
 
 			X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
 			colnames(X_full)[1:2] = c("(Intercept)", "w")
-			X_reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			X_reduced = private$reduce_design_matrix_preserving_treatment_matrix(X_full)
 			if (is.null(X_reduced)){
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_

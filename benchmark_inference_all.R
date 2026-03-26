@@ -24,7 +24,7 @@ custom_rand_stat = function(){
 }
 
 CORE_COUNTS = c(5, 2, 1) # User requested order
-r = 201 
+r = 99
 pval_epsilon = 0.05
 beta_T = 0.2
 SD_NOISE = 0.1
@@ -61,32 +61,44 @@ namespace_content = readLines("SeqExpMatch/NAMESPACE")
 inf_classes = grep("^export\\(DesignInference", namespace_content, value = TRUE)
 inf_classes = gsub("export\\(|\\)", "", inf_classes)
 
+is_all = grepl("^DesignInferenceAll", inf_classes)
+is_ordinal = grepl("Ordinal", inf_classes)
 categorized_classes = list(
-    continuous = inf_classes[grepl("Contin|All|Bai", inf_classes)],
-    incidence = inf_classes[grepl("Incid|All", inf_classes)],
-    proportion = inf_classes[grepl("Prop|All", inf_classes)],
-    count = inf_classes[grepl("Count|All", inf_classes)],
-    survival = inf_classes[grepl("Survival|All", inf_classes)],
-    ordinal = inf_classes[grepl("Ordinal|All", inf_classes)]
+    continuous = inf_classes[grepl("Contin|Bai", inf_classes) | is_all],
+    incidence = inf_classes[grepl("Incid", inf_classes) | is_all],
+    proportion = inf_classes[(grepl("Prop", inf_classes) & !is_ordinal) | is_all],
+    count = inf_classes[grepl("Count", inf_classes) | is_all],
+    survival = inf_classes[grepl("Survival", inf_classes) | is_all],
+    ordinal = inf_classes[is_ordinal | is_all]
 )
 
 results_file = "benchmark_inference_results.csv"
 if (file.exists(results_file)) file.remove(results_file)
+
+MAX_BM_SECS = 30
 
 bm_safe = function(label, expr, env = parent.frame()) {
     cat(sprintf("%s\n", label))
     flush.console()
     t_start = proc.time()[["elapsed"]]
     res = tryCatch({
+        setTimeLimit(elapsed = MAX_BM_SECS, transient = TRUE)
+        on.exit(setTimeLimit(elapsed = Inf, transient = FALSE), add = TRUE)
         eval(expr, envir = env)
-        
+
         t_end = proc.time()[["elapsed"]]
         duration = round(t_end - t_start, 3)
         cat(sprintf(" (%.3fs) ", duration))
         duration
     }, error = function(e) {
-        cat(sprintf(" (ERROR: %s) ", e$message))
-        NA
+        if (grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
+            t_elapsed = round(proc.time()[["elapsed"]] - t_start, 3)
+            cat(sprintf(" (TIMEOUT >%.1fs) ", t_elapsed))
+            Inf
+        } else {
+            cat(sprintf(" (ERROR: %s) ", e$message))
+            NA
+        }
     })
     res
 }

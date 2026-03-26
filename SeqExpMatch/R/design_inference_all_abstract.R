@@ -44,7 +44,7 @@ DesignInference = R6::R6Class("DesignInference",
 			private$y_temp = private$y
 			private$w = private$seq_des_obj_priv_int$w
 			private$dead = private$seq_des_obj_priv_int$dead
-			private$is_KK = is(seq_des_obj, "SeqDesignKK14") #SeqDesignKK14 is the base class of all KK designs
+			private$is_KK = is(seq_des_obj, "SeqDesignKK14") || is(seq_des_obj, "FixedDesignBinaryMatch") #KK and Fixed Binary Match are both matching designs
 			private$n = seq_des_obj$get_n()
 			private$prob_T = seq_des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(seq_des_obj$supports_resampling())
@@ -144,7 +144,7 @@ DesignInference = R6::R6Class("DesignInference",
 		# @param args_for_type    A list of parameters for the specific exact test type. 
 		#                         For \code{type = "Zhang"}, this is a list containing \code{combination_method} 
 		#                         ("Fisher" (default), "Stouffer", or "min_p") and \code{pval_epsilon} (default 0.005).
-		compute_exact_confidence_interval = function(type = "Zhang", alpha = 0.05, args_for_type = list(zhang = list(combination_method = "Fisher", pval_epsilon = 0.005))){
+		compute_exact_confidence_interval = function(type = "Zhang", alpha = 0.05, args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = 0.005))){
 			private$assert_exact_inference_params(type, args_for_type)			
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			
@@ -160,7 +160,7 @@ DesignInference = R6::R6Class("DesignInference",
 		# @param args_for_type    A list of parameters for the specific exact test type. 
 		#                         For \code{type = "Zhang"}, this is a list containing \code{combination_method} 
 		#                         ("Fisher" (default), "Stouffer", or "min_p").
-		compute_exact_two_sided_pval_for_treatment_effect = function(type = "Zhang", delta = 0, args_for_type = list(zhang = list(combination_method = "Fisher"))){
+		compute_exact_two_sided_pval_for_treatment_effect = function(type = "Zhang", delta = 0, args_for_type = list(Zhang = list(combination_method = "Fisher"))){
 			private$assert_exact_inference_params(type, args_for_type)
 			assertNumeric(delta)
 			
@@ -213,10 +213,22 @@ DesignInference = R6::R6Class("DesignInference",
 
 			mclapply_fn = if (private$verbose && requireNamespace("pbmcapply", quietly = TRUE)) pbmcapply::pbmclapply else parallel::mclapply
 
+			# Auto-detect if parallelism helps: run 1 warm-up iteration and compare to
+			# estimated fork overhead (~50ms). If per-iteration time < fork_overhead/B,
+			# forking would be slower than serial execution.
+			use_parallel = private$num_cores > 1L
+			if (use_parallel){
+				t_warmup = system.time(private$run_bootstrap_iteration(n, y, dead, w, X, max_resample_attempts))[[3]]
+				fork_overhead_estimate = 0.05  # seconds per fork, conservative estimate
+				use_parallel = t_warmup * B > fork_overhead_estimate * private$num_cores
+			}
+			actual_cores = if (use_parallel) private$num_cores else 1L
+
 			beta_hat_T_bs = unlist(mclapply_fn(1:B, function(b) {
 				set_package_threads(1L)
+				private$num_cores = 1L
 				private$run_bootstrap_iteration(n, y, dead, w, X, max_resample_attempts)
-			}, mc.cores = private$num_cores))
+			}, mc.cores = actual_cores))
 
 			return(beta_hat_T_bs)
 		},
@@ -842,9 +854,10 @@ DesignInference = R6::R6Class("DesignInference",
 		# -----------------------------------------------------------------------
 
 		compute_combined_exact_pval = function(delta_0, combination_method = "Fisher"){
-			# Design validation: only Bernoulli and KK supported by this method
-			if (!is(private$seq_des_obj, "SeqDesignBernoulli") && !private$is_KK){
-				stop("Zhang incidence inference is only supported for Bernoulli (SeqDesignBernoulli) and KK (SeqDesignKK14 or subclass) designs.")
+			# Design validation: only Bernoulli and KK/Matched supported by this method
+			is_bernoulli = is(private$seq_des_obj, "SeqDesignBernoulli") || is(private$seq_des_obj, "FixedDesignBernoulli")
+			if (!is_bernoulli && !private$is_KK){
+				stop("Zhang incidence inference is only supported for Bernoulli (Fixed or Sequential), Fixed Binary Match, and KK (SeqDesignKK14 or subclass) designs.")
 			}
 
 			exact_stats = private$get_exact_zhang_stats()
@@ -1328,6 +1341,24 @@ DesignInference = R6::R6Class("DesignInference",
 						stats::pt(z_or_t_stats, private$cached_values$df)
 					}
 			2 * min(probs)
+		},
+
+		reduce_design_matrix_preserving_treatment = function(X_full){
+			reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), c(1L, 2L))
+			keep = as.integer(reduced$keep)
+			if (!(2L %in% keep)){
+				return(list(X = NULL, keep = keep, j_treat = NA_integer_))
+			}
+
+			list(
+				X = reduced$X_reduced,
+				keep = keep,
+				j_treat = match(2L, keep)
+			)
+		},
+
+		reduce_design_matrix_preserving_treatment_matrix = function(X_full){
+			private$reduce_design_matrix_preserving_treatment(X_full)$X
 		},
 
 		# Parallel computation of both CI bounds with a per-bound core budget.

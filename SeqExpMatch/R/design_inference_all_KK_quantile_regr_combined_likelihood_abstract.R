@@ -33,6 +33,10 @@ DesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignInf
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
 			super$initialize(seq_des_obj, num_cores, verbose)
+			if (private$is_KK){
+				private$m = seq_des_obj$.__enclos_env__$private$m
+				private$compute_basic_match_data()
+			}
 		},
 
 		# @description
@@ -66,6 +70,20 @@ DesignInferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignInf
 	private = list(
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
+		m = NULL,
+
+		compute_basic_match_data = function(){
+			if (is.null(private$X)){
+				private$X = private$get_X()
+			}
+			private$cached_values$KKstats = .compute_kk_basic_match_data(
+				X = private$X,
+				n = private$n,
+				y = private$y,
+				w = private$w,
+				m_vec = private$m
+			)
+		},
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){

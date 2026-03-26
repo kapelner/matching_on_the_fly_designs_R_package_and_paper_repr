@@ -1,6 +1,8 @@
 v2.1.0 (planned)
 * Support for unequal allocation (the probability of allocation to treatment and control are not 50-50)
 * Support for other sequential designs
+* balanced_clustering
+* Robins exact
 
 v2.0.0
 * MAJOR ARCHITECTURAL REVOLUTION:

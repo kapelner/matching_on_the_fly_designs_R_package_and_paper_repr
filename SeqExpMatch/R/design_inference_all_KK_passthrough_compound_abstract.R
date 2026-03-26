@@ -20,6 +20,20 @@ DesignInferenceKKPassThroughCompound = R6::R6Class("DesignInferenceKKPassThrough
 		}
 	),
 	private = list(
+		compute_estimate_from_matched_and_reservoir = function(run_matched, run_reservoir){
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+			if (private$only_matches()){
+				run_matched()
+			} else if (private$only_reservoir()){
+				run_reservoir()
+			} else {
+				run_matched()
+				run_reservoir()
+			}
+		},
+
 		compute_reservoir_and_match_statistics = function(){
 			nRC = private$cached_values$KKstats$nRC
 			nRT = private$cached_values$KKstats$nRT

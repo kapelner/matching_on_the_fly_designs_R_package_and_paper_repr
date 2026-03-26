@@ -54,7 +54,10 @@ DesignInferenceContinMultOLSKKIVWC = R6::R6Class("DesignInferenceContinMultOLSKK
 		#'
 		compute_treatment_estimate = function(){
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
-				private$shared_for_compute_estimate()
+				private$compute_estimate_from_matched_and_reservoir(
+					private$ols_for_matched_pairs,
+					private$ols_for_reservoir
+				)
 			}
 			if (is.null(private$cached_values[["beta_hat_T"]])){
 				beta_hat_T = if (private$only_matches()){
@@ -159,17 +162,6 @@ DesignInferenceContinMultOLSKKIVWC = R6::R6Class("DesignInferenceContinMultOLSKK
 	),
 
 	private = list(
-		shared_for_compute_estimate = function(){
-			if (private$only_matches()){
-				private$ols_for_matched_pairs()
-			} else if (private$only_reservoir()){
-				private$ols_for_reservoir()
-			} else {
-				private$ols_for_matched_pairs()
-				private$ols_for_reservoir()
-			}
-		},
-
 		shared_for_inference = function(){
 			if (is.null(private$cached_values[["beta_hat_T"]])){
 				self$compute_treatment_estimate()

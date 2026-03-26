@@ -16,7 +16,11 @@ DesignInferenceKKPassThrough = R6::R6Class("DesignInferenceKKPassThrough",
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(seq_des_obj, num_cores, verbose)
-			if (is(seq_des_obj, "SeqDesignKK14")){
+			if (private$is_KK){
+				# For fixed binary matching, we need to ensure pairs are computed first
+				if (is(seq_des_obj, "FixedDesignBinaryMatch")){
+					seq_des_obj$.__enclos_env__$private$ensure_pairs_computed()
+				}
 				private$m = seq_des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
 			}
