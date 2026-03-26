@@ -38,6 +38,10 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			private$uses_covariates = TRUE
+			private$lambda = if (is.null(lambda)) 0.1 else lambda
+			private$t_0_pct = if (is.null(t_0_pct)) 0.35 else t_0_pct
+			private$morrison = morrison
+			private$p = p
 		},
 
 		#' @description
@@ -48,22 +52,27 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 			wt = 	if (private$too_early_to_match()){
 						#we're early, so randomize
 						private$m[private$t] = 0 #zero means "reservoir", >0 means match number
-						self$assign_wt_Bernoulli()
+						private$assign_wt_Bernoulli()
 					} else {
 						all_subject_data = private$compute_all_subject_data()
-						#first calculate the threshold we're operating at
-						#when inverting, ensure full rank by adding eps * I
-						inv_Xt_X_plus_lambda_I = solve(all_subject_data$XtX_all + private$lambda * diag(all_subject_data$p_all))
-						#formula 14
-						threshold = as.numeric(all_subject_data$xt_all %*% inv_Xt_X_plus_lambda_I %*% all_subject_data$xt_all)
-						
+						#compute inverse sample covariance of all past subjects (with eps regularization)
+						S_xs_inv = solve(var(all_subject_data$X_prev) + diag(.Machine$double.eps, all_subject_data$rank_prev), tol = .Machine$double.xmin)
 						#now find the best match in the reservoir
 						reservoir_indices = which(private$m[1 : (private$t - 1)] == 0)
-						sqd_mahal_dists = compute_mahal_distances_cpp(all_subject_data$X_prev, all_subject_data$xt_prev, inv_Xt_X_plus_lambda_I)
-						min_sqd_dist_index = which.min(sqd_mahal_dists)
-						min_sqd_dist = sqd_mahal_dists[min_sqd_dist_index]
-						
-						if (min_sqd_dist < threshold){
+						sqd_distances_times_two = compute_proportional_mahal_distances_cpp(
+							all_subject_data$xt_prev,
+							all_subject_data$X_prev,
+							as.integer(reservoir_indices),
+							S_xs_inv
+						)
+						#compute F-test threshold
+						F_crit = qf(private$compute_lambda(), all_subject_data$rank_prev, private$t - all_subject_data$rank_prev)
+						n = self$get_n()
+						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
+						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))
+						if (length(min_sqd_dist_index) > 1) min_sqd_dist_index = min_sqd_dist_index[1]
+
+						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
 							#we matched!
 							match_num = max(private$m) + 1
 							#update previous subject's match number
@@ -74,7 +83,7 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 							1 - private$w[reservoir_indices[min_sqd_dist_index]]
 						} else { #otherwise, randomize and add it to the reservoir
 							private$m[private$t] = 0
-							self$assign_wt_Bernoulli()
+							private$assign_wt_Bernoulli()
 						}
 					}
 			if (is.na(private$m[private$t])){
@@ -103,6 +112,10 @@ SeqDesignKK14 = R6::R6Class("SeqDesignKK14",
 		t_0_pct = NULL,
 		morrison = NULL,
 		p = NULL,
+
+		compute_lambda = function(){
+			private$lambda
+		},
 
 		too_early_to_match = function(){
 			private$t <= private$t_0_pct * private$n

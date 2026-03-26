@@ -11,7 +11,7 @@ set.seed(1)
 nC = 18 #num cores
 # plan(sequential)
 
-nsim_exact_test = 301
+r = 301
 missing_data_prop = 0
 prob_of_adding_response = 1 #CHANGE THIS
 prob_of_uncensored_survival_observation = 0.3
@@ -103,7 +103,7 @@ rm(check_dataset_has_response)
 
 cl = makeCluster(nC)
 registerDoParallel(cl)
-clusterExport(cl, c('exp_settings', 'datasets_and_response_models', 'missing_data_prop', 'visualizations_during_testing', 'nsim_exact_test', 'prob_of_uncensored_survival_observation'))
+clusterExport(cl, c('exp_settings', 'datasets_and_response_models', 'missing_data_prop', 'visualizations_during_testing', 'r', 'prob_of_uncensored_survival_observation'))
 
 res = foreach(
 	nsim = 1:nrow(exp_settings),
@@ -272,11 +272,11 @@ res = foreach(
 		seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 		cat("  beta_T = ", beta_T, "  beta_hat_T =", beta_hat_T, "\n")
-		pval = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(nsim_exact_test = nsim_exact_test)
+		pval = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(r = r)
 		cat("  pval =", pval, "\n")
 
 		if (test_type == "MLE-or-KM-based" & response_type == "continuous"){
-		ci = seq_des_inf_obj$compute_confidence_interval(nsim_exact_test = nsim_exact_test)
+		ci = seq_des_inf_obj$compute_confidence_interval(r = r)
 		cat("  95% CI for betaT = [", paste(round(ci, 4), collapse = ", "), "] width =", round(ci[2] - ci[1], 4), "\n")
 		} else {
 		ci = c(NA, NA)

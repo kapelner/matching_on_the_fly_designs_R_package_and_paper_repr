@@ -3,12 +3,12 @@ beta_hat_T = mean(yTs) - mean(yCs)
 
 ## now we have to monte-carlo the exact test
 b_T_sims = array(NA, Nsim_exact_test)
-for (nsim_exact_test in 1 : Nsim_exact_test){
+for (r in 1 : Nsim_exact_test){
 	permuted_indic_T = do.call(indic_T_permute_function, indic_T_permute_function_args)
 	yTs = Xy[permuted_indic_T == 1, "y"]
 	yCs = Xy[permuted_indic_T == 0, "y"]
 
-	b_T_sims[nsim_exact_test] = mean(yTs) - mean(yCs)
+	b_T_sims[r] = mean(yTs) - mean(yCs)
 }
 
 #hist(b_T_sims, br = 100)

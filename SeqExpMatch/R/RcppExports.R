@@ -53,7 +53,7 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
 #' undefined behaviour in R and caused process crashes.
 #'
 #' @param pval_fn R function: pval_fn(nsim, delta, transform_responses, num_cores)
-#' @param nsim_exact_test Number of randomization iterations
+#' @param r Number of randomization iterations
 #' @param l_lower Initial lower bound for lower CI bound search
 #' @param u_lower Initial upper bound for lower CI bound search (typically the estimate)
 #' @param l_upper Initial lower bound for upper CI bound search (typically the estimate)
@@ -65,15 +65,15 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
 #'
 #' @return Numeric vector of length 2: [lower_bound, upper_bound]
 #'
-bisection_ci_parallel_cpp <- function(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 1L) {
-    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
+bisection_ci_parallel_cpp <- function(pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 1L) {
+    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
 }
 
 #' Single-threaded helper for computing one CI bound
 #'
 #' @keywords internal
-bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
-    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores)
+bisection_ci_single_bound_cpp <- function(pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
+    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores)
 }
 
 #' Bisection loop for computing confidence interval bounds by inverting randomization tests
@@ -83,7 +83,7 @@ bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_t
 #' until convergence.
 #'
 #' @param pval_fn R function that computes two-sided p-value given delta
-#' @param nsim_exact_test Number of randomization iterations
+#' @param r Number of randomization iterations
 #' @param l Initial lower bound
 #' @param u Initial upper bound
 #' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
@@ -93,8 +93,8 @@ bisection_ci_single_bound_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_t
 #'
 #' @return The CI bound value
 #'
-bisection_ci_loop_cpp <- function(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower) {
-    .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower)
+bisection_ci_loop_cpp <- function(pval_fn, r, l, u, pval_th, tol, transform_responses, lower) {
+    .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower)
 }
 
 bootstrap_indices_cpp <- function(n, B) {
@@ -711,8 +711,8 @@ random_block_size_redraw_w_cpp <- function(strata_keys_sexp, block_sizes_sexp, p
     .Call(`_SeqExpMatch_random_block_size_redraw_w_cpp`, strata_keys_sexp, block_sizes_sexp, prob_T_sexp)
 }
 
-randomization_loop_cpp <- function(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
-    .Call(`_SeqExpMatch_randomization_loop_cpp`, nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+randomization_loop_cpp <- function(r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
+    .Call(`_SeqExpMatch_randomization_loop_cpp`, r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
 }
 
 compute_ridit_distr_parallel_cpp <- function(y, w_mat, reference, num_cores) {

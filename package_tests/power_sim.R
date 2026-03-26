@@ -6,7 +6,7 @@ mu_x = 1
 sigma_x = 1
 sigma_e = 1
 beta_T = 1
-nsim_exact_test = 501
+r = 501
 num_cores = 6
 Nsim = 1000
 
@@ -60,7 +60,7 @@ for (nsim in 1 : Nsim){
 			seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
 
 			beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
-			pval = seq_des_inf_obj$compute_pval_for_no_treatment_effect(nsim_exact_test = nsim_exact_test)
+			pval = seq_des_inf_obj$compute_pval_for_no_treatment_effect(r = r)
 
 			res = rbind(res, data.frame(
 			betas = paste0(betas, collapse=""),

@@ -147,7 +147,7 @@ time-ratio null used by the randomization CI algorithm.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceSurvivalLogRank$compute_confidence_interval_rand(
   alpha = 0.05,
-  nsim_exact_test = 501,
+  r = 501,
   pval_epsilon = 0.005,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}
@@ -158,7 +158,7 @@ time-ratio null used by the randomization CI algorithm.
 \describe{
 \item{\code{alpha}}{Unused.}
 
-\item{\code{nsim_exact_test}}{Unused.}
+\item{\code{r}}{Unused.}
 
 \item{\code{pval_epsilon}}{Unused.}
 

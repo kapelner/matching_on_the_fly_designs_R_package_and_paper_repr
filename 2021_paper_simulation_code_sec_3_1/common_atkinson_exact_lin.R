@@ -4,10 +4,10 @@ b_T_obs = coef(lm(y ~ ., Xy))[p + 2]
 Xy_copy = Xy
 ## now we have to monte-carlo the exact test
 b_T_sims = array(NA, Nsim_exact_test)
-for (nsim_exact_test in 1 : Nsim_exact_test){
+for (r in 1 : Nsim_exact_test){
 	Xy_copy$indic_T = atkinson_assignment(x_s)
 	#rerun regression
-	b_T_sims[nsim_exact_test] = coef(lm(y ~ ., Xy_copy))[p + 2]
+	b_T_sims[r] = coef(lm(y ~ ., Xy_copy))[p + 2]
 }
 
 #hist(b_T_sims, br = 100)

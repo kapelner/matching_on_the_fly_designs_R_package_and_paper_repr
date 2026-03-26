@@ -10,6 +10,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @description
 		#' Initialize a fixed stratified blocking experimental design
 		#'
+		#' @param strata_cols A character vector of column names to use for stratification.
 		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
@@ -19,6 +20,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'
 		#' @return	A new `FixedDesignBlocking` object
 		initialize = function(
+						strata_cols,
 						response_type = "continuous",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
@@ -26,7 +28,10 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						num_cores = 1,
 						verbose = FALSE
 					) {
+			assertCharacter(strata_cols, min.len = 1)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			private$strata_cols = strata_cols
+			private$uses_covariates = TRUE
 		},
 
 		#' @description
@@ -35,37 +40,44 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @param r 	The number of designs to draw.
 		#'
 		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r){
-			# Logic for stratified blocking permutations
-			# Get strata from Ximp
-			strata = apply(private$Ximp, 1, paste, collapse = "|")
-			strata_levels = unique(strata)
-			strata_indices = lapply(strata_levels, function(lev) which(strata == lev))
+		draw_ws_according_to_design = function(r = 100){
+			self$assert_all_subjects_arrived()
 			
-			generate_permutations_blocking_cpp(
+			strata_keys = vapply(1:private$t, function(i) {
+				vals = vapply(private$strata_cols, function(col) {
+					val = private$Xraw[i, ][[col]]
+					if (is.na(val)) "NA" else as.character(val)
+				}, character(1))
+				paste(vals, collapse = "|")
+			}, character(1))
+			
+			# Use randomizr::block_ra for canonical stratified blocking if available,
+			# or fallback to our C++ implementation.
+			if (requireNamespace("randomizr", quietly = TRUE)) {
+				w_mat = replicate(r, as.numeric(as.character(randomizr::block_ra(blocks = strata_keys, prob = private$prob_T))))
+				storage.mode(w_mat) = "numeric"
+				return(w_mat)
+			}
+			
+			unique_keys = unique(strata_keys)
+			strata_indices = lapply(unique_keys, function(key) which(strata_keys == key))
+			
+			res = generate_permutations_blocking_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),
 				as.numeric(private$prob_T),
 				strata_indices
-			)$w_mat
+			)
+			w_mat = res$w_mat
+			storage.mode(w_mat) = "numeric"
+			w_mat
 		}
 	),
 	private = list(
+		strata_cols = NULL,
+		
 		redraw_w_according_to_design = function(){
-			# Manual redraw logic
-			strata = apply(private$Ximp, 1, paste, collapse = "|")
-			strata_levels = unique(strata)
-			new_w = rep(NA_real_, private$t)
-			
-			for (lev in strata_levels) {
-				idxs = which(strata == lev)
-				m = length(idxs)
-				n_T = round(m * private$prob_T)
-				# Balanced shuffle within stratum
-				new_w[idxs] = sample(c(rep(1, n_T), rep(0, m - n_T)))
-			}
-			
-			private$w[1:private$t] = new_w
+			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
 		}
 	)
 )

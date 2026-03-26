@@ -42,7 +42,7 @@ SeqDesignEfron = R6::R6Class("SeqDesignEfron",
 			nC = sum(private$w == 0, na.rm = TRUE)
 			
 			if (nT == nC){
-				self$assign_wt_Bernoulli()
+				private$assign_wt_Bernoulli()
 			} else {
 				#assign to the group with fewer subjects with probability weighted_coin_prob
 				if (nT > nC){

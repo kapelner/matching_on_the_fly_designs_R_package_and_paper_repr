@@ -55,20 +55,20 @@ DesignInferenceAbstractKKGLMM = R6::R6Class("DesignInferenceAbstractKKGLMM",
 
 		# @description
 		# Overridden to provide a warning about slowness.
-		# @param nsim_exact_test		Number of randomization iterations.
+		# @param r		Number of randomization iterations.
 		# @param ... 					Additional arguments passed to super.
-		compute_confidence_interval_rand = function(nsim_exact_test = 501, ...){
+		compute_confidence_interval_rand = function(r = 501, ...){
 			warning("Randomization-based confidence intervals for GLMM models are extremely slow because they require many hundreds or thousands of model fits. Consider using asymptotic or bootstrap intervals instead.")
-			super$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, ...)
+			super$compute_confidence_interval_rand(r = r, ...)
 		},
 
 		# @description
 		# Overridden to provide a warning about slowness.
-		# @param nsim_exact_test		Number of randomization iterations.
+		# @param r		Number of randomization iterations.
 		# @param ... 					Additional arguments passed to super.
-		compute_two_sided_pval_for_treatment_effect_rand = function(nsim_exact_test = 501, ...){
+		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, ...){
 			warning("Randomization-based p-values for GLMM models are slow because they require many model fits.")
-			super$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, ...)
+			super$compute_two_sided_pval_for_treatment_effect_rand(r = r, ...)
 		}
 	),
 

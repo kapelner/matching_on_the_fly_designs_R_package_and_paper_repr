@@ -55,6 +55,7 @@ An R6 Class encapsulating the data and functionality for a fixed stratified bloc
 Initialize a fixed stratified blocking experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$new(
+  strata_cols,
   response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
@@ -67,6 +68,8 @@ Initialize a fixed stratified blocking experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
+
 \item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
@@ -91,7 +94,7 @@ A new `FixedDesignBlocking` object
 \subsection{Method \code{draw_ws_according_to_design()}}{
 Draw multiple treatment assignment vectors according to stratified blocking.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$draw_ws_according_to_design(r)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

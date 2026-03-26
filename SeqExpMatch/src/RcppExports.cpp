@@ -160,13 +160,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // bisection_ci_parallel_cpp
-NumericVector bisection_ci_parallel_cpp(Function pval_fn, int nsim_exact_test, double l_lower, double u_lower, double l_upper, double u_upper, double pval_th, double tol, std::string transform_responses, int num_cores);
-RcppExport SEXP _SeqExpMatch_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
+NumericVector bisection_ci_parallel_cpp(Function pval_fn, int r, double l_lower, double u_lower, double l_upper, double u_upper, double pval_th, double tol, std::string transform_responses, int num_cores);
+RcppExport SEXP _SeqExpMatch_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
-    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
     Rcpp::traits::input_parameter< double >::type l_lower(l_lowerSEXP);
     Rcpp::traits::input_parameter< double >::type u_lower(u_lowerSEXP);
     Rcpp::traits::input_parameter< double >::type l_upper(l_upperSEXP);
@@ -175,18 +175,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(bisection_ci_parallel_cpp(pval_fn, nsim_exact_test, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores));
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_parallel_cpp(pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
 // bisection_ci_single_bound_cpp
-double bisection_ci_single_bound_cpp(Function pval_fn, int nsim_exact_test, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower, int num_cores);
-RcppExport SEXP _SeqExpMatch_bisection_ci_single_bound_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP, SEXP num_coresSEXP) {
+double bisection_ci_single_bound_cpp(Function pval_fn, int r, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower, int num_cores);
+RcppExport SEXP _SeqExpMatch_bisection_ci_single_bound_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
-    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
     Rcpp::traits::input_parameter< double >::type l(lSEXP);
     Rcpp::traits::input_parameter< double >::type u(uSEXP);
     Rcpp::traits::input_parameter< double >::type pval_th(pval_thSEXP);
@@ -194,25 +194,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
     Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(bisection_ci_single_bound_cpp(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower, num_cores));
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_single_bound_cpp(pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
 // bisection_ci_loop_cpp
-double bisection_ci_loop_cpp(Function pval_fn, int nsim_exact_test, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower);
-RcppExport SEXP _SeqExpMatch_bisection_ci_loop_cpp(SEXP pval_fnSEXP, SEXP nsim_exact_testSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP) {
+double bisection_ci_loop_cpp(Function pval_fn, int r, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower);
+RcppExport SEXP _SeqExpMatch_bisection_ci_loop_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Function >::type pval_fn(pval_fnSEXP);
-    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
     Rcpp::traits::input_parameter< double >::type l(lSEXP);
     Rcpp::traits::input_parameter< double >::type u(uSEXP);
     Rcpp::traits::input_parameter< double >::type pval_th(pval_thSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type transform_responses(transform_responsesSEXP);
     Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
-    rcpp_result_gen = Rcpp::wrap(bisection_ci_loop_cpp(pval_fn, nsim_exact_test, l, u, pval_th, tol, transform_responses, lower));
+    rcpp_result_gen = Rcpp::wrap(bisection_ci_loop_cpp(pval_fn, r, l, u, pval_th, tol, transform_responses, lower));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1939,17 +1939,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // randomization_loop_cpp
-NumericVector randomization_loop_cpp(int nsim_exact_test, Function duplicate_design_fn, Function duplicate_inference_fn, Function run_randomization_iteration_fn, int num_cores);
-RcppExport SEXP _SeqExpMatch_randomization_loop_cpp(SEXP nsim_exact_testSEXP, SEXP duplicate_design_fnSEXP, SEXP duplicate_inference_fnSEXP, SEXP run_randomization_iteration_fnSEXP, SEXP num_coresSEXP) {
+NumericVector randomization_loop_cpp(int r, Function duplicate_design_fn, Function duplicate_inference_fn, Function run_randomization_iteration_fn, int num_cores);
+RcppExport SEXP _SeqExpMatch_randomization_loop_cpp(SEXP rSEXP, SEXP duplicate_design_fnSEXP, SEXP duplicate_inference_fnSEXP, SEXP run_randomization_iteration_fnSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type nsim_exact_test(nsim_exact_testSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
     Rcpp::traits::input_parameter< Function >::type duplicate_design_fn(duplicate_design_fnSEXP);
     Rcpp::traits::input_parameter< Function >::type duplicate_inference_fn(duplicate_inference_fnSEXP);
     Rcpp::traits::input_parameter< Function >::type run_randomization_iteration_fn(run_randomization_iteration_fnSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(randomization_loop_cpp(nsim_exact_test, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores));
+    rcpp_result_gen = Rcpp::wrap(randomization_loop_cpp(r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }

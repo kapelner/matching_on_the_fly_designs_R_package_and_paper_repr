@@ -12,7 +12,7 @@ using namespace Rcpp;
 //' until convergence.
 //'
 //' @param pval_fn R function that computes two-sided p-value given delta
-//' @param nsim_exact_test Number of randomization iterations
+//' @param r Number of randomization iterations
 //' @param l Initial lower bound
 //' @param u Initial upper bound
 //' @param pval_th P-value threshold (typically alpha/2 for two-sided CI)
@@ -25,7 +25,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 double bisection_ci_loop_cpp(
 	Function pval_fn,
-	int nsim_exact_test,
+	int r,
 	double l,
 	double u,
 	double pval_th,
@@ -34,8 +34,8 @@ double bisection_ci_loop_cpp(
 	bool lower
 ) {
 	// Compute initial p-values at bounds
-	double pval_l = as<double>(pval_fn(nsim_exact_test, l, transform_responses));
-	double pval_u = as<double>(pval_fn(nsim_exact_test, u, transform_responses));
+	double pval_l = as<double>(pval_fn(r, l, transform_responses));
+	double pval_u = as<double>(pval_fn(r, u, transform_responses));
 
 	// Bisection loop
 	while (true) {
@@ -46,7 +46,7 @@ double bisection_ci_loop_cpp(
 
 	// Compute midpoint
 	double m = (l + u) / 2.0;
-	double pval_m = as<double>(pval_fn(nsim_exact_test, m, transform_responses));
+	double pval_m = as<double>(pval_fn(r, m, transform_responses));
 
 	// Update bounds based on bisection logic
 	if (pval_m >= pval_th && lower) {

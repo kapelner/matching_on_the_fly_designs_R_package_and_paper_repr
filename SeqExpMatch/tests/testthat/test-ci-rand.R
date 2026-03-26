@@ -19,7 +19,7 @@ test_that("compute_confidence_interval_rand works for continuous response", {
 
 	# Compute randomization CI
 	# Using small nsim for speed in tests
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
@@ -46,7 +46,7 @@ test_that("compute_confidence_interval_rand works for proportion response", {
 	inf <- DesignInferencePropUniBetaRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
@@ -73,7 +73,7 @@ test_that("compute_confidence_interval_rand works for survival response (uncenso
 	inf <- DesignInferenceSurvivalUniWeibullRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
@@ -100,7 +100,7 @@ test_that("compute_confidence_interval_rand works for ordinal response (cumulati
 
 	inf <- DesignInferenceOrdinalUniPropOddsRegr$new(des, verbose = FALSE)
 
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05, show_progress = FALSE)
+	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05, show_progress = FALSE)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
@@ -123,7 +123,7 @@ test_that("compute_confidence_interval_rand throws error for unsupported types",
 	for (i in 1:n) des_count$add_subject_to_experiment_and_assign(data.table(x=1))
 	des_count$add_all_subject_responses(rpois(n, 5))
 	inf_count <- DesignInferenceCountUnivNegBinRegr$new(des_count)
-	ci_count <- inf_count$compute_confidence_interval_rand(alpha = 0.05, nsim_exact_test = 100, pval_epsilon = 0.05)
+	ci_count <- inf_count$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 	expect_equal(length(ci_count), 2)
 	expect_true(ci_count[1] < ci_count[2])
 	expect_true(all(is.finite(ci_count)))

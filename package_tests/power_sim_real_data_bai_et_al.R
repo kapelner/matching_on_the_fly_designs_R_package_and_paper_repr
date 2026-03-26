@@ -4,7 +4,7 @@ rm(list = ls())
 options(error = recover)
 
 #n = 50
-nsim_exact_test = 501
+r = 501
 num_cores = 20
 Nsim = 5000
 

@@ -87,7 +87,7 @@ test_that("Generated permutations support randomization p-values", {
 	expect_length(attr(perms, "sig"), 1)
 
 	pval <- inf$compute_two_sided_pval_for_treatment_effect_rand(
-		nsim_exact_test = 64,
+		r = 64,
 		show_progress = FALSE,
 		permutations = perms
 	)

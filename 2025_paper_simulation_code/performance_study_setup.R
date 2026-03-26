@@ -8,7 +8,7 @@ Nsim = 500
 
 censoring_mechanism = list(q = 0.8, prob = 0.2)
 betas = c(3,-3,1,-1,0,0)
-nsim_exact_test = 501
+r = 501
 
 
 

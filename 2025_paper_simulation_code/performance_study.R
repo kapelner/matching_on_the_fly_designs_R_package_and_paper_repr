@@ -32,7 +32,7 @@ clusterExport(cl, list(
 	"survival_mu_multiple",
 	"survival_k",
 	"mu_survival_max_to_be_observed",
-	"nsim_exact_test"
+	"r"
 ), envir = environment())
 
 t_0 = as.integer(Sys.time())
@@ -97,14 +97,14 @@ for (n_setting in 1 : nrow(exp_settings)){
 		estimate = seq_des_inf_obj$compute_treatment_estimate()
 
 		if (test_type == "MLE-or-KM-based"){
-			ci = seq_des_inf_obj$compute_confidence_interval(nsim_exact_test = nsim_exact_test)
+			ci = seq_des_inf_obj$compute_confidence_interval(r = r)
 			ci_a = ci[1]
 			ci_b = ci[2]
 		} else {
 			ci_a = NA
 			ci_b = NA
 		}
-		p_val = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(nsim_exact_test = nsim_exact_test)
+		p_val = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(r = r)
 
 		#if it's sequential
 		# if (n_setting %% 37 == 0){

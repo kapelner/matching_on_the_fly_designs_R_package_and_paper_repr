@@ -41,13 +41,13 @@ DesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignI
 		#' @description
 		#' Computes the randomization-based confidence interval via Zhang's combined test.
 		#' @param alpha The confidence level is 1 - \code{alpha}.
-		#' @param nsim_exact_test Number of random sign-flips / permutations.
+		#' @param r Number of random sign-flips / permutations.
 		#' @param pval_epsilon Bisection convergence tolerance.
 		#' @param show_progress Ignored.
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 499, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE){
 			super$compute_confidence_interval_rand(
 				alpha = alpha,
-				nsim_exact_test = nsim_exact_test,
+				r = r,
 				pval_epsilon = pval_epsilon,
 				show_progress = show_progress
 			)

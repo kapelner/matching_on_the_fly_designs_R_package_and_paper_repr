@@ -5,7 +5,7 @@ set.seed(1986)
 options(error = recover)
 
 
-nsim_exact_test = 501
+r = 501
 num_cores = availableCores()-10
 Nsim = 1
 

@@ -10,13 +10,13 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector randomization_loop_cpp(
-	int nsim_exact_test,
+	int r,
 	Function duplicate_design_fn,
 	Function duplicate_inference_fn,
 	Function run_randomization_iteration_fn,
 	int num_cores = 1
 ) {
-	NumericVector estimates(nsim_exact_test);
+	NumericVector estimates(r);
 
 // #ifdef _OPENMP
 //   if (num_cores > 1) {
@@ -38,7 +38,7 @@ NumericVector randomization_loop_cpp(
 	);
 
 // #pragma omp for schedule(dynamic) // Temporarily disable OpenMP for debugging
-	for (int r = 0; r < nsim_exact_test; ++r) {
+	for (int r = 0; r < r; ++r) {
 		// Call R function to run one randomization iteration
 		// Each thread uses its own design and inference objects
 		NumericVector result = run_randomization_iteration_fn(thread_objects);

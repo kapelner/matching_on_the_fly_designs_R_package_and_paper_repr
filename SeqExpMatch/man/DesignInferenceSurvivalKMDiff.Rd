@@ -285,7 +285,7 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceSurvivalKMDiff$compute_confidence_interval_rand(
   alpha = 0.05,
-  nsim_exact_test = 501,
+  r = 501,
   pval_epsilon = 0.005,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}
@@ -297,7 +297,7 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 \item{\code{alpha}}{The confidence level in the computed confidence
 interval is 1 - \code{alpha}. The default is 0.05.}
 
-\item{\code{nsim_exact_test}}{The number of randomization vectors. The default is 501.}
+\item{\code{r}}{The number of randomization vectors. The default is 501.}
 
 \item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
 

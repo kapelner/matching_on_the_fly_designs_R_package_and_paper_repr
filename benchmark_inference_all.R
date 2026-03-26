@@ -24,7 +24,7 @@ custom_rand_stat = function(){
 }
 
 CORE_COUNTS = c(5, 2, 1) # User requested order
-nsim_exact_test = 201 
+r = 201 
 pval_epsilon = 0.05
 beta_T = 0.2
 SD_NOISE = 0.1
@@ -127,14 +127,14 @@ for (response_type in names(categorized_classes)) {
             # 1. boot (New object)
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
-                bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE)))
+                bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
             w_original = current_seq_des_obj$.__enclos_env__$private$w
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
@@ -143,18 +143,18 @@ for (response_type in names(categorized_classes)) {
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
-                bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
             inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE)))
+                bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
             } else NA
             
             # 5. ci_after_rand (REUSE object from rand)
             ci_after_rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)

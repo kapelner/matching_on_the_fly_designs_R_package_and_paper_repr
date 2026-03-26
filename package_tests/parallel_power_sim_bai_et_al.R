@@ -7,7 +7,7 @@ p = 2
 mu_x = 1
 sigma_x = 1
 sigma_e = 1
-nsim_exact_test = 501
+r = 501
 num_cores = availableCores()-1
 Nsim = 10
 

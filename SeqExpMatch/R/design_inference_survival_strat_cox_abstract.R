@@ -21,7 +21,7 @@ DesignInferenceSurvivalStratCoxPHAbstract = R6::R6Class("DesignInferenceSurvival
 			private$generate_mod()$b[2]
 		},
 
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			stop("Randomization confidence intervals are not supported for stratified Cox PH models because the estimator units (Log-Hazard Ratio) are inconsistent with the randomization test's required transformed scale (Log-Time Ratio / AFT effect).")
 		}
 	),

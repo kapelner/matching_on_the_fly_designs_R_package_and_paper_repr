@@ -41,7 +41,7 @@ SeqDesigniBCRD = R6::R6Class("SeqDesigniBCRD",
 			if (is.null(private$n)){
 				#if n is not fixed, we cannot really ensure balance at the end, 
 				#so we just use Bernoulli
-				self$assign_wt_Bernoulli()
+				private$assign_wt_Bernoulli()
 			} else {
 				#if n is fixed, we use the remaining slots
 				nT_rem = round(private$n * private$prob_T) - nT

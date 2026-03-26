@@ -65,19 +65,19 @@ run_inference_checks = function(seq_des_inf, response_type){
 	safe_call("compute_bootstrap_two_sided_pval",
 			seq_des_inf$compute_bootstrap_two_sided_pval(B = 50, na.rm = TRUE))
 	safe_call("compute_two_sided_pval_for_treatment_effect_rand",
-			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 50))
+			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = 50))
 	if (response_type %in% c("continuous", "proportion", "survival")){
 	 safe_call("compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)",
-			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 50, delta = 0.5))
+			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = 50, delta = 0.5))
 	}
 	safe_call("compute_two_sided_pval_for_treatment_effect_rand(na.rm=TRUE)",
-			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 50, na.rm = TRUE))
+			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = 50, na.rm = TRUE))
 
 	if (response_type %in% c("continuous", "proportion", "survival")){
 	safe_call("compute_confidence_interval_rand",
-				seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = 50, pval_epsilon = 0.05))
+				seq_des_inf$compute_confidence_interval_rand(r = 50, pval_epsilon = 0.05))
 	safe_call("compute_confidence_interval_rand(alpha=0.01)",
-				seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = 50, pval_epsilon = 0.05, alpha = 0.01))
+				seq_des_inf$compute_confidence_interval_rand(r = 50, pval_epsilon = 0.05, alpha = 0.01))
 	}
 	seq_des_inf$set_custom_randomization_statistic_function(function(){
 	yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
@@ -85,10 +85,10 @@ run_inference_checks = function(seq_des_inf, response_type){
 	(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 	})
 	safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
-			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 50))
+			seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = 50))
 	if (response_type %in% c("continuous", "proportion", "survival")){
 	safe_call("compute_confidence_interval_rand(custom)",
-				seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = 50, pval_epsilon = 0.05))
+				seq_des_inf$compute_confidence_interval_rand(r = 50, pval_epsilon = 0.05))
 	}
 	seq_des_inf$set_custom_randomization_statistic_function(NULL)
 }

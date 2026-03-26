@@ -21,7 +21,7 @@ if (nRT <= 1 || nRC <= 1){
 ## now we have to monte-carlo the exact test
 Xyleft_copy = Xyleft
 b_T_sims = array(NA, Nsim_exact_test)
-for (nsim_exact_test in 1 : Nsim_exact_test){
+for (r in 1 : Nsim_exact_test){
 
 	#### unconditional permuting - flip coins for each (equivalent to conditional permuting)
 	trt_vec_multiple = (rbinom(max(Xy$match_indic), 1, prob_trt) - 0.5) * 2
@@ -40,11 +40,11 @@ for (nsim_exact_test in 1 : Nsim_exact_test){
 	w_star_samp = ssqR_samp / (ssqR_samp + ssqD_bar_samp)
 
 	if (m == 0){
-		b_T_sims[nsim_exact_test] = r_bar_samp
+		b_T_sims[r] = r_bar_samp
 	} else if (nRT <= 2 || nRC <= 2){
-		b_T_sims[nsim_exact_test] = d_bar_samp
+		b_T_sims[r] = d_bar_samp
 	} else {
-		b_T_sims[nsim_exact_test] = w_star_samp * d_bar_samp + (1 - w_star_samp) * r_bar_samp
+		b_T_sims[r] = w_star_samp * d_bar_samp + (1 - w_star_samp) * r_bar_samp
 	}
 }
 

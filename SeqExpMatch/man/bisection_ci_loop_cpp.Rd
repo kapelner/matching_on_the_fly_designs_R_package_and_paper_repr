@@ -6,7 +6,7 @@
 \usage{
 bisection_ci_loop_cpp(
   pval_fn,
-  nsim_exact_test,
+  r,
   l,
   u,
   pval_th,
@@ -18,7 +18,7 @@ bisection_ci_loop_cpp(
 \arguments{
 \item{pval_fn}{R function that computes two-sided p-value given delta}
 
-\item{nsim_exact_test}{Number of randomization iterations}
+\item{r}{Number of randomization iterations}
 
 \item{l}{Initial lower bound}
 

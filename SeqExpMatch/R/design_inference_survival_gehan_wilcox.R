@@ -139,10 +139,10 @@ DesignInferenceSurvivalGehanWilcox = R6::R6Class("DesignInferenceSurvivalGehanWi
 		#' null used by the randomization CI bisection algorithm.
 		#'
 		#' @param	alpha			Unused.
-		#' @param	nsim_exact_test	Unused.
+		#' @param	r	Unused.
 		#' @param	pval_epsilon	Unused.
 		#' @param	show_progress	Unused.
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 501, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			stop("Randomization confidence intervals are not supported for DesignInferenceSurvivalGehanWilcox due to inconsistent estimator units on the Peto-Prentice score scale.")
 		}
 	),

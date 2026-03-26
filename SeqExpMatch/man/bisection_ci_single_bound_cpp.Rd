@@ -6,7 +6,7 @@
 \usage{
 bisection_ci_single_bound_cpp(
   pval_fn,
-  nsim_exact_test,
+  r,
   l,
   u,
   pval_th,

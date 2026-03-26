@@ -6,7 +6,7 @@
 \usage{
 bisection_ci_parallel_cpp(
   pval_fn,
-  nsim_exact_test,
+  r,
   l_lower,
   u_lower,
   l_upper,
@@ -20,7 +20,7 @@ bisection_ci_parallel_cpp(
 \arguments{
 \item{pval_fn}{R function: pval_fn(nsim, delta, transform_responses, num_cores)}
 
-\item{nsim_exact_test}{Number of randomization iterations}
+\item{r}{Number of randomization iterations}
 
 \item{l_lower}{Initial lower bound for lower CI bound search}
 

@@ -175,8 +175,8 @@ run_comprehensive_inference_suite <- function(
 			list(name = "compute_treatment_estimate", fn = function() inf_obj$compute_treatment_estimate()),
 			list(name = "compute_bootstrap_confidence_interval", fn = function() inf_obj$compute_bootstrap_confidence_interval(B = 100)),
 			list(name = "compute_bootstrap_two_sided_pval", fn = function() inf_obj$compute_bootstrap_two_sided_pval(B = 100)),
-			list(name = "compute_two_sided_pval_for_treatment_effect_rand", fn = function() inf_obj$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 100)),
-			list(name = "compute_confidence_interval_rand", fn = function() inf_obj$compute_confidence_interval_rand(nsim_exact_test = 100))
+			list(name = "compute_two_sided_pval_for_treatment_effect_rand", fn = function() inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = 100)),
+			list(name = "compute_confidence_interval_rand", fn = function() inf_obj$compute_confidence_interval_rand(r = 100))
 		)
 
 		if ("compute_asymp_confidence_interval" %in% names(inf_obj)) {

@@ -8,25 +8,25 @@
 #
 # @keywords internal
 DesignInferenceAbstractQuantileRandCI = R6::R6Class("DesignInferenceAbstractQuantileRandCI",
-	inherit = DesignInferenceAbstractZhangCombinedBase,
+	inherit = DesignInference,
 	public = list(
 
 		# @description
 		# Computes a randomization-based confidence interval via Zhang's combined test.
 		#
 		# @param alpha					The confidence level is 1 - \code{alpha}.
-		# @param nsim_exact_test		Number of random sign-flips / permutations.
+		# @param r		Number of random sign-flips / permutations.
 		# @param pval_epsilon			Bisection convergence tolerance.
 		# @param show_progress			Ignored.
 		# @return 	A length-2 numeric vector giving the lower and upper CI boundary.
-		compute_confidence_interval_rand = function(alpha = 0.05, nsim_exact_test = 499, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE){
 			if (!is.null(private[["custom_randomization_statistic_function"]])){
 				stop("Custom randomization statistic functions are not supported for the Zhang combined CI method used by ", class(self)[1], ". The method uses its own fixed QR-based test statistics.")
 			}
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			assertCount(nsim_exact_test, positive = TRUE)
-			private$nsim_rand = as.integer(nsim_exact_test)
+			assertCount(r, positive = TRUE)
+			private$nsim_rand = as.integer(r)
 			private$ci_exact_zhang_combined(alpha, pval_epsilon)
 		}
 	),

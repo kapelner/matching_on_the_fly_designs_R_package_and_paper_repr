@@ -59,7 +59,7 @@ infer
 
 }
 \section{Super classes}{
-\code{SeqExpMatch::DesignInference} -> \code{SeqExpMatch::DesignInferenceAbstractZhangCombinedBase} -> \code{SeqExpMatch::DesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::DesignInferenceAbstractKKQuantileRegrIVWC} -> \code{DesignInferenceContinMultKKQuantileRegrIVWC}
+\code{SeqExpMatch::DesignInference} -> \code{SeqExpMatch::DesignInferenceAbstractQuantileRandCI} -> \code{SeqExpMatch::DesignInferenceAbstractKKQuantileRegrIVWC} -> \code{DesignInferenceContinMultKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -161,7 +161,7 @@ Computes the randomization-based confidence interval via Zhang's combined test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceContinMultKKQuantileRegrIVWC$compute_confidence_interval_rand(
   alpha = 0.05,
-  nsim_exact_test = 499,
+  r = 499,
   pval_epsilon = 0.005,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}
@@ -172,7 +172,7 @@ Computes the randomization-based confidence interval via Zhang's combined test.
 \describe{
 \item{\code{alpha}}{The confidence level is 1 - \code{alpha}.}
 
-\item{\code{nsim_exact_test}}{Number of random sign-flips / permutations.}
+\item{\code{r}}{Number of random sign-flips / permutations.}
 
 \item{\code{pval_epsilon}}{Bisection convergence tolerance.}
 

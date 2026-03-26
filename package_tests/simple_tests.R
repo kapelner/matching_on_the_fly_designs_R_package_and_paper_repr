@@ -11,7 +11,7 @@ args = commandArgs(trailingOnly = TRUE)
 Nrep      = if (length(args) >= 1) as.integer(args[1]) else 40L
 NUM_CORES = if (length(args) >= 2) as.integer(args[2]) else 2L
 prob_censoring = 0.15
-nsim_exact_test = 351
+r = 351
 pval_epsilon = 0.007
 test_compute_confidence_interval_rand = TRUE
 beta_T_values = c(0, 1)
@@ -84,7 +84,7 @@ results_dt = data.table(
 	rep = integer(),
 	run_row_id = integer(),
 	beta_T = numeric(),
-	nsim_exact_test = integer(),
+	r = integer(),
 	pval_epsilon = numeric(),
 	prob_censoring = numeric(),
 	sd_noise = numeric(),
@@ -146,7 +146,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 			run_row_id = run_row_id,
 			duration_time_sec = duration_time_sec,
 			beta_T = beta_T,
-			nsim_exact_test = as.integer(nsim_exact_test),
+			r = as.integer(r),
 			pval_epsilon = pval_epsilon,
 			prob_censoring = prob_censoring,
 			sd_noise = SD_NOISE,
@@ -326,27 +326,27 @@ safe_call = function(label, expr){
 	}
 	if (!skip_slow && !skip_ci && !skip_bootstrap){
 		message("    Calling compute_bootstrap_confidence_interval()")
-		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = nsim_exact_test, na.rm = TRUE))
+		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = r, na.rm = TRUE))
 	}
 	if (!skip_slow && !skip_bootstrap){
 		message("    Calling compute_bootstrap_two_sided_pval()")
-		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = nsim_exact_test, na.rm = TRUE))
+		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE))
 	}
 	if (!skip_slow && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion")){
 		message("    Calling compute_two_sided_pval_for_treatment_effect_rand()")
-		safe_call("compute_two_sided_pval_for_treatment_effect_rand", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
+		safe_call("compute_two_sided_pval_for_treatment_effect_rand", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE))
 		message("    Calling compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)")
 		use_log   = response_type == "survival"
 		use_logit = response_type == "proportion"
 		transform_for_rand = if (use_log) "log" else if (use_logit) "logit" else "none"
 		delta_for_rand = 0.5
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)",
-				seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, delta = delta_for_rand, transform_responses = transform_for_rand, show_progress = FALSE))
+				seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, delta = delta_for_rand, transform_responses = transform_for_rand, show_progress = FALSE))
 	}
 
 	if (!skip_slow && !skip_rand && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count")){
 		message("    Calling compute_confidence_interval_rand()")
-		safe_call("compute_confidence_interval_rand", seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
+		safe_call("compute_confidence_interval_rand", seq_des_inf$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 	}
 	if (response_type != "incidence"){
 		message("    Calling set_custom_randomization_statistic_function()")
@@ -357,12 +357,12 @@ safe_call = function(label, expr){
 		})
 		if (!skip_slow && !skip_rand_pval){
 			message("    Calling compute_two_sided_pval_for_treatment_effect_rand(custom)")
-			safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = nsim_exact_test, show_progress = FALSE))
+			safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE))
 		}
 		if (!skip_slow && !skip_ci && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous")){
 			message("    Calling compute_confidence_interval_rand(custom)")
 			if (!skip_ci_rand_custom){
-				safe_call("compute_confidence_interval_rand(custom)", seq_des_inf$compute_confidence_interval_rand(nsim_exact_test = nsim_exact_test, pval_epsilon = pval_epsilon, show_progress = FALSE))
+				safe_call("compute_confidence_interval_rand(custom)", seq_des_inf$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 			} else {
 				message("    Skipping compute_confidence_interval_rand(custom) (too slow)")
 			}

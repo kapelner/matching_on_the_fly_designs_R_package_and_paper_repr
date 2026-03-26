@@ -28,7 +28,7 @@ test_that("plain FixedDesign supports analysis but not redraw-based resampling",
 		"Bootstrap inference is not available for plain FixedDesign objects"
 	)
 	expect_error(
-		inf$compute_two_sided_pval_for_treatment_effect_rand(nsim_exact_test = 11),
+		inf$compute_two_sided_pval_for_treatment_effect_rand(r = 11),
 		"Randomization inference is not available for plain FixedDesign objects"
 	)
 
