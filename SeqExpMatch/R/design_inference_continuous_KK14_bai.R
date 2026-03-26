@@ -12,7 +12,7 @@ DesignInferenceBaiAdjustedTKK14 = R6::R6Class("DesignInferenceBaiAdjustedTKK14",
 	#' @description
 	#' Initialize a sequential experimental design estimation and test object
 	#' after the sequential design is completed.
-		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#' @param des_obj A SeqDesign object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -45,10 +45,10 @@ DesignInferenceBaiAdjustedTKK14 = R6::R6Class("DesignInferenceBaiAdjustedTKK14",
 	#' infer <- DesignInferenceBaiAdjustedTKK14$new(seq_des, verbose = FALSE)
 	#' infer
 	#'
-	initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
-		super$initialize(seq_des_obj, num_cores, verbose, convex_flag = convex_flag)
+	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+		super$initialize(des_obj, num_cores, verbose, convex_flag = convex_flag)
 		assertNoCensoring(private$any_censoring)
-		assert_class(seq_des_obj, "SeqDesignKK14")
+		assert_class(des_obj, "SeqDesignKK14")
 	}
 	),
 

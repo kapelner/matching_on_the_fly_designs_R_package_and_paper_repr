@@ -39,11 +39,11 @@ DesignInferenceIncidUnivKKGCompRiskDiff = R6::R6Class("DesignInferenceIncidUnivK
 	public = list(
 		#' @description
 		#' Initialize the KK g-computation RD inference object.
-		#' @param seq_des_obj A completed KK \code{SeqDesign} object with an incidence response.
+		#' @param des_obj A completed KK \code{SeqDesign} object with an incidence response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#' @description
@@ -131,11 +131,11 @@ DesignInferenceIncidUnivKKGCompRiskRatio = R6::R6Class("DesignInferenceIncidUniv
 	public = list(
 		#' @description
 		#' Initialize the KK g-computation RR inference object.
-		#' @param seq_des_obj A completed KK \code{SeqDesign} object with an incidence response.
+		#' @param des_obj A completed KK \code{SeqDesign} object with an incidence response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#' @description

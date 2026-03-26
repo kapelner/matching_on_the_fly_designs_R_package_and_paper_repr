@@ -26,11 +26,11 @@ DesignInferenceOrdinalMultiKKCondAdjCatLogitRegr = R6::R6Class(
 	public = list(
 		#' @description
 		#' Initialize a multivariate conditional adjacent-category inference object.
-		#' @param	seq_des_obj		A SeqDesign object (must be a KK design).
+		#' @param	des_obj		A SeqDesign object (must be a KK design).
 		#' @param	num_cores			Number of CPU cores.
 		#' @param	verbose			Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		}
 	),
 

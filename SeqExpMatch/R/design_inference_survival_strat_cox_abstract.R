@@ -12,9 +12,9 @@ DesignInferenceSurvivalStratCoxPHAbstract = R6::R6Class("DesignInferenceSurvival
 	inherit = DesignInferenceMLEorKMforGLMs,
 	public = list(
 
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
-			assertResponseType(seq_des_obj$get_response_type(), "survival")
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
+			assertResponseType(des_obj$get_response_type(), "survival")
 		},
 
 		compute_treatment_estimate = function(){

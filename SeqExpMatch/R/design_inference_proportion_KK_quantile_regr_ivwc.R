@@ -68,7 +68,7 @@ DesignInferencePropMultiKKQuantileRegrIVWC = R6::R6Class("DesignInferencePropMul
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object
 		#' after the sequential design is completed.
-		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#' @param des_obj A SeqDesign object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param tau                             The quantile level for regression on the logit
 		#'   scale, strictly between 0 and 1.
@@ -81,9 +81,9 @@ DesignInferencePropMultiKKQuantileRegrIVWC = R6::R6Class("DesignInferencePropMul
 		#' 							and bootstrap resampling. The default is 1 for serial computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
-		initialize = function(seq_des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "proportion")
-			super$initialize(seq_des_obj, tau, qlogis, num_cores, verbose)
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "proportion")
+			super$initialize(des_obj, tau, qlogis, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		},

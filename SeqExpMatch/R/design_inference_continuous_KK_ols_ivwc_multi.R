@@ -14,7 +14,7 @@ DesignInferenceContinMultOLSKKIVWC = R6::R6Class("DesignInferenceContinMultOLSKK
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object
 		#' after the sequential design is completed.
-		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#' @param des_obj A SeqDesign object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -28,9 +28,9 @@ DesignInferenceContinMultOLSKKIVWC = R6::R6Class("DesignInferenceContinMultOLSKK
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

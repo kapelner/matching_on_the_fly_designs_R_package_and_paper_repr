@@ -8,20 +8,20 @@ DesignInferenceKKPassThrough = R6::R6Class("DesignInferenceKKPassThrough",
 	inherit = DesignInference,
 	public = list(
 
-		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# @param des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
 		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
 		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$is_KK){
 				# For fixed binary matching, we need to ensure pairs are computed first
-				if (is(seq_des_obj, "FixedDesignBinaryMatch")){
-					seq_des_obj$.__enclos_env__$private$ensure_pairs_computed()
+				if (is(des_obj, "FixedDesignBinaryMatch")){
+					des_obj$.__enclos_env__$private$ensure_pairs_computed()
 				}
-				private$m = seq_des_obj$.__enclos_env__$private$m
+				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
 			}
 		},
@@ -105,7 +105,43 @@ DesignInferenceKKPassThrough = R6::R6Class("DesignInferenceKKPassThrough",
 				} else {
 					# Parallel bootstrap execution for KK designs
 					cores_to_use = private$num_cores
-					
+
+					# Warm-up guard: run 1 iteration at 1 thread to estimate per-iteration cost.
+					# Fork overhead on large R sessions can be 0.1-1s; only parallelize if
+					# computation clearly outweighs that cost.
+					if (cores_to_use > 1L) {
+						i_res_w = sample(i_reservoir, n_reservoir, replace = TRUE)
+						if (m > 0) {
+							pairs_w = sample(1:m, m, replace = TRUE)
+							i_mat_w = integer(0); m_vm_w = integer(0)
+							for (np in 1:m) {
+								op = pairs_w[np]; pi = which(m_vec == op)
+								i_mat_w = c(i_mat_w, pi); m_vm_w = c(m_vm_w, np, np)
+							}
+						} else {
+							i_mat_w = integer(0); m_vm_w = integer(0)
+						}
+						i_b_w = c(i_res_w, i_mat_w)
+						m_vec_b_w = c(rep(0, n_reservoir), m_vm_w)
+						t_warmup_kk = system.time({
+							boot_w = self$duplicate()
+							boot_w$.__enclos_env__$private$num_cores = 1L
+							boot_w$.__enclos_env__$private$y = y[i_b_w]
+							boot_w$.__enclos_env__$private$dead = dead[i_b_w]
+							boot_w$.__enclos_env__$private$w = w[i_b_w]
+							boot_w$.__enclos_env__$private$X = X[i_b_w, , drop = FALSE]
+							boot_w$.__enclos_env__$private$cached_values = list()
+							boot_w$.__enclos_env__$private$m = m_vec_b_w
+							boot_w$.__enclos_env__$private$compute_basic_match_data()
+							if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
+								boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+							tryCatch(boot_w$compute_treatment_estimate(), error = function(e) NA_real_)
+						})[[3]]
+						fork_overhead_estimate = 0.5  # conservative: ~500ms per fork for large sessions
+						if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
+							cores_to_use = 1L
+					}
+
 					mclapply_fn = parallel::mclapply
 					if (private$verbose && requireNamespace("pbmcapply", quietly = TRUE)) {
 						mclapply_fn = pbmcapply::pbmclapply

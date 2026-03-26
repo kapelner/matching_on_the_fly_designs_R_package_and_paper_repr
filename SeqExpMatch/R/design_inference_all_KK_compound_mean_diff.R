@@ -29,7 +29,7 @@ DesignInferenceAllKKCompoundMeanDiff = R6::R6Class("DesignInferenceAllKKCompound
 		#' @description
 		#' Initialize a sequential experimental design estimation and test object
 		#' after the sequential design is completed.
-		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#' @param des_obj A SeqDesign object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -43,8 +43,8 @@ DesignInferenceAllKKCompoundMeanDiff = R6::R6Class("DesignInferenceAllKKCompound
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#'
@@ -124,7 +124,7 @@ DesignInferenceAllKKCompoundMeanDiff = R6::R6Class("DesignInferenceAllKKCompound
 		#' @param	show_progress			Show a text progress indicator.
 		#' @return	A 1 - alpha sized frequentist confidence interval
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
-			if (private$seq_des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
+			if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
 				stop("Randomization confidence intervals are not supported for DesignInferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
 			}
 			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress)

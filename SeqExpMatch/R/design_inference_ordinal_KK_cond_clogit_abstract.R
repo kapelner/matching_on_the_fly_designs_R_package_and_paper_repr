@@ -1,6 +1,6 @@
-ordinal_cond_clogit_initialize = function(super_obj, private_env, seq_des_obj, num_cores = 1, verbose = FALSE){
-	assertResponseType(seq_des_obj$get_response_type(), "ordinal")
-	super_obj$initialize(seq_des_obj, num_cores, verbose)
+ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_cores = 1, verbose = FALSE){
+	assertResponseType(des_obj$get_response_type(), "ordinal")
+	super_obj$initialize(des_obj, num_cores, verbose)
 	assertNoCensoring(private_env$any_censoring)
 }
 

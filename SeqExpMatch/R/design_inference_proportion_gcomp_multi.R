@@ -38,11 +38,11 @@ DesignInferencePropMultiGCompMeanDiff = R6::R6Class("DesignInferencePropMultiGCo
 
 		#' @description
 		#' Initialize the multivariate g-computation mean-difference inference object.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with a proportion response.
+		#' @param des_obj A completed \code{SeqDesign} object with a proportion response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		}
 	),
 

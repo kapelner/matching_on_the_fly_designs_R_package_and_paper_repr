@@ -247,6 +247,8 @@ safe_call = function(label, expr){
 			msg = if (length(e$message) == 0L) "" else e$message
 			is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
 					 grepl("must implement", msg, fixed = TRUE) ||
+					 grepl("Zhang incidence inference is only supported", msg, fixed = TRUE) ||
+					 grepl("This type of inference is only available for incidence", msg, fixed = TRUE) ||
 						 grepl("not enough discordant pairs", msg, ignore.case = TRUE) ||
 						 grepl("Degenerate confidence interval", msg, fixed = TRUE) ||
 						 grepl("inconsistent estimator units", msg, ignore.case = TRUE) ||

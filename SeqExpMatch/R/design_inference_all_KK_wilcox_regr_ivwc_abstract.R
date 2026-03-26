@@ -17,19 +17,19 @@ DesignInferenceAbstractKKWilcoxRegrIVWC = R6::R6Class("DesignInferenceAbstractKK
 
 		# @description
 		# Initialize the inference object.
-		# @param seq_des_obj		A SeqDesign object (must be a KK design).
+		# @param des_obj		A SeqDesign object (must be a KK design).
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			res_type = seq_des_obj$get_response_type()
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
 			}
 			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			if (!is(seq_des_obj, "SeqDesignKK14")){
+			if (!is(des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$any_censoring){
 				stop(class(self)[1], " does not support censored survival data.")
 			}

@@ -7,9 +7,9 @@
 #' effects. When all covariates are parallel, the fit uses the package's fast
 #' Rcpp proportional-odds solver.
 #'
-#' @param seq_des_obj A completed \code{SeqDesign} object whose response type is
+#' @param des_obj A completed \code{SeqDesign} object whose response type is
 #'   \code{"ordinal"}.
-#' @param nonparallel Character vector of covariate names from \code{seq_des_obj$
+#' @param nonparallel Character vector of covariate names from \code{des_obj$
 #'   get_X()} that should vary by threshold. Treatment is always kept parallel.
 #' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 #' @param verbose Whether to print progress messages.
@@ -39,17 +39,17 @@ DesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 	public = list(
 		#' @description
 		#' Initialize a multivariate partial proportional-odds inference object.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal
+		#' @param des_obj A completed \code{SeqDesign} object with an ordinal
 		#'   response.
 		#' @param nonparallel Covariate names that should vary across thresholds.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj,
+		initialize = function(des_obj,
 						nonparallel = character(0),
 						num_cores = 1,
 						verbose = FALSE){
 			super$initialize(
-				seq_des_obj = seq_des_obj,
+				des_obj = des_obj,
 				nonparallel = nonparallel,
 				num_cores = num_cores,
 				verbose = verbose
@@ -85,9 +85,9 @@ DesignInferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 #' Backward-compatible alias for the multivariate partial proportional-odds
 #' estimator.
 #'
-#' @param seq_des_obj A completed \code{SeqDesign} object whose response type is
+#' @param des_obj A completed \code{SeqDesign} object whose response type is
 #'   \code{"ordinal"}.
-#' @param nonparallel Character vector of covariate names from \code{seq_des_obj$
+#' @param nonparallel Character vector of covariate names from \code{des_obj$
 #'   get_X()} that should vary by threshold. Treatment is always kept parallel.
 #' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 #' @param verbose Whether to print progress messages.
@@ -117,17 +117,17 @@ DesignInferenceOrdinalPartialProportionalOdds = R6::R6Class(
 	public = list(
 		#' @description
 		#' Initialize the backward-compatible multivariate PPO estimator.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal
+		#' @param des_obj A completed \code{SeqDesign} object with an ordinal
 		#'   response.
 		#' @param nonparallel Covariate names that should vary across thresholds.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj,
+		initialize = function(des_obj,
 						nonparallel = character(0),
 						num_cores = 1,
 						verbose = FALSE){
 			super$initialize(
-				seq_des_obj = seq_des_obj,
+				des_obj = des_obj,
 				nonparallel = nonparallel,
 				num_cores = num_cores,
 				verbose = verbose

@@ -36,11 +36,11 @@ DesignInferenceOrdinalMultiStereotypeProbitRegr = R6::R6Class("DesignInferenceOr
 		#' @description
 		#' Initialize a multivariate stereotype probit inference object for a
 		#' completed ordinal sequential design.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal response.
+		#' @param des_obj A completed \code{SeqDesign} object with an ordinal response.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		}
 	),
 

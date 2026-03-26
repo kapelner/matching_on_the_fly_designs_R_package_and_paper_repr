@@ -33,7 +33,7 @@ DesignInferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("DesignInferenceAbstractKK
 
 			# Reconstruct m_mat if NULL (KK permutations return fixed matching as NULL to save memory)
 			if (is.null(m_mat)) {
-				m_vec = as.integer(private$seq_des_obj_priv_int$m)
+				m_vec = as.integer(private$des_obj_priv_int$m)
 				m_mat = matrix(rep(m_vec, nsim), nrow = length(m_vec), ncol = nsim)
 				is_fixed_matching = TRUE
 			} else {

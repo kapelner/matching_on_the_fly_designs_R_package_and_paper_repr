@@ -10,7 +10,7 @@ DesignInferenceContinMultiKKRobustRegrIVWC = R6::R6Class("DesignInferenceContinM
 	inherit = DesignInferenceAbstractKKRobustRegrIVWC,
 	public = list(
 		#' @description Initialize the inference object.
-		#' @param seq_des_obj A SeqDesign object (must be a KK design).
+		#' @param des_obj A SeqDesign object (must be a KK design).
 		#' @param method Robust-regression fitting method for
 		#'   \code{MASS::rlm}; one of \code{"M"} or \code{"MM"}.
 		#'   The default is \code{"MM"}.
@@ -31,8 +31,8 @@ DesignInferenceContinMultiKKRobustRegrIVWC = R6::R6Class("DesignInferenceContinM
 		#' infer <- DesignInferenceContinMultiKKRobustRegrIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(seq_des_obj, method = "MM", num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, method = method, num_cores = num_cores, verbose = verbose)
+		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, method = method, num_cores = num_cores, verbose = verbose)
 		},
 		#' @description Returns the estimated treatment effect.
 		compute_treatment_estimate = function(){ super$compute_treatment_estimate() },

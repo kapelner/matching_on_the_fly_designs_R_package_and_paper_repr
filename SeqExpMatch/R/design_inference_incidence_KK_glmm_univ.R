@@ -23,7 +23,7 @@ DesignInferenceIncidUnivKKGLMM = R6::R6Class("DesignInferenceIncidUnivKKGLMM",
 		#' @description
 		#' Initialize a univariate GLMM inference object for a completed KK design
 		#' with a binary (incidence) response.
-		#' @param	seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
+		#' @param	des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose binary response y is recorded.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -48,8 +48,8 @@ DesignInferenceIncidUnivKKGLMM = R6::R6Class("DesignInferenceIncidUnivKKGLMM",
 		#' seq_des_inf = DesignInferenceIncidUnivKKGLMM$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#' @description

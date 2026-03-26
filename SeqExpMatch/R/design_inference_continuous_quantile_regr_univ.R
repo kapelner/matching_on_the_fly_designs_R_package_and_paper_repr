@@ -22,7 +22,7 @@ DesignInferenceContinUnivQuantileRegr = R6::R6Class("DesignInferenceContinUnivQu
 		#' @description
 		#' Initialize a quantile-regression inference object for a completed design
 		#' with a continuous response.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with a continuous response.
+		#' @param des_obj A completed \code{SeqDesign} object with a continuous response.
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
 		#'   \code{tau = 0.5}
 		#'   estimates the median treatment effect.
@@ -40,13 +40,13 @@ DesignInferenceContinUnivQuantileRegr = R6::R6Class("DesignInferenceContinUnivQu
 		#' seq_des_inf = DesignInferenceContinUnivQuantileRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(seq_des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$tau = tau
 		},

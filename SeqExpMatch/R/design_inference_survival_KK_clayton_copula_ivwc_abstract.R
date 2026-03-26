@@ -21,15 +21,15 @@ DesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("DesignInferenceAbstrac
 
 		# @description
 		# Initialize the inference object.
-		# @param seq_des_obj		A SeqDesign object (must be a KK design).
+		# @param des_obj		A SeqDesign object (must be a KK design).
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "survival")
-			if (!is(seq_des_obj, "SeqDesignKK14")){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "survival")
+			if (!is(des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		# @description

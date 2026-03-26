@@ -44,15 +44,15 @@ DesignInferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("DesignInferenceIncidUn
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param seq_des_obj A completed KK \code{SeqDesign} object.
+		#' @param des_obj A completed KK \code{SeqDesign} object.
 		#' @param num_cores CPU cores.
 		#' @param verbose Flag for progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "incidence")
-			if (!is(seq_des_obj, "SeqDesignKK14")){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (!is(des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

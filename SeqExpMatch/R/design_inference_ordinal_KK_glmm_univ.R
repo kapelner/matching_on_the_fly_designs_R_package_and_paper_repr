@@ -45,7 +45,7 @@ DesignInferenceOrdinalUnivKKGLMM = R6::R6Class("DesignInferenceOrdinalUnivKKGLMM
 		#' @description
 		#' Initialize a univariate GLMM inference object for a completed KK design
 		#' with an ordinal response.
-		#' @param	seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
+		#' @param	des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose ordinal response y is recorded.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -58,8 +58,8 @@ DesignInferenceOrdinalUnivKKGLMM = R6::R6Class("DesignInferenceOrdinalUnivKKGLMM
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		}
 	),
 	private = list(

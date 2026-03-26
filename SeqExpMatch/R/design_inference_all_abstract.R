@@ -205,21 +205,37 @@ DesignInference = R6::R6Class("DesignInference",
 
 			n = private$des_obj$get_n(); y = private$y; dead = private$dead; w = private$w; X = private$get_X()
 
-			# Check for C++ fast-path
+			# Check for C++ fast-path (OpenMP-based)
 			if (private$has_private_method("compute_fast_bootstrap_distr")) {
+				# Warm-up guard: measure 1 iteration at 1 thread to estimate per-iteration cost.
+				# If cost * B is too small relative to OpenMP thread overhead, fall back to 1 thread.
+				fast_nc = private$num_cores
+				if (fast_nc > 1L) {
+					saved_nc = fast_nc
+					private$num_cores = 1L; set_package_threads(1L)
+					t_fast_warmup = system.time(
+						private$compute_fast_bootstrap_distr(1L, max_resample_attempts, n, y, dead, w)
+					)[[3]]
+					private$num_cores = saved_nc; set_package_threads(saved_nc)
+					omp_overhead_estimate = 0.001  # ~1ms per OpenMP parallel-region entry per thread
+					fast_nc = if (t_fast_warmup * B > omp_overhead_estimate * private$num_cores) private$num_cores else 1L
+				}
+				saved_nc2 = private$num_cores
+				private$num_cores = fast_nc; set_package_threads(fast_nc)
 				fast_distr = private$compute_fast_bootstrap_distr(B, max_resample_attempts, n, y, dead, w)
+				private$num_cores = saved_nc2; set_package_threads(saved_nc2)
 				if (!is.null(fast_distr)) return(fast_distr)
 			}
 
 			mclapply_fn = if (private$verbose && requireNamespace("pbmcapply", quietly = TRUE)) pbmcapply::pbmclapply else parallel::mclapply
 
 			# Auto-detect if parallelism helps: run 1 warm-up iteration and compare to
-			# estimated fork overhead (~50ms). If per-iteration time < fork_overhead/B,
-			# forking would be slower than serial execution.
+			# estimated fork overhead. R process fork can cost 0.1-1s on large sessions
+			# (copy-on-write). If per-iteration time * B < that budget, run serially.
 			use_parallel = private$num_cores > 1L
 			if (use_parallel){
 				t_warmup = system.time(private$run_bootstrap_iteration(n, y, dead, w, X, max_resample_attempts))[[3]]
-				fork_overhead_estimate = 0.05  # seconds per fork, conservative estimate
+				fork_overhead_estimate = 0.5  # seconds per fork, conservative estimate for large sessions
 				use_parallel = t_warmup * B > fork_overhead_estimate * private$num_cores
 			}
 			actual_cores = if (use_parallel) private$num_cores else 1L
@@ -394,6 +410,30 @@ DesignInference = R6::R6Class("DesignInference",
 
 			mclapply_fn = if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) pbmcapply::pbmclapply else parallel::mclapply
 
+			# Warm-up guard: for the R-loop path, fork overhead can exceed computation time.
+			# Only parallelize if per-iteration cost clearly exceeds fork overhead per core.
+			actual_rand_cores = private$num_cores
+			if (actual_rand_cores > 1L && need_thread_objs) {
+				t_rand_warmup = system.time({
+					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
+					w_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
+					if (!is.null(w_inf)) w_inf$.__enclos_env__$private$num_cores = 1L
+					private$run_randomization_iteration(w_des, w_inf,
+						perm_idx = if(use_perms) 1L else NULL,
+						permutations = permutations, delta = delta,
+						y_delta = setup$y_delta, base_template_y = setup$base_template_y,
+						base_template_dead = setup$base_template_dead,
+						custom_stat_analysis = custom_stat_analysis,
+						lightweight_custom_context = setup$lightweight_custom_context)
+				})[[3]]
+				fork_overhead_estimate_rand = 0.5  # conservative: ~500ms per fork for large sessions
+				if (!(t_rand_warmup * r > fork_overhead_estimate_rand * actual_rand_cores))
+					actual_rand_cores = 1L
+			} else if (actual_rand_cores > 1L && !need_thread_objs) {
+				# Lightweight path: per-iteration cost is trivial; fork overhead always dominates
+				actual_rand_cores = 1L
+			}
+
 			beta_hat_T_diff_ws = unlist(mclapply_fn(1:r, function(idx) {
 				set_package_threads(1L)
 				worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
@@ -411,7 +451,7 @@ DesignInference = R6::R6Class("DesignInference",
 					custom_stat_analysis = custom_stat_analysis,
 					lightweight_custom_context = setup$lightweight_custom_context
 				)
-			}, mc.cores = private$num_cores))
+			}, mc.cores = actual_rand_cores))
 
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			beta_hat_T_diff_ws
@@ -613,6 +653,27 @@ DesignInference = R6::R6Class("DesignInference",
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms)
 
 			use_parallel_ci = private$num_cores > 1L && !(private$has_private_method("compute_fast_randomization_distr") && is.null(private[["custom_randomization_statistic_function"]]))
+
+			# Warm-up guard for parallel CI: fork overhead for CI workers can exceed 1s when the
+			# session has dirty pages from prior bootstrap forks. Measure one randomization
+			# iteration (r=1) to estimate per-iteration cost; only use 2 parallel bound-workers
+			# if the bisection computation clearly outweighs that overhead.
+			if (use_parallel_ci) {
+				ci_warmup_inf = temp_inf$duplicate()
+				ci_warmup_inf$.__enclos_env__$private$num_cores = 1L
+				set_package_threads(1L)
+				t_ci_warmup_iter = system.time(tryCatch(
+					ci_warmup_inf$compute_two_sided_pval_for_treatment_effect_rand(
+						r = 1L, delta = bounds$est, transform_responses = transform_arg,
+						show_progress = FALSE, permutations = NULL),
+					error = function(e) NULL
+				))[[3]]
+				set_package_threads(private$num_cores)
+				# Parallel CI wins when per-iteration cost * bisection_steps * r > fork overhead
+				fork_overhead_estimate_ci = 1.0  # conservative: ~1s per fork for post-bootstrap sessions
+				bisect_steps_estimate = 10L
+				use_parallel_ci = fork_overhead_estimate_ci < t_ci_warmup_iter * bisect_steps_estimate * r
+			}
 
 			if (use_parallel_ci) {
 				ci = private$compute_ci_both_bounds_parallel(r, bounds$l, bounds$est, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, perms, inf_obj = temp_inf)

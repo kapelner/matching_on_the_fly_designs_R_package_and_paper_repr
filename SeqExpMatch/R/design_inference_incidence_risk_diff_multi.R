@@ -39,13 +39,13 @@ DesignInferenceIncidMultiRiskDiff = R6::R6Class("DesignInferenceIncidMultiRiskDi
 		#' @description
 		#' Initialize a multivariate risk-difference inference object for a
 		#' completed non-KK design with a binary response.
-		#' @param seq_des_obj A completed non-KK \code{SeqDesign} object with an
+		#' @param des_obj A completed non-KK \code{SeqDesign} object with an
 		#'   incidence response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and
 		#'   randomization inference.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#' @description

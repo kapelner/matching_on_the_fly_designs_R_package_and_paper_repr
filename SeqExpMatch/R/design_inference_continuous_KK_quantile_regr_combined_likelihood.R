@@ -11,7 +11,7 @@ DesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignI
 	inherit = DesignInferenceAbstractKKQuantileRegrCombinedLikelihood,
 	public = list(
 		#' @description	Initialize the inference object.
-		#' @param seq_des_obj A SeqDesign object whose entire n subjects
+		#' @param des_obj A SeqDesign object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param	tau				The quantile level for regression, strictly between 0 and 1. Default is 0.5.
 		#' @param	num_cores			Number of CPU cores for parallel processing.
@@ -32,9 +32,9 @@ DesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignI
 		#' = FALSE)
 		#' infer
 		#'
-		initialize = function(seq_des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
-			super$initialize(seq_des_obj, tau, identity, num_cores, verbose)
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
+			super$initialize(des_obj, tau, identity, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
