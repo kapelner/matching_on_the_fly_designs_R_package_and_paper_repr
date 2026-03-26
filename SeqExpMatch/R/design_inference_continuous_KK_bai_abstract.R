@@ -15,7 +15,7 @@ DesignInferenceBaiAdjustedT = R6::R6Class("DesignInferenceBaiAdjustedT",
 
 	# @description
 	# Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		# @param seq_des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
+		# @param des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
 		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
 		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
@@ -24,11 +24,11 @@ DesignInferenceBaiAdjustedT = R6::R6Class("DesignInferenceBaiAdjustedT",
 	# @param convex_flag       A flag indicating whether the estimator should use a convex combination of the Bai et al
 	# 					matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#
-	initialize = function(seq_des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
 		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
 		stop("Package 'nbpMatching' is required for DesignInferenceBaiAdjustedT. Please install it.")
 		}
-		super$initialize(seq_des_obj, num_cores, verbose)
+		super$initialize(des_obj, num_cores, verbose)
 		private$convex_flag = convex_flag
 		assertNoCensoring(private$any_censoring)
 	},
@@ -177,7 +177,7 @@ DesignInferenceBaiAdjustedT = R6::R6Class("DesignInferenceBaiAdjustedT",
 		m_mat = permutations$m_mat
 		nsim_local = ncol(w_mat)
 		if (is.null(m_mat)) {
-			m_vec = as.integer(private$seq_des_obj_priv_int$m)
+			m_vec = as.integer(private$des_obj_priv_int$m)
 			m_mat = matrix(rep(m_vec, nsim_local), nrow = length(m_vec), ncol = nsim_local)
 		}
 		
@@ -287,9 +287,9 @@ DesignInferenceBaiAdjustedT = R6::R6Class("DesignInferenceBaiAdjustedT",
 
 		X = private$get_X()
 
-		pair_avg = compute_pair_averages_cpp(X, private$seq_des_obj_priv_int$m, m)
+		pair_avg = compute_pair_averages_cpp(X, private$des_obj_priv_int$m, m)
 
-		weights = private$seq_des_obj_priv_int$covariate_weights
+		weights = private$des_obj_priv_int$covariate_weights
 		if (is.null(weights) || length(weights) != ncol(pair_avg)){
 		weights = numeric()
 		}

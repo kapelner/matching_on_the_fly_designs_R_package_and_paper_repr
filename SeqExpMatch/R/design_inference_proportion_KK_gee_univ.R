@@ -28,7 +28,7 @@ DesignInferencePropUnivKKGEE = R6::R6Class("DesignInferencePropUnivKKGEE",
 		#' @description
 		#' Initialize a univariate GEE inference object for a completed KK design
 		#' with a proportion response.
-		#' @param	seq_des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
+		#' @param	des_obj		A SeqDesign object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose proportion response y is recorded.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
@@ -53,8 +53,8 @@ DesignInferencePropUnivKKGEE = R6::R6Class("DesignInferencePropUnivKKGEE",
 		#' seq_des_inf = DesignInferencePropUnivKKGEE$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		},
 

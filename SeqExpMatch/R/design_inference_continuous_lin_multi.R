@@ -15,7 +15,7 @@ DesignInferenceContinMultLin = R6::R6Class("DesignInferenceContinMultLin",
 		#' Initialize a Lin (2013) inference object for a completed sequential
 		#' experiment with a continuous response.
 		#'
-		#' @param seq_des_obj A completed \code{SeqDesign} object with a
+		#' @param des_obj A completed \code{SeqDesign} object with a
 		#'   continuous response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and
 		#'   randomization inference.
@@ -32,9 +32,9 @@ DesignInferenceContinMultLin = R6::R6Class("DesignInferenceContinMultLin",
 		#' seq_des_inf = DesignInferenceContinMultLin$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
-			super$initialize(seq_des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

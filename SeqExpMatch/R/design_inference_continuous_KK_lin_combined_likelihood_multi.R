@@ -29,7 +29,7 @@ DesignInferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("DesignInference
 		#' @description
 		#' Initialize the inference object.
 		#'
-		#' @param seq_des_obj A completed KK \code{SeqDesign} object with a continuous
+		#' @param des_obj A completed KK \code{SeqDesign} object with a continuous
 		#'   response.
 		#' @param num_cores The number of CPU cores to use for bootstrap and
 		#'   randomization inference.
@@ -49,12 +49,12 @@ DesignInferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("DesignInference
 		#' infer <- DesignInferenceContinMultiKKLinCombinedLikelihood$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
-			if (!is(seq_des_obj, "SeqDesignKK14")){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
+			if (!is(des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

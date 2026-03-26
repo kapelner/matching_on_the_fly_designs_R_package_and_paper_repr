@@ -305,7 +305,7 @@ safe_call = function(label, expr){
 		message("    Calling compute_exact_two_sided_pval_for_treatment_effect()")
 		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
 		message("    Calling compute_exact_confidence_interval()")
-		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(pval_epsilon = pval_epsilon))))
+		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = pval_epsilon))))
 	}
 
 	message("    Calling compute_treatment_estimate()")

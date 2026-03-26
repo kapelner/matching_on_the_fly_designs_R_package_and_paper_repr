@@ -23,7 +23,7 @@ DesignInferenceAllSimpleWilcox = R6::R6Class("DesignInferenceAllSimpleWilcox",
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param seq_des_obj  A completed \code{SeqDesign} object.
+		#' @param des_obj  A completed \code{SeqDesign} object.
 		#' @param num_cores    Number of CPU cores for parallel bootstrap/randomization. Default 1.
 		#' @param verbose      Whether to print progress messages. Default \code{FALSE}.
 		#' @examples
@@ -40,8 +40,8 @@ DesignInferenceAllSimpleWilcox = R6::R6Class("DesignInferenceAllSimpleWilcox",
 		#' infer <- DesignInferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			res_type = seq_des_obj$get_response_type()
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop(
 					"Wilcoxon rank-sum inference is not implemented for incidence (binary) ",
@@ -50,7 +50,7 @@ DesignInferenceAllSimpleWilcox = R6::R6Class("DesignInferenceAllSimpleWilcox",
 				)
 			}
 			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$any_censoring){
 				stop(
 					"Wilcoxon rank-sum inference does not support censored survival data. ",

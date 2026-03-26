@@ -5,12 +5,12 @@ DesignInferenceAbstractKKMarginalIncid = R6::R6Class("DesignInferenceAbstractKKM
 	inherit = DesignInferenceKKPassThrough,
 	public = list(
 
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "incidence")
-			if (!is(seq_des_obj, "SeqDesignKK14")){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (!is(des_obj, "SeqDesignKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (SeqDesignKK14 or subclass).")
 			}
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		}
 	),

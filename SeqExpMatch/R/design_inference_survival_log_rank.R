@@ -42,12 +42,12 @@ DesignInferenceSurvivalLogRank = R6::R6Class("DesignInferenceSurvivalLogRank",
 
 		#' @description
 		#' Initialize a log-rank inference object for survival data.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with a survival response.
+		#' @param des_obj A completed \code{SeqDesign} object with a survival response.
 		#' @param num_cores The number of CPU cores to use for parallel processing.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, num_cores, verbose)
-			assertResponseType(seq_des_obj$get_response_type(), "survival")
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
+			assertResponseType(des_obj$get_response_type(), "survival")
 		},
 
 		#' @description

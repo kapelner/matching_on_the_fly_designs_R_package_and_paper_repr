@@ -21,7 +21,7 @@ DesignInference = R6::R6Class("DesignInference",
 		# Initialize an estimation and test object after the design is completed.
 		#
 		#
-		# @param seq_des_obj		A completed \code{Design} object whose entire n subjects are assigned and response y is recorded within.
+		# @param des_obj		A completed \code{Design} object whose entire n subjects are assigned and response y is recorded within.
 
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
 		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
@@ -30,24 +30,24 @@ DesignInference = R6::R6Class("DesignInference",
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
 		#
 		# @return A new `DesignInference` object.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
-			assertClass(seq_des_obj, "Design")
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertClass(des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
-			seq_des_obj$assert_experiment_completed()
+			des_obj$assert_experiment_completed()
 
 			private$cached_values = list()
-			private$any_censoring = seq_des_obj$any_censoring()
-			private$seq_des_obj = seq_des_obj
-			private$seq_des_obj_priv_int = seq_des_obj$.__enclos_env__$private
-			private$y = private$seq_des_obj_priv_int$y
+			private$any_censoring = des_obj$any_censoring()
+			private$des_obj = des_obj
+			private$des_obj_priv_int = des_obj$.__enclos_env__$private
+			private$y = private$des_obj_priv_int$y
 			private$y_temp = private$y
-			private$w = private$seq_des_obj_priv_int$w
-			private$dead = private$seq_des_obj_priv_int$dead
-			private$is_KK = is(seq_des_obj, "SeqDesignKK14") || is(seq_des_obj, "FixedDesignBinaryMatch") #KK and Fixed Binary Match are both matching designs
-			private$n = seq_des_obj$get_n()
-			private$prob_T = seq_des_obj$get_prob_T()
-			private$supports_design_resampling = isTRUE(seq_des_obj$supports_resampling())
+			private$w = private$des_obj_priv_int$w
+			private$dead = private$des_obj_priv_int$dead
+			private$is_KK = is(des_obj, "SeqDesignKK14") || is(des_obj, "FixedDesignBinaryMatch") #KK and Fixed Binary Match are both matching designs
+			private$n = des_obj$get_n()
+			private$prob_T = des_obj$get_prob_T()
+			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
 			private$num_cores = num_cores
 			set_package_threads(num_cores)
 			private$verbose = verbose
@@ -57,9 +57,9 @@ DesignInference = R6::R6Class("DesignInference",
 			if (private$verbose){
 				cat(paste0(
 					"Initialized inference methods for a ",
-					class(seq_des_obj)[1],
+					class(des_obj)[1],
 					" design and response type ",
-					seq_des_obj$get_response_type(),
+					des_obj$get_response_type(),
 					".\n"
 				))
 			}
@@ -96,8 +96,8 @@ DesignInference = R6::R6Class("DesignInference",
 		# #now let's set the statistic during randomization tests and intervals to the
 		# #studentized average difference (the t stat).
 		# seq_des_inf$set_custom_randomization_statistic_function(function(){
-		#    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-		#	  yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+		#    yTs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 1]
+		#	  yCs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 0]
 		#	  (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 		# })
 		# }
@@ -165,7 +165,7 @@ DesignInference = R6::R6Class("DesignInference",
 			assertNumeric(delta)
 			
 			if (type == "Zhang") {
-				private$compute_combined_exact_pval(delta, args_for_type[[type]]$combination_method)
+				private$pval_exact_zhang_combined(delta, args_for_type[[type]]$combination_method)
 			}
 		},
 
@@ -203,7 +203,7 @@ DesignInference = R6::R6Class("DesignInference",
 			private$assert_design_supports_resampling("Bootstrap inference")
 			assertCount(B, positive = TRUE); assertCount(max_resample_attempts, positive = TRUE)
 
-			n = private$seq_des_obj$get_n(); y = private$y; dead = private$dead; w = private$w; X = private$get_X()
+			n = private$des_obj$get_n(); y = private$y; dead = private$dead; w = private$w; X = private$get_X()
 
 			# Check for C++ fast-path
 			if (private$has_private_method("compute_fast_bootstrap_distr")) {
@@ -454,7 +454,7 @@ DesignInference = R6::R6Class("DesignInference",
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
-			if (private$seq_des_obj_priv_int$response_type == "incidence"){
+			if (private$des_obj_priv_int$response_type == "incidence"){
 				stop("Randomization tests are not supported for incidence outcomes. Use compute_exact_two_sided_pval_for_treatment_effect(type = 'Zhang') for the Zhang method.")
 			}
 			if (is.null(permutations)) {
@@ -587,7 +587,7 @@ DesignInference = R6::R6Class("DesignInference",
 			assertCount(r, positive = TRUE); assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
 			assertLogical(show_progress); show_progress = isTRUE(show_progress) && private$num_cores == 1
 
-			resp_type = private$seq_des_obj_priv_int$response_type
+			resp_type = private$des_obj_priv_int$response_type
 			if (resp_type == "incidence") stop("Confidence intervals are not supported for randomization tests for incidence outcomes. Use compute_exact_confidence_interval(type = 'Zhang') for the Zhang method.")
 
 			# Determine transform and clamping
@@ -664,8 +664,8 @@ DesignInference = R6::R6Class("DesignInference",
 	),
 
 	private = list(
-		seq_des_obj = NULL,
-		seq_des_obj_priv_int = NULL,
+		des_obj = NULL,
+		des_obj_priv_int = NULL,
 		m = NULL,
 		is_KK = NULL,
 		supports_design_resampling = FALSE,
@@ -691,10 +691,10 @@ DesignInference = R6::R6Class("DesignInference",
 			}
 
 			# Create a template design object with transformations applied
-			template = private$seq_des_obj$duplicate()
+			template = private$des_obj$duplicate()
 
 			if (transform_responses == "log"){
-				if (private$seq_des_obj_priv_int$response_type != "count") {
+				if (private$des_obj_priv_int$response_type != "count") {
 					template$.__enclos_env__$private$y = log(copy(private$y))
 				}
 			} else if (transform_responses == "logit"){
@@ -705,24 +705,24 @@ DesignInference = R6::R6Class("DesignInference",
 
 			# Apply delta adjustment if nonzero
 			if (delta != 0 && !bypass_checks){
-				if (private$seq_des_obj_priv_int$response_type == "incidence"){
+				if (private$des_obj_priv_int$response_type == "incidence"){
 					stop("randomization tests with delta nonzero are not supported for incidence response type")
 				}
-				if (private$seq_des_obj_priv_int$response_type == "count" &&
+				if (private$des_obj_priv_int$response_type == "count" &&
 					!(transform_responses %in% c("log1p", "already_transformed", "log"))){
 					stop("randomization tests with delta nonzero are not supported for count response type without log1p transform")
 				}
-				if (private$seq_des_obj_priv_int$response_type == "proportion" && transform_responses != "logit"){
+				if (private$des_obj_priv_int$response_type == "proportion" && transform_responses != "logit"){
 					stop("randomization tests with delta nonzero are not supported for proportion response type without logit transform (values must remain in (0,1))")
 				}
-				if (private$seq_des_obj_priv_int$response_type == "survival" && transform_responses != "log"){
+				if (private$des_obj_priv_int$response_type == "survival" && transform_responses != "log"){
 					stop("randomization tests with delta nonzero are not supported for survival response type without log transform (values must be positive)")
 				}
-				if (transform_responses == "log" && private$seq_des_obj_priv_int$response_type == "count") {
+				if (transform_responses == "log" && private$des_obj_priv_int$response_type == "count") {
 					template$.__enclos_env__$private$y[private$w == 1] = template$.__enclos_env__$private$y[private$w == 1] * exp(-delta)
 				} else {
 					template$.__enclos_env__$private$y[private$w == 1] = template$.__enclos_env__$private$y[private$w == 1] - delta
-					if (transform_responses == "log" && private$seq_des_obj_priv_int$response_type != "count"){
+					if (transform_responses == "log" && private$des_obj_priv_int$response_type != "count"){
 						template$.__enclos_env__$private$y = exp(template$.__enclos_env__$private$y)
 					} else if (transform_responses == "logit"){
 						template$.__enclos_env__$private$y = inv_logit(template$.__enclos_env__$private$y)
@@ -784,12 +784,12 @@ DesignInference = R6::R6Class("DesignInference",
 				if (private$is_KK && private$object_has_private_method(thread_des_obj, "m")) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
 				thread_inf_obj$.__enclos_env__$private$w = perm_data$w
 				if (private$is_KK && private$object_has_private_method(thread_inf_obj, "m")) thread_inf_obj$.__enclos_env__$private$m = perm_data$m_vec
-				thread_inf_obj$.__enclos_env__$private$seq_des_obj_priv_int = thread_des_obj$.__enclos_env__$private
+				thread_inf_obj$.__enclos_env__$private$des_obj_priv_int = thread_des_obj$.__enclos_env__$private
 				thread_inf_obj$.__enclos_env__$private$y = thread_des_obj$.__enclos_env__$private$y
 				thread_inf_obj$.__enclos_env__$private$dead = thread_des_obj$.__enclos_env__$private$dead
 			} else {
 				thread_des_obj$.__enclos_env__$private$draw_one_w()
-				thread_inf_obj$.__enclos_env__$private$seq_des_obj_priv_int = thread_des_obj$.__enclos_env__$private
+				thread_inf_obj$.__enclos_env__$private$des_obj_priv_int = thread_des_obj$.__enclos_env__$private
 				thread_inf_obj$.__enclos_env__$private$y = thread_des_obj$.__enclos_env__$private$y
 				thread_inf_obj$.__enclos_env__$private$w = thread_des_obj$.__enclos_env__$private$w
 				thread_inf_obj$.__enclos_env__$private$dead = thread_des_obj$.__enclos_env__$private$dead
@@ -824,8 +824,8 @@ DesignInference = R6::R6Class("DesignInference",
 		run_bootstrap_iteration = function(n, y, dead, w, X, max_resample_attempts){
 			attempt = 1
 			repeat {
-				if (private$seq_des_obj$.__enclos_env__$private$has_private_method("get_bootstrap_indices")) {
-					i_b = private$seq_des_obj$.__enclos_env__$private$get_bootstrap_indices()
+				if (private$des_obj$.__enclos_env__$private$has_private_method("get_bootstrap_indices")) {
+					i_b = private$des_obj$.__enclos_env__$private$get_bootstrap_indices()
 				} else {
 					i_b = sample_int_replace_cpp(n, n)
 				}
@@ -853,13 +853,7 @@ DesignInference = R6::R6Class("DesignInference",
 		# Zhang Exact Inference Infrastructure
 		# -----------------------------------------------------------------------
 
-		compute_combined_exact_pval = function(delta_0, combination_method = "Fisher"){
-			# Design validation: only Bernoulli and KK/Matched supported by this method
-			is_bernoulli = is(private$seq_des_obj, "SeqDesignBernoulli") || is(private$seq_des_obj, "FixedDesignBernoulli")
-			if (!is_bernoulli && !private$is_KK){
-				stop("Zhang incidence inference is only supported for Bernoulli (Fixed or Sequential), Fixed Binary Match, and KK (SeqDesignKK14 or subclass) designs.")
-			}
-
+		pval_exact_zhang_combined = function(delta_0, combination_method = "Fisher"){
 			exact_stats = private$get_exact_zhang_stats()
 			p_M = if (exact_stats$m > 0)              private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
 			p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) private$compute_exact_pval_reservoir(delta_0)    else NA_real_
@@ -935,10 +929,10 @@ DesignInference = R6::R6Class("DesignInference",
 
 			if (private$is_KK){
 				if (is.null(private$cached_values$KKstats)){
-					private$m = private$seq_des_obj_priv_int$m
+					private$m = private$des_obj_priv_int$m
 					m_vec = if (is.null(private$m)) rep(0, private$n) else private$m
 					m_vec[is.na(m_vec)] = 0
-					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$seq_des_obj$get_X())
+					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$des_obj$get_X())
 				}
 				KKstats = private$cached_values$KKstats
 				exact_stats = list(m = as.integer(KKstats$m), nRT = as.integer(KKstats$nRT), nRC = as.integer(KKstats$nRC),
@@ -1128,10 +1122,10 @@ DesignInference = R6::R6Class("DesignInference",
 			"private$y",
 			"private$w",
 			"private$dead",
-			"private$seq_des_obj_priv_int",
-			"private$seq_des_obj_priv_int$y",
-			"private$seq_des_obj_priv_int$w",
-			"private$seq_des_obj_priv_int$dead"
+			"private$des_obj_priv_int",
+			"private$des_obj_priv_int$y",
+			"private$des_obj_priv_int$w",
+			"private$des_obj_priv_int$dead"
 		)
 		references_self = any(vapply(dollar_paths, function(path) length(path) > 0L && identical(path[1], "self"), logical(1)))
 		can_use_lightweight_yw_only =
@@ -1167,14 +1161,14 @@ DesignInference = R6::R6Class("DesignInference",
 		eval_env = new.env(parent = orig_env)
 		private_proxy = new.env(parent = emptyenv())
 		seq_priv_proxy = new.env(parent = emptyenv())
-		private_proxy$seq_des_obj_priv_int = seq_priv_proxy
+		private_proxy$des_obj_priv_int = seq_priv_proxy
 		eval_env$private = private_proxy
 		custom_fun = private$custom_randomization_statistic_function
 		environment(custom_fun) = eval_env
 		list(
 			fun = custom_fun,
 			private_proxy = private_proxy,
-			seq_des_obj_priv_int_proxy = seq_priv_proxy
+			des_obj_priv_int_proxy = seq_priv_proxy
 		)
 	},
 
@@ -1185,9 +1179,9 @@ DesignInference = R6::R6Class("DesignInference",
 		context$private_proxy$y = y
 		context$private_proxy$w = w
 		context$private_proxy$dead = dead
-		context$seq_des_obj_priv_int_proxy$y = y
-		context$seq_des_obj_priv_int_proxy$w = w
-		context$seq_des_obj_priv_int_proxy$dead = dead
+		context$des_obj_priv_int_proxy$y = y
+		context$des_obj_priv_int_proxy$w = w
+		context$des_obj_priv_int_proxy$dead = dead
 		tryCatch(
 			context$fun(),
 			error = function(e) NA_real_
@@ -1219,7 +1213,13 @@ DesignInference = R6::R6Class("DesignInference",
 		args = args_for_type[[type]]
 		
 		if (type == "Zhang") {
-			assertResponseType(private$seq_des_obj$get_response_type(), "incidence")
+			# Design validation: only Bernoulli and KK/Matched supported by this method
+			is_bernoulli = is(private$des_obj, "SeqDesignBernoulli") || is(private$des_obj, "FixedDesignBernoulli")
+			if (!is_bernoulli && !private$is_KK){
+				stop("Zhang incidence inference is only supported for Bernoulli (Fixed or Sequential), Fixed Binary Match, and KK (SeqDesignKK14 or subclass) designs.")
+			}
+
+			assertResponseType(private$des_obj$get_response_type(), "incidence")
 			assertNoCensoring(private$any_censoring)
 			combination_method = args$combination_method
 			assertChoice(combination_method, c("Fisher", "Stouffer", "min_p"))
@@ -1240,7 +1240,7 @@ DesignInference = R6::R6Class("DesignInference",
 							return(private$cached_values$permutations_cache[[cache_key]])
 						}
 
-						perms = private$seq_des_obj$draw_ws_according_to_design(r)
+						perms = private$des_obj$draw_ws_according_to_design(r)
 						if (is.matrix(perms)) {
 							perms = list(w_mat = perms, match_indic_mat = NULL)
 						}
@@ -1266,11 +1266,11 @@ DesignInference = R6::R6Class("DesignInference",
 
 		get_X = function(){
 			if (is.null(private$X)){
-				if (is.null(private$seq_des_obj_priv_int$X)){
-					private$seq_des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
+				if (is.null(private$des_obj_priv_int$X)){
+					private$des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
 				}
-				X_all = private$seq_des_obj_priv_int$compute_all_subject_data()$X_all
-				colnames(X_all) = colnames(private$seq_des_obj_priv_int$X)
+				X_all = private$des_obj_priv_int$compute_all_subject_data()$X_all
+				colnames(X_all) = colnames(private$des_obj_priv_int$X)
 				private$X = X_all
 			}
 			private$X

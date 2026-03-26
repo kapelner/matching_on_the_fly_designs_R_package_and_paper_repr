@@ -15,7 +15,7 @@ DesignInferenceContinMultiRobustRegr = R6::R6Class("DesignInferenceContinMultiRo
 		#' @description
 		#' Initialize a multivariate robust-regression inference object for a completed design
 		#' with a continuous response.
-		#' @param seq_des_obj             A SeqDesign object whose entire n subjects are assigned and
+		#' @param des_obj             A SeqDesign object whose entire n subjects are assigned and
 		#'   whose continuous response y is recorded.
 		#' @param method                  Robust-regression fitting method for \code{MASS::rlm}; one
 		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
@@ -39,8 +39,8 @@ DesignInferenceContinMultiRobustRegr = R6::R6Class("DesignInferenceContinMultiRo
 		#' infer <- DesignInferenceContinMultiRobustRegr$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(seq_des_obj, method = "MM", num_cores = 1, verbose = FALSE){
-			super$initialize(seq_des_obj, method = method, num_cores = num_cores, verbose = verbose)
+		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, method = method, num_cores = num_cores, verbose = verbose)
 		}
 	),
 

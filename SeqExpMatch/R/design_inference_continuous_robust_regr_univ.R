@@ -21,7 +21,7 @@ DesignInferenceContinUnivRobustRegr = R6::R6Class("DesignInferenceContinUnivRobu
 		#' @description
 		#' Initialize a robust-regression inference object for a completed design
 		#' with a continuous response.
-		#' @param seq_des_obj             A SeqDesign object whose entire n subjects are assigned and
+		#' @param des_obj             A SeqDesign object whose entire n subjects are assigned and
 		#'   whose continuous response y is recorded.
 		#' @param method                  Robust-regression fitting method for \code{MASS::rlm}; one
 		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
@@ -43,10 +43,10 @@ DesignInferenceContinUnivRobustRegr = R6::R6Class("DesignInferenceContinUnivRobu
 		#' seq_des_inf = DesignInferenceContinUnivRobustRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(seq_des_obj, method = "MM", num_cores = 1, verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "continuous")
+		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
-			super$initialize(seq_des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
 		},

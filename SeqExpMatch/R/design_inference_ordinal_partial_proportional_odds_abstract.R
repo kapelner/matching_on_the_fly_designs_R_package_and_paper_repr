@@ -13,17 +13,17 @@ DesignInferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 	public = list(
 		#' @description
 		#' Initialize the internal PPO base object.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal
+		#' @param des_obj A completed \code{SeqDesign} object with an ordinal
 		#'   response.
 		#' @param nonparallel Covariate names that may vary across thresholds.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj,
+		initialize = function(des_obj,
 				nonparallel = character(0),
 				num_cores = 1,
 				verbose = FALSE){
-			assertResponseType(seq_des_obj$get_response_type(), "ordinal")
-			super$initialize(seq_des_obj, num_cores, verbose)
+			assertResponseType(des_obj$get_response_type(), "ordinal")
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertCharacter(nonparallel, null.ok = TRUE)
 			private$nonparallel = unique(nonparallel)

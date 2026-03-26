@@ -22,13 +22,13 @@ DesignInferenceOrdinalUniPartialProportionalOddsRegr = R6::R6Class(
 	public = list(
 		#' @description
 		#' Initialize a treatment-only partial proportional-odds inference object.
-		#' @param seq_des_obj A completed \code{SeqDesign} object with an ordinal
+		#' @param des_obj A completed \code{SeqDesign} object with an ordinal
 		#'   response.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(seq_des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			super$initialize(
-				seq_des_obj = seq_des_obj,
+				des_obj = des_obj,
 				nonparallel = character(0),
 				num_cores = num_cores,
 				verbose = verbose
