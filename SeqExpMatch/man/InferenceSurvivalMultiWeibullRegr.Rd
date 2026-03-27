@@ -39,7 +39,7 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{\link[EDI:InferenceSurvivalUniWeibullRegr]{EDI::InferenceSurvivalUniWeibullRegr}} -> \code{InferenceSurvivalMultiWeibullRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceSurvivalUniWeibullRegr]{EDI::InferenceSurvivalUniWeibullRegr}} -> \code{InferenceSurvivalMultiWeibullRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

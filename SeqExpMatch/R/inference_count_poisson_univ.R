@@ -99,6 +99,15 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
 			private$fit_poisson_with_var(Xmm)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			w_mat = permutations$w_mat
+			if (is.null(w_mat)) return(NULL)
+			X_covars = private$get_X()
+			log_transform = transform_responses == "log"
+			compute_poisson_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), log_transform, private$num_cores)
 		}
 	)
 )

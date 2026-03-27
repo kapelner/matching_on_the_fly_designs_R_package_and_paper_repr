@@ -25,7 +25,7 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAbstractKKPoissonCPoissonCombinedLikelihood}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAbstractKKPoissonCPoissonCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{

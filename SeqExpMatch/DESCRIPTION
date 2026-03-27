@@ -30,6 +30,7 @@ Imports:
     pbmcapply,
     randomizr
 Suggests:
+    mirai,
     aftgee,
     betareg,
     doParallel,

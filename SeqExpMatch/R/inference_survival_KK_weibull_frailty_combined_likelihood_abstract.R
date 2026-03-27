@@ -130,7 +130,7 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 
 			cores_to_use = private$num_cores
 
-			beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+			beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 				# Resample reservoir
 				i_res_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 
@@ -164,7 +164,7 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 
 				res = private$fit_fast_approx(dat_b, cov_str)
 				if (!is.null(res) && is.finite(res$beta_aft)) res$beta_aft else NA_real_
-			}, mc.cores = cores_to_use))
+			}, n_cores = cores_to_use))
 			beta_hat_T_bs
 		},
 

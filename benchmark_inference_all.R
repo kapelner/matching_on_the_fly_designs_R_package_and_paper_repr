@@ -58,10 +58,10 @@ prepare_des_obj = function(response_type, dataset_name = "airquality", design_cl
 }
 
 namespace_content = readLines("SeqExpMatch/NAMESPACE")
-inf_classes = grep("^export\\(DesignInference", namespace_content, value = TRUE)
+inf_classes = grep("^export\\(Inference", namespace_content, value = TRUE)
 inf_classes = gsub("export\\(|\\)", "", inf_classes)
 
-is_all = grepl("^DesignInferenceAll", inf_classes)
+is_all = grepl("^InferenceAll", inf_classes)
 is_ordinal = grepl("Ordinal", inf_classes)
 categorized_classes = list(
     continuous = inf_classes[grepl("Contin|Bai", inf_classes) | is_all],

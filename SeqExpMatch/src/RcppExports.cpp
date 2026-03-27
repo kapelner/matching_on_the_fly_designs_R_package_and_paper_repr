@@ -388,6 +388,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_adj_cat_logit_distr_parallel_cpp
+NumericVector compute_adj_cat_logit_distr_parallel_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXd& X_covars, const Rcpp::IntegerMatrix& w_mat, double delta, int num_cores);
+RcppExport SEXP _EDI_compute_adj_cat_logit_distr_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_covars(X_covarsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type w_mat(w_matSEXP);
+    Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_adj_cat_logit_distr_parallel_cpp(y, X_covars, w_mat, delta, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_bai_distr_parallel_cpp
 NumericVector compute_bai_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, const IntegerMatrix& m_mat, double delta, const IntegerMatrix& halves_idx, bool convex_flag, int num_cores);
 RcppExport SEXP _EDI_compute_bai_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP halves_idxSEXP, SEXP convex_flagSEXP, SEXP num_coresSEXP) {
@@ -879,6 +894,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_poisson_distr_parallel_cpp
+NumericVector compute_poisson_distr_parallel_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXd& X_covars, const Rcpp::IntegerMatrix& w_mat, double delta, bool log_transform, int num_cores);
+RcppExport SEXP _EDI_compute_poisson_distr_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP log_transformSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_covars(X_covarsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type w_mat(w_matSEXP);
+    Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< bool >::type log_transform(log_transformSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_poisson_distr_parallel_cpp(y, X_covars, w_mat, delta, log_transform, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_ridit_scores_cpp
 List fast_ridit_scores_cpp(const IntegerVector& y, const IntegerVector& ref_idx);
 RcppExport SEXP _EDI_fast_ridit_scores_cpp(SEXP ySEXP, SEXP ref_idxSEXP) {
@@ -978,6 +1009,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_stereotype_profile_loglik_cpp(X, y, beta_fixed, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_stereotype_logit_distr_parallel_cpp
+NumericVector compute_stereotype_logit_distr_parallel_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXd& X_covars, const Rcpp::IntegerMatrix& w_mat, double delta, int num_cores);
+RcppExport SEXP _EDI_compute_stereotype_logit_distr_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_covars(X_covarsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type w_mat(w_matSEXP);
+    Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_stereotype_logit_distr_parallel_cpp(y, X_covars, w_mat, delta, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2187,6 +2233,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_efron_redraw_cpp", (DL_FUNC) &_EDI_efron_redraw_cpp, 3},
     {"_EDI_fast_adjacent_category_logit_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_cpp, 4},
     {"_EDI_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_with_var_cpp, 4},
+    {"_EDI_compute_adj_cat_logit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_adj_cat_logit_distr_parallel_cpp, 5},
     {"_EDI_compute_bai_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_bai_distr_parallel_cpp, 7},
     {"_EDI_fast_beta_regression_cpp", (DL_FUNC) &_EDI_fast_beta_regression_cpp, 5},
     {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 5},
@@ -2222,6 +2269,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_poisson_regression_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_cpp, 4},
     {"_EDI_fast_poisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_with_var_cpp, 5},
     {"_EDI_fast_quasipoisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_quasipoisson_regression_with_var_cpp, 5},
+    {"_EDI_compute_poisson_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_poisson_distr_parallel_cpp, 6},
     {"_EDI_fast_ridit_scores_cpp", (DL_FUNC) &_EDI_fast_ridit_scores_cpp, 2},
     {"_EDI_fast_ridit_analysis_cpp", (DL_FUNC) &_EDI_fast_ridit_analysis_cpp, 3},
     {"_EDI_sample_int_replace_cpp", (DL_FUNC) &_EDI_sample_int_replace_cpp, 2},
@@ -2230,6 +2278,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_stereotype_logit_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_cpp, 4},
     {"_EDI_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_with_var_cpp, 4},
     {"_EDI_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_EDI_fast_stereotype_profile_loglik_cpp, 5},
+    {"_EDI_compute_stereotype_logit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_stereotype_logit_distr_parallel_cpp, 5},
     {"_EDI_get_survival_stat_for_group", (DL_FUNC) &_EDI_get_survival_stat_for_group, 3},
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},

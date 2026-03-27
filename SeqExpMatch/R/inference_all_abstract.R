@@ -8,6 +8,7 @@
 #'
 #' @keywords internal
 Inference = R6::R6Class("Inference",
+	lock_objects = FALSE,
 	public = list(
 		# @description
 		# Initialize an estimation and test object after the design is completed.
@@ -15,10 +16,11 @@ Inference = R6::R6Class("Inference",
 		# @param num_cores			The number of CPU cores to use to parallelize the sampling.
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
 		# @return A new `Inference` object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertClass(des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
+			assertFlag(make_fork_cluster, null.ok = TRUE)
 			des_obj$assert_experiment_completed()
 
 			private$cached_values = list()
@@ -35,6 +37,8 @@ Inference = R6::R6Class("Inference",
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
 			private$num_cores = num_cores
 			set_package_threads(num_cores)
+			private$make_fork_cluster = if (is.null(make_fork_cluster)) .Platform$OS.type == "unix" else isTRUE(make_fork_cluster)
+			private$use_mirai = num_cores > 1L && !private$make_fork_cluster && requireNamespace("mirai", quietly = TRUE)
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
@@ -57,34 +61,41 @@ Inference = R6::R6Class("Inference",
 		duplicate = function(verbose = FALSE){
 			i = self$clone()
 			i$.__enclos_env__$private$verbose = verbose
+			i$.__enclos_env__$private$fork_cluster = NULL
 			i$.__enclos_env__$private$cached_values = list()
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			i$.__enclos_env__$private$cached_values$t0s_rand = private$cached_values$t0s_rand
-			
-			if (private$has_private_method("custom_randomization_statistic_function") && 
+
+			if (private$has_private_method("custom_randomization_statistic_function") &&
 				!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				clone_private = i$.__enclos_env__$private
 				fn = clone_private$custom_randomization_statistic_function
 				environment(fn) = environment(i$initialize)
 				field = "custom_randomization_statistic_function"
-				if (bindingIsLocked(field, clone_private)) {
-					unlockBinding(field, clone_private)
-				}
 				assign(field, fn, envir = clone_private)
 			}
 			i
 		}
-	),
+		),
 
-	private = list(
-		des_obj = NULL,
-		des_obj_priv_int = NULL,
+		private = list(
+		finalize = function(){
+			if (!is.null(private$fork_cluster)){
+				try(parallel::stopCluster(private$fork_cluster), silent = TRUE)
+				private$fork_cluster = NULL
+			}
+		},
+		des_obj = NULL,		des_obj_priv_int = NULL,
 		m = NULL,
 		is_KK = NULL,
 		supports_design_resampling = FALSE,
 		any_censoring = NULL,
 		num_cores = NULL,
+		make_fork_cluster = NULL,
+		use_mirai = FALSE,
+		warned_no_parallel = FALSE,
+		fork_cluster = NULL,
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
@@ -95,6 +106,44 @@ Inference = R6::R6Class("Inference",
 		y_temp = NULL,
 		X = NULL,
 		cached_values = list(),
+
+		get_or_create_fork_cluster = function(){
+			if (is.null(private$fork_cluster)){
+				private$fork_cluster = parallel::makeForkCluster(private$num_cores)
+			}
+			private$fork_cluster
+		},
+
+		par_lapply = function(X, FUN, n_cores, show_progress = FALSE){
+			if (n_cores <= 1L) return(lapply(X, FUN))
+			if (isTRUE(private$make_fork_cluster)){
+				cl = private$get_or_create_fork_cluster()
+				parallel::parLapply(cl, X, FUN)
+			} else if (isTRUE(private$use_mirai)){
+				private$ensure_mirai_daemons(n_cores)
+				tasks = lapply(X, function(x) mirai::mirai({FUN(x)}, FUN = FUN, x = x))
+				lapply(tasks, function(m) m[])
+			} else if (.Platform$OS.type != "unix"){
+				if (!isTRUE(private$warned_no_parallel)){
+					message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
+					private$warned_no_parallel = TRUE
+				}
+				lapply(X, FUN)
+			} else {
+				if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
+					pbmcapply::pbmclapply(X, FUN, mc.cores = n_cores)
+				} else {
+					parallel::mclapply(X, FUN, mc.cores = n_cores)
+				}
+			}
+		},
+
+		ensure_mirai_daemons = function(n){
+			s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
+			n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
+			if (n_running != n) mirai::daemons(n)
+			invisible(NULL)
+		},
 
 		stable_signature = function(obj){
 			raw_sig = serialize(obj, NULL, xdr = FALSE)

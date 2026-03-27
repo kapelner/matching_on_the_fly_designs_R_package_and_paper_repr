@@ -168,6 +168,14 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 			var_w = tryCatch(vcov(mod)["w", "w"], error = function(e) NA_real_)
 			ssq = if (is.finite(var_w) && var_w > 0) var_w else NA_real_
 			list(b = c(NA, coef_w), ssq_b_2 = ssq)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			w_mat = permutations$w_mat
+			if (is.null(w_mat)) return(NULL)
+			X_covars = private$get_X()
+			compute_stereotype_logit_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), private$num_cores)
 		}
 	)
 )

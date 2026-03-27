@@ -52,8 +52,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(inf_template) && private$is_KK && private$object_has_private_method(inf_template, "compute_basic_match_data"))
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
-			mclapply_fn = if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) pbmcapply::pbmclapply else parallel::mclapply
-
 			actual_rand_cores = private$num_cores
 			if (actual_rand_cores > 1L && need_thread_objs) {
 				t_rand_warmup = system.time({
@@ -65,13 +63,13 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (!(t_rand_warmup * r > 0.5 * actual_rand_cores)) actual_rand_cores = 1L
 			} else if (actual_rand_cores > 1L && !need_thread_objs) actual_rand_cores = 1L
 
-			beta_hat_T_diff_ws = unlist(mclapply_fn(1:r, function(idx) {
+			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
 				set_package_threads(1L)
 				worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 				worker_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
 				if (!is.null(worker_inf)) worker_inf$.__enclos_env__$private$num_cores = 1L
 				private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
-			}, mc.cores = actual_rand_cores))
+			}, n_cores = actual_rand_cores, show_progress = show_progress))
 
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			beta_hat_T_diff_ws

@@ -10,7 +10,7 @@ with continuous responses using robust regression for matched-pair differences
 and reservoir outcomes, with treatment and all recorded covariates as predictors.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractKKRobustRegrIVWC} -> \code{InferenceContinMultiKKRobustRegrIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractKKRobustRegrIVWC]{EDI::InferenceAbstractKKRobustRegrIVWC}} -> \code{InferenceContinMultiKKRobustRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -169,7 +169,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 
 			cores_to_use = private$num_cores
 
-			beta_hat_T_bs = unlist(parallel::mclapply(1:B, function(b) {
+			beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 				# --- Matched pairs component ---
 				beta_m = NA_real_
 				ssq_m  = NA_real_
@@ -224,7 +224,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				} else {
 					NA_real_
 				}
-			}, mc.cores = cores_to_use))
+			}, n_cores = cores_to_use))
 			beta_hat_T_bs
 		},
 

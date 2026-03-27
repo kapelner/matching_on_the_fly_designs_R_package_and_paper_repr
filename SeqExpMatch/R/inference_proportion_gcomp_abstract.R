@@ -95,7 +95,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			if (private$num_cores == 1){
 				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
 			} else {
-				unlist(parallel::mclapply(seq_len(B), function(b) draw_sample(), mc.cores = min(2L, private$num_cores)))
+				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), n_cores = min(2L, private$num_cores)))
 			}
 		}
 	),

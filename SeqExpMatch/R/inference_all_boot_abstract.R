@@ -26,16 +26,32 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			if (private$verbose) cat("Computing bootstrap distribution...\n")
 
-			mclapply_fn = if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) pbmcapply::pbmclapply else parallel::mclapply
-
 			# Duplicate objects for thread safety
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
 
-			# Determine cores
+			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
+			# cost, then only parallelize if computation outweighs fork overhead (~500ms per worker).
 			actual_cores = private$num_cores
-			
-			boot_distr = unlist(mclapply_fn(1:B, function(idx) {
+			if (actual_cores > 1L) {
+				t_boot_warmup = system.time({
+					w_des = des_template$duplicate()
+					w_inf = inf_template$duplicate(); w_inf$.__enclos_env__$private$num_cores = 1L
+					w_des$resample_design()
+					w_inf$.__enclos_env__$private$w = w_des$.__enclos_env__$private$w
+					w_inf$.__enclos_env__$private$y = w_des$.__enclos_env__$private$y
+					if (private$is_KK) {
+						w_inf$.__enclos_env__$private$m = w_des$.__enclos_env__$private$m
+						w_inf$.__enclos_env__$private$compute_basic_match_data()
+					}
+					tryCatch(w_inf$compute_treatment_estimate(), error = function(e) NA_real_)
+				})[[3]]
+				fork_overhead_estimate = 0.5  # ~500ms per fork for large R sessions
+				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores))
+					actual_cores = 1L
+			}
+
+			boot_distr = unlist(private$par_lapply(1:B, function(idx) {
 				set_package_threads(1L)
 				worker_des = des_template$duplicate()
 				worker_inf = inf_template$duplicate()
@@ -54,7 +70,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				
 				# Compute estimate
 				tryCatch(worker_inf$compute_treatment_estimate(), error = function(e) NA_real_)
-			}, mc.cores = actual_cores))
+			}, n_cores = actual_cores, show_progress = show_progress))
 
 			if (!is.numeric(boot_distr)) boot_distr = as.numeric(boot_distr)
 			

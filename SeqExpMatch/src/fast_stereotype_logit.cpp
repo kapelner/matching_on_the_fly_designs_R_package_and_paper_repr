@@ -527,3 +527,68 @@ double fast_stereotype_profile_loglik_cpp(
     int n_gamma = model.num_gamma();
     return profile_loglik_for_beta(model, params, beta_fixed, n_alpha, p, n_gamma, 0);
 }
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// [[Rcpp::plugins(openmp)]]
+
+//' Parallel Stereotype Logit Randomization Distribution
+//'
+//' @param y Numeric vector of response values (pre-null-shifted for treated).
+//' @param X_covars Matrix of covariates (without intercept or treatment).
+//' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
+//' @param delta Null treatment effect (additive shift).
+//' @param num_cores Number of OpenMP threads.
+//' @return Numeric vector of length nsim with treatment coefficients.
+// [[Rcpp::export]]
+NumericVector compute_stereotype_logit_distr_parallel_cpp(
+	const Eigen::VectorXd& y,
+	const Eigen::MatrixXd& X_covars,
+	const Rcpp::IntegerMatrix& w_mat,
+	double delta,
+	int num_cores
+) {
+	int nsim = w_mat.cols();
+	int n = y.size();
+	int p_covars = X_covars.cols();
+	int p_full = p_covars + 1; // treatment + covars (no intercept — thresholds handle location)
+
+	std::vector<double> results(nsim, NA_REAL);
+	const int* w_ptr = w_mat.begin();
+
+#ifdef _OPENMP
+	omp_set_num_threads(num_cores);
+#endif
+
+#pragma omp parallel for schedule(static)
+	for (int b = 0; b < nsim; ++b) {
+		const int* w_col = w_ptr + (size_t)b * n;
+
+		Eigen::MatrixXd X_full(n, p_full);
+		Eigen::VectorXd y_shifted(n);
+
+		for (int i = 0; i < n; ++i) {
+			X_full(i, 0) = (double)w_col[i];
+			for (int k = 0; k < p_covars; ++k) {
+				X_full(i, 1 + k) = X_covars(i, k);
+			}
+			y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
+		}
+
+		StereotypeLogitRegression model(X_full, y_shifted);
+		if (model.num_categories() < 2) continue;
+
+		bool converged = false;
+		Eigen::VectorXd params = stereotype_newton_fit(model, 100, 1e-8, &converged);
+
+		int n_alpha = model.num_alpha();
+		// accept result even if not formally converged, matching R generate_mod behaviour
+		if ((int)params.size() >= n_alpha + 1 && std::isfinite(params[n_alpha])) {
+			results[b] = params[n_alpha];
+		}
+	}
+
+	return wrap(results);
+}

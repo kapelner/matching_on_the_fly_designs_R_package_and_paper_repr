@@ -76,6 +76,14 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 				b = c(NA, res$b[1]),
 				ssq_b_2 = res$ssq_b_1
 			)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			w_mat = permutations$w_mat
+			if (is.null(w_mat)) return(NULL)
+			X_covars = private$get_X()
+			compute_adj_cat_logit_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), private$num_cores)
 		}
 	)
 )

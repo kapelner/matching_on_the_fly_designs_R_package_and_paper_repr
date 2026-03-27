@@ -45,6 +45,22 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 			use_parallel_ci = private$num_cores > 1L && !(private$has_private_method("compute_fast_randomization_distr") && is.null(private[["custom_randomization_statistic_function"]]))
 
+			# Warm-up guard: measure cost of one bisection step (one rand p-value at r=1).
+			# Fork overhead for 2 CI workers is ~0.5s each. Only parallelize if bisection
+			# cost clearly outweighs fork overhead.
+			if (use_parallel_ci) {
+				t_ci_warmup = system.time(tryCatch(
+					temp_inf$compute_two_sided_pval_for_treatment_effect_rand(
+						r = 1L, delta = bounds$est, transform_responses = transform_arg,
+						show_progress = FALSE, permutations = NULL),
+					error = function(e) NULL
+				))[[3]]
+				# Use parallel CI only if expected bisection cost > fork overhead for 2 workers
+				bisect_steps_estimate = 10L
+				fork_overhead_per_worker = 0.5  # ~500ms per fork in large R sessions
+				use_parallel_ci = t_ci_warmup * bisect_steps_estimate * r > fork_overhead_per_worker * min(2L, private$num_cores)
+			}
+
 			if (use_parallel_ci) {
 				ci = private$compute_ci_both_bounds_parallel(r, bounds$l, bounds$est, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, perms, inf_obj = temp_inf)
 			} else {
@@ -101,11 +117,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		compute_ci_both_bounds_parallel = function(r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, permutations = NULL, inf_obj = self){
 			bound_specs = list(list(l = l_lower, u = u_lower, lower = TRUE), list(l = l_upper, u = u_upper, lower = FALSE))
 			inf_template = inf_obj$duplicate()
-			results = parallel::mclapply(bound_specs, function(spec) {
+			results = private$par_lapply(bound_specs, function(spec) {
 				worker_inf = inf_template$duplicate(); worker_inf$.__enclos_env__$private$num_cores = 1L
 				set_package_threads(1L)
 				worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol, transform_responses = transform_responses, lower = spec$lower, show_progress = FALSE, permutations = permutations)
-			}, mc.cores = min(2L, private$num_cores))
+			}, n_cores = min(2L, private$num_cores))
 			c(results[[1]], results[[2]])
 		},
 

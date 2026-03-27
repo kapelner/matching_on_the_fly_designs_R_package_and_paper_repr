@@ -9,7 +9,7 @@ all recorded covariates as predictors. The treatment effect is reported on the
 log-risk-ratio scale.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidLogBinomialAbstract} -> \code{\link[EDI:InferenceIncidUnivLogBinomial]{EDI::InferenceIncidUnivLogBinomial}} -> \code{InferenceIncidMultiLogBinomial}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidLogBinomialAbstract} -> \code{\link[EDI:InferenceIncidUnivLogBinomial]{EDI::InferenceIncidUnivLogBinomial}} -> \code{InferenceIncidMultiLogBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{

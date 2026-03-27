@@ -142,12 +142,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							cores_to_use = 1L
 					}
 
-					mclapply_fn = parallel::mclapply
-					if (private$verbose && requireNamespace("pbmcapply", quietly = TRUE)) {
-						mclapply_fn = pbmcapply::pbmclapply
-					}
-
-					beta_hat_T_bs = unlist(mclapply_fn(1:B, function(b) {
+					beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 						set_package_threads(1L)
 						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 
@@ -189,7 +184,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						}, error = function(e) {
 							NA_real_
 						})
-					}, mc.cores = cores_to_use))
+					}, n_cores = cores_to_use, show_progress = private$verbose))
 					return(beta_hat_T_bs)
 				}
 			}

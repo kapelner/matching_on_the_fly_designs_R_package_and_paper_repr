@@ -1,5 +1,14 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
+#include <cmath>
+#include <vector>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// [[Rcpp::depends(RcppEigen)]]
+// [[Rcpp::plugins(openmp)]]
 
 using namespace Rcpp;
 using namespace Eigen;
@@ -124,4 +133,66 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged
 	);
+}
+
+//' Parallel Poisson Randomization Distribution
+//'
+//' @param y Numeric vector of response values (pre-null-shifted for treated).
+//' @param X_covars Matrix of covariates (without intercept or treatment).
+//' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
+//' @param delta Null treatment effect shift.
+//' @param log_transform If TRUE, apply multiplicative delta shift (exp scale); otherwise additive.
+//' @param num_cores Number of OpenMP threads.
+//' @return Numeric vector of length nsim with treatment coefficients.
+// [[Rcpp::export]]
+NumericVector compute_poisson_distr_parallel_cpp(
+	const Eigen::VectorXd& y,
+	const Eigen::MatrixXd& X_covars,
+	const Rcpp::IntegerMatrix& w_mat,
+	double delta,
+	bool log_transform,
+	int num_cores
+) {
+	int nsim = w_mat.cols();
+	int n = y.size();
+	int p_covars = X_covars.cols();
+	int p_full = p_covars + 2; // intercept + treatment + covars
+
+	std::vector<double> results(nsim, NA_REAL);
+	const int* w_ptr = w_mat.begin();
+
+#ifdef _OPENMP
+	omp_set_num_threads(num_cores);
+#endif
+
+	const double exp_delta = std::exp(delta);
+
+#pragma omp parallel for schedule(static)
+	for (int b = 0; b < nsim; ++b) {
+		const int* w_col = w_ptr + (size_t)b * n;
+
+		Eigen::MatrixXd X_full(n, p_full);
+		Eigen::VectorXd y_shifted(n);
+
+		for (int i = 0; i < n; ++i) {
+			X_full(i, 0) = 1.0;
+			X_full(i, 1) = (double)w_col[i];
+			for (int k = 0; k < p_covars; ++k) {
+				X_full(i, 2 + k) = X_covars(i, k);
+			}
+			bool treated = (w_col[i] == 1);
+			if (log_transform) {
+				y_shifted[i] = treated ? y[i] * exp_delta : y[i];
+			} else {
+				y_shifted[i] = treated ? y[i] + delta : y[i];
+			}
+		}
+
+		ModelResult res = fast_poisson_internal(X_full, y_shifted);
+		if (res.converged && p_full >= 2 && std::isfinite(res.b[1])) {
+			results[b] = res.b[1];
+		}
+	}
+
+	return wrap(results);
 }

@@ -145,6 +145,18 @@ fast_adjacent_category_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 
     .Call(`_EDI_fast_adjacent_category_logit_with_var_cpp`, X, y, maxit, tol)
 }
 
+#' Parallel Adjacent-Category Logit Randomization Distribution
+#'
+#' @param y Numeric vector of response values (pre-null-shifted for treated).
+#' @param X_covars Matrix of covariates (without intercept or treatment).
+#' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
+#' @param delta Null treatment effect (additive shift).
+#' @param num_cores Number of OpenMP threads.
+#' @return Numeric vector of length nsim with treatment coefficients.
+compute_adj_cat_logit_distr_parallel_cpp <- function(y, X_covars, w_mat, delta, num_cores) {
+    .Call(`_EDI_compute_adj_cat_logit_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
+}
+
 #' Fast Bai Adjusted T Statistic for Multiple Permutations
 #'
 #' @param y Numeric response vector.
@@ -305,6 +317,19 @@ fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 10
     .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
+#' Parallel Poisson Randomization Distribution
+#'
+#' @param y Numeric vector of response values (pre-null-shifted for treated).
+#' @param X_covars Matrix of covariates (without intercept or treatment).
+#' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
+#' @param delta Null treatment effect shift.
+#' @param log_transform If TRUE, apply multiplicative delta shift (exp scale); otherwise additive.
+#' @param num_cores Number of OpenMP threads.
+#' @return Numeric vector of length nsim with treatment coefficients.
+compute_poisson_distr_parallel_cpp <- function(y, X_covars, w_mat, delta, log_transform, num_cores) {
+    .Call(`_EDI_compute_poisson_distr_parallel_cpp`, y, X_covars, w_mat, delta, log_transform, num_cores)
+}
+
 fast_ridit_scores_cpp <- function(y, ref_idx) {
     .Call(`_EDI_fast_ridit_scores_cpp`, y, ref_idx)
 }
@@ -335,6 +360,18 @@ fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
 
 fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
+}
+
+#' Parallel Stereotype Logit Randomization Distribution
+#'
+#' @param y Numeric vector of response values (pre-null-shifted for treated).
+#' @param X_covars Matrix of covariates (without intercept or treatment).
+#' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
+#' @param delta Null treatment effect (additive shift).
+#' @param num_cores Number of OpenMP threads.
+#' @return Numeric vector of length nsim with treatment coefficients.
+compute_stereotype_logit_distr_parallel_cpp <- function(y, X_covars, w_mat, delta, num_cores) {
+    .Call(`_EDI_compute_stereotype_logit_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
 }
 
 #' Calculates the median or restricted mean survival time for a single group.

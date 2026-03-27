@@ -8,7 +8,7 @@ Abstract class for randomization-based confidence interval inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{InferenceRandCI}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{InferenceRandCI}
 }
 \section{Methods}{
 \subsection{Public methods}{

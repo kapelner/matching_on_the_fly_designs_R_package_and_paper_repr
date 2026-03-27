@@ -13,7 +13,7 @@ Applicable to binary (incidence) outcomes in KK matching-on-the-fly or Bernoulli
 designs. A bisection algorithm inverts the combined p-value to construct the CI.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceExact} -> \code{InferenceIncidExactZhang}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{EDI::InferenceExact} -> \code{InferenceIncidExactZhang}
 }
 \section{Methods}{
 \subsection{Public methods}{
