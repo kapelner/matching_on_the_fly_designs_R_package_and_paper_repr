@@ -4,6 +4,10 @@
 #' Continuation-ratio logit model inference for ordinal responses with
 #' baseline covariate adjustment.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

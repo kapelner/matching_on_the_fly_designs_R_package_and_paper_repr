@@ -8,6 +8,10 @@
 #' This method is robust to outliers and does not assume a specific parametric
 #' distribution for the response.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceAllKKWilcoxIVWC = R6::R6Class("DesignInferenceAllKKWilcoxIVWC",
 	inherit = DesignInferenceAbstractKKWilcoxBaseIVWC,

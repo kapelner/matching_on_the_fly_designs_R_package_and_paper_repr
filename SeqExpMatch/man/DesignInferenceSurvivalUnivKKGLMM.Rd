@@ -74,17 +74,13 @@ seq_des_inf$compute_treatment_estimate()
 Initialize a univariate GLMM inference object for a completed KK design
 with an uncensored survival response.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceSurvivalUnivKKGLMM$new(
-  seq_des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceSurvivalUnivKKGLMM$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design) whose entire n subjects
+\item{\code{des_obj}}{A SeqDesign object (must be a KK design) whose entire n subjects
 are assigned and whose uncensored survival response y is recorded.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize

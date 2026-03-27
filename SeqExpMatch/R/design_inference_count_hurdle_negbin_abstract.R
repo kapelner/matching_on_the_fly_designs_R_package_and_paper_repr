@@ -10,7 +10,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceCountHurdleNegBinAbstract = R6::R6Class("DesignInferenceCountHurdleNegBinAbstract",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE){

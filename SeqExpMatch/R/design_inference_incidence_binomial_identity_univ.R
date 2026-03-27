@@ -10,6 +10,10 @@
 #' likelihood with identity link. Fitting uses a constrained IRLS routine
 #' implemented in C++ to enforce fitted probabilities in \eqn{(0,1)}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceIncidUnivBinomialIdentityRiskDiff = R6::R6Class("DesignInferenceIncidUnivBinomialIdentityRiskDiff",
 	inherit = DesignInferenceIncidBinomialIdentityAbstract,

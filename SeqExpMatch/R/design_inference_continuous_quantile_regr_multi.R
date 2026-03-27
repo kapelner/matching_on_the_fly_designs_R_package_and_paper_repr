@@ -6,6 +6,10 @@
 #' reported on the response scale at quantile \code{tau}; by default
 #' \code{tau = 0.5}, so this is median regression.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultiQuantileRegr = R6::R6Class("DesignInferenceContinMultiQuantileRegr",
 	inherit = DesignInferenceContinUnivQuantileRegr,

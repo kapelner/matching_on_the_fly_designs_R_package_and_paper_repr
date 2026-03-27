@@ -6,7 +6,7 @@
 #
 # @keywords internal
 DesignInferenceMLEorKMforGLMs = R6::R6Class("DesignInferenceMLEorKMforGLMs",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description
@@ -21,80 +21,26 @@ DesignInferenceMLEorKMforGLMs = R6::R6Class("DesignInferenceMLEorKMforGLMs",
 			super$initialize(des_obj, num_cores, verbose)
 		},
 
-
-		# @description
-
-
-
-		# Computes a 1-alpha level frequentist confidence interval differently for all response types, estimate types and test types.
-		#
-		# Here we use the theory that MLE's computed for GLM's are asymptotically normal.
-		# Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
-		#
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-		#
-		# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignBernoulli$new(n = 6)
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des_inf = DesignInferenceContinMultOLS$new(seq_des)
-		# seq_des_inf$compute_asymp_confidence_interval()
-		# }
-		#
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		#' @description
+		#' Computes the treatment estimate using the underlying model.
+		compute_treatment_estimate = function(){
 			private$shared()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-
-
-		# @description
-
-
-
-		# Computes a 2-sided p-value
-		#
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
-		#
-		# @return 	The approximate frequentist p-value
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = SeqDesignBernoulli$new(n = 6)
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des_inf = DesignInferenceContinMultOLS$new(seq_des)
-		# seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-		# }
-		#
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			private$shared()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
-			}
+			private$cached_values$beta_hat_T
 		}
 	),
 
 	private = list(
 		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
+
+		get_standard_error = function(){
+			private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+
+		get_degrees_of_freedom = function(){
+			private$shared()
+			private$cached_values$df
+		},
 
 		shared = function(){
 			if (!is.null(private$cached_values$is_z)) return(invisible(NULL))
@@ -108,6 +54,7 @@ DesignInferenceMLEorKMforGLMs = R6::R6Class("DesignInferenceMLEorKMforGLMs",
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 			private$cached_values$is_z = TRUE # This remains true for asymptotic inference
+			private$cached_values$df = model_output$df %||% NA_real_
 		}
 	)
 )

@@ -10,7 +10,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("DesignInferenceAbstractKKHurdlePoissonIVWC",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE){

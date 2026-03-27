@@ -4,6 +4,10 @@
 #' Fits the combined stratified Cox partial likelihood (matched pairs + reservoir)
 #' using only the treatment indicator.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

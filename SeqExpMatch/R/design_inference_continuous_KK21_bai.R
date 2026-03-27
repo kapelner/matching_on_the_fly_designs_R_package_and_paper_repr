@@ -4,6 +4,10 @@
 #' Inference for mean difference
 #'
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceBaiAdjustedTKK21 = R6::R6Class("DesignInferenceBaiAdjustedTKK21",
 	inherit = DesignInferenceBaiAdjustedT,

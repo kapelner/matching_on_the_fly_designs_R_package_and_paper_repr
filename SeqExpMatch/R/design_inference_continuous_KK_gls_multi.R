@@ -24,6 +24,10 @@
 #' installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{nlme} before using this class.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultGLS = R6::R6Class("DesignInferenceContinMultGLS",
 	inherit = DesignInferenceKKPassThrough,

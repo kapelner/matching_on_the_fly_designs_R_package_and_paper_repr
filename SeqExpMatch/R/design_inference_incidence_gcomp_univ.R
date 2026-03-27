@@ -6,6 +6,10 @@
 #' all-treated and all-control assignments over the empirical covariate
 #' distribution.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceIncidUnivGCompRiskDiff = R6::R6Class("DesignInferenceIncidUnivGCompRiskDiff",
 	inherit = DesignInferenceIncidGCompAbstract,
@@ -85,6 +89,10 @@ DesignInferenceIncidUnivGCompRiskDiff = R6::R6Class("DesignInferenceIncidUnivGCo
 #' and p-values use the delta method on the log-risk-ratio scale and then map
 #' back to the risk-ratio scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

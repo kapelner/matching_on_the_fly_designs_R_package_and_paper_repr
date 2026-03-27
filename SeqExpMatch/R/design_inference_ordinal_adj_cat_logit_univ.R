@@ -5,6 +5,10 @@
 #' common treatment effect across the logits of each category versus the next
 #' category.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

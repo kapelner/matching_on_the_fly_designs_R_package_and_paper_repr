@@ -3,6 +3,10 @@
 #' @description
 #' Stereotype probit inference for ordinal responses using treatment plus observed covariates.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

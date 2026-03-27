@@ -5,6 +5,10 @@
 #' indicator and all recorded covariates. The treatment effect is reported on the
 #' log-rate scale and inference uses a Huber-White sandwich variance.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

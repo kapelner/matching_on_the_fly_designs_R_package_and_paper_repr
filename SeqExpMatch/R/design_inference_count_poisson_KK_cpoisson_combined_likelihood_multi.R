@@ -5,6 +5,10 @@
 #' responses using the treatment indicator and all recorded covariates.
 #' Jointly maximises L_cond_Poisson(pairs) + L_Poisson(reservoir) via BFGS.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

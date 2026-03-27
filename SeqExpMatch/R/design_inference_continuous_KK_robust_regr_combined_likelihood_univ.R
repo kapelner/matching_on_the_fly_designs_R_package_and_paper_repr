@@ -4,6 +4,10 @@
 #' Fits a stacked robust regression for KK matching-on-the-fly designs with
 #' continuous responses using only the treatment indicator.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinUnivKKRobustRegrCombinedLikelihood = R6::R6Class("DesignInferenceContinUnivKKRobustRegrCombinedLikelihood",
 	inherit = DesignInferenceAbstractKKRobustRegrCombinedLikelihood,

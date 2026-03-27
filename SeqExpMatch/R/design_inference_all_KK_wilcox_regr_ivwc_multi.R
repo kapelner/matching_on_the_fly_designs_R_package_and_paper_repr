@@ -8,6 +8,10 @@
 #' including both treatment and covariates. This is the multivariate (covariate-adjusted)
 #' variant.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceAllKKWilcoxRegrMultiIVWC = R6::R6Class("DesignInferenceAllKKWilcoxRegrMultiIVWC",
 	inherit = DesignInferenceAbstractKKWilcoxRegrIVWC,

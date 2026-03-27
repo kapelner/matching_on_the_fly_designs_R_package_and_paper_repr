@@ -8,6 +8,10 @@
 #' rather than independent. The treatment effect is reported on the transformed
 #' log-time scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

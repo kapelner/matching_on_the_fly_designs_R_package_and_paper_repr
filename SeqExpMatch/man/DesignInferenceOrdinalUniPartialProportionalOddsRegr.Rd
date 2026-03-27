@@ -56,7 +56,7 @@ infer
 Initialize a treatment-only partial proportional-odds inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalUniPartialProportionalOddsRegr$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -65,7 +65,7 @@ Initialize a treatment-only partial proportional-odds inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with an ordinal
 response.}
 
 \item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}

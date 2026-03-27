@@ -31,7 +31,6 @@ Imports:
     methods,
     MASS,
     pbmcapply,
-    nbpMatching,
     randomizr
 Suggests:
     aftgee,
@@ -56,7 +55,7 @@ URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper
 Collate:
     'RcppExports.R'
     'SeqExpMatch.R'
-    'helper_functions.R'
+    'other_helpers.R'
     'glm_fit_helpers.R'
     'design_abstract.R'
     'design_fixed_abstract.R'
@@ -86,6 +85,12 @@ Collate:
     'design_seq_urn.R'
     'zhang_inference_helpers.R'
     'design_inference_all_abstract.R'
+    'design_inference_all_rand_abstract.R'
+    'design_inference_all_rand_ci_abstract.R'
+    'design_inference_all_exact_abstract.R'
+    'design_inference_all_boot_abstract.R'
+    'design_inference_asymp_abstract.R'
+    'design_inference_incidence_exact_zhang.R'
     'design_inference_all_KK_compound_mean_diff.R'
     'design_inference_all_KK_gee_abstract.R'
     'design_inference_all_KK_glmm_abstract.R'

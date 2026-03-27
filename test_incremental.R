@@ -80,8 +80,8 @@ run_inference_checks = function(seq_des_inf, response_type){
 				seq_des_inf$compute_confidence_interval_rand(r = 50, pval_epsilon = 0.05, alpha = 0.01))
 	}
 	seq_des_inf$set_custom_randomization_statistic_function(function(){
-	yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-	yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+	yTs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 1]
+	yCs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 0]
 	(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 	})
 	safe_call("compute_two_sided_pval_for_treatment_effect_rand(custom)",
@@ -112,29 +112,29 @@ run_tests_for_response = function(response_type){
 	}
 
 	cat("  Creating SeqDesignKK21 object\n")
-	seq_des_obj = SeqDesignKK21$new(response_type = response_type, n = n)
+	des_obj = SeqDesignKK21$new(response_type = response_type, n = n)
 	cat("  Created SeqDesignKK21 object\n")
 
 	cat("  Adding subjects...\n")
 	for (t in 1 : n){
 	if (t %% 50 == 0) cat("    Added", t, "subjects\n")
-	seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des_obj$add_subject_response(t, y[t], dead[t])
+	des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	des_obj$add_subject_response(t, y[t], dead[t])
 	}
 	cat("  Added all", n, "subjects\n")
 
 	if (response_type == "continuous"){
 	cat("  About to run inference checks\n")
 	cat("  Creating DesignInferenceAllSimpleMeanDiff\n")
-	run_inference_checks(DesignInferenceAllSimpleMeanDiff$new(seq_des_obj), response_type)
+	run_inference_checks(DesignInferenceAllSimpleMeanDiff$new(des_obj), response_type)
 	cat("  Done with DesignInferenceAllSimpleMeanDiff\n")
 
 	cat("  Creating DesignInferenceAllKKCompoundMeanDiff\n")
-	run_inference_checks(DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj), response_type)
+	run_inference_checks(DesignInferenceAllKKCompoundMeanDiff$new(des_obj), response_type)
 	cat("  Done with DesignInferenceAllKKCompoundMeanDiff\n")
 
 	cat("  Creating DesignInferenceContinMultOLSKK\n")
-	run_inference_checks(DesignInferenceContinMultOLSKK$new(seq_des_obj), response_type)
+	run_inference_checks(DesignInferenceContinMultOLSKK$new(des_obj), response_type)
 	cat("  Done with DesignInferenceContinMultOLSKK\n")
 	}
 

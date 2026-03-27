@@ -8,6 +8,10 @@
 #' reported treatment effect is the treatment coefficient from the positive-count
 #' component on the log-rate scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceCountUnivKKHurdlePoissonCombinedLikelihood = R6::R6Class("DesignInferenceCountUnivKKHurdlePoissonCombinedLikelihood",
 	inherit = DesignInferenceAbstractKKHurdlePoissonCombinedLikelihood,

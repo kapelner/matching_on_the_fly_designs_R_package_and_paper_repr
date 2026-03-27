@@ -15,6 +15,10 @@
 #' include only the treatment indicator. The resulting treatment coefficient is an
 #' adjusted log-time-ratio-style effect for the event process.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

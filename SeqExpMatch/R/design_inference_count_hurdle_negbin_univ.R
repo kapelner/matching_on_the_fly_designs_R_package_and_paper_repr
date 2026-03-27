@@ -8,6 +8,10 @@
 #' The reported treatment effect is the treatment coefficient from the conditional
 #' count component, on the log-rate scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

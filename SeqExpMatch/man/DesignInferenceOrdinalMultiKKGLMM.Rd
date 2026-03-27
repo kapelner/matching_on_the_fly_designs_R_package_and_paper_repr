@@ -77,17 +77,13 @@ infer
 Initialize a multivariate ordinal CLMM inference object for a completed
 KK design.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalMultiKKGLMM$new(
-  seq_des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalMultiKKGLMM$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design) whose entire
+\item{\code{des_obj}}{A SeqDesign object (must be a KK design) whose entire
 n subjects are assigned and whose ordinal response y is
 recorded.}
 

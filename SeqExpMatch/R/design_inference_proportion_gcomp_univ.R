@@ -6,6 +6,10 @@
 #' proportions under all-treated and all-control assignments over the empirical
 #' covariate distribution.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferencePropUniGCompMeanDiff = R6::R6Class("DesignInferencePropUniGCompMeanDiff",
 	inherit = DesignInferencePropGCompAbstract,

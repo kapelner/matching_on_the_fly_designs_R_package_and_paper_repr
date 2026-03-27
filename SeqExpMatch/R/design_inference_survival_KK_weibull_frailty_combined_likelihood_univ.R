@@ -4,6 +4,10 @@
 #' Fits a single joint parametric Weibull gamma-frailty model (matched pairs +
 #' reservoir as singletons) using only the treatment indicator.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

@@ -16,6 +16,10 @@
 #' we follow the standard conditional logit approach where only strata with variation
 #' in both treatment and response contribute.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

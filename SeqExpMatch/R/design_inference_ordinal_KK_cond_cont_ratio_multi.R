@@ -4,6 +4,10 @@
 #' Fits a conditional continuation-ratio logit model for ordinal responses under a KK
 #' matching-on-the-fly design, adjusting for baseline covariates.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

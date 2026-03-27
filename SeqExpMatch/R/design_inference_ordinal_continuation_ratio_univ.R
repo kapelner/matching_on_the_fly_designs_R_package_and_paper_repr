@@ -5,6 +5,10 @@
 #' conditions on "having reached category k" before comparing category k vs >k.
 #' It is particularly useful when categories represent a progression.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

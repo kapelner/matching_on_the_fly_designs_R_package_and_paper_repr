@@ -7,6 +7,10 @@
 #' treated as singleton clusters when computing the sandwich covariance, so the
 #' estimated treatment effect is a log risk ratio with cluster-robust inference.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

@@ -9,7 +9,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("DesignInferenceAbstractKKLWACoxCombinedLikelihood",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

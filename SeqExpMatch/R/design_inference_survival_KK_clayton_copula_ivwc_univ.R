@@ -6,6 +6,10 @@
 #' Weibull AFT margins. For reservoir subjects, it uses a standard Weibull AFT regression.
 #' Both components estimate log-time ratios, which are then combined by inverse variance.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

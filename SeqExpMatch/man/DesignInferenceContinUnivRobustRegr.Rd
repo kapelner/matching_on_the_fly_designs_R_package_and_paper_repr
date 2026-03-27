@@ -70,7 +70,7 @@ Initialize a robust-regression inference object for a completed design
 with a continuous response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceContinUnivRobustRegr$new(
-  seq_des_obj,
+  des_obj,
   method = "MM",
   num_cores = 1,
   verbose = FALSE
@@ -80,7 +80,7 @@ with a continuous response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and
+\item{\code{des_obj}}{A SeqDesign object whose entire n subjects are assigned and
 whose continuous response y is recorded.}
 
 \item{\code{method}}{Robust-regression fitting method for \code{MASS::rlm}; one

@@ -60,25 +60,25 @@ for (n_setting in 1 : nrow(exp_settings)){
 	response_function = response_functions[[response_type]]
 	dead_function =     response_functions[["dead"]]
 
-	seq_des_obj = SeqDesign$new(n, design, response_type, verbose = FALSE)
+	des_obj = SeqDesign$new(n, design, response_type, verbose = FALSE)
 
 	#now we add the subjects and sometimes assign y_t values
 	response_added = array(FALSE, n)
 	for (t in 1 : n){
 		x_t = X100[t, ]
-		w_t = seq_des_obj$add_subject_to_experiment_and_assign(x_t)
+		w_t = des_obj$add_subject_to_experiment_and_assign(x_t)
 		if (runif(1) < prob_of_adding_response){
 		y_t = response_function(as.numeric(x_t), w_t, betaT)
 		dead_t = ifelse(response_type == "survival", response_functions[["dead"]](y_t), 1)
-		seq_des_obj$add_subject_response(t, y_t, dead_t)
+		des_obj$add_subject_response(t, y_t, dead_t)
 		response_added[t] = TRUE
 		}
 	}
 
 	for (t in which(!response_added)){
-		y_t = response_function(as.numeric(X100[t, ]), seq_des_obj$w[t], betaT)
+		y_t = response_function(as.numeric(X100[t, ]), des_obj$w[t], betaT)
 		dead_t = ifelse(response_type == "survival", response_functions[["dead"]](y_t), 1)
-		seq_des_obj$add_subject_response(t, y_t, dead_t)
+		des_obj$add_subject_response(t, y_t, dead_t)
 	}
 
 	for (inference_method in names(estimands_betaT_one[[response_type]])){
@@ -92,7 +92,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 		tryCatch({
 		estimand = ifelse(betaT == 0, 0, estimands_betaT_one[[response_type]][[inference_method]])
 
-		seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
+		seq_des_inf_obj = DesignInference$new(des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
 
 		estimate = seq_des_inf_obj$compute_treatment_estimate()
 
@@ -110,7 +110,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 		# if (n_setting %% 37 == 0){
 		#   cat("run", n_setting, "of", nrow(exp_settings), "\n")
 		# }
-		weights = seq_des_obj$covariate_weights
+		weights = des_obj$covariate_weights
 		res_row = list(
 			nexp =             n_setting,
 			nsim =             exp_settings$nsims[n_setting],

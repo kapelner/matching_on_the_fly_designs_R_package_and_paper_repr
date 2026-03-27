@@ -6,6 +6,10 @@
 #' probability model with HC2 heteroskedasticity-robust variance. The treatment
 #' effect is reported on the risk-difference scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

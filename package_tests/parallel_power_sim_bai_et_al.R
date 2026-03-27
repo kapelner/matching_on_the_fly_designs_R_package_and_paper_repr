@@ -68,21 +68,21 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 
 
 	if (morison == "_morrison_n") {
-	seq_des_obj = des_class$new(n = n, prob_T = 0.5, p = p,
+	des_obj = des_class$new(n = n, prob_T = 0.5, p = p,
 								 response_type = "continuous", verbose = FALSE, morrison = TRUE)
 	} else if (morison == "_morrison") {
-	seq_des_obj = des_class$new(prob_T = 0.5, p = p,
+	des_obj = des_class$new(prob_T = 0.5, p = p,
 								 response_type = "continuous", verbose = FALSE, morrison = TRUE)
 	} else {
-	seq_des_obj = des_class$new(n = n, prob_T = 0.5, p = p,
+	des_obj = des_class$new(n = n, prob_T = 0.5, p = p,
 								 response_type = "continuous", verbose = FALSE, morrison = FALSE)
 	}
 
 	for (t in 1 : n){
-	seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
-	w_t = seq_des_obj$get_w()[seq_des_obj$get_t()]
+	des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	w_t = des_obj$get_w()[des_obj$get_t()]
 	y[t] = beta_T * w_t + z[t] + errors[t]
-	seq_des_obj$add_subject_response(t = t, y = as.numeric(y[t]))
+	des_obj$add_subject_response(t = t, y = as.numeric(y[t]))
 	}
 	rm(errors, Sigma, X, z, y, t, des, des_class)
 	gc()
@@ -95,7 +95,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 		des_inf_class = get(des_inf)
 		for(conex in c(TRUE, FALSE)){
 		#for (bai_v in c(TRUE, FALSE)){
-			seq_des_inf_obj = des_inf_class$new(seq_des_obj, verbose = FALSE, convex = conex) #, var_squ_flag = var_sqr
+			seq_des_inf_obj = des_inf_class$new(des_obj, verbose = FALSE, convex = conex) #, var_squ_flag = var_sqr
 			if(conex == TRUE){
 			inference_specific = paste0(inference, "_convex")
 			} else {
@@ -113,7 +113,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 			design = design,
 			mor = morison,
 			inference = inference_specific,
-			reservoir = sum(seq_des_obj$get_match_indic() == 0),
+			reservoir = sum(des_obj$get_match_indic() == 0),
 			beta_hat_T = beta_hat_T,
 			pval = pval
 			))
@@ -121,7 +121,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 		}
 	} else {
 		des_inf_class = get(des_inf)
-		seq_des_inf_obj = des_inf_class$new(seq_des_obj, verbose = FALSE)
+		seq_des_inf_obj = des_inf_class$new(des_obj, verbose = FALSE)
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 		pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 		res = rbind(res, data.frame(
@@ -133,7 +133,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 		design = design,
 		mor = morison,
 		inference = inference,
-		reservoir = sum(seq_des_obj$get_match_indic() == 0),
+		reservoir = sum(des_obj$get_match_indic() == 0),
 		beta_hat_T = beta_hat_T,
 		pval = pval
 		))

@@ -7,6 +7,10 @@
 #' after the sequential design is completed.
 #'
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalMultiCoxPHRegr = R6::R6Class("DesignInferenceSurvivalMultiCoxPHRegr",
 	inherit = DesignInferenceSurvivalUniCoxPHRegr,

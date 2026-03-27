@@ -5,6 +5,10 @@
 #' with continuous responses using robust regression for matched-pair differences
 #' and reservoir outcomes, with treatment as the only predictor.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinUnivKKRobustRegrIVWC = R6::R6Class("DesignInferenceContinUnivKKRobustRegrIVWC",
 	inherit = DesignInferenceAbstractKKRobustRegrIVWC,

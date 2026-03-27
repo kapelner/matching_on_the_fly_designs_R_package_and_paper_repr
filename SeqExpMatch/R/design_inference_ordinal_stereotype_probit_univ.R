@@ -5,6 +5,10 @@
 #' treatment coefficient with category-specific score weights, and inference is
 #' based on a probit link.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -32,7 +36,7 @@
 #' infer
 #'
 DesignInferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("DesignInferenceOrdinalUniStereotypeProbitRegr",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

@@ -13,9 +13,13 @@
 #' function. Approximate confidence intervals and p-values use the reported
 #' robust standard error with residual degrees of freedom \eqn{n - p}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinUnivRobustRegr = R6::R6Class("DesignInferenceContinUnivRobustRegr",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

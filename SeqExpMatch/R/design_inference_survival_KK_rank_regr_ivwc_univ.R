@@ -8,6 +8,10 @@
 #' via a variance-weighted linear combination. This is the univariate (covariate-free)
 #' variant.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

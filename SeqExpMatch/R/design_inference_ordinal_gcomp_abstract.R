@@ -9,7 +9,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceOrdinalGCompAbstract = R6::R6Class("DesignInferenceOrdinalGCompAbstract",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

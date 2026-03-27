@@ -7,6 +7,10 @@
 #' Weibull regression. Both models estimate log-time ratios, which are then
 #' combined via a variance-weighted linear combination.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

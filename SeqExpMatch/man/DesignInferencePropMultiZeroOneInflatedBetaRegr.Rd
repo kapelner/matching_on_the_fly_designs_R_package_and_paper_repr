@@ -75,7 +75,7 @@ Initialize a multivariate zero/one-inflated beta inference object for a
 completed design with a proportion response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferencePropMultiZeroOneInflatedBetaRegr$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -84,7 +84,7 @@ completed design with a proportion response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with a proportion response.}
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with a proportion response.}
 
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
 

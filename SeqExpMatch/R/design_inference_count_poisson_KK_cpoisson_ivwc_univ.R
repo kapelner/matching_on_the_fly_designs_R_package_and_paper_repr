@@ -5,6 +5,10 @@
 #' using only the treatment indicator. For matched pairs, it uses conditional Poisson
 #' regression. For reservoir subjects, it uses Negative Binomial regression.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

@@ -72,7 +72,7 @@ Initialize a quantile-regression inference object for a completed design
 with a continuous response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceContinUnivQuantileRegr$new(
-  seq_des_obj,
+  des_obj,
   tau = 0.5,
   num_cores = 1,
   verbose = FALSE
@@ -82,7 +82,7 @@ with a continuous response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with a continuous response.}
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with a continuous response.}
 
 \item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default
 \code{tau = 0.5}

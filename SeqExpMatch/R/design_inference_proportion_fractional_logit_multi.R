@@ -5,6 +5,10 @@
 #' indicator and all recorded covariates, with sandwich-robust variance. The
 #' treatment effect is reported on the log-odds scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

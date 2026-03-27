@@ -5,6 +5,10 @@
 #' category-specific treatment effects through latent score weights while keeping
 #' a common treatment coefficient.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

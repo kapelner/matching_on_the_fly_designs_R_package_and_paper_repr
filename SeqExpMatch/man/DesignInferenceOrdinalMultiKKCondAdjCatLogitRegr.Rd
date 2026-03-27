@@ -60,7 +60,7 @@ infer
 Initialize a multivariate conditional adjacent-category inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalMultiKKCondAdjCatLogitRegr$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -69,7 +69,7 @@ Initialize a multivariate conditional adjacent-category inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design).}
+\item{\code{des_obj}}{A SeqDesign object (must be a KK design).}
 
 \item{\code{num_cores}}{Number of CPU cores.}
 

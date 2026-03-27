@@ -69,7 +69,7 @@ Initialize a multivariate conditional logistic regression inference object for a
 completed KK design with a binary (incidence) response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceIncidMultiKKClogitIVWC$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -78,7 +78,7 @@ completed KK design with a binary (incidence) response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design) whose entire n subjects
+\item{\code{des_obj}}{A SeqDesign object (must be a KK design) whose entire n subjects
 are assigned and whose binary response y is recorded.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize

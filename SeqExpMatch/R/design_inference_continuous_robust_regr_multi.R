@@ -7,6 +7,10 @@
 #' when outcomes are heavy-tailed or outlier-prone. Inference is based on the
 #' coefficient table returned by \code{summary.rlm()}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultiRobustRegr = R6::R6Class("DesignInferenceContinMultiRobustRegr",
 	inherit = DesignInferenceContinUnivRobustRegr,

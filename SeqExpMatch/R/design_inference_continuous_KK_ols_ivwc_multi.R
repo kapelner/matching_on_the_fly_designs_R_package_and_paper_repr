@@ -6,6 +6,10 @@
 #' sequential experimental design estimation and test object
 #' after the sequential design is completed.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultOLSKKIVWC = R6::R6Class("DesignInferenceContinMultOLSKKIVWC",
 	inherit = DesignInferenceKKPassThroughCompound,

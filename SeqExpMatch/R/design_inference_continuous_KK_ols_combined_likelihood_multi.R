@@ -32,6 +32,10 @@
 #'   cached_values$
 #'   hessian} for downstream use (CI, p-value).
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("DesignInferenceContinMultOLSKKCombinedLikelihood",
 	inherit = DesignInferenceKKPassThroughCompound,

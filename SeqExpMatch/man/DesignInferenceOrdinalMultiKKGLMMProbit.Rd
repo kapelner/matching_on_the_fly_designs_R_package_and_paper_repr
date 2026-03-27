@@ -78,7 +78,7 @@ Initialize a multivariate ordinal probit CLMM inference object for a
 completed KK design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalMultiKKGLMMProbit$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -87,7 +87,7 @@ completed KK design.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object (must be a KK design) whose entire
+\item{\code{des_obj}}{A SeqDesign object (must be a KK design) whose entire
 n subjects are assigned and whose ordinal response y is
 recorded.}
 

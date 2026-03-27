@@ -5,6 +5,10 @@
 #' responses using the treatment indicator and all recorded covariates. Uses the combined
 #' logistic likelihood over discordant matched-pair differences and reservoir subjects.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

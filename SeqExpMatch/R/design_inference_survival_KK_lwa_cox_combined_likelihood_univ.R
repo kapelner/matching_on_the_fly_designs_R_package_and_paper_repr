@@ -6,6 +6,10 @@
 #' subjects share their pair ID as a cluster and reservoir subjects are treated as
 #' singleton clusters.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

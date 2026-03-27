@@ -37,7 +37,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("DesignInferenceAbstractKKWeibullFrailtyIVWC",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

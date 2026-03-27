@@ -74,13 +74,13 @@ infer
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceAllSimpleWilcox$new(seq_des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DesignInferenceAllSimpleWilcox$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object.}
+\item{\code{des_obj}}{A completed \code{SeqDesign} object.}
 
 \item{\code{num_cores}}{Number of CPU cores for parallel bootstrap/randomization. Default 1.}
 

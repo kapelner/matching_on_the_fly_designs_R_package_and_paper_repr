@@ -7,9 +7,13 @@
 #' after the sequential design is completed.
 #'
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalKMDiff = R6::R6Class("DesignInferenceSurvivalKMDiff",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

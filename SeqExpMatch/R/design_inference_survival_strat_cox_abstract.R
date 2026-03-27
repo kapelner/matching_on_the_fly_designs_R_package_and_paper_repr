@@ -9,7 +9,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceSurvivalStratCoxPHAbstract = R6::R6Class("DesignInferenceSurvivalStratCoxPHAbstract",
-	inherit = DesignInferenceMLEorKMforGLMs,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE){

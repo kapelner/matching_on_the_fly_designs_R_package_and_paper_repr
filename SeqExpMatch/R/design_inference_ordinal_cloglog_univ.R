@@ -4,6 +4,10 @@
 #' Cumulative complementary log-log model inference for ordinal responses.
 #' This model is also known as the discrete-time proportional hazards model.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

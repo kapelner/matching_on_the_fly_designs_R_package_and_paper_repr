@@ -7,6 +7,10 @@
 #' control groups under the pooled null hazard. The p-value uses the classic
 #' log-rank score statistic with its hypergeometric tie-adjusted variance.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -37,7 +41,7 @@
 #' infer
 #'
 DesignInferenceSurvivalLogRank = R6::R6Class("DesignInferenceSurvivalLogRank",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

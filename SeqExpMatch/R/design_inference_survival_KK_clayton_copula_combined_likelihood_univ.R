@@ -6,6 +6,10 @@
 #' copula and Weibull AFT margins; reservoir subjects contribute standard Weibull AFT
 #' singleton likelihood terms. The treatment effect is reported as a log-time ratio.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

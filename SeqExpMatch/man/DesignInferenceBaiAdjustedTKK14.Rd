@@ -63,7 +63,7 @@ Initialize a sequential experimental design estimation and test object
 after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceBaiAdjustedTKK14$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = TRUE,
   convex_flag = FALSE
@@ -73,7 +73,7 @@ after the sequential design is completed.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+\item{\code{des_obj}}{A SeqDesign object whose entire n subjects
 are assigned and response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize

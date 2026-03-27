@@ -4,6 +4,10 @@
 #' Fits a single joint Weibull frailty model (matched pairs + reservoir as singletons)
 #' using the treatment indicator and all recorded covariates.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

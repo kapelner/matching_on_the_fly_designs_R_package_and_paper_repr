@@ -4,6 +4,10 @@
 #' Stereotype logistic inference for ordinal responses with treatment and observed
 #' covariates entering the linear predictor.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

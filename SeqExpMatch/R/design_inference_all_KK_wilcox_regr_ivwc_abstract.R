@@ -12,7 +12,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKWilcoxRegrIVWC = R6::R6Class("DesignInferenceAbstractKKWilcoxRegrIVWC",
-	inherit = DesignInferenceAbstractKKWilcoxBaseIVWC,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

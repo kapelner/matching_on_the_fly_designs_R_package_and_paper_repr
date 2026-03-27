@@ -11,9 +11,13 @@
 #' working model is Poisson with log link, but inference uses a robust sandwich
 #' covariance rather than the naive Poisson model-based variance.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceIncidUnivModifiedPoisson = R6::R6Class("DesignInferenceIncidUnivModifiedPoisson",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

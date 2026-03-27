@@ -18,6 +18,10 @@
 #' \pkg{SeqExpMatch}. Install \pkg{glmmTMB} manually
 #' before using this class.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalMultiKKGammaGLMM = R6::R6Class("DesignInferenceSurvivalMultiKKGammaGLMM",
 	inherit = DesignInferenceAbstractKKGLMM,

@@ -30,7 +30,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("DesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

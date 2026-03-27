@@ -7,9 +7,14 @@
 #' after the sequential design is completed.
 #'
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#'
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultOLS = R6::R6Class("DesignInferenceContinMultOLS",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

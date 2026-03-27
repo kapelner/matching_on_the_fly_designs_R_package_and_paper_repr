@@ -7,6 +7,10 @@
 #' member of the treatment group has a better outcome than a randomly selected
 #' member of the control group.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -24,7 +28,7 @@
 #' infer
 #'
 DesignInferenceOrdinalRidit = R6::R6Class("DesignInferenceOrdinalRidit",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

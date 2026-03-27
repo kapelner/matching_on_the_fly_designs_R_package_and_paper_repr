@@ -7,6 +7,10 @@
 #' after the sequential design is completed.
 #'
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' \dontrun{
@@ -26,7 +30,7 @@
 #' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 #' }
 DesignInferenceAllSimpleMeanDiff = R6::R6Class("DesignInferenceAllSimpleMeanDiff",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

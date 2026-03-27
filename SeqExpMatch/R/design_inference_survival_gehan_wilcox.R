@@ -16,9 +16,13 @@
 #' p=1, q=0), which is distinct from the log-rank test (\code{rho = 0}) used in
 #' \code{DesignInferenceSurvivalKMDiff}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalGehanWilcox = R6::R6Class("DesignInferenceSurvivalGehanWilcox",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

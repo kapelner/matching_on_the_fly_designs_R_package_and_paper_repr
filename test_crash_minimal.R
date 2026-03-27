@@ -22,16 +22,16 @@ colnames(X) <- paste0("x", 1:3)
 y <- rnorm(n)
 
 cat("Step 8: Creating design object\n")
-seq_des_obj <- SeqDesignKK21$new(response_type = "continuous", n = n)
+des_obj <- SeqDesignKK21$new(response_type = "continuous", n = n)
 
 cat("Step 9: Adding subjects\n")
 for (t in 1:n) {
-	seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
-	seq_des_obj$add_subject_response(t, y[t], 1)
+	des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	des_obj$add_subject_response(t, y[t], 1)
 }
 
 cat("Step 10: Creating inference object\n")
-seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(des_obj)
 
 cat("Step 11: Computing treatment estimate\n")
 result <- seq_des_inf$compute_treatment_estimate()

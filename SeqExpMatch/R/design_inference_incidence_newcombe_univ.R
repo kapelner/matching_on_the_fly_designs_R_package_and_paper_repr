@@ -11,6 +11,10 @@
 #' ignores any matched-pair structure if present. For matched data, use
 #' \code{DesignInferenceIncidUnivKKNewcombeRiskDiff}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -38,7 +42,7 @@
 #' infer
 #'
 DesignInferenceIncidUnivNewcombeRiskDiff = R6::R6Class("DesignInferenceIncidUnivNewcombeRiskDiff",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

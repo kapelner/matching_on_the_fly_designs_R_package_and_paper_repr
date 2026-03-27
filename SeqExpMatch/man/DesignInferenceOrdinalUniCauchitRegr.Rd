@@ -58,7 +58,7 @@ infer
 Initialize a sequential experimental design estimation and test object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalUniCauchitRegr$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -67,7 +67,7 @@ Initialize a sequential experimental design estimation and test object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and
+\item{\code{des_obj}}{A SeqDesign object whose entire n subjects are assigned and
 response y is recorded within.}
 
 \item{\code{num_cores}}{The number of CPU cores to use.}

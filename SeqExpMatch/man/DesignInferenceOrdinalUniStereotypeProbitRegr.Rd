@@ -72,7 +72,7 @@ Initialize a stereotype probit inference object for a completed ordinal
 sequential design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalUniStereotypeProbitRegr$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -81,7 +81,7 @@ sequential design.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal response.}
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with an ordinal response.}
 
 \item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
 

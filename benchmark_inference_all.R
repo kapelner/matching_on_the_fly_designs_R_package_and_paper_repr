@@ -17,28 +17,28 @@ source("package_tests/_dataset_load.R")
 MAX_N_DATASET = 100
 
 custom_rand_stat = function(){
-    yTs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 1]
-    yCs = private$seq_des_obj_priv_int$y[private$seq_des_obj_priv_int$w == 0]
+    yTs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 1]
+    yCs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 0]
     if (length(yTs) < 2 || length(yCs) < 2) return(0)
     (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 }
 
 CORE_COUNTS = c(5, 2, 1) # User requested order
-r = 99
+r = 19
 pval_epsilon = 0.05
 beta_T = 0.2
 SD_NOISE = 0.1
 
-prepare_seq_des_obj = function(response_type, dataset_name = "airquality", design_class = SeqDesignKK14) {
+prepare_des_obj = function(response_type, dataset_name = "airquality", design_class = SeqDesignKK14) {
     D = datasets_and_response_models[[dataset_name]]
     X_design = as.data.frame(D$X)
     n = min(nrow(X_design), MAX_N_DATASET)
     y = D$y_original[[response_type]]
     
-    seq_des_obj = design_class$new(response_type = response_type, n = n)
+    des_obj = design_class$new(response_type = response_type, n = n)
     
     for (t in 1:n) {
-        w_t = seq_des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
+        w_t = des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
         if (response_type == "continuous") {
             y_t = y[t] + (if(w_t == 1) beta_T else 0) + rnorm(1, 0, SD_NOISE)
         } else if (response_type == "incidence") {
@@ -52,9 +52,9 @@ prepare_seq_des_obj = function(response_type, dataset_name = "airquality", desig
         } else if (response_type == "ordinal") {
             y_t = pmax(1, as.integer(y[t] + (if(w_t == 1) beta_T else 0) + rnorm(1, 0, SD_NOISE)))
         }
-        seq_des_obj$add_subject_response(t, y_t, dead = 1)
+        des_obj$add_subject_response(t, y_t, dead = 1)
     }
-    return(seq_des_obj)
+    return(des_obj)
 }
 
 namespace_content = readLines("SeqExpMatch/NAMESPACE")
@@ -75,24 +75,51 @@ categorized_classes = list(
 results_file = "benchmark_inference_results.csv"
 if (file.exists(results_file)) file.remove(results_file)
 
-MAX_BM_SECS = 30
+MAX_BM_SECS = 10
 
 bm_safe = function(label, expr, env = parent.frame()) {
     cat(sprintf("%s\n", label))
     flush.console()
     t_start = proc.time()[["elapsed"]]
+    main_pid = Sys.getpid()
+
+    # Launch a watchdog that kills all children of this process after MAX_BM_SECS.
+    # This handles the case where mclapply children ignore setTimeLimit.
+    watchdog_script = sprintf(
+        "sleep %d && pkill -P %d -KILL 2>/dev/null; true",
+        MAX_BM_SECS, main_pid
+    )
+    watchdog_pid_str = system(
+        sprintf("bash -c '%s' & echo $!", watchdog_script),
+        intern = TRUE
+    )
+    watchdog_pid = suppressWarnings(as.integer(watchdog_pid_str))
+
+    kill_watchdog = function() {
+        if (!is.na(watchdog_pid) && watchdog_pid > 0)
+            system(sprintf("kill %d 2>/dev/null", watchdog_pid), ignore.stdout = TRUE)
+    }
+
     res = tryCatch({
         setTimeLimit(elapsed = MAX_BM_SECS, transient = TRUE)
-        on.exit(setTimeLimit(elapsed = Inf, transient = FALSE), add = TRUE)
+        on.exit({ setTimeLimit(elapsed = Inf, transient = FALSE); kill_watchdog() }, add = TRUE)
         eval(expr, envir = env)
-
+        setTimeLimit(elapsed = Inf, transient = FALSE)
+        kill_watchdog()
         t_end = proc.time()[["elapsed"]]
         duration = round(t_end - t_start, 3)
+        # C++ code bypasses setTimeLimit; check manually
+        if (duration >= MAX_BM_SECS) {
+            cat(sprintf(" (TIMEOUT >%.1fs) ", duration))
+            return(Inf)
+        }
         cat(sprintf(" (%.3fs) ", duration))
         duration
     }, error = function(e) {
-        if (grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
-            t_elapsed = round(proc.time()[["elapsed"]] - t_start, 3)
+        kill_watchdog()
+        t_elapsed = round(proc.time()[["elapsed"]] - t_start, 3)
+        if (t_elapsed >= MAX_BM_SECS - 1 ||
+            grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
             cat(sprintf(" (TIMEOUT >%.1fs) ", t_elapsed))
             Inf
         } else {
@@ -108,8 +135,8 @@ for (response_type in names(categorized_classes)) {
     flush.console()
     if (!(response_type %in% names(datasets_and_response_models$airquality$y_original))) next
     
-    seq_des_obj_kk14 = prepare_seq_des_obj(response_type, design_class = SeqDesignKK14)
-    seq_des_obj_kk21 = prepare_seq_des_obj(response_type, design_class = SeqDesignKK21)
+    des_obj_kk14 = prepare_des_obj(response_type, design_class = SeqDesignKK14)
+    des_obj_kk21 = prepare_des_obj(response_type, design_class = SeqDesignKK21)
     
     for (inf_class_name in unique(categorized_classes[[response_type]])) {
         if (inf_class_name == "DesignInferenceAllKKCompoundMeanDiff") next
@@ -124,7 +151,7 @@ for (response_type in names(categorized_classes)) {
         }
         
         # Decide which design object to use
-        current_seq_des_obj = if (grepl("TKK21", inf_class_name)) seq_des_obj_kk21 else seq_des_obj_kk14
+        current_des_obj = if (grepl("TKK21", inf_class_name)) des_obj_kk21 else des_obj_kk14
         
         # Skip slow randomization CI for heavy models
         is_heavy_model = grepl("GLMM|GEE|QuantileRegr", inf_class_name)
@@ -137,29 +164,29 @@ for (response_type in names(categorized_classes)) {
             flush.console()
             
             # 1. boot (New object)
-            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
                 bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
-            w_original = current_seq_des_obj$.__enclos_env__$private$w
-            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            w_original = current_des_obj$.__enclos_env__$private$w
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
-            current_seq_des_obj$.__enclos_env__$private$X = NULL
-            current_seq_des_obj$.__enclos_env__$private$w = w_original
-            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            current_des_obj$.__enclos_env__$private$X = NULL
+            current_des_obj$.__enclos_env__$private$w = w_original
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
                 bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
-            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
             } else NA
@@ -170,7 +197,7 @@ for (response_type in names(categorized_classes)) {
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)
-            inf_obj = tryCatch(inf_class$new(current_seq_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             asymp_pval_time = if (!is.null(inf_obj)) {
                 bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
             } else NA

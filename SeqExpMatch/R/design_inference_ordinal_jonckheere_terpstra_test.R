@@ -6,6 +6,10 @@
 #' sum of Mann-Whitney U counts across groups. This class provides the exact
 #' distribution-based p-value.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -24,7 +28,7 @@
 #'
 DesignInferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 	"DesignInferenceOrdinalJonckheereTerpstraTest",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

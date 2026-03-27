@@ -12,15 +12,15 @@ y = D$y_original$continuous
 dead = rep(1, n)
 
 cat("Creating KK21 design...\n")
-seq_des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
+des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
 for (t in 1:n) {
-	seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des_obj$add_subject_response(t, y[t], dead[t])
+	des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	des_obj$add_subject_response(t, y[t], dead[t])
 }
 cat("Created design with", n, "subjects\n")
 
 cat("Creating AllSimpleMeanDiff...\n")
-seq_des_inf1 = DesignInferenceAllSimpleMeanDiff$new(seq_des_obj)
+seq_des_inf1 = DesignInferenceAllSimpleMeanDiff$new(des_obj)
 cat("Computing treatment estimate...\n")
 seq_des_inf1$compute_treatment_estimate()
 cat("Treatment estimate:", seq_des_inf1$compute_treatment_estimate(), "\n")

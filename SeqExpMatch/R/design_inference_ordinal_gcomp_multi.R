@@ -4,6 +4,10 @@
 #' Fits a proportional odds model adjusting for all baseline covariates, then
 #' standardizes to estimate the marginal mean difference.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

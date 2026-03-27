@@ -2,7 +2,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKGEE = R6::R6Class("DesignInferenceAbstractKKGEE",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

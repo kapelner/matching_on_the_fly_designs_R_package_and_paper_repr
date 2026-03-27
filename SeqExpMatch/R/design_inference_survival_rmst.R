@@ -38,9 +38,13 @@
 #'   compute_asymp_two_sided_pval_for_treatment_effect()
 #' }
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalRestrictedMeanDiff = R6::R6Class("DesignInferenceSurvivalRestrictedMeanDiff",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

@@ -8,17 +8,17 @@ colnames(X) <- paste0("x", 1:3)
 y <- rnorm(n)
 
 cat("Creating SeqDesignKK21...\n")
-seq_des_obj <- SeqDesignKK21$new(response_type = "continuous", n = n)
+des_obj <- SeqDesignKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1:n) {
-	seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
-	seq_des_obj$add_subject_response(t, y[t], 1)
+	des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	des_obj$add_subject_response(t, y[t], 1)
 }
 
 cat("Creating DesignInferenceAllKKCompoundMeanDiff...\n")
 tryCatch({
-	seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(seq_des_obj)
+	seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(des_obj)
 	cat("SUCCESS: Created inference object\n")
 
 	cat("Computing treatment estimate...\n")

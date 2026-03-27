@@ -11,6 +11,10 @@
 #' (e.g. no discordant pairs), the estimator falls back to logistic regression on the
 #' reservoir only.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceIncidMultiKKClogitIVWC = R6::R6Class("DesignInferenceIncidMultiKKClogitIVWC",
 	inherit = DesignInferenceAbstractKKClogitIVWC,

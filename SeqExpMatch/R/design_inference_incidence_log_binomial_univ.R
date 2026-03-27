@@ -11,6 +11,10 @@
 #' IRLS routine implemented in C++ to respect the log-binomial mean constraint
 #' \eqn{\mu_i < 1}.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceIncidUnivLogBinomial = R6::R6Class("DesignInferenceIncidUnivLogBinomial",
 	inherit = DesignInferenceIncidLogBinomialAbstract,

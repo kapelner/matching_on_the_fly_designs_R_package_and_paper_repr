@@ -62,21 +62,21 @@ for (nsim in 1 : Nsim){
 			for (d in c("KK14", "KK21", "KK21stepwise")){
 			des = paste0("SeqDesign", d)
 			des_class = get(des)
-			seq_des_obj_morrison_n = des_class$new(n = n, prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
-			seq_des_obj_morrison = des_class$new(prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
-			seq_des_obj = des_class$new(n = n, prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = FALSE)
+			des_obj_morrison_n = des_class$new(n = n, prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
+			des_obj_morrison = des_class$new(prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
+			des_obj = des_class$new(n = n, prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = FALSE)
 			for(mor in c("_morrison_n", "_morrison", "")){
 				#cat(d, mor, '\n')
 
 				cat(d,mor,'\n')
 
-				cur_seq_des_obj = get(paste0("seq_des_obj", mor))
+				cur_des_obj = get(paste0("des_obj", mor))
 
 				for (t in 1 : n){
-				cur_seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
-				w_t = cur_seq_des_obj$get_w()[cur_seq_des_obj$get_t()]
+				cur_des_obj$add_subject_to_experiment_and_assign(X[t, ])
+				w_t = cur_des_obj$get_w()[cur_des_obj$get_t()]
 				y[t] = beta_T * w_t + z[t] + errors[t]
-				cur_seq_des_obj$add_subject_response(t = t, y = as.numeric(y[t]))
+				cur_des_obj$add_subject_response(t = t, y = as.numeric(y[t]))
 				}
 
 				for(infrence in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
@@ -85,7 +85,7 @@ for (nsim in 1 : Nsim){
 					des = paste0(des, d)
 					des_class = get(des)
 					for(conex in c(TRUE, FALSE)){
-					seq_des_inf_obj = des_class$new(cur_seq_des_obj, num_cores = num_cores, verbose = FALSE, convex = conex)
+					seq_des_inf_obj = des_class$new(cur_des_obj, num_cores = num_cores, verbose = FALSE, convex = conex)
 					if(conex == TRUE){
 						infrence_specific = paste0(infrence, "_convex")
 					} else {
@@ -102,14 +102,14 @@ for (nsim in 1 : Nsim){
 						design = d,
 						mor = mor,
 						infrence = infrence_specific,
-						reservoir = sum(seq_des_obj$get_match_indic() == 0),
+						reservoir = sum(des_obj$get_match_indic() == 0),
 						beta_hat_T = beta_hat_T,
 						pval = pval
 					))
 					}
 				} else {
 					des_class = get(des)
-					seq_des_inf_obj = des_class$new(cur_seq_des_obj, num_cores = num_cores, verbose = FALSE)
+					seq_des_inf_obj = des_class$new(cur_des_obj, num_cores = num_cores, verbose = FALSE)
 
 					beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 					pval = seq_des_inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
@@ -122,7 +122,7 @@ for (nsim in 1 : Nsim){
 					design = d,
 					mor = mor,
 					infrence = infrence,
-					reservoir = sum(seq_des_obj$get_match_indic() == 0),
+					reservoir = sum(des_obj$get_match_indic() == 0),
 					beta_hat_T = beta_hat_T,
 					pval = pval
 					))

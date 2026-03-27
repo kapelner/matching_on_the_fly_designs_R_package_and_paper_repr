@@ -63,7 +63,7 @@ infer
 Initialize the backward-compatible multivariate PPO estimator.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalPartialProportionalOdds$new(
-  seq_des_obj,
+  des_obj,
   nonparallel = character(0),
   num_cores = 1,
   verbose = FALSE
@@ -73,7 +73,7 @@ Initialize the backward-compatible multivariate PPO estimator.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with an ordinal
 response.}
 
 \item{\code{nonparallel}}{Covariate names that should vary across thresholds.}

@@ -6,6 +6,10 @@
 #' inference uses the model-based quasi-Poisson variance with an estimated
 #' dispersion parameter.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

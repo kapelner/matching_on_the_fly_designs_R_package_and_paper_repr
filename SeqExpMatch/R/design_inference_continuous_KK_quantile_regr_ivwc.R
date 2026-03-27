@@ -33,6 +33,10 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{quantreg} before using this class.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultKKQuantileRegrIVWC = R6::R6Class("DesignInferenceContinMultKKQuantileRegrIVWC",
 	inherit = DesignInferenceAbstractKKQuantileRegrIVWC,

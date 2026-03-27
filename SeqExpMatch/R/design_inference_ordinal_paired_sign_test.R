@@ -5,6 +5,10 @@
 #' For matched pairs, it considers the sign of the within-pair differences.
 #' Reservoir subjects are not included in this simple paired test.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

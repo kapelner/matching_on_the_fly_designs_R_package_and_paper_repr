@@ -76,7 +76,7 @@ infer
 Initialize a Newcombe risk-difference inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceIncidUnivNewcombeRiskDiff$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -85,7 +85,7 @@ Initialize a Newcombe risk-difference inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an incidence response.}
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with an incidence response.}
 
 \item{\code{num_cores}}{The number of CPU cores to use.}
 

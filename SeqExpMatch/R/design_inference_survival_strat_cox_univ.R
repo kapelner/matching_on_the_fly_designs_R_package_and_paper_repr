@@ -7,6 +7,10 @@
 #' stratification covariates are available, the method falls back to the standard
 #' univariate Cox PH model.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

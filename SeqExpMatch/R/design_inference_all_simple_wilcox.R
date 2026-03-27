@@ -16,9 +16,13 @@
 #' so the randomization confidence interval inversion is exact (not approximate)
 #' on the original response scale for continuous responses.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceAllSimpleWilcox = R6::R6Class("DesignInferenceAllSimpleWilcox",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		#' @description

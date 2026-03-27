@@ -161,18 +161,18 @@ res = foreach(
 	cat("\n", nsim, "/", nrow(exp_settings), " dataset_name =", dataset_name, "response_type =", response_type, "design =", design, "\n")
 
 	t_0 = proc.time()
-	seq_des_obj = SeqDesign$new(n, design, response_type = response_type, verbose = FALSE)
+	des_obj = SeqDesign$new(n, design, response_type = response_type, verbose = FALSE)
 	response_added = array(FALSE, n)
 	# stop("boom")
 	# profvis({
 	for (t in 1 : n){
-	w_t = seq_des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	w_t = des_obj$add_subject_to_experiment_and_assign(X[t, ])
 	# if (t %% 50 == 0){
-	#   seq_des_obj$print_current_subject_assignment()
+	#   des_obj$print_current_subject_assignment()
 	# }
 	if (runif(1) < prob_of_adding_response){
 		dead_t = ifelse(response_type == "survival", as.numeric(runif(1) > prob_of_uncensored_survival_observation), 1)
-		seq_des_obj$add_subject_response(t, draw_response_with_treatment(X[t], dead_t, w_t, beta_T, response_type), dead = dead_t)
+		des_obj$add_subject_response(t, draw_response_with_treatment(X[t], dead_t, w_t, beta_T, response_type), dead = dead_t)
 		response_added[t] = TRUE
 	}
 	}
@@ -181,19 +181,19 @@ res = foreach(
 
 	for (t in which(!response_added)){
 	dead_t = ifelse(response_type == "survival", as.numeric(runif(1) > prob_of_uncensored_survival_observation), 1)
-	suppressWarnings(seq_des_obj$add_subject_response(t, draw_response_with_treatment(X[t, ], dead_t, seq_des_obj$w[t], beta_T, response_type), dead = dead_t))
+	suppressWarnings(des_obj$add_subject_response(t, draw_response_with_treatment(X[t, ], dead_t, des_obj$w[t], beta_T, response_type), dead = dead_t))
 	}
-	cat("experiment completed?", seq_des_obj$check_experiment_completed(), "\n")
-	# mean(log(seq_des_obj$y[seq_des_obj$w == 1])) - mean(log(seq_des_obj$y[seq_des_obj$w == 0]))
+	cat("experiment completed?", des_obj$check_experiment_completed(), "\n")
+	# mean(log(des_obj$y[des_obj$w == 1])) - mean(log(des_obj$y[des_obj$w == 0]))
 
 	prop_subjects_matched = NA
 	if (visualizations_during_testing & grepl("KK", design)){
-	stats = seq_des_obj$matching_statistics()
+	stats = des_obj$matching_statistics()
 	prop_subjects_matched = stats$prop_subjects_matched
 	cat(paste("  KK stats: prop matches:", prop_subjects_matched, "# remaining in reservoir:", stats$num_subjects_remaining_in_reservoir, "\n"))
 	if (grepl("KK21", design)){
-		if (!is.null(seq_des_obj$covariate_weights)){
-		wts = seq_des_obj$covariate_weights / sum(seq_des_obj$covariate_weights)
+		if (!is.null(des_obj$covariate_weights)){
+		wts = des_obj$covariate_weights / sum(des_obj$covariate_weights)
 		ggplot_obj = ggplot(data.frame(x = names(wts), imp = wts)) +
 			aes(x = x, y = imp) +
 			geom_bar(stat = "identity") +
@@ -269,7 +269,7 @@ res = foreach(
 
 		t_0 = proc.time()
 
-		seq_des_inf_obj = DesignInference$new(seq_des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
+		seq_des_inf_obj = DesignInference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 		cat("  beta_T = ", beta_T, "  beta_hat_T =", beta_hat_T, "\n")
 		pval = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(r = r)

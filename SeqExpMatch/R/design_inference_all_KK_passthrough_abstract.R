@@ -5,7 +5,7 @@
 #
 # @keywords internal
 DesignInferenceKKPassThrough = R6::R6Class("DesignInferenceKKPassThrough",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @param des_obj		A SeqDesign object whose entire n subjects are assigned and response y is recorded within.

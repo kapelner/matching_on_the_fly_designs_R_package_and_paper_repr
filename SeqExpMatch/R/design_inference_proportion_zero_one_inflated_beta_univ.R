@@ -7,6 +7,10 @@
 #' beta distribution. The reported treatment effect is the treatment coefficient
 #' from the beta mean submodel, on the logit scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

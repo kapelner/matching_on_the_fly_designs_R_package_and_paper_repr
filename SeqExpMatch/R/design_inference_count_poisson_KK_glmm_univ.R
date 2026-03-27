@@ -15,6 +15,10 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{glmmTMB} before using this class.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceCountPoissonUnivKKGLMM = R6::R6Class("DesignInferenceCountPoissonUnivKKGLMM",
 	inherit = DesignInferenceAbstractKKGLMM,

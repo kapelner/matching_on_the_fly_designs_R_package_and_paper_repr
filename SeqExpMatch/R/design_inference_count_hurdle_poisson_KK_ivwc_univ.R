@@ -6,6 +6,10 @@
 #' pairs are analyzed with a hurdle-Poisson mixed model and the reservoir subjects
 #' are analyzed with ordinary Poisson regression.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

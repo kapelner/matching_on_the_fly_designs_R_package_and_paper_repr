@@ -3,6 +3,10 @@
 #' @description
 #' Proportional odds model (cumulative logit) inference for ordinal responses.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

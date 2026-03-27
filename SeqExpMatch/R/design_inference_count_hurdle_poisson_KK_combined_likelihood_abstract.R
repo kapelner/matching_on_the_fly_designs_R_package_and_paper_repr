@@ -11,7 +11,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("DesignInferenceAbstractKKHurdlePoissonCombinedLikelihood",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE){

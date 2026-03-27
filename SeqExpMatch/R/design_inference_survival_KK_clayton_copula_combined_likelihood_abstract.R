@@ -15,7 +15,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("DesignInferenceAbstractKKClaytonCopulaCombinedLikelihood",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

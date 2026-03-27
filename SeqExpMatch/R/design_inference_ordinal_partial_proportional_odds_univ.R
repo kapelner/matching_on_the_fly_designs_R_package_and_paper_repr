@@ -5,6 +5,10 @@
 #' With no baseline covariates, this reduces to the usual proportional-odds
 #' cumulative-logit model and uses the package's fast Rcpp ordinal solver.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

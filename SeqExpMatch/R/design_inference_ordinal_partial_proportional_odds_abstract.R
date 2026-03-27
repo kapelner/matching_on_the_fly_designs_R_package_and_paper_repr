@@ -9,7 +9,7 @@
 #' @keywords internal
 DesignInferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 	"DesignInferenceOrdinalPartialProportionalOddsAbstract",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 		#' @description
 		#' Initialize the internal PPO base object.

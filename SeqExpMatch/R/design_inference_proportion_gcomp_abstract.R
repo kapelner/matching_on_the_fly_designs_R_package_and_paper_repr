@@ -11,7 +11,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferencePropGCompAbstract = R6::R6Class("DesignInferencePropGCompAbstract",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

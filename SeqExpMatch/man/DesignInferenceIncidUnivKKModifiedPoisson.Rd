@@ -74,7 +74,7 @@ Initialize a univariate modified-Poisson inference object for a completed
 KK design with a binary response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceIncidUnivKKModifiedPoisson$new(
-  seq_des_obj,
+  des_obj,
   num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
@@ -83,7 +83,7 @@ KK design with a binary response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed KK \code{SeqDesign} object with an incidence response.}
+\item{\code{des_obj}}{A completed KK \code{SeqDesign} object with an incidence response.}
 
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
 

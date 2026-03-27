@@ -6,6 +6,10 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("DesignInferenceContinMultKKQuantileRegrCombinedLikelihood",
 	inherit = DesignInferenceAbstractKKQuantileRegrCombinedLikelihood,

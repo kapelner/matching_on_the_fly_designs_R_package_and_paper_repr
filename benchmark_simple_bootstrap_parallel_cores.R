@@ -31,12 +31,12 @@ y = D$y_original[[response_type]]
 cat("Initializing design ", design_type, " for dataset ", dataset_name, " (n = ", n, ")...
 ", sep="")
 
-seq_des_obj = SeqDesignBernoulli$new(response_type = response_type, n = n)
+des_obj = SeqDesignBernoulli$new(response_type = response_type, n = n)
 
 for (t in 1 : n){
-	w_t = seq_des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	w_t = des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
 	y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
-	seq_des_obj$add_subject_response(t, y_t, dead[t])
+	des_obj$add_subject_response(t, y_t, dead[t])
 }
 
 timings = data.table(num_cores = integer(), duration_sec = numeric(), pval = numeric())
@@ -46,7 +46,7 @@ for (cores in 1:6) {
 Benchmarking C++ OpenMP simple bootstrap with %d core(s) and B = %d...
 ", cores, B_samples))
 
-	seq_des_inf = DesignInferenceAllSimpleMeanDiff$new(seq_des_obj, num_cores = cores)
+	seq_des_inf = DesignInferenceAllSimpleMeanDiff$new(des_obj, num_cores = cores)
 
 	start_time = proc.time()[["elapsed"]]
 

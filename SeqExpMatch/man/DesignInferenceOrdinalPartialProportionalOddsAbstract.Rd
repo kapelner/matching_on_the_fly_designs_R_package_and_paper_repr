@@ -47,7 +47,7 @@ general R fitters.
 Initialize the internal PPO base object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalPartialProportionalOddsAbstract$new(
-  seq_des_obj,
+  des_obj,
   nonparallel = character(0),
   num_cores = 1,
   verbose = FALSE
@@ -57,7 +57,7 @@ Initialize the internal PPO base object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A completed \code{SeqDesign} object with an ordinal
+\item{\code{des_obj}}{A completed \code{SeqDesign} object with an ordinal
 response.}
 
 \item{\code{nonparallel}}{Covariate names that may vary across thresholds.}

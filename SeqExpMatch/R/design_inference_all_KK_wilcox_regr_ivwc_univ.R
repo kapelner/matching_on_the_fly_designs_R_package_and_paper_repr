@@ -7,6 +7,10 @@
 #' For reservoir subjects, it uses a standard rank-based linear model with the treatment
 #' assignment as the sole predictor. This is the univariate (covariate-free) variant.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("DesignInferenceAllKKWilcoxRegrUnivIVWC",
 	inherit = DesignInferenceAbstractKKWilcoxRegrIVWC,

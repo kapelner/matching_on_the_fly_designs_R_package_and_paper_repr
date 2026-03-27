@@ -64,7 +64,7 @@ infer
 Initialize a Ridit analysis inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferenceOrdinalRidit$new(
-  seq_des_obj,
+  des_obj,
   reference = "control",
   num_cores = 1,
   verbose = FALSE
@@ -74,7 +74,7 @@ Initialize a Ridit analysis inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects are assigned and
+\item{\code{des_obj}}{A SeqDesign object whose entire n subjects are assigned and
 response y is recorded within.}
 
 \item{\code{reference}}{The group to use as the "Identified Distribution" (reference).

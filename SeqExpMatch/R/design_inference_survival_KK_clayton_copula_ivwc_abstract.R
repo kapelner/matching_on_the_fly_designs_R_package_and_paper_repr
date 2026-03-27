@@ -16,7 +16,7 @@
 #
 # @keywords internal
 DesignInferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("DesignInferenceAbstractKKClaytonCopulaIVWC",
-	inherit = DesignInferenceKKPassThrough,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		# @description

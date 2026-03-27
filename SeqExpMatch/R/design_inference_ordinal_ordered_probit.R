@@ -3,6 +3,10 @@
 #' @description
 #' Ordinal probit (ordered probit) model inference for ordinal responses.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -42,6 +46,10 @@ DesignInferenceOrdinalUniOrderedProbitRegr = R6::R6Class("DesignInferenceOrdinal
 #' treatment and observed covariates entering linearly into the latent normal
 #' index.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

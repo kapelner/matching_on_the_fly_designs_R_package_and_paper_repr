@@ -18,6 +18,10 @@
 #' \pkg{SeqExpMatch}. Install \pkg{geepack} manually
 #' before using this class.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 DesignInferenceSurvivalUnivKKGEE = R6::R6Class("DesignInferenceSurvivalUnivKKGEE",
 	inherit = DesignInferenceAbstractKKGEE,

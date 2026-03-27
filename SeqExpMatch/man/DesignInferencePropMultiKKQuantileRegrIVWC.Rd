@@ -102,7 +102,7 @@ Initialize a sequential experimental design estimation and test object
 after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignInferencePropMultiKKQuantileRegrIVWC$new(
-  seq_des_obj,
+  des_obj,
   tau = 0.5,
   num_cores = 1,
   verbose = FALSE
@@ -112,7 +112,7 @@ after the sequential design is completed.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{seq_des_obj}}{A SeqDesign object whose entire n subjects
+\item{\code{des_obj}}{A SeqDesign object whose entire n subjects
 are assigned and response y is recorded within.}
 
 \item{\code{tau}}{The quantile level for regression on the logit

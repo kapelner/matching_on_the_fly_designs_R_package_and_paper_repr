@@ -8,6 +8,10 @@
 #' clusters and reservoir subjects are treated as singletons when computing the
 #' sandwich covariance.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -100,6 +104,10 @@ DesignInferenceIncidUnivKKGCompRiskDiff = R6::R6Class("DesignInferenceIncidUnivK
 #' and p-values use the delta method on the log-risk-ratio scale and then map
 #' back to the risk-ratio scale.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

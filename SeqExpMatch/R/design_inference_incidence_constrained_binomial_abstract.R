@@ -8,7 +8,7 @@
 #' @keywords internal
 #' @noRd
 DesignInferenceIncidConstrainedBinomialAbstract = R6::R6Class("DesignInferenceIncidConstrainedBinomialAbstract",
-	inherit = DesignInference,
+	inherit = DesignInferenceAsymp,
 	public = list(
 
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE){

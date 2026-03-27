@@ -14,6 +14,10 @@
 #' logits, analogous to a matched-pairs conditional logistic regression when the
 #' ordinal response has only two levels.
 #'
+#' @inherit DesignInferenceRand methods
+#' @inherit DesignInferenceBoot methods
+#' @inherit DesignInferenceAsymp methods
+#' @inherit DesignInferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
