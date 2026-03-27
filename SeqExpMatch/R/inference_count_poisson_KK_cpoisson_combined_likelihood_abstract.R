@@ -1,25 +1,25 @@
-# Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
-#
-# @description
-# Fits a single joint likelihood over all KK design data for count responses.
-# The matched-pair component uses the conditional Poisson likelihood; conditioning
-# on each pair's total count n_k = yT_k + yC_k reduces it to a weighted binomial
-# logistic form: yT_k | n_k ~ Binomial(n_k, p_k) with logit(p_k) = beta_T + X_diff_k' beta_xs.
-# The reservoir component uses the marginal Poisson likelihood.
-# Both components share beta_T and beta_xs; beta_0 (intercept) is only identified
-# from reservoir rows and is profiled out in the pairs-only case.
-#
-# Because the two components use different link functions (logit vs log), they
-# cannot be stacked into a single GLM.  Instead, the combined log-likelihood
-#   L_total = L_cond_Poisson(pairs) + L_Poisson(reservoir)
-# is maximized jointly via BFGS with an analytic gradient.
-# The standard error for beta_T is extracted from the numerical Hessian at the MLE.
-#
-# Degenerate cases:
-#   Pairs only     : reduces to weighted logistic (glm.fit), no BFGS needed.
-#   Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
-#
-# @keywords internal
+#' Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
+#'
+#' @description
+#' Fits a single joint likelihood over all KK design data for count responses.
+#' The matched-pair component uses the conditional Poisson likelihood; conditioning
+#' on each pair's total count n_k = yT_k + yC_k reduces it to a weighted binomial
+#' logistic form: yT_k | n_k ~ Binomial(n_k, p_k) with logit(p_k) = beta_T + X_diff_k' beta_xs.
+#' The reservoir component uses the marginal Poisson likelihood.
+#' Both components share beta_T and beta_xs; beta_0 (intercept) is only identified
+#' from reservoir rows and is profiled out in the pairs-only case.
+#'
+#' Because the two components use different link functions (logit vs log), they
+#' cannot be stacked into a single GLM.  Instead, the combined log-likelihood
+#' L_total = L_cond_Poisson(pairs) + L_Poisson(reservoir)
+#' is maximized jointly via BFGS with an analytic gradient.
+#' The standard error for beta_T is extracted from the numerical Hessian at the MLE.
+#'
+#' Degenerate cases:
+#' Pairs only     : reduces to weighted logistic (glm.fit), no BFGS needed.
+#' Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
+#'
+#' @keywords internal
 InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbstractKKPoissonCPoissonCombinedLikelihood",
 	inherit = InferenceAsymp,
 	public = list(

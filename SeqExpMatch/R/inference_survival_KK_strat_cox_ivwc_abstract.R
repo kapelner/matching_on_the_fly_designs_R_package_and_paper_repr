@@ -1,13 +1,13 @@
-# Abstract class for Stratified Cox / Standard Cox Compound Inference
-#
-# @description
-# This class implements a compound estimator for KK matching-on-the-fly designs with
-# survival responses. For matched pairs, it uses stratified Cox proportional hazards
-# regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
-# regression. The two estimates (both log-hazard ratios) are combined via a
-# variance-weighted linear combination.
-#
-# @keywords internal
+#' Abstract class for Stratified Cox / Standard Cox Compound Inference
+#'
+#' @description
+#' This class implements a compound estimator for KK matching-on-the-fly designs with
+#' survival responses. For matched pairs, it uses stratified Cox proportional hazards
+#' regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
+#' regression. The two estimates (both log-hazard ratios) are combined via a
+#' variance-weighted linear combination.
+#'
+#' @keywords internal
 InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 	inherit = InferenceKKPassThrough,
 	public = list(

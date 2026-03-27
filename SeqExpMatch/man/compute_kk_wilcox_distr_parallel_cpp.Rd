@@ -14,6 +14,24 @@ compute_kk_wilcox_distr_parallel_cpp(
   num_cores
 )
 }
+\arguments{
+\item{y}{Numeric response vector.}
+
+\item{w_mat}{Integer matrix of permuted treatment assignments (n x r).}
+
+\item{m_mat}{Integer matrix of match indicators (n x r).}
+
+\item{delta}{Null treatment effect shift.}
+
+\item{transform_code}{Integer code for response transformation.}
+
+\item{is_fixed_matching}{Logical flag for fixed matching designs.}
+
+\item{num_cores}{Number of OpenMP threads.}
+}
+\value{
+Numeric vector of KK Wilcoxon statistics.
+}
 \description{
 Fast KK Wilcoxon Statistic for Multiple Permutations
 }

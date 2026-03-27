@@ -38,11 +38,6 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 			private$num_combinations = nrow(private$combinations)
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the factorial design.
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors according to balanced factorial randomization.

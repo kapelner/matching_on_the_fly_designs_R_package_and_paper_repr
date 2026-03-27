@@ -21,33 +21,12 @@ listed under \code{Suggests} and is not installed automatically with
 \pkg{SeqExpMatch}. Install \pkg{geepack} manually
 before using this class.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceSurvivalUnivKKGEE$new`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneKK14$new(n = 20, response_type = "survival")
-for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rexp(20, rate = 0.5), rep(1, 20))
-
-seq_des_inf = InferenceSurvivalUnivKKGEE$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKGEE} -> \code{InferenceSurvivalUnivKKGEE}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKGEE} -> \code{InferenceSurvivalUnivKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalUnivKKGEE-new}{\code{InferenceSurvivalUnivKKGEE$new()}}
-\item \href{#method-InferenceSurvivalUnivKKGEE-compute_treatment_estimate}{\code{InferenceSurvivalUnivKKGEE$compute_treatment_estimate()}}
-\item \href{#method-InferenceSurvivalUnivKKGEE-compute_asymp_confidence_interval}{\code{InferenceSurvivalUnivKKGEE$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalUnivKKGEE-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalUnivKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceSurvivalUnivKKGEE-clone}{\code{InferenceSurvivalUnivKKGEE$clone()}}
 }
 }
@@ -61,106 +40,13 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKGEE$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_treatment_estimate'><code>EDI::InferenceAbstractKKGEE$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-initialize'><code>EDI::InferenceAbstractKKGEE$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a univariate GEE inference object for a completed KK design
-with an uncensored survival response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKGEE$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-are assigned and whose uncensored survival response y is recorded.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneKK14$new(n = 20, response_type = "survival")
-for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rexp(20, rate = 0.5), rep(1, 20))
-
-seq_des_inf = InferenceSurvivalUnivKKGEE$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKGEE$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKGEE$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKGEE$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-clone}{}}}

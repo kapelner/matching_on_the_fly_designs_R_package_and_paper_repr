@@ -8,7 +8,7 @@ An R6 Class encapsulating the data and functionality for a Pocock & Simon sequen
 This design minimizes the imbalance across treatments for multiple covariates.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOnePocockSimon}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOnePocockSimon}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -16,7 +16,6 @@ This design minimizes the imbalance across treatments for multiple covariates.
 \item \href{#method-DesignSeqOneByOnePocockSimon-new}{\code{DesignSeqOneByOnePocockSimon$new()}}
 \item \href{#method-DesignSeqOneByOnePocockSimon-assign_wt}{\code{DesignSeqOneByOnePocockSimon$assign_wt()}}
 \item \href{#method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design}{\code{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design()}}
-\item \href{#method-DesignSeqOneByOnePocockSimon-redraw_w_according_to_design}{\code{DesignSeqOneByOnePocockSimon$redraw_w_according_to_design()}}
 \item \href{#method-DesignSeqOneByOnePocockSimon-clone}{\code{DesignSeqOneByOnePocockSimon$clone()}}
 }
 }
@@ -129,16 +128,6 @@ Draw multiple treatment assignment vectors according to Pocock & Simon design.
 \subsection{Returns}{
 A matrix of size n x r.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the Pocock & Simon design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-clone"></a>}}

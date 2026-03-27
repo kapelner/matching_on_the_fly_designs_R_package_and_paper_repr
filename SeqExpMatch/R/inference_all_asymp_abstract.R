@@ -1,9 +1,9 @@
-# Asymptotic Inference
-#
-# @description
-# Abstract class for asymptotic inference.
-#
-# @keywords internal
+#' Asymptotic Inference
+#'
+#' @description
+#' Abstract class for asymptotic inference.
+#'
+#' @keywords internal
 InferenceAsymp = R6::R6Class("InferenceAsymp",
 	inherit = InferenceBoot,
 	public = list(

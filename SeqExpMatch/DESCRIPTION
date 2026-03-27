@@ -42,7 +42,6 @@ Suggests:
     nlme,
     ordinal,
     parfm,
-    pbmcapply,
     quantreg,
     Rfit,
     testthat,
@@ -82,9 +81,9 @@ Collate:
     'design_seq_one_by_one_urn.R'
     'zhang_inference_helpers.R'
     'inference_all_abstract.R'
+    'inference_all_exact_abstract.R'
     'inference_all_rand_abstract.R'
     'inference_all_rand_ci_abstract.R'
-    'inference_all_exact_abstract.R'
     'inference_all_boot_abstract.R'
     'inference_all_asymp_abstract.R'
     'inference_all_KK_compound_mean_diff.R'
@@ -96,7 +95,6 @@ Collate:
     'inference_all_KK_quantile_regr_ivwc_abstract.R'
     'inference_all_KK_wilcox_base_ivwc_abstract.R'
     'inference_all_KK_wilcox_ivwc.R'
-    'inference_all_KK_wilcox_regr_ivwc_abstract.R'
     'inference_all_KK_wilcox_regr_ivwc_multi.R'
     'inference_all_KK_wilcox_regr_ivwc_univ.R'
     'inference_all_mean_diff.R'
@@ -164,7 +162,6 @@ Collate:
     'inference_incidence_binomial_identity_abstract.R'
     'inference_incidence_binomial_identity_multi.R'
     'inference_incidence_binomial_identity_univ.R'
-    'inference_incidence_constrained_binomial_abstract.R'
     'inference_incidence_gcomp_abstract.R'
     'inference_incidence_gcomp_multi.R'
     'inference_incidence_gcomp_univ.R'

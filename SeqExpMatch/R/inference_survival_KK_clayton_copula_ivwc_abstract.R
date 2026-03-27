@@ -1,20 +1,20 @@
-# Abstract class for Clayton Copula / Standard Weibull Compound Inference
-#
-# @description
-# This class implements a compound estimator for KK matching-on-the-fly designs with
-# survival responses using a Clayton copula with Weibull AFT margins for matched pairs.
-# The matched-pair component is fitted by maximizing the pairwise copula likelihood
-# under right censoring. The reservoir component uses standard Weibull AFT regression.
-# The two treatment-effect estimates are combined by inverse-variance weighting.
-#
-# @details
-# This is the package's first copula-based bivariate survival implementation. The matched-pair
-# contribution uses a Clayton survival copula with Weibull AFT marginal models, so the
-# treatment effect is reported on the AFT log-time-ratio scale, matching the existing Weibull
-# survival classes. The copula dependence parameter is estimated jointly with the matched-pair
-# regression coefficients by direct likelihood maximization.
-#
-# @keywords internal
+#' Abstract class for Clayton Copula / Standard Weibull Compound Inference
+#'
+#' @description
+#' This class implements a compound estimator for KK matching-on-the-fly designs with
+#' survival responses using a Clayton copula with Weibull AFT margins for matched pairs.
+#' The matched-pair component is fitted by maximizing the pairwise copula likelihood
+#' under right censoring. The reservoir component uses standard Weibull AFT regression.
+#' The two treatment-effect estimates are combined by inverse-variance weighting.
+#'
+#' @details
+#' This is the package's first copula-based bivariate survival implementation. The matched-pair
+#' contribution uses a Clayton survival copula with Weibull AFT marginal models, so the
+#' treatment effect is reported on the AFT log-time-ratio scale, matching the existing Weibull
+#' survival classes. The copula dependence parameter is estimated jointly with the matched-pair
+#' regression coefficients by direct likelihood maximization.
+#'
+#' @keywords internal
 InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCopulaIVWC",
 	inherit = InferenceAsymp,
 	public = list(

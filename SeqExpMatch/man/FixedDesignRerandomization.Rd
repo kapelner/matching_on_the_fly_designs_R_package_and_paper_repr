@@ -14,7 +14,6 @@ This design generates random allocations and only accepts those that meet a cova
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignRerandomization-new}{\code{FixedDesignRerandomization$new()}}
-\item \href{#method-FixedDesignRerandomization-redraw_w_according_to_design}{\code{FixedDesignRerandomization$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-draw_ws_according_to_design}{\code{FixedDesignRerandomization$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignRerandomization-clone}{\code{FixedDesignRerandomization$clone()}}
 }
@@ -91,16 +90,6 @@ Initialize a rerandomization fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignRerandomization` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignRerandomization-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignRerandomization-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the rerandomization design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignRerandomization$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignRerandomization-draw_ws_according_to_design"></a>}}

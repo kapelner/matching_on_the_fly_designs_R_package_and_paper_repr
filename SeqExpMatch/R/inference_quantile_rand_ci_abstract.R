@@ -1,12 +1,12 @@
-# Abstract mixin: Zhang combined randomisation CI for quantile regression
-#
-# @description
-# Provides \code{compute_confidence_interval_rand()}
-# via Zhang's combined test-inversion method for both Bernoulli (\eqn{m = 0},
-# all subjects in the reservoir) and KK matching-on-the-fly designs
-# (\eqn{m > 0}).
-#
-# @keywords internal
+#' Abstract mixin: Zhang combined randomisation CI for quantile regression
+#'
+#' @description
+#' Provides \code{compute_confidence_interval_rand()}
+#' via Zhang's combined test-inversion method for both Bernoulli (\eqn{m = 0},
+#' all subjects in the reservoir) and KK matching-on-the-fly designs
+#' (\eqn{m > 0}).
+#'
+#' @keywords internal
 InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 	inherit = InferenceKKPassThroughCompound,
 	public = list(

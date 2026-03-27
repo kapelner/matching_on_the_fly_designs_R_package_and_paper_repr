@@ -10,29 +10,8 @@ For matched pairs, it uses R-estimation on the within-pair response differences.
 For reservoir subjects, it uses a standard rank-based linear model with the treatment
 assignment as the sole predictor. This is the univariate (covariate-free) variant.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceAllKKWilcoxRegrUnivIVWC$new`
-## ------------------------------------------------
-
-set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceAllKKWilcoxRegrUnivIVWC$new(seq_des, verbose = FALSE)
-infer
-
-}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKWilcoxRegrIVWC} -> \code{InferenceAllKKWilcoxRegrUnivIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAllKKWilcoxRegrUnivIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -41,7 +20,6 @@ infer
 \item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate()}}
 \item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-clone}{\code{InferenceAllKKWilcoxRegrUnivIVWC$clone()}}
 }
 }
@@ -54,6 +32,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -77,27 +56,6 @@ Initialize the inference object.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceAllKKWilcoxRegrUnivIVWC$new(seq_des, verbose = FALSE)
-infer
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate"></a>}}
@@ -123,8 +81,7 @@ Computes the asymptotic confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{The confidence level is 1 - \code{alpha}. The default is 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -133,7 +90,7 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
+Computes the asymptotic two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
@@ -143,30 +100,7 @@ Computes the asymptotic p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Computes the bootstrap confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_bootstrap_confidence_interval(
-  alpha = 0.05,
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level. Default is 0.05.}
-
-\item{\code{...}}{Additional arguments passed to the superclass method.}
+\item{\code{delta}}{The null difference to test against. Default is zero.}
 }
 \if{html}{\out{</div>}}
 }

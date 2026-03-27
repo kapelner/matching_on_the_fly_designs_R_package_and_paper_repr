@@ -69,14 +69,7 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 		}
 	),
 	private = list(
-		weighted_coin_prob = NULL,
+		weighted_coin_prob = NULL
 
-		redraw_w_according_to_design = function(){
-			private$w[1:private$t] = efron_redraw_cpp(
-				private$t,
-				private$prob_T,
-				private$weighted_coin_prob
-			)
-		}
 	)
 )

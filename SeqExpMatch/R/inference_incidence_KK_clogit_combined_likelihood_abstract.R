@@ -1,21 +1,21 @@
-# Abstract class for Conditional Logistic Combined-Likelihood Compound Inference
-#
-# @description
-# Fits a single joint likelihood over all KK design data for incidence responses.
-# The matched-pair component uses the conditional logistic likelihood on discordant
-# pairs (signed within-pair differences); the reservoir component uses the marginal
-# logistic likelihood. Both share the treatment effect beta_T and covariate slopes
-# beta_xs.
-#
-# Combined design matrix (column layout: beta_0, beta_T, beta_xs):
-#   Discordant pair rows: [0 | t_diff_k | X_diff_k]
-#   Reservoir rows:       [1 | w_i      | X_i     ]
-# The zero in column 1 for pair rows encodes that beta_0 is absent from the
-# conditional likelihood (eliminated by conditioning on the pair sum).
-# Fitting a single logistic regression on the stacked dataset maximises the
-# combined log-likelihood L = L_cond(pairs) + L_marg(reservoir).
-#
-# @keywords internal
+#' Abstract class for Conditional Logistic Combined-Likelihood Compound Inference
+#'
+#' @description
+#' Fits a single joint likelihood over all KK design data for incidence responses.
+#' The matched-pair component uses the conditional logistic likelihood on discordant
+#' pairs (signed within-pair differences); the reservoir component uses the marginal
+#' logistic likelihood. Both share the treatment effect beta_T and covariate slopes
+#' beta_xs.
+#'
+#' Combined design matrix (column layout: beta_0, beta_T, beta_xs):
+#' Discordant pair rows: [0 | t_diff_k | X_diff_k]
+#' Reservoir rows:       [1 | w_i      | X_i     ]
+#' The zero in column 1 for pair rows encodes that beta_0 is absent from the
+#' conditional likelihood (eliminated by conditioning on the pair sum).
+#' Fitting a single logistic regression on the stacked dataset maximises the
+#' combined log-likelihood L = L_cond(pairs) + L_marg(reservoir).
+#'
+#' @keywords internal
 InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKClogitCombinedLikelihood",
 	inherit = InferenceAsymp,
 	public = list(

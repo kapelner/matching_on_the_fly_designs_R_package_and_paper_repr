@@ -94,37 +94,8 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$prob_T,
 				as.integer(r)
 			)$w_mat
-		},
-
-		#' @description
-		#' Redraw treatment assignments according to the Pocock & Simon design.
-		redraw_w_according_to_design = function(){
-			private$ensure_factor_metadata()
-			# Reset incremental counts
-			private$counts = matrix(0, nrow = private$num_levels_total, ncol = 2)
-			
-			n = private$t
-			x_levels_matrix = matrix(NA_integer_, nrow = n, ncol = length(private$strata_cols))
-			for (i in 1 : n){
-				x_levels_matrix[i, ] = private$get_subject_levels_idx(private$Xraw[i, ])
-			}
-			
-			# Redraw entire vector using optimized C++ loop
-			private$w[1:n] = pocock_simon_redraw_w_cpp(
-				x_levels_matrix,
-				as.integer(private$num_levels_total),
-				private$weights,
-				private$p_best,
-				private$prob_T
-			)
-			
-			# Re-calculate final incremental counts state
-			for (i in 1 : n){
-				w_i = private$w[i]
-				idx = x_levels_matrix[i, ]
-				for (j in idx) private$counts[j, w_i + 1] = private$counts[j, w_i + 1] + 1
-			}
 		}
+
 	),
 
 	private = list(

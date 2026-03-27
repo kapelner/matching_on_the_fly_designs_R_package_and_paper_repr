@@ -1,10 +1,10 @@
-# Inference for A Sequential Design
-#
-# @description
-# An abstract R6 Class that provides asymptotic tests and intervals for a treatment effect in a sequential design
-# where the common denominator is a summary table from a glm.
-#
-# @keywords internal
+#' Inference for A Sequential Design
+#'
+#' @description
+#' An abstract R6 Class that provides asymptotic tests and intervals for a treatment effect in a sequential design
+#' where the common denominator is a summary table from a glm.
+#'
+#' @keywords internal
 InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 	inherit = InferenceKKPassThrough,
 	public = list(

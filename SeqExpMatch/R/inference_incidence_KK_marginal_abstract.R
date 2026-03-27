@@ -1,6 +1,6 @@
-# Abstract class for all-subject marginal incidence inference in KK designs
-#
-# @keywords internal
+#' Abstract class for all-subject marginal incidence inference in KK designs
+#'
+#' @keywords internal
 InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid",
 	inherit = InferenceKKPassThrough,
 	public = list(

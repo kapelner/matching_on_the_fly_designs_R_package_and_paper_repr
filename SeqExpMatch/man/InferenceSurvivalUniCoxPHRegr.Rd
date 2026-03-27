@@ -34,12 +34,11 @@ seq_des_inf$compute_treatment_estimate()
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceSurvivalUniCoxPHRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceSurvivalUniCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalUniCoxPHRegr-new}{\code{InferenceSurvivalUniCoxPHRegr$new()}}
 \item \href{#method-InferenceSurvivalUniCoxPHRegr-compute_treatment_estimate}{\code{InferenceSurvivalUniCoxPHRegr$compute_treatment_estimate()}}
 \item \href{#method-InferenceSurvivalUniCoxPHRegr-compute_confidence_interval_rand}{\code{InferenceSurvivalUniCoxPHRegr$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceSurvivalUniCoxPHRegr-clone}{\code{InferenceSurvivalUniCoxPHRegr$clone()}}
@@ -49,6 +48,7 @@ seq_des_inf$compute_treatment_estimate()
 <details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
@@ -59,39 +59,6 @@ seq_des_inf$compute_treatment_estimate()
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUniCoxPHRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUniCoxPHRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUniCoxPHRegr$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUniCoxPHRegr-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUniCoxPHRegr-compute_treatment_estimate}{}}}

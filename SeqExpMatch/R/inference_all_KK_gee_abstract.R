@@ -1,6 +1,6 @@
-# Abstract class for GEE-based Inference
-#
-# @keywords internal
+#' Abstract class for GEE-based Inference
+#'
+#' @keywords internal
 InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 	inherit = InferenceAsymp,
 	public = list(

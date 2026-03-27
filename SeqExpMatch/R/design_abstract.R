@@ -401,13 +401,8 @@ Design = R6::R6Class("Design",
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
 			d
-		},
-
-		#' @description
-		#' Redraw treatment assignments according to the design.
-		redraw_w_according_to_design = function(){
-			stop("Must be implemented by subclass.")
 		}
+
 	),
 
 

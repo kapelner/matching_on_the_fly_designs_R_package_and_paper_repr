@@ -1,12 +1,12 @@
-# Inference for A Sequential Design
-#
-# @description
-# An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a completed design.
-# This class takes a completed \code{Design} object as an input where this object
-# contains data for a fully completed experiment (i.e. all treatment
-# assignments were allocated and all responses were collected).
-#
-# @keywords internal
+#' Inference for A Sequential Design
+#'
+#' @description
+#' An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a completed design.
+#' This class takes a completed \code{Design} object as an input where this object
+#' contains data for a fully completed experiment (i.e. all treatment
+#' assignments were allocated and all responses were collected).
+#'
+#' @keywords internal
 Inference = R6::R6Class("Inference",
 	public = list(
 		# @description

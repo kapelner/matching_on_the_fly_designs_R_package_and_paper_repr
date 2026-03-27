@@ -1,6 +1,6 @@
-# Abstract class for Conditional Logistic Compound Inference
-#
-# @keywords internal
+#' Abstract class for Conditional Logistic Compound Inference
+#'
+#' @keywords internal
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	inherit = InferenceAsymp,
 	public = list(

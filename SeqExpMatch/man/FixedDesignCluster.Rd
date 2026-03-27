@@ -14,7 +14,6 @@ This design randomizes entire groups (clusters) of subjects together using the \
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignCluster-new}{\code{FixedDesignCluster$new()}}
-\item \href{#method-FixedDesignCluster-redraw_w_according_to_design}{\code{FixedDesignCluster$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignCluster-draw_ws_according_to_design}{\code{FixedDesignCluster$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignCluster-clone}{\code{FixedDesignCluster$clone()}}
 }
@@ -88,16 +87,6 @@ Initialize a cluster randomized fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignCluster` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignCluster-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignCluster-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the cluster randomized design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignCluster$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignCluster-draw_ws_according_to_design"></a>}}

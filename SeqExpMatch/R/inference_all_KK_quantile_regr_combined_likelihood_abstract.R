@@ -1,21 +1,21 @@
-# Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
-#
-# @description
-# Fits a single joint quantile regression over all KK design data by stacking
-# matched-pair differences and reservoir observations into one design matrix.
-#
-# Column layout of X_stack: [beta_0 | beta_T | beta_xs (p cols)]
-#   Pair rows:      [0 | 1   | Xd_k] → Q_tau(yd_k) = beta_T + Xd_k' beta_xs
-#   Reservoir rows: [1 | w_i | X_i]  → Q_tau(y_i)  = beta_0 + w_i*beta_T + X_i'*beta_xs
-# Fitting a single rq() on the stacked dataset minimises the combined check-function loss.
-#
-# Special cases:
-#   Pairs only:     beta_0 column is all-zero and dropped; layout [beta_T | beta_xs].
-#   Reservoir only: standard quantile regression layout [beta_0 | beta_T | beta_xs].
-#
-# Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
-#
-# @keywords internal
+#' Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
+#'
+#' @description
+#' Fits a single joint quantile regression over all KK design data by stacking
+#' matched-pair differences and reservoir observations into one design matrix.
+#'
+#' Column layout of X_stack: [beta_0 | beta_T | beta_xs (p cols)]
+#' Pair rows:      [0 | 1   | Xd_k] → Q_tau(yd_k) = beta_T + Xd_k' beta_xs
+#' Reservoir rows: [1 | w_i | X_i]  → Q_tau(y_i)  = beta_0 + w_i*beta_T + X_i'*beta_xs
+#' Fitting a single rq() on the stacked dataset minimises the combined check-function loss.
+#'
+#' Special cases:
+#' Pairs only:     beta_0 column is all-zero and dropped; layout [beta_T | beta_xs].
+#' Reservoir only: standard quantile regression layout [beta_0 | beta_T | beta_xs].
+#'
+#' Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
+#'
+#' @keywords internal
 InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstractKKQuantileRegrCombinedLikelihood",
 	inherit = InferenceAbstractQuantileRandCI,
 	public = list(

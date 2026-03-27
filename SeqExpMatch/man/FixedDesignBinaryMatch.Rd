@@ -14,7 +14,6 @@ This design pairs subjects based on covariate distances and randomizes within pa
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignBinaryMatch-new}{\code{FixedDesignBinaryMatch$new()}}
-\item \href{#method-FixedDesignBinaryMatch-redraw_w_according_to_design}{\code{FixedDesignBinaryMatch$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignBinaryMatch-draw_ws_according_to_design}{\code{FixedDesignBinaryMatch$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignBinaryMatch-clone}{\code{FixedDesignBinaryMatch$clone()}}
 }
@@ -88,16 +87,6 @@ Initialize a binary match fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignBinaryMatch` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignBinaryMatch-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignBinaryMatch-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the binary match design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBinaryMatch$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBinaryMatch-draw_ws_according_to_design"></a>}}

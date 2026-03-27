@@ -93,18 +93,7 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 				if (is.na(val)) "NA" else as.character(val)
 			}, character(1))
 			paste(vals, collapse = "|")
-		},
-
-		redraw_w_according_to_design = function(){
-			strata_keys = vapply(1:private$t, function(i) {
-				private$get_strata_key(private$Xraw[i, ])
-			}, character(1))
-			
-			private$w[1:private$t] = spbr_redraw_w_cpp(
-				as.character(unname(strata_keys)), 
-				as.integer(private$block_size), 
-				as.numeric(private$prob_T)
-			)
 		}
+
 	)
 )

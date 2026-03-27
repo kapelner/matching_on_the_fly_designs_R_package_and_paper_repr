@@ -37,12 +37,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKMarginalIncid} -> \code{EDI::InferenceAbstractKKModifiedPoisson} -> \code{\link[EDI:InferenceIncidUnivKKModifiedPoisson]{EDI::InferenceIncidUnivKKModifiedPoisson}} -> \code{InferenceIncidMultiKKModifiedPoisson}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKMarginalIncid} -> \code{EDI::InferenceAbstractKKModifiedPoisson} -> \code{\link[EDI:InferenceIncidUnivKKModifiedPoisson]{EDI::InferenceIncidUnivKKModifiedPoisson}} -> \code{InferenceIncidMultiKKModifiedPoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiKKModifiedPoisson-new}{\code{InferenceIncidMultiKKModifiedPoisson$new()}}
 \item \href{#method-InferenceIncidMultiKKModifiedPoisson-clone}{\code{InferenceIncidMultiKKModifiedPoisson$clone()}}
 }
 }
@@ -56,38 +55,13 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKModifiedPoisson" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivKKModifiedPoisson.html#method-InferenceIncidUnivKKModifiedPoisson-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivKKModifiedPoisson$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKModifiedPoisson" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidUnivKKModifiedPoisson.html#method-InferenceIncidUnivKKModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidUnivKKModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKModifiedPoisson" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidUnivKKModifiedPoisson.html#method-InferenceIncidUnivKKModifiedPoisson-compute_treatment_estimate'><code>EDI::InferenceIncidUnivKKModifiedPoisson$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKMarginalIncid" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKMarginalIncid.html#method-InferenceAbstractKKMarginalIncid-initialize'><code>EDI::InferenceAbstractKKMarginalIncid$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKModifiedPoisson" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKModifiedPoisson.html#method-InferenceAbstractKKModifiedPoisson-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKModifiedPoisson$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKModifiedPoisson" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKModifiedPoisson.html#method-InferenceAbstractKKModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKModifiedPoisson" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKModifiedPoisson.html#method-InferenceAbstractKKModifiedPoisson-compute_treatment_estimate'><code>EDI::InferenceAbstractKKModifiedPoisson$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiKKModifiedPoisson-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiKKModifiedPoisson-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate modified-Poisson inference object for a completed
-KK design with a binary response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiKKModifiedPoisson$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed KK \code{DesignSeqOneByOne} object with an incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiKKModifiedPoisson-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiKKModifiedPoisson-clone}{}}}

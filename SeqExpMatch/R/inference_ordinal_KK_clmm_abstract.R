@@ -1,6 +1,6 @@
-# Abstract class for ordinal CLMM-based Inference in KK designs
-#
-# @keywords internal
+#' Abstract class for ordinal CLMM-based Inference in KK designs
+#'
+#' @keywords internal
 InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	inherit = InferenceKKPassThrough,
 	public = list(

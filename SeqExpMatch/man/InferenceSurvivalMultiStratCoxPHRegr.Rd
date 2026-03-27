@@ -41,7 +41,7 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceSurvivalStratCoxPHAbstract} -> \code{InferenceSurvivalMultiStratCoxPHRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceSurvivalStratCoxPHAbstract} -> \code{InferenceSurvivalMultiStratCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -53,6 +53,7 @@ infer
 <details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
@@ -62,7 +63,6 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_confidence_interval_rand'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_treatment_estimate'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="initialize"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-initialize'><code>EDI::InferenceSurvivalStratCoxPHAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}

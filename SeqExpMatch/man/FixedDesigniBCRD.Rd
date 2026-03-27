@@ -14,7 +14,6 @@ An R6 Class encapsulating the data and functionality for a fixed balanced comple
 \itemize{
 \item \href{#method-FixedDesigniBCRD-new}{\code{FixedDesigniBCRD$new()}}
 \item \href{#method-FixedDesigniBCRD-draw_ws_according_to_design}{\code{FixedDesigniBCRD$draw_ws_according_to_design()}}
-\item \href{#method-FixedDesigniBCRD-redraw_w_according_to_design}{\code{FixedDesigniBCRD$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesigniBCRD-clone}{\code{FixedDesigniBCRD$clone()}}
 }
 }
@@ -104,16 +103,6 @@ Draw multiple treatment assignment vectors according to balanced randomization.
 \subsection{Returns}{
 A matrix of size n x r.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesigniBCRD-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesigniBCRD-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the balanced completely randomized design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesigniBCRD$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesigniBCRD-clone"></a>}}

@@ -1,16 +1,16 @@
-# Abstract class for Stratified Cox Combined-Likelihood Compound Inference
-#
-# @description
-# Fits a single joint Cox model over all KK design data for survival responses.
-# Reservoir subjects (m_vec == 0) share stratum 0 (common baseline hazard);
-# matched subjects belong to their own pair stratum (strata 1..m), which conditions
-# away each pair's baseline hazard identically to stratified Cox.
-#
-# The combined partial likelihood is therefore:
-#   L = L_strat_pairs(beta_T, beta_xs) x L_cox_reservoir(beta_T, beta_xs)
-# and is maximised by a single coxph call with strata(stratum).
-#
-# @keywords internal
+#' Abstract class for Stratified Cox Combined-Likelihood Compound Inference
+#'
+#' @description
+#' Fits a single joint Cox model over all KK design data for survival responses.
+#' Reservoir subjects (m_vec == 0) share stratum 0 (common baseline hazard);
+#' matched subjects belong to their own pair stratum (strata 1..m), which conditions
+#' away each pair's baseline hazard identically to stratified Cox.
+#'
+#' The combined partial likelihood is therefore:
+#' L = L_strat_pairs(beta_T, beta_xs) x L_cox_reservoir(beta_T, beta_xs)
+#' and is maximised by a single coxph call with strata(stratum).
+#'
+#' @keywords internal
 InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKStratCoxCombinedLikelihood",
 	inherit = InferenceKKPassThrough,
 	public = list(

@@ -1,41 +1,41 @@
-# Abstract class for Weibull Frailty / Standard Weibull Compound Inference
-#
-# @description
-# This class implements a compound estimator for KK matching-on-the-fly designs with
-# survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
-# model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
-# reservoir subjects, it uses standard Weibull AFT regression. The two estimates
-# are combined via a variance-weighted linear combination.
-#
-# @details
-# The matched-pairs frailty estimator differs between the univariate and multivariate
-# subclasses due to computational constraints:
-#
-# \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
-# to fit a fully parametric Weibull gamma-frailty model with only the treatment
-# indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
-# \code{parfm}, and the AFT log-time ratio is recovered as
-# \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
-# This is fast because there is only one fixed-effect parameter.
-#
-# \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
-# prohibitively slow when many covariates are present (its EM algorithm is
-# \eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
-# Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
-# obtained from \code{survival::coxph()} with a \code{frailty(cluster,
-# distribution = "gamma")} term, which is a highly optimised C implementation.
-# The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
-# \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
-# The AFT log-time ratio is then
-# \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
-# and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
-# (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
-# semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
-# only for scale conversion and does not affect the frailty correction itself.
-#
-# The \pkg{parfm} package is required only for the univariate subclass.
-#
-# @keywords internal
+#' Abstract class for Weibull Frailty / Standard Weibull Compound Inference
+#'
+#' @description
+#' This class implements a compound estimator for KK matching-on-the-fly designs with
+#' survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
+#' model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
+#' reservoir subjects, it uses standard Weibull AFT regression. The two estimates
+#' are combined via a variance-weighted linear combination.
+#'
+#' @details
+#' The matched-pairs frailty estimator differs between the univariate and multivariate
+#' subclasses due to computational constraints:
+#'
+#' \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
+#' to fit a fully parametric Weibull gamma-frailty model with only the treatment
+#' indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
+#' \code{parfm}, and the AFT log-time ratio is recovered as
+#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
+#' This is fast because there is only one fixed-effect parameter.
+#'
+#' \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
+#' prohibitively slow when many covariates are present (its EM algorithm is
+#' \eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
+#' Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
+#' obtained from \code{survival::coxph()} with a \code{frailty(cluster,
+#' distribution = "gamma")} term, which is a highly optimised C implementation.
+#' The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
+#' \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
+#' The AFT log-time ratio is then
+#' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
+#' and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
+#' (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
+#' semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
+#' only for scale conversion and does not affect the frailty correction itself.
+#'
+#' The \pkg{parfm} package is required only for the univariate subclass.
+#'
+#' @keywords internal
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	inherit = InferenceAsymp,
 	public = list(

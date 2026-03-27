@@ -13,7 +13,8 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "ordinal",
+  verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
@@ -24,12 +25,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{\link[EDI:InferenceOrdinalUniCauchitRegr]{EDI::InferenceOrdinalUniCauchitRegr}} -> \code{InferenceOrdinalMultiCauchitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceOrdinalUniCauchitRegr]{EDI::InferenceOrdinalUniCauchitRegr}} -> \code{InferenceOrdinalMultiCauchitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalMultiCauchitRegr-new}{\code{InferenceOrdinalMultiCauchitRegr$new()}}
 \item \href{#method-InferenceOrdinalMultiCauchitRegr-clone}{\code{InferenceOrdinalMultiCauchitRegr$clone()}}
 }
 }
@@ -46,31 +46,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUniCauchitRegr" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceOrdinalUniCauchitRegr.html#method-InferenceOrdinalUniCauchitRegr-compute_treatment_estimate'><code>EDI::InferenceOrdinalUniCauchitRegr$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUniCauchitRegr" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalUniCauchitRegr.html#method-InferenceOrdinalUniCauchitRegr-initialize'><code>EDI::InferenceOrdinalUniCauchitRegr$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalMultiCauchitRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiCauchitRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalMultiCauchitRegr$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned and
-response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalMultiCauchitRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiCauchitRegr-clone}{}}}

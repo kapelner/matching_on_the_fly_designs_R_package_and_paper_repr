@@ -36,12 +36,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferencePropGCompAbstract} -> \code{\link[EDI:InferencePropUniGCompMeanDiff]{EDI::InferencePropUniGCompMeanDiff}} -> \code{InferencePropMultiGCompMeanDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferencePropGCompAbstract} -> \code{\link[EDI:InferencePropUniGCompMeanDiff]{EDI::InferencePropUniGCompMeanDiff}} -> \code{InferencePropMultiGCompMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropMultiGCompMeanDiff-new}{\code{InferencePropMultiGCompMeanDiff$new()}}
 \item \href{#method-InferencePropMultiGCompMeanDiff-clone}{\code{InferencePropMultiGCompMeanDiff$clone()}}
 }
 }
@@ -55,34 +54,14 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferencePropGCompAbstract$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniGCompMeanDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferencePropUniGCompMeanDiff.html#method-InferencePropUniGCompMeanDiff-compute_asymp_confidence_interval'><code>EDI::InferencePropUniGCompMeanDiff$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniGCompMeanDiff" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferencePropUniGCompMeanDiff.html#method-InferencePropUniGCompMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferencePropUniGCompMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniGCompMeanDiff" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferencePropUniGCompMeanDiff.html#method-InferencePropUniGCompMeanDiff-compute_bootstrap_two_sided_pval'><code>EDI::InferencePropUniGCompMeanDiff$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniGCompMeanDiff" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferencePropUniGCompMeanDiff.html#method-InferencePropUniGCompMeanDiff-compute_treatment_estimate'><code>EDI::InferencePropUniGCompMeanDiff$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-compute_asymp_confidence_interval'><code>EDI::InferencePropGCompAbstract$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferencePropGCompAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-compute_bootstrap_two_sided_pval'><code>EDI::InferencePropGCompAbstract$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-compute_treatment_estimate'><code>EDI::InferencePropGCompAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropGCompAbstract" data-id="initialize"><a href='../../EDI/html/InferencePropGCompAbstract.html#method-InferencePropGCompAbstract-initialize'><code>EDI::InferencePropGCompAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropMultiGCompMeanDiff-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiGCompMeanDiff-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the multivariate g-computation mean-difference inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiGCompMeanDiff$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with a proportion response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiGCompMeanDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropMultiGCompMeanDiff-clone}{}}}

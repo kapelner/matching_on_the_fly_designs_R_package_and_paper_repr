@@ -1,9 +1,9 @@
-# A class that provides for relevant methods when the designs are KK matching-on-the-fly
-#
-# @description
-# An abstract class
-#
-# @keywords internal
+#' A class that provides for relevant methods when the designs are KK matching-on-the-fly
+#'
+#' @description
+#' An abstract class
+#'
+#' @keywords internal
 InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 	inherit = InferenceAsymp,
 	public = list(

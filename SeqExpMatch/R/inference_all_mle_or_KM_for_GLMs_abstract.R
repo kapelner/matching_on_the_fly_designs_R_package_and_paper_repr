@@ -1,10 +1,9 @@
-# Simple Mean Difference Inference based on Maximum Likelihood
-#
-# @description
-# The methods that support confidence intervals and testing for the mean difference
-# in all response types (except Weibull with censoring) sequential experimental design estimation and test object after the sequential design is completed.
-#
-# @keywords internal
+#' GLM and Kaplan-Meier Inference
+#'
+#' @description
+#' Abstract class providing MLE/KM-based inference methods for GLM and survival models.
+#'
+#' @keywords internal
 InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 	inherit = InferenceAsymp,
 	public = list(

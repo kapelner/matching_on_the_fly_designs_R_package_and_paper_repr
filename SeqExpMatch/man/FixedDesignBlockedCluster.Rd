@@ -14,7 +14,6 @@ This design randomizes clusters within specified blocks using the \pkg{randomizr
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignBlockedCluster-new}{\code{FixedDesignBlockedCluster$new()}}
-\item \href{#method-FixedDesignBlockedCluster-redraw_w_according_to_design}{\code{FixedDesignBlockedCluster$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignBlockedCluster-draw_ws_according_to_design}{\code{FixedDesignBlockedCluster$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignBlockedCluster-clone}{\code{FixedDesignBlockedCluster$clone()}}
 }
@@ -91,16 +90,6 @@ Initialize a blocked and cluster randomized fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignBlockedCluster` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignBlockedCluster-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignBlockedCluster-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the blocked cluster randomized design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlockedCluster$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignBlockedCluster-draw_ws_according_to_design"></a>}}

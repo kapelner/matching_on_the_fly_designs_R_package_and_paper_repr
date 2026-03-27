@@ -38,11 +38,6 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			private$uses_covariates = TRUE
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the binary match design.
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors according to binary matching.

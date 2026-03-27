@@ -1,14 +1,14 @@
-# Inference based on Maximum Likelihood for KK designs
-#
-# @description
-# Inference for mean difference
-#
-# @details
-# This class requires the \pkg{nbpMatching} package, which is listed in Suggests
-# and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
-# \code{install.packages("nbpMatching")} before using this class.
-#
-# @keywords internal
+#' Inference based on Maximum Likelihood for KK designs
+#'
+#' @description
+#' Inference for mean difference
+#'
+#' @details
+#' This class requires the \pkg{nbpMatching} package, which is listed in Suggests
+#' and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
+#' \code{install.packages("nbpMatching")} before using this class.
+#'
+#' @keywords internal
 InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	inherit = InferenceKKPassThroughCompound,
 	public = list(

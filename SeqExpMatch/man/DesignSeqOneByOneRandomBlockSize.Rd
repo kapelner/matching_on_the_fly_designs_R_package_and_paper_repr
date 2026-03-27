@@ -9,7 +9,7 @@ where block sizes are randomly chosen from a specified set for each stratum. Thi
 is commonly used in clinical trials to prevent predictability of treatment assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneRandomBlockSize}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneRandomBlockSize}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -44,7 +44,6 @@ is commonly used in clinical trials to prevent predictability of treatment assig
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="redraw_w_according_to_design"><a href='../../EDI/html/Design.html#method-Design-redraw_w_according_to_design'><code>EDI::Design$redraw_w_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_subject_to_experiment_and_assign"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_subject_to_experiment_and_assign'><code>EDI::DesignSeqOneByOne$add_subject_to_experiment_and_assign()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="draw_ws_according_to_design"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-draw_ws_according_to_design'><code>EDI::DesignSeqOneByOne$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>

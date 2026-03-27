@@ -17,7 +17,6 @@ This class takes care of whole-experiment randomization.
 \item \href{#method-FixedDesign-new}{\code{FixedDesign$new()}}
 \item \href{#method-FixedDesign-randomize}{\code{FixedDesign$randomize()}}
 \item \href{#method-FixedDesign-supports_resampling}{\code{FixedDesign$supports_resampling()}}
-\item \href{#method-FixedDesign-redraw_w_according_to_design}{\code{FixedDesign$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesign-draw_ws_according_to_design}{\code{FixedDesign$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesign-clone}{\code{FixedDesign$clone()}}
 }
@@ -109,16 +108,6 @@ Check if the design supports resampling.
 \subsection{Returns}{
 TRUE if supported.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesign-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesign-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-draw_ws_according_to_design"></a>}}

@@ -1,34 +1,34 @@
-# Abstract class for Weibull Frailty Combined-Likelihood Compound Inference
-#
-# @description
-# Fits a single joint parametric Weibull frailty model over all KK design data
-# for survival (or count) responses. Matched subjects belong to their pair cluster
-# (frailty integrates away the pair-level baseline); reservoir subjects are assigned
-# unique singleton cluster IDs (singleton frailty degenerates to standard Weibull),
-# so the joint likelihood is:
-#   L = L_pairs_frailty(beta_T, beta_xs) x L_reservoir_weibull(beta_T, beta_xs).
-#
-# @details
-# As with the IVWC analogue, the matched-pairs frailty estimator differs between the
-# univariate and multivariate subclasses:
-#
-# \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
-# to fit a fully parametric Weibull gamma-frailty model with only the treatment
-# indicator on ALL data (matched + reservoir singletons). The PH coefficient and
-# Weibull shape \eqn{\rho} are both taken from \code{parfm}, and the AFT log-time
-# ratio is recovered as \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
-#
-# \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
-# prohibitively slow with many covariates. Instead, the treatment PH coefficient
-# \eqn{\hat\beta_\mathrm{PH}} and its SE are obtained from
-# \code{survival::coxph()} with a \code{frailty(cluster, distribution = "gamma")}
-# term on ALL data; the Weibull shape \eqn{\hat\rho} is estimated separately from a
-# \code{survival::survreg()} fit on all data. The AFT conversion and delta-method SE
-# follow identically to the IVWC multivariate subclass.
-#
-# The \pkg{parfm} package is required only for the univariate subclass.
-#
-# @keywords internal
+#' Abstract class for Weibull Frailty Combined-Likelihood Compound Inference
+#'
+#' @description
+#' Fits a single joint parametric Weibull frailty model over all KK design data
+#' for survival (or count) responses. Matched subjects belong to their pair cluster
+#' (frailty integrates away the pair-level baseline); reservoir subjects are assigned
+#' unique singleton cluster IDs (singleton frailty degenerates to standard Weibull),
+#' so the joint likelihood is:
+#' L = L_pairs_frailty(beta_T, beta_xs) x L_reservoir_weibull(beta_T, beta_xs).
+#'
+#' @details
+#' As with the IVWC analogue, the matched-pairs frailty estimator differs between the
+#' univariate and multivariate subclasses:
+#'
+#' \strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
+#' to fit a fully parametric Weibull gamma-frailty model with only the treatment
+#' indicator on ALL data (matched + reservoir singletons). The PH coefficient and
+#' Weibull shape \eqn{\rho} are both taken from \code{parfm}, and the AFT log-time
+#' ratio is recovered as \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
+#'
+#' \strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
+#' prohibitively slow with many covariates. Instead, the treatment PH coefficient
+#' \eqn{\hat\beta_\mathrm{PH}} and its SE are obtained from
+#' \code{survival::coxph()} with a \code{frailty(cluster, distribution = "gamma")}
+#' term on ALL data; the Weibull shape \eqn{\hat\rho} is estimated separately from a
+#' \code{survival::survreg()} fit on all data. The AFT conversion and delta-method SE
+#' follow identically to the IVWC multivariate subclass.
+#'
+#' The \pkg{parfm} package is required only for the univariate subclass.
+#'
+#' @keywords internal
 InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbstractKKWeibullFrailtyCombinedLikelihood",
 	inherit = InferenceAsymp,
 	public = list(

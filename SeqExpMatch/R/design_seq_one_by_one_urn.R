@@ -54,24 +54,9 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 			prob_T = (private$alpha + private$beta * nC) / (2 * private$alpha + private$beta * (nT + nC))
 			
 			rbinom(1, 1, prob_T)
-		},
-
-
-		#' @description
-		#' Redraw treatment assignments according to the Urn design.
-		redraw_w_according_to_design = function(){
-			# Sequential simulation of the urn process
-			new_w = rep(NA_real_, private$t)
-			nT = 0
-			nC = 0
-			for (i in 1:private$t) {
-				prob_T = (private$alpha + private$beta * nC) / (2 * private$alpha + private$beta * (nT + nC))
-				w_i = rbinom(1, 1, prob_T)
-				new_w[i] = w_i
-				if (w_i == 1) nT = nT + 1 else nC = nC + 1
-			}
-			private$w[1:private$t] = new_w
 		}
+
+
 	),
 	private = list(
 		alpha = NULL,

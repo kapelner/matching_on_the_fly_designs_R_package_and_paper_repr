@@ -40,15 +40,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKClaytonCopulaIVWC} -> \code{InferenceSurvivalUnivKKClaytonCopulaIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKClaytonCopulaIVWC} -> \code{InferenceSurvivalUnivKKClaytonCopulaIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$new()}}
-\item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_treatment_estimate}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_treatment_estimate()}}
-\item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$clone()}}
 }
 }
@@ -61,86 +57,15 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_treatment_estimate_during_randomization_inference"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate_during_randomization_inference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-duplicate'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-initialize'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKClaytonCopulaIVWC$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone}{}}}

@@ -41,15 +41,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKWeibullFrailtyIVWC} -> \code{InferenceSurvivalUnivKKWeibullFrailtyIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKWeibullFrailtyIVWC} -> \code{InferenceSurvivalUnivKKWeibullFrailtyIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$new()}}
-\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_treatment_estimate}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_treatment_estimate()}}
-\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_confidence_interval}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$clone()}}
 }
 }
@@ -63,84 +59,13 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-initialize'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyIVWC$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone}{}}}

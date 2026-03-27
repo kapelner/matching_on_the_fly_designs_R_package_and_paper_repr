@@ -24,12 +24,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{\link[EDI:InferenceOrdinalUnivKKCondAdjCatLogitRegr]{EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr}} -> \code{InferenceOrdinalMultiKKCondAdjCatLogitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{\link[EDI:InferenceOrdinalUnivKKCondAdjCatLogitRegr]{EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr}} -> \code{InferenceOrdinalMultiKKCondAdjCatLogitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-new}{\code{InferenceOrdinalMultiKKCondAdjCatLogitRegr$new()}}
 \item \href{#method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-clone}{\code{InferenceOrdinalMultiKKCondAdjCatLogitRegr$clone()}}
 }
 }
@@ -46,34 +45,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUnivKKCondAdjCatLogitRegr" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceOrdinalUnivKKCondAdjCatLogitRegr.html#method-InferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_confidence_interval'><code>EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUnivKKCondAdjCatLogitRegr" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceOrdinalUnivKKCondAdjCatLogitRegr.html#method-InferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUnivKKCondAdjCatLogitRegr" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceOrdinalUnivKKCondAdjCatLogitRegr.html#method-InferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_treatment_estimate'><code>EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUnivKKCondAdjCatLogitRegr" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalUnivKKCondAdjCatLogitRegr.html#method-InferenceOrdinalUnivKKCondAdjCatLogitRegr-initialize'><code>EDI::InferenceOrdinalUnivKKCondAdjCatLogitRegr$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate conditional adjacent-category inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiKKCondAdjCatLogitRegr-clone}{}}}

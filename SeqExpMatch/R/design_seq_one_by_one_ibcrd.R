@@ -69,9 +69,5 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 		}
 	),
 	private = list(
-		redraw_w_according_to_design = function(){
-			n_T_total = round(private$t * private$prob_T) 
-			private$w[1:private$t] = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$t - n_T_total)))
-		}
 	)
 )

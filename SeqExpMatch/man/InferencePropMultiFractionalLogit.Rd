@@ -35,12 +35,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{\link[EDI:InferencePropUniFractionalLogit]{EDI::InferencePropUniFractionalLogit}} -> \code{InferencePropMultiFractionalLogit}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferencePropUniFractionalLogit]{EDI::InferencePropUniFractionalLogit}} -> \code{InferencePropMultiFractionalLogit}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropMultiFractionalLogit-new}{\code{InferencePropMultiFractionalLogit$new()}}
 \item \href{#method-InferencePropMultiFractionalLogit-clone}{\code{InferencePropMultiFractionalLogit$clone()}}
 }
 }
@@ -57,31 +56,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniFractionalLogit" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferencePropUniFractionalLogit.html#method-InferencePropUniFractionalLogit-compute_asymp_confidence_interval'><code>EDI::InferencePropUniFractionalLogit$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniFractionalLogit" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferencePropUniFractionalLogit.html#method-InferencePropUniFractionalLogit-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferencePropUniFractionalLogit$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniFractionalLogit" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferencePropUniFractionalLogit.html#method-InferencePropUniFractionalLogit-compute_treatment_estimate'><code>EDI::InferencePropUniFractionalLogit$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropUniFractionalLogit" data-id="initialize"><a href='../../EDI/html/InferencePropUniFractionalLogit.html#method-InferencePropUniFractionalLogit-initialize'><code>EDI::InferencePropUniFractionalLogit$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropMultiFractionalLogit-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiFractionalLogit-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate fractional-logit inference object for a completed
-design with a proportion response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiFractionalLogit$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with a proportion response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiFractionalLogit-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropMultiFractionalLogit-clone}{}}}

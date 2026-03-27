@@ -15,7 +15,7 @@ IRLS routine implemented in C++ to respect the log-binomial mean constraint
 \eqn{\mu_i < 1}.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidLogBinomialAbstract} -> \code{InferenceIncidUnivLogBinomial}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidLogBinomialAbstract} -> \code{InferenceIncidUnivLogBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{

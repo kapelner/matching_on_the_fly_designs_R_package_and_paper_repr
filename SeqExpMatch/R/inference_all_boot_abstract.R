@@ -1,9 +1,9 @@
-# Bootstrap-based Inference
-#
-# @description
-# Abstract class for bootstrap-based inference.
-#
-# @keywords internal
+#' Bootstrap-based Inference
+#'
+#' @description
+#' Abstract class for bootstrap-based inference.
+#'
+#' @keywords internal
 InferenceBoot = R6::R6Class("InferenceBoot",
 	inherit = InferenceRandCI,
 	public = list(

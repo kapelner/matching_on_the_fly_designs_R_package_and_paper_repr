@@ -15,7 +15,6 @@ This design searches for an allocation that maximizes the determinant of the inf
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignDOptimal-new}{\code{FixedDesignDOptimal$new()}}
-\item \href{#method-FixedDesignDOptimal-redraw_w_according_to_design}{\code{FixedDesignDOptimal$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignDOptimal-draw_ws_according_to_design}{\code{FixedDesignDOptimal$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignDOptimal-clone}{\code{FixedDesignDOptimal$clone()}}
 }
@@ -86,16 +85,6 @@ Initialize a D-optimal search fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignDOptimal` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignDOptimal-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignDOptimal-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the D-optimal search fixed design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignDOptimal$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignDOptimal-draw_ws_according_to_design"></a>}}

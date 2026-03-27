@@ -41,12 +41,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{\link[EDI:InferenceIncidUnivGCompRiskRatio]{EDI::InferenceIncidUnivGCompRiskRatio}} -> \code{InferenceIncidMultiGCompRiskRatio}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{\link[EDI:InferenceIncidUnivGCompRiskRatio]{EDI::InferenceIncidUnivGCompRiskRatio}} -> \code{InferenceIncidMultiGCompRiskRatio}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiGCompRiskRatio-new}{\code{InferenceIncidMultiGCompRiskRatio$new()}}
 \item \href{#method-InferenceIncidMultiGCompRiskRatio-clone}{\code{InferenceIncidMultiGCompRiskRatio$clone()}}
 }
 }
@@ -60,34 +59,14 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivGCompRiskRatio" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivGCompRiskRatio.html#method-InferenceIncidUnivGCompRiskRatio-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivGCompRiskRatio$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivGCompRiskRatio" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidUnivGCompRiskRatio.html#method-InferenceIncidUnivGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidUnivGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivGCompRiskRatio" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceIncidUnivGCompRiskRatio.html#method-InferenceIncidUnivGCompRiskRatio-compute_bootstrap_two_sided_pval'><code>EDI::InferenceIncidUnivGCompRiskRatio$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivGCompRiskRatio" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidUnivGCompRiskRatio.html#method-InferenceIncidUnivGCompRiskRatio-compute_treatment_estimate'><code>EDI::InferenceIncidUnivGCompRiskRatio$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceIncidGCompAbstract$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidGCompAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_bootstrap_two_sided_pval'><code>EDI::InferenceIncidGCompAbstract$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_treatment_estimate'><code>EDI::InferenceIncidGCompAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="initialize"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-initialize'><code>EDI::InferenceIncidGCompAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiGCompRiskRatio-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiGCompRiskRatio-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the multivariate g-computation RR inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiGCompRiskRatio$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiGCompRiskRatio-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiGCompRiskRatio-clone}{}}}

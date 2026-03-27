@@ -8,7 +8,7 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneAtkinson}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -16,7 +16,6 @@ This class takes care of data initialization and sequential assignments.
 \item \href{#method-DesignSeqOneByOneAtkinson-new}{\code{DesignSeqOneByOneAtkinson$new()}}
 \item \href{#method-DesignSeqOneByOneAtkinson-assign_wt}{\code{DesignSeqOneByOneAtkinson$assign_wt()}}
 \item \href{#method-DesignSeqOneByOneAtkinson-draw_ws_according_to_design}{\code{DesignSeqOneByOneAtkinson$draw_ws_according_to_design()}}
-\item \href{#method-DesignSeqOneByOneAtkinson-redraw_w_according_to_design}{\code{DesignSeqOneByOneAtkinson$redraw_w_according_to_design()}}
 \item \href{#method-DesignSeqOneByOneAtkinson-clone}{\code{DesignSeqOneByOneAtkinson$clone()}}
 }
 }
@@ -120,16 +119,6 @@ Draw multiple treatment assignment vectors.
 \subsection{Returns}{
 A matrix of size n x r.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneAtkinson-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneAtkinson-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the Atkinson design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneAtkinson$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneAtkinson-clone"></a>}}

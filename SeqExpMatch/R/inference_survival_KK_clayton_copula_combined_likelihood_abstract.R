@@ -1,19 +1,19 @@
-# Abstract class for Clayton Copula Combined-Likelihood Inference
-#
-# @description
-# Fits a single joint likelihood over all KK design data for survival responses using
-# a Clayton survival copula with Weibull AFT margins for matched pairs and standard
-# Weibull AFT singleton contributions for reservoir subjects. The treatment effect is
-# reported on the AFT log-time-ratio scale.
-#
-# @details
-# This keeps the package's established \code{CombinedLikelihood} terminology even though
-# the matched and reservoir parts are combined through a joint copula-based likelihood
-# rather than a classical Gaussian-style likelihood. The matched-pair contribution uses
-# a Clayton copula with censored bivariate survival contributions; reservoir subjects
-# contribute ordinary univariate Weibull AFT terms.
-#
-# @keywords internal
+#' Abstract class for Clayton Copula Combined-Likelihood Inference
+#'
+#' @description
+#' Fits a single joint likelihood over all KK design data for survival responses using
+#' a Clayton survival copula with Weibull AFT margins for matched pairs and standard
+#' Weibull AFT singleton contributions for reservoir subjects. The treatment effect is
+#' reported on the AFT log-time-ratio scale.
+#'
+#' @details
+#' This keeps the package's established \code{CombinedLikelihood} terminology even though
+#' the matched and reservoir parts are combined through a joint copula-based likelihood
+#' rather than a classical Gaussian-style likelihood. The matched-pair contribution uses
+#' a Clayton copula with censored bivariate survival contributions; reservoir subjects
+#' contribute ordinary univariate Weibull AFT terms.
+#'
+#' @keywords internal
 InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstractKKClaytonCopulaCombinedLikelihood",
 	inherit = InferenceAsymp,
 	public = list(

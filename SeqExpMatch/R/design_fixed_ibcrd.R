@@ -41,17 +41,8 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 				as.integer(r),
 				as.numeric(private$prob_T)
 			)$w_mat
-		},
-
-		#' @description
-		#' Redraw treatment assignments according to the balanced completely randomized design.
-		redraw_w_according_to_design = function(){
-			n_T_total = round(private$t * private$prob_T)
-			if (abs(n_T_total - private$t * private$prob_T) > 1e-10) {
-				warning("prob_T * t is not an integer; rounding to the nearest integer for balanced allocation.")
-			}
-			private$w[1:private$t] = shuffle_cpp(c(rep(1, n_T_total), rep(0, private$t - n_T_total)))
 		}
+
 	),
 	private = list(
 	)

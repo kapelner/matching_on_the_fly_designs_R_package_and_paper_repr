@@ -18,33 +18,12 @@ This class requires the \pkg{glmmTMB} package, which is listed in Suggests
 and is not installed automatically with \pkg{SeqExpMatch}.
 Install \pkg{glmmTMB} before using this class.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceCountPoissonUnivKKGLMM$new`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneKK14$new(n = 20, response_type = "count")
-for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rpois(20, 3))
-
-seq_des_inf = InferenceCountPoissonUnivKKGLMM$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKGLMM} -> \code{InferenceCountPoissonUnivKKGLMM}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKGLMM} -> \code{InferenceCountPoissonUnivKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceCountPoissonUnivKKGLMM-new}{\code{InferenceCountPoissonUnivKKGLMM$new()}}
-\item \href{#method-InferenceCountPoissonUnivKKGLMM-compute_treatment_estimate}{\code{InferenceCountPoissonUnivKKGLMM$compute_treatment_estimate()}}
-\item \href{#method-InferenceCountPoissonUnivKKGLMM-compute_asymp_confidence_interval}{\code{InferenceCountPoissonUnivKKGLMM$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceCountPoissonUnivKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceCountPoissonUnivKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceCountPoissonUnivKKGLMM-clone}{\code{InferenceCountPoissonUnivKKGLMM$clone()}}
 }
 }
@@ -56,108 +35,15 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKGLMM$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_confidence_interval_rand'><code>EDI::InferenceAbstractKKGLMM$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_treatment_estimate'><code>EDI::InferenceAbstractKKGLMM$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-initialize'><code>EDI::InferenceAbstractKKGLMM$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountPoissonUnivKKGLMM-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountPoissonUnivKKGLMM-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a univariate GLMM inference object for a completed KK design
-with a count response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonUnivKKGLMM$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-are assigned and whose count response y is recorded.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneKK14$new(n = 20, response_type = "count")
-for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rpois(20, 3))
-
-seq_des_inf = InferenceCountPoissonUnivKKGLMM$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountPoissonUnivKKGLMM-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountPoissonUnivKKGLMM-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonUnivKKGLMM$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountPoissonUnivKKGLMM-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountPoissonUnivKKGLMM-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonUnivKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountPoissonUnivKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountPoissonUnivKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonUnivKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountPoissonUnivKKGLMM-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountPoissonUnivKKGLMM-clone}{}}}

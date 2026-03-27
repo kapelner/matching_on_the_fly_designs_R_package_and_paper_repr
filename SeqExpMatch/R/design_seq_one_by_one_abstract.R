@@ -1,10 +1,9 @@
-# A Sequential Design
-#
-# @description
-# An abstract R6 Class encapsulating the data and functionality for a sequential experimental design.
-# This class takes care of sequential assignments.
-#
-# @keywords internal
+#' Sequential One-by-One Experimental Design
+#'
+#' @description
+#' Abstract R6 class encapsulating data and functionality for a sequential one-by-one experimental design.
+#'
+#' @keywords internal
 #' @export
 DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 	inherit = Design,
@@ -46,7 +45,14 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		draw_ws_according_to_design = function(r = 100){
 			w_mat = matrix(NA_real_, nrow = private$t, ncol = r)
 			for (j in 1 : r){
-				private$redraw_w_according_to_design()
+				if (private$fixed_sample) {
+					private$w = rep(NA_real_, private$n)
+				} else {
+					private$w = rep(NA_real_, private$t)
+				}
+				for (t in 1 : private$t){
+					private$w[t] = self$assign_wt()
+				}
 				w_mat[, j] = private$w[1:private$t]
 			}
 			w_mat
@@ -57,16 +63,5 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		}
 	),
 
-	private = list(
-		redraw_w_according_to_design = function(){
-			if (private$fixed_sample) {
-				private$w = rep(NA_real_, private$n)
-			} else {
-				private$w = rep(NA_real_, private$t)
-			}
-			for (t in 1 : private$t){
-				private$w[t] = self$assign_wt()
-			}
-		}
-	)
+	private = list()
 )

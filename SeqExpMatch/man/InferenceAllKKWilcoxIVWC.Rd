@@ -33,7 +33,7 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKWilcoxBaseIVWC} -> \code{InferenceAllKKWilcoxIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKWilcoxBaseIVWC} -> \code{InferenceAllKKWilcoxIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -42,7 +42,6 @@ infer
 \item \href{#method-InferenceAllKKWilcoxIVWC-compute_treatment_estimate}{\code{InferenceAllKKWilcoxIVWC$compute_treatment_estimate()}}
 \item \href{#method-InferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAllKKWilcoxIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAllKKWilcoxIVWC-clone}{\code{InferenceAllKKWilcoxIVWC$clone()}}
 }
 }
@@ -55,6 +54,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWilcoxBaseIVWC" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWilcoxBaseIVWC.html#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval'><code>EDI::InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -144,28 +144,6 @@ Computes the non-parametric p-value.
 \describe{
 \item{\code{delta}}{The null difference to test against. For any
 treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Computes the bootstrap confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_bootstrap_confidence_interval(
-  alpha = 0.05,
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level. Default is 0.05.}
-
-\item{\code{...}}{Additional arguments passed to the superclass method.}
 }
 \if{html}{\out{</div>}}
 }

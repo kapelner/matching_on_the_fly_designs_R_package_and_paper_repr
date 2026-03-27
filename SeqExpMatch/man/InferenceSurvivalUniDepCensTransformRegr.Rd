@@ -48,12 +48,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{InferenceSurvivalUniDepCensTransformRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{InferenceSurvivalUniDepCensTransformRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalUniDepCensTransformRegr-new}{\code{InferenceSurvivalUniDepCensTransformRegr$new()}}
 \item \href{#method-InferenceSurvivalUniDepCensTransformRegr-clone}{\code{InferenceSurvivalUniDepCensTransformRegr$clone()}}
 }
 }
@@ -67,42 +66,13 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="initialize"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-initialize'><code>EDI::InferenceKKPassThrough$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_asymp_confidence_interval'><code>EDI::InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_treatment_estimate'><code>EDI::InferenceMLEorKMSummaryTable$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalUniDepCensTransformRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalUniDepCensTransformRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUniDepCensTransformRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUniDepCensTransformRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUniDepCensTransformRegr-clone}{}}}

@@ -23,14 +23,14 @@ seq_des_inf$compute_treatment_estimate()
 seq_des_inf$compute_asymp_confidence_interval()
 seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
+
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceAllKKCompoundMeanDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceAllKKCompoundMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAllKKCompoundMeanDiff-new}{\code{InferenceAllKKCompoundMeanDiff$new()}}
 \item \href{#method-InferenceAllKKCompoundMeanDiff-compute_treatment_estimate}{\code{InferenceAllKKCompoundMeanDiff$compute_treatment_estimate()}}
 \item \href{#method-InferenceAllKKCompoundMeanDiff-compute_asymp_confidence_interval}{\code{InferenceAllKKCompoundMeanDiff$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAllKKCompoundMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKCompoundMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
@@ -47,42 +47,10 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="initialize"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-initialize'><code>EDI::InferenceKKPassThrough$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKCompoundMeanDiff-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKCompoundMeanDiff-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKCompoundMeanDiff$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKCompoundMeanDiff-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKCompoundMeanDiff-compute_treatment_estimate}{}}}

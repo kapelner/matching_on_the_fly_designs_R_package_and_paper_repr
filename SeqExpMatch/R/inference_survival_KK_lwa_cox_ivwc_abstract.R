@@ -1,14 +1,14 @@
-# Abstract class for LWA-style Marginal Cox / Standard Cox Compound Inference
-#
-# @description
-# This class implements a compound estimator for KK matching-on-the-fly designs with
-# survival responses. For matched pairs, it uses a marginal Cox proportional hazards
-# model with Lee-Wei-Amato style cluster-robust variance, treating each pair as a
-# cluster of size two. For reservoir subjects, it uses standard Cox regression. The
-# two estimates (both log-hazard ratios) are combined via a variance-weighted linear
-# combination.
-#
-# @keywords internal
+#' Abstract class for LWA-style Marginal Cox / Standard Cox Compound Inference
+#'
+#' @description
+#' This class implements a compound estimator for KK matching-on-the-fly designs with
+#' survival responses. For matched pairs, it uses a marginal Cox proportional hazards
+#' model with Lee-Wei-Amato style cluster-robust variance, treating each pair as a
+#' cluster of size two. For reservoir subjects, it uses standard Cox regression. The
+#' two estimates (both log-hazard ratios) are combined via a variance-weighted linear
+#' combination.
+#'
+#' @keywords internal
 InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 	inherit = InferenceAsymp,
 	public = list(

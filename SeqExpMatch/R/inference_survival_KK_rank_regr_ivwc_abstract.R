@@ -1,17 +1,17 @@
-# Abstract class for Survival Rank-based Regression (AFT) Compound Inference
-#
-# @description
-# This class implements a robust compound estimator for KK matching-on-the-fly
-# designs with survival responses using rank-based estimating equations via the
-# \pkg{aftgee} package. For matched pairs, it fits a rank-based AFT model with
-# clustering. For reservoir subjects, it fits a standard rank-based AFT model.
-# The two estimates (both log-time ratios) are combined via a variance-weighted
-# linear combination.
-#
-# @details
-# This class requires the \pkg{aftgee} package.
-#
-# @keywords internal
+#' Abstract class for Survival Rank-based Regression (AFT) Compound Inference
+#'
+#' @description
+#' This class implements a robust compound estimator for KK matching-on-the-fly
+#' designs with survival responses using rank-based estimating equations via the
+#' \pkg{aftgee} package. For matched pairs, it fits a rank-based AFT model with
+#' clustering. For reservoir subjects, it fits a standard rank-based AFT model.
+#' The two estimates (both log-time ratios) are combined via a variance-weighted
+#' linear combination.
+#'
+#' @details
+#' This class requires the \pkg{aftgee} package.
+#'
+#' @keywords internal
 InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurvivalRankRegrIVWC",
 	inherit = InferenceKKPassThrough,
 	public = list(

@@ -1,13 +1,13 @@
-# Abstract class for LWA-style Marginal Cox Combined-Likelihood Inference
-#
-# @description
-# Fits a single joint marginal Cox model over all KK design data for survival
-# responses. Matched subjects share their pair ID as a cluster, and reservoir
-# subjects are assigned singleton cluster IDs. The treatment effect is estimated by
-# the Cox partial likelihood on all data, with Lee-Wei-Amato style cluster-robust
-# variance treating within-pair correlation as a nuisance.
-#
-# @keywords internal
+#' Abstract class for LWA-style Marginal Cox Combined-Likelihood Inference
+#'
+#' @description
+#' Fits a single joint marginal Cox model over all KK design data for survival
+#' responses. Matched subjects share their pair ID as a cluster, and reservoir
+#' subjects are assigned singleton cluster IDs. The treatment effect is estimated by
+#' the Cox partial likelihood on all data, with Lee-Wei-Amato style cluster-robust
+#' variance treating within-pair correlation as a nuisance.
+#'
+#' @keywords internal
 InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLWACoxCombinedLikelihood",
 	inherit = InferenceAsymp,
 	public = list(

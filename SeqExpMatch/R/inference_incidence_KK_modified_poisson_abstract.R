@@ -1,6 +1,6 @@
-# Abstract class for all-subject modified-Poisson inference in KK designs
-#
-# @keywords internal
+#' Abstract class for all-subject modified-Poisson inference in KK designs
+#'
+#' @keywords internal
 InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoisson",
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(

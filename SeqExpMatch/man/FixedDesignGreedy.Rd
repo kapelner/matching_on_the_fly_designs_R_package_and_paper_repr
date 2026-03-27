@@ -14,7 +14,6 @@ This design starts with a random allocation and greedily switches pairs to optim
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignGreedy-new}{\code{FixedDesignGreedy$new()}}
-\item \href{#method-FixedDesignGreedy-redraw_w_according_to_design}{\code{FixedDesignGreedy$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-draw_ws_according_to_design}{\code{FixedDesignGreedy$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignGreedy-clone}{\code{FixedDesignGreedy$clone()}}
 }
@@ -88,16 +87,6 @@ Initialize a greedy search fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignGreedy` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignGreedy-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignGreedy-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the greedy search design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignGreedy$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignGreedy-draw_ws_according_to_design"></a>}}

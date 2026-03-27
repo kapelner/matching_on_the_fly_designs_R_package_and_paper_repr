@@ -55,8 +55,5 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		}
 	),
 	private = list(
-		redraw_w_according_to_design = function(){
-			private$w[1:private$t] = rbinom(private$t, 1, private$prob_T)
-		}
 	)
 )

@@ -21,12 +21,11 @@ infer <- InferenceOrdinalUniPartialProportionalOddsRegr$
 infer
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{\link[EDI:InferenceOrdinalPartialProportionalOddsAbstract]{EDI::InferenceOrdinalPartialProportionalOddsAbstract}} -> \code{InferenceOrdinalUniPartialProportionalOddsRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceOrdinalPartialProportionalOddsAbstract]{EDI::InferenceOrdinalPartialProportionalOddsAbstract}} -> \code{InferenceOrdinalUniPartialProportionalOddsRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalUniPartialProportionalOddsRegr-new}{\code{InferenceOrdinalUniPartialProportionalOddsRegr$new()}}
 \item \href{#method-InferenceOrdinalUniPartialProportionalOddsRegr-clone}{\code{InferenceOrdinalUniPartialProportionalOddsRegr$clone()}}
 }
 }
@@ -43,35 +42,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_treatment_estimate'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-initialize'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalUniPartialProportionalOddsRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniPartialProportionalOddsRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a treatment-only partial proportional-odds inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniPartialProportionalOddsRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
-response.}
-
-\item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUniPartialProportionalOddsRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalUniPartialProportionalOddsRegr-clone}{}}}

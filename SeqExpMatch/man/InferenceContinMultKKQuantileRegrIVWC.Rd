@@ -58,16 +58,12 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{EDI::InferenceAbstractKKQuantileRegrIVWC} -> \code{InferenceContinMultKKQuantileRegrIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{EDI::InferenceAbstractKKQuantileRegrIVWC} -> \code{InferenceContinMultKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceContinMultKKQuantileRegrIVWC-new}{\code{InferenceContinMultKKQuantileRegrIVWC$new()}}
-\item \href{#method-InferenceContinMultKKQuantileRegrIVWC-compute_confidence_interval_rand}{\code{InferenceContinMultKKQuantileRegrIVWC$compute_confidence_interval_rand()}}
-\item \href{#method-InferenceContinMultKKQuantileRegrIVWC-compute_treatment_estimate}{\code{InferenceContinMultKKQuantileRegrIVWC$compute_treatment_estimate()}}
-\item \href{#method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_confidence_interval}{\code{InferenceContinMultKKQuantileRegrIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceContinMultKKQuantileRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceContinMultKKQuantileRegrIVWC-clone}{\code{InferenceContinMultKKQuantileRegrIVWC$clone()}}
 }
 }
@@ -80,6 +76,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>EDI::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -148,83 +148,6 @@ infer
 
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrIVWC-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrIVWC-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
-Computes the randomization-based confidence interval via Zhang's combined test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrIVWC$compute_confidence_interval_rand(
-  alpha = 0.05,
-  r = 499,
-  pval_epsilon = 0.005,
-  show_progress = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level is 1 - \code{alpha}.}
-
-\item{\code{r}}{Number of random sign-flips / permutations.}
-
-\item{\code{pval_epsilon}}{Bisection convergence tolerance.}
-
-\item{\code{show_progress}}{Ignored.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrIVWC-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrIVWC$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. Default is zero.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrIVWC-clone"></a>}}

@@ -1,6 +1,6 @@
-# Abstract class for GLMM-based Inference
-#
-# @keywords internal
+#' Abstract class for GLMM-based Inference
+#'
+#' @keywords internal
 InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 	inherit = InferenceAsymp,
 	public = list(

@@ -43,12 +43,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKMarginalIncid} -> \code{EDI::InferenceIncidKKGCompAbstract} -> \code{\link[EDI:InferenceIncidUnivKKGCompRiskRatio]{EDI::InferenceIncidUnivKKGCompRiskRatio}} -> \code{InferenceIncidMultiKKGCompRiskRatio}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKMarginalIncid} -> \code{EDI::InferenceIncidKKGCompAbstract} -> \code{\link[EDI:InferenceIncidUnivKKGCompRiskRatio]{EDI::InferenceIncidUnivKKGCompRiskRatio}} -> \code{InferenceIncidMultiKKGCompRiskRatio}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiKKGCompRiskRatio-new}{\code{InferenceIncidMultiKKGCompRiskRatio$new()}}
 \item \href{#method-InferenceIncidMultiKKGCompRiskRatio-clone}{\code{InferenceIncidMultiKKGCompRiskRatio$clone()}}
 }
 }
@@ -62,38 +61,14 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKGCompRiskRatio" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivKKGCompRiskRatio.html#method-InferenceIncidUnivKKGCompRiskRatio-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivKKGCompRiskRatio$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKGCompRiskRatio" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidUnivKKGCompRiskRatio.html#method-InferenceIncidUnivKKGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidUnivKKGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKGCompRiskRatio" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceIncidUnivKKGCompRiskRatio.html#method-InferenceIncidUnivKKGCompRiskRatio-compute_bootstrap_two_sided_pval'><code>EDI::InferenceIncidUnivKKGCompRiskRatio$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKGCompRiskRatio" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidUnivKKGCompRiskRatio.html#method-InferenceIncidUnivKKGCompRiskRatio-compute_treatment_estimate'><code>EDI::InferenceIncidUnivKKGCompRiskRatio$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKMarginalIncid" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKMarginalIncid.html#method-InferenceAbstractKKMarginalIncid-initialize'><code>EDI::InferenceAbstractKKMarginalIncid$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidKKGCompAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidKKGCompAbstract.html#method-InferenceIncidKKGCompAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceIncidKKGCompAbstract$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidKKGCompAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidKKGCompAbstract.html#method-InferenceIncidKKGCompAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidKKGCompAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidKKGCompAbstract" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceIncidKKGCompAbstract.html#method-InferenceIncidKKGCompAbstract-compute_bootstrap_two_sided_pval'><code>EDI::InferenceIncidKKGCompAbstract$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidKKGCompAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidKKGCompAbstract.html#method-InferenceIncidKKGCompAbstract-compute_treatment_estimate'><code>EDI::InferenceIncidKKGCompAbstract$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiKKGCompRiskRatio-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiKKGCompRiskRatio-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the multivariate KK g-computation RR inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiKKGCompRiskRatio$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed KK \code{DesignSeqOneByOne} object with an incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiKKGCompRiskRatio-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiKKGCompRiskRatio-clone}{}}}

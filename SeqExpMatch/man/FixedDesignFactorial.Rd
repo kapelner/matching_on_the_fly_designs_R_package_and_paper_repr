@@ -14,7 +14,6 @@ This design handles multiple treatment factors and balances assignments across a
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignFactorial-new}{\code{FixedDesignFactorial$new()}}
-\item \href{#method-FixedDesignFactorial-redraw_w_according_to_design}{\code{FixedDesignFactorial$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignFactorial-draw_ws_according_to_design}{\code{FixedDesignFactorial$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignFactorial-get_w_factorial}{\code{FixedDesignFactorial$get_w_factorial()}}
 \item \href{#method-FixedDesignFactorial-clone}{\code{FixedDesignFactorial$clone()}}
@@ -86,16 +85,6 @@ Initialize a factorial fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignFactorial` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignFactorial-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignFactorial-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the factorial design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignFactorial$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignFactorial-draw_ws_according_to_design"></a>}}

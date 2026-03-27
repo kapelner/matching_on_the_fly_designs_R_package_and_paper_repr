@@ -11,38 +11,12 @@ and covariates. For reservoir subjects, it uses a standard rank-based linear mod
 including both treatment and covariates. This is the multivariate (covariate-adjusted)
 variant.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceAllKKWilcoxRegrMultiIVWC$new`
-## ------------------------------------------------
-
-set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceAllKKWilcoxRegrMultiIVWC$new(seq_des, verbose = FALSE)
-infer
-
-}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKWilcoxRegrIVWC} -> \code{InferenceAllKKWilcoxRegrMultiIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllKKWilcoxRegrUnivIVWC]{EDI::InferenceAllKKWilcoxRegrUnivIVWC}} -> \code{InferenceAllKKWilcoxRegrMultiIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-new}{\code{InferenceAllKKWilcoxRegrMultiIVWC$new()}}
-\item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-compute_treatment_estimate}{\code{InferenceAllKKWilcoxRegrMultiIVWC$compute_treatment_estimate()}}
-\item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKWilcoxRegrMultiIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKWilcoxRegrMultiIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAllKKWilcoxRegrMultiIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAllKKWilcoxRegrMultiIVWC-clone}{\code{InferenceAllKKWilcoxRegrMultiIVWC$clone()}}
 }
 }
@@ -55,123 +29,14 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllKKWilcoxRegrUnivIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAllKKWilcoxRegrUnivIVWC.html#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllKKWilcoxRegrUnivIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAllKKWilcoxRegrUnivIVWC.html#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllKKWilcoxRegrUnivIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAllKKWilcoxRegrUnivIVWC.html#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate'><code>EDI::InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllKKWilcoxRegrUnivIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAllKKWilcoxRegrUnivIVWC.html#method-InferenceAllKKWilcoxRegrUnivIVWC-initialize'><code>EDI::InferenceAllKKWilcoxRegrUnivIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrMultiIVWC$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceAllKKWilcoxRegrMultiIVWC$new(seq_des, verbose = FALSE)
-infer
-
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrMultiIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrMultiIVWC$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrMultiIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-compute_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-compute_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
-Computes the bootstrap confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrMultiIVWC$compute_bootstrap_confidence_interval(
-  alpha = 0.05,
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level. Default is 0.05.}
-
-\item{\code{...}}{Additional arguments passed to the superclass method.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrMultiIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrMultiIVWC-clone}{}}}

@@ -34,7 +34,6 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
-\item \href{#method-Design-redraw_w_according_to_design}{\code{Design$redraw_w_according_to_design()}}
 \item \href{#method-Design-clone}{\code{Design$clone()}}
 }
 }
@@ -379,16 +378,6 @@ Duplicate this design object
 \subsection{Returns}{
 A new `Design` object with the same data
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-clone"></a>}}

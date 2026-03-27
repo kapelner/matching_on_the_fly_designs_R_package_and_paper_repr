@@ -9,15 +9,13 @@ This design uses an adaptive urn model where the probability of assignment to a 
 decreases as the number of subjects in that group increases.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneUrn}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneUrn}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignSeqOneByOneUrn-new}{\code{DesignSeqOneByOneUrn$new()}}
 \item \href{#method-DesignSeqOneByOneUrn-assign_wt}{\code{DesignSeqOneByOneUrn$assign_wt()}}
-\item \href{#method-DesignSeqOneByOneUrn-draw_ws_according_to_design}{\code{DesignSeqOneByOneUrn$draw_ws_according_to_design()}}
-\item \href{#method-DesignSeqOneByOneUrn-redraw_w_according_to_design}{\code{DesignSeqOneByOneUrn$redraw_w_according_to_design()}}
 \item \href{#method-DesignSeqOneByOneUrn-clone}{\code{DesignSeqOneByOneUrn$clone()}}
 }
 }
@@ -47,6 +45,7 @@ decreases as the number of subjects in that group increases.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_subject_to_experiment_and_assign"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_subject_to_experiment_and_assign'><code>EDI::DesignSeqOneByOne$add_subject_to_experiment_and_assign()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="draw_ws_according_to_design"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-draw_ws_according_to_design'><code>EDI::DesignSeqOneByOne$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>EDI::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
 </ul>
@@ -104,36 +103,6 @@ Assign the next subject to a treatment group
 \subsection{Returns}{
 The treatment assignment (0 or 1)
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneUrn-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneUrn-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to Wei's Urn design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneUrn$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneUrn-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneUrn-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the Urn design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneUrn$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneUrn-clone"></a>}}

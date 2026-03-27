@@ -1,10 +1,10 @@
-# Abstract class for Robust-Regression Combined-Likelihood Inference for KK Designs
-#
-# @description
-# Fits a single stacked robust regression over matched-pair differences and reservoir
-# observations for KK matching-on-the-fly designs with continuous responses.
-#
-# @keywords internal
+#' Abstract class for Robust-Regression Combined-Likelihood Inference for KK Designs
+#'
+#' @description
+#' Fits a single stacked robust regression over matched-pair differences and reservoir
+#' observations for KK matching-on-the-fly designs with continuous responses.
+#'
+#' @keywords internal
 InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstractKKRobustRegrCombinedLikelihood",
 	inherit = InferenceKKPassThroughCompound,
 	public = list(

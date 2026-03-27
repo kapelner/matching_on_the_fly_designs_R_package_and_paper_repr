@@ -1,11 +1,11 @@
-# Abstract class for Robust-Regression IVWC Compound Inference for KK Designs
-#
-# @description
-# Fits a variance-weighted compound estimator for KK matching-on-the-fly designs
-# with continuous responses using robust linear regression (`MASS::rlm`) for the
-# matched-pair and reservoir components separately.
-#
-# @keywords internal
+#' Abstract class for Robust-Regression IVWC Compound Inference for KK Designs
+#'
+#' @description
+#' Fits a variance-weighted compound estimator for KK matching-on-the-fly designs
+#' with continuous responses using robust linear regression (`MASS::rlm`) for the
+#' matched-pair and reservoir components separately.
+#'
+#' @keywords internal
 InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIVWC",
 	inherit = InferenceKKPassThroughCompound,
 	public = list(

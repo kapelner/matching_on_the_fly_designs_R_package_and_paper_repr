@@ -1,12 +1,12 @@
-# Abstract base class for KK Wilcoxon-based compound inference
-#
-# @description
-# Shared base for all KK Wilcoxon inference classes. Overrides the per-permutation
-# statistic used in randomization tests with standardized Wilcoxon W statistics
-# (O(n log n), conf.int = FALSE), avoiding the O(n^2) Walsh-average computation
-# required by the full Hodges-Lehmann estimate.
-#
-# @keywords internal
+#' Abstract base class for KK Wilcoxon-based compound inference
+#'
+#' @description
+#' Shared base for all KK Wilcoxon inference classes. Overrides the per-permutation
+#' statistic used in randomization tests with standardized Wilcoxon W statistics
+#' (O(n log n), conf.int = FALSE), avoiding the O(n^2) Walsh-average computation
+#' required by the full Hodges-Lehmann estimate.
+#'
+#' @keywords internal
 InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIVWC",
 	inherit = InferenceAsymp,
 	public = list(

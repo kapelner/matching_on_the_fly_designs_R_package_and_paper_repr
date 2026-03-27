@@ -1,7 +1,7 @@
 #/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ SeqExpMatch/
 rm(list = ls())
 set.seed(1)
-pacman::p_load(SeqExpMatch, doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
+pacman::p_load(EDI, doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 # options(error = recover)

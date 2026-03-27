@@ -36,12 +36,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{\link[EDI:InferenceCountUnivRobustPoissonRegr]{EDI::InferenceCountUnivRobustPoissonRegr}} -> \code{\link[EDI:InferenceCountUnivQuasiPoissonRegr]{EDI::InferenceCountUnivQuasiPoissonRegr}} -> \code{InferenceCountMultiQuasiPoissonRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceCountUnivRobustPoissonRegr]{EDI::InferenceCountUnivRobustPoissonRegr}} -> \code{\link[EDI:InferenceCountUnivQuasiPoissonRegr]{EDI::InferenceCountUnivQuasiPoissonRegr}} -> \code{InferenceCountMultiQuasiPoissonRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceCountMultiQuasiPoissonRegr-new}{\code{InferenceCountMultiQuasiPoissonRegr$new()}}
 \item \href{#method-InferenceCountMultiQuasiPoissonRegr-clone}{\code{InferenceCountMultiQuasiPoissonRegr$clone()}}
 }
 }
@@ -58,46 +57,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountUnivRobustPoissonRegr" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceCountUnivRobustPoissonRegr.html#method-InferenceCountUnivRobustPoissonRegr-compute_treatment_estimate'><code>EDI::InferenceCountUnivRobustPoissonRegr$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountUnivRobustPoissonRegr" data-id="initialize"><a href='../../EDI/html/InferenceCountUnivRobustPoissonRegr.html#method-InferenceCountUnivRobustPoissonRegr-initialize'><code>EDI::InferenceCountUnivRobustPoissonRegr$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountMultiQuasiPoissonRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountMultiQuasiPoissonRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountMultiQuasiPoissonRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountMultiQuasiPoissonRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountMultiQuasiPoissonRegr-clone}{}}}

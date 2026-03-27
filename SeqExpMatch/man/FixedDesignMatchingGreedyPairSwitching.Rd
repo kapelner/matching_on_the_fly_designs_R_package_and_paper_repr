@@ -15,7 +15,6 @@ using the \pkg{GreedyExperimentalDesign} package.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-new}{\code{FixedDesignMatchingGreedyPairSwitching$new()}}
-\item \href{#method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design}{\code{FixedDesignMatchingGreedyPairSwitching$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{FixedDesignMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignMatchingGreedyPairSwitching-clone}{\code{FixedDesignMatchingGreedyPairSwitching$clone()}}
 }
@@ -98,16 +97,6 @@ Initialize a fixed design that performs binary matching followed by greedy pair 
 \subsection{Returns}{
 A new \code{FixedDesignMatchingGreedyPairSwitching} object.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignMatchingGreedyPairSwitching-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the binary match followed by greedy switching design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignMatchingGreedyPairSwitching$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}

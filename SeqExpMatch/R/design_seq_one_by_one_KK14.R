@@ -122,11 +122,8 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		},
 
 		too_early_to_match = function(){
-			private$t <= private$t_0_pct * private$n
-		},
-
-		redraw_w_according_to_design = function(){
-			private$w = redraw_w_kk14_cpp(private$m, private$w)
+			private$t <= private$t_0_pct * private$n | is.null(private$X)
 		}
+
 	)
 )

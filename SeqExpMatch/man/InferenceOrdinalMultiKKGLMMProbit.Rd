@@ -42,12 +42,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKOrdinalCLMM} -> \code{InferenceOrdinalMultiKKGLMMProbit}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKOrdinalCLMM} -> \code{InferenceOrdinalMultiKKGLMMProbit}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalMultiKKGLMMProbit-new}{\code{InferenceOrdinalMultiKKGLMMProbit$new()}}
 \item \href{#method-InferenceOrdinalMultiKKGLMMProbit-clone}{\code{InferenceOrdinalMultiKKGLMMProbit$clone()}}
 }
 }
@@ -64,36 +63,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKOrdinalCLMM" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html#method-InferenceAbstractKKOrdinalCLMM-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKOrdinalCLMM$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKOrdinalCLMM" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html#method-InferenceAbstractKKOrdinalCLMM-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKOrdinalCLMM$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKOrdinalCLMM" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html#method-InferenceAbstractKKOrdinalCLMM-compute_treatment_estimate'><code>EDI::InferenceAbstractKKOrdinalCLMM$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKOrdinalCLMM" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html#method-InferenceAbstractKKOrdinalCLMM-initialize'><code>EDI::InferenceAbstractKKOrdinalCLMM$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalMultiKKGLMMProbit-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiKKGLMMProbit-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate ordinal probit CLMM inference object for a
-completed KK design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalMultiKKGLMMProbit$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design) whose entire
-n subjects are assigned and whose ordinal response y is
-recorded.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the
-sampling during randomization-based inference and bootstrap
-resampling.}
-
-\item{\code{verbose}}{Whether to print progress messages. Default is
-\code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalMultiKKGLMMProbit-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiKKGLMMProbit-clone}{}}}

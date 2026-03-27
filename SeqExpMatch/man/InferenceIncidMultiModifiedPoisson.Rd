@@ -36,13 +36,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{\link[EDI:InferenceIncidUnivModifiedPoisson]{EDI::InferenceIncidUnivModifiedPoisson}} -> \code{InferenceIncidMultiModifiedPoisson}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceIncidUnivModifiedPoisson]{EDI::InferenceIncidUnivModifiedPoisson}} -> \code{InferenceIncidMultiModifiedPoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiModifiedPoisson-new}{\code{InferenceIncidMultiModifiedPoisson$new()}}
-\item \href{#method-InferenceIncidMultiModifiedPoisson-compute_treatment_estimate}{\code{InferenceIncidMultiModifiedPoisson$compute_treatment_estimate()}}
 \item \href{#method-InferenceIncidMultiModifiedPoisson-clone}{\code{InferenceIncidMultiModifiedPoisson$clone()}}
 }
 }
@@ -58,44 +56,11 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivModifiedPoisson" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivModifiedPoisson.html#method-InferenceIncidUnivModifiedPoisson-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivModifiedPoisson$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivModifiedPoisson" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidUnivModifiedPoisson.html#method-InferenceIncidUnivModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidUnivModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivModifiedPoisson" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidUnivModifiedPoisson.html#method-InferenceIncidUnivModifiedPoisson-compute_treatment_estimate'><code>EDI::InferenceIncidUnivModifiedPoisson$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivModifiedPoisson" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivModifiedPoisson.html#method-InferenceIncidUnivModifiedPoisson-initialize'><code>EDI::InferenceIncidUnivModifiedPoisson$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiModifiedPoisson-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiModifiedPoisson-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate modified-Poisson inference object for a
-completed non-KK design with a binary response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiModifiedPoisson$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed non-KK \code{DesignSeqOneByOne} object with an
-incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and
-randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiModifiedPoisson-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiModifiedPoisson-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the modified-Poisson estimate of the treatment effect on the
-log-risk-ratio scale.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiModifiedPoisson$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiModifiedPoisson-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiModifiedPoisson-clone}{}}}

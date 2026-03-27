@@ -1,9 +1,9 @@
-# Randomization-based Inference
-#
-# @description
-# Abstract class for randomization-based inference.
-#
-# @keywords internal
+#' Randomization-based Inference
+#'
+#' @description
+#' Abstract class for randomization-based inference.
+#'
+#' @keywords internal
 InferenceRand = R6::R6Class("InferenceRand",
 	inherit = Inference,
 	public = list(

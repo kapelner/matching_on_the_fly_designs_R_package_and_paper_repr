@@ -40,12 +40,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceSurvivalLogRank}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceSurvivalLogRank}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceSurvivalLogRank-new}{\code{InferenceSurvivalLogRank$new()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_treatment_estimate}{\code{InferenceSurvivalLogRank$compute_treatment_estimate()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_asymp_confidence_interval}{\code{InferenceSurvivalLogRank$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalLogRank$compute_asymp_two_sided_pval_for_treatment_effect()}}
@@ -57,6 +56,7 @@ infer
 <details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
@@ -65,27 +65,6 @@ infer
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalLogRank-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a log-rank inference object for survival data.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with a survival response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_treatment_estimate}{}}}

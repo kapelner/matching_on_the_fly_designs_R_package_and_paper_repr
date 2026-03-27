@@ -45,11 +45,6 @@ FixedDesign = R6::R6Class("FixedDesign",
 			class(self)[1] != "FixedDesign"
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the design.
-		redraw_w_according_to_design = function(){
-			stop("Must be implemented by subclass.")
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors.

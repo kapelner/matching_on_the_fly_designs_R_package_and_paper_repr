@@ -116,3 +116,37 @@ InferenceExact = R6::R6Class("InferenceExact",
 		}
 	)
 )
+
+#' Exact Zhang Incidence Randomization CI for KK or Bernoulli Designs
+#'
+#' @description
+#' Implements the exact test-inversion randomization CI of Zhang (2026). Partitions
+#' subjects into matched pairs (analyzed via binomial test) and reservoir subjects
+#' (analyzed via Fisher's Exact Test), then combines via a p-value combination rule.
+#'
+#' @details
+#' Applicable to binary (incidence) outcomes in KK matching-on-the-fly or Bernoulli
+#' designs. A bisection algorithm inverts the combined p-value to construct the CI.
+#'
+#' @export
+InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
+	inherit = InferenceExact,
+	public = list(
+		#' @description
+		#' Initialize the Zhang inference object.
+		#' @param des_obj   A completed \code{Design} object with incidence response.
+		#' @param num_cores Number of CPU cores for parallel bisection search.
+		#' @param verbose   Flag for progress messages.
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			assertResponseType(des_obj$get_response_type(), "incidence")
+			super$initialize(des_obj, num_cores, verbose)
+		},
+
+		#' @description
+		#' Returns the incidence treatment estimate (log odds ratio).
+		compute_treatment_estimate = function(){
+			stats = private$get_exact_zhang_stats()
+			zhang_incid_treatment_estimate(stats)
+		}
+	)
+)

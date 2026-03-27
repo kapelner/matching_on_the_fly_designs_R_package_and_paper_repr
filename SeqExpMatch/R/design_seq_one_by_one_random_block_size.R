@@ -101,23 +101,6 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 			paste(vals, collapse = "|")
 		},
 
-		redraw_w_according_to_design = function(){
-			# Since block sizes are random, we re-simulate based on the same rules.
-			# If strata_cols is NULL, strata_keys will be all the same.
-			strata_keys = if (private$uses_covariates) {
-				vapply(1:private$t, function(i) {
-					private$get_strata_key(private$Xraw[i, ])
-				}, character(1))
-			} else {
-				rep("overall", private$t)
-			}
-			
-			private$w[1:private$t] = random_block_size_redraw_w_cpp(
-				as.character(unname(strata_keys)), 
-				as.integer(private$block_sizes), 
-				as.numeric(private$prob_T)
-			)
-		},
 
 		get_bootstrap_indices = function() {
 			if (private$uses_covariates) {

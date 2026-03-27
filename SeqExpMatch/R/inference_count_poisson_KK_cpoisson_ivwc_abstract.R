@@ -1,13 +1,13 @@
-# Abstract class for Conditional Poisson / Negative Binomial Compound Inference
-#
-# @description
-# This class implements a compound estimator for KK matching-on-the-fly designs with
-# count responses. For matched pairs, it uses conditional Poisson regression (implemented
-# via binomial logistic regression on the differences of covariates). For reservoir
-# subjects, it uses Negative Binomial regression. The two estimates are combined via a
-# variance-weighted linear combination.
-#
-# @keywords internal
+#' Abstract class for Conditional Poisson / Negative Binomial Compound Inference
+#'
+#' @description
+#' This class implements a compound estimator for KK matching-on-the-fly designs with
+#' count responses. For matched pairs, it uses conditional Poisson regression (implemented
+#' via binomial logistic regression on the differences of covariates). For reservoir
+#' subjects, it uses Negative Binomial regression. The two estimates are combined via a
+#' variance-weighted linear combination.
+#'
+#' @keywords internal
 InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoissonCPoissonIVWC",
 	inherit = InferenceAsymp,
 	public = list(

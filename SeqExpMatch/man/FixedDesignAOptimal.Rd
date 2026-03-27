@@ -15,7 +15,6 @@ This design searches for an allocation that minimizes the trace of the inverse i
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesignAOptimal-new}{\code{FixedDesignAOptimal$new()}}
-\item \href{#method-FixedDesignAOptimal-redraw_w_according_to_design}{\code{FixedDesignAOptimal$redraw_w_according_to_design()}}
 \item \href{#method-FixedDesignAOptimal-draw_ws_according_to_design}{\code{FixedDesignAOptimal$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesignAOptimal-clone}{\code{FixedDesignAOptimal$clone()}}
 }
@@ -86,16 +85,6 @@ Initialize an A-optimal search fixed experimental design
 \subsection{Returns}{
 A new `FixedDesignAOptimal` object
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesignAOptimal-redraw_w_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesignAOptimal-redraw_w_according_to_design}{}}}
-\subsection{Method \code{redraw_w_according_to_design()}}{
-Redraw treatment assignments according to the A-optimal search fixed design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesignAOptimal$redraw_w_according_to_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesignAOptimal-draw_ws_according_to_design"></a>}}

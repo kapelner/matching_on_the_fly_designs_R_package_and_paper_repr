@@ -14,7 +14,7 @@ likelihood with identity link. Fitting uses a constrained IRLS routine
 implemented in C++ to enforce fitted probabilities in \eqn{(0,1)}.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidBinomialIdentityAbstract} -> \code{InferenceIncidUnivBinomialIdentityRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidBinomialIdentityAbstract} -> \code{InferenceIncidUnivBinomialIdentityRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -41,16 +41,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{InferenceIncidUnivGCompRiskRatio}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{InferenceIncidUnivGCompRiskRatio}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidUnivGCompRiskRatio-new}{\code{InferenceIncidUnivGCompRiskRatio$new()}}
-\item \href{#method-InferenceIncidUnivGCompRiskRatio-compute_treatment_estimate}{\code{InferenceIncidUnivGCompRiskRatio$compute_treatment_estimate()}}
-\item \href{#method-InferenceIncidUnivGCompRiskRatio-compute_asymp_confidence_interval}{\code{InferenceIncidUnivGCompRiskRatio$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceIncidUnivGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceIncidUnivGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceIncidUnivGCompRiskRatio-compute_bootstrap_two_sided_pval}{\code{InferenceIncidUnivGCompRiskRatio$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-InferenceIncidUnivGCompRiskRatio-clone}{\code{InferenceIncidUnivGCompRiskRatio$clone()}}
 }
 }
@@ -64,103 +59,14 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceIncidGCompAbstract$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidGCompAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_bootstrap_two_sided_pval'><code>EDI::InferenceIncidGCompAbstract$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-compute_treatment_estimate'><code>EDI::InferenceIncidGCompAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidGCompAbstract" data-id="initialize"><a href='../../EDI/html/InferenceIncidGCompAbstract.html#method-InferenceIncidGCompAbstract-initialize'><code>EDI::InferenceIncidGCompAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the g-computation RR inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivGCompRiskRatio$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the standardized marginal risk-ratio estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivGCompRiskRatio$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a 1 - \code{alpha} confidence interval for the marginal risk ratio.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivGCompRiskRatio$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 - \code{alpha}.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a two-sided p-value for the marginal risk ratio.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivGCompRiskRatio$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null risk ratio to test against. The default is 1.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-compute_bootstrap_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-compute_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
-Computes a bootstrap two-sided p-value for the marginal risk ratio.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivGCompRiskRatio$compute_bootstrap_two_sided_pval(
-  delta = NULL,
-  B = 501,
-  na.rm = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null risk ratio to test against. The default is 1.}
-
-\item{\code{B}}{Number of bootstrap samples.}
-
-\item{\code{na.rm}}{Whether to remove non-finite bootstrap replicates.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivGCompRiskRatio-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidUnivGCompRiskRatio-clone}{}}}

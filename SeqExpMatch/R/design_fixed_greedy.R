@@ -38,11 +38,6 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			private$uses_covariates = TRUE
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the greedy search design.
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = private$run_one_greedy_search()
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors.

@@ -40,11 +40,6 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 			private$uses_covariates = TRUE
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the blocked cluster randomized design.
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors according to blocked cluster randomization.

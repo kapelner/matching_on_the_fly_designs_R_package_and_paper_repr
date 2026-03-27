@@ -10,14 +10,8 @@
 #'
 #' @export
 InferenceAllKKWilcoxRegrMultiIVWC = R6::R6Class("InferenceAllKKWilcoxRegrMultiIVWC",
-	inherit = InferenceAbstractKKWilcoxRegrIVWC,
-	public = list(
-
-
-
-
-
-	),
+	inherit = InferenceAllKKWilcoxRegrUnivIVWC,
+	public = list(),
 	private = list(
 		include_covariates = function() TRUE
 	)

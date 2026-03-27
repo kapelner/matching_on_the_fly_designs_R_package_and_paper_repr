@@ -39,12 +39,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferencePropZeroOneInflatedBetaAbstract} -> \code{InferencePropMultiZeroOneInflatedBetaRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferencePropZeroOneInflatedBetaAbstract} -> \code{InferencePropMultiZeroOneInflatedBetaRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropMultiZeroOneInflatedBetaRegr-new}{\code{InferencePropMultiZeroOneInflatedBetaRegr$new()}}
 \item \href{#method-InferencePropMultiZeroOneInflatedBetaRegr-clone}{\code{InferencePropMultiZeroOneInflatedBetaRegr$clone()}}
 }
 }
@@ -61,35 +60,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropZeroOneInflatedBetaAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferencePropZeroOneInflatedBetaAbstract.html#method-InferencePropZeroOneInflatedBetaAbstract-compute_asymp_confidence_interval'><code>EDI::InferencePropZeroOneInflatedBetaAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropZeroOneInflatedBetaAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferencePropZeroOneInflatedBetaAbstract.html#method-InferencePropZeroOneInflatedBetaAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferencePropZeroOneInflatedBetaAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropZeroOneInflatedBetaAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferencePropZeroOneInflatedBetaAbstract.html#method-InferencePropZeroOneInflatedBetaAbstract-compute_treatment_estimate'><code>EDI::InferencePropZeroOneInflatedBetaAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropZeroOneInflatedBetaAbstract" data-id="initialize"><a href='../../EDI/html/InferencePropZeroOneInflatedBetaAbstract.html#method-InferencePropZeroOneInflatedBetaAbstract-initialize'><code>EDI::InferencePropZeroOneInflatedBetaAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropMultiZeroOneInflatedBetaRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiZeroOneInflatedBetaRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate zero/one-inflated beta inference object for a
-completed design with a proportion response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiZeroOneInflatedBetaRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with a proportion response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiZeroOneInflatedBetaRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropMultiZeroOneInflatedBetaRegr-clone}{}}}

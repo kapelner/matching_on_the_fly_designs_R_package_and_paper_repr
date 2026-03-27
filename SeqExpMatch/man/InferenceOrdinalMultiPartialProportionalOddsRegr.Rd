@@ -17,7 +17,8 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "ordinal",
+  verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
@@ -31,12 +32,11 @@ infer <- InferenceOrdinalMultiPartialProportionalOddsRegr$
 infer
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{\link[EDI:InferenceOrdinalPartialProportionalOddsAbstract]{EDI::InferenceOrdinalPartialProportionalOddsAbstract}} -> \code{InferenceOrdinalMultiPartialProportionalOddsRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceOrdinalPartialProportionalOddsAbstract]{EDI::InferenceOrdinalPartialProportionalOddsAbstract}} -> \code{InferenceOrdinalMultiPartialProportionalOddsRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalMultiPartialProportionalOddsRegr-new}{\code{InferenceOrdinalMultiPartialProportionalOddsRegr$new()}}
 \item \href{#method-InferenceOrdinalMultiPartialProportionalOddsRegr-clone}{\code{InferenceOrdinalMultiPartialProportionalOddsRegr$clone()}}
 }
 }
@@ -53,38 +53,10 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_treatment_estimate'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPartialProportionalOddsAbstract" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalPartialProportionalOddsAbstract.html#method-InferenceOrdinalPartialProportionalOddsAbstract-initialize'><code>EDI::InferenceOrdinalPartialProportionalOddsAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalMultiPartialProportionalOddsRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiPartialProportionalOddsRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate partial proportional-odds inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalMultiPartialProportionalOddsRegr$new(
-  des_obj,
-  nonparallel = character(0),
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
-response.}
-
-\item{\code{nonparallel}}{Covariate names that should vary across thresholds.}
-
-\item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalMultiPartialProportionalOddsRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalMultiPartialProportionalOddsRegr-clone}{}}}

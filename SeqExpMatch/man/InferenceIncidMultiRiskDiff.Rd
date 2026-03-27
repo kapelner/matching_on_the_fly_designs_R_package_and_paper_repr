@@ -36,13 +36,11 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{\link[EDI:InferenceIncidUnivRiskDiff]{EDI::InferenceIncidUnivRiskDiff}} -> \code{InferenceIncidMultiRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceIncidUnivRiskDiff]{EDI::InferenceIncidUnivRiskDiff}} -> \code{InferenceIncidMultiRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiRiskDiff-new}{\code{InferenceIncidMultiRiskDiff$new()}}
-\item \href{#method-InferenceIncidMultiRiskDiff-compute_treatment_estimate}{\code{InferenceIncidMultiRiskDiff$compute_treatment_estimate()}}
 \item \href{#method-InferenceIncidMultiRiskDiff-clone}{\code{InferenceIncidMultiRiskDiff$clone()}}
 }
 }
@@ -58,43 +56,11 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivRiskDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivRiskDiff.html#method-InferenceIncidUnivRiskDiff-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivRiskDiff$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivRiskDiff" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceIncidUnivRiskDiff.html#method-InferenceIncidUnivRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceIncidUnivRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivRiskDiff" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceIncidUnivRiskDiff.html#method-InferenceIncidUnivRiskDiff-compute_treatment_estimate'><code>EDI::InferenceIncidUnivRiskDiff$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivRiskDiff" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivRiskDiff.html#method-InferenceIncidUnivRiskDiff-initialize'><code>EDI::InferenceIncidUnivRiskDiff$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiRiskDiff-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiRiskDiff-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a multivariate risk-difference inference object for a
-completed non-KK design with a binary response.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiRiskDiff$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed non-KK \code{DesignSeqOneByOne} object with an
-incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and
-randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiRiskDiff-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiRiskDiff-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the direct risk-difference estimate of the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiRiskDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiRiskDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiRiskDiff-clone}{}}}

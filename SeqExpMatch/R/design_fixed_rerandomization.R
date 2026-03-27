@@ -38,11 +38,6 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 			private$uses_covariates = TRUE
 		},
 
-		#' @description
-		#' Redraw treatment assignments according to the rerandomization design.
-		redraw_w_according_to_design = function(){
-			private$w[1:self$get_n()] = private$generate_one_rerandomized_w()
-		},
 
 		#' @description
 		#' Draw multiple treatment assignment vectors.

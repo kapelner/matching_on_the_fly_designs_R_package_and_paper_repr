@@ -69,18 +69,8 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 				as.numeric(private$prob_T),
 				as.integer(r)
 			)$w_mat
-		},
-
-		#' @description
-		#' Redraw treatment assignments according to the Atkinson design.
-		redraw_w_according_to_design = function(){
-			private$w[1:private$t] = atkinson_redraw_batch_cpp(
-				as.matrix(private$X[1:private$t, , drop = FALSE]),
-				private$t,
-				ncol(private$Xraw),
-				private$prob_T
-			)
 		}
+
 	),
 	private = list(
 	)
