@@ -3,10 +3,6 @@
 #' @description
 #' Ordinal probit (ordered probit) model inference for ordinal responses.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -26,16 +22,6 @@
 InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedProbitRegr",
 	inherit = InferenceOrdinalUniCumulProbitRegr,
 	public = list(
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
-		#' after the sequential design is completed.
-		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
-		#'   are assigned and response y is recorded within.
-		#' @param num_cores The number of CPU cores to use.
-		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	)
 )
 
@@ -46,10 +32,6 @@ InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedPr
 #' treatment and observed covariates entering linearly into the latent normal
 #' index.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -69,15 +51,5 @@ InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedPr
 InferenceOrdinalMultiOrderedProbitRegr = R6::R6Class("InferenceOrdinalMultiOrderedProbitRegr",
 	inherit = InferenceOrdinalMultiCumulProbitRegr,
 	public = list(
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
-		#' after the sequential design is completed.
-		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
-		#'   are assigned and response y is recorded within.
-		#' @param num_cores The number of CPU cores to use.
-		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	)
 )

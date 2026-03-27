@@ -6,10 +6,6 @@
 #' standardizing predicted risks under all-treated and all-control assignments
 #' over the empirical covariate distribution.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -40,14 +36,6 @@ InferenceIncidMultiGCompRiskDiff = R6::R6Class("InferenceIncidMultiGCompRiskDiff
 	inherit = InferenceIncidUnivGCompRiskDiff,
 	public = list(
 
-		#' @description
-		#' Initialize the multivariate g-computation RD inference object.
-		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(
@@ -70,10 +58,6 @@ InferenceIncidMultiGCompRiskDiff = R6::R6Class("InferenceIncidMultiGCompRiskDiff
 #' and p-values use the delta method on the log-risk-ratio scale and then map
 #' back to the risk-ratio scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -104,14 +88,6 @@ InferenceIncidMultiGCompRiskRatio = R6::R6Class("InferenceIncidMultiGCompRiskRat
 	inherit = InferenceIncidUnivGCompRiskRatio,
 	public = list(
 
-		#' @description
-		#' Initialize the multivariate g-computation RR inference object.
-		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(

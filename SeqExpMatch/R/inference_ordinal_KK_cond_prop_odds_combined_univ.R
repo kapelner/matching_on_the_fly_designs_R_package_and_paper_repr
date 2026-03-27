@@ -16,10 +16,6 @@
 #' we follow the standard conditional logit approach where only strata with variation
 #' in both treatment and response contribute.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

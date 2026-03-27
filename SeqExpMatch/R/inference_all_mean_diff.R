@@ -7,10 +7,6 @@
 #' after the sequential design is completed.
 #'
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' \dontrun{
@@ -33,27 +29,6 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	inherit = InferenceAsymp,
 	public = list(
 
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
-		#' after the sequential design is completed.
-		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
-		#'   are assigned and response y is recorded within.
-		#' @param num_cores The number of CPU cores to use to parallelize
-		#'   the sampling during randomization-based inference and
-		#'   bootstrap resampling.
-		#'   The default is 1 for serial computation. For simple
-		#'   estimators (e.g. mean difference and KK compound),
-		#'   parallelization is achieved with zero-overhead C++ OpenMP.
-		#'   For complex models (e.g. GLMs),
-		#'   parallelization falls back to R's
-		#'   \code{parallel::mclapply}, which incurs
-		#'   session-forking overhead.
-		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-			assertNoCensoring(private$any_censoring)
-		},
 
 		#' @description
 		#' Computes the appropriate estimate for mean difference
@@ -77,46 +52,6 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 
 
 
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
-		#' differently for all response types, estimate types, and
-		#' test types.
-		#'
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal.
-		#' Hence these confidence intervals are asymptotically valid
-		#' and thus approximate for any sample size.
-		#'
-		#' @param alpha The confidence level in the computed confidence
-		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		#'
-		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-		#'
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			if (is.null(private$cached_values$s_beta_hat_T)){
-				private$shared()
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-
-		#' @description
-
-
-		#' Computes a 2-sided p-value for all types of inferential settings written about in the
-		#' initializer
-		#'
-		#' @param delta The null difference to test against. For any
-		#'   treatment effect at all this is set to zero (the default).
-		#'
-		#' @return	The approximate frequentist p-value
-		#'
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (is.null(private$cached_values$df)){
-				private$shared()
-			}
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
 
 		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
@@ -135,7 +70,17 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		}
 	),
 
-			private = list(
+	private = list(
+		get_standard_error = function(){
+			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+
+		get_degrees_of_freedom = function(){
+			if (is.null(private$cached_values$df)) private$shared()
+			private$cached_values$df
+		},
+
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.

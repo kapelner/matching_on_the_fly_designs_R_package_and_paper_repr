@@ -8,10 +8,6 @@
 #' If no suitable stratification covariates are available, the method falls back to
 #' the standard multivariate Cox PH model.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

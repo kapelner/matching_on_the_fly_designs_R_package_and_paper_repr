@@ -21,10 +21,6 @@
 #'         weighting.
 #' }
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiKKLinCombinedLikelihood",
 	inherit = InferenceKKPassThroughCompound,

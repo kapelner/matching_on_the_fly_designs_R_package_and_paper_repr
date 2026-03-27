@@ -12,10 +12,6 @@
 #' the natural classical binary-endpoint complement to the regression-based
 #' incidence methods already in the package.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMiettinenNurminenRiskDiff",
 	inherit = InferenceAsymp,

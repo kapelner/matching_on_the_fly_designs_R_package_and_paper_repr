@@ -6,10 +6,6 @@
 #' sum of Mann-Whitney U counts across groups. This class provides the exact
 #' distribution-based p-value.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

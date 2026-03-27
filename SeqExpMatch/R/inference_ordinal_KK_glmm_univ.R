@@ -12,10 +12,6 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{ordinal} before using this class.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -46,25 +42,6 @@ InferenceOrdinalUnivKKGLMM = R6::R6Class("InferenceOrdinalUnivKKGLMM",
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
 
-		#' @description
-		#' Initialize a univariate GLMM inference object for a completed KK design
-		#' with an ordinal response.
-		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-		#' 							are assigned and whose ordinal response y is recorded.
-		#' @param num_cores The number of CPU cores to use to parallelize
-		#'   the sampling during randomization-based inference and
-		#'   bootstrap resampling.
-		#'   The default is 1 for serial computation. For simple
-		#'   estimators (e.g. mean difference and KK compound),
-		#'   parallelization is achieved with zero-overhead C++ OpenMP.
-		#'   For complex models (e.g. GLMs),
-		#'   parallelization falls back to R's
-		#'   \code{parallel::mclapply}, which incurs
-		#'   session-forking overhead.
-		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 	private = list(
 		clmm_link = function() "logit"

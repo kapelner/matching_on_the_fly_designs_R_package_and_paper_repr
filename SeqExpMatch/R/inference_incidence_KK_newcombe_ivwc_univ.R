@@ -12,10 +12,6 @@
 #' independent samples. The two estimates are combined using the standard IVWC
 #' framework of the package.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

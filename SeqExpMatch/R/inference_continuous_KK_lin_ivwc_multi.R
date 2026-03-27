@@ -10,10 +10,6 @@
 #' uses pair differences together with pair covariate differences and centered pair
 #' means, which is the algebraically equivalent paired Lin regression.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 	inherit = InferenceKKPassThroughCompound,

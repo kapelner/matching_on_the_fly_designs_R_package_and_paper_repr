@@ -6,10 +6,6 @@
 #' Poisson log-link working model with Huber-White sandwich variance. The
 #' treatment effect is reported on the log-risk-ratio scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -40,24 +36,7 @@ InferenceIncidMultiModifiedPoisson = R6::R6Class("InferenceIncidMultiModifiedPoi
 	inherit = InferenceIncidUnivModifiedPoisson,
 	public = list(
 
-		#' @description
-		#' Initialize a multivariate modified-Poisson inference object for a
-		#' completed non-KK design with a binary response.
-		#' @param des_obj A completed non-KK \code{DesignSeqOneByOne} object with an
-		#'   incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and
-		#'   randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
-		#' @description
-		#' Computes the modified-Poisson estimate of the treatment effect on the
-		#' log-risk-ratio scale.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		}
 	),
 
 	private = list(

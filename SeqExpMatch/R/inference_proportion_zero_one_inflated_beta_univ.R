@@ -7,10 +7,6 @@
 #' beta distribution. The reported treatment effect is the treatment coefficient
 #' from the beta mean submodel, on the logit scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -41,14 +37,5 @@ InferencePropUniZeroOneInflatedBetaRegr = R6::R6Class("InferencePropUniZeroOneIn
 	inherit = InferencePropZeroOneInflatedBetaAbstract,
 	public = list(
 
-		#' @description
-		#' Initialize a zero/one-inflated beta inference object for a completed design
-		#' with a proportion response.
-		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	)
 )

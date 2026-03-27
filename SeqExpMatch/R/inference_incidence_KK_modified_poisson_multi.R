@@ -7,10 +7,6 @@
 #' treated as singleton clusters when computing the sandwich covariance, so the
 #' estimated treatment effect is a log risk ratio with cluster-robust inference.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -41,15 +37,6 @@ InferenceIncidMultiKKModifiedPoisson = R6::R6Class("InferenceIncidMultiKKModifie
 	inherit = InferenceIncidUnivKKModifiedPoisson,
 	public = list(
 
-		#' @description
-		#' Initialize a multivariate modified-Poisson inference object for a completed
-		#' KK design with a binary response.
-		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(

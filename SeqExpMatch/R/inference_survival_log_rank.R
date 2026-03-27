@@ -7,10 +7,6 @@
 #' control groups under the pooled null hazard. The p-value uses the classic
 #' log-rank score statistic with its hypergeometric tie-adjusted variance.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -44,15 +40,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 	inherit = InferenceAsymp,
 	public = list(
 
-		#' @description
-		#' Initialize a log-rank inference object for survival data.
-		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a survival response.
-		#' @param num_cores The number of CPU cores to use for parallel processing.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-			assertResponseType(des_obj$get_response_type(), "survival")
-		},
 
 		#' @description
 		#' Computes the treatment-effect estimate on the martingale-residual mean-difference scale.

@@ -16,25 +16,11 @@
 #' p=1, q=0), which is distinct from the log-rank test (\code{rho = 0}) used in
 #' \code{InferenceSurvivalKMDiff}.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 	inherit = InferenceAsymp,
 	public = list(
 
-		#' @description
-		#' Initialize a Gehan-Wilcoxon (Peto-Prentice) inference object for survival data.
-		#' @param des_obj     A DesignSeqOneByOne object whose entire n subjects are assigned and response
-		#'   y is recorded within.
-		#' @param	num_cores		The number of CPU cores to use for parallel processing. Default is 1.
-		#' @param	verbose		Whether to print progress messages. Default is FALSE.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-			assertResponseType(des_obj$get_response_type(), "survival")
-		},
 
 		#' @description
 		#' Returns the mean difference in Peto-Prentice weighted martingale residuals

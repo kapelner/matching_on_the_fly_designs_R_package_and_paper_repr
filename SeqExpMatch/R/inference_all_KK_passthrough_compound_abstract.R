@@ -14,10 +14,6 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-			private$compute_reservoir_and_match_statistics()
-		}
 	),
 	private = list(
 		compute_estimate_from_matched_and_reservoir = function(run_matched, run_reservoir){

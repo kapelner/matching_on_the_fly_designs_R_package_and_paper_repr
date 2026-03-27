@@ -7,10 +7,6 @@
 #' after the sequential design is completed.
 #'
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidUnivLogRegr = R6::R6Class("InferenceIncidUnivLogRegr",
 	inherit = InferenceMLEorKMforGLMs,

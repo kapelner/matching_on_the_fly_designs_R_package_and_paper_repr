@@ -14,10 +14,6 @@
 #' \code{Suggests} and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{quantreg} manually before use.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 	inherit = InferenceAsymp,

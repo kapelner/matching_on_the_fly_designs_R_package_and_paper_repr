@@ -6,10 +6,6 @@
 #' indicator, centered covariates, and treatment-by-centered-covariate
 #' interactions. Inference uses HC2 heteroskedasticity-robust standard errors.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 	inherit = InferenceAsymp,

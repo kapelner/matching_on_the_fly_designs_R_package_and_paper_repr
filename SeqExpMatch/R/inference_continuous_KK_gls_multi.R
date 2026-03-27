@@ -24,10 +24,6 @@
 #' installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{nlme} before using this class.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 	inherit = InferenceKKPassThrough,

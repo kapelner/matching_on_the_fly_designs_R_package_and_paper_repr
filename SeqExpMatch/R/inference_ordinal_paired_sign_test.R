@@ -5,10 +5,6 @@
 #' For matched pairs, it considers the sign of the within-pair differences.
 #' Reservoir subjects are not included in this simple paired test.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

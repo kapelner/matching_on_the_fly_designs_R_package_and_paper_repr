@@ -5,10 +5,6 @@
 #' for ordinal responses under a KK matching-on-the-fly design, adjusting for
 #' baseline covariates.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' \dontrun{
@@ -30,14 +26,6 @@
 InferenceOrdinalMultiKKGEE = R6::R6Class("InferenceOrdinalMultiKKGEE",
 	inherit = InferenceOrdinalUnivKKGEE,
 	public = list(
-		#' @description
-		#' Initialize a multivariate GEE inference object.
-		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores Number of CPU cores.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 	private = list(
 		shared = function(){

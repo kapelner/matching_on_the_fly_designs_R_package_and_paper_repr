@@ -7,10 +7,6 @@
 #' member of the treatment group has a better outcome than a randomly selected
 #' member of the control group.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

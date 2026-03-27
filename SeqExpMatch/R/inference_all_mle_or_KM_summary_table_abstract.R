@@ -17,9 +17,6 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
 		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
 		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
 		# @description
 		# Computes the appropriate estimate for mean difference

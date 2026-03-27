@@ -56,17 +56,6 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 			rbinom(1, 1, prob_T)
 		},
 
-		#' @description
-		#' Draw multiple treatment assignment vectors according to Wei's Urn design.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
-			# For Urn, we can't use simple C++ permutations if it's dynamic.
-			# Fallback to super which calls redraw_w_according_to_design r times.
-			super$draw_ws_according_to_design(r)
-		},
 
 		#' @description
 		#' Redraw treatment assignments according to the Urn design.

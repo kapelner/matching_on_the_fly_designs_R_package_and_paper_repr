@@ -3,10 +3,6 @@
 #' @description
 #' Stereotype probit inference for ordinal responses using treatment plus observed covariates.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -37,15 +33,6 @@ InferenceOrdinalMultiStereotypeProbitRegr = R6::R6Class("InferenceOrdinalMultiSt
 	inherit = InferenceOrdinalUniStereotypeProbitRegr,
 	public = list(
 
-		#' @description
-		#' Initialize a multivariate stereotype probit inference object for a
-		#' completed ordinal sequential design.
-		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
-		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(

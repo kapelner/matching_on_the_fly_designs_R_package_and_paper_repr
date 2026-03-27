@@ -11,10 +11,6 @@
 #' ignores any matched-pair structure if present. For matched data, use
 #' \code{InferenceIncidUnivKKNewcombeRiskDiff}.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

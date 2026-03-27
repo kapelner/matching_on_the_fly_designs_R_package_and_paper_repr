@@ -5,10 +5,6 @@
 #' all recorded covariates as predictors. The treatment effect is reported on the
 #' log-risk-ratio scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidMultiLogBinomial = R6::R6Class("InferenceIncidMultiLogBinomial",
 	inherit = InferenceIncidUnivLogBinomial,

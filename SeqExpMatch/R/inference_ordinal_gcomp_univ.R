@@ -4,10 +4,6 @@
 #' Fits a proportional odds model with only the treatment indicator, then
 #' standardizes to estimate the marginal mean difference.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

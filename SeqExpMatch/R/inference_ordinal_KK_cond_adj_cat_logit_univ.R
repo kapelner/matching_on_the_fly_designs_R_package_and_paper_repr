@@ -8,10 +8,6 @@
 #' response
 #' into pairs of adjacent categories and applying conditional logistic regression.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

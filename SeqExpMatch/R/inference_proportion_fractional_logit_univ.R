@@ -11,10 +11,6 @@
 #' coefficient from the working logit model, and inference uses a robust sandwich
 #' covariance rather than the model-based binomial variance.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 	inherit = InferenceAsymp,

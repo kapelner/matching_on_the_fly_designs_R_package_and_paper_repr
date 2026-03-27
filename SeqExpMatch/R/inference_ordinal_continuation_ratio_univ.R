@@ -5,10 +5,6 @@
 #' conditions on "having reached category k" before comparing category k vs >k.
 #' It is particularly useful when categories represent a progression.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

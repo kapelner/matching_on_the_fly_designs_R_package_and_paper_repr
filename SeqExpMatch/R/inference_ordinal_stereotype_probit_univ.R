@@ -5,10 +5,6 @@
 #' treatment coefficient with category-specific score weights, and inference is
 #' based on a probit link.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

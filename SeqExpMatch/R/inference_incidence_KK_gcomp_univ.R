@@ -8,10 +8,6 @@
 #' clusters and reservoir subjects are treated as singletons when computing the
 #' sandwich covariance.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -41,43 +37,10 @@
 InferenceIncidUnivKKGCompRiskDiff = R6::R6Class("InferenceIncidUnivKKGCompRiskDiff",
 	inherit = InferenceIncidKKGCompAbstract,
 	public = list(
-		#' @description
-		#' Initialize the KK g-computation RD inference object.
-		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
-		#' @description
-		#' Computes the standardized marginal risk-difference estimate.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		},
 
-		#' @description
-		#' Computes a 1 - \code{alpha} confidence interval for the marginal risk difference.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			super$compute_asymp_confidence_interval(alpha = alpha)
-		},
 
-		#' @description
-		#' Computes a two-sided p-value for the marginal risk difference.
-		#' @param delta The null risk difference to test against. The default is 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
-			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
-		},
 
-		#' @description
-		#' Computes a bootstrap two-sided p-value for the marginal risk difference.
-		#' @param delta The null risk difference to test against. The default is 0.
-		#' @param B Number of bootstrap samples.
-		#' @param na.rm Whether to remove non-finite bootstrap replicates.
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
-		}
 	),
 
 	private = list(
@@ -104,10 +67,6 @@ InferenceIncidUnivKKGCompRiskDiff = R6::R6Class("InferenceIncidUnivKKGCompRiskDi
 #' and p-values use the delta method on the log-risk-ratio scale and then map
 #' back to the risk-ratio scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -137,43 +96,10 @@ InferenceIncidUnivKKGCompRiskDiff = R6::R6Class("InferenceIncidUnivKKGCompRiskDi
 InferenceIncidUnivKKGCompRiskRatio = R6::R6Class("InferenceIncidUnivKKGCompRiskRatio",
 	inherit = InferenceIncidKKGCompAbstract,
 	public = list(
-		#' @description
-		#' Initialize the KK g-computation RR inference object.
-		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
-		#' @description
-		#' Computes the standardized marginal risk-ratio estimate.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		},
 
-		#' @description
-		#' Computes a 1 - \code{alpha} confidence interval for the marginal risk ratio.
-		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			super$compute_asymp_confidence_interval(alpha = alpha)
-		},
 
-		#' @description
-		#' Computes a two-sided p-value for the marginal risk ratio.
-		#' @param delta The null risk ratio to test against. The default is 1.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
-			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
-		},
 
-		#' @description
-		#' Computes a bootstrap two-sided p-value for the marginal risk ratio.
-		#' @param delta The null risk ratio to test against. The default is 1.
-		#' @param B Number of bootstrap samples.
-		#' @param na.rm Whether to remove non-finite bootstrap replicates.
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
-		}
 	),
 
 	private = list(

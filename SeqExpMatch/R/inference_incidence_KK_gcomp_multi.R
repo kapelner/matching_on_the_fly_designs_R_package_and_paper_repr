@@ -8,10 +8,6 @@
 #' treated as clusters and reservoir subjects are treated as singletons when
 #' computing the sandwich covariance.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -41,14 +37,6 @@
 InferenceIncidMultiKKGCompRiskDiff = R6::R6Class("InferenceIncidMultiKKGCompRiskDiff",
 	inherit = InferenceIncidUnivKKGCompRiskDiff,
 	public = list(
-		#' @description
-		#' Initialize the multivariate KK g-computation RD inference object.
-		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(
@@ -73,10 +61,6 @@ InferenceIncidMultiKKGCompRiskDiff = R6::R6Class("InferenceIncidMultiKKGCompRisk
 #' and p-values use the delta method on the log-risk-ratio scale and then map
 #' back to the risk-ratio scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -106,14 +90,6 @@ InferenceIncidMultiKKGCompRiskDiff = R6::R6Class("InferenceIncidMultiKKGCompRisk
 InferenceIncidMultiKKGCompRiskRatio = R6::R6Class("InferenceIncidMultiKKGCompRiskRatio",
 	inherit = InferenceIncidUnivKKGCompRiskRatio,
 	public = list(
-		#' @description
-		#' Initialize the multivariate KK g-computation RR inference object.
-		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 
 	private = list(

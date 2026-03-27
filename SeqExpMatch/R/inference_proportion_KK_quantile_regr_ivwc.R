@@ -35,10 +35,6 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{quantreg} before using this class.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -90,42 +86,10 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 			super$initialize(des_obj, tau, qlogis, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-		},
-
-		#' @description
-		#' Computes the randomization-based confidence interval via Zhang's combined test.
-		#' @param alpha The confidence level is 1 - \code{alpha}.
-		#' @param r Number of random sign-flips / permutations.
-		#' @param pval_epsilon Bisection convergence tolerance.
-		#' @param show_progress Ignored.
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE){
-			super$compute_confidence_interval_rand(
-				alpha = alpha,
-				r = r,
-				pval_epsilon = pval_epsilon,
-				show_progress = show_progress
-			)
-		},
-
-		#' @description
-		#' Returns the estimated treatment effect.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval.
-		#' @param alpha The confidence level in the computed confidence
-		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			super$compute_asymp_confidence_interval(alpha = alpha)
-		},
-
-		#' @description
-		#' Computes the asymptotic p-value.
-		#' @param delta The null difference to test against. Default is zero.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
 		}
+
+
+
+
 	)
 )

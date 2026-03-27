@@ -6,10 +6,6 @@
 #' probability model with HC2 heteroskedasticity-robust variance. The treatment
 #' effect is reported on the risk-difference scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -40,23 +36,7 @@ InferenceIncidMultiRiskDiff = R6::R6Class("InferenceIncidMultiRiskDiff",
 	inherit = InferenceIncidUnivRiskDiff,
 	public = list(
 
-		#' @description
-		#' Initialize a multivariate risk-difference inference object for a
-		#' completed non-KK design with a binary response.
-		#' @param des_obj A completed non-KK \code{DesignSeqOneByOne} object with an
-		#'   incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and
-		#'   randomization inference.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
-		#' @description
-		#' Computes the direct risk-difference estimate of the treatment effect.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		}
 	),
 
 	private = list(

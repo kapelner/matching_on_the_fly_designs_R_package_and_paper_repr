@@ -7,10 +7,6 @@
 #' model logit(P(Y = k | Y >= k)) is fit by expanding the ordinal response into
 #' binary continuation trials and applying conditional logistic regression.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

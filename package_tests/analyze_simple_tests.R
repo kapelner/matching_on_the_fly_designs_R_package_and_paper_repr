@@ -1,5 +1,5 @@
 set.seed(1)
-pacman::p_load(SeqExpMatch, stringr, doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
+pacman::p_load(EDI, stringr, doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 

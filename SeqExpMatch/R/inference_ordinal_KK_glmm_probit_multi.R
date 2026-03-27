@@ -12,10 +12,6 @@
 #' \code{Suggests} and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{ordinal} manually before using this class.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -45,20 +41,6 @@
 InferenceOrdinalMultiKKGLMMProbit = R6::R6Class("InferenceOrdinalMultiKKGLMMProbit",
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
-		#' @description
-		#' Initialize a multivariate ordinal probit CLMM inference object for a
-		#' completed KK design.
-		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design) whose entire
-		#' 							n subjects are assigned and whose ordinal response y is
-		#' 							recorded.
-		#' @param	num_cores			The number of CPU cores to use to parallelize the
-		#' 							sampling during randomization-based inference and bootstrap
-		#' 							resampling.
-		#' @param	verbose			Whether to print progress messages. Default is
-		#' 							\code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		}
 	),
 	private = list(
 		clmm_link = function() "probit"

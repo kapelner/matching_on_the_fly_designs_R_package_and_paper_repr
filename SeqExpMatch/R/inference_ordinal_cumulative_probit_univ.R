@@ -3,10 +3,6 @@
 #' @description
 #' Ordinal probit (cumulative probit) model inference for ordinal responses.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

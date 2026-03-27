@@ -5,10 +5,6 @@
 #' using the treatment indicator and all recorded covariates. For matched pairs, it uses
 #' conditional Poisson regression. For reservoir subjects, it uses Negative Binomial regression.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -39,36 +35,9 @@ InferenceCountPoissonMultiKKCPoissonIVWC = R6::R6Class("InferenceCountPoissonMul
 	inherit = InferenceAbstractKKPoissonCPoissonIVWC,
 	public = list(
 
-		#' @description
-		#' Initialize the inference object.
-		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param	num_cores			Number of CPU cores for parallel processing.
-		#' @param	verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-		},
 
-		#' @description
-		#' Returns the estimated treatment effect.
-		compute_treatment_estimate = function(){
-			super$compute_treatment_estimate()
-		},
 
-		#' @description
-		#' Computes the asymptotic confidence interval.
-		#' @param alpha The confidence level in the computed confidence
-		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			super$compute_asymp_confidence_interval(alpha = alpha)
-		},
 
-		#' @description
-		#' Computes the asymptotic p-value.
-		#' @param delta The null difference to test against. For any
-		#'   treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			super$compute_asymp_two_sided_pval_for_treatment_effect(delta = delta)
-		}
 	),
 	private = list(
 		include_covariates = function() TRUE

@@ -15,10 +15,6 @@
 #' include only the treatment indicator. The resulting treatment coefficient is an
 #' adjusted log-time-ratio-style effect for the event process.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)
@@ -52,20 +48,6 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 	inherit = InferenceMLEorKMSummaryTable,
 	public = list(
 
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
-		#' after the sequential design is completed.
-		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
-		#'   are assigned and response y is recorded within.
-		#' @param num_cores The number of CPU cores to use to parallelize
-		#'   the sampling during randomization-based inference and
-		#'   bootstrap resampling.
-		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
-			assertResponseType(des_obj$get_response_type(), "survival")
-		}
 	),
 
 	private = list(

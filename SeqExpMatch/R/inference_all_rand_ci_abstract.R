@@ -150,7 +150,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 #' Applicable to binary (incidence) outcomes in KK matching-on-the-fly or Bernoulli
 #' designs. A bisection algorithm inverts the combined p-value to construct the CI.
 #'
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 	inherit = InferenceRandCI,

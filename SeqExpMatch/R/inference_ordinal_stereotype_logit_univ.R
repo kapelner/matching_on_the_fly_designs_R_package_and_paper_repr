@@ -5,10 +5,6 @@
 #' category-specific treatment effects through latent score weights while keeping
 #' a common treatment coefficient.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

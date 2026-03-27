@@ -14,10 +14,6 @@
 #' and is not installed automatically with \pkg{SeqExpMatch}.
 #' Install \pkg{multgee} before using this class.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

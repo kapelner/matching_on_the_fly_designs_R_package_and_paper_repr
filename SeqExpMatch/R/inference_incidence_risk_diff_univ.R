@@ -11,10 +11,6 @@
 #' outcomes. With only the treatment indicator in the design matrix, the point
 #' estimate coincides with the empirical risk difference.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidUnivRiskDiff = R6::R6Class("InferenceIncidUnivRiskDiff",
 	inherit = InferenceAsymp,

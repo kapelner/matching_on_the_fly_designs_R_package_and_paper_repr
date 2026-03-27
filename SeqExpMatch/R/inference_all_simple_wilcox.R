@@ -16,10 +16,6 @@
 #' so the randomization confidence interval inversion is exact (not approximate)
 #' on the original response scale for continuous responses.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 	inherit = InferenceAsymp,

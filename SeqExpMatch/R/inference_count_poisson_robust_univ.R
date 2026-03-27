@@ -5,10 +5,6 @@
 #' indicator. The treatment effect is reported on the log-rate scale and inference
 #' uses a Huber-White sandwich variance rather than the model-based Poisson variance.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 #' @examples
 #' set.seed(1)

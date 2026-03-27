@@ -5,10 +5,6 @@
 #' treatment and all recorded covariates as predictors. The treatment effect is
 #' reported on the risk-difference scale.
 #'
-#' @inherit InferenceRand methods
-#' @inherit InferenceBoot methods
-#' @inherit InferenceAsymp methods
-#' @inherit InferenceRandCI methods
 #' @export
 InferenceIncidMultiBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidMultiBinomialIdentityRiskDiff",
 	inherit = InferenceIncidUnivBinomialIdentityRiskDiff,
