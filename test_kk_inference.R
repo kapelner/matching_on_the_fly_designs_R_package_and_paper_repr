@@ -7,8 +7,8 @@ X <- as.data.frame(matrix(rnorm(n * 3), ncol = 3))
 colnames(X) <- paste0("x", 1:3)
 y <- rnorm(n)
 
-cat("Creating SeqDesignKK21...\n")
-des_obj <- SeqDesignKK21$new(response_type = "continuous", n = n)
+cat("Creating DesignSeqOneByOneKK21...\n")
+des_obj <- DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1:n) {
@@ -16,9 +16,9 @@ for (t in 1:n) {
 	des_obj$add_subject_response(t, y[t], 1)
 }
 
-cat("Creating DesignInferenceAllKKCompoundMeanDiff...\n")
+cat("Creating InferenceAllKKCompoundMeanDiff...\n")
 tryCatch({
-	seq_des_inf <- DesignInferenceAllKKCompoundMeanDiff$new(des_obj)
+	seq_des_inf <- InferenceAllKKCompoundMeanDiff$new(des_obj)
 	cat("SUCCESS: Created inference object\n")
 
 	cat("Computing treatment estimate...\n")

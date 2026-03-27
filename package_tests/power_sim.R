@@ -46,7 +46,7 @@ for (nsim in 1 : Nsim){
 
 	#test all designs
 	for (d in c("Bernoulli", "BCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise")){
-		des_obj = SeqDesign$new(n, p, d, verbose = FALSE)
+		des_obj = DesignSeqOneByOne$new(n, p, d, verbose = FALSE)
 
 		for (t in 1 : n){
 		des_obj$add_subject_to_experiment(X[t, ])
@@ -57,7 +57,7 @@ for (nsim in 1 : Nsim){
 
 		for (test_type in c("normal-based", "randomization-exact")){
 		for (estimate_type in c("difference-in-means", "OLS")){
-			seq_des_inf_obj = DesignInference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
+			seq_des_inf_obj = Inference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
 
 			beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 			pval = seq_des_inf_obj$compute_pval_for_no_treatment_effect(r = r)

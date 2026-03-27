@@ -1,11 +1,11 @@
-test_that("SeqDesignPocockSimon works", {
+test_that("DesignSeqOneByOnePocockSimon works", {
 	n = 20
 	X = data.frame(
 		gender = sample(c("M", "F"), n, replace = TRUE),
 		age_cat = sample(c("Young", "Old"), n, replace = TRUE)
 	)
 	
-	des = SeqDesignPocockSimon$new(strata_cols = c("gender", "age_cat"), n = n, verbose = FALSE)
+	des = DesignSeqOneByOnePocockSimon$new(strata_cols = c("gender", "age_cat"), n = n, verbose = FALSE)
 	
 	for (i in 1:n) {
 		des$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])

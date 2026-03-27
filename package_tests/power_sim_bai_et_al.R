@@ -60,7 +60,7 @@ for (nsim in 1 : Nsim){
 			y = array(NA, n)
 			#test all designs
 			for (d in c("KK14", "KK21", "KK21stepwise")){
-			des = paste0("SeqDesign", d)
+			des = paste0("DesignSeqOneByOne", d)
 			des_class = get(des)
 			des_obj_morrison_n = des_class$new(n = n, prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
 			des_obj_morrison = des_class$new(prob_T = 0.5, p = p, response_type = "continuous", verbose = FALSE, morrison = TRUE)
@@ -80,7 +80,7 @@ for (nsim in 1 : Nsim){
 				}
 
 				for(infrence in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
-				des = paste0("DesignInference", infrence)
+				des = paste0("Inference", infrence)
 				if(infrence == "BaiAdjustedT"){
 					des = paste0(des, d)
 					des_class = get(des)

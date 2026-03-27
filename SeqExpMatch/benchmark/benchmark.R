@@ -12,13 +12,13 @@ cat("Debugging Bootstrap NAs for Bernoulli continuous SimpleMeanDiff\n")
 
 # Define Designs
 design_constructors = list(
-	"Bernoulli" = function(type) SeqDesignBernoulli$new(response_type = type)
+	"Bernoulli" = function(type) DesignSeqOneByOneBernoulli$new(response_type = type)
 )
 
 # Inference classes mapped by response type
 inference_map = list(
 	"continuous" = list(
-	"SimpleMeanDiff" = DesignInferenceAllSimpleMeanDiff
+	"SimpleMeanDiff" = InferenceAllSimpleMeanDiff
 	)
 )
 

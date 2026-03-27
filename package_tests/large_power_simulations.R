@@ -161,7 +161,7 @@ res = foreach(
 	cat("\n", nsim, "/", nrow(exp_settings), " dataset_name =", dataset_name, "response_type =", response_type, "design =", design, "\n")
 
 	t_0 = proc.time()
-	des_obj = SeqDesign$new(n, design, response_type = response_type, verbose = FALSE)
+	des_obj = DesignSeqOneByOne$new(n, design, response_type = response_type, verbose = FALSE)
 	response_added = array(FALSE, n)
 	# stop("boom")
 	# profvis({
@@ -269,7 +269,7 @@ res = foreach(
 
 		t_0 = proc.time()
 
-		seq_des_inf_obj = DesignInference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
+		seq_des_inf_obj = Inference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
 		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
 		cat("  beta_T = ", beta_T, "  beta_hat_T =", beta_hat_T, "\n")
 		pval = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(r = r)

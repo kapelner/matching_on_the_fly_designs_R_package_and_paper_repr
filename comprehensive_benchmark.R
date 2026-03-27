@@ -33,49 +33,49 @@ extract_ci_bounds <- function(value) {
 # Set seed for reproducibility
 set.seed(123)
 
-designs <- c("SeqDesignBernoulli", "SeqDesigniBCRD", "SeqDesignEfron", "SeqDesignAtkinson", "SeqDesignKK14", "SeqDesignKK21", "SeqDesignKK21stepwise")
+designs <- c("DesignSeqOneByOneBernoulli", "DesignSeqOneByOneiBCRD", "DesignSeqOneByOneEfron", "DesignSeqOneByOneAtkinson", "DesignSeqOneByOneKK14", "DesignSeqOneByOneKK21", "DesignSeqOneByOneKK21stepwise")
 response_types <- c("continuous", "incidence", "count", "proportion", "survival")
 
 inf_by_res_type <- list(
 	continuous = c(
-	"DesignInferenceAllSimpleMeanDiff",
-	"DesignInferenceAllKKCompoundMeanDiff",
-	"DesignInferenceContinMultOLS",
-	"DesignInferenceContinMultOLSKK",
-	"DesignInferenceBaiAdjustedTKK14",
-	"DesignInferenceBaiAdjustedTKK21"
+	"InferenceAllSimpleMeanDiff",
+	"InferenceAllKKCompoundMeanDiff",
+	"InferenceContinMultOLS",
+	"InferenceContinMultOLSKK",
+	"InferenceBaiAdjustedTKK14",
+	"InferenceBaiAdjustedTKK21"
 	),
 	incidence = c(
-	"DesignInferenceAllSimpleMeanDiff",
-	"DesignInferenceAllKKCompoundMeanDiff",
-	"DesignInferenceIncidUnivLogRegr",
-	"DesignInferenceIncidMultiLogRegr"
+	"InferenceAllSimpleMeanDiff",
+	"InferenceAllKKCompoundMeanDiff",
+	"InferenceIncidUnivLogRegr",
+	"InferenceIncidMultiLogRegr"
 	),
 	count = c(
-	"DesignInferenceAllSimpleMeanDiff",
-	"DesignInferenceAllKKCompoundMeanDiff",
-	"DesignInferenceCountUnivNegBinRegr",
-	"DesignInferenceCountMultiNegBinRegr"
+	"InferenceAllSimpleMeanDiff",
+	"InferenceAllKKCompoundMeanDiff",
+	"InferenceCountUnivNegBinRegr",
+	"InferenceCountMultiNegBinRegr"
 	),
 	proportion = c(
-	"DesignInferenceAllSimpleMeanDiff",
-	"DesignInferenceAllKKCompoundMeanDiff",
-	"DesignInferencePropUniBetaRegr",
-	"DesignInferencePropMultiBetaRegr"
+	"InferenceAllSimpleMeanDiff",
+	"InferenceAllKKCompoundMeanDiff",
+	"InferencePropUniBetaRegr",
+	"InferencePropMultiBetaRegr"
 	),
 	survival = c(
-	"DesignInferenceSurvivalKMDiff",
-	"DesignInferenceSurvivalRestrictedMeanDiff",
-	"DesignInferenceSurvivalUniWeibullRegr",
-	"DesignInferenceSurvivalMultiWeibullRegr",
-	"DesignInferenceSurvivalUniCoxPHRegr",
-	"DesignInferenceSurvivalMultiCoxPHRegr"
+	"InferenceSurvivalKMDiff",
+	"InferenceSurvivalRestrictedMeanDiff",
+	"InferenceSurvivalUniWeibullRegr",
+	"InferenceSurvivalMultiWeibullRegr",
+	"InferenceSurvivalUniCoxPHRegr",
+	"InferenceSurvivalMultiCoxPHRegr"
 	)
 )
 
 inference_design_requirements <- list(
-	DesignInferenceBaiAdjustedTKK14 = "SeqDesignKK14",
-	DesignInferenceBaiAdjustedTKK21 = c("SeqDesignKK21", "SeqDesignKK21stepwise")
+	InferenceBaiAdjustedTKK14 = "DesignSeqOneByOneKK14",
+	InferenceBaiAdjustedTKK21 = c("DesignSeqOneByOneKK21", "DesignSeqOneByOneKK21stepwise")
 )
 
 n <- 100
@@ -100,7 +100,7 @@ for (rt in response_types) {
 	vbcat("  Testing design:", des_name, "\n")
 
 	# Initialize design
-	# Some designs might have different constructor arguments, but most follow SeqDesign signature
+	# Some designs might have different constructor arguments, but most follow DesignSeqOneByOne signature
 	des_class <- get(des_name)
 	des_obj <- des_class$new(n = n, response_type = rt, verbose = verbose)
 
@@ -131,9 +131,9 @@ for (rt in response_types) {
 		}
 		}
 		if (is.null(skip_reason) &&
-			inf_name == "DesignInferenceContinMultOLSKK" &&
-			!any(vapply(c("SeqDesignKK14", "SeqDesignKK21"), function(cl) inherits(des_obj, cl), logical(1)))) {
-		skip_reason <- "Skipped: design must inherit SeqDesignKK14 or SeqDesignKK21"
+			inf_name == "InferenceContinMultOLSKK" &&
+			!any(vapply(c("DesignSeqOneByOneKK14", "DesignSeqOneByOneKK21"), function(cl) inherits(des_obj, cl), logical(1)))) {
+		skip_reason <- "Skipped: design must inherit DesignSeqOneByOneKK14 or DesignSeqOneByOneKK21"
 		}
 		if (!is.null(skip_reason)) {
 		vbcat(skip_reason, "\n")

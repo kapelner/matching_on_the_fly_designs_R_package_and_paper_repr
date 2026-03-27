@@ -1,43 +1,43 @@
 
 dir_path = "SeqExpMatch/R/"
-files = list.files(dir_path, pattern = "^design_inference_.*\\.R$", full.names = TRUE)
+files = list.files(dir_path, pattern = "^inference_.*\\.R$", full.names = TRUE)
 
 abstract_classes_to_asymp = c(
-  "DesignInferenceAbstractKKGEE",
-  "DesignInferenceAbstractKKGLMM",
-  "DesignInferenceAbstractKKClogitIVWC",
-  "DesignInferenceAbstractKKClogitCombinedLikelihood",
-  "DesignInferenceKKPassThrough",
-  "DesignInferenceMLEorKMforGLMs",
-  "DesignInferenceIncidGCompAbstract",
-  "DesignInferencePropGCompAbstract",
-  "DesignInferenceOrdinalGCompAbstract",
-  "DesignInferenceSurvivalStratCoxPHAbstract",
-  "DesignInferenceAbstractKKWilcoxBaseIVWC",
-  "DesignInferenceAbstractKKWilcoxRegrIVWC",
-  "DesignInferenceAbstractKKLWACoxIVWC",
-  "DesignInferenceAbstractKKLWACoxCombinedLikelihood",
-  "DesignInferenceAbstractKKClaytonCopulaIVWC",
-  "DesignInferenceAbstractKKClaytonCopulaCombinedLikelihood",
-  "DesignInferenceAbstractKKWeibullFrailtyIVWC",
-  "DesignInferenceAbstractKKWeibullFrailtyCombinedLikelihood",
-  "DesignInferenceAbstractKKPoissonCPoissonIVWC",
-  "DesignInferenceAbstractKKPoissonCPoissonCombinedLikelihood",
-  "DesignInferenceAbstractKKHurdlePoissonIVWC",
-  "DesignInferenceAbstractKKHurdlePoissonCombinedLikelihood",
-  "DesignInferenceCountHurdleNegBinAbstract",
-  "DesignInferenceCountZeroAugmentedPoissonAbstract",
-  "DesignInferencePropZeroOneInflatedBetaAbstract",
-  "DesignInferenceOrdinalPartialProportionalOddsAbstract",
-  "DesignInferenceIncidLogBinomialAbstract",
-  "DesignInferenceIncidConstrainedBinomialAbstract",
-  "DesignInferenceIncidBinomialIdentityAbstract"
+  "InferenceAbstractKKGEE",
+  "InferenceAbstractKKGLMM",
+  "InferenceAbstractKKClogitIVWC",
+  "InferenceAbstractKKClogitCombinedLikelihood",
+  "InferenceKKPassThrough",
+  "InferenceMLEorKMforGLMs",
+  "InferenceIncidGCompAbstract",
+  "InferencePropGCompAbstract",
+  "InferenceOrdinalGCompAbstract",
+  "InferenceSurvivalStratCoxPHAbstract",
+  "InferenceAbstractKKWilcoxBaseIVWC",
+  "InferenceAbstractKKWilcoxRegrIVWC",
+  "InferenceAbstractKKLWACoxIVWC",
+  "InferenceAbstractKKLWACoxCombinedLikelihood",
+  "InferenceAbstractKKClaytonCopulaIVWC",
+  "InferenceAbstractKKClaytonCopulaCombinedLikelihood",
+  "InferenceAbstractKKWeibullFrailtyIVWC",
+  "InferenceAbstractKKWeibullFrailtyCombinedLikelihood",
+  "InferenceAbstractKKPoissonCPoissonIVWC",
+  "InferenceAbstractKKPoissonCPoissonCombinedLikelihood",
+  "InferenceAbstractKKHurdlePoissonIVWC",
+  "InferenceAbstractKKHurdlePoissonCombinedLikelihood",
+  "InferenceCountHurdleNegBinAbstract",
+  "InferenceCountZeroAugmentedPoissonAbstract",
+  "InferencePropZeroOneInflatedBetaAbstract",
+  "InferenceOrdinalPartialProportionalOddsAbstract",
+  "InferenceIncidLogBinomialAbstract",
+  "InferenceIncidConstrainedBinomialAbstract",
+  "InferenceIncidBinomialIdentityAbstract"
 )
 
 inherit_tags = c(
-  "#' @inherit DesignInferenceRand methods",
-  "#' @inherit DesignInferenceBoot methods",
-  "#' @inherit DesignInferenceAsymp methods"
+  "#' @inherit InferenceRand methods",
+  "#' @inherit InferenceBoot methods",
+  "#' @inherit InferenceAsymp methods"
 )
 
 for (file in files) {
@@ -51,8 +51,8 @@ for (file in files) {
     if (length(idx) > 0) {
       for (i in seq(idx + 1, min(idx + 15, length(lines)))) {
         if (grepl("inherit\\s*=", lines[i])) {
-          if (!grepl("DesignInferenceAsymp", lines[i])) {
-            lines[i] = gsub("inherit\\s*=\\s*[A-Za-z0-9_]+\\s*([,)])$", "inherit = DesignInferenceAsymp\\1", lines[i])
+          if (!grepl("InferenceAsymp", lines[i])) {
+            lines[i] = gsub("inherit\\s*=\\s*[A-Za-z0-9_]+\\s*([,)])$", "inherit = InferenceAsymp\\1", lines[i])
             changed = TRUE
           }
           break
@@ -61,12 +61,12 @@ for (file in files) {
     }
   }
 
-  # 2. Update classes inheriting from DesignInference to DesignInferenceAsymp
+  # 2. Update classes inheriting from Inference to InferenceAsymp
   r6_indices = grep("^[A-Za-z0-9_]+\\s*=\\s*R6::R6Class\\(", lines)
   for (idx in r6_indices) {
     for (i in seq(idx + 1, min(idx + 15, length(lines)))) {
-       if (grepl("inherit\\s*=\\s*DesignInference\\s*([,)])$", lines[i])) {
-         lines[i] = gsub("inherit\\s*=\\s*DesignInference\\s*([,)])$", "inherit = DesignInferenceAsymp\\1", lines[i])
+       if (grepl("inherit\\s*=\\s*Inference\\s*([,)])$", lines[i])) {
+         lines[i] = gsub("inherit\\s*=\\s*Inference\\s*([,)])$", "inherit = InferenceAsymp\\1", lines[i])
          changed = TRUE
          break
        }
@@ -80,7 +80,7 @@ for (file in files) {
     r6_indices = grep("^[A-Za-z0-9_]+\\s*=\\s*R6::R6Class\\(", lines)
     for (idx in r6_indices) {
       cls_name = gsub("^([A-Za-z0-9_]+)\\s*=\\s*R6::R6Class\\(.*", "\\1", lines[idx])
-      if (startsWith(cls_name, "DesignInference")) {
+      if (startsWith(cls_name, "Inference")) {
         found_export = FALSE
         export_idx = -1
         # Search backwards from class definition
@@ -96,7 +96,7 @@ for (file in files) {
           # Check if tags are already there in the roxygen block before this class
           found_asymp = FALSE
           for (i in seq(idx - 1, max(1, idx - 40))) {
-             if (grepl("@inherit DesignInferenceAsymp methods", lines[i])) {
+             if (grepl("@inherit InferenceAsymp methods", lines[i])) {
                found_asymp = TRUE
                break
              }

@@ -11,8 +11,8 @@ n = min(nrow(D$X), 200)
 y = D$y_original$continuous
 dead = rep(1, n)
 
-cat("Creating SeqDesignKK21 object\n")
-des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
+cat("Creating DesignSeqOneByOneKK21 object\n")
+des_obj = DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1 : n){
@@ -20,8 +20,8 @@ for (t in 1 : n){
 	des_obj$add_subject_response(t, y[t], dead[t])
 }
 
-cat("Creating DesignInferenceAllKKCompoundMeanDiff...\n")
-inf2 = DesignInferenceAllKKCompoundMeanDiff$new(des_obj)
+cat("Creating InferenceAllKKCompoundMeanDiff...\n")
+inf2 = InferenceAllKKCompoundMeanDiff$new(des_obj)
 
 cat("Computing treatment estimate...\n")
 te = inf2$compute_treatment_estimate()

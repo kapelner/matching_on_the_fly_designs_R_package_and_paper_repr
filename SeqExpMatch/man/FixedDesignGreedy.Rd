@@ -8,7 +8,7 @@ An R6 Class encapsulating the data and functionality for a fixed greedy experime
 This design starts with a random allocation and greedily switches pairs to optimize covariate balance.
 }
 \section{Super classes}{
-\code{\link[SeqExpMatch:Design]{SeqExpMatch::Design}} -> \code{\link[SeqExpMatch:FixedDesign]{SeqExpMatch::FixedDesign}} -> \code{FixedDesignGreedy}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignGreedy}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -22,30 +22,30 @@ This design starts with a random allocation and greedily switches pairs to optim
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_assignments'><code>SeqExpMatch::Design$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_all_subject_responses"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_all_subject_responses'><code>SeqExpMatch::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject'><code>SeqExpMatch::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="add_subject_response"><a href='../../SeqExpMatch/html/Design.html#method-Design-add_subject_response'><code>SeqExpMatch::Design$add_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="any_censoring"><a href='../../SeqExpMatch/html/Design.html#method-Design-any_censoring'><code>SeqExpMatch::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_all_subjects_arrived'><code>SeqExpMatch::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_even_allocation"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_even_allocation'><code>SeqExpMatch::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_experiment_completed'><code>SeqExpMatch::Design$assert_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="assert_fixed_sample"><a href='../../SeqExpMatch/html/Design.html#method-Design-assert_fixed_sample'><code>SeqExpMatch::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="check_experiment_completed"><a href='../../SeqExpMatch/html/Design.html#method-Design-check_experiment_completed'><code>SeqExpMatch::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="duplicate"><a href='../../SeqExpMatch/html/Design.html#method-Design-duplicate'><code>SeqExpMatch::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X'><code>SeqExpMatch::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_imp"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_imp'><code>SeqExpMatch::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_X_raw"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_X_raw'><code>SeqExpMatch::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_dead"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_dead'><code>SeqExpMatch::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_n"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_n'><code>SeqExpMatch::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_prob_T"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_prob_T'><code>SeqExpMatch::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_response_type"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_response_type'><code>SeqExpMatch::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_t"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_t'><code>SeqExpMatch::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_w"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_w'><code>SeqExpMatch::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="get_y"><a href='../../SeqExpMatch/html/Design.html#method-Design-get_y'><code>SeqExpMatch::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../SeqExpMatch/html/Design.html#method-Design-is_fixed_sample_size'><code>SeqExpMatch::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="randomize"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-randomize'><code>SeqExpMatch::FixedDesign$randomize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="SeqExpMatch" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../SeqExpMatch/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>SeqExpMatch::FixedDesign$supports_resampling()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_even_allocation"><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>EDI::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-assert_experiment_completed'><code>EDI::Design$assert_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_fixed_sample"><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>EDI::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="check_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>EDI::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="duplicate"><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>EDI::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X"><a href='../../EDI/html/Design.html#method-Design-get_X'><code>EDI::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_imp"><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>EDI::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_raw"><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>EDI::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="randomize"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-randomize'><code>EDI::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>EDI::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
 }}

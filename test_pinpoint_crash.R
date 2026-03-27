@@ -12,8 +12,8 @@ n = min(nrow(D$X), 200)
 y = D$y_original$continuous
 dead = rep(1, n)
 
-cat("Creating SeqDesignKK21 object\n")
-des_obj = SeqDesignKK21$new(response_type = "continuous", n = n)
+cat("Creating DesignSeqOneByOneKK21 object\n")
+des_obj = DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1 : n){
@@ -23,18 +23,18 @@ for (t in 1 : n){
 
 cat("Subjects added successfully\n")
 
-cat("Testing DesignInferenceAllSimpleMeanDiff...\n")
-inf1 = DesignInferenceAllSimpleMeanDiff$new(des_obj)
+cat("Testing InferenceAllSimpleMeanDiff...\n")
+inf1 = InferenceAllSimpleMeanDiff$new(des_obj)
 cat("  Created successfully\n")
 cat("  Treatment estimate:", inf1$compute_treatment_estimate(), "\n")
 
-cat("\nNow testing DesignInferenceAllKKCompoundMeanDiff...\n")
+cat("\nNow testing InferenceAllKKCompoundMeanDiff...\n")
 cat("  About to call $new()...\n")
 flush.console()
 
 # Try with R-level error handling
 result = tryCatch({
-	inf2 = DesignInferenceAllKKCompoundMeanDiff$new(des_obj)
+	inf2 = InferenceAllKKCompoundMeanDiff$new(des_obj)
 	cat("  Created successfully!\n")
 	inf2
 }, error = function(e) {

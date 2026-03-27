@@ -3,7 +3,7 @@ library(SeqExpMatch)
 library(data.table)
 library(testthat)
 
-test_that("SeqDesignSPBR Stratification and Randomization", {
+test_that("DesignSeqOneByOneSPBR Stratification and Randomization", {
   n = 20
   strata_cols = c("gender", "age_cat")
   
@@ -13,7 +13,7 @@ test_that("SeqDesignSPBR Stratification and Randomization", {
     age_cat = rep(rep(c("Young", "Old"), each = 5), 2)
   )
   
-  seq_des = SeqDesignSPBR$new(strata_cols = strata_cols, block_size = 2, n = n)
+  seq_des = DesignSeqOneByOneSPBR$new(strata_cols = strata_cols, block_size = 2, n = n)
   
   cat("Starting subjects addition...\n")
   assignments = numeric(n)
@@ -60,7 +60,7 @@ test_that("SeqDesignSPBR Stratification and Randomization", {
   cat("Testing stratified bootstrap...\n")
   # Use an inference class to trigger bootstrap
   seq_des$add_all_subject_responses(rnorm(n))
-  inf_obj = DesignInferenceAllSimpleMeanDiff$new(seq_des)
+  inf_obj = InferenceAllSimpleMeanDiff$new(seq_des)
   
   # Capture the indices by overriding or just checking the property
   # We'll just run it to make sure it doesn't crash

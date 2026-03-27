@@ -60,7 +60,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 	response_function = response_functions[[response_type]]
 	dead_function =     response_functions[["dead"]]
 
-	des_obj = SeqDesign$new(n, design, response_type, verbose = FALSE)
+	des_obj = DesignSeqOneByOne$new(n, design, response_type, verbose = FALSE)
 
 	#now we add the subjects and sometimes assign y_t values
 	response_added = array(FALSE, n)
@@ -92,7 +92,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 		tryCatch({
 		estimand = ifelse(betaT == 0, 0, estimands_betaT_one[[response_type]][[inference_method]])
 
-		seq_des_inf_obj = DesignInference$new(des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
+		seq_des_inf_obj = Inference$new(des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
 
 		estimate = seq_des_inf_obj$compute_treatment_estimate()
 

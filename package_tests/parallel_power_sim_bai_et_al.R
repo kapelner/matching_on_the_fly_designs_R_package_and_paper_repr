@@ -63,7 +63,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 	y = array(NA, n)
 
 
-	des = paste0("SeqDesign", design)
+	des = paste0("DesignSeqOneByOne", design)
 	des_class = get(des)
 
 
@@ -89,7 +89,7 @@ run_simulation = function(i, beta_T, config, design, morison, n){
 	#cat("nsim:", i, ", 2\n")
 	for(inference in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){
 	#cat(inference, "\n")
-	des_inf = paste0("DesignInference", inference)
+	des_inf = paste0("Inference", inference)
 	if(inference == "BaiAdjustedT"){
 		des_inf = paste0(des_inf, design)
 		des_inf_class = get(des_inf)

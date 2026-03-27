@@ -1,5 +1,5 @@
 test_that("Design hierarchy supports both fixed and sequential designs", {
-	seq_des = SeqDesignBernoulli$new(n = 4, response_type = "continuous", verbose = FALSE)
+	seq_des = DesignSeqOneByOneBernoulli$new(n = 4, response_type = "continuous", verbose = FALSE)
 	fixed_des = FixedDesignBernoulli$new(n = 4, response_type = "continuous", verbose = FALSE)
 
 	expect_true(is(seq_des, "Design"))
@@ -19,7 +19,7 @@ test_that("plain FixedDesign supports analysis but not redraw-based resampling",
 	expect_false(des$supports_resampling())
 	expect_error(des$randomize(), "Plain FixedDesign objects do not support randomization")
 
-	inf = DesignInferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
+	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_equal(inf$compute_treatment_estimate(), 2)
 	expect_length(inf$compute_asymp_confidence_interval(), 2)
 	expect_true(is.finite(inf$compute_asymp_two_sided_pval_for_treatment_effect()))

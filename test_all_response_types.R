@@ -14,60 +14,60 @@ cat("Testing all response types with basic inference...\n\n")
 # Continuous
 cat("1. CONTINUOUS response: ")
 y = D$y_original$continuous
-seq_des = SeqDesignKK21$new(response_type = "continuous", n = n)
+seq_des = DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = DesignInferenceAllSimpleMeanDiff$new(seq_des)
+inf = InferenceAllSimpleMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Incidence
 cat("2. INCIDENCE response: ")
 y = D$y_original$incidence
-seq_des = SeqDesignKK21$new(response_type = "incidence", n = n)
+seq_des = DesignSeqOneByOneKK21$new(response_type = "incidence", n = n)
 for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = DesignInferenceIncidUnivLogRegr$new(seq_des)
+inf = InferenceIncidUnivLogRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Proportion
 cat("3. PROPORTION response: ")
 y = D$y_original$proportion
-seq_des = SeqDesignKK21$new(response_type = "proportion", n = n)
+seq_des = DesignSeqOneByOneKK21$new(response_type = "proportion", n = n)
 for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = DesignInferencePropUniBetaRegr$new(seq_des)
+inf = InferencePropUniBetaRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Count
 cat("4. COUNT response: ")
 y = D$y_original$count
-seq_des = SeqDesignKK21$new(response_type = "count", n = n)
+seq_des = DesignSeqOneByOneKK21$new(response_type = "count", n = n)
 for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = DesignInferenceCountUnivNegBinRegr$new(seq_des)
+inf = InferenceCountUnivNegBinRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Survival
 cat("5. SURVIVAL response: ")
 y = D$y_original$survival
-seq_des = SeqDesignKK21$new(response_type = "survival", n = n)
+seq_des = DesignSeqOneByOneKK21$new(response_type = "survival", n = n)
 for (t in 1:n) {
 	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
 	seq_des$add_subject_response(t, y[t], 1)
 }
-inf = DesignInferenceSurvivalRestrictedMeanDiff$new(seq_des)
+inf = InferenceSurvivalRestrictedMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 

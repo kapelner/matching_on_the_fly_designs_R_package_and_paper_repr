@@ -7,13 +7,13 @@ n = 20
 X = data.frame(x = rnorm(n))
 y = rbinom(n, 1, 0.5)
 
-seq_des = SeqDesignBernoulli$new(response_type = "incidence", n = n)
+seq_des = DesignSeqOneByOneBernoulli$new(response_type = "incidence", n = n)
 for (i in 1:n){
     seq_des$add_subject_to_experiment_and_assign(X[i, , drop=FALSE])
 }
 seq_des$add_all_subject_responses(y)
 
-inf = DesignInferenceIncidExactZhang$new(seq_des)
+inf = InferenceIncidExactZhang$new(seq_des)
 
 cat("Testing compute_exact_two_sided_pval_for_treatment_effect()...
 ")

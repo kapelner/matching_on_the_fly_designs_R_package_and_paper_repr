@@ -89,8 +89,10 @@ bm_safe = function(label, expr, env = parent.frame()) {
         "sleep %d && pkill -P %d -KILL 2>/dev/null; true",
         MAX_BM_SECS, main_pid
     )
+    # Redirect watchdog stdin/stdout/stderr away from the inherited pipe;
+    # otherwise system(intern=TRUE) would block until the watchdog finishes.
     watchdog_pid_str = system(
-        sprintf("bash -c '%s' & echo $!", watchdog_script),
+        sprintf("bash -c '%s' </dev/null >/dev/null 2>&1 & echo $!", watchdog_script),
         intern = TRUE
     )
     watchdog_pid = suppressWarnings(as.integer(watchdog_pid_str))
@@ -158,7 +160,28 @@ for (response_type in names(categorized_classes)) {
         if (response_type != "continuous" && grepl("Wilcox", inf_class_name)) {
             is_heavy_model = TRUE
         }
-        
+
+        # Pre-screen with num_cores=1: skip if all operations time out (class too slow to benchmark)
+        cat("    [pre-screen 1 core]: ")
+        flush.console()
+        inf_obj_screen = tryCatch(inf_class$new(current_des_obj, num_cores = 1L, verbose = FALSE), error = function(e) NULL)
+        screen_times = list(
+            boot = if (!is.null(inf_obj_screen))
+                bm_safe("boot", quote(inf_obj_screen$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
+                else NA,
+            rand = if (!is.null(inf_obj_screen) && !is_heavy_model)
+                bm_safe("rand", quote(inf_obj_screen$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
+                else NA
+        )
+        n_inf = sum(sapply(screen_times, function(x) !is.na(x) && is.finite(x)))
+        if (n_inf == 0) {
+            cat("  SKIP (all ops >10s at 1 core)\n")
+            flush.console()
+            next
+        }
+        cat("  OK\n")
+        flush.console()
+
         for (num_cores in CORE_COUNTS) {
             cat(sprintf("    num_cores = %d: ", num_cores))
             flush.console()

@@ -1,0 +1,25 @@
+#' Univariate Binomial Identity-Link Regression for Binary Responses
+#'
+#' @description
+#' Fits a binomial GLM with identity link for binary (incidence) responses using
+#' only the treatment indicator. The treatment effect is reported on the
+#' risk-difference scale.
+#'
+#' @details
+#' This model targets the adjusted risk difference directly through a Bernoulli
+#' likelihood with identity link. Fitting uses a constrained IRLS routine
+#' implemented in C++ to enforce fitted probabilities in \eqn{(0,1)}.
+#'
+#' @inherit InferenceRand methods
+#' @inherit InferenceBoot methods
+#' @inherit InferenceAsymp methods
+#' @inherit InferenceRandCI methods
+#' @export
+InferenceIncidUnivBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidUnivBinomialIdentityRiskDiff",
+	inherit = InferenceIncidBinomialIdentityAbstract,
+	private = list(
+		build_design_matrix = function(){
+			cbind(1, private$w)
+		}
+	)
+)

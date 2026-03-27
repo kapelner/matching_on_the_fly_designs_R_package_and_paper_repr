@@ -2,47 +2,47 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 fill_i_b_with_matches_loop_cpp <- function(i_b, m_vec, ms_b, i_b_idx) {
-    invisible(.Call(`_SeqExpMatch_fill_i_b_with_matches_loop_cpp`, i_b, m_vec, ms_b, i_b_idx))
+    invisible(.Call(`_EDI_fill_i_b_with_matches_loop_cpp`, i_b, m_vec, ms_b, i_b_idx))
 }
 
 eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp <- function(M, j) {
-    .Call(`_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp`, M, j)
+    .Call(`_EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp`, M, j)
 }
 
 eigen_Xt_times_diag_w_times_X_cpp <- function(X, w) {
-    .Call(`_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp`, X, w)
+    .Call(`_EDI_eigen_Xt_times_diag_w_times_X_cpp`, X, w)
 }
 
 mean_cpp <- function(x) {
-    .Call(`_SeqExpMatch_mean_cpp`, x)
+    .Call(`_EDI_mean_cpp`, x)
 }
 
 var_cpp <- function(x) {
-    .Call(`_SeqExpMatch_var_cpp`, x)
+    .Call(`_EDI_var_cpp`, x)
 }
 
 atkinson_assign_weight_cpp <- function(w_prev, X_prev, xt_prev, rank_prev, t) {
-    .Call(`_SeqExpMatch_atkinson_assign_weight_cpp`, w_prev, X_prev, xt_prev, rank_prev, t)
+    .Call(`_EDI_atkinson_assign_weight_cpp`, w_prev, X_prev, xt_prev, rank_prev, t)
 }
 
 atkinson_redraw_batch_cpp <- function(X, n, p_raw, prob_T = 0.5) {
-    .Call(`_SeqExpMatch_atkinson_redraw_batch_cpp`, X, n, p_raw, prob_T)
+    .Call(`_EDI_atkinson_redraw_batch_cpp`, X, n, p_raw, prob_T)
 }
 
 base_bootstrap_loop_cpp <- function(indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
-    .Call(`_SeqExpMatch_base_bootstrap_loop_cpp`, indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores)
+    .Call(`_EDI_base_bootstrap_loop_cpp`, indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
 
 beta_loglik_cpp <- function(y, mu, phi, wt) {
-    .Call(`_SeqExpMatch_beta_loglik_cpp`, y, mu, phi, wt)
+    .Call(`_EDI_beta_loglik_cpp`, y, mu, phi, wt)
 }
 
 beta_dev_resids_cpp <- function(y, mu, phi, wt) {
-    .Call(`_SeqExpMatch_beta_dev_resids_cpp`, y, mu, phi, wt)
+    .Call(`_EDI_beta_dev_resids_cpp`, y, mu, phi, wt)
 }
 
 beta_aic_cpp <- function(y, mu, phi, wt) {
-    .Call(`_SeqExpMatch_beta_aic_cpp`, y, mu, phi, wt)
+    .Call(`_EDI_beta_aic_cpp`, y, mu, phi, wt)
 }
 
 #' Sequential computation of both CI bounds (called from R-level parallelism)
@@ -66,14 +66,14 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
 #' @return Numeric vector of length 2: [lower_bound, upper_bound]
 #'
 bisection_ci_parallel_cpp <- function(pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores = 1L) {
-    .Call(`_SeqExpMatch_bisection_ci_parallel_cpp`, pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
+    .Call(`_EDI_bisection_ci_parallel_cpp`, pval_fn, r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, num_cores)
 }
 
 #' Single-threaded helper for computing one CI bound
 #'
 #' @keywords internal
 bisection_ci_single_bound_cpp <- function(pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores = 1L) {
-    .Call(`_SeqExpMatch_bisection_ci_single_bound_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores)
+    .Call(`_EDI_bisection_ci_single_bound_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower, num_cores)
 }
 
 #' Bisection loop for computing confidence interval bounds by inverting randomization tests
@@ -94,229 +94,229 @@ bisection_ci_single_bound_cpp <- function(pval_fn, r, l, u, pval_th, tol, transf
 #' @return The CI bound value
 #'
 bisection_ci_loop_cpp <- function(pval_fn, r, l, u, pval_th, tol, transform_responses, lower) {
-    .Call(`_SeqExpMatch_bisection_ci_loop_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower)
+    .Call(`_EDI_bisection_ci_loop_cpp`, pval_fn, r, l, u, pval_th, tol, transform_responses, lower)
 }
 
 bootstrap_indices_cpp <- function(n, B) {
-    .Call(`_SeqExpMatch_bootstrap_indices_cpp`, n, B)
+    .Call(`_EDI_bootstrap_indices_cpp`, n, B)
 }
 
 bootstrap_m_indices_cpp <- function(m_vec, i_reservoir, n_reservoir, m, B) {
-    .Call(`_SeqExpMatch_bootstrap_m_indices_cpp`, m_vec, i_reservoir, n_reservoir, m, B)
+    .Call(`_EDI_bootstrap_m_indices_cpp`, m_vec, i_reservoir, n_reservoir, m, B)
 }
 
 match_stats_from_indices_cpp <- function(y, w, X, original_m_vec, i_b, m) {
-    .Call(`_SeqExpMatch_match_stats_from_indices_cpp`, y, w, X, original_m_vec, i_b, m)
+    .Call(`_EDI_match_stats_from_indices_cpp`, y, w, X, original_m_vec, i_b, m)
 }
 
 collect_discordant_pairs_cpp <- function(y_m, w_m, X_m, strata_m) {
-    .Call(`_SeqExpMatch_collect_discordant_pairs_cpp`, y_m, w_m, X_m, strata_m)
+    .Call(`_EDI_collect_discordant_pairs_cpp`, y_m, w_m, X_m, strata_m)
 }
 
 build_kk_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_r, X_r) {
-    .Call(`_SeqExpMatch_build_kk_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
+    .Call(`_EDI_build_kk_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
 }
 
 build_kk_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
-    .Call(`_SeqExpMatch_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
+    .Call(`_EDI_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
 }
 
 compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {
-    .Call(`_SeqExpMatch_compute_all_subject_data_cpp`, X, t, i_all_y_present_R, rank_tol)
+    .Call(`_EDI_compute_all_subject_data_cpp`, X, t, i_all_y_present_R, rank_tol)
 }
 
 compute_proportional_mahal_distances_cpp <- function(xt_prev, X_prev, reservoir_indices, S_xs_inv) {
-    .Call(`_SeqExpMatch_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
+    .Call(`_EDI_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
 }
 
 compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights) {
-    .Call(`_SeqExpMatch_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
+    .Call(`_EDI_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
 efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
-    .Call(`_SeqExpMatch_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
+    .Call(`_EDI_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
 }
 
 fast_adjacent_category_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_adjacent_category_logit_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_adjacent_category_logit_cpp`, X, y, maxit, tol)
 }
 
 fast_adjacent_category_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_adjacent_category_logit_with_var_cpp`, X, y, maxit, tol)
 }
 
 #' Fast Bai Adjusted T Statistic for Multiple Permutations
 compute_bai_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, halves_idx, convex_flag, num_cores) {
-    .Call(`_SeqExpMatch_compute_bai_distr_parallel_cpp`, y, w_mat, m_mat, delta, halves_idx, convex_flag, num_cores)
+    .Call(`_EDI_compute_bai_distr_parallel_cpp`, y, w_mat, m_mat, delta, halves_idx, convex_flag, num_cores)
 }
 
 fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
-    .Call(`_SeqExpMatch_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs)
+    .Call(`_EDI_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
-    .Call(`_SeqExpMatch_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
+    .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
 fast_continuation_ratio_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_continuation_ratio_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_continuation_ratio_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_continuation_ratio_regression_with_var_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp`, X, y)
+    .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y)
 }
 
 fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol)
+    .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol)
 }
 
 fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
+    .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
-    .Call(`_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp`, y, w)
+    .Call(`_EDI_exact_jonckheere_terpstra_pval_cpp`, y, w)
 }
 
 #' Fast KK Wilcoxon Statistic for Multiple Permutations
 compute_kk_wilcox_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores) {
-    .Call(`_SeqExpMatch_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores)
+    .Call(`_EDI_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores)
 }
 
 fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_log_binomial_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_log_binomial_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_log_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_log_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+    .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_identity_binomial_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_identity_binomial_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_identity_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_identity_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+    .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_logistic_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
-    .Call(`_SeqExpMatch_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
+    .Call(`_EDI_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
 }
 
 fast_logrank_stats_cpp <- function(time, dead, w) {
-    .Call(`_SeqExpMatch_fast_logrank_stats_cpp`, time, dead, w)
+    .Call(`_EDI_fast_logrank_stats_cpp`, time, dead, w)
 }
 
 matrix_rank_cpp <- function(A, tol = 1e-12) {
-    .Call(`_SeqExpMatch_matrix_rank_cpp`, A, tol)
+    .Call(`_EDI_matrix_rank_cpp`, A, tol)
 }
 
 fast_neg_bin_with_var_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5) {
-    .Call(`_SeqExpMatch_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g)
+    .Call(`_EDI_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g)
 }
 
 fast_neg_bin_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5) {
-    .Call(`_SeqExpMatch_fast_neg_bin_cpp`, X, y, maxit, eps_f, eps_g)
+    .Call(`_EDI_fast_neg_bin_cpp`, X, y, maxit, eps_f, eps_g)
 }
 
 fast_ols_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ols_cpp`, X, y)
+    .Call(`_EDI_fast_ols_cpp`, X, y)
 }
 
 fast_ols_with_var_cpp <- function(X, y, j = 2L) {
-    .Call(`_SeqExpMatch_fast_ols_with_var_cpp`, X, y, j)
+    .Call(`_EDI_fast_ols_with_var_cpp`, X, y, j)
 }
 
 fast_ordinal_cauchit_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
-    .Call(`_SeqExpMatch_fast_ordinal_cauchit_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_ordinal_cauchit_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_ordinal_cauchit_regression_with_var_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp`, X, y)
+    .Call(`_EDI_fast_ordinal_cauchit_regression_with_var_cpp`, X, y)
 }
 
 fast_ordinal_cloglog_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
-    .Call(`_SeqExpMatch_fast_ordinal_cloglog_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_ordinal_cloglog_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_ordinal_cloglog_regression_with_var_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp`, X, y)
+    .Call(`_EDI_fast_ordinal_cloglog_regression_with_var_cpp`, X, y)
 }
 
 fast_ordinal_probit_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
-    .Call(`_SeqExpMatch_fast_ordinal_probit_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_ordinal_probit_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_ordinal_probit_regression_with_var_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp`, X, y)
+    .Call(`_EDI_fast_ordinal_probit_regression_with_var_cpp`, X, y)
 }
 
 fast_ordinal_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
-    .Call(`_SeqExpMatch_fast_ordinal_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_ordinal_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_ordinal_regression_with_var_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_fast_ordinal_regression_with_var_cpp`, X, y)
+    .Call(`_EDI_fast_ordinal_regression_with_var_cpp`, X, y)
 }
 
 ordinal_gcomp_post_fit_cpp <- function(X_fit, y, coef_hat, alpha_hat, j_treat) {
-    .Call(`_SeqExpMatch_ordinal_gcomp_post_fit_cpp`, X_fit, y, coef_hat, alpha_hat, j_treat)
+    .Call(`_EDI_ordinal_gcomp_post_fit_cpp`, X_fit, y, coef_hat, alpha_hat, j_treat)
 }
 
 expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
-    .Call(`_SeqExpMatch_expand_continuation_ratio_data_cpp`, y, w, strata, K)
+    .Call(`_EDI_expand_continuation_ratio_data_cpp`, y, w, strata, K)
 }
 
 expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
-    .Call(`_SeqExpMatch_expand_adjacent_category_data_cpp`, y, w, strata, K)
+    .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
 }
 
 fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_poisson_regression_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_poisson_regression_cpp`, X, y, maxit, tol)
 }
 
 fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+    .Call(`_EDI_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
+    .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
 fast_ridit_scores_cpp <- function(y, ref_idx) {
-    .Call(`_SeqExpMatch_fast_ridit_scores_cpp`, y, ref_idx)
+    .Call(`_EDI_fast_ridit_scores_cpp`, y, ref_idx)
 }
 
 fast_ridit_analysis_cpp <- function(y, w, reference = "control") {
-    .Call(`_SeqExpMatch_fast_ridit_analysis_cpp`, y, w, reference)
+    .Call(`_EDI_fast_ridit_analysis_cpp`, y, w, reference)
 }
 
 sample_int_replace_cpp <- function(n, size) {
-    .Call(`_SeqExpMatch_sample_int_replace_cpp`, n, size)
+    .Call(`_EDI_sample_int_replace_cpp`, n, size)
 }
 
 scale_columns_cpp <- function(X) {
-    .Call(`_SeqExpMatch_scale_columns_cpp`, X)
+    .Call(`_EDI_scale_columns_cpp`, X)
 }
 
 shuffle_cpp <- function(w) {
-    .Call(`_SeqExpMatch_shuffle_cpp`, w)
+    .Call(`_EDI_shuffle_cpp`, w)
 }
 
 fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_stereotype_logit_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_stereotype_logit_cpp`, X, y, maxit, tol)
 }
 
 fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_stereotype_logit_with_var_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_fast_stereotype_logit_with_var_cpp`, X, y, maxit, tol)
 }
 
 fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
+    .Call(`_EDI_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
 }
 
 #' Calculates the median or restricted mean survival time for a single group.
@@ -327,7 +327,7 @@ fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, t
 #' @return The calculated statistic.
 #' @keywords internal
 get_survival_stat_for_group <- function(y, dead, requested_stat) {
-    .Call(`_SeqExpMatch_get_survival_stat_for_group`, y, dead, requested_stat)
+    .Call(`_EDI_get_survival_stat_for_group`, y, dead, requested_stat)
 }
 
 #' Calculates the difference in a survival statistic (median or restricted mean)
@@ -340,7 +340,7 @@ get_survival_stat_for_group <- function(y, dead, requested_stat) {
 #' @return The difference in the statistic (treatment - control).
 #' @keywords internal
 get_survival_stat_diff <- function(y, dead, w, requested_stat) {
-    .Call(`_SeqExpMatch_get_survival_stat_diff`, y, dead, w, requested_stat)
+    .Call(`_EDI_get_survival_stat_diff`, y, dead, w, requested_stat)
 }
 
 #' Uses the standard variance formula (Uno et al.):
@@ -357,7 +357,7 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
 #' @return The standard error of the restricted mean.
 #' @keywords internal
 get_restricted_mean_se_for_group <- function(y, dead) {
-    .Call(`_SeqExpMatch_get_restricted_mean_se_for_group`, y, dead)
+    .Call(`_EDI_get_restricted_mean_se_for_group`, y, dead)
 }
 
 #' Calculates the standard error of the difference in restricted mean survival times.
@@ -368,191 +368,191 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @return The standard error of the difference.
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
-    .Call(`_SeqExpMatch_get_restricted_mean_se_diff`, y, dead, w)
+    .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
 }
 
 wilcox_hl_point_estimate_cpp <- function(y, w) {
-    .Call(`_SeqExpMatch_wilcox_hl_point_estimate_cpp`, y, w)
+    .Call(`_EDI_wilcox_hl_point_estimate_cpp`, y, w)
 }
 
 compute_wilcox_hl_bootstrap_parallel_cpp <- function(y, w, indices_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_wilcox_hl_bootstrap_parallel_cpp`, y, w, indices_mat, num_cores)
+    .Call(`_EDI_compute_wilcox_hl_bootstrap_parallel_cpp`, y, w, indices_mat, num_cores)
 }
 
 compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, num_cores) {
-    .Call(`_SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, num_cores)
+    .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, num_cores)
 }
 
 compute_wilcox_kk_ivwc_bootstrap_parallel_cpp <- function(y, w, m_vec, indices_mat, m_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp`, y, w, m_vec, indices_mat, m_mat, num_cores)
+    .Call(`_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp`, y, w, m_vec, indices_mat, m_mat, num_cores)
 }
 
 compute_wilcox_distr_parallel_cpp <- function(y, w_mat, delta, num_cores) {
-    .Call(`_SeqExpMatch_compute_wilcox_distr_parallel_cpp`, y, w_mat, delta, num_cores)
+    .Call(`_EDI_compute_wilcox_distr_parallel_cpp`, y, w_mat, delta, num_cores)
 }
 
 compute_wilcox_distr_from_list_parallel_cpp <- function(y, permutations, delta, num_cores) {
-    .Call(`_SeqExpMatch_compute_wilcox_distr_from_list_parallel_cpp`, y, permutations, delta, num_cores)
+    .Call(`_EDI_compute_wilcox_distr_from_list_parallel_cpp`, y, permutations, delta, num_cores)
 }
 
 fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init) {
-    .Call(`_SeqExpMatch_fast_zero_one_inflated_beta_cpp`, Xfull, y, init)
+    .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, Xfull, y, init)
 }
 
 gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
-    .Call(`_SeqExpMatch_gcomp_logistic_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+    .Call(`_EDI_gcomp_logistic_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
 }
 
 gcomp_fractional_logit_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
-    .Call(`_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+    .Call(`_EDI_gcomp_fractional_logit_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
 }
 
 gcomp_logistic_cluster_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, cluster_id, j_treat) {
-    .Call(`_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, cluster_id, j_treat)
+    .Call(`_EDI_gcomp_logistic_cluster_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, cluster_id, j_treat)
 }
 
 gcomp_ordinal_proportional_odds_post_fit_cpp <- function(X_fit, coef_hat, alpha_hat, j_treat) {
-    .Call(`_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit, coef_hat, alpha_hat, j_treat)
+    .Call(`_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit, coef_hat, alpha_hat, j_treat)
 }
 
 generate_permutations_kk_cpp <- function(m_vec, nsim, prob_T) {
-    .Call(`_SeqExpMatch_generate_permutations_kk_cpp`, m_vec, nsim, prob_T)
+    .Call(`_EDI_generate_permutations_kk_cpp`, m_vec, nsim, prob_T)
 }
 
 generate_permutations_bernoulli_cpp <- function(n, nsim, prob_T) {
-    .Call(`_SeqExpMatch_generate_permutations_bernoulli_cpp`, n, nsim, prob_T)
+    .Call(`_EDI_generate_permutations_bernoulli_cpp`, n, nsim, prob_T)
 }
 
 generate_permutations_ibcrd_cpp <- function(n, nsim, prob_T) {
-    .Call(`_SeqExpMatch_generate_permutations_ibcrd_cpp`, n, nsim, prob_T)
+    .Call(`_EDI_generate_permutations_ibcrd_cpp`, n, nsim, prob_T)
 }
 
 generate_permutations_blocking_cpp <- function(n, nsim, prob_T, strata_indices) {
-    .Call(`_SeqExpMatch_generate_permutations_blocking_cpp`, n, nsim, prob_T, strata_indices)
+    .Call(`_EDI_generate_permutations_blocking_cpp`, n, nsim, prob_T, strata_indices)
 }
 
 generate_permutations_efron_cpp <- function(n, nsim, prob_T, weighted_coin_prob) {
-    .Call(`_SeqExpMatch_generate_permutations_efron_cpp`, n, nsim, prob_T, weighted_coin_prob)
+    .Call(`_EDI_generate_permutations_efron_cpp`, n, nsim, prob_T, weighted_coin_prob)
 }
 
 generate_permutations_atkinson_cpp <- function(X, n, p_raw, prob_T, nsim) {
-    .Call(`_SeqExpMatch_generate_permutations_atkinson_cpp`, X, n, p_raw, prob_T, nsim)
+    .Call(`_EDI_generate_permutations_atkinson_cpp`, X, n, p_raw, prob_T, nsim)
 }
 
 generate_permutations_pocock_simon_cpp <- function(x_levels_matrix, num_levels_total, weights, p_best, prob_T, nsim) {
-    .Call(`_SeqExpMatch_generate_permutations_pocock_simon_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T, nsim)
+    .Call(`_EDI_generate_permutations_pocock_simon_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T, nsim)
 }
 
 generate_permutations_cluster_cpp <- function(n, nsim, prob_T, cluster_indices) {
-    .Call(`_SeqExpMatch_generate_permutations_cluster_cpp`, n, nsim, prob_T, cluster_indices)
+    .Call(`_EDI_generate_permutations_cluster_cpp`, n, nsim, prob_T, cluster_indices)
 }
 
 generate_permutations_spbr_cpp <- function(strata_keys, block_size, prob_T, nsim) {
-    .Call(`_SeqExpMatch_generate_permutations_spbr_cpp`, strata_keys, block_size, prob_T, nsim)
+    .Call(`_EDI_generate_permutations_spbr_cpp`, strata_keys, block_size, prob_T, nsim)
 }
 
 get_column_types_cpp <- function(df) {
-    .Call(`_SeqExpMatch_get_column_types_cpp`, df)
+    .Call(`_EDI_get_column_types_cpp`, df)
 }
 
 columns_have_missingness_cpp <- function(df) {
-    .Call(`_SeqExpMatch_columns_have_missingness_cpp`, df)
+    .Call(`_EDI_columns_have_missingness_cpp`, df)
 }
 
 create_missingness_indicators_cpp <- function(df, col_indices) {
-    .Call(`_SeqExpMatch_create_missingness_indicators_cpp`, df, col_indices)
+    .Call(`_EDI_create_missingness_indicators_cpp`, df, col_indices)
 }
 
 count_unique_values_cpp <- function(df) {
-    .Call(`_SeqExpMatch_count_unique_values_cpp`, df)
+    .Call(`_EDI_count_unique_values_cpp`, df)
 }
 
 redraw_w_kk14_cpp <- function(m_vec, w) {
-    .Call(`_SeqExpMatch_redraw_w_kk14_cpp`, m_vec, w)
+    .Call(`_EDI_redraw_w_kk14_cpp`, m_vec, w)
 }
 
 kk21_stepwise_survival_weights_cpp <- function(X, y, delta, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_survival_weights_cpp`, X, y, delta, w)
+    .Call(`_EDI_kk21_stepwise_survival_weights_cpp`, X, y, delta, w)
 }
 
 kk21_continuous_weights_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_kk21_continuous_weights_cpp`, X, y)
+    .Call(`_EDI_kk21_continuous_weights_cpp`, X, y)
 }
 
 kk21_logistic_weights_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
-    .Call(`_SeqExpMatch_kk21_logistic_weights_cpp`, X, y, maxit, tol)
+    .Call(`_EDI_kk21_logistic_weights_cpp`, X, y, maxit, tol)
 }
 
 kk21_stepwise_continuous_weights_cpp <- function(X, y, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_continuous_weights_cpp`, X, y, w)
+    .Call(`_EDI_kk21_stepwise_continuous_weights_cpp`, X, y, w)
 }
 
 kk21_stepwise_logistic_weights_cpp <- function(X, y, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_logistic_weights_cpp`, X, y, w)
+    .Call(`_EDI_kk21_stepwise_logistic_weights_cpp`, X, y, w)
 }
 
 kk21_beta_weights_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_kk21_beta_weights_cpp`, X, y)
+    .Call(`_EDI_kk21_beta_weights_cpp`, X, y)
 }
 
 kk21_negbin_weights_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_kk21_negbin_weights_cpp`, X, y)
+    .Call(`_EDI_kk21_negbin_weights_cpp`, X, y)
 }
 
 kk21_survival_weights_cpp <- function(X, y, delta) {
-    .Call(`_SeqExpMatch_kk21_survival_weights_cpp`, X, y, delta)
+    .Call(`_EDI_kk21_survival_weights_cpp`, X, y, delta)
 }
 
 kk21_stepwise_beta_weights_cpp <- function(X, y, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_beta_weights_cpp`, X, y, w)
+    .Call(`_EDI_kk21_stepwise_beta_weights_cpp`, X, y, w)
 }
 
 kk21_stepwise_negbin_weights_cpp <- function(X, y, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_negbin_weights_cpp`, X, y, w)
+    .Call(`_EDI_kk21_stepwise_negbin_weights_cpp`, X, y, w)
 }
 
 kk21_ordinal_weights_cpp <- function(X, y) {
-    .Call(`_SeqExpMatch_kk21_ordinal_weights_cpp`, X, y)
+    .Call(`_EDI_kk21_ordinal_weights_cpp`, X, y)
 }
 
 kk21_stepwise_ordinal_weights_cpp <- function(X, y, w) {
-    .Call(`_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp`, X, y, w)
+    .Call(`_EDI_kk21_stepwise_ordinal_weights_cpp`, X, y, w)
 }
 
 kk_bootstrap_loop_cpp <- function(indices, y, w, X, original_m_vec, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
-    .Call(`_SeqExpMatch_kk_bootstrap_loop_cpp`, indices, y, w, X, original_m_vec, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
+    .Call(`_EDI_kk_bootstrap_loop_cpp`, indices, y, w, X, original_m_vec, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
 
 compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {
-    .Call(`_SeqExpMatch_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
+    .Call(`_EDI_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
 }
 
 compute_kk_grouping_cpp <- function(m_vec) {
-    .Call(`_SeqExpMatch_compute_kk_grouping_cpp`, m_vec)
+    .Call(`_EDI_compute_kk_grouping_cpp`, m_vec)
 }
 
 compute_kk_cluster_ids_cpp <- function(m_vec) {
-    .Call(`_SeqExpMatch_compute_kk_cluster_ids_cpp`, m_vec)
+    .Call(`_EDI_compute_kk_cluster_ids_cpp`, m_vec)
 }
 
 compute_kk_compound_distr_parallel_cpp <- function(y, w_mat, m_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_kk_compound_distr_parallel_cpp`, y, w_mat, m_mat, num_cores)
+    .Call(`_EDI_compute_kk_compound_distr_parallel_cpp`, y, w_mat, m_mat, num_cores)
 }
 
 compute_kk_compound_bootstrap_parallel_cpp <- function(y_mat, w_mat, m_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp`, y_mat, w_mat, m_mat, num_cores)
+    .Call(`_EDI_compute_kk_compound_bootstrap_parallel_cpp`, y_mat, w_mat, m_mat, num_cores)
 }
 
 compute_kk_lin_match_data_cpp <- function(w, m_vec, y, X) {
-    .Call(`_SeqExpMatch_compute_kk_lin_match_data_cpp`, w, m_vec, y, X)
+    .Call(`_EDI_compute_kk_lin_match_data_cpp`, w, m_vec, y, X)
 }
 
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
-    .Call(`_SeqExpMatch_neg_loglik_nb_cpp`, theta, beta, X, y)
+    .Call(`_EDI_neg_loglik_nb_cpp`, theta, beta, X, y)
 }
 
 match_diffs_cpp <- function(w, m_vec, y, X, m) {
-    .Call(`_SeqExpMatch_match_diffs_cpp`, w, m_vec, y, X, m)
+    .Call(`_EDI_match_diffs_cpp`, w, m_vec, y, X, m)
 }
 
 #' Constrained MLE for Risk Difference (Miettinen-Nurminen)
@@ -562,7 +562,7 @@ match_diffs_cpp <- function(w, m_vec, y, X, m) {
 #' which is monotonic and well-behaved.
 #' @keywords internal
 mn_constrained_mle_pc_cpp <- function(x_t, n_t, x_c, n_c, delta) {
-    .Call(`_SeqExpMatch_mn_constrained_mle_pc_cpp`, x_t, n_t, x_c, n_c, delta)
+    .Call(`_EDI_mn_constrained_mle_pc_cpp`, x_t, n_t, x_c, n_c, delta)
 }
 
 #' Miettinen-Nurminen Score Z Statistic for Risk Difference
@@ -580,7 +580,7 @@ mn_constrained_mle_pc_cpp <- function(x_t, n_t, x_c, n_c, delta) {
 #' @param p_c_obs Observed control-arm risk.
 #' @return The asymptotic z statistic.
 mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
-    .Call(`_SeqExpMatch_mn_z_statistic_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
+    .Call(`_EDI_mn_z_statistic_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
 
 #' Miettinen-Nurminen Two-Sided P Value for Risk Difference
@@ -591,7 +591,7 @@ mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #' @inheritParams mn_z_statistic_cpp
 #' @return The two-sided p-value.
 mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
-    .Call(`_SeqExpMatch_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
+    .Call(`_EDI_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
 
 #' Miettinen-Nurminen Confidence Interval for Risk Difference
@@ -604,53 +604,53 @@ mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #' @param pval_epsilon Bisection tolerance in p-value space.
 #' @return A length-2 numeric vector containing the lower and upper CI bounds.
 mn_ci_cpp <- function(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon) {
-    .Call(`_SeqExpMatch_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
+    .Call(`_EDI_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
 }
 
 #' Wilson Score Interval for a Single Proportion
 #' @keywords internal
 wilson_score_interval_cpp <- function(x, n, alpha) {
-    .Call(`_SeqExpMatch_wilson_score_interval_cpp`, x, n, alpha)
+    .Call(`_EDI_wilson_score_interval_cpp`, x, n, alpha)
 }
 
 #' Newcombe Hybrid Score Interval for Independent Proportions (Method 10)
 #' @keywords internal
 newcombe_independent_ci_cpp <- function(x1, n1, x2, n2, alpha) {
-    .Call(`_SeqExpMatch_newcombe_independent_ci_cpp`, x1, n1, x2, n2, alpha)
+    .Call(`_EDI_newcombe_independent_ci_cpp`, x1, n1, x2, n2, alpha)
 }
 
 #' Newcombe Hybrid Score Interval for Paired Proportions
 #' @keywords internal
 newcombe_paired_ci_cpp <- function(n11, n10, n01, n00, alpha) {
-    .Call(`_SeqExpMatch_newcombe_paired_ci_cpp`, n11, n10, n01, n00, alpha)
+    .Call(`_EDI_newcombe_paired_ci_cpp`, n11, n10, n01, n00, alpha)
 }
 
 compute_ols_distr_parallel_cpp <- function(y, X_covars, w_mat, delta, num_cores) {
-    .Call(`_SeqExpMatch_compute_ols_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
+    .Call(`_EDI_compute_ols_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
 }
 
 compute_ols_bootstrap_parallel_cpp <- function(y, X_covars, w, indices_mat, num_cores) {
-    .Call(`_SeqExpMatch_compute_ols_bootstrap_parallel_cpp`, y, X_covars, w, indices_mat, num_cores)
+    .Call(`_EDI_compute_ols_bootstrap_parallel_cpp`, y, X_covars, w, indices_mat, num_cores)
 }
 
 d_optimal_search_cpp <- function(P, nsim, n_T) {
-    .Call(`_SeqExpMatch_d_optimal_search_cpp`, P, nsim, n_T)
+    .Call(`_EDI_d_optimal_search_cpp`, P, nsim, n_T)
 }
 
 a_optimal_search_cpp <- function(P, H, nsim, n_T) {
-    .Call(`_SeqExpMatch_a_optimal_search_cpp`, P, H, nsim, n_T)
+    .Call(`_EDI_a_optimal_search_cpp`, P, H, nsim, n_T)
 }
 
 compute_pair_averages_cpp <- function(X, m_vec, m) {
-    .Call(`_SeqExpMatch_compute_pair_averages_cpp`, X, m_vec, m)
+    .Call(`_EDI_compute_pair_averages_cpp`, X, m_vec, m)
 }
 
 compute_pair_distance_matrix_cpp <- function(pair_avg, weights) {
-    .Call(`_SeqExpMatch_compute_pair_distance_matrix_cpp`, pair_avg, weights)
+    .Call(`_EDI_compute_pair_distance_matrix_cpp`, pair_avg, weights)
 }
 
 compute_lambda_squ_cpp <- function(d_i, halves) {
-    .Call(`_SeqExpMatch_compute_lambda_squ_cpp`, d_i, halves)
+    .Call(`_EDI_compute_lambda_squ_cpp`, d_i, halves)
 }
 
 #' Pocock-Simon Minimization Allocation Logic
@@ -666,7 +666,7 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
 #' @return The assigned treatment (0 or 1).
 #' @export
 pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
-    .Call(`_SeqExpMatch_pocock_simon_assign_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
+    .Call(`_EDI_pocock_simon_assign_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
 }
 
 #' Pocock-Simon Minimization Assignment and Update
@@ -682,7 +682,7 @@ pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best,
 #' @return The assigned treatment (0 or 1).
 #' @export
 pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
-    .Call(`_SeqExpMatch_pocock_simon_assign_and_update_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
+    .Call(`_EDI_pocock_simon_assign_and_update_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
 }
 
 #' Pocock-Simon Minimization Redraw Assignments
@@ -696,63 +696,63 @@ pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weigh
 #' @return An integer vector of treatment assignments.
 #' @export
 pocock_simon_redraw_w_cpp <- function(x_levels_matrix, num_levels_total, weights, p_best, prob_T) {
-    .Call(`_SeqExpMatch_pocock_simon_redraw_w_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T)
+    .Call(`_EDI_pocock_simon_redraw_w_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T)
 }
 
 qr_reduce_full_rank_cpp <- function(X) {
-    .Call(`_SeqExpMatch_qr_reduce_full_rank_cpp`, X)
+    .Call(`_EDI_qr_reduce_full_rank_cpp`, X)
 }
 
 qr_reduce_preserve_cols_cpp <- function(X, required_cols) {
-    .Call(`_SeqExpMatch_qr_reduce_preserve_cols_cpp`, X, required_cols)
+    .Call(`_EDI_qr_reduce_preserve_cols_cpp`, X, required_cols)
 }
 
 random_block_size_redraw_w_cpp <- function(strata_keys_sexp, block_sizes_sexp, prob_T_sexp) {
-    .Call(`_SeqExpMatch_random_block_size_redraw_w_cpp`, strata_keys_sexp, block_sizes_sexp, prob_T_sexp)
+    .Call(`_EDI_random_block_size_redraw_w_cpp`, strata_keys_sexp, block_sizes_sexp, prob_T_sexp)
 }
 
 randomization_loop_cpp <- function(r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
-    .Call(`_SeqExpMatch_randomization_loop_cpp`, r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+    .Call(`_EDI_randomization_loop_cpp`, r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
 }
 
 compute_ridit_distr_parallel_cpp <- function(y, w_mat, reference, num_cores) {
-    .Call(`_SeqExpMatch_compute_ridit_distr_parallel_cpp`, y, w_mat, reference, num_cores)
+    .Call(`_EDI_compute_ridit_distr_parallel_cpp`, y, w_mat, reference, num_cores)
 }
 
 compute_ridit_bootstrap_parallel_cpp <- function(y, w, indices_mat, reference, num_cores) {
-    .Call(`_SeqExpMatch_compute_ridit_bootstrap_parallel_cpp`, y, w, indices_mat, reference, num_cores)
+    .Call(`_EDI_compute_ridit_bootstrap_parallel_cpp`, y, w, indices_mat, reference, num_cores)
 }
 
 ols_hc2_post_fit_cpp <- function(X_fit, y, coef_hat, j_treat) {
-    .Call(`_SeqExpMatch_ols_hc2_post_fit_cpp`, X_fit, y, coef_hat, j_treat)
+    .Call(`_EDI_ols_hc2_post_fit_cpp`, X_fit, y, coef_hat, j_treat)
 }
 
 glm_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, j_treat) {
-    .Call(`_SeqExpMatch_glm_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, j_treat)
+    .Call(`_EDI_glm_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, j_treat)
 }
 
 glm_cluster_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat) {
-    .Call(`_SeqExpMatch_glm_cluster_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat)
+    .Call(`_EDI_glm_cluster_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat)
 }
 
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {
-    .Call(`_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp`, X_all_scaled_col_subset, covariate_weights, t, B)
+    .Call(`_EDI_compute_bootstrapped_weighted_sqd_distances_cpp`, X_all_scaled_col_subset, covariate_weights, t, B)
 }
 
 sample_mode_cpp <- function(data) {
-    .Call(`_SeqExpMatch_sample_mode_cpp`, data)
+    .Call(`_EDI_sample_mode_cpp`, data)
 }
 
 compute_simple_mean_diff_parallel_cpp <- function(y, w_mat, delta, num_cores) {
-    .Call(`_SeqExpMatch_compute_simple_mean_diff_parallel_cpp`, y, w_mat, delta, num_cores)
+    .Call(`_EDI_compute_simple_mean_diff_parallel_cpp`, y, w_mat, delta, num_cores)
 }
 
 spbr_redraw_w_cpp <- function(strata_keys_sexp, block_size_sexp, prob_T_sexp) {
-    .Call(`_SeqExpMatch_spbr_redraw_w_cpp`, strata_keys_sexp, block_size_sexp, prob_T_sexp)
+    .Call(`_EDI_spbr_redraw_w_cpp`, strata_keys_sexp, block_size_sexp, prob_T_sexp)
 }
 
 stratified_bootstrap_indices_cpp <- function(strata_keys_sexp) {
-    .Call(`_SeqExpMatch_stratified_bootstrap_indices_cpp`, strata_keys_sexp)
+    .Call(`_EDI_stratified_bootstrap_indices_cpp`, strata_keys_sexp)
 }
 
 #' Compute automatic survival strata IDs from low-cardinality covariates
@@ -770,22 +770,22 @@ stratified_bootstrap_indices_cpp <- function(strata_keys_sexp) {
 #'   candidate column.
 #' @return A list with `strata_id`, `selected_cols`, and `num_strata`.
 compute_survival_strata_ids_cpp <- function(X, max_unique_per_col = 4L, max_strata_cols = 4L, min_count_per_level = 2L) {
-    .Call(`_SeqExpMatch_compute_survival_strata_ids_cpp`, X, max_unique_per_col, max_strata_cols, min_count_per_level)
+    .Call(`_EDI_compute_survival_strata_ids_cpp`, X, max_unique_per_col, max_strata_cols, min_count_per_level)
 }
 
 which_cols_vary_cpp <- function(X) {
-    .Call(`_SeqExpMatch_which_cols_vary_cpp`, X)
+    .Call(`_EDI_which_cols_vary_cpp`, X)
 }
 
 zhang_exact_binom_pval_cpp <- function(d_plus, d_minus, delta_0) {
-    .Call(`_SeqExpMatch_zhang_exact_binom_pval_cpp`, d_plus, d_minus, delta_0)
+    .Call(`_EDI_zhang_exact_binom_pval_cpp`, d_plus, d_minus, delta_0)
 }
 
 zhang_exact_fisher_pval_cpp <- function(n11, n10, n01, n00, delta_0) {
-    .Call(`_SeqExpMatch_zhang_exact_fisher_pval_cpp`, n11, n10, n01, n00, delta_0)
+    .Call(`_EDI_zhang_exact_fisher_pval_cpp`, n11, n10, n01, n00, delta_0)
 }
 
 compute_zhang_match_data_cpp <- function(w, m_vec, y, X) {
-    .Call(`_SeqExpMatch_compute_zhang_match_data_cpp`, w, m_vec, y, X)
+    .Call(`_EDI_compute_zhang_match_data_cpp`, w, m_vec, y, X)
 }
 

@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // fill_i_b_with_matches_loop_cpp
 void fill_i_b_with_matches_loop_cpp(IntegerVector& i_b, const IntegerVector& m_vec, const IntegerVector& ms_b, int i_b_idx);
-RcppExport SEXP _SeqExpMatch_fill_i_b_with_matches_loop_cpp(SEXP i_bSEXP, SEXP m_vecSEXP, SEXP ms_bSEXP, SEXP i_b_idxSEXP) {
+RcppExport SEXP _EDI_fill_i_b_with_matches_loop_cpp(SEXP i_bSEXP, SEXP m_vecSEXP, SEXP ms_bSEXP, SEXP i_b_idxSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector& >::type i_b(i_bSEXP);
@@ -26,7 +26,7 @@ END_RCPP
 }
 // eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp
 double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j);
-RcppExport SEXP _SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(SEXP MSEXP, SEXP jSEXP) {
+RcppExport SEXP _EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(SEXP MSEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -38,7 +38,7 @@ END_RCPP
 }
 // eigen_Xt_times_diag_w_times_X_cpp
 Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::VectorXd> w);
-RcppExport SEXP _SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp(SEXP XSEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_eigen_Xt_times_diag_w_times_X_cpp(SEXP XSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,7 +50,7 @@ END_RCPP
 }
 // mean_cpp
 double mean_cpp(const Eigen::VectorXd& x);
-RcppExport SEXP _SeqExpMatch_mean_cpp(SEXP xSEXP) {
+RcppExport SEXP _EDI_mean_cpp(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +61,7 @@ END_RCPP
 }
 // var_cpp
 double var_cpp(const Eigen::VectorXd& x);
-RcppExport SEXP _SeqExpMatch_var_cpp(SEXP xSEXP) {
+RcppExport SEXP _EDI_var_cpp(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -72,7 +72,7 @@ END_RCPP
 }
 // atkinson_assign_weight_cpp
 double atkinson_assign_weight_cpp(const NumericVector& w_prev, const NumericMatrix& X_prev, const NumericVector& xt_prev, int rank_prev, int t);
-RcppExport SEXP _SeqExpMatch_atkinson_assign_weight_cpp(SEXP w_prevSEXP, SEXP X_prevSEXP, SEXP xt_prevSEXP, SEXP rank_prevSEXP, SEXP tSEXP) {
+RcppExport SEXP _EDI_atkinson_assign_weight_cpp(SEXP w_prevSEXP, SEXP X_prevSEXP, SEXP xt_prevSEXP, SEXP rank_prevSEXP, SEXP tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -87,7 +87,7 @@ END_RCPP
 }
 // atkinson_redraw_batch_cpp
 NumericVector atkinson_redraw_batch_cpp(const Eigen::MatrixXd& X, int n, int p_raw, double prob_T);
-RcppExport SEXP _SeqExpMatch_atkinson_redraw_batch_cpp(SEXP XSEXP, SEXP nSEXP, SEXP p_rawSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_atkinson_redraw_batch_cpp(SEXP XSEXP, SEXP nSEXP, SEXP p_rawSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,7 @@ END_RCPP
 }
 // base_bootstrap_loop_cpp
 NumericVector base_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& dead, const NumericMatrix& X, const NumericVector& w, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
-RcppExport SEXP _SeqExpMatch_base_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP wSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_base_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP wSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -119,7 +119,7 @@ END_RCPP
 }
 // beta_loglik_cpp
 double beta_loglik_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& mu, const double phi, const Eigen::VectorXd& wt);
-RcppExport SEXP _SeqExpMatch_beta_loglik_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
+RcppExport SEXP _EDI_beta_loglik_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -133,7 +133,7 @@ END_RCPP
 }
 // beta_dev_resids_cpp
 Eigen::VectorXd beta_dev_resids_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& mu, const double phi, const Eigen::VectorXd& wt);
-RcppExport SEXP _SeqExpMatch_beta_dev_resids_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
+RcppExport SEXP _EDI_beta_dev_resids_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -147,7 +147,7 @@ END_RCPP
 }
 // beta_aic_cpp
 double beta_aic_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& mu, const double phi, const Eigen::VectorXd& wt);
-RcppExport SEXP _SeqExpMatch_beta_aic_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
+RcppExport SEXP _EDI_beta_aic_cpp(SEXP ySEXP, SEXP muSEXP, SEXP phiSEXP, SEXP wtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -161,7 +161,7 @@ END_RCPP
 }
 // bisection_ci_parallel_cpp
 NumericVector bisection_ci_parallel_cpp(Function pval_fn, int r, double l_lower, double u_lower, double l_upper, double u_upper, double pval_th, double tol, std::string transform_responses, int num_cores);
-RcppExport SEXP _SeqExpMatch_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -181,7 +181,7 @@ END_RCPP
 }
 // bisection_ci_single_bound_cpp
 double bisection_ci_single_bound_cpp(Function pval_fn, int r, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower, int num_cores);
-RcppExport SEXP _SeqExpMatch_bisection_ci_single_bound_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_bisection_ci_single_bound_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -200,7 +200,7 @@ END_RCPP
 }
 // bisection_ci_loop_cpp
 double bisection_ci_loop_cpp(Function pval_fn, int r, double l, double u, double pval_th, double tol, std::string transform_responses, bool lower);
-RcppExport SEXP _SeqExpMatch_bisection_ci_loop_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP) {
+RcppExport SEXP _EDI_bisection_ci_loop_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP lSEXP, SEXP uSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP lowerSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -218,7 +218,7 @@ END_RCPP
 }
 // bootstrap_indices_cpp
 IntegerMatrix bootstrap_indices_cpp(int n, int B);
-RcppExport SEXP _SeqExpMatch_bootstrap_indices_cpp(SEXP nSEXP, SEXP BSEXP) {
+RcppExport SEXP _EDI_bootstrap_indices_cpp(SEXP nSEXP, SEXP BSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -230,7 +230,7 @@ END_RCPP
 }
 // bootstrap_m_indices_cpp
 IntegerMatrix bootstrap_m_indices_cpp(const IntegerVector& m_vec, const IntegerVector& i_reservoir, int n_reservoir, int m, int B);
-RcppExport SEXP _SeqExpMatch_bootstrap_m_indices_cpp(SEXP m_vecSEXP, SEXP i_reservoirSEXP, SEXP n_reservoirSEXP, SEXP mSEXP, SEXP BSEXP) {
+RcppExport SEXP _EDI_bootstrap_m_indices_cpp(SEXP m_vecSEXP, SEXP i_reservoirSEXP, SEXP n_reservoirSEXP, SEXP mSEXP, SEXP BSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -245,7 +245,7 @@ END_RCPP
 }
 // match_stats_from_indices_cpp
 List match_stats_from_indices_cpp(const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& original_m_vec, const IntegerVector& i_b, int m);
-RcppExport SEXP _SeqExpMatch_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_m_vecSEXP, SEXP i_bSEXP, SEXP mSEXP) {
+RcppExport SEXP _EDI_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_m_vecSEXP, SEXP i_bSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -261,7 +261,7 @@ END_RCPP
 }
 // collect_discordant_pairs_cpp
 List collect_discordant_pairs_cpp(const Eigen::VectorXd& y_m, const Eigen::VectorXd& w_m, const Eigen::MatrixXd& X_m, const Rcpp::IntegerVector& strata_m);
-RcppExport SEXP _SeqExpMatch_collect_discordant_pairs_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP) {
+RcppExport SEXP _EDI_collect_discordant_pairs_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -275,7 +275,7 @@ END_RCPP
 }
 // build_kk_combined_clogit_design_cpp
 List build_kk_combined_clogit_design_cpp(const Eigen::VectorXd& y_m, const Eigen::VectorXd& w_m, const Eigen::MatrixXd& X_m, const Rcpp::IntegerVector& strata_m, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r);
-RcppExport SEXP _SeqExpMatch_build_kk_combined_clogit_design_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
+RcppExport SEXP _EDI_build_kk_combined_clogit_design_cpp(SEXP y_mSEXP, SEXP w_mSEXP, SEXP X_mSEXP, SEXP strata_mSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -292,7 +292,7 @@ END_RCPP
 }
 // build_kk_combined_ols_design_cpp
 List build_kk_combined_ols_design_cpp(const Eigen::VectorXd& yd, const Eigen::MatrixXd& Xd, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r);
-RcppExport SEXP _SeqExpMatch_build_kk_combined_ols_design_cpp(SEXP ydSEXP, SEXP XdSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
+RcppExport SEXP _EDI_build_kk_combined_ols_design_cpp(SEXP ydSEXP, SEXP XdSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -307,7 +307,7 @@ END_RCPP
 }
 // compute_all_subject_data_cpp
 List compute_all_subject_data_cpp(const Eigen::MatrixXd& X, int t, const IntegerVector& i_all_y_present_R, double rank_tol);
-RcppExport SEXP _SeqExpMatch_compute_all_subject_data_cpp(SEXP XSEXP, SEXP tSEXP, SEXP i_all_y_present_RSEXP, SEXP rank_tolSEXP) {
+RcppExport SEXP _EDI_compute_all_subject_data_cpp(SEXP XSEXP, SEXP tSEXP, SEXP i_all_y_present_RSEXP, SEXP rank_tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -321,7 +321,7 @@ END_RCPP
 }
 // compute_proportional_mahal_distances_cpp
 Eigen::VectorXd compute_proportional_mahal_distances_cpp(const Eigen::VectorXd& xt_prev, const Eigen::MatrixXd& X_prev, const Eigen::VectorXi& reservoir_indices, const Eigen::MatrixXd& S_xs_inv);
-RcppExport SEXP _SeqExpMatch_compute_proportional_mahal_distances_cpp(SEXP xt_prevSEXP, SEXP X_prevSEXP, SEXP reservoir_indicesSEXP, SEXP S_xs_invSEXP) {
+RcppExport SEXP _EDI_compute_proportional_mahal_distances_cpp(SEXP xt_prevSEXP, SEXP X_prevSEXP, SEXP reservoir_indicesSEXP, SEXP S_xs_invSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -335,7 +335,7 @@ END_RCPP
 }
 // compute_weighted_sqd_distances_cpp
 NumericVector compute_weighted_sqd_distances_cpp(NumericVector x_new, NumericMatrix X_all_scaled_col_subset, IntegerVector reservoir_indices, NumericVector covariate_weights);
-RcppExport SEXP _SeqExpMatch_compute_weighted_sqd_distances_cpp(SEXP x_newSEXP, SEXP X_all_scaled_col_subsetSEXP, SEXP reservoir_indicesSEXP, SEXP covariate_weightsSEXP) {
+RcppExport SEXP _EDI_compute_weighted_sqd_distances_cpp(SEXP x_newSEXP, SEXP X_all_scaled_col_subsetSEXP, SEXP reservoir_indicesSEXP, SEXP covariate_weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -349,7 +349,7 @@ END_RCPP
 }
 // efron_redraw_cpp
 NumericVector efron_redraw_cpp(int t, double prob_T, double weighted_coin_prob);
-RcppExport SEXP _SeqExpMatch_efron_redraw_cpp(SEXP tSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
+RcppExport SEXP _EDI_efron_redraw_cpp(SEXP tSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -362,7 +362,7 @@ END_RCPP
 }
 // fast_adjacent_category_logit_cpp
 List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_adjacent_category_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_adjacent_category_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -376,7 +376,7 @@ END_RCPP
 }
 // fast_adjacent_category_logit_with_var_cpp
 List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_adjacent_category_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_adjacent_category_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -390,7 +390,7 @@ END_RCPP
 }
 // compute_bai_distr_parallel_cpp
 NumericVector compute_bai_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, const IntegerMatrix& m_mat, double delta, const IntegerMatrix& halves_idx, bool convex_flag, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_bai_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP halves_idxSEXP, SEXP convex_flagSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_bai_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP halves_idxSEXP, SEXP convex_flagSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -407,7 +407,7 @@ END_RCPP
 }
 // fast_beta_regression_cpp
 List fast_beta_regression_cpp(const Eigen::MatrixXd& X, const NumericVector& y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
-RcppExport SEXP _SeqExpMatch_fast_beta_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+RcppExport SEXP _EDI_fast_beta_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -422,7 +422,7 @@ END_RCPP
 }
 // fast_beta_regression_with_var_cpp
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X, const NumericVector& y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs);
-RcppExport SEXP _SeqExpMatch_fast_beta_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
+RcppExport SEXP _EDI_fast_beta_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -437,7 +437,7 @@ END_RCPP
 }
 // fast_continuation_ratio_regression_cpp
 List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -451,7 +451,7 @@ END_RCPP
 }
 // fast_continuation_ratio_regression_with_var_cpp
 List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_continuation_ratio_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -463,7 +463,7 @@ END_RCPP
 }
 // fast_cpoisson_combined_with_var_cpp
 List fast_cpoisson_combined_with_var_cpp(const Eigen::VectorXd& yT_v, const Eigen::VectorXd& n_k_v, const Eigen::MatrixXd& X_diff_v, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_cpoisson_combined_with_var_cpp(SEXP yT_vSEXP, SEXP n_k_vSEXP, SEXP X_diff_vSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_cpoisson_combined_with_var_cpp(SEXP yT_vSEXP, SEXP n_k_vSEXP, SEXP X_diff_vSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -481,7 +481,7 @@ END_RCPP
 }
 // fast_hurdle_negbin_with_var_cpp
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_hurdle_negbin_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_hurdle_negbin_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -496,7 +496,7 @@ END_RCPP
 }
 // exact_jonckheere_terpstra_pval_cpp
 List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y, const IntegerVector& w);
-RcppExport SEXP _SeqExpMatch_exact_jonckheere_terpstra_pval_cpp(SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_exact_jonckheere_terpstra_pval_cpp(SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -508,7 +508,7 @@ END_RCPP
 }
 // compute_kk_wilcox_distr_parallel_cpp
 NumericVector compute_kk_wilcox_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, const IntegerMatrix& m_mat, double delta, int transform_code, bool is_fixed_matching, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_kk_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP is_fixed_matchingSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_kk_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP is_fixed_matchingSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -525,7 +525,7 @@ END_RCPP
 }
 // fast_log_binomial_regression_cpp
 List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_log_binomial_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_log_binomial_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -539,7 +539,7 @@ END_RCPP
 }
 // fast_log_binomial_regression_with_var_cpp
 List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_log_binomial_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_log_binomial_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -554,7 +554,7 @@ END_RCPP
 }
 // fast_identity_binomial_regression_cpp
 List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_identity_binomial_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_identity_binomial_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -568,7 +568,7 @@ END_RCPP
 }
 // fast_identity_binomial_regression_with_var_cpp
 List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_identity_binomial_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_identity_binomial_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -583,7 +583,7 @@ END_RCPP
 }
 // fast_logistic_regression_cpp
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -597,7 +597,7 @@ END_RCPP
 }
 // fast_logistic_regression_with_var_cpp
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j);
-RcppExport SEXP _SeqExpMatch_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP) {
+RcppExport SEXP _EDI_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -610,7 +610,7 @@ END_RCPP
 }
 // fast_logrank_stats_cpp
 List fast_logrank_stats_cpp(const Eigen::VectorXd& time, const IntegerVector& dead, const IntegerVector& w);
-RcppExport SEXP _SeqExpMatch_fast_logrank_stats_cpp(SEXP timeSEXP, SEXP deadSEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_fast_logrank_stats_cpp(SEXP timeSEXP, SEXP deadSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -623,7 +623,7 @@ END_RCPP
 }
 // matrix_rank_cpp
 int matrix_rank_cpp(const Eigen::MatrixXd& A, double tol);
-RcppExport SEXP _SeqExpMatch_matrix_rank_cpp(SEXP ASEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_matrix_rank_cpp(SEXP ASEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -635,7 +635,7 @@ END_RCPP
 }
 // fast_neg_bin_with_var_cpp
 List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, int maxit, double eps_f, double eps_g);
-RcppExport SEXP _SeqExpMatch_fast_neg_bin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+RcppExport SEXP _EDI_fast_neg_bin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -650,7 +650,7 @@ END_RCPP
 }
 // fast_neg_bin_cpp
 List fast_neg_bin_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, int maxit, double eps_f, double eps_g);
-RcppExport SEXP _SeqExpMatch_fast_neg_bin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
+RcppExport SEXP _EDI_fast_neg_bin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -665,7 +665,7 @@ END_RCPP
 }
 // fast_ols_cpp
 List fast_ols_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ols_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_ols_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -677,7 +677,7 @@ END_RCPP
 }
 // fast_ols_with_var_cpp
 List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j);
-RcppExport SEXP _SeqExpMatch_fast_ols_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP) {
+RcppExport SEXP _EDI_fast_ols_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -690,7 +690,7 @@ END_RCPP
 }
 // fast_ordinal_cauchit_regression_cpp
 List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -704,7 +704,7 @@ END_RCPP
 }
 // fast_ordinal_cauchit_regression_with_var_cpp
 List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -716,7 +716,7 @@ END_RCPP
 }
 // fast_ordinal_cloglog_regression_cpp
 List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -730,7 +730,7 @@ END_RCPP
 }
 // fast_ordinal_cloglog_regression_with_var_cpp
 List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -742,7 +742,7 @@ END_RCPP
 }
 // fast_ordinal_probit_regression_cpp
 List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -756,7 +756,7 @@ END_RCPP
 }
 // fast_ordinal_probit_regression_with_var_cpp
 List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -768,7 +768,7 @@ END_RCPP
 }
 // fast_ordinal_regression_cpp
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -782,7 +782,7 @@ END_RCPP
 }
 // fast_ordinal_regression_with_var_cpp
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _SeqExpMatch_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -794,7 +794,7 @@ END_RCPP
 }
 // ordinal_gcomp_post_fit_cpp
 List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& alpha_hat, int j_treat);
-RcppExport SEXP _SeqExpMatch_ordinal_gcomp_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_ordinal_gcomp_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -809,7 +809,7 @@ END_RCPP
 }
 // expand_continuation_ratio_data_cpp
 List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K);
-RcppExport SEXP _SeqExpMatch_expand_continuation_ratio_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
+RcppExport SEXP _EDI_expand_continuation_ratio_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -823,7 +823,7 @@ END_RCPP
 }
 // expand_adjacent_category_data_cpp
 List expand_adjacent_category_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K);
-RcppExport SEXP _SeqExpMatch_expand_adjacent_category_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
+RcppExport SEXP _EDI_expand_adjacent_category_data_cpp(SEXP ySEXP, SEXP wSEXP, SEXP strataSEXP, SEXP KSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -837,7 +837,7 @@ END_RCPP
 }
 // fast_poisson_regression_cpp
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_poisson_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_poisson_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -851,7 +851,7 @@ END_RCPP
 }
 // fast_poisson_regression_with_var_cpp
 List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_poisson_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_poisson_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -866,7 +866,7 @@ END_RCPP
 }
 // fast_quasipoisson_regression_with_var_cpp
 List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_quasipoisson_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_quasipoisson_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -881,7 +881,7 @@ END_RCPP
 }
 // fast_ridit_scores_cpp
 List fast_ridit_scores_cpp(const IntegerVector& y, const IntegerVector& ref_idx);
-RcppExport SEXP _SeqExpMatch_fast_ridit_scores_cpp(SEXP ySEXP, SEXP ref_idxSEXP) {
+RcppExport SEXP _EDI_fast_ridit_scores_cpp(SEXP ySEXP, SEXP ref_idxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -893,7 +893,7 @@ END_RCPP
 }
 // fast_ridit_analysis_cpp
 List fast_ridit_analysis_cpp(const IntegerVector& y, const IntegerVector& w, const std::string& reference);
-RcppExport SEXP _SeqExpMatch_fast_ridit_analysis_cpp(SEXP ySEXP, SEXP wSEXP, SEXP referenceSEXP) {
+RcppExport SEXP _EDI_fast_ridit_analysis_cpp(SEXP ySEXP, SEXP wSEXP, SEXP referenceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -906,7 +906,7 @@ END_RCPP
 }
 // sample_int_replace_cpp
 IntegerVector sample_int_replace_cpp(int n, int size);
-RcppExport SEXP _SeqExpMatch_sample_int_replace_cpp(SEXP nSEXP, SEXP sizeSEXP) {
+RcppExport SEXP _EDI_sample_int_replace_cpp(SEXP nSEXP, SEXP sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -918,7 +918,7 @@ END_RCPP
 }
 // scale_columns_cpp
 Eigen::MatrixXd scale_columns_cpp(const Eigen::MatrixXd& X);
-RcppExport SEXP _SeqExpMatch_scale_columns_cpp(SEXP XSEXP) {
+RcppExport SEXP _EDI_scale_columns_cpp(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -929,7 +929,7 @@ END_RCPP
 }
 // shuffle_cpp
 NumericVector shuffle_cpp(NumericVector w);
-RcppExport SEXP _SeqExpMatch_shuffle_cpp(SEXP wSEXP) {
+RcppExport SEXP _EDI_shuffle_cpp(SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -940,7 +940,7 @@ END_RCPP
 }
 // fast_stereotype_logit_cpp
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_stereotype_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_stereotype_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -954,7 +954,7 @@ END_RCPP
 }
 // fast_stereotype_logit_with_var_cpp
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_stereotype_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_stereotype_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -968,7 +968,7 @@ END_RCPP
 }
 // fast_stereotype_profile_loglik_cpp
 double fast_stereotype_profile_loglik_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, double beta_fixed, int maxit, double tol);
-RcppExport SEXP _SeqExpMatch_fast_stereotype_profile_loglik_cpp(SEXP XSEXP, SEXP ySEXP, SEXP beta_fixedSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_fast_stereotype_profile_loglik_cpp(SEXP XSEXP, SEXP ySEXP, SEXP beta_fixedSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -983,7 +983,7 @@ END_RCPP
 }
 // get_survival_stat_for_group
 double get_survival_stat_for_group(NumericVector y, IntegerVector dead, std::string requested_stat);
-RcppExport SEXP _SeqExpMatch_get_survival_stat_for_group(SEXP ySEXP, SEXP deadSEXP, SEXP requested_statSEXP) {
+RcppExport SEXP _EDI_get_survival_stat_for_group(SEXP ySEXP, SEXP deadSEXP, SEXP requested_statSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -996,7 +996,7 @@ END_RCPP
 }
 // get_survival_stat_diff
 double get_survival_stat_diff(NumericVector y, IntegerVector dead, IntegerVector w, std::string requested_stat);
-RcppExport SEXP _SeqExpMatch_get_survival_stat_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP, SEXP requested_statSEXP) {
+RcppExport SEXP _EDI_get_survival_stat_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP, SEXP requested_statSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1010,7 +1010,7 @@ END_RCPP
 }
 // get_restricted_mean_se_for_group
 double get_restricted_mean_se_for_group(NumericVector y, IntegerVector dead);
-RcppExport SEXP _SeqExpMatch_get_restricted_mean_se_for_group(SEXP ySEXP, SEXP deadSEXP) {
+RcppExport SEXP _EDI_get_restricted_mean_se_for_group(SEXP ySEXP, SEXP deadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1022,7 +1022,7 @@ END_RCPP
 }
 // get_restricted_mean_se_diff
 double get_restricted_mean_se_diff(NumericVector y, IntegerVector dead, IntegerVector w);
-RcppExport SEXP _SeqExpMatch_get_restricted_mean_se_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_get_restricted_mean_se_diff(SEXP ySEXP, SEXP deadSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1035,7 +1035,7 @@ END_RCPP
 }
 // wilcox_hl_point_estimate_cpp
 double wilcox_hl_point_estimate_cpp(const NumericVector& y, const IntegerVector& w);
-RcppExport SEXP _SeqExpMatch_wilcox_hl_point_estimate_cpp(SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_wilcox_hl_point_estimate_cpp(SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1047,7 +1047,7 @@ END_RCPP
 }
 // compute_wilcox_hl_bootstrap_parallel_cpp
 NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(const NumericVector& y, const IntegerVector& w, const IntegerMatrix& indices_mat, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_wilcox_hl_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_wilcox_hl_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1061,7 +1061,7 @@ END_RCPP
 }
 // compute_wilcox_hl_distr_parallel_cpp
 NumericVector compute_wilcox_hl_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, double delta, int transform_code, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_wilcox_hl_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1076,7 +1076,7 @@ END_RCPP
 }
 // compute_wilcox_kk_ivwc_bootstrap_parallel_cpp
 NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(const NumericVector& y, const IntegerVector& w, const IntegerVector& m_vec, const IntegerMatrix& indices_mat, const IntegerMatrix& m_mat, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP m_vecSEXP, SEXP indices_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP m_vecSEXP, SEXP indices_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1092,7 +1092,7 @@ END_RCPP
 }
 // compute_wilcox_distr_parallel_cpp
 NumericVector compute_wilcox_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, double delta, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1106,7 +1106,7 @@ END_RCPP
 }
 // compute_wilcox_distr_from_list_parallel_cpp
 NumericVector compute_wilcox_distr_from_list_parallel_cpp(const NumericVector& y, const List& permutations, double delta, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_wilcox_distr_from_list_parallel_cpp(SEXP ySEXP, SEXP permutationsSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_wilcox_distr_from_list_parallel_cpp(SEXP ySEXP, SEXP permutationsSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1120,7 +1120,7 @@ END_RCPP
 }
 // fast_zero_one_inflated_beta_cpp
 List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull, NumericVector y, NumericVector init);
-RcppExport SEXP _SeqExpMatch_fast_zero_one_inflated_beta_cpp(SEXP XfullSEXP, SEXP ySEXP, SEXP initSEXP) {
+RcppExport SEXP _EDI_fast_zero_one_inflated_beta_cpp(SEXP XfullSEXP, SEXP ySEXP, SEXP initSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1133,7 +1133,7 @@ END_RCPP
 }
 // gcomp_logistic_post_fit_cpp
 List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, int j_treat);
-RcppExport SEXP _SeqExpMatch_gcomp_logistic_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_gcomp_logistic_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1148,7 +1148,7 @@ END_RCPP
 }
 // gcomp_fractional_logit_post_fit_cpp
 List gcomp_fractional_logit_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, int j_treat);
-RcppExport SEXP _SeqExpMatch_gcomp_fractional_logit_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_gcomp_fractional_logit_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1163,7 +1163,7 @@ END_RCPP
 }
 // gcomp_logistic_cluster_post_fit_cpp
 List gcomp_logistic_cluster_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, const IntegerVector& cluster_id, int j_treat);
-RcppExport SEXP _SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP cluster_idSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_gcomp_logistic_cluster_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP cluster_idSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1179,7 +1179,7 @@ END_RCPP
 }
 // gcomp_ordinal_proportional_odds_post_fit_cpp
 List gcomp_ordinal_proportional_odds_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& alpha_hat, int j_treat);
-RcppExport SEXP _SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp(SEXP X_fitSEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_gcomp_ordinal_proportional_odds_post_fit_cpp(SEXP X_fitSEXP, SEXP coef_hatSEXP, SEXP alpha_hatSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1193,7 +1193,7 @@ END_RCPP
 }
 // generate_permutations_kk_cpp
 List generate_permutations_kk_cpp(const IntegerVector& m_vec, int nsim, double prob_T);
-RcppExport SEXP _SeqExpMatch_generate_permutations_kk_cpp(SEXP m_vecSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_generate_permutations_kk_cpp(SEXP m_vecSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1206,7 +1206,7 @@ END_RCPP
 }
 // generate_permutations_bernoulli_cpp
 List generate_permutations_bernoulli_cpp(int n, int nsim, double prob_T);
-RcppExport SEXP _SeqExpMatch_generate_permutations_bernoulli_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_generate_permutations_bernoulli_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1219,7 +1219,7 @@ END_RCPP
 }
 // generate_permutations_ibcrd_cpp
 List generate_permutations_ibcrd_cpp(int n, int nsim, double prob_T);
-RcppExport SEXP _SeqExpMatch_generate_permutations_ibcrd_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_generate_permutations_ibcrd_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1232,7 +1232,7 @@ END_RCPP
 }
 // generate_permutations_blocking_cpp
 List generate_permutations_blocking_cpp(int n, int nsim, double prob_T, List strata_indices);
-RcppExport SEXP _SeqExpMatch_generate_permutations_blocking_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP strata_indicesSEXP) {
+RcppExport SEXP _EDI_generate_permutations_blocking_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP strata_indicesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1246,7 +1246,7 @@ END_RCPP
 }
 // generate_permutations_efron_cpp
 List generate_permutations_efron_cpp(int n, int nsim, double prob_T, double weighted_coin_prob);
-RcppExport SEXP _SeqExpMatch_generate_permutations_efron_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
+RcppExport SEXP _EDI_generate_permutations_efron_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1260,7 +1260,7 @@ END_RCPP
 }
 // generate_permutations_atkinson_cpp
 List generate_permutations_atkinson_cpp(const Eigen::MatrixXd& X, int n, int p_raw, double prob_T, int nsim);
-RcppExport SEXP _SeqExpMatch_generate_permutations_atkinson_cpp(SEXP XSEXP, SEXP nSEXP, SEXP p_rawSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
+RcppExport SEXP _EDI_generate_permutations_atkinson_cpp(SEXP XSEXP, SEXP nSEXP, SEXP p_rawSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1275,7 +1275,7 @@ END_RCPP
 }
 // generate_permutations_pocock_simon_cpp
 List generate_permutations_pocock_simon_cpp(const IntegerMatrix& x_levels_matrix, int num_levels_total, const NumericVector& weights, double p_best, double prob_T, int nsim);
-RcppExport SEXP _SeqExpMatch_generate_permutations_pocock_simon_cpp(SEXP x_levels_matrixSEXP, SEXP num_levels_totalSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
+RcppExport SEXP _EDI_generate_permutations_pocock_simon_cpp(SEXP x_levels_matrixSEXP, SEXP num_levels_totalSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1291,7 +1291,7 @@ END_RCPP
 }
 // generate_permutations_cluster_cpp
 List generate_permutations_cluster_cpp(int n, int nsim, double prob_T, List cluster_indices);
-RcppExport SEXP _SeqExpMatch_generate_permutations_cluster_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP cluster_indicesSEXP) {
+RcppExport SEXP _EDI_generate_permutations_cluster_cpp(SEXP nSEXP, SEXP nsimSEXP, SEXP prob_TSEXP, SEXP cluster_indicesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1305,7 +1305,7 @@ END_RCPP
 }
 // generate_permutations_spbr_cpp
 List generate_permutations_spbr_cpp(const CharacterVector& strata_keys, int block_size, double prob_T, int nsim);
-RcppExport SEXP _SeqExpMatch_generate_permutations_spbr_cpp(SEXP strata_keysSEXP, SEXP block_sizeSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
+RcppExport SEXP _EDI_generate_permutations_spbr_cpp(SEXP strata_keysSEXP, SEXP block_sizeSEXP, SEXP prob_TSEXP, SEXP nsimSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1319,7 +1319,7 @@ END_RCPP
 }
 // get_column_types_cpp
 CharacterVector get_column_types_cpp(List df);
-RcppExport SEXP _SeqExpMatch_get_column_types_cpp(SEXP dfSEXP) {
+RcppExport SEXP _EDI_get_column_types_cpp(SEXP dfSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1330,7 +1330,7 @@ END_RCPP
 }
 // columns_have_missingness_cpp
 LogicalVector columns_have_missingness_cpp(List df);
-RcppExport SEXP _SeqExpMatch_columns_have_missingness_cpp(SEXP dfSEXP) {
+RcppExport SEXP _EDI_columns_have_missingness_cpp(SEXP dfSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1341,7 +1341,7 @@ END_RCPP
 }
 // create_missingness_indicators_cpp
 List create_missingness_indicators_cpp(List df, IntegerVector col_indices);
-RcppExport SEXP _SeqExpMatch_create_missingness_indicators_cpp(SEXP dfSEXP, SEXP col_indicesSEXP) {
+RcppExport SEXP _EDI_create_missingness_indicators_cpp(SEXP dfSEXP, SEXP col_indicesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1353,7 +1353,7 @@ END_RCPP
 }
 // count_unique_values_cpp
 IntegerVector count_unique_values_cpp(List df);
-RcppExport SEXP _SeqExpMatch_count_unique_values_cpp(SEXP dfSEXP) {
+RcppExport SEXP _EDI_count_unique_values_cpp(SEXP dfSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1364,7 +1364,7 @@ END_RCPP
 }
 // redraw_w_kk14_cpp
 NumericVector redraw_w_kk14_cpp(const IntegerVector& m_vec, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_redraw_w_kk14_cpp(SEXP m_vecSEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_redraw_w_kk14_cpp(SEXP m_vecSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1376,7 +1376,7 @@ END_RCPP
 }
 // kk21_stepwise_survival_weights_cpp
 NumericVector kk21_stepwise_survival_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& delta, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1390,7 +1390,7 @@ END_RCPP
 }
 // kk21_continuous_weights_cpp
 NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X, const NumericVector& y);
-RcppExport SEXP _SeqExpMatch_kk21_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_kk21_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1402,7 +1402,7 @@ END_RCPP
 }
 // kk21_logistic_weights_cpp
 NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X, const NumericVector& y, const int maxit, const double tol);
-RcppExport SEXP _SeqExpMatch_kk21_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+RcppExport SEXP _EDI_kk21_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1416,7 +1416,7 @@ END_RCPP
 }
 // kk21_stepwise_continuous_weights_cpp
 NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_continuous_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1429,7 +1429,7 @@ END_RCPP
 }
 // kk21_stepwise_logistic_weights_cpp
 NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_logistic_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1442,7 +1442,7 @@ END_RCPP
 }
 // kk21_beta_weights_cpp
 NumericVector kk21_beta_weights_cpp(const NumericMatrix& X, const NumericVector& y);
-RcppExport SEXP _SeqExpMatch_kk21_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_kk21_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1454,7 +1454,7 @@ END_RCPP
 }
 // kk21_negbin_weights_cpp
 NumericVector kk21_negbin_weights_cpp(const NumericMatrix& X, const NumericVector& y);
-RcppExport SEXP _SeqExpMatch_kk21_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_kk21_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1466,7 +1466,7 @@ END_RCPP
 }
 // kk21_survival_weights_cpp
 NumericVector kk21_survival_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& delta);
-RcppExport SEXP _SeqExpMatch_kk21_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP) {
+RcppExport SEXP _EDI_kk21_survival_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deltaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1479,7 +1479,7 @@ END_RCPP
 }
 // kk21_stepwise_beta_weights_cpp
 NumericVector kk21_stepwise_beta_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_beta_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1492,7 +1492,7 @@ END_RCPP
 }
 // kk21_stepwise_negbin_weights_cpp
 NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_negbin_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1505,7 +1505,7 @@ END_RCPP
 }
 // kk21_ordinal_weights_cpp
 NumericVector kk21_ordinal_weights_cpp(const NumericMatrix& X, const NumericVector& y);
-RcppExport SEXP _SeqExpMatch_kk21_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_kk21_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1517,7 +1517,7 @@ END_RCPP
 }
 // kk21_stepwise_ordinal_weights_cpp
 NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X, const NumericVector& y, const NumericVector& w);
-RcppExport SEXP _SeqExpMatch_kk21_stepwise_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
+RcppExport SEXP _EDI_kk21_stepwise_ordinal_weights_cpp(SEXP XSEXP, SEXP ySEXP, SEXP wSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1530,7 +1530,7 @@ END_RCPP
 }
 // kk_bootstrap_loop_cpp
 NumericVector kk_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& original_m_vec, int m, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
-RcppExport SEXP _SeqExpMatch_kk_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_m_vecSEXP, SEXP mSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_kk_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_m_vecSEXP, SEXP mSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1549,7 +1549,7 @@ END_RCPP
 }
 // compute_kk_reservoir_stats_cpp
 List compute_kk_reservoir_stats_cpp(const NumericVector& y_matched_diffs, const NumericVector& y_reservoir, const NumericVector& w_reservoir);
-RcppExport SEXP _SeqExpMatch_compute_kk_reservoir_stats_cpp(SEXP y_matched_diffsSEXP, SEXP y_reservoirSEXP, SEXP w_reservoirSEXP) {
+RcppExport SEXP _EDI_compute_kk_reservoir_stats_cpp(SEXP y_matched_diffsSEXP, SEXP y_reservoirSEXP, SEXP w_reservoirSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1562,7 +1562,7 @@ END_RCPP
 }
 // compute_kk_grouping_cpp
 List compute_kk_grouping_cpp(const IntegerVector& m_vec);
-RcppExport SEXP _SeqExpMatch_compute_kk_grouping_cpp(SEXP m_vecSEXP) {
+RcppExport SEXP _EDI_compute_kk_grouping_cpp(SEXP m_vecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1573,7 +1573,7 @@ END_RCPP
 }
 // compute_kk_cluster_ids_cpp
 IntegerVector compute_kk_cluster_ids_cpp(const IntegerVector& m_vec);
-RcppExport SEXP _SeqExpMatch_compute_kk_cluster_ids_cpp(SEXP m_vecSEXP) {
+RcppExport SEXP _EDI_compute_kk_cluster_ids_cpp(SEXP m_vecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1584,7 +1584,7 @@ END_RCPP
 }
 // compute_kk_compound_distr_parallel_cpp
 NumericVector compute_kk_compound_distr_parallel_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXi& w_mat, const Eigen::MatrixXi& m_mat, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_kk_compound_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_kk_compound_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1598,7 +1598,7 @@ END_RCPP
 }
 // compute_kk_compound_bootstrap_parallel_cpp
 NumericVector compute_kk_compound_bootstrap_parallel_cpp(const Eigen::MatrixXd& y_mat, const Eigen::MatrixXi& w_mat, const Eigen::MatrixXi& m_mat, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp(SEXP y_matSEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_kk_compound_bootstrap_parallel_cpp(SEXP y_matSEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1612,7 +1612,7 @@ END_RCPP
 }
 // compute_kk_lin_match_data_cpp
 List compute_kk_lin_match_data_cpp(const IntegerVector& w, const IntegerVector& m_vec, const NumericVector& y, const NumericMatrix& X);
-RcppExport SEXP _SeqExpMatch_compute_kk_lin_match_data_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP) {
+RcppExport SEXP _EDI_compute_kk_lin_match_data_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1626,7 +1626,7 @@ END_RCPP
 }
 // neg_loglik_nb_cpp
 double neg_loglik_nb_cpp(double theta, const Eigen::VectorXd& beta, const Eigen::MatrixXd& X, const Eigen::VectorXi& y);
-RcppExport SEXP _SeqExpMatch_neg_loglik_nb_cpp(SEXP thetaSEXP, SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP) {
+RcppExport SEXP _EDI_neg_loglik_nb_cpp(SEXP thetaSEXP, SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1640,7 +1640,7 @@ END_RCPP
 }
 // match_diffs_cpp
 List match_diffs_cpp(const Eigen::VectorXi& w, const Eigen::VectorXi& m_vec, const Eigen::VectorXd& y, const Eigen::MatrixXd& X, int m);
-RcppExport SEXP _SeqExpMatch_match_diffs_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP, SEXP mSEXP) {
+RcppExport SEXP _EDI_match_diffs_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1655,7 +1655,7 @@ END_RCPP
 }
 // mn_constrained_mle_pc_cpp
 double mn_constrained_mle_pc_cpp(double x_t, double n_t, double x_c, double n_c, double delta);
-RcppExport SEXP _SeqExpMatch_mn_constrained_mle_pc_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP) {
+RcppExport SEXP _EDI_mn_constrained_mle_pc_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1670,7 +1670,7 @@ END_RCPP
 }
 // mn_z_statistic_cpp
 double mn_z_statistic_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs);
-RcppExport SEXP _SeqExpMatch_mn_z_statistic_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP) {
+RcppExport SEXP _EDI_mn_z_statistic_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1687,7 +1687,7 @@ END_RCPP
 }
 // mn_pvalue_cpp
 double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs);
-RcppExport SEXP _SeqExpMatch_mn_pvalue_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP) {
+RcppExport SEXP _EDI_mn_pvalue_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP deltaSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1704,7 +1704,7 @@ END_RCPP
 }
 // mn_ci_cpp
 NumericVector mn_ci_cpp(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon);
-RcppExport SEXP _SeqExpMatch_mn_ci_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP, SEXP alphaSEXP, SEXP pval_epsilonSEXP) {
+RcppExport SEXP _EDI_mn_ci_cpp(SEXP x_tSEXP, SEXP n_tSEXP, SEXP x_cSEXP, SEXP n_cSEXP, SEXP p_t_obsSEXP, SEXP p_c_obsSEXP, SEXP alphaSEXP, SEXP pval_epsilonSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1722,7 +1722,7 @@ END_RCPP
 }
 // wilson_score_interval_cpp
 NumericVector wilson_score_interval_cpp(double x, double n, double alpha);
-RcppExport SEXP _SeqExpMatch_wilson_score_interval_cpp(SEXP xSEXP, SEXP nSEXP, SEXP alphaSEXP) {
+RcppExport SEXP _EDI_wilson_score_interval_cpp(SEXP xSEXP, SEXP nSEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1735,7 +1735,7 @@ END_RCPP
 }
 // newcombe_independent_ci_cpp
 NumericVector newcombe_independent_ci_cpp(double x1, double n1, double x2, double n2, double alpha);
-RcppExport SEXP _SeqExpMatch_newcombe_independent_ci_cpp(SEXP x1SEXP, SEXP n1SEXP, SEXP x2SEXP, SEXP n2SEXP, SEXP alphaSEXP) {
+RcppExport SEXP _EDI_newcombe_independent_ci_cpp(SEXP x1SEXP, SEXP n1SEXP, SEXP x2SEXP, SEXP n2SEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1750,7 +1750,7 @@ END_RCPP
 }
 // newcombe_paired_ci_cpp
 NumericVector newcombe_paired_ci_cpp(double n11, double n10, double n01, double n00, double alpha);
-RcppExport SEXP _SeqExpMatch_newcombe_paired_ci_cpp(SEXP n11SEXP, SEXP n10SEXP, SEXP n01SEXP, SEXP n00SEXP, SEXP alphaSEXP) {
+RcppExport SEXP _EDI_newcombe_paired_ci_cpp(SEXP n11SEXP, SEXP n10SEXP, SEXP n01SEXP, SEXP n00SEXP, SEXP alphaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1765,7 +1765,7 @@ END_RCPP
 }
 // compute_ols_distr_parallel_cpp
 NumericVector compute_ols_distr_parallel_cpp(const NumericVector& y, const Eigen::MatrixXd& X_covars, const IntegerMatrix& w_mat, double delta, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_ols_distr_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_ols_distr_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1780,7 +1780,7 @@ END_RCPP
 }
 // compute_ols_bootstrap_parallel_cpp
 NumericVector compute_ols_bootstrap_parallel_cpp(const NumericVector& y, const Eigen::MatrixXd& X_covars, const IntegerVector& w, const IntegerMatrix& indices_mat, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_ols_bootstrap_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_ols_bootstrap_parallel_cpp(SEXP ySEXP, SEXP X_covarsSEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1795,7 +1795,7 @@ END_RCPP
 }
 // d_optimal_search_cpp
 IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T);
-RcppExport SEXP _SeqExpMatch_d_optimal_search_cpp(SEXP PSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
+RcppExport SEXP _EDI_d_optimal_search_cpp(SEXP PSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1808,7 +1808,7 @@ END_RCPP
 }
 // a_optimal_search_cpp
 IntegerMatrix a_optimal_search_cpp(const Eigen::MatrixXd& P, const Eigen::MatrixXd& H, int nsim, int n_T);
-RcppExport SEXP _SeqExpMatch_a_optimal_search_cpp(SEXP PSEXP, SEXP HSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
+RcppExport SEXP _EDI_a_optimal_search_cpp(SEXP PSEXP, SEXP HSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1822,7 +1822,7 @@ END_RCPP
 }
 // compute_pair_averages_cpp
 NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X, const IntegerVector& m_vec, const int m);
-RcppExport SEXP _SeqExpMatch_compute_pair_averages_cpp(SEXP XSEXP, SEXP m_vecSEXP, SEXP mSEXP) {
+RcppExport SEXP _EDI_compute_pair_averages_cpp(SEXP XSEXP, SEXP m_vecSEXP, SEXP mSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1835,7 +1835,7 @@ END_RCPP
 }
 // compute_pair_distance_matrix_cpp
 NumericMatrix compute_pair_distance_matrix_cpp(const NumericMatrix& pair_avg, const NumericVector& weights);
-RcppExport SEXP _SeqExpMatch_compute_pair_distance_matrix_cpp(SEXP pair_avgSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _EDI_compute_pair_distance_matrix_cpp(SEXP pair_avgSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1847,7 +1847,7 @@ END_RCPP
 }
 // compute_lambda_squ_cpp
 double compute_lambda_squ_cpp(const NumericVector& d_i, const IntegerMatrix& halves);
-RcppExport SEXP _SeqExpMatch_compute_lambda_squ_cpp(SEXP d_iSEXP, SEXP halvesSEXP) {
+RcppExport SEXP _EDI_compute_lambda_squ_cpp(SEXP d_iSEXP, SEXP halvesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1859,7 +1859,7 @@ END_RCPP
 }
 // pocock_simon_assign_cpp
 int pocock_simon_assign_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T);
-RcppExport SEXP _SeqExpMatch_pocock_simon_assign_cpp(SEXP countsSEXP, SEXP subject_levels_idxSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_pocock_simon_assign_cpp(SEXP countsSEXP, SEXP subject_levels_idxSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1874,7 +1874,7 @@ END_RCPP
 }
 // pocock_simon_assign_and_update_cpp
 int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T);
-RcppExport SEXP _SeqExpMatch_pocock_simon_assign_and_update_cpp(SEXP countsSEXP, SEXP subject_levels_idxSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_pocock_simon_assign_and_update_cpp(SEXP countsSEXP, SEXP subject_levels_idxSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1889,7 +1889,7 @@ END_RCPP
 }
 // pocock_simon_redraw_w_cpp
 IntegerVector pocock_simon_redraw_w_cpp(IntegerMatrix x_levels_matrix, int num_levels_total, NumericVector weights, double p_best, double prob_T);
-RcppExport SEXP _SeqExpMatch_pocock_simon_redraw_w_cpp(SEXP x_levels_matrixSEXP, SEXP num_levels_totalSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
+RcppExport SEXP _EDI_pocock_simon_redraw_w_cpp(SEXP x_levels_matrixSEXP, SEXP num_levels_totalSEXP, SEXP weightsSEXP, SEXP p_bestSEXP, SEXP prob_TSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1904,7 +1904,7 @@ END_RCPP
 }
 // qr_reduce_full_rank_cpp
 List qr_reduce_full_rank_cpp(const Eigen::MatrixXd& X);
-RcppExport SEXP _SeqExpMatch_qr_reduce_full_rank_cpp(SEXP XSEXP) {
+RcppExport SEXP _EDI_qr_reduce_full_rank_cpp(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1915,7 +1915,7 @@ END_RCPP
 }
 // qr_reduce_preserve_cols_cpp
 List qr_reduce_preserve_cols_cpp(const Eigen::MatrixXd& X, IntegerVector required_cols);
-RcppExport SEXP _SeqExpMatch_qr_reduce_preserve_cols_cpp(SEXP XSEXP, SEXP required_colsSEXP) {
+RcppExport SEXP _EDI_qr_reduce_preserve_cols_cpp(SEXP XSEXP, SEXP required_colsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1927,7 +1927,7 @@ END_RCPP
 }
 // random_block_size_redraw_w_cpp
 NumericVector random_block_size_redraw_w_cpp(SEXP strata_keys_sexp, SEXP block_sizes_sexp, SEXP prob_T_sexp);
-RcppExport SEXP _SeqExpMatch_random_block_size_redraw_w_cpp(SEXP strata_keys_sexpSEXP, SEXP block_sizes_sexpSEXP, SEXP prob_T_sexpSEXP) {
+RcppExport SEXP _EDI_random_block_size_redraw_w_cpp(SEXP strata_keys_sexpSEXP, SEXP block_sizes_sexpSEXP, SEXP prob_T_sexpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1940,7 +1940,7 @@ END_RCPP
 }
 // randomization_loop_cpp
 NumericVector randomization_loop_cpp(int r, Function duplicate_design_fn, Function duplicate_inference_fn, Function run_randomization_iteration_fn, int num_cores);
-RcppExport SEXP _SeqExpMatch_randomization_loop_cpp(SEXP rSEXP, SEXP duplicate_design_fnSEXP, SEXP duplicate_inference_fnSEXP, SEXP run_randomization_iteration_fnSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_randomization_loop_cpp(SEXP rSEXP, SEXP duplicate_design_fnSEXP, SEXP duplicate_inference_fnSEXP, SEXP run_randomization_iteration_fnSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1955,7 +1955,7 @@ END_RCPP
 }
 // compute_ridit_distr_parallel_cpp
 NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y, const IntegerMatrix& w_mat, std::string reference, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_ridit_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP referenceSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_ridit_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP referenceSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1969,7 +1969,7 @@ END_RCPP
 }
 // compute_ridit_bootstrap_parallel_cpp
 NumericVector compute_ridit_bootstrap_parallel_cpp(const IntegerVector& y, const IntegerVector& w, const IntegerMatrix& indices_mat, std::string reference, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_ridit_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP referenceSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_ridit_bootstrap_parallel_cpp(SEXP ySEXP, SEXP wSEXP, SEXP indices_matSEXP, SEXP referenceSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1984,7 +1984,7 @@ END_RCPP
 }
 // ols_hc2_post_fit_cpp
 List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, int j_treat);
-RcppExport SEXP _SeqExpMatch_ols_hc2_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_ols_hc2_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1998,7 +1998,7 @@ END_RCPP
 }
 // glm_sandwich_post_fit_cpp
 List glm_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, const Eigen::VectorXd& working_weights, int j_treat);
-RcppExport SEXP _SeqExpMatch_glm_sandwich_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP working_weightsSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_glm_sandwich_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP working_weightsSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2014,7 +2014,7 @@ END_RCPP
 }
 // glm_cluster_sandwich_post_fit_cpp
 List glm_cluster_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, const Eigen::VectorXd& working_weights, const IntegerVector& cluster_id, int j_treat);
-RcppExport SEXP _SeqExpMatch_glm_cluster_sandwich_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP working_weightsSEXP, SEXP cluster_idSEXP, SEXP j_treatSEXP) {
+RcppExport SEXP _EDI_glm_cluster_sandwich_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP working_weightsSEXP, SEXP cluster_idSEXP, SEXP j_treatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2031,7 +2031,7 @@ END_RCPP
 }
 // compute_bootstrapped_weighted_sqd_distances_cpp
 NumericVector compute_bootstrapped_weighted_sqd_distances_cpp(NumericMatrix X_all_scaled_col_subset, NumericVector covariate_weights, int t, int B);
-RcppExport SEXP _SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp(SEXP X_all_scaled_col_subsetSEXP, SEXP covariate_weightsSEXP, SEXP tSEXP, SEXP BSEXP) {
+RcppExport SEXP _EDI_compute_bootstrapped_weighted_sqd_distances_cpp(SEXP X_all_scaled_col_subsetSEXP, SEXP covariate_weightsSEXP, SEXP tSEXP, SEXP BSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2045,7 +2045,7 @@ END_RCPP
 }
 // sample_mode_cpp
 SEXP sample_mode_cpp(SEXP data);
-RcppExport SEXP _SeqExpMatch_sample_mode_cpp(SEXP dataSEXP) {
+RcppExport SEXP _EDI_sample_mode_cpp(SEXP dataSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2056,7 +2056,7 @@ END_RCPP
 }
 // compute_simple_mean_diff_parallel_cpp
 NumericVector compute_simple_mean_diff_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, double delta, int num_cores);
-RcppExport SEXP _SeqExpMatch_compute_simple_mean_diff_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
+RcppExport SEXP _EDI_compute_simple_mean_diff_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2070,7 +2070,7 @@ END_RCPP
 }
 // spbr_redraw_w_cpp
 NumericVector spbr_redraw_w_cpp(SEXP strata_keys_sexp, SEXP block_size_sexp, SEXP prob_T_sexp);
-RcppExport SEXP _SeqExpMatch_spbr_redraw_w_cpp(SEXP strata_keys_sexpSEXP, SEXP block_size_sexpSEXP, SEXP prob_T_sexpSEXP) {
+RcppExport SEXP _EDI_spbr_redraw_w_cpp(SEXP strata_keys_sexpSEXP, SEXP block_size_sexpSEXP, SEXP prob_T_sexpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2083,7 +2083,7 @@ END_RCPP
 }
 // stratified_bootstrap_indices_cpp
 IntegerVector stratified_bootstrap_indices_cpp(SEXP strata_keys_sexp);
-RcppExport SEXP _SeqExpMatch_stratified_bootstrap_indices_cpp(SEXP strata_keys_sexpSEXP) {
+RcppExport SEXP _EDI_stratified_bootstrap_indices_cpp(SEXP strata_keys_sexpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2094,7 +2094,7 @@ END_RCPP
 }
 // compute_survival_strata_ids_cpp
 List compute_survival_strata_ids_cpp(const Eigen::MatrixXd& X, int max_unique_per_col, int max_strata_cols, int min_count_per_level);
-RcppExport SEXP _SeqExpMatch_compute_survival_strata_ids_cpp(SEXP XSEXP, SEXP max_unique_per_colSEXP, SEXP max_strata_colsSEXP, SEXP min_count_per_levelSEXP) {
+RcppExport SEXP _EDI_compute_survival_strata_ids_cpp(SEXP XSEXP, SEXP max_unique_per_colSEXP, SEXP max_strata_colsSEXP, SEXP min_count_per_levelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2108,7 +2108,7 @@ END_RCPP
 }
 // which_cols_vary_cpp
 LogicalVector which_cols_vary_cpp(NumericMatrix X);
-RcppExport SEXP _SeqExpMatch_which_cols_vary_cpp(SEXP XSEXP) {
+RcppExport SEXP _EDI_which_cols_vary_cpp(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2119,7 +2119,7 @@ END_RCPP
 }
 // zhang_exact_binom_pval_cpp
 double zhang_exact_binom_pval_cpp(int d_plus, int d_minus, double delta_0);
-RcppExport SEXP _SeqExpMatch_zhang_exact_binom_pval_cpp(SEXP d_plusSEXP, SEXP d_minusSEXP, SEXP delta_0SEXP) {
+RcppExport SEXP _EDI_zhang_exact_binom_pval_cpp(SEXP d_plusSEXP, SEXP d_minusSEXP, SEXP delta_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2132,7 +2132,7 @@ END_RCPP
 }
 // zhang_exact_fisher_pval_cpp
 double zhang_exact_fisher_pval_cpp(int n11, int n10, int n01, int n00, double delta_0);
-RcppExport SEXP _SeqExpMatch_zhang_exact_fisher_pval_cpp(SEXP n11SEXP, SEXP n10SEXP, SEXP n01SEXP, SEXP n00SEXP, SEXP delta_0SEXP) {
+RcppExport SEXP _EDI_zhang_exact_fisher_pval_cpp(SEXP n11SEXP, SEXP n10SEXP, SEXP n01SEXP, SEXP n00SEXP, SEXP delta_0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2147,7 +2147,7 @@ END_RCPP
 }
 // compute_zhang_match_data_cpp
 List compute_zhang_match_data_cpp(const IntegerVector& w, const IntegerVector& m_vec, const NumericVector& y, const NumericMatrix& X);
-RcppExport SEXP _SeqExpMatch_compute_zhang_match_data_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP) {
+RcppExport SEXP _EDI_compute_zhang_match_data_cpp(SEXP wSEXP, SEXP m_vecSEXP, SEXP ySEXP, SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2161,165 +2161,165 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SeqExpMatch_fill_i_b_with_matches_loop_cpp", (DL_FUNC) &_SeqExpMatch_fill_i_b_with_matches_loop_cpp, 4},
-    {"_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp", (DL_FUNC) &_SeqExpMatch_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp, 2},
-    {"_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp", (DL_FUNC) &_SeqExpMatch_eigen_Xt_times_diag_w_times_X_cpp, 2},
-    {"_SeqExpMatch_mean_cpp", (DL_FUNC) &_SeqExpMatch_mean_cpp, 1},
-    {"_SeqExpMatch_var_cpp", (DL_FUNC) &_SeqExpMatch_var_cpp, 1},
-    {"_SeqExpMatch_atkinson_assign_weight_cpp", (DL_FUNC) &_SeqExpMatch_atkinson_assign_weight_cpp, 5},
-    {"_SeqExpMatch_atkinson_redraw_batch_cpp", (DL_FUNC) &_SeqExpMatch_atkinson_redraw_batch_cpp, 4},
-    {"_SeqExpMatch_base_bootstrap_loop_cpp", (DL_FUNC) &_SeqExpMatch_base_bootstrap_loop_cpp, 8},
-    {"_SeqExpMatch_beta_loglik_cpp", (DL_FUNC) &_SeqExpMatch_beta_loglik_cpp, 4},
-    {"_SeqExpMatch_beta_dev_resids_cpp", (DL_FUNC) &_SeqExpMatch_beta_dev_resids_cpp, 4},
-    {"_SeqExpMatch_beta_aic_cpp", (DL_FUNC) &_SeqExpMatch_beta_aic_cpp, 4},
-    {"_SeqExpMatch_bisection_ci_parallel_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_parallel_cpp, 10},
-    {"_SeqExpMatch_bisection_ci_single_bound_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_single_bound_cpp, 9},
-    {"_SeqExpMatch_bisection_ci_loop_cpp", (DL_FUNC) &_SeqExpMatch_bisection_ci_loop_cpp, 8},
-    {"_SeqExpMatch_bootstrap_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_indices_cpp, 2},
-    {"_SeqExpMatch_bootstrap_m_indices_cpp", (DL_FUNC) &_SeqExpMatch_bootstrap_m_indices_cpp, 5},
-    {"_SeqExpMatch_match_stats_from_indices_cpp", (DL_FUNC) &_SeqExpMatch_match_stats_from_indices_cpp, 6},
-    {"_SeqExpMatch_collect_discordant_pairs_cpp", (DL_FUNC) &_SeqExpMatch_collect_discordant_pairs_cpp, 4},
-    {"_SeqExpMatch_build_kk_combined_clogit_design_cpp", (DL_FUNC) &_SeqExpMatch_build_kk_combined_clogit_design_cpp, 7},
-    {"_SeqExpMatch_build_kk_combined_ols_design_cpp", (DL_FUNC) &_SeqExpMatch_build_kk_combined_ols_design_cpp, 5},
-    {"_SeqExpMatch_compute_all_subject_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_all_subject_data_cpp, 4},
-    {"_SeqExpMatch_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_proportional_mahal_distances_cpp, 4},
-    {"_SeqExpMatch_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_weighted_sqd_distances_cpp, 4},
-    {"_SeqExpMatch_efron_redraw_cpp", (DL_FUNC) &_SeqExpMatch_efron_redraw_cpp, 3},
-    {"_SeqExpMatch_fast_adjacent_category_logit_cpp", (DL_FUNC) &_SeqExpMatch_fast_adjacent_category_logit_cpp, 4},
-    {"_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_adjacent_category_logit_with_var_cpp, 4},
-    {"_SeqExpMatch_compute_bai_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_bai_distr_parallel_cpp, 7},
-    {"_SeqExpMatch_fast_beta_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_cpp, 5},
-    {"_SeqExpMatch_fast_beta_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_beta_regression_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_continuation_ratio_regression_cpp, 4},
-    {"_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_continuation_ratio_regression_with_var_cpp, 2},
-    {"_SeqExpMatch_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_cpoisson_combined_with_var_cpp, 8},
-    {"_SeqExpMatch_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_hurdle_negbin_with_var_cpp, 5},
-    {"_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_SeqExpMatch_exact_jonckheere_terpstra_pval_cpp, 2},
-    {"_SeqExpMatch_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_wilcox_distr_parallel_cpp, 7},
-    {"_SeqExpMatch_fast_log_binomial_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_log_binomial_regression_cpp, 4},
-    {"_SeqExpMatch_fast_log_binomial_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_log_binomial_regression_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_identity_binomial_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_identity_binomial_regression_cpp, 4},
-    {"_SeqExpMatch_fast_identity_binomial_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_identity_binomial_regression_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_logistic_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_cpp, 4},
-    {"_SeqExpMatch_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_logistic_regression_with_var_cpp, 3},
-    {"_SeqExpMatch_fast_logrank_stats_cpp", (DL_FUNC) &_SeqExpMatch_fast_logrank_stats_cpp, 3},
-    {"_SeqExpMatch_matrix_rank_cpp", (DL_FUNC) &_SeqExpMatch_matrix_rank_cpp, 2},
-    {"_SeqExpMatch_fast_neg_bin_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_neg_bin_cpp", (DL_FUNC) &_SeqExpMatch_fast_neg_bin_cpp, 5},
-    {"_SeqExpMatch_fast_ols_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_cpp, 2},
-    {"_SeqExpMatch_fast_ols_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ols_with_var_cpp, 3},
-    {"_SeqExpMatch_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cauchit_regression_cpp, 4},
-    {"_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cauchit_regression_with_var_cpp, 2},
-    {"_SeqExpMatch_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_cpp, 4},
-    {"_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_cloglog_regression_with_var_cpp, 2},
-    {"_SeqExpMatch_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_cpp, 4},
-    {"_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_probit_regression_with_var_cpp, 2},
-    {"_SeqExpMatch_fast_ordinal_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_cpp, 4},
-    {"_SeqExpMatch_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_ordinal_regression_with_var_cpp, 2},
-    {"_SeqExpMatch_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_ordinal_gcomp_post_fit_cpp, 5},
-    {"_SeqExpMatch_expand_continuation_ratio_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_continuation_ratio_data_cpp, 4},
-    {"_SeqExpMatch_expand_adjacent_category_data_cpp", (DL_FUNC) &_SeqExpMatch_expand_adjacent_category_data_cpp, 4},
-    {"_SeqExpMatch_fast_poisson_regression_cpp", (DL_FUNC) &_SeqExpMatch_fast_poisson_regression_cpp, 4},
-    {"_SeqExpMatch_fast_poisson_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_poisson_regression_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_quasipoisson_regression_with_var_cpp, 5},
-    {"_SeqExpMatch_fast_ridit_scores_cpp", (DL_FUNC) &_SeqExpMatch_fast_ridit_scores_cpp, 2},
-    {"_SeqExpMatch_fast_ridit_analysis_cpp", (DL_FUNC) &_SeqExpMatch_fast_ridit_analysis_cpp, 3},
-    {"_SeqExpMatch_sample_int_replace_cpp", (DL_FUNC) &_SeqExpMatch_sample_int_replace_cpp, 2},
-    {"_SeqExpMatch_scale_columns_cpp", (DL_FUNC) &_SeqExpMatch_scale_columns_cpp, 1},
-    {"_SeqExpMatch_shuffle_cpp", (DL_FUNC) &_SeqExpMatch_shuffle_cpp, 1},
-    {"_SeqExpMatch_fast_stereotype_logit_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_logit_cpp, 4},
-    {"_SeqExpMatch_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_logit_with_var_cpp, 4},
-    {"_SeqExpMatch_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_SeqExpMatch_fast_stereotype_profile_loglik_cpp, 5},
-    {"_SeqExpMatch_get_survival_stat_for_group", (DL_FUNC) &_SeqExpMatch_get_survival_stat_for_group, 3},
-    {"_SeqExpMatch_get_survival_stat_diff", (DL_FUNC) &_SeqExpMatch_get_survival_stat_diff, 4},
-    {"_SeqExpMatch_get_restricted_mean_se_for_group", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_for_group, 2},
-    {"_SeqExpMatch_get_restricted_mean_se_diff", (DL_FUNC) &_SeqExpMatch_get_restricted_mean_se_diff, 3},
-    {"_SeqExpMatch_wilcox_hl_point_estimate_cpp", (DL_FUNC) &_SeqExpMatch_wilcox_hl_point_estimate_cpp, 2},
-    {"_SeqExpMatch_compute_wilcox_hl_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_wilcox_hl_bootstrap_parallel_cpp, 4},
-    {"_SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_wilcox_hl_distr_parallel_cpp, 5},
-    {"_SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp, 6},
-    {"_SeqExpMatch_compute_wilcox_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_wilcox_distr_parallel_cpp, 4},
-    {"_SeqExpMatch_compute_wilcox_distr_from_list_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_wilcox_distr_from_list_parallel_cpp, 4},
-    {"_SeqExpMatch_fast_zero_one_inflated_beta_cpp", (DL_FUNC) &_SeqExpMatch_fast_zero_one_inflated_beta_cpp, 3},
-    {"_SeqExpMatch_gcomp_logistic_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_logistic_post_fit_cpp, 5},
-    {"_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_fractional_logit_post_fit_cpp, 5},
-    {"_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_logistic_cluster_post_fit_cpp, 6},
-    {"_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_gcomp_ordinal_proportional_odds_post_fit_cpp, 4},
-    {"_SeqExpMatch_generate_permutations_kk_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_kk_cpp, 3},
-    {"_SeqExpMatch_generate_permutations_bernoulli_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_bernoulli_cpp, 3},
-    {"_SeqExpMatch_generate_permutations_ibcrd_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_ibcrd_cpp, 3},
-    {"_SeqExpMatch_generate_permutations_blocking_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_blocking_cpp, 4},
-    {"_SeqExpMatch_generate_permutations_efron_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_efron_cpp, 4},
-    {"_SeqExpMatch_generate_permutations_atkinson_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_atkinson_cpp, 5},
-    {"_SeqExpMatch_generate_permutations_pocock_simon_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_pocock_simon_cpp, 6},
-    {"_SeqExpMatch_generate_permutations_cluster_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_cluster_cpp, 4},
-    {"_SeqExpMatch_generate_permutations_spbr_cpp", (DL_FUNC) &_SeqExpMatch_generate_permutations_spbr_cpp, 4},
-    {"_SeqExpMatch_get_column_types_cpp", (DL_FUNC) &_SeqExpMatch_get_column_types_cpp, 1},
-    {"_SeqExpMatch_columns_have_missingness_cpp", (DL_FUNC) &_SeqExpMatch_columns_have_missingness_cpp, 1},
-    {"_SeqExpMatch_create_missingness_indicators_cpp", (DL_FUNC) &_SeqExpMatch_create_missingness_indicators_cpp, 2},
-    {"_SeqExpMatch_count_unique_values_cpp", (DL_FUNC) &_SeqExpMatch_count_unique_values_cpp, 1},
-    {"_SeqExpMatch_redraw_w_kk14_cpp", (DL_FUNC) &_SeqExpMatch_redraw_w_kk14_cpp, 2},
-    {"_SeqExpMatch_kk21_stepwise_survival_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_survival_weights_cpp, 4},
-    {"_SeqExpMatch_kk21_continuous_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_continuous_weights_cpp, 2},
-    {"_SeqExpMatch_kk21_logistic_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_logistic_weights_cpp, 4},
-    {"_SeqExpMatch_kk21_stepwise_continuous_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_continuous_weights_cpp, 3},
-    {"_SeqExpMatch_kk21_stepwise_logistic_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_logistic_weights_cpp, 3},
-    {"_SeqExpMatch_kk21_beta_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_beta_weights_cpp, 2},
-    {"_SeqExpMatch_kk21_negbin_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_negbin_weights_cpp, 2},
-    {"_SeqExpMatch_kk21_survival_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_survival_weights_cpp, 3},
-    {"_SeqExpMatch_kk21_stepwise_beta_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_beta_weights_cpp, 3},
-    {"_SeqExpMatch_kk21_stepwise_negbin_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_negbin_weights_cpp, 3},
-    {"_SeqExpMatch_kk21_ordinal_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_ordinal_weights_cpp, 2},
-    {"_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp", (DL_FUNC) &_SeqExpMatch_kk21_stepwise_ordinal_weights_cpp, 3},
-    {"_SeqExpMatch_kk_bootstrap_loop_cpp", (DL_FUNC) &_SeqExpMatch_kk_bootstrap_loop_cpp, 9},
-    {"_SeqExpMatch_compute_kk_reservoir_stats_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_reservoir_stats_cpp, 3},
-    {"_SeqExpMatch_compute_kk_grouping_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_grouping_cpp, 1},
-    {"_SeqExpMatch_compute_kk_cluster_ids_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_cluster_ids_cpp, 1},
-    {"_SeqExpMatch_compute_kk_compound_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_compound_distr_parallel_cpp, 4},
-    {"_SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_compound_bootstrap_parallel_cpp, 4},
-    {"_SeqExpMatch_compute_kk_lin_match_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_kk_lin_match_data_cpp, 4},
-    {"_SeqExpMatch_neg_loglik_nb_cpp", (DL_FUNC) &_SeqExpMatch_neg_loglik_nb_cpp, 4},
-    {"_SeqExpMatch_match_diffs_cpp", (DL_FUNC) &_SeqExpMatch_match_diffs_cpp, 5},
-    {"_SeqExpMatch_mn_constrained_mle_pc_cpp", (DL_FUNC) &_SeqExpMatch_mn_constrained_mle_pc_cpp, 5},
-    {"_SeqExpMatch_mn_z_statistic_cpp", (DL_FUNC) &_SeqExpMatch_mn_z_statistic_cpp, 7},
-    {"_SeqExpMatch_mn_pvalue_cpp", (DL_FUNC) &_SeqExpMatch_mn_pvalue_cpp, 7},
-    {"_SeqExpMatch_mn_ci_cpp", (DL_FUNC) &_SeqExpMatch_mn_ci_cpp, 8},
-    {"_SeqExpMatch_wilson_score_interval_cpp", (DL_FUNC) &_SeqExpMatch_wilson_score_interval_cpp, 3},
-    {"_SeqExpMatch_newcombe_independent_ci_cpp", (DL_FUNC) &_SeqExpMatch_newcombe_independent_ci_cpp, 5},
-    {"_SeqExpMatch_newcombe_paired_ci_cpp", (DL_FUNC) &_SeqExpMatch_newcombe_paired_ci_cpp, 5},
-    {"_SeqExpMatch_compute_ols_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ols_distr_parallel_cpp, 5},
-    {"_SeqExpMatch_compute_ols_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ols_bootstrap_parallel_cpp, 5},
-    {"_SeqExpMatch_d_optimal_search_cpp", (DL_FUNC) &_SeqExpMatch_d_optimal_search_cpp, 3},
-    {"_SeqExpMatch_a_optimal_search_cpp", (DL_FUNC) &_SeqExpMatch_a_optimal_search_cpp, 4},
-    {"_SeqExpMatch_compute_pair_averages_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_averages_cpp, 3},
-    {"_SeqExpMatch_compute_pair_distance_matrix_cpp", (DL_FUNC) &_SeqExpMatch_compute_pair_distance_matrix_cpp, 2},
-    {"_SeqExpMatch_compute_lambda_squ_cpp", (DL_FUNC) &_SeqExpMatch_compute_lambda_squ_cpp, 2},
-    {"_SeqExpMatch_pocock_simon_assign_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_assign_cpp, 5},
-    {"_SeqExpMatch_pocock_simon_assign_and_update_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_assign_and_update_cpp, 5},
-    {"_SeqExpMatch_pocock_simon_redraw_w_cpp", (DL_FUNC) &_SeqExpMatch_pocock_simon_redraw_w_cpp, 5},
-    {"_SeqExpMatch_qr_reduce_full_rank_cpp", (DL_FUNC) &_SeqExpMatch_qr_reduce_full_rank_cpp, 1},
-    {"_SeqExpMatch_qr_reduce_preserve_cols_cpp", (DL_FUNC) &_SeqExpMatch_qr_reduce_preserve_cols_cpp, 2},
-    {"_SeqExpMatch_random_block_size_redraw_w_cpp", (DL_FUNC) &_SeqExpMatch_random_block_size_redraw_w_cpp, 3},
-    {"_SeqExpMatch_randomization_loop_cpp", (DL_FUNC) &_SeqExpMatch_randomization_loop_cpp, 5},
-    {"_SeqExpMatch_compute_ridit_distr_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ridit_distr_parallel_cpp, 4},
-    {"_SeqExpMatch_compute_ridit_bootstrap_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_ridit_bootstrap_parallel_cpp, 5},
-    {"_SeqExpMatch_ols_hc2_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_ols_hc2_post_fit_cpp, 4},
-    {"_SeqExpMatch_glm_sandwich_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_glm_sandwich_post_fit_cpp, 6},
-    {"_SeqExpMatch_glm_cluster_sandwich_post_fit_cpp", (DL_FUNC) &_SeqExpMatch_glm_cluster_sandwich_post_fit_cpp, 7},
-    {"_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_SeqExpMatch_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
-    {"_SeqExpMatch_sample_mode_cpp", (DL_FUNC) &_SeqExpMatch_sample_mode_cpp, 1},
-    {"_SeqExpMatch_compute_simple_mean_diff_parallel_cpp", (DL_FUNC) &_SeqExpMatch_compute_simple_mean_diff_parallel_cpp, 4},
-    {"_SeqExpMatch_spbr_redraw_w_cpp", (DL_FUNC) &_SeqExpMatch_spbr_redraw_w_cpp, 3},
-    {"_SeqExpMatch_stratified_bootstrap_indices_cpp", (DL_FUNC) &_SeqExpMatch_stratified_bootstrap_indices_cpp, 1},
-    {"_SeqExpMatch_compute_survival_strata_ids_cpp", (DL_FUNC) &_SeqExpMatch_compute_survival_strata_ids_cpp, 4},
-    {"_SeqExpMatch_which_cols_vary_cpp", (DL_FUNC) &_SeqExpMatch_which_cols_vary_cpp, 1},
-    {"_SeqExpMatch_zhang_exact_binom_pval_cpp", (DL_FUNC) &_SeqExpMatch_zhang_exact_binom_pval_cpp, 3},
-    {"_SeqExpMatch_zhang_exact_fisher_pval_cpp", (DL_FUNC) &_SeqExpMatch_zhang_exact_fisher_pval_cpp, 5},
-    {"_SeqExpMatch_compute_zhang_match_data_cpp", (DL_FUNC) &_SeqExpMatch_compute_zhang_match_data_cpp, 4},
+    {"_EDI_fill_i_b_with_matches_loop_cpp", (DL_FUNC) &_EDI_fill_i_b_with_matches_loop_cpp, 4},
+    {"_EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp", (DL_FUNC) &_EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp, 2},
+    {"_EDI_eigen_Xt_times_diag_w_times_X_cpp", (DL_FUNC) &_EDI_eigen_Xt_times_diag_w_times_X_cpp, 2},
+    {"_EDI_mean_cpp", (DL_FUNC) &_EDI_mean_cpp, 1},
+    {"_EDI_var_cpp", (DL_FUNC) &_EDI_var_cpp, 1},
+    {"_EDI_atkinson_assign_weight_cpp", (DL_FUNC) &_EDI_atkinson_assign_weight_cpp, 5},
+    {"_EDI_atkinson_redraw_batch_cpp", (DL_FUNC) &_EDI_atkinson_redraw_batch_cpp, 4},
+    {"_EDI_base_bootstrap_loop_cpp", (DL_FUNC) &_EDI_base_bootstrap_loop_cpp, 8},
+    {"_EDI_beta_loglik_cpp", (DL_FUNC) &_EDI_beta_loglik_cpp, 4},
+    {"_EDI_beta_dev_resids_cpp", (DL_FUNC) &_EDI_beta_dev_resids_cpp, 4},
+    {"_EDI_beta_aic_cpp", (DL_FUNC) &_EDI_beta_aic_cpp, 4},
+    {"_EDI_bisection_ci_parallel_cpp", (DL_FUNC) &_EDI_bisection_ci_parallel_cpp, 10},
+    {"_EDI_bisection_ci_single_bound_cpp", (DL_FUNC) &_EDI_bisection_ci_single_bound_cpp, 9},
+    {"_EDI_bisection_ci_loop_cpp", (DL_FUNC) &_EDI_bisection_ci_loop_cpp, 8},
+    {"_EDI_bootstrap_indices_cpp", (DL_FUNC) &_EDI_bootstrap_indices_cpp, 2},
+    {"_EDI_bootstrap_m_indices_cpp", (DL_FUNC) &_EDI_bootstrap_m_indices_cpp, 5},
+    {"_EDI_match_stats_from_indices_cpp", (DL_FUNC) &_EDI_match_stats_from_indices_cpp, 6},
+    {"_EDI_collect_discordant_pairs_cpp", (DL_FUNC) &_EDI_collect_discordant_pairs_cpp, 4},
+    {"_EDI_build_kk_combined_clogit_design_cpp", (DL_FUNC) &_EDI_build_kk_combined_clogit_design_cpp, 7},
+    {"_EDI_build_kk_combined_ols_design_cpp", (DL_FUNC) &_EDI_build_kk_combined_ols_design_cpp, 5},
+    {"_EDI_compute_all_subject_data_cpp", (DL_FUNC) &_EDI_compute_all_subject_data_cpp, 4},
+    {"_EDI_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_EDI_compute_proportional_mahal_distances_cpp, 4},
+    {"_EDI_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_weighted_sqd_distances_cpp, 4},
+    {"_EDI_efron_redraw_cpp", (DL_FUNC) &_EDI_efron_redraw_cpp, 3},
+    {"_EDI_fast_adjacent_category_logit_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_cpp, 4},
+    {"_EDI_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_with_var_cpp, 4},
+    {"_EDI_compute_bai_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_bai_distr_parallel_cpp, 7},
+    {"_EDI_fast_beta_regression_cpp", (DL_FUNC) &_EDI_fast_beta_regression_cpp, 5},
+    {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 5},
+    {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 4},
+    {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 2},
+    {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
+    {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 5},
+    {"_EDI_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_EDI_exact_jonckheere_terpstra_pval_cpp, 2},
+    {"_EDI_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_wilcox_distr_parallel_cpp, 7},
+    {"_EDI_fast_log_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_cpp, 4},
+    {"_EDI_fast_log_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_with_var_cpp, 5},
+    {"_EDI_fast_identity_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_cpp, 4},
+    {"_EDI_fast_identity_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_with_var_cpp, 5},
+    {"_EDI_fast_logistic_regression_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_cpp, 4},
+    {"_EDI_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_with_var_cpp, 3},
+    {"_EDI_fast_logrank_stats_cpp", (DL_FUNC) &_EDI_fast_logrank_stats_cpp, 3},
+    {"_EDI_matrix_rank_cpp", (DL_FUNC) &_EDI_matrix_rank_cpp, 2},
+    {"_EDI_fast_neg_bin_with_var_cpp", (DL_FUNC) &_EDI_fast_neg_bin_with_var_cpp, 5},
+    {"_EDI_fast_neg_bin_cpp", (DL_FUNC) &_EDI_fast_neg_bin_cpp, 5},
+    {"_EDI_fast_ols_cpp", (DL_FUNC) &_EDI_fast_ols_cpp, 2},
+    {"_EDI_fast_ols_with_var_cpp", (DL_FUNC) &_EDI_fast_ols_with_var_cpp, 3},
+    {"_EDI_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_cpp, 4},
+    {"_EDI_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_with_var_cpp, 2},
+    {"_EDI_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_cpp, 4},
+    {"_EDI_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_with_var_cpp, 2},
+    {"_EDI_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_cpp, 4},
+    {"_EDI_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_with_var_cpp, 2},
+    {"_EDI_fast_ordinal_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_cpp, 4},
+    {"_EDI_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_with_var_cpp, 2},
+    {"_EDI_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_EDI_ordinal_gcomp_post_fit_cpp, 5},
+    {"_EDI_expand_continuation_ratio_data_cpp", (DL_FUNC) &_EDI_expand_continuation_ratio_data_cpp, 4},
+    {"_EDI_expand_adjacent_category_data_cpp", (DL_FUNC) &_EDI_expand_adjacent_category_data_cpp, 4},
+    {"_EDI_fast_poisson_regression_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_cpp, 4},
+    {"_EDI_fast_poisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_with_var_cpp, 5},
+    {"_EDI_fast_quasipoisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_quasipoisson_regression_with_var_cpp, 5},
+    {"_EDI_fast_ridit_scores_cpp", (DL_FUNC) &_EDI_fast_ridit_scores_cpp, 2},
+    {"_EDI_fast_ridit_analysis_cpp", (DL_FUNC) &_EDI_fast_ridit_analysis_cpp, 3},
+    {"_EDI_sample_int_replace_cpp", (DL_FUNC) &_EDI_sample_int_replace_cpp, 2},
+    {"_EDI_scale_columns_cpp", (DL_FUNC) &_EDI_scale_columns_cpp, 1},
+    {"_EDI_shuffle_cpp", (DL_FUNC) &_EDI_shuffle_cpp, 1},
+    {"_EDI_fast_stereotype_logit_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_cpp, 4},
+    {"_EDI_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_with_var_cpp, 4},
+    {"_EDI_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_EDI_fast_stereotype_profile_loglik_cpp, 5},
+    {"_EDI_get_survival_stat_for_group", (DL_FUNC) &_EDI_get_survival_stat_for_group, 3},
+    {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
+    {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},
+    {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
+    {"_EDI_wilcox_hl_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_point_estimate_cpp, 2},
+    {"_EDI_compute_wilcox_hl_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_bootstrap_parallel_cpp, 4},
+    {"_EDI_compute_wilcox_hl_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_distr_parallel_cpp, 5},
+    {"_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp, 6},
+    {"_EDI_compute_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_parallel_cpp, 4},
+    {"_EDI_compute_wilcox_distr_from_list_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_from_list_parallel_cpp, 4},
+    {"_EDI_fast_zero_one_inflated_beta_cpp", (DL_FUNC) &_EDI_fast_zero_one_inflated_beta_cpp, 3},
+    {"_EDI_gcomp_logistic_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_logistic_post_fit_cpp, 5},
+    {"_EDI_gcomp_fractional_logit_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_fractional_logit_post_fit_cpp, 5},
+    {"_EDI_gcomp_logistic_cluster_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_logistic_cluster_post_fit_cpp, 6},
+    {"_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp, 4},
+    {"_EDI_generate_permutations_kk_cpp", (DL_FUNC) &_EDI_generate_permutations_kk_cpp, 3},
+    {"_EDI_generate_permutations_bernoulli_cpp", (DL_FUNC) &_EDI_generate_permutations_bernoulli_cpp, 3},
+    {"_EDI_generate_permutations_ibcrd_cpp", (DL_FUNC) &_EDI_generate_permutations_ibcrd_cpp, 3},
+    {"_EDI_generate_permutations_blocking_cpp", (DL_FUNC) &_EDI_generate_permutations_blocking_cpp, 4},
+    {"_EDI_generate_permutations_efron_cpp", (DL_FUNC) &_EDI_generate_permutations_efron_cpp, 4},
+    {"_EDI_generate_permutations_atkinson_cpp", (DL_FUNC) &_EDI_generate_permutations_atkinson_cpp, 5},
+    {"_EDI_generate_permutations_pocock_simon_cpp", (DL_FUNC) &_EDI_generate_permutations_pocock_simon_cpp, 6},
+    {"_EDI_generate_permutations_cluster_cpp", (DL_FUNC) &_EDI_generate_permutations_cluster_cpp, 4},
+    {"_EDI_generate_permutations_spbr_cpp", (DL_FUNC) &_EDI_generate_permutations_spbr_cpp, 4},
+    {"_EDI_get_column_types_cpp", (DL_FUNC) &_EDI_get_column_types_cpp, 1},
+    {"_EDI_columns_have_missingness_cpp", (DL_FUNC) &_EDI_columns_have_missingness_cpp, 1},
+    {"_EDI_create_missingness_indicators_cpp", (DL_FUNC) &_EDI_create_missingness_indicators_cpp, 2},
+    {"_EDI_count_unique_values_cpp", (DL_FUNC) &_EDI_count_unique_values_cpp, 1},
+    {"_EDI_redraw_w_kk14_cpp", (DL_FUNC) &_EDI_redraw_w_kk14_cpp, 2},
+    {"_EDI_kk21_stepwise_survival_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_survival_weights_cpp, 4},
+    {"_EDI_kk21_continuous_weights_cpp", (DL_FUNC) &_EDI_kk21_continuous_weights_cpp, 2},
+    {"_EDI_kk21_logistic_weights_cpp", (DL_FUNC) &_EDI_kk21_logistic_weights_cpp, 4},
+    {"_EDI_kk21_stepwise_continuous_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_continuous_weights_cpp, 3},
+    {"_EDI_kk21_stepwise_logistic_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_logistic_weights_cpp, 3},
+    {"_EDI_kk21_beta_weights_cpp", (DL_FUNC) &_EDI_kk21_beta_weights_cpp, 2},
+    {"_EDI_kk21_negbin_weights_cpp", (DL_FUNC) &_EDI_kk21_negbin_weights_cpp, 2},
+    {"_EDI_kk21_survival_weights_cpp", (DL_FUNC) &_EDI_kk21_survival_weights_cpp, 3},
+    {"_EDI_kk21_stepwise_beta_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_beta_weights_cpp, 3},
+    {"_EDI_kk21_stepwise_negbin_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_negbin_weights_cpp, 3},
+    {"_EDI_kk21_ordinal_weights_cpp", (DL_FUNC) &_EDI_kk21_ordinal_weights_cpp, 2},
+    {"_EDI_kk21_stepwise_ordinal_weights_cpp", (DL_FUNC) &_EDI_kk21_stepwise_ordinal_weights_cpp, 3},
+    {"_EDI_kk_bootstrap_loop_cpp", (DL_FUNC) &_EDI_kk_bootstrap_loop_cpp, 9},
+    {"_EDI_compute_kk_reservoir_stats_cpp", (DL_FUNC) &_EDI_compute_kk_reservoir_stats_cpp, 3},
+    {"_EDI_compute_kk_grouping_cpp", (DL_FUNC) &_EDI_compute_kk_grouping_cpp, 1},
+    {"_EDI_compute_kk_cluster_ids_cpp", (DL_FUNC) &_EDI_compute_kk_cluster_ids_cpp, 1},
+    {"_EDI_compute_kk_compound_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_compound_distr_parallel_cpp, 4},
+    {"_EDI_compute_kk_compound_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_compound_bootstrap_parallel_cpp, 4},
+    {"_EDI_compute_kk_lin_match_data_cpp", (DL_FUNC) &_EDI_compute_kk_lin_match_data_cpp, 4},
+    {"_EDI_neg_loglik_nb_cpp", (DL_FUNC) &_EDI_neg_loglik_nb_cpp, 4},
+    {"_EDI_match_diffs_cpp", (DL_FUNC) &_EDI_match_diffs_cpp, 5},
+    {"_EDI_mn_constrained_mle_pc_cpp", (DL_FUNC) &_EDI_mn_constrained_mle_pc_cpp, 5},
+    {"_EDI_mn_z_statistic_cpp", (DL_FUNC) &_EDI_mn_z_statistic_cpp, 7},
+    {"_EDI_mn_pvalue_cpp", (DL_FUNC) &_EDI_mn_pvalue_cpp, 7},
+    {"_EDI_mn_ci_cpp", (DL_FUNC) &_EDI_mn_ci_cpp, 8},
+    {"_EDI_wilson_score_interval_cpp", (DL_FUNC) &_EDI_wilson_score_interval_cpp, 3},
+    {"_EDI_newcombe_independent_ci_cpp", (DL_FUNC) &_EDI_newcombe_independent_ci_cpp, 5},
+    {"_EDI_newcombe_paired_ci_cpp", (DL_FUNC) &_EDI_newcombe_paired_ci_cpp, 5},
+    {"_EDI_compute_ols_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_distr_parallel_cpp, 5},
+    {"_EDI_compute_ols_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_bootstrap_parallel_cpp, 5},
+    {"_EDI_d_optimal_search_cpp", (DL_FUNC) &_EDI_d_optimal_search_cpp, 3},
+    {"_EDI_a_optimal_search_cpp", (DL_FUNC) &_EDI_a_optimal_search_cpp, 4},
+    {"_EDI_compute_pair_averages_cpp", (DL_FUNC) &_EDI_compute_pair_averages_cpp, 3},
+    {"_EDI_compute_pair_distance_matrix_cpp", (DL_FUNC) &_EDI_compute_pair_distance_matrix_cpp, 2},
+    {"_EDI_compute_lambda_squ_cpp", (DL_FUNC) &_EDI_compute_lambda_squ_cpp, 2},
+    {"_EDI_pocock_simon_assign_cpp", (DL_FUNC) &_EDI_pocock_simon_assign_cpp, 5},
+    {"_EDI_pocock_simon_assign_and_update_cpp", (DL_FUNC) &_EDI_pocock_simon_assign_and_update_cpp, 5},
+    {"_EDI_pocock_simon_redraw_w_cpp", (DL_FUNC) &_EDI_pocock_simon_redraw_w_cpp, 5},
+    {"_EDI_qr_reduce_full_rank_cpp", (DL_FUNC) &_EDI_qr_reduce_full_rank_cpp, 1},
+    {"_EDI_qr_reduce_preserve_cols_cpp", (DL_FUNC) &_EDI_qr_reduce_preserve_cols_cpp, 2},
+    {"_EDI_random_block_size_redraw_w_cpp", (DL_FUNC) &_EDI_random_block_size_redraw_w_cpp, 3},
+    {"_EDI_randomization_loop_cpp", (DL_FUNC) &_EDI_randomization_loop_cpp, 5},
+    {"_EDI_compute_ridit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_distr_parallel_cpp, 4},
+    {"_EDI_compute_ridit_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_bootstrap_parallel_cpp, 5},
+    {"_EDI_ols_hc2_post_fit_cpp", (DL_FUNC) &_EDI_ols_hc2_post_fit_cpp, 4},
+    {"_EDI_glm_sandwich_post_fit_cpp", (DL_FUNC) &_EDI_glm_sandwich_post_fit_cpp, 6},
+    {"_EDI_glm_cluster_sandwich_post_fit_cpp", (DL_FUNC) &_EDI_glm_cluster_sandwich_post_fit_cpp, 7},
+    {"_EDI_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
+    {"_EDI_sample_mode_cpp", (DL_FUNC) &_EDI_sample_mode_cpp, 1},
+    {"_EDI_compute_simple_mean_diff_parallel_cpp", (DL_FUNC) &_EDI_compute_simple_mean_diff_parallel_cpp, 4},
+    {"_EDI_spbr_redraw_w_cpp", (DL_FUNC) &_EDI_spbr_redraw_w_cpp, 3},
+    {"_EDI_stratified_bootstrap_indices_cpp", (DL_FUNC) &_EDI_stratified_bootstrap_indices_cpp, 1},
+    {"_EDI_compute_survival_strata_ids_cpp", (DL_FUNC) &_EDI_compute_survival_strata_ids_cpp, 4},
+    {"_EDI_which_cols_vary_cpp", (DL_FUNC) &_EDI_which_cols_vary_cpp, 1},
+    {"_EDI_zhang_exact_binom_pval_cpp", (DL_FUNC) &_EDI_zhang_exact_binom_pval_cpp, 3},
+    {"_EDI_zhang_exact_fisher_pval_cpp", (DL_FUNC) &_EDI_zhang_exact_fisher_pval_cpp, 5},
+    {"_EDI_compute_zhang_match_data_cpp", (DL_FUNC) &_EDI_compute_zhang_match_data_cpp, 4},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_SeqExpMatch(DllInfo *dll) {
+RcppExport void R_init_EDI(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
