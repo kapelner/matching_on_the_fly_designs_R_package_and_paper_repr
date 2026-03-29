@@ -1,6 +1,5 @@
 #' Multivariate LWA-style Marginal Cox Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 #' using the treatment indicator and all recorded covariates. For matched pairs, it
 #' uses a marginal Cox proportional hazards model with Lee-Wei-Amato style
@@ -38,6 +37,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKLWACoxIVWC = R6::R6Class("InferenceSurvivalMultiKKLWACoxIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxIVWC,
 	public = list(
 

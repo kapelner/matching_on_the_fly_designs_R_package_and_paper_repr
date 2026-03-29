@@ -1,6 +1,5 @@
 #' Multivariate Hurdle Poisson IVWC Inference for KK Designs
 #'
-#' @description
 #' Fits an inverse-variance weighted compound estimator for KK matching-on-the-fly
 #' designs with count responses using the treatment indicator and all recorded
 #' covariates. The matched pairs are analyzed with a hurdle-Poisson mixed model
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountMultiKKHurdlePoissonIVWC = R6::R6Class("InferenceCountMultiKKHurdlePoissonIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKHurdlePoissonIVWC,
 	private = list(
 		include_covariates = function() TRUE

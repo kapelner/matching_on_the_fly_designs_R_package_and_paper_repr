@@ -1,6 +1,5 @@
 #' Abstract class for Stratified Cox / Standard Cox Compound Inference
 #'
-#' @description
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
 #' survival responses. For matched pairs, it uses stratified Cox proportional hazards
 #' regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
@@ -9,14 +8,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -25,16 +26,18 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
-		# @description
-		# Returns the estimated treatment effect (log-hazard ratio).
+		#' @description
+		#' Returns the estimated treatment effect (log-hazard ratio).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the asymptotic confidence interval.
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -42,9 +45,10 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the asymptotic p-value.
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. For
+		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

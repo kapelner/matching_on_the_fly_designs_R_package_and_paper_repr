@@ -4,6 +4,11 @@
 \alias{InferenceAllKKWilcoxIVWC}
 \title{Non-parametric Wilcoxon-based Compound Inference for KK Designs}
 \description{
+Non-parametric Wilcoxon-based Compound Inference for KK Designs
+
+Non-parametric Wilcoxon-based Compound Inference for KK Designs
+}
+\details{
 Fits a non-parametric compound estimator for KK matching-on-the-fly designs.
 For matched pairs, it uses the Wilcoxon Signed-Rank Hodges-Lehmann estimate.
 For reservoir subjects, it uses the Wilcoxon Rank-Sum (Mann-Whitney U) Hodges-Lehmann
@@ -33,7 +38,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKWilcoxBaseIVWC]{EDI::InferenceAbstractKKWilcoxBaseIVWC}} -> \code{InferenceAllKKWilcoxIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKWilcoxBaseIVWC} -> \code{InferenceAllKKWilcoxIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -83,6 +88,8 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -114,9 +121,16 @@ infer
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect (Hodges-Lehmann median shift).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval"></a>}}

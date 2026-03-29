@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalUnivKKCondAdjCatLogitRegr}
 \title{Univariate Conditional Adjacent-Category Inference for KK Designs}
 \description{
+Univariate Conditional Adjacent-Category Inference for KK Designs
+
+Univariate Conditional Adjacent-Category Inference for KK Designs
+}
+\details{
 Fits a conditional adjacent-category logit model for ordinal responses under a KK
 matching-on-the-fly design. Each matched pair is treated as a stratum.
 Reservoir subjects each form their own unique stratum. The adjacent-category
@@ -17,7 +22,8 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal",
+verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
@@ -28,7 +34,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceOrdinalUnivKKCondAdjCatLogitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceOrdinalUnivKKCondAdjCatLogitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -78,6 +84,8 @@ Initialize a univariate conditional adjacent-category inference object.
 \item{\code{num_cores}}{Number of CPU cores.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -88,9 +96,18 @@ Initialize a univariate conditional adjacent-category inference object.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKCondAdjCatLogitRegr$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUnivKKCondAdjCatLogitRegr-compute_asymp_confidence_interval"></a>}}

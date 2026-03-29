@@ -1,6 +1,5 @@
 #' Multivariate Modified Poisson Inference for Binary Responses
 #'
-#' @description
 #' Fits the classic modified Poisson model for binary (incidence) responses under
 #' non-KK designs using treatment and all recorded covariates as predictors in a
 #' Poisson log-link working model with Huber-White sandwich variance. The
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceIncidMultiModifiedPoisson = R6::R6Class("InferenceIncidMultiModifiedPoisson",
+	lock_objects = FALSE,
 	inherit = InferenceIncidUnivModifiedPoisson,
 	public = list(
 

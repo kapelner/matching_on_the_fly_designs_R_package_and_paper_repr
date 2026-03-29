@@ -1,6 +1,5 @@
 #' Stratified Cox PH Inference for Survival Responses
 #'
-#' @description
 #' Internal base class for all-subject non-KK stratified Cox proportional hazards
 #' regression. Stratification variables are chosen automatically from the recorded
 #' low-cardinality covariates. If no suitable stratification covariates are found,
@@ -9,27 +8,43 @@
 #' @keywords internal
 #' @noRd
 InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
+		#' @description
+		#' Compute confidence interval rand
+		#' @param alpha Description for alpha
+		#' @param r Number of vectors to draw.
+		#' @param pval_epsilon Description for pval_epsilon
+		#' @param show_progress Description for show_progress
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			stop("Randomization confidence intervals are not supported for stratified Cox PH models because the estimator units (Log-Hazard Ratio) are inconsistent with the randomization test's required transformed scale (Log-Time Ratio / AFT effect).")
 		}

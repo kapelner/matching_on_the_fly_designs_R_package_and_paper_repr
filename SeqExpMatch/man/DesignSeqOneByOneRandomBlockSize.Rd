@@ -4,12 +4,18 @@
 \alias{DesignSeqOneByOneRandomBlockSize}
 \title{A sequential blocking allocation design with random block sizes}
 \description{
-An R6 Class encapsulating the data and functionality for a sequential blocking experimental design
+A sequential blocking allocation design with random block sizes
+
+A sequential blocking allocation design with random block sizes
+}
+\details{
+An R6 Class encapsulating the data and functionality for a sequential blocking
+experimental design
 where block sizes are randomly chosen from a specified set for each stratum. This design
 is commonly used in clinical trials to prevent predictability of treatment assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneRandomBlockSize}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneRandomBlockSize}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -73,10 +79,13 @@ Initialize a random block size sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{strata_cols}}{A character vector of column names to use for stratification. If NULL, simple blocking is used.}
+\item{\code{strata_cols}}{A character vector of column names to use for stratification. If
+NULL, simple blocking is used.}
 
-\item{\code{block_sizes}}{A vector of positive integers representing the possible block sizes to choose from. 
-Each must be a multiple of the inverse of \code{prob_T} to ensure integer treatment/control counts.}
+\item{\code{block_sizes}}{A vector of positive integers representing the possible block sizes
+  to choose from.
+Each must be a multiple of the inverse of \code{prob_T} to ensure integer
+treatment/control counts.}
 
 \item{\code{response_type}}{The data type of response values which must be one of the following:
 "continuous" (the default),
@@ -95,7 +104,8 @@ should we include another dummy variable for its missingness? Default is \code{T
 
 \item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is \code{FALSE}.}
+\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is
+\code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

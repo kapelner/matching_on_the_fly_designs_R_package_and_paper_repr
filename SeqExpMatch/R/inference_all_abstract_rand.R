@@ -1,15 +1,15 @@
 #' Randomization-based Inference
 #'
-#' @description
 #' Abstract class for randomization-based inference.
 #'
 #' @keywords internal
 InferenceRand = R6::R6Class("InferenceRand",
 	inherit = Inference,
+	lock_objects = FALSE,
 	public = list(
-		# @description
-		# Set Custom Randomization Statistic Computation
-		# @param custom_randomization_statistic_function	A function that returns a scalar value.
+		#' @description
+		#' Set Custom Randomization Statistic Computation
+		#' @param custom_randomization_statistic_function	A function that returns a scalar value.
 		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
 			assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
 			private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
@@ -21,14 +21,14 @@ InferenceRand = R6::R6Class("InferenceRand",
 			private$cached_values$custom_stat_analysis = NULL
 		},
 
-		# @description
-		# Under the sharp null, computes the randomization distribution.
-		# @param r						The number of randomization vectors.
-		# @param delta					The null difference.
-		# @param transform_responses	Type of transformation.
-		# @param show_progress		Show progress bar.
-		# @param permutations		Pre-computed permutations.
-		# @return 	A vector of estimates.
+		#' @description
+		#' Under the sharp null, computes the randomization distribution.
+		#' @param r						The number of randomization vectors.
+		#' @param delta					The null difference.
+		#' @param transform_responses	Type of transformation.
+		#' @param show_progress		Show progress bar.
+		#' @param permutations		Pre-computed permutations.
+		#' @return 	A vector of estimates.
 		compute_beta_hat_T_randomization_distr_under_sharp_null = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(delta); assertCount(r, positive = TRUE)
@@ -48,6 +48,26 @@ InferenceRand = R6::R6Class("InferenceRand",
 			need_thread_objs = !(use_lightweight_custom_stat && use_perms)
 			inf_template = if (need_thread_objs) self$duplicate() else NULL
 			des_template = if (need_thread_objs) setup$template$duplicate() else NULL
+
+			# Warm up the design template cache if it is a sequential design that uses covariates.
+			if (!is.null(des_template) && isTRUE(des_template$.__enclos_env__$private$uses_covariates)) {
+				if (private$verbose) cat("Warming up design cache... ")
+				tryCatch({
+					priv = des_template$.__enclos_env__$private
+					old_t = priv$t
+					if (is.null(priv$all_subject_data_cache)) priv$all_subject_data_cache = list()
+					n_subjects = des_template$get_n()
+					for (t_temp in 1 : n_subjects) {
+						priv$t = t_temp
+						priv$compute_all_subject_data()
+					}
+					priv$t = old_t
+					if (private$verbose) cat("done.\n")
+				}, error = function(e) {
+					if (exists("old_t")) des_template$.__enclos_env__$private$t = old_t
+					if (private$verbose) cat("failed.\n")
+				})
+			}
 
 			if (!is.null(inf_template) && private$is_KK && private$object_has_private_method(inf_template, "compute_basic_match_data"))
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
@@ -75,25 +95,27 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
 				set_package_threads(1L)
-				worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
-				worker_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
-				if (!is.null(worker_inf)) worker_inf$.__enclos_env__$private$num_cores = 1L
-				private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+				suppressWarnings({
+					worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
+					worker_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
+					if (!is.null(worker_inf)) worker_inf$.__enclos_env__$private$num_cores = 1L
+					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+				})
 			}, n_cores = actual_rand_cores, show_progress = show_progress))
 
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			beta_hat_T_diff_ws
 		},
 
-		# @description
-		# Computes a randomization-based p-value.
-		# @param r		Number of randomization vectors.
-		# @param delta					Null difference.
-		# @param transform_responses	Transformation.
-		# @param na.rm 				Remove NAs.
-		# @param show_progress		Show progress.
-		# @param permutations		Pre-computed permutations.
-		# @return 	Randomization p-value.
+		#' @description
+		#' Computes a randomization-based p-value.
+		#' @param r		Number of randomization vectors.
+		#' @param delta					Null difference.
+		#' @param transform_responses	Transformation.
+		#' @param na.rm 				Remove NAs.
+		#' @param show_progress		Show progress.
+		#' @param permutations		Pre-computed permutations.
+		#' @return 	Randomization p-value.
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)

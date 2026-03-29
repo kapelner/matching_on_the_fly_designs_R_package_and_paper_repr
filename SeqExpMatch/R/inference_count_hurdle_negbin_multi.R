@@ -1,6 +1,5 @@
 #' Multivariate Hurdle Negative Binomial Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a hurdle negative binomial regression for count responses using the
 #' treatment indicator and all recorded covariates in both the hurdle and count
 #' components. The hurdle indicator model is fit on all subjects, and the
@@ -35,6 +34,7 @@
 #' infer
 #'
 InferenceCountMultiHurdleNegBinRegr = R6::R6Class("InferenceCountMultiHurdleNegBinRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivHurdleNegBinRegr,
 	private = list(
 		predictors_df = function(){

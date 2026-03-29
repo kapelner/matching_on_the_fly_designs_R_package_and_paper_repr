@@ -1,6 +1,5 @@
 #' Abstract class for Weibull Frailty / Standard Weibull Compound Inference
 #'
-#' @description
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
 #' survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
 #' model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
@@ -28,7 +27,8 @@
 #' \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
 #' The AFT log-time ratio is then
 #' \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
-#' and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
+#' and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} =
+#' \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
 #' (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
 #' semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
 #' only for scale conversion and does not affect the frailty correction itself.
@@ -37,14 +37,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			if (!requireNamespace("parfm", quietly = TRUE)) {
 				stop("Package 'parfm' is required for ", class(self)[1], ". Please install it.")
@@ -56,16 +58,18 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
-		# @description
-		# Returns the estimated treatment effect (log-time ratio).
+		#' @description
+		#' Returns the estimated treatment effect (log-time ratio).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the asymptotic confidence interval.
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -73,9 +77,10 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the asymptotic p-value.
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. For
+		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

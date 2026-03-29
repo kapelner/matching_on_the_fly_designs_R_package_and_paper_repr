@@ -1,10 +1,10 @@
 #' Bootstrap-based Inference
 #'
-#' @description
 #' Abstract class for bootstrap-based inference.
 #'
 #' @keywords internal
 InferenceBoot = R6::R6Class("InferenceBoot",
+	lock_objects = FALSE,
 	inherit = InferenceRandCI,
 	public = list(
 		#' @description
@@ -131,7 +131,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param alpha					The confidence level 1 - \code{alpha}. Default 0.05.
 		#' @param B						Number of bootstrap samples. Default 501.
 		#' @param type					Type of bootstrap CI: "percentile" (default) or "basic".
-		#' @param na.rm					Remove non-finite bootstrap replicates. Default TRUE. Non-finite replicates are always removed internally.
+		#' @param na.rm                                   Remove non-finite bootstrap replicates.
+		#'   Default TRUE. Non-finite replicates are always removed internally.
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.

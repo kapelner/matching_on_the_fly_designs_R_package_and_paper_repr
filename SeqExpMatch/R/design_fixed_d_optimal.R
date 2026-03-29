@@ -1,6 +1,5 @@
 #' A D-optimal Search Fixed Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a fixed D-optimal experimental design.
 #' This design searches for an allocation that maximizes the determinant of the information matrix
 #' (equivalent to minimizing the variance of the parameter estimates).

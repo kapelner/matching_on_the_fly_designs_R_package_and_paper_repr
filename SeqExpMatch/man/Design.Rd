@@ -4,6 +4,7 @@
 \alias{Design}
 \title{An Abstract Experimental Design}
 \description{
+Internal method.
 An abstract R6 Class encapsulating the data and functionality for an experimental design.
 This class takes care of data storage and response handling.
 }
@@ -57,7 +58,8 @@ Initialize an experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

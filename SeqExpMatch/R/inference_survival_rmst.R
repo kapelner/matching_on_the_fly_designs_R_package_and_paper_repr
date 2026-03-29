@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -40,6 +39,7 @@
 #'
 #' @export
 InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -48,6 +48,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#' Computes the appropriate estimate for mean difference
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$beta_hat_T = get_survival_stat_diff(

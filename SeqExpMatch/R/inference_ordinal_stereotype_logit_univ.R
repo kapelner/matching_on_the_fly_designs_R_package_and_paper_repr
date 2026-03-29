@@ -1,6 +1,5 @@
 #' Stereotype Logistic Inference for Ordinal Responses
 #'
-#' @description
 #' Stereotype logistic inference for ordinal responses. The model allows
 #' category-specific treatment effects through latent score weights while keeping
 #' a common treatment coefficient.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereotypeLogitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
@@ -52,6 +52,7 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)

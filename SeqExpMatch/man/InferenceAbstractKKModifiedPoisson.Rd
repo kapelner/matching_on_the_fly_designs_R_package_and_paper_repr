@@ -11,7 +11,7 @@ Abstract class for all-subject modified-Poisson inference in KK designs
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKMarginalIncid]{EDI::InferenceAbstractKKMarginalIncid}} -> \code{InferenceAbstractKKModifiedPoisson}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceAbstractKKMarginalIncid} -> \code{InferenceAbstractKKModifiedPoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -43,32 +43,58 @@ Abstract class for all-subject modified-Poisson inference in KK designs
 \if{html}{\out{<a id="method-InferenceAbstractKKModifiedPoisson-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKModifiedPoisson-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Compute treatment estimate
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKModifiedPoisson$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKModifiedPoisson$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKModifiedPoisson-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKModifiedPoisson-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute asymp confidence interval
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKModifiedPoisson$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Description for alpha}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKModifiedPoisson-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Compute asymp two sided pval for treatment effect
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKModifiedPoisson$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Description for delta}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKModifiedPoisson-clone"></a>}}

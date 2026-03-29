@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -10,6 +9,7 @@
 #'
 #' @export
 InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -30,6 +30,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -56,6 +57,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			full_X_matrix = private$create_design_matrix()
 			mod = lm.fit(full_X_matrix, private$y) #can't beat R's built-in OLS
@@ -100,9 +102,6 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 
 
 		#' @description
-
-
-
 		#' Computes a 2-sided p-value
 		#'
 		#' @param delta The null difference to test against. For any

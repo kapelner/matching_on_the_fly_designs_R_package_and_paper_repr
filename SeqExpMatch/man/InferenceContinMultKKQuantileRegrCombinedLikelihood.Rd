@@ -5,6 +5,11 @@
 \alias{InferenceContinMultKKQuantileRegrCombinedLikelihood}
 \title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)}
 \description{
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)
+
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)
+}
+\details{
 Fits the combined stacked quantile regression (matched-pair differences + reservoir)
 using the treatment indicator and all recorded covariates for continuous responses.
 Minimises the joint check-function loss over both data sources simultaneously.
@@ -33,7 +38,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrCombinedLikelihood]{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood}} -> \code{InferenceContinMultKKQuantileRegrCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{InferenceContinMultKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -87,6 +92,8 @@ are assigned and response y is recorded within.}
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -120,10 +127,17 @@ infer
 Returns the estimated treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
-  
+  estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrCombinedLikelihood-clone"></a>}}

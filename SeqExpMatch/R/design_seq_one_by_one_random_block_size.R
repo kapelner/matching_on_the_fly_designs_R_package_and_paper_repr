@@ -1,7 +1,7 @@
 #' A sequential blocking allocation design with random block sizes
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a sequential blocking experimental design
+#' An R6 Class encapsulating the data and functionality for a sequential blocking
+#' experimental design
 #' where block sizes are randomly chosen from a specified set for each stratum. This design
 #' is commonly used in clinical trials to prevent predictability of treatment assignments.
 #'
@@ -13,9 +13,12 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		#' @description
 		#' Initialize a random block size sequential experimental design
 		#'
-		#' @param strata_cols A character vector of column names to use for stratification. If NULL, simple blocking is used.
-		#' @param block_sizes A vector of positive integers representing the possible block sizes to choose from. 
-		#'                    Each must be a multiple of the inverse of \code{prob_T} to ensure integer treatment/control counts.
+		#' @param strata_cols A character vector of column names to use for stratification. If
+		#'   NULL, simple blocking is used.
+		#' @param block_sizes A vector of positive integers representing the possible block sizes
+		#'   to choose from.
+		#' Each must be a multiple of the inverse of \code{prob_T} to ensure integer
+		#' treatment/control counts.
 		#' @param	response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous" (the default),
 		#' 								"incidence",
@@ -28,7 +31,8 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		#'   should we include another dummy variable for its missingness? Default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param num_cores The number of CPU cores to use to parallelize the sampling.
-		#' @param verbose A flag indicating whether messages should be displayed. Default is \code{FALSE}.
+		#' @param verbose A flag indicating whether messages should be displayed. Default is
+		#'   \code{FALSE}.
 		#' @return	A new `DesignSeqOneByOneRandomBlockSize` object
 		#'
 		initialize = function(

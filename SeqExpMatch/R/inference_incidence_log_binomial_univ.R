@@ -1,6 +1,5 @@
 #' Univariate Log-Binomial Inference for Binary Responses
 #'
-#' @description
 #' Fits a log-binomial model for binary (incidence) responses using only the
 #' treatment indicator. The treatment effect is reported on the log-risk-ratio
 #' scale.
@@ -13,6 +12,7 @@
 #'
 #' @export
 InferenceIncidUnivLogBinomial = R6::R6Class("InferenceIncidUnivLogBinomial",
+	lock_objects = FALSE,
 	inherit = InferenceIncidLogBinomialAbstract,
 	private = list(
 		build_design_matrix = function(){

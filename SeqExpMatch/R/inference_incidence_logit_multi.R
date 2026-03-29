@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -9,6 +8,7 @@
 #'
 #' @export
 InferenceIncidMultiLogRegr = R6::R6Class("InferenceIncidMultiLogRegr",
+	lock_objects = FALSE,
 	inherit = InferenceIncidUnivLogRegr,
 	public = list(
 

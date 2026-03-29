@@ -1,6 +1,5 @@
 #' Multivariate Continuation-Ratio Logit Inference for Ordinal Responses
 #'
-#' @description
 #' Continuation-ratio logit model inference for ordinal responses with
 #' baseline covariate adjustment.
 #'
@@ -23,6 +22,7 @@
 #'
 InferenceOrdinalMultiContRatioRegr = R6::R6Class(
 	"InferenceOrdinalMultiContRatioRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalContRatioRegr,
 	public = list(
 	),

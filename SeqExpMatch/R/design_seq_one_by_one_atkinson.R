@@ -1,6 +1,5 @@
 #' Atkinson's (1982) Covariate-Adjusted Biased Coin Sequential Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments.
 #'

@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalUniStereotypeLogitRegr}
 \title{Stereotype Logistic Inference for Ordinal Responses}
 \description{
+Stereotype Logistic Inference for Ordinal Responses
+
+Stereotype Logistic Inference for Ordinal Responses
+}
+\details{
 Stereotype logistic inference for ordinal responses. The model allows
 category-specific treatment effects through latent score weights while keeping
 a common treatment coefficient.
@@ -35,15 +40,12 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceOrdinalUniStereotypeLogitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceOrdinalUniStereotypeLogitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceOrdinalUniStereotypeLogitRegr-new}{\code{InferenceOrdinalUniStereotypeLogitRegr$new()}}
-\item \href{#method-InferenceOrdinalUniStereotypeLogitRegr-compute_treatment_estimate}{\code{InferenceOrdinalUniStereotypeLogitRegr$compute_treatment_estimate()}}
-\item \href{#method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval}{\code{InferenceOrdinalUniStereotypeLogitRegr$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceOrdinalUniStereotypeLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceOrdinalUniStereotypeLogitRegr-clone}{\code{InferenceOrdinalUniStereotypeLogitRegr$clone()}}
 }
 }
@@ -60,6 +62,9 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -97,68 +102,10 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeLogitRegr-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeLogitRegr-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the stereotype logistic treatment effect estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeLogitRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The estimated treatment coefficient.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a profile-likelihood confidence interval for the stereotype
-treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeLogitRegr$compute_asymp_confidence_interval(
-  alpha = 0.05
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is
-\eqn{1 - \alpha}. The default is \code{0.05}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A profile-likelihood confidence interval for the treatment effect.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeLogitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a profile-likelihood ratio p-value for the stereotype treatment
-effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeLogitRegr$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null treatment effect. Only \code{0} is supported.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The approximate frequentist p-value.
 }
 }
 \if{html}{\out{<hr>}}

@@ -4,11 +4,16 @@
 \alias{InferencePropUniFractionalLogit}
 \title{Univariate Fractional Logit Inference for Proportion Responses}
 \description{
+Univariate Fractional Logit Inference for Proportion Responses
+
+Univariate Fractional Logit Inference for Proportion Responses
+}
+\details{
 Fits a fractional logit model for proportion responses using a binomial logit
 quasi-likelihood with sandwich-robust variance. The treatment effect is reported
 on the log-odds scale.
-}
-\details{
+
+
 This is the standard Papke-Wooldridge style fractional-response model for
 outcomes in \eqn{[0, 1]}. The point estimate is the treatment log-odds
 coefficient from the working logit model, and inference uses a robust sandwich
@@ -33,7 +38,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferencePropUniFractionalLogit}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferencePropUniFractionalLogit}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -84,6 +89,8 @@ with a proportion response.
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -113,9 +120,18 @@ seq_des_inf$compute_treatment_estimate()
 Computes the fractional-logit estimate of the treatment effect on the
 log-odds scale.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropUniFractionalLogit$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropUniFractionalLogit$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropUniFractionalLogit-compute_asymp_confidence_interval"></a>}}

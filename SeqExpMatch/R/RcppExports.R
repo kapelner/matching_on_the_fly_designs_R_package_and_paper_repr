@@ -233,6 +233,10 @@ fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
 
+fast_logistic_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_fast_logistic_regression_weighted_cpp`, X, y, weights, maxit, tol)
+}
+
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L) {
     .Call(`_EDI_fast_logistic_regression_with_var_cpp`, Xmm, y, j)
 }
@@ -307,6 +311,10 @@ expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
 
 fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_poisson_regression_cpp`, X, y, maxit, tol)
+}
+
+fast_poisson_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X, y, weights, maxit, tol)
 }
 
 fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8) {
@@ -712,7 +720,8 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
 #'
 #' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 #'               Each row corresponds to a specific level of a specific covariate.
-#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
+#' @param subject_levels_idx An integer vector of indices indicating which rows of the
+#'   counts matrix
 #'                           the current subject belongs to.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.
@@ -728,7 +737,8 @@ pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best,
 #'
 #' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 #'               Modified in place.
-#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
+#' @param subject_levels_idx An integer vector of indices indicating which rows of the
+#'   counts matrix
 #'                           the current subject belongs to.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.
@@ -742,7 +752,8 @@ pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weigh
 
 #' Pocock-Simon Minimization Redraw Assignments
 #'
-#' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.
+#' @param x_levels_matrix A matrix where each row is a subject and each column is the row
+#'   index in counts for that covariate.
 #' @param num_levels_total Total number of levels across all covariates.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.

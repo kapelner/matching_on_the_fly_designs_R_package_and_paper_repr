@@ -1,6 +1,5 @@
 #' Univariate KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'
-#' @description
 #' Fits a KK hurdle-Poisson combined-likelihood model for count responses using
 #' only the treatment indicator in both the hurdle and positive-count
 #' components. Matched pairs contribute pair-specific random intercepts, while
@@ -10,6 +9,7 @@
 #'
 #' @export
 InferenceCountUnivKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceCountUnivKKHurdlePoissonCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKHurdlePoissonCombinedLikelihood,
 	private = list(
 		include_covariates = function() FALSE

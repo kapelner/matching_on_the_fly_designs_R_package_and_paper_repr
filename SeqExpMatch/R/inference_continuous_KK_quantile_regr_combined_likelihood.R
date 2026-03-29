@@ -1,6 +1,5 @@
 #' Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)
 #'
-#' @description
 #' Fits the combined stacked quantile regression (matched-pair differences + reservoir)
 #' using the treatment indicator and all recorded covariates for continuous responses.
 #' Minimises the joint check-function loss over both data sources simultaneously.
@@ -8,6 +7,7 @@
 #'
 #' @export
 InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceContinMultKKQuantileRegrCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrCombinedLikelihood,
 	public = list(
 		#' @description	Initialize the inference object.
@@ -32,6 +32,7 @@ InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceCont
 		#' = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, tau, identity, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -41,6 +42,7 @@ InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceCont
 
 		#' @description
 		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE) super$compute_treatment_estimate()
 
 

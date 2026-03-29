@@ -4,6 +4,11 @@
 \alias{InferenceAllKKWilcoxRegrUnivIVWC}
 \title{Univariate Wilcox Rank-based Regression Compound Inference for KK Designs}
 \description{
+Univariate Wilcox Rank-based Regression Compound Inference for KK Designs
+
+Univariate Wilcox Rank-based Regression Compound Inference for KK Designs
+}
+\details{
 Fits a robust compound estimator for KK matching-on-the-fly designs using rank-based
 regression (R-estimation) with only the treatment indicator (no additional covariates).
 For matched pairs, it uses R-estimation on the within-pair response differences.
@@ -11,7 +16,7 @@ For reservoir subjects, it uses a standard rank-based linear model with the trea
 assignment as the sole predictor. This is the univariate (covariate-free) variant.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAllKKWilcoxRegrUnivIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAllKKWilcoxRegrUnivIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -61,6 +66,8 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -71,9 +78,18 @@ Initialize the inference object.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval"></a>}}

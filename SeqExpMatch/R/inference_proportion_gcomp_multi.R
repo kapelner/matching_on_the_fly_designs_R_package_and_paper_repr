@@ -1,6 +1,5 @@
 #' Multivariate G-Computation Mean-Difference Inference for Proportion Responses
 #'
-#' @description
 #' Fits a multivariate fractional-logit working model for a proportion outcome
 #' and then estimates the marginal mean difference by standardizing predicted
 #' mean proportions under all-treated and all-control assignments over the
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferencePropMultiGCompMeanDiff = R6::R6Class("InferencePropMultiGCompMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferencePropUniGCompMeanDiff,
 	public = list(
 

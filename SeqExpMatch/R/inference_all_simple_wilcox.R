@@ -1,6 +1,5 @@
 #' Wilcoxon Rank-Sum Inference for Any Sequential Design
 #'
-#' @description
 #' Non-parametric inference based on the two-sample Wilcoxon rank-sum test
 #' (Mann-Whitney U) for any sequential experimental design (Bernoulli, Efron, iBCRD,
 #' or KK). The treatment effect estimate is the Hodges-Lehmann pseudo-median of
@@ -18,6 +17,7 @@
 #'
 #' @export
 InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -41,6 +41,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
@@ -63,6 +64,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' @description
 		#' Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
 		#' differences.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

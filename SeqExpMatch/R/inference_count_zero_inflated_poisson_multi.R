@@ -1,6 +1,5 @@
 #' Multivariate Zero-Inflated Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a zero-inflated Poisson regression for count responses using the treatment
 #' indicator and all recorded covariates in both the count and zero-inflation
 #' components. The reported treatment effect is the treatment coefficient from the
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountMultiZeroInflatedPoissonRegr = R6::R6Class("InferenceCountMultiZeroInflatedPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivZeroInflatedPoissonRegr,
 	private = list(
 		predictors_df = function(){

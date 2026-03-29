@@ -4,11 +4,17 @@
 \alias{DesignSeqOneByOnePocockSimon}
 \title{Pocock & Simon's Minimization Sequential Design}
 \description{
-An R6 Class encapsulating the data and functionality for a Pocock & Simon sequential experimental design.
+Pocock & Simon's Minimization Sequential Design
+
+Pocock & Simon's Minimization Sequential Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a Pocock & Simon
+sequential experimental design.
 This design minimizes the imbalance across treatments for multiple covariates.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOnePocockSimon}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOnePocockSimon}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -73,11 +79,13 @@ Initialize a Pocock & Simon sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{strata_cols}}{The names of the covariates to be used for minimization. These must be factor or categorical variables.}
+\item{\code{strata_cols}}{The names of the covariates to be used for minimization. These
+must be factor or categorical variables.}
 
 \item{\code{weights}}{A numeric vector of weights for each covariate. Defaults to 1 for all.}
 
-\item{\code{p_best}}{The probability of assigning the treatment that minimizes the imbalance. Defaults to 0.8.}
+\item{\code{p_best}}{The probability of assigning the treatment that minimizes the
+imbalance. Defaults to 0.8.}
 
 \item{\code{response_type}}{The data type of response values.}
 

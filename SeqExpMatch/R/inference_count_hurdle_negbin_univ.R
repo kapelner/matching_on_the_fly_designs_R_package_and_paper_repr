@@ -1,6 +1,5 @@
 #' Univariate Hurdle Negative Binomial Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a hurdle negative binomial regression for count responses using only the
 #' treatment indicator in both the hurdle and count components. The hurdle
 #' indicator model is fit on all subjects, and the zero-truncated negative
@@ -35,6 +34,7 @@
 #' infer
 #'
 InferenceCountUnivHurdleNegBinRegr = R6::R6Class("InferenceCountUnivHurdleNegBinRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountHurdleNegBinAbstract,
 	private = list(
 		hurdle_description = function() "Hurdle negative binomial regression"

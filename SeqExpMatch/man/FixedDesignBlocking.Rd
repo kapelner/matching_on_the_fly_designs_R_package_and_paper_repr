@@ -4,10 +4,16 @@
 \alias{FixedDesignBlocking}
 \title{A stratified blocking Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed stratified blocking experimental design.
+A stratified blocking Fixed Design
+
+A stratified blocking Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed stratified
+blocking experimental design.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlocking}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBlocking}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -70,7 +76,8 @@ Initialize a fixed stratified blocking experimental design
 \describe{
 \item{\code{strata_cols}}{A character vector of column names to use for stratification.}
 
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

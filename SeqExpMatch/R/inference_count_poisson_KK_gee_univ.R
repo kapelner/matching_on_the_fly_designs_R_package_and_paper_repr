@@ -1,6 +1,5 @@
 #' Univariate GEE Inference for KK Designs with Count Response
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for count responses under a KK matching-on-the-fly design using only the
 #' treatment indicator as a predictor (intercept + treatment). A Poisson working
@@ -16,6 +15,7 @@
 #'
 #' @export
 InferenceCountPoissonUnivKKGEE = R6::R6Class("InferenceCountPoissonUnivKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

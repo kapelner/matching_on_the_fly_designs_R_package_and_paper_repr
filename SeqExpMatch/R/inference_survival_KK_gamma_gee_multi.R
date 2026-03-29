@@ -1,6 +1,5 @@
 #' Multivariate GEE Inference for KK Designs with Survival Response (no censoring)
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for uncensored survival (time-to-event) responses under a KK matching-on-the-fly
 #' design using the treatment indicator and all recorded covariates as predictors.
@@ -20,6 +19,7 @@
 #'
 #' @export
 InferenceSurvivalMultiKKGammaGEE = R6::R6Class("InferenceSurvivalMultiKKGammaGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

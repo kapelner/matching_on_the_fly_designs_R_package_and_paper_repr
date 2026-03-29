@@ -10,7 +10,7 @@ reported on the response scale at quantile \code{tau}; by default
 \code{tau = 0.5}, so this is median regression.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceContinUnivQuantileRegr]{EDI::InferenceContinUnivQuantileRegr}} -> \code{InferenceContinMultiQuantileRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceContinUnivQuantileRegr} -> \code{InferenceContinMultiQuantileRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

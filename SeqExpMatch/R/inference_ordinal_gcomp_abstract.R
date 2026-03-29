@@ -1,6 +1,5 @@
 #' Marginal Standardization / G-Computation for Ordinal Responses
 #'
-#' @description
 #' Internal base class for ordinal-outcome g-computation (G-Comp) estimators. A
 #' proportional odds model is fit, then potential-outcome expected values under
 #' all-treated and all-control assignments are standardized over the empirical
@@ -9,29 +8,33 @@
 #' @keywords internal
 #' @noRd
 InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the g-computation (G-Comp) inference object.
-		# @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
-		# @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		# @param verbose Whether to print progress messages.
+		#' @description
+		#' Initialize the g-computation (G-Comp) inference object.
+		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
+		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
+		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
-		# @description
-		# Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
+		#' @description
+		#' Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
 
-		# @description
-		# Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
+		#' @description
+		#' Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -42,8 +45,9 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 			ci
 		},
 
-		# @description
-		# Computes a two-sided Wald p-value for the G-Comp mean difference.
+		#' @description
+		#' Computes a two-sided Wald p-value for the G-Comp mean difference.
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

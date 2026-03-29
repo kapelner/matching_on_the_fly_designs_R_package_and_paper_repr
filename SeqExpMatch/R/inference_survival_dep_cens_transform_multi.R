@@ -1,6 +1,5 @@
 #' Multivariate Survival Transformation Regression with Dependent Censoring
 #'
-#' @description
 #' Fits a lognormal transformation model for survival responses that jointly models
 #' the event and censoring times using the treatment indicator and all recorded
 #' covariates. Dependence between the two transformed times is represented with a
@@ -38,6 +37,7 @@
 #' infer
 #'
 InferenceSurvivalMultiDepCensTransformRegr = R6::R6Class("InferenceSurvivalMultiDepCensTransformRegr",
+	lock_objects = FALSE,
 	inherit = InferenceSurvivalUniDepCensTransformRegr,
 	public = list(
 

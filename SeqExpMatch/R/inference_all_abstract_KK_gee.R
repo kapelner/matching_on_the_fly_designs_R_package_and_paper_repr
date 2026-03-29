@@ -2,14 +2,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), private$gee_response_type())
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -22,16 +24,18 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			}
 		},
 
-		# @description
-		# Returns the estimated treatment effect.
+		#' @description
+		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the asymptotic confidence interval.
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -39,9 +43,10 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the asymptotic p-value.
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. For
+		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

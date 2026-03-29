@@ -1,6 +1,5 @@
 #' Multivariate Weibull Frailty Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a single joint Weibull frailty model (matched pairs + reservoir as singletons)
 #' using the treatment indicator and all recorded covariates.
 #'
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWeibullFrailtyCombinedLikelihood,
 	public = list(
 

@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -26,6 +25,7 @@
 #' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 #' }
 InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -35,6 +35,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$yTs = private$y[private$w == 1]

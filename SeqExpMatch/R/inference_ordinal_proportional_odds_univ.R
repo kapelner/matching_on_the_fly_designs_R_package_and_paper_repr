@@ -1,6 +1,5 @@
 #' Proportional Odds Inference based on Maximum Likelihood
 #'
-#' @description
 #' Proportional odds model (cumulative logit) inference for ordinal responses.
 #'
 #' @export
@@ -30,6 +29,7 @@
 #' infer
 #'
 InferenceOrdinalUniPropOddsRegr = R6::R6Class("InferenceOrdinalUniPropOddsRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
@@ -50,6 +50,7 @@ InferenceOrdinalUniPropOddsRegr = R6::R6Class("InferenceOrdinalUniPropOddsRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)

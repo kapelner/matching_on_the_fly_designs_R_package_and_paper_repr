@@ -1,6 +1,5 @@
 #' Univariate GEE Inference for KK Designs with Survival Response (no censoring)
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for uncensored survival (time-to-event) responses under a KK matching-on-the-fly
 #' design using only the treatment indicator as a predictor (intercept + treatment).
@@ -20,6 +19,7 @@
 #'
 #' @export
 InferenceSurvivalUnivKKGEE = R6::R6Class("InferenceSurvivalUnivKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

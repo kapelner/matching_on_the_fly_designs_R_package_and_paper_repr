@@ -1,6 +1,5 @@
 #' Multivariate Stereotype Logistic Inference for Ordinal Responses
 #'
-#' @description
 #' Stereotype logistic inference for ordinal responses with treatment and observed
 #' covariates entering the linear predictor.
 #'
@@ -31,6 +30,7 @@
 #' infer
 #'
 InferenceOrdinalMultiStereotypeLogitRegr = R6::R6Class("InferenceOrdinalMultiStereotypeLogitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniStereotypeLogitRegr,
 	public = list(
 

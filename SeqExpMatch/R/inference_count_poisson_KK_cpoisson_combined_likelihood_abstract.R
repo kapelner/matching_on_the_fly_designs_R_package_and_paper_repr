@@ -1,6 +1,5 @@
 #' Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
 #'
-#' @description
 #' Fits a single joint likelihood over all KK design data for count responses.
 #' The matched-pair component uses the conditional Poisson likelihood; conditioning
 #' on each pair's total count n_k = yT_k + yC_k reduces it to a weighted binomial
@@ -21,14 +20,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbstractKKPoissonCPoissonCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -38,29 +39,30 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			assertNoCensoring(private$any_censoring)
 		},
 
-		# @description
-		# Returns the combined-likelihood estimate of the treatment effect.
+		#' @description
+		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Returns a 1 - alpha confidence interval for beta_T.
-		# @param alpha Significance level; default 0.05 gives a 95% CI.
+		#' @description
+		#' Returns a 1 - alpha confidence interval for beta_T.
+		#' @param alpha Significance level; default 0.05 gives a 95% CI.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Returns a 2-sided p-value for H0: beta_T = delta.
-		# @param delta Null value; default 0.
+		#' @description
+		#' Returns a 2-sided p-value for H0: beta_T = delta.
+		#' @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -91,8 +93,9 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 		#                   [beta_T, beta_xs (p)]           when pairs-only.
 		# The combined case is handled by fast_cpoisson_combined_with_var_cpp
 		# (Newton's method with analytic Fisher-information Hessian).
-		shared_combined_likelihood = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared_combined_likelihood = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -148,108 +151,128 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
 					X_diff_v = as.matrix(Xd_full[valid, , drop = FALSE])
 
-					# QR-reduce the combined design to full rank while preserving the
-					# intercept and treatment columns required by the C++ parameterization.
-					X_rank = rbind(
-						cbind(0, 1, X_diff_v),
-						cbind(1, w_r_v, X_r_v)
-					)
-					keep = 1:2
-					rank_keep = qr(X_rank[, keep, drop = FALSE])$rank
-					if (rank_keep < length(keep)) {
-						private$cached_values$beta_hat_T   = NA_real_
-						private$cached_values$s_beta_hat_T = NA_real_
-						private$cached_values$is_z         = TRUE
-						return(invisible(NULL))
-					}
-					for (j in 3:ncol(X_rank)) {
-						trial_keep = c(keep, j)
-						trial_rank = qr(X_rank[, trial_keep, drop = FALSE])$rank
-						if (trial_rank > rank_keep) {
-							keep = trial_keep
-							rank_keep = trial_rank
+					if (!estimate_only) {
+						# QR-reduce the combined design to full rank while preserving the
+						# intercept and treatment columns required by the C++ parameterization.
+						X_rank = rbind(
+							cbind(0, 1, X_diff_v),
+							cbind(1, w_r_v, X_r_v)
+						)
+						keep = 1:2
+						rank_keep = qr(X_rank[, keep, drop = FALSE])$rank
+						if (rank_keep < length(keep)) {
+							private$cached_values$beta_hat_T   = NA_real_
+							private$cached_values$s_beta_hat_T = NA_real_
+							private$cached_values$is_z         = TRUE
+							return(invisible(NULL))
 						}
-					}
-					keep_cov = keep[keep > 2L] - 2L
-					X_diff_v = if (length(keep_cov) > 0L) {
-						X_diff_v[, keep_cov, drop = FALSE]
-					} else {
-						matrix(nrow = nrow(X_diff_v), ncol = 0L)
-					}
-					X_r_v = if (length(keep_cov) > 0L) {
-						X_r_v[, keep_cov, drop = FALSE]
-					} else {
-						matrix(nrow = nrow(X_r_v), ncol = 0L)
+						for (j in 3:ncol(X_rank)) {
+							trial_keep = c(keep, j)
+							trial_rank = qr(X_rank[, trial_keep, drop = FALSE])$rank
+							if (trial_rank > rank_keep) {
+								keep = trial_keep
+								rank_keep = trial_rank
+							}
+						}
+						keep_cov = keep[keep > 2L] - 2L
+						X_diff_v = if (length(keep_cov) > 0L) {
+							X_diff_v[, keep_cov, drop = FALSE]
+						} else {
+							matrix(nrow = nrow(X_diff_v), ncol = 0L)
+						}
+						X_r_v = if (length(keep_cov) > 0L) {
+							X_r_v[, keep_cov, drop = FALSE]
+						} else {
+							matrix(nrow = nrow(X_r_v), ncol = 0L)
+						}
 					}
 				}
 
-				# Combined: Newton's method in C++ (fast_cpoisson_combined_with_var_cpp)
+				# Combined: Newton's method in C++
 				# params layout: [beta_0, beta_T, beta_xs]; beta_T is at 1-based index 2
 				mod = tryCatch(
-					fast_cpoisson_combined_with_var_cpp(
-						as.double(yT_v), as.double(n_k_v), X_diff_v,
-						as.double(y_r_v), as.double(w_r_v), X_r_v
-					),
+					if (estimate_only) {
+						fast_cpoisson_combined_cpp(
+							as.double(yT_v), as.double(n_k_v), X_diff_v,
+							as.double(y_r_v), as.double(w_r_v), X_r_v
+						)
+					} else {
+						fast_cpoisson_combined_with_var_cpp(
+							as.double(yT_v), as.double(n_k_v), X_diff_v,
+							as.double(y_r_v), as.double(w_r_v), X_r_v
+						)
+					},
 					error = function(e) NULL
 				)
-				if (is.null(mod) || !mod$converged || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
+				if (is.null(mod) || !mod$converged){
 					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 					private$cached_values$is_z         = TRUE
 					return(invisible(NULL))
 				}
 				private$cached_values$beta_hat_T   = as.numeric(mod$b[2L])
-				private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
 				private$cached_values$is_z         = TRUE
 
-			# ---- Case 2: pairs only — weighted logistic (glm.fit) ---------------
+			# ---- Case 2: pairs only — weighted logistic (C++) -------------------
 			} else if (has_pairs){
 				y_prop = yT_v / n_k_v
 				Xmm    = if (p > 0L) cbind(1, X_diff_v) else matrix(1, nrow = length(yT_v), ncol = 1)
 				mod = tryCatch({
-					g_mod = stats::glm.fit(x = Xmm, y = y_prop, weights = n_k_v, family = stats::binomial())
-					R_mat = qr.R(g_mod$qr)
-					Rinv  = backsolve(R_mat, diag(ncol(R_mat)))
-					vcov  = Rinv %*% t(Rinv)
-					list(b = g_mod$coefficients, ssq_b_1 = vcov[1, 1])
+					if (estimate_only) {
+						res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
+						list(b = res$b, ssq_b_1 = NA_real_)
+					} else {
+						res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
+						# Compute vcov from Fisher information matrix XtWX
+						vcov = solve(res$XtWX)
+						list(b = res$b, ssq_b_1 = vcov[1, 1])
+					}
 				}, error = function(e) NULL)
 				if (is.null(mod)){
 					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 					private$cached_values$is_z         = TRUE
 					return(invisible(NULL))
 				}
 				private$cached_values$beta_hat_T   = as.numeric(mod$b[1L])
-				private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_1))
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_1))
 				private$cached_values$is_z         = TRUE
 
-			# ---- Case 3: reservoir only — Poisson regression (glm.fit) ----------
+			# ---- Case 3: reservoir only — Poisson regression (C++) --------------
 			} else {
 				j_beta_T = 2L
 				X_full   = if (p > 0L) cbind(1, w_r_v, X_r_v) else cbind(1, w_r_v)
-				qr_X = qr(X_full)
-				if (qr_X$rank < ncol(X_full)){
-					keep     = qr_X$pivot[seq_len(qr_X$rank)]
-					if (!(j_beta_T %in% keep)) keep[qr_X$rank] = j_beta_T
-					keep     = sort(keep)
-					X_full   = X_full[, keep, drop = FALSE]
-					j_beta_T = which(keep == j_beta_T)
+				
+				if (!estimate_only) {
+					qr_X = qr(X_full)
+					if (qr_X$rank < ncol(X_full)){
+						keep     = qr_X$pivot[seq_len(qr_X$rank)]
+						if (!(j_beta_T %in% keep)) keep[qr_X$rank] = j_beta_T
+						keep     = sort(keep)
+						X_full   = X_full[, keep, drop = FALSE]
+						j_beta_T = which(keep == j_beta_T)
+					}
 				}
+				
 				mod = tryCatch({
-					g_mod  = stats::glm.fit(x = X_full, y = y_r_v, family = stats::poisson())
-					mu_hat = g_mod$fitted.values
-					XtWX   = crossprod(X_full * sqrt(mu_hat))   # Fisher information X'WX, W=diag(mu)
-					vcov   = solve(XtWX)
-					list(b = g_mod$coefficients, ssq_b_j = vcov[j_beta_T, j_beta_T])
+					if (estimate_only) {
+						res = fast_poisson_regression_cpp(X = X_full, y = y_r_v)
+						list(b = res$b, ssq_b_j = NA_real_)
+					} else {
+						res = fast_poisson_regression_cpp(X = X_full, y = y_r_v)
+						vcov = solve(res$XtWX)
+						list(b = res$b, ssq_b_j = vcov[j_beta_T, j_beta_T])
+					}
 				}, error = function(e) NULL)
 				if (is.null(mod)){
 					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 					private$cached_values$is_z         = TRUE
 					return(invisible(NULL))
 				}
 				private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
-				private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
 				private$cached_values$is_z         = TRUE
 			}
 

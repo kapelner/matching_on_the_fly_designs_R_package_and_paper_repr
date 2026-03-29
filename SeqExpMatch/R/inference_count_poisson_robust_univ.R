@@ -1,6 +1,5 @@
 #' Univariate Robust Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a Poisson log-link regression for count responses using only the treatment
 #' indicator. The treatment effect is reported on the log-rate scale and inference
 #' uses a Huber-White sandwich variance rather than the model-based Poisson variance.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
@@ -52,6 +52,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -61,6 +62,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		#' Computes the appropriate estimate.
 		#'
 		#' @return	The log-rate treatment-effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T

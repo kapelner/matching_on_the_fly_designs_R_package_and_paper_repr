@@ -1,8 +1,8 @@
 #' An A-optimal Search Fixed Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a fixed A-optimal experimental design.
-#' This design searches for an allocation that minimizes the trace of the inverse information matrix
+#' This design searches for an allocation that minimizes the trace of the inverse
+#' information matrix
 #' (equivalent to minimizing the average variance of the parameter estimates).
 #'
 #' @export
@@ -12,7 +12,8 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 		#' @description
 		#' Initialize an A-optimal search fixed experimental design
 		#'
-		#' @param response_type "continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param prob_T Probability of treatment assignment (default 0.5).
 		#' @param include_is_missing_as_a_new_feature Flag for missingness indicators.
 		#' @param n Sample size (if fixed).

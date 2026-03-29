@@ -1,6 +1,5 @@
 #' Partial Proportional-Odds Inference for Ordinal Responses
 #'
-#' @description
 #' Fits a treatment-only partial proportional-odds model for ordinal responses.
 #' With no baseline covariates, this reduces to the usual proportional-odds
 #' cumulative-logit model and uses the package's fast Rcpp ordinal solver.
@@ -18,6 +17,7 @@
 #' infer
 InferenceOrdinalUniPartialProportionalOddsRegr = R6::R6Class(
 	"InferenceOrdinalUniPartialProportionalOddsRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalPartialProportionalOddsAbstract,
 	public = list(
 	),

@@ -1,6 +1,5 @@
 #' Univariate Ordered Probit Inference for Ordinal Responses
 #'
-#' @description
 #' Ordinal probit (ordered probit) model inference for ordinal responses.
 #'
 #' @export
@@ -21,6 +20,7 @@
 #' infer
 #'
 InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedProbitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniCumulProbitRegr,
 	public = list(
 	)
@@ -28,7 +28,6 @@ InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedPr
 
 #' Multivariate Ordered Probit Inference for Ordinal Responses
 #'
-#' @description
 #' Ordinal probit (ordered probit) inference for ordinal responses with
 #' treatment and observed covariates entering linearly into the latent normal
 #' index.
@@ -51,6 +50,7 @@ InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedPr
 #' infer
 #'
 InferenceOrdinalMultiOrderedProbitRegr = R6::R6Class("InferenceOrdinalMultiOrderedProbitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalMultiCumulProbitRegr,
 	public = list(
 	)

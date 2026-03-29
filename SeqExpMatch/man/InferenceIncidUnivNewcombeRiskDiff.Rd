@@ -4,12 +4,17 @@
 \alias{InferenceIncidUnivNewcombeRiskDiff}
 \title{Univariate Newcombe Risk-Difference Inference for Binary Responses}
 \description{
+Univariate Newcombe Risk-Difference Inference for Binary Responses
+
+Univariate Newcombe Risk-Difference Inference for Binary Responses
+}
+\details{
 Fits the Newcombe hybrid score method (Method 10) for the risk difference in a
 two-arm binary trial. This method constructs a confidence interval for the
 difference between two independent proportions by combining Wilson score intervals
 for each group.
-}
-\details{
+
+
 This class is unadjusted and assumes independent samples (e.g. from a Bernoulli). It
 ignores any matched-pair structure if present. For matched data, use
 \code{InferenceIncidUnivKKNewcombeRiskDiff}.
@@ -41,7 +46,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceIncidUnivNewcombeRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceIncidUnivNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -91,6 +96,8 @@ Initialize a Newcombe risk-difference inference object.
 \item{\code{num_cores}}{The number of CPU cores to use.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -101,9 +108,18 @@ Initialize a Newcombe risk-difference inference object.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the observed risk-difference estimate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivNewcombeRiskDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivNewcombeRiskDiff$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}

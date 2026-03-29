@@ -1,6 +1,5 @@
 #' Univariate Conditional Proportional-Odds Inference for KK Designs
 #'
-#' @description
 #' Fits a conditional proportional-odds model for ordinal responses under a KK
 #' matching-on-the-fly design. Each matched pair is treated as its own stratum,
 #' and the cumulative-logit model is fit by expanding the ordinal response into
@@ -21,7 +20,8 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal",
+#' verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
@@ -32,6 +32,7 @@
 #'
 InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 	"InferenceOrdinalUnivKKCondPropOddsRegr",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
@@ -39,7 +40,7 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 		#' Initialize a univariate conditional proportional-odds inference object for
 		#' a completed KK design with an ordinal response.
 		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-		#'                                                      are assigned and whose ordinal response y is recorded.
+		#' are assigned and whose ordinal response y is recorded.
 		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
@@ -51,6 +52,7 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -62,6 +64,7 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 
 		#' @description
 		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

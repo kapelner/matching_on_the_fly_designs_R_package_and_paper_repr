@@ -1,6 +1,5 @@
 #' Generalized Least Squares Inference based on Maximum Likelihood for KK designs
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in continuous response types for sequential experimental designs using Generalized Least
 #' Squares (GLS).
@@ -26,6 +25,7 @@
 #'
 #' @export
 InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
@@ -61,6 +61,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#' infer <- InferenceContinMultGLS$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -75,6 +76,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#' Computes the appropriate GLS estimate
 		#'
 		#' @return	The setting-appropriate numeric estimate of the treatment effect
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$shared(estimate_only = estimate_only)

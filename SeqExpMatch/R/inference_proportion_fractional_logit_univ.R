@@ -1,6 +1,5 @@
 #' Univariate Fractional Logit Inference for Proportion Responses
 #'
-#' @description
 #' Fits a fractional logit model for proportion responses using a binomial logit
 #' quasi-likelihood with sandwich-robust variance. The treatment effect is reported
 #' on the log-odds scale.
@@ -13,6 +12,7 @@
 #'
 #' @export
 InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -35,6 +35,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' seq_des_inf = InferencePropUniFractionalLogit$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -44,6 +45,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' @description
 		#' Computes the fractional-logit estimate of the treatment effect on the
 		#' log-odds scale.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T

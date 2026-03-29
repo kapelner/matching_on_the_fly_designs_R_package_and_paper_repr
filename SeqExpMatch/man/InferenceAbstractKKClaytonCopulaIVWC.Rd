@@ -5,13 +5,18 @@
 \alias{InferenceAbstractKKClaytonCopulaIVWC}
 \title{Abstract class for Clayton Copula / Standard Weibull Compound Inference}
 \description{
+Abstract class for Clayton Copula / Standard Weibull Compound Inference
+
+Abstract class for Clayton Copula / Standard Weibull Compound Inference
+}
+\details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
 survival responses using a Clayton copula with Weibull AFT margins for matched pairs.
 The matched-pair component is fitted by maximizing the pairwise copula likelihood
 under right censoring. The reservoir component uses standard Weibull AFT regression.
 The two treatment-effect estimates are combined by inverse-variance weighting.
-}
-\details{
+
+
 This is the package's first copula-based bivariate survival implementation. The matched-pair
 contribution uses a Clayton survival copula with Weibull AFT marginal models, so the
 treatment effect is reported on the AFT log-time-ratio scale, matching the existing Weibull
@@ -20,7 +25,7 @@ regression coefficients by direct likelihood maximization.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKClaytonCopulaIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKClaytonCopulaIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -53,6 +58,7 @@ regression coefficients by direct likelihood maximization.
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$new(
   des_obj,
@@ -62,51 +68,102 @@ regression coefficients by direct likelihood maximization.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect (log-time ratio).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For
+any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference}{}}}
 \subsection{Method \code{compute_treatment_estimate_during_randomization_inference()}}{
+Overridden to use the best design matrix and starting parameters from the initial fit
+to speed up randomization-based inference.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate_during_randomization_inference(
   

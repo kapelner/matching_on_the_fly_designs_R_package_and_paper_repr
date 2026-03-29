@@ -4,10 +4,16 @@
 \alias{DesignSeqOneByOneEfron}
 \title{Efron's (1971) Biased Coin Sequential Design}
 \description{
-An R6 Class encapsulating the data and functionality for Efron's biased coin sequential experimental design.
+Efron's (1971) Biased Coin Sequential Design
+
+Efron's (1971) Biased Coin Sequential Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for Efron's biased coin
+sequential experimental design.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneEfron}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneEfron}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -70,7 +76,8 @@ Initialize an Efron biased coin sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

@@ -1,6 +1,5 @@
 #' Multivariate Robust Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a Poisson log-link regression for count responses using the treatment
 #' indicator and all recorded covariates. The treatment effect is reported on the
 #' log-rate scale and inference uses a Huber-White sandwich variance.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceCountMultiRobustPoissonRegr = R6::R6Class("InferenceCountMultiRobustPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivRobustPoissonRegr,
 	public = list(
 

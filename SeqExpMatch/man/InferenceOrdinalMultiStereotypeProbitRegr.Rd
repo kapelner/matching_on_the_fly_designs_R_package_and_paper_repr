@@ -2,8 +2,13 @@
 % Please edit documentation in R/inference_ordinal_stereotype_probit_multi.R
 \name{InferenceOrdinalMultiStereotypeProbitRegr}
 \alias{InferenceOrdinalMultiStereotypeProbitRegr}
-\title{Multivariate Stereotype Probit Inference for Ordinal Responses}
+\title{Multivariate Stereotype Probit Inference for Ordinal Responses
+Stereotype probit inference for ordinal responses using treatment plus observed covariates.}
 \description{
+Multivariate Stereotype Probit Inference for Ordinal Responses
+Stereotype probit inference for ordinal responses using treatment plus observed covariates.
+
+Multivariate Stereotype Probit Inference for Ordinal Responses
 Stereotype probit inference for ordinal responses using treatment plus observed covariates.
 }
 \examples{
@@ -33,7 +38,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceOrdinalUniStereotypeProbitRegr]{EDI::InferenceOrdinalUniStereotypeProbitRegr}} -> \code{InferenceOrdinalMultiStereotypeProbitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceOrdinalUniStereotypeProbitRegr} -> \code{InferenceOrdinalMultiStereotypeProbitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -5,6 +5,11 @@
 \alias{InferenceContinMultOLSKKCombinedLikelihood}
 \title{OLS Compound Combined-Likelihood Inference for KK Designs}
 \description{
+OLS Compound Combined-Likelihood Inference for KK Designs
+
+OLS Compound Combined-Likelihood Inference for KK Designs
+}
+\details{
 Fits a single joint normal likelihood over all KK design data — matched-pair
 differences and reservoir subjects — estimating the treatment effect \eqn{\beta_T}
 in one combined OLS.
@@ -58,7 +63,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceContinMultOLSKKCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceContinMultOLSKKCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -108,6 +113,8 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -144,9 +151,18 @@ observations with shared covariate effects. The Hessian
 \eqn{H = -\mathbf{X}'\mathbf{X}/\hat\sigma^2} is stored in
 \code{private$cached_values$hessian} as a side-effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLSKKCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLSKKCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 Numeric scalar \eqn{\hat\beta_T}.
 }

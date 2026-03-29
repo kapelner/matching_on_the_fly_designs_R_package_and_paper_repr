@@ -1,6 +1,5 @@
 #' Multivariate LWA-style Marginal Cox Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a single joint marginal Cox model on all KK design data using the treatment
 #' indicator and all recorded covariates, with Lee-Wei-Amato style cluster-robust
 #' variance. Matched subjects share their pair ID as a cluster and reservoir subjects
@@ -34,6 +33,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKLWACoxCombinedLikelihood = R6::R6Class("InferenceSurvivalMultiKKLWACoxCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxCombinedLikelihood,
 	public = list(
 

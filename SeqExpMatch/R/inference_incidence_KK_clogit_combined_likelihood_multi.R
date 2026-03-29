@@ -1,6 +1,5 @@
 #' Multivariate Conditional Logistic Combined-Likelihood Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
 #' responses using the treatment indicator and all recorded covariates. Uses the combined
 #' logistic likelihood over discordant matched-pair differences and reservoir subjects.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceIncidMultiKKClogitCombinedLikelihood = R6::R6Class("InferenceIncidMultiKKClogitCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitCombinedLikelihood,
 	public = list(
 

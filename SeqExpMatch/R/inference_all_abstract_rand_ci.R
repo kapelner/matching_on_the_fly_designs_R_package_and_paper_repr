@@ -1,19 +1,19 @@
 #' Randomization-based Confidence Intervals
 #'
-#' @description
 #' Abstract class for randomization-based confidence interval inference.
 #'
 #' @keywords internal
 InferenceRandCI = R6::R6Class("InferenceRandCI",
+	lock_objects = FALSE,
 	inherit = InferenceRand,
 	public = list(
-		# @description
-		# Computes a randomization-based confidence interval.
-		# @param alpha					Significance level.
-		# @param r		Number of randomization vectors.
-		# @param pval_epsilon			Bisection tolerance.
-		# @param show_progress		Show progress.
-		# @return 	Randomization CI.
+		#' @description
+		#' Computes a randomization-based confidence interval.
+		#' @param alpha					Significance level.
+		#' @param r		Number of randomization vectors.
+		#' @param pval_epsilon			Bisection tolerance.
+		#' @param show_progress		Show progress.
+		#' @return 	Randomization CI.
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -54,6 +54,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				temp_inf$compute_two_sided_pval_for_treatment_effect_rand(
 					r = 1L, delta = bounds$est, transform_responses = transform_arg,
 					show_progress = FALSE, permutations = NULL),
+				# Error handler for compute_two_sided_pval_for_treatment_effect_rand
 				error = function(e) NULL
 			))[[3]]
 			

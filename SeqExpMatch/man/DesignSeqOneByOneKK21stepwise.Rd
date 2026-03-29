@@ -4,6 +4,11 @@
 \alias{DesignSeqOneByOneKK21stepwise}
 \title{A Sequential Design}
 \description{
+A Sequential Design
+
+A Sequential Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
@@ -20,7 +25,7 @@ seq_des = DesignSeqOneByOneKK21stepwise$new(n = 6, response_type = "continuous")
 
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{\link[EDI:DesignSeqOneByOneKK14]{EDI::DesignSeqOneByOneKK14}} -> \code{\link[EDI:DesignSeqOneByOneKK21]{EDI::DesignSeqOneByOneKK21}} -> \code{DesignSeqOneByOneKK21stepwise}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{EDI::DesignSeqOneByOneKK14} -> \code{EDI::DesignSeqOneByOneKK21} -> \code{DesignSeqOneByOneKK21stepwise}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -1,6 +1,5 @@
 #' A Sequential Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.

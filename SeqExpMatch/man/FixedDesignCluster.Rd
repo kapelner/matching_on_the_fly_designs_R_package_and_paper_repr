@@ -4,11 +4,18 @@
 \alias{FixedDesignCluster}
 \title{A Cluster Randomized Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed cluster randomized experimental design.
-This design randomizes entire groups (clusters) of subjects together using the \pkg{randomizr} package.
+A Cluster Randomized Fixed Design
+
+A Cluster Randomized Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed cluster
+randomized experimental design.
+This design randomizes entire groups (clusters) of subjects together using the
+\pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignCluster}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignCluster}
 }
 \section{Methods}{
 \subsection{Public methods}{

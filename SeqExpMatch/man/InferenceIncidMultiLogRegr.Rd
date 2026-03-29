@@ -9,34 +9,12 @@ in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
 after the sequential design is completed.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceIncidMultiLogRegr$compute_treatment_estimate`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = InferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-
-}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceIncidUnivLogRegr]{EDI::InferenceIncidUnivLogRegr}} -> \code{InferenceIncidMultiLogRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{EDI::InferenceIncidUnivLogRegr} -> \code{InferenceIncidMultiLogRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidMultiLogRegr-compute_treatment_estimate}{\code{InferenceIncidMultiLogRegr$compute_treatment_estimate()}}
 \item \href{#method-InferenceIncidMultiLogRegr-clone}{\code{InferenceIncidMultiLogRegr$clone()}}
 }
 }
@@ -55,44 +33,11 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivLogRegr" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivLogRegr.html#method-InferenceIncidUnivLogRegr-initialize'><code>EDI::InferenceIncidUnivLogRegr$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidMultiLogRegr-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidMultiLogRegr-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMultiLogRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The setting-appropriate (see description) numeric estimate of the treatment effect
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = InferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMultiLogRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMultiLogRegr-clone}{}}}

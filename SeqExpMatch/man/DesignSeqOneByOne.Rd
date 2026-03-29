@@ -4,11 +4,17 @@
 \alias{DesignSeqOneByOne}
 \title{Sequential One-by-One Experimental Design}
 \description{
-Abstract R6 class encapsulating data and functionality for a sequential one-by-one experimental design.
+Sequential One-by-One Experimental Design
+
+Sequential One-by-One Experimental Design
+}
+\details{
+Abstract R6 class encapsulating data and functionality for a sequential one-by-
+one experimental design.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{DesignSeqOneByOne}
+\code{EDI::Design} -> \code{DesignSeqOneByOne}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -55,6 +61,7 @@ Abstract R6 class encapsulating data and functionality for a sequential one-by-o
 \if{html}{\out{<a id="method-DesignSeqOneByOne-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a sequential one-by-one design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$new(
   response_type = "continuous",
@@ -66,47 +73,96 @@ Abstract R6 class encapsulating data and functionality for a sequential one-by-o
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present, include a dummy
+variable for it.}
+
+\item{\code{n}}{The sample size (if fixed).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-supports_resampling"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-supports_resampling}{}}}
 \subsection{Method \code{supports_resampling()}}{
+Checks if the design supports resampling.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$supports_resampling()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Always TRUE for sequential designs.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-add_subject_to_experiment_and_assign"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_subject_to_experiment_and_assign}{}}}
 \subsection{Method \code{add_subject_to_experiment_and_assign()}}{
+Adds a subject and assigns treatment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment assignment (0 or 1).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assigns treatment to the current subject.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draws treatment vectors according to the design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of vectors to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-print_current_subject_assignment"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-print_current_subject_assignment}{}}}
 \subsection{Method \code{print_current_subject_assignment()}}{
+Prints the current subject's assignment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$print_current_subject_assignment()}\if{html}{\out{</div>}}
 }

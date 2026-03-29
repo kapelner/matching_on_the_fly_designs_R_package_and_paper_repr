@@ -9,14 +9,11 @@
 EDI
 }
 \details{
-Generates the following sequential one-by-one two-arm experimental designs
-(1) completely randomized (Bernoulli)
-(2) balanced completely randomized
-(3) Efron's (1971) Biased Coin
-(4) Atkinson's (1982) Covariate-Adjusted Biased Coin
-(5) Kapelner and Krieger's (2014) Covariate-Adjusted Matching on the Fly
-(6) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates
-(7) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates Stepwise
+Provides comprehensive support for many fixed and sequential experimental designs and many
+infererential methods (parametric, nonparametric, exact) for response types continuous, 
+incidence, count, proportion, survival  (with censoring) and ordinal. Supports automatic 
+missing data imputation, parallelization, provides robustness fallbacks and is
+optimized with C++.
 }
 \references{
 Adam Kapelner and Abba Krieger A Matching Procedure for Sequential

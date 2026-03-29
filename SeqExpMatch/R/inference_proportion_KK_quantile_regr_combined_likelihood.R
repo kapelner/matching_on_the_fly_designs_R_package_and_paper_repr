@@ -1,6 +1,5 @@
 #' Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)
 #'
-#' @description
 #' Fits the combined stacked quantile regression (matched-pair differences + reservoir)
 #' using the treatment indicator and all recorded covariates for proportion responses.
 #' Responses are transformed via logit before regression; the estimated treatment
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropMultiKKQuantileRegrCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrCombinedLikelihood,
 	public = list(
 		#' @description	Initialize the inference object.
@@ -42,6 +42,7 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 		#'   between 0 and 1. Default is 0.5.
 		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, tau, qlogis, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -52,6 +53,7 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 
 		#' @description
 		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE) super$compute_treatment_estimate()
 
 

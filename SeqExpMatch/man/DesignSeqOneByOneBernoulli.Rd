@@ -4,10 +4,15 @@
 \alias{DesignSeqOneByOneBernoulli}
 \title{A completely randomized / Bernoulli Sequential Design}
 \description{
+A completely randomized / Bernoulli Sequential Design
+
+A completely randomized / Bernoulli Sequential Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneBernoulli}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneBernoulli}
 }
 \section{Methods}{
 \subsection{Public methods}{

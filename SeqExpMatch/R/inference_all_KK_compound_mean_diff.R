@@ -1,6 +1,5 @@
 #' Inference based on Maximum Likelihood for KK designs
 #'
-#' @description
 #' Inference for mean difference
 #'
 #'
@@ -23,6 +22,7 @@
 #' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 #' }
 InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -33,6 +33,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -49,8 +50,6 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		},
 
 		#' @description
-
-
 		#' Computes a 1-alpha level frequentist confidence interval
 		#'
 		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in
@@ -76,8 +75,6 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		},
 
 		#' @description
-
-
 		#' Computes a 2-sided p-value
 		#'
 		#' @param delta   The null difference to test against. For any treatment effect at all this is
@@ -158,7 +155,6 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 
 			return(res)
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0) return(NULL)
@@ -180,7 +176,6 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			)
 			return(res)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

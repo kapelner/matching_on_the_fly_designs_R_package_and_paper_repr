@@ -1,6 +1,5 @@
 #' Univariate Linear Mixed Model Inference for KK Designs with Continuous Response
 #'
-#' @description
 #' Fits a linear mixed model using the \pkg{glmmTMB} fitter for continuous responses
 #' under a KK matching-on-the-fly design using only the treatment indicator as a
 #' fixed-effect predictor (intercept + treatment). A Gaussian identity-link working
@@ -17,6 +16,7 @@
 #'
 #' @export
 InferenceContinUnivKKGLMM = R6::R6Class("InferenceContinUnivKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
 

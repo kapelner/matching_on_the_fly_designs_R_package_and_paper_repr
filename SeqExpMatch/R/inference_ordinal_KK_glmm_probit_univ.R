@@ -1,6 +1,5 @@
 #' Univariate Probit CLMM Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a cumulative-link mixed model via \code{ordinal::clmm} with a probit
 #' link for ordinal responses under a KK matching-on-the-fly design using only
 #' the treatment indicator as a fixed effect and a random intercept for each
@@ -39,6 +38,7 @@
 #' infer
 #'
 InferenceOrdinalUnivKKGLMMProbit = R6::R6Class("InferenceOrdinalUnivKKGLMMProbit",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
 	),

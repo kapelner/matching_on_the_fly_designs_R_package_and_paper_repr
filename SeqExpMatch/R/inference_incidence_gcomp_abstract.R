@@ -1,6 +1,5 @@
 #' Marginal Standardization / G-Computation for Binary Responses
 #'
-#' @description
 #' Internal base class for incidence-outcome g-computation estimators. A
 #' logistic regression working model is fit, then potential-outcome risks under
 #' all-treated and all-control assignments are standardized over the empirical
@@ -17,49 +16,52 @@
 #' @keywords internal
 #' @noRd
 InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the g-computation inference object.
-		# @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
-		# @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		# @param verbose Whether to print progress messages.
+		#' @description
+		#' Initialize the g-computation inference object.
+		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
+		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
+		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
-		# @description
-		# Computes the g-computation treatment-effect estimate.
+		#' @description
+		#' Computes the g-computation treatment-effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$get_effect_estimate()
 		},
 
-		# @description
-		# Computes a 1 - \code{alpha} confidence interval.
-		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
+		#' @description
+		#' Computes a 1 - \code{alpha} confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
 
-		# @description
-		# Computes a two-sided p-value for the treatment effect.
-		# @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
+		#' @description
+		#' Computes a two-sided p-value for the treatment effect.
+		#' @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
 
-		# @description
-		# Computes a bootstrap two-sided p-value for the treatment effect.
-		# @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
-		# @param B Number of bootstrap samples.
-		# @param na.rm Whether to remove non-finite bootstrap replicates.
+		#' @description
+		#' Computes a bootstrap two-sided p-value for the treatment effect.
+		#' @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
+		#' @param B Number of bootstrap samples.
+		#' @param na.rm Whether to remove non-finite bootstrap replicates.
 		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
 			if (is.null(delta)){
 				delta = private$default_null_value()

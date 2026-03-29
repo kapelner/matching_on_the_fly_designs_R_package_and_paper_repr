@@ -5,13 +5,18 @@
 \alias{InferenceAbstractKKWeibullFrailtyIVWC}
 \title{Abstract class for Weibull Frailty / Standard Weibull Compound Inference}
 \description{
+Abstract class for Weibull Frailty / Standard Weibull Compound Inference
+
+Abstract class for Weibull Frailty / Standard Weibull Compound Inference
+}
+\details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
 survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
 model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
 reservoir subjects, it uses standard Weibull AFT regression. The two estimates
 are combined via a variance-weighted linear combination.
-}
-\details{
+
+
 The matched-pairs frailty estimator differs between the univariate and multivariate
 subclasses due to computational constraints:
 
@@ -32,7 +37,8 @@ The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
 \code{survival::survreg()} fit (no frailty) on the same matched-pair data.
 The AFT log-time ratio is then
 \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
-and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} = \widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
+and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} =
+\widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
 (delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
 semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
 only for scale conversion and does not affect the frailty correction itself.
@@ -41,7 +47,7 @@ The \pkg{parfm} package is required only for the univariate subclass.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKWeibullFrailtyIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKWeibullFrailtyIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -73,6 +79,7 @@ The \pkg{parfm} package is required only for the univariate subclass.
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$new(
   des_obj,
@@ -82,37 +89,78 @@ The \pkg{parfm} package is required only for the univariate subclass.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the estimated treatment effect (log-time ratio).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes the asymptotic p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For
+any treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-clone"></a>}}

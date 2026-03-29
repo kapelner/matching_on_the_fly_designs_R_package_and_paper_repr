@@ -4,6 +4,11 @@
 \alias{InferenceAllKKCompoundMeanDiff}
 \title{Inference based on Maximum Likelihood for KK designs}
 \description{
+Inference based on Maximum Likelihood for KK designs
+
+Inference based on Maximum Likelihood for KK designs
+}
+\details{
 Inference for mean difference
 }
 \examples{
@@ -26,7 +31,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceAllKKCompoundMeanDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceAllKKCompoundMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -60,9 +65,18 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate estimate for compound mean difference across pairs and reservoir
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKCompoundMeanDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKCompoundMeanDiff$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The setting-appropriate (see description) numeric estimate of the treatment effect
 }

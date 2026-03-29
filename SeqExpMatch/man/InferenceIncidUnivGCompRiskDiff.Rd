@@ -10,7 +10,7 @@ all-treated and all-control assignments over the empirical covariate
 distribution.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{InferenceIncidUnivGCompRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidGCompAbstract} -> \code{InferenceIncidUnivGCompRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

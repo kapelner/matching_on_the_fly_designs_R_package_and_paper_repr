@@ -1,6 +1,5 @@
 #' Multivariate Clayton Copula Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 #' using the treatment indicator and all recorded covariates. For matched pairs, it uses
 #' a Clayton copula with Weibull AFT margins. For reservoir subjects, it uses a standard
@@ -37,6 +36,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalMultiKKClaytonCopulaIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaIVWC,
 	public = list(
 

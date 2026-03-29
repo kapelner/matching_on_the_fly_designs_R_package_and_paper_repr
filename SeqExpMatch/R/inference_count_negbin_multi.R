@@ -1,7 +1,6 @@
 #' Sequential Design Inference for Count Response Types using Multivariate Negative Binomial
 #' Regression
 #'
-#' @description
 #' The methods that support confidence intervals and testing for
 #' count response Types using Multivariate Negative Binomial Regression
 #'
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountMultiNegBinRegr = R6::R6Class("InferenceCountMultiNegBinRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivNegBinRegr,
 	public = list(
 

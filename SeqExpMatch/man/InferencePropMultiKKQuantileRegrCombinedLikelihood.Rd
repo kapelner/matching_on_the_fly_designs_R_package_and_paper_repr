@@ -5,6 +5,11 @@
 \alias{InferencePropMultiKKQuantileRegrCombinedLikelihood}
 \title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)}
 \description{
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)
+
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)
+}
+\details{
 Fits the combined stacked quantile regression (matched-pair differences + reservoir)
 using the treatment indicator and all recorded covariates for proportion responses.
 Responses are transformed via logit before regression; the estimated treatment
@@ -37,7 +42,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrCombinedLikelihood]{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood}} -> \code{InferencePropMultiKKQuantileRegrCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{InferencePropMultiKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -92,6 +97,8 @@ between 0 and 1. Default is 0.5.}
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -102,9 +109,18 @@ between 0 and 1. Default is 0.5.}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrCombinedLikelihood-clone"></a>}}

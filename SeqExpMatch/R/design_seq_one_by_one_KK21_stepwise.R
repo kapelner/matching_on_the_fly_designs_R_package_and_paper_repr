@@ -1,6 +1,5 @@
 #' A Sequential Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
@@ -102,10 +101,9 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 
 		compute_weights = function(all_subject_data){ #stepwise function
 			xs = all_subject_data$X_all_with_y_scaled
-			i_y_present = which(!is.na(private$y))
-			ys = private$y[i_y_present]
-			ws = private$w[i_y_present]
-			deads = private$dead[i_y_present]
+			ys = all_subject_data$y_all
+			ws = all_subject_data$w_all_with_y_scaled
+			deads = all_subject_data$dead_all
 			# The C++ stepwise functions initialize all weights to NA and fill them as each
 			# step succeeds. When perfect separation (or rank deficiency) causes an early
 			# break, the remaining features retain NA. Replace NA with 0 so those features
@@ -113,37 +111,37 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			na0 = function(w) { w[is.na(w)] = 0; w }
 
 			if (private$response_type == "continuous"){
-				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_continuous_weights_cpp(xs, ys, ws)))
 			}
 			if (private$response_type == "incidence"){
-				return(na0(kk21_stepwise_logistic_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_logistic_weights_cpp(xs, ys, ws)))
 			}
 			if (private$response_type == "count" && private$count_use_speedup){
-				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys + 1)), as.numeric(ws))))
+				return(na0(kk21_stepwise_continuous_weights_cpp(xs, log(ys + 1), ws)))
 			}
 			if (private$response_type == "proportion" && private$proportion_use_speedup){
 				ys_adj = ys
 				ys_adj[ys_adj == 0] = .Machine$double.eps
 				ys_adj[ys_adj == 1] = 1 - .Machine$double.eps
-				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys_adj / (1 - ys_adj))), as.numeric(ws))))
+				return(na0(kk21_stepwise_continuous_weights_cpp(xs, log(ys_adj / (1 - ys_adj)), ws)))
 			}
 			if (private$response_type == "survival"){
 				if (private$survival_use_speedup_for_no_censoring && all(deads == 1)){
-					return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(log(ys)), as.numeric(ws))))
+					return(na0(kk21_stepwise_continuous_weights_cpp(xs, log(ys), ws)))
 				}
-				return(na0(kk21_stepwise_survival_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(deads), as.numeric(ws))))
+				return(na0(kk21_stepwise_survival_weights_cpp(xs, ys, deads, ws)))
 			}
 			if (private$response_type == "count" && !private$count_use_speedup){
-				return(na0(kk21_stepwise_negbin_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_negbin_weights_cpp(xs, ys, ws)))
 			}
 			if (private$response_type == "proportion" && !private$proportion_use_speedup){
-				return(na0(kk21_stepwise_beta_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_beta_weights_cpp(xs, ys, ws)))
 			}
 			if (private$response_type == "ordinal" && private$ordinal_use_speedup){
-				return(na0(kk21_stepwise_continuous_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_continuous_weights_cpp(xs, ys, ws)))
 			}
 			if (private$response_type == "ordinal" && !private$ordinal_use_speedup){
-				return(na0(kk21_stepwise_ordinal_weights_cpp(as.matrix(xs), as.numeric(ys), as.numeric(ws))))
+				return(na0(kk21_stepwise_ordinal_weights_cpp(xs, ys, ws)))
 			}
 
 			# Fallback for future response types (should not reach here for current types)

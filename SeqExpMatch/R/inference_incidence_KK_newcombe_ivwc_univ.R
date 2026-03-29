@@ -1,6 +1,5 @@
 #' Univariate IVWC Newcombe Risk-Difference Inference for KK Designs
 #'
-#' @description
 #' Implements a compound Newcombe risk-difference estimator for KK designs.
 #' This class pools information from matched pairs (using the Paired Newcombe
 #' method) and the reservoir (using the Independent Newcombe method) via
@@ -39,6 +38,7 @@
 #' infer
 #'
 InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombeRiskDiff",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -47,6 +47,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param num_cores CPU cores.
 		#' @param verbose Flag for progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -58,6 +59,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 
 		#' @description
 		#' Returns the IVWC Newcombe estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined()
 			private$cached_values$beta_hat_T

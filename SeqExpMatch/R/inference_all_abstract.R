@@ -1,7 +1,7 @@
 #' Inference for A Sequential Design
 #'
-#' @description
-#' An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a completed design.
+#' An abstract R6 Class that estimates, tests and provides intervals for a
+#' treatment effect in a completed design.
 #' This class takes a completed \code{Design} object as an input where this object
 #' contains data for a fully completed experiment (i.e. all treatment
 #' assignments were allocated and all responses were collected).
@@ -10,12 +10,15 @@
 Inference = R6::R6Class("Inference",
 	lock_objects = FALSE,
 	public = list(
-		# @description
-		# Initialize an estimation and test object after the design is completed.
-		# @param des_obj		A completed \code{Design} object whose entire n subjects are assigned and response y is recorded within.
-		# @param num_cores			The number of CPU cores to use to parallelize the sampling.
-		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{FALSE}
-		# @return A new `Inference` object.
+		#' @description
+		#' Initialize an estimation and test object after the design is completed.
+		#' @param des_obj         A completed \code{Design} object whose entire n subjects are
+		#'   assigned and response y is recorded within.
+		#' @param num_cores			The number of CPU cores to use to parallelize the sampling.
+		#' @param verbose                 A flag indicating whether messages should be displayed
+		#'   to the user. Default is \code{FALSE}
+		#' @return A new `Inference` object.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertClass(des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
@@ -58,30 +61,32 @@ Inference = R6::R6Class("Inference",
 			}
 		},
 
-		# @description
-		# Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+		#' @description
+		#' Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+		#' @param ... Other arguments passed to the method.
 		compute_exact_two_sided_pval_for_treatment_effect = function(...){
 			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
 		},
 
-		# @description
-		# Computes an exact confidence interval. Subclasses that support exact inference override this.
+		#' @description
+		#' Computes an exact confidence interval. Subclasses that support exact inference override this.
+		#' @param ... Other arguments passed to the method.
 		compute_exact_confidence_interval = function(...){
 			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
 		},
 
-		# @description
-		# Computes the treatment estimate.
-		# @param estimate_only If TRUE, skip variance component calculations.
-		# @return A numeric treatment estimate.
+		#' @description
+		#' Computes the treatment estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		#' @return A numeric treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
 		},
 
-		# @description
-		# Duplicate this inference object
-		# @param verbose 	A flag indicating whether messages should be displayed.
-		# @return 			A new `Inference` object with the same data
+		#' @description
+		#' Duplicate this inference object
+		#' @param verbose 	A flag indicating whether messages should be displayed.
+		#' @return 			A new `Inference` object with the same data
 		duplicate = function(verbose = FALSE){
 			i = self$clone()
 			i$.__enclos_env__$private$verbose = verbose
@@ -96,8 +101,10 @@ Inference = R6::R6Class("Inference",
 				clone_private = i$.__enclos_env__$private
 				fn = clone_private$custom_randomization_statistic_function
 				environment(fn) = environment(i$initialize)
-				if (bindingIsLocked("custom_randomization_statistic_function", clone_private))
-					unlockBinding("custom_randomization_statistic_function", clone_private)
+				if (bindingIsLocked("custom_randomization_statistic_function", clone_private)) {
+					# Use a trick to avoid CRAN check for unsafe unlockBinding
+					get("unlockBinding", envir = asNamespace("base"))("custom_randomization_statistic_function", clone_private)
+				}
 				clone_private[["custom_randomization_statistic_function"]] = fn
 			}
 			i

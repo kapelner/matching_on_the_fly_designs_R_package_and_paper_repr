@@ -1,6 +1,5 @@
 #' Multivariate Quasi-Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a quasi-Poisson log-link regression for count responses using the treatment
 #' indicator and all recorded covariates. The treatment effect is reported on the
 #' log-rate scale and inference uses the model-based quasi-Poisson variance with an
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountMultiQuasiPoissonRegr = R6::R6Class("InferenceCountMultiQuasiPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivQuasiPoissonRegr,
 	public = list(
 

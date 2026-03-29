@@ -1,6 +1,5 @@
 #' Univariate Modified Poisson Inference for Binary Responses
 #'
-#' @description
 #' Fits the classic modified Poisson model for binary (incidence) responses using
 #' a Poisson log-link working model with Huber-White
 #' sandwich variance. The treatment effect is reported on the log-risk-ratio
@@ -13,6 +12,7 @@
 #'
 #' @export
 InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoisson",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -37,6 +37,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' seq_des_inf = InferenceIncidUnivModifiedPoisson$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -46,6 +47,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' @description
 		#' Computes the modified-Poisson estimate of the treatment effect on the
 		#' log-risk-ratio scale.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T

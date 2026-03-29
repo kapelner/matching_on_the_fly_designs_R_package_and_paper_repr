@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalMultiCoxPHRegr}
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
+Simple Mean Difference Inference based on Maximum Likelihood
+
+Simple Mean Difference Inference based on Maximum Likelihood
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
@@ -31,10 +36,9 @@ seq_des$add_all_subject_responses(
 seq_des_inf = InferenceSurvivalMultiCoxPHRegr$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 }
-
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceSurvivalUniCoxPHRegr]{EDI::InferenceSurvivalUniCoxPHRegr}} -> \code{InferenceSurvivalMultiCoxPHRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{EDI::InferenceSurvivalUniCoxPHRegr} -> \code{InferenceSurvivalMultiCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -53,12 +57,12 @@ seq_des_inf$compute_treatment_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalUniCoxPHRegr" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceSurvivalUniCoxPHRegr.html#method-InferenceSurvivalUniCoxPHRegr-compute_confidence_interval_rand'><code>EDI::InferenceSurvivalUniCoxPHRegr$compute_confidence_interval_rand()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -68,9 +72,18 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate estimate
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiCoxPHRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiCoxPHRegr$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The setting-appropriate (see description) numeric estimate of the treatment effect
 }
@@ -92,7 +105,6 @@ seq_des$add_all_subject_responses(
 seq_des_inf = InferenceSurvivalMultiCoxPHRegr$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
 }
-
 }
 \if{html}{\out{</div>}}
 

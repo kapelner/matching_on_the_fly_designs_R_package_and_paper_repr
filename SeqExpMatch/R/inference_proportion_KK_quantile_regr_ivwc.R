@@ -1,7 +1,6 @@
 #' Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
 #' Outcomes)
 #'
-#' @description
 #' A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
 #' designs with proportion responses. Inference is performed on the \strong{logit (log-odds)
 #' scale}: responses \eqn{y \in (0,1)} are transformed via \eqn{\text{logit}(y) = \log(y/(1-y))}
@@ -62,6 +61,7 @@
 #' infer
 #'
 InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantileRegrIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
 
@@ -81,6 +81,7 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 		#' 							and bootstrap resampling. The default is 1 for serial computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, tau, qlogis, num_cores, verbose, make_fork_cluster = make_fork_cluster)

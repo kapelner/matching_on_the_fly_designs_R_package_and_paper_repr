@@ -1,6 +1,5 @@
 #' Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
 #'
-#' @description
 #' Fits a single joint quantile regression over all KK design data by stacking
 #' matched-pair differences and reservoir observations into one design matrix.
 #'
@@ -17,14 +16,19 @@
 #'
 #' @keywords internal
 InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstractKKQuantileRegrCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractQuantileRandCI,
 	public = list(
 
-		# @param des_obj		A DesignSeqOneByOne object whose entire n subjects are assigned and response y is recorded within.
-		# @param tau				The quantile level for regression, strictly between 0 and 1.
-		# @param transform_y_fn	A function applied to y values before quantile regression.
-		# @param num_cores			The number of CPU cores to use to parallelize sampling.
-		# @param verbose			A flag indicating whether messages should be displayed. Default is FALSE.
+		#' @description
+		#' Initialize
+		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
+		#'   and response y is recorded within.
+		#' @param tau				The quantile level for regression, strictly between 0 and 1.
+		#' @param transform_y_fn	A function applied to y values before quantile regression.
+		#' @param num_cores			The number of CPU cores to use to parallelize sampling.
+		#' @param verbose			A flag indicating whether messages should be displayed. Default is FALSE.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
@@ -39,29 +43,30 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 			}
 		},
 
-		# @description
-		# Returns the combined-likelihood estimate of the treatment effect.
+		#' @description
+		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Returns a 1 - alpha confidence interval for beta_T.
-		# @param alpha Significance level; default 0.05 gives a 95% CI.
+		#' @description
+		#' Returns a 1 - alpha confidence interval for beta_T.
+		#' @param alpha Significance level; default 0.05 gives a 95% CI.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Returns a 2-sided p-value for H0: beta_T = delta.
-		# @param delta Null value; default 0.
+		#' @description
+		#' Returns a 2-sided p-value for H0: beta_T = delta.
+		#' @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -93,16 +98,9 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 
 		# Fit the combined check-function loss over matched-pair differences and
 		# reservoir observations with SHARED covariate effects beta_xs.
-		#
-		# Column layout of X_stack: [beta_0 | beta_T | beta_xs (p cols)]
-		#   col 1       : beta_0   (0 for pair rows; 1 for reservoir rows)
-		#   col 2       : beta_T   (1 for pair rows; w_i for reservoir rows)
-		#   cols 3..p+2 : beta_xs  (Xd_k for pair rows; X_i for reservoir rows)
-		#
-		# Pairs-only case: beta_0 column is all-zero and dropped; layout [beta_T | beta_xs].
-		# Reservoir-only case: standard layout [beta_0 | beta_T | beta_xs].
-		shared_combined_likelihood = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared_combined_likelihood = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -157,7 +155,7 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 
 			if (is.null(X_stack)){
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
@@ -171,7 +169,7 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 			n_params = ncol(X_stack)
 			if (n_total <= n_params){
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
@@ -188,16 +186,17 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 			)
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
 			beta = tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
-			se   = private$extract_se_from_rq(fit, "trt__")
-
 			private$cached_values$beta_hat_T   = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$s_beta_hat_T = if (!is.na(se)) se else NA_real_
+			if (!estimate_only) {
+				se = private$extract_se_from_rq(fit, "trt__")
+				private$cached_values$s_beta_hat_T = if (!is.na(se)) se else NA_real_
+			}
 			private$cached_values$is_z         = TRUE
 			invisible(NULL)
 		},

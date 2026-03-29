@@ -1,6 +1,5 @@
 #' Multivariate GLMM Inference for KK Designs with Binary Response
 #'
-#' @description
 #' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for binary
 #' (incidence) responses under a KK matching-on-the-fly design using the treatment
 #' indicator and all recorded covariates as fixed-effect predictors. The matched-pair
@@ -17,6 +16,7 @@
 #'
 #' @export
 InferenceIncidMultiKKGLMM = R6::R6Class("InferenceIncidMultiKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
 

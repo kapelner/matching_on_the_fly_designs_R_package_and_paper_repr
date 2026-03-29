@@ -1,6 +1,5 @@
 #' Univariate Conditional Logistic Regression Inference for KK Designs with Binary Response
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
 #' responses using only the treatment indicator (no additional covariates). For matched
 #' pairs, a conditional logistic regression model is used (via the internal
@@ -13,6 +12,7 @@
 #'
 #' @export
 InferenceIncidUnivKKClogitIVWC = R6::R6Class("InferenceIncidUnivKKClogitIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitIVWC,
 	public = list(
 

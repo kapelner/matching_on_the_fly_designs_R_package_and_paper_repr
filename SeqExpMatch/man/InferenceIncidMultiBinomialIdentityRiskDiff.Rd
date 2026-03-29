@@ -9,7 +9,7 @@ treatment and all recorded covariates as predictors. The treatment effect is
 reported on the risk-difference scale.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceIncidBinomialIdentityAbstract} -> \code{\link[EDI:InferenceIncidUnivBinomialIdentityRiskDiff]{EDI::InferenceIncidUnivBinomialIdentityRiskDiff}} -> \code{InferenceIncidMultiBinomialIdentityRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceIncidBinomialIdentityAbstract} -> \code{EDI::InferenceIncidUnivBinomialIdentityRiskDiff} -> \code{InferenceIncidMultiBinomialIdentityRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

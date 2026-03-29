@@ -1,6 +1,5 @@
 #' Multivariate Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a Poisson log-link regression for count responses using the treatment
 #' indicator and all recorded covariates. The treatment effect is reported on the
 #' log-rate scale and inference uses the model-based Poisson variance.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceCountMultiPoissonRegr = R6::R6Class("InferenceCountMultiPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountUnivPoissonRegr,
 	public = list(
 

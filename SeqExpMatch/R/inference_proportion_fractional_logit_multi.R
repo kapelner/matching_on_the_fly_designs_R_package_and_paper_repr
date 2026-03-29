@@ -1,6 +1,5 @@
 #' Multivariate Fractional Logit Inference for Proportion Responses
 #'
-#' @description
 #' Fits a fractional logit model for proportion responses using the treatment
 #' indicator and all recorded covariates, with sandwich-robust variance. The
 #' treatment effect is reported on the log-odds scale.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferencePropMultiFractionalLogit = R6::R6Class("InferencePropMultiFractionalLogit",
+	lock_objects = FALSE,
 	inherit = InferencePropUniFractionalLogit,
 	public = list(
 

@@ -1,6 +1,5 @@
 #' Univariate Modified-Poisson Inference for KK Designs with Binary Responses
 #'
-#' @description
 #' Fits an all-subject modified-Poisson working model for incidence outcomes under
 #' a KK matching-on-the-fly design using only the treatment indicator as a
 #' predictor. Matched pairs are treated as clusters and reservoir subjects are
@@ -34,6 +33,7 @@
 #' infer
 #'
 InferenceIncidUnivKKModifiedPoisson = R6::R6Class("InferenceIncidUnivKKModifiedPoisson",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKModifiedPoisson,
 	public = list(
 

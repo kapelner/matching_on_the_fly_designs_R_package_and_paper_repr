@@ -4,12 +4,17 @@
 \alias{FixedDesignMatchingGreedyPairSwitching}
 \title{A Fixed Design Combining Binary Matching and Greedy Pair Switching}
 \description{
+A Fixed Design Combining Binary Matching and Greedy Pair Switching
+
+A Fixed Design Combining Binary Matching and Greedy Pair Switching
+}
+\details{
 An R6 class encapsulating a fixed experimental design that first computes
 binary matches and then improves the matched design with greedy pair switching
 using the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignMatchingGreedyPairSwitching}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignMatchingGreedyPairSwitching}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -103,7 +108,8 @@ A new \code{FixedDesignMatchingGreedyPairSwitching} object.
 \if{html}{\out{<a id="method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-FixedDesignMatchingGreedyPairSwitching-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to binary match followed by greedy switching.
+Draw multiple treatment assignment vectors according to binary match followed by
+greedy switching.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }

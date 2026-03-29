@@ -1,6 +1,5 @@
 #' Continuation-Ratio Logit Inference based on Maximum Likelihood
 #'
-#' @description
 #' Continuation-ratio logit model inference for ordinal responses. This model
 #' conditions on "having reached category k" before comparing category k vs >k.
 #' It is particularly useful when categories represent a progression.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
@@ -52,6 +52,7 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)

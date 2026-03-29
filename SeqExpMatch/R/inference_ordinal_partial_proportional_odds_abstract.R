@@ -1,6 +1,5 @@
 #' Internal Base Class for Ordinal Partial Proportional-Odds Inference
 #'
-#' @description
 #' Shared implementation for ordinal partial proportional-odds estimators. When
 #' the requested model has no nonparallel covariates, this class uses the
 #' package's fast Rcpp proportional-odds solver before falling back to the
@@ -9,6 +8,7 @@
 #' @keywords internal
 InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 	"InferenceOrdinalPartialProportionalOddsAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 		#' @description
@@ -18,6 +18,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param nonparallel Covariate names that may vary across thresholds.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj,
 				nonparallel = character(0),
 				num_cores = 1,
@@ -34,6 +35,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' Retrieve the estimated treatment log-odds shift.
 		#'
 		#' @return The estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

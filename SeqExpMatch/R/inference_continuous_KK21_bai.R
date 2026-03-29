@@ -1,11 +1,11 @@
 #' Inference based on Maximum Likelihood for KK designs
 #'
-#' @description
 #' Inference for mean difference
 #'
 #'
 #' @export
 InferenceBaiAdjustedTKK21 = R6::R6Class("InferenceBaiAdjustedTKK21",
+	lock_objects = FALSE,
 	inherit = InferenceBaiAdjustedT,
 	public = list(
 

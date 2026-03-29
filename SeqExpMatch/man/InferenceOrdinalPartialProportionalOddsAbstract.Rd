@@ -5,6 +5,11 @@
 \alias{InferenceOrdinalPartialProportionalOddsAbstract}
 \title{Internal Base Class for Ordinal Partial Proportional-Odds Inference}
 \description{
+Internal Base Class for Ordinal Partial Proportional-Odds Inference
+
+Internal Base Class for Ordinal Partial Proportional-Odds Inference
+}
+\details{
 Shared implementation for ordinal partial proportional-odds estimators. When
 the requested model has no nonparallel covariates, this class uses the
 package's fast Rcpp proportional-odds solver before falling back to the
@@ -12,7 +17,7 @@ general R fitters.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalPartialProportionalOddsAbstract}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceOrdinalPartialProportionalOddsAbstract}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -66,6 +71,8 @@ response.}
 \item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -76,9 +83,18 @@ response.}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Retrieve the estimated treatment log-odds shift.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The estimated treatment effect.
 }

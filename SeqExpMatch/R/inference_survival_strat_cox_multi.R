@@ -1,6 +1,5 @@
 #' Multivariate Stratified Cox PH Regression Inference for Survival Responses
 #'
-#' @description
 #' Fits an all-subject stratified Cox proportional hazards model for survival
 #' responses using the treatment indicator and the recorded covariates in the
 #' linear predictor. Low-cardinality covariates are reserved for automatic
@@ -38,6 +37,7 @@
 #' infer
 #'
 InferenceSurvivalMultiStratCoxPHRegr = R6::R6Class("InferenceSurvivalMultiStratCoxPHRegr",
+	lock_objects = FALSE,
 	inherit = InferenceSurvivalStratCoxPHAbstract,
 	private = list(
 		include_covariates = function() TRUE

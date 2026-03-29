@@ -1,6 +1,5 @@
 #' Abstract class for Clayton Copula Combined-Likelihood Inference
 #'
-#' @description
 #' Fits a single joint likelihood over all KK design data for survival responses using
 #' a Clayton survival copula with Weibull AFT margins for matched pairs and standard
 #' Weibull AFT singleton contributions for reservoir subjects. The treatment effect is
@@ -15,14 +14,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstractKKClaytonCopulaCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -31,25 +32,26 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
-		# @description
-		# Returns the combined-likelihood estimate of the treatment effect (log-time ratio).
+		#' @description
+		#' Returns the combined-likelihood estimate of the treatment effect (log-time ratio).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes an asymptotic confidence interval for the treatment effect.
-		# @param alpha Significance level. Default 0.05.
+		#' @description
+		#' Computes an asymptotic confidence interval for the treatment effect.
+		#' @param alpha Significance level. Default 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Returns a 2-sided p-value for H0: beta_T = delta.
-		# @param delta Null value; default 0.
+		#' @description
+		#' Returns a 2-sided p-value for H0: beta_T = delta.
+		#' @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
@@ -57,9 +59,9 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
-		# @description
-		# Duplicates the object while preserving caches.
-		# @param verbose Whether the duplicate should be verbose.
+		#' @description
+		#' Duplicates the object while preserving caches.
+		#' @param verbose Whether the duplicate should be verbose.
 		duplicate = function(verbose = FALSE){
 			inf_obj = super$duplicate(verbose = verbose)
 			inf_obj

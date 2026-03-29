@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -9,13 +8,14 @@
 #'
 #' @export
 InferenceSurvivalMultiCoxPHRegr = R6::R6Class("InferenceSurvivalMultiCoxPHRegr",
+	lock_objects = FALSE,
 	inherit = InferenceSurvivalUniCoxPHRegr,
 	public = list(
 
 
 		#' @description
 		#' Computes the appropriate estimate
-		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @examples
@@ -33,12 +33,14 @@ InferenceSurvivalMultiCoxPHRegr = R6::R6Class("InferenceSurvivalMultiCoxPHRegr",
 		#' )
 		#'
 		#' seq_des_inf = InferenceSurvivalMultiCoxPHRegr$new(seq_des)
-		#   seq_des_inf$compute_treatment_estimate()
-		# }
-		#
-		),
+		#' seq_des_inf$compute_treatment_estimate()
+		#' }
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			super$compute_treatment_estimate(estimate_only = estimate_only)
+		}
+	),
 
-		private = list(
+	private = list(
 		generate_mod = function(estimate_only = FALSE){
 			surv_obj = survival::Surv(private$y, private$dead)
 			tryCatch({

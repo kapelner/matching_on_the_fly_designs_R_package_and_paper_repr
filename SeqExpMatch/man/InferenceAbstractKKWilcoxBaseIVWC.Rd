@@ -4,6 +4,11 @@
 \alias{InferenceAbstractKKWilcoxBaseIVWC}
 \title{Abstract base class for KK Wilcoxon-based compound inference}
 \description{
+Abstract base class for KK Wilcoxon-based compound inference
+
+Abstract base class for KK Wilcoxon-based compound inference
+}
+\details{
 Shared base for all KK Wilcoxon inference classes. Overrides the per-permutation
 statistic used in randomization tests with standardized Wilcoxon W statistics
 (O(n log n), conf.int = FALSE), avoiding the O(n^2) Walsh-average computation
@@ -11,7 +16,7 @@ required by the full Hodges-Lehmann estimate.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKWilcoxBaseIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKWilcoxBaseIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -43,6 +48,9 @@ required by the full Hodges-Lehmann estimate.
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
+inside compute_confidence_interval_rand. The asymptotic MLE CI is a perfectly
+adequate starting bound for the bisection and is computed in O(1).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval(
   alpha = 0.05,
@@ -50,6 +58,15 @@ required by the full Hodges-Lehmann estimate.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level. Default is 0.05.}
+
+\item{\code{...}}{Additional arguments passed to super.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-clone"></a>}}

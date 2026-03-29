@@ -1,6 +1,5 @@
 #' Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
 #'
-#' @description
 #' A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
 #' designs with continuous responses. The estimator combines:
 #' \enumerate{
@@ -35,6 +34,7 @@
 #'
 #' @export
 InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuantileRegrIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
 
@@ -76,6 +76,7 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' infer <- InferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, tau, identity, num_cores, verbose, make_fork_cluster = make_fork_cluster)

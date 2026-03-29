@@ -10,8 +10,8 @@ NULL
 
 .onAttach = function(libname, pkgname){
 	packageStartupMessage(
-			paste("Welcome to SeqExpMatch v",
-					utils::packageVersion("SeqExpMatch"),
+			paste("Welcome to EDI v",
+					utils::packageVersion("EDI"),
 					sep = "")
 	)
 }

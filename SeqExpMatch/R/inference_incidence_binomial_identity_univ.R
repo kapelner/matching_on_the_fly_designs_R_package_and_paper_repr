@@ -1,6 +1,5 @@
 #' Univariate Binomial Identity-Link Regression for Binary Responses
 #'
-#' @description
 #' Fits a binomial GLM with identity link for binary (incidence) responses using
 #' only the treatment indicator. The treatment effect is reported on the
 #' risk-difference scale.
@@ -12,6 +11,7 @@
 #'
 #' @export
 InferenceIncidUnivBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidUnivBinomialIdentityRiskDiff",
+	lock_objects = FALSE,
 	inherit = InferenceIncidBinomialIdentityAbstract,
 	private = list(
 		build_design_matrix = function(){

@@ -1,7 +1,7 @@
 #' A balanced completely randomized Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed balanced completely randomized experimental design.
+#' An R6 Class encapsulating the data and functionality for a fixed balanced
+#' completely randomized experimental design.
 #'
 #' @export
 FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
@@ -10,7 +10,8 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 		#' @description
 		#' Initialize a fixed balanced completely randomized experimental design
 		#'
-		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.

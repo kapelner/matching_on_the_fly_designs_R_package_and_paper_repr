@@ -4,6 +4,11 @@
 \alias{InferenceContinMultLin}
 \title{Lin (2013) Covariate-Adjusted OLS Inference for Continuous Responses}
 \description{
+Lin (2013) Covariate-Adjusted OLS Inference for Continuous Responses
+
+Lin (2013) Covariate-Adjusted OLS Inference for Continuous Responses
+}
+\details{
 Fits the Lin (2013) covariate-adjusted linear estimator for continuous responses.
 The working model includes an intercept, treatment
 indicator, centered covariates, and treatment-by-centered-covariate
@@ -27,7 +32,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinMultLin}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceContinMultLin}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -80,6 +85,8 @@ continuous response.}
 randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -107,9 +114,16 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes Lin's covariate-adjusted estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultLin$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultLin$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The estimated treatment effect.
 }

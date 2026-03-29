@@ -1,6 +1,5 @@
 #' Univariate Wilcox Rank-based Regression Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a robust compound estimator for KK matching-on-the-fly designs using rank-based
 #' regression (R-estimation) with only the treatment indicator (no additional covariates).
 #' For matched pairs, it uses R-estimation on the within-pair response differences.
@@ -9,6 +8,7 @@
 #'
 #' @export
 InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
@@ -17,6 +17,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param num_cores Number of CPU cores for parallel processing.
 		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
@@ -37,6 +38,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 
 		#' @description
 		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

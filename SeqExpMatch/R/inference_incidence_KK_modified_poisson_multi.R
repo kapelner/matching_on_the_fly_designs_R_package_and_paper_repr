@@ -1,6 +1,5 @@
 #' Multivariate Modified-Poisson Inference for KK Designs with Binary Responses
 #'
-#' @description
 #' Fits an all-subject modified-Poisson working model for incidence outcomes under
 #' a KK matching-on-the-fly design using treatment and all recorded covariates as
 #' predictors. Matched pairs are treated as clusters and reservoir subjects are
@@ -34,6 +33,7 @@
 #' infer
 #'
 InferenceIncidMultiKKModifiedPoisson = R6::R6Class("InferenceIncidMultiKKModifiedPoisson",
+	lock_objects = FALSE,
 	inherit = InferenceIncidUnivKKModifiedPoisson,
 	public = list(
 

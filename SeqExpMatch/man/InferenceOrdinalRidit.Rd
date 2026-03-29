@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalRidit}
 \title{Ridit Analysis for Ordinal Responses}
 \description{
+Ridit Analysis for Ordinal Responses
+
+Ridit Analysis for Ordinal Responses
+}
+\details{
 Performs Ridit analysis (Relative to an Identified Distribution unit) for
 comparing two groups on an ordinal scale. Ridit analysis provides a
 distribution-free way to estimate the probability that a randomly selected
@@ -28,7 +33,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalRidit}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceOrdinalRidit}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -85,6 +90,8 @@ Must be one of "control", "treatment", or "pooled". Default is "control".}
 \item{\code{num_cores}}{The number of CPU cores to use.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -95,9 +102,16 @@ Must be one of "control", "treatment", or "pooled". Default is "control".}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect (Mean Ridit - 0.5).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The numeric estimate.
 }

@@ -1,19 +1,28 @@
 #' A class that provides for relevant methods when the designs are KK matching-on-the-fly
 #'
-#' @description
 #' An abstract class
 #'
 #' @keywords internal
 InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @param des_obj		A DesignSeqOneByOne object whose entire n subjects are assigned and response y is recorded within.
-		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
+		#' @description
+		#' Initialize
+		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
+		#'   and response y is recorded within.
+		#' @param num_cores                       The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference
+		#' and bootstrap resampling. The default is 1 for serial computation. For simple
+		#' estimators (e.g. mean difference
+		#' and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
+		#' complex models (e.g. GLMs),
+		#' parallelization falls back to R's \code{parallel::mclapply} which incurs
+		#' session-forking overhead.
+		#' @param verbose                 A flag indicating whether messages should be displayed
+		#'   to the user. Default is \code{TRUE}
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			if (private$is_KK){
@@ -27,29 +36,31 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		},
 
 
-		# @description
-		# Creates the boostrap distribution of the estimate for the treatment effect
-		#
-		# @param B						Number of bootstrap samples. The default is 501.
-		#
-		# @return 	A vector of length \code{B} with the bootstrap values of the estimates of the treatment effect
-		#
-		# @examples
-		# \dontrun{
-		# seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = "continuous")
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#
-		# seq_des_inf = InferenceContinMultOLSKK$new(seq_des)
-		# beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
-		# beta_hat_T_bs
-		# }
-		#
+		#' @description
+		#' Creates the boostrap distribution of the estimate for the treatment effect
+		#'
+		#' @param B						Number of bootstrap samples. The default is 501.
+		#'
+		#' @return A vector of length \code{B} with the bootstrap values of the estimates of the
+		#'   treatment effect
+		#'
+		#' @examples
+		#' \dontrun{
+		#' seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = "continuous")
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+		#'
+		#' seq_des_inf = InferenceContinMultOLSKK$new(seq_des)
+		#' beta_hat_T_bs = seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = 5)
+		#' beta_hat_T_bs
+		#' }
+		#'
+		#' @param show_progress Description for show_progress
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE){
 			if (!private$is_KK){
 				super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress)
@@ -121,7 +132,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 							if (has_res_stat_serial) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							boot_inf_obj$compute_treatment_estimate()
+							boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
 						}, error = function(e) { NA_real_ })
 						if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 					}
@@ -159,7 +170,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							boot_w$.__enclos_env__$private$compute_basic_match_data()
 							if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
 								boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							tryCatch(boot_w$compute_treatment_estimate(), error = function(e) NA_real_)
+							tryCatch(boot_w$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 						})[[3]]
 						fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
 						if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
@@ -169,6 +180,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					kk_template = self$duplicate()
 					has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
 
+					# Internal task for bootstrap execution
 					kk_task = function(b) {
 						try(set_package_threads(1L), silent = TRUE)
 						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
@@ -197,7 +209,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 							if (has_res_stat) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							boot_inf_obj$compute_treatment_estimate()
+							boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
 						}, error = function(e) NA_real_)
 					}
 
@@ -234,7 +246,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 								if (has_res_stat_local) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								boot_inf_obj$compute_treatment_estimate()
+								boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
 							}, error = function(e) NA_real_)
 						}, n_cores = cores_to_use, show_progress = private$verbose))
 					}

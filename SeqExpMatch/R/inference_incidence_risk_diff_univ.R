@@ -1,6 +1,5 @@
 #' Univariate Risk-Difference Regression for Binary Responses
 #'
-#' @description
 #' Fits a direct risk-difference estimator for binary (incidence) responses
 #' using a linear probability model with HC2
 #' heteroskedasticity-robust variance. The treatment effect is reported on the
@@ -13,6 +12,7 @@
 #'
 #' @export
 InferenceIncidUnivRiskDiff = R6::R6Class("InferenceIncidUnivRiskDiff",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -37,6 +37,7 @@ InferenceIncidUnivRiskDiff = R6::R6Class("InferenceIncidUnivRiskDiff",
 		#' seq_des_inf = InferenceIncidUnivRiskDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -45,6 +46,7 @@ InferenceIncidUnivRiskDiff = R6::R6Class("InferenceIncidUnivRiskDiff",
 
 		#' @description
 		#' Computes the direct risk-difference estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

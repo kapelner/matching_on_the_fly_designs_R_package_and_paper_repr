@@ -1,6 +1,5 @@
 #' Stereotype Probit Inference for Ordinal Responses
 #
-#' @description
 #' Stereotype probit inference for ordinal responses. The model exposes a common
 #' treatment coefficient with category-specific score weights, and inference is
 #' based on a probit link.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereotypeProbitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -41,6 +41,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -51,6 +52,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 		#' Compute the estimated stereotype probit treatment effect.
 		#'
 		#' @return The estimated treatment coefficient.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

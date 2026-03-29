@@ -1,6 +1,5 @@
 #' Non-parametric Wilcoxon-based Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a non-parametric compound estimator for KK matching-on-the-fly designs.
 #' For matched pairs, it uses the Wilcoxon Signed-Rank Hodges-Lehmann estimate.
 #' For reservoir subjects, it uses the Wilcoxon Rank-Sum (Mann-Whitney U) Hodges-Lehmann
@@ -10,6 +9,7 @@
 #'
 #' @export
 InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWilcoxBaseIVWC,
 	public = list(
 
@@ -33,6 +33,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 		#' infer <- InferenceAllKKWilcoxIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
@@ -50,6 +51,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 
 		#' @description
 		#' Returns the estimated treatment effect (Hodges-Lehmann median shift).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

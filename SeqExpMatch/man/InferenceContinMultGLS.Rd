@@ -4,14 +4,19 @@
 \alias{InferenceContinMultGLS}
 \title{Generalized Least Squares Inference based on Maximum Likelihood for KK designs}
 \description{
+Generalized Least Squares Inference based on Maximum Likelihood for KK designs
+
+Generalized Least Squares Inference based on Maximum Likelihood for KK designs
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in continuous response types for sequential experimental designs using Generalized Least
 Squares (GLS).
 This model assumes a shared correlation within matched pairs but independence for subjects in
 the reservoir.
 When no matched pairs exist (pure reservoir design), the model degenerates to OLS.
-}
-\details{
+
+
 The GLS model is fit by REML, which provides unbiased estimates of the within-pair
 correlation
 \eqn{\rho} and the residual variance \eqn{\sigma^2}. The residual degrees of freedom for
@@ -49,7 +54,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceContinMultGLS}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceContinMultGLS}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -111,6 +116,8 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -142,9 +149,16 @@ infer
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate GLS estimate
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The setting-appropriate numeric estimate of the treatment effect
 }

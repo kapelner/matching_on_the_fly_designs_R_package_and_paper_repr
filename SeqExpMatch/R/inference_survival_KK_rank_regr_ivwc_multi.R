@@ -1,6 +1,5 @@
 #' Multivariate Survival Rank-based Regression (AFT) Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a robust compound estimator for KK matching-on-the-fly designs with survival
 #' responses using rank-based estimating equations with the treatment indicator and
 #' all recorded covariates. For matched pairs, it uses a rank-based AFT model with
@@ -38,6 +37,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKRankRegrIVWC = R6::R6Class("InferenceSurvivalMultiKKRankRegrIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKSurvivalRankRegrIVWC,
 	public = list(
 

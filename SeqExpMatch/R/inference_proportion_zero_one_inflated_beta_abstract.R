@@ -1,6 +1,5 @@
 #' Zero/One-Inflated Beta Inference for Proportion Responses
 #'
-#' @description
 #' Internal base class for non-KK zero/one-inflated beta regression models. The
 #' response is modeled as a three-component mixture with point masses at 0 and 1
 #' plus a beta-distributed interior component on \eqn{(0, 1)}. The reported
@@ -15,20 +14,33 @@
 #' @keywords internal
 #' @noRd
 InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInflatedBetaAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
+		#' @description
+		#' Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared(estimate_only = FALSE)
@@ -39,6 +51,9 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared(estimate_only = FALSE)

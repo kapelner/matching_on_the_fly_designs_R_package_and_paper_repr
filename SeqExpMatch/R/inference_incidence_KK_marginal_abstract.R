@@ -2,9 +2,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
+		#' @description
+		#' Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){

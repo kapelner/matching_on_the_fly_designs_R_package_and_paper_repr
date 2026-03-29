@@ -1,6 +1,5 @@
 #' Univariate Quantile Regression Inference for Continuous Responses
 #'
-#' @description
 #' Fits a quantile regression for continuous responses using only the treatment
 #' indicator as a predictor. The treatment effect is reported on the response
 #' scale at quantile \code{tau}; by default \code{tau = 0.5}, so this is median
@@ -16,6 +15,7 @@
 #'
 #' @export
 InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -40,6 +40,7 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' seq_des_inf = InferenceContinUnivQuantileRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
@@ -53,6 +54,7 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 
 		#' @description
 		#' Computes the quantile-regression estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

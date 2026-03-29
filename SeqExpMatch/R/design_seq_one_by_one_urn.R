@@ -1,7 +1,7 @@
 #' Wei's Urn Sequential Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for Wei's Urn sequential experimental design.
+#' An R6 Class encapsulating the data and functionality for Wei's Urn sequential
+#' experimental design.
 #' This design uses an adaptive urn model where the probability of assignment to a group
 #' decreases as the number of subjects in that group increases.
 #'

@@ -1,6 +1,5 @@
 #' Multivariate GEE Inference for KK Designs with Binary Response
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for binary (incidence) responses under a KK matching-on-the-fly design using the
 #' treatment indicator and all recorded covariates as predictors. Matched pairs are
@@ -16,6 +15,7 @@
 #'
 #' @export
 InferenceIncidMultiKKGEE = R6::R6Class("InferenceIncidMultiKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

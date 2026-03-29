@@ -1,28 +1,30 @@
-# Exact Inference via Zhang's Method
-#
-# @description
-# Abstract class for Zhang (2026) exact test-inversion inference.
-#
-# @keywords internal
+#' Exact Inference via Zhang's Method
+#'
+#' @name InferenceExact
+#' @description Internal method.
+#' Abstract class for Zhang (2026) exact test-inversion inference.
+#'
+#' @keywords internal
 InferenceExact = R6::R6Class("InferenceExact",
+	lock_objects = FALSE,
 	inherit = Inference,
 	public = list(
-		# @description
-		# Computes an exact confidence interval via Zhang's combined test.
-		# @param type             The type of exact inference. Currently only "Zhang" is supported.
-		# @param alpha            Significance level.
-		# @param args_for_type    A list of parameters including combination_method and pval_epsilon.
+		#' @description
+		#' Computes an exact confidence interval via Zhang's combined test.
+		#' @param type             The type of exact inference. Currently only "Zhang" is supported.
+		#' @param alpha            Significance level.
+		#' @param args_for_type    A list of parameters including combination_method and pval_epsilon.
 		compute_exact_confidence_interval = function(type = "Zhang", alpha = 0.05, args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = 0.005))){
 			private$assert_exact_inference_params(type, args_for_type)
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			if (type == "Zhang") private$ci_exact_zhang_combined(alpha, args_for_type[[type]]$pval_epsilon, args_for_type[[type]]$combination_method)
 		},
 
-		# @description
-		# Computes an exact two-sided p-value via Zhang's combined test.
-		# @param type             The type of exact inference.
-		# @param delta            Null treatment effect (log-odds ratio).
-		# @param args_for_type    A list containing combination_method.
+		#' @description
+		#' Computes an exact two-sided p-value via Zhang's combined test.
+		#' @param type             The type of exact inference.
+		#' @param delta            Null treatment effect (log-odds ratio).
+		#' @param args_for_type    A list containing combination_method.
 		compute_exact_two_sided_pval_for_treatment_effect = function(type = "Zhang", delta = 0, args_for_type = list(Zhang = list(combination_method = "Fisher"))){
 			private$assert_exact_inference_params(type, args_for_type); assertNumeric(delta)
 			if (type == "Zhang") private$pval_exact_zhang_combined(delta, args_for_type[[type]]$combination_method)
@@ -116,34 +118,14 @@ InferenceExact = R6::R6Class("InferenceExact",
 		}
 	)
 )
-
-#' Exact Zhang Incidence Randomization CI for KK or Bernoulli Designs
-#'
-#' @description
-#' Implements the exact test-inversion randomization CI of Zhang (2026). Partitions
-#' subjects into matched pairs (analyzed via binomial test) and reservoir subjects
-#' (analyzed via Fisher's Exact Test), then combines via a p-value combination rule.
-#'
-#' @details
-#' Applicable to binary (incidence) outcomes in KK matching-on-the-fly or Bernoulli
-#' designs. A bisection algorithm inverts the combined p-value to construct the CI.
-#'
-#' @export
 InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
+	lock_objects = FALSE,
 	inherit = InferenceExact,
 	public = list(
-		#' @description
-		#' Initialize the Zhang inference object.
-		#' @param des_obj   A completed \code{Design} object with incidence response.
-		#' @param num_cores Number of CPU cores for parallel bisection search.
-		#' @param verbose   Flag for progress messages.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
-
-		#' @description
-		#' Returns the incidence treatment estimate (log odds ratio).
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			stats = private$get_exact_zhang_stats()
 			zhang_incid_treatment_estimate(stats)

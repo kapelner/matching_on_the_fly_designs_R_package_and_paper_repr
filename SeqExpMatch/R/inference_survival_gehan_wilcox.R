@@ -1,6 +1,5 @@
 #' Gehan-Wilcoxon (Peto-Prentice) Inference for Survival Data with Censoring
 #'
-#' @description
 #' Non-parametric inference for survival outcomes supporting censored data, using
 #' the Peto-Prentice modification of the Gehan-Wilcoxon test. The treatment effect
 #' estimate is the mean difference in Peto-Prentice weighted martingale residuals
@@ -18,6 +17,7 @@
 #'
 #' @export
 InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -44,6 +44,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#'
 		#' seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

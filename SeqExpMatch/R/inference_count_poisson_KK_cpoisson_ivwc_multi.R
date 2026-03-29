@@ -1,6 +1,5 @@
 #' Multivariate Conditional Poisson / Negative Binomial Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with count responses
 #' using the treatment indicator and all recorded covariates. For matched pairs, it uses
 #' conditional Poisson regression. For reservoir subjects, it uses Negative Binomial regression.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceCountPoissonMultiKKCPoissonIVWC = R6::R6Class("InferenceCountPoissonMultiKKCPoissonIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKPoissonCPoissonIVWC,
 	public = list(
 

@@ -5,11 +5,16 @@
 \alias{InferenceContinMultiKKLinCombinedLikelihood}
 \title{Lin (2013) Combined-Likelihood Inference for KK Designs with Continuous Responses}
 \description{
+Lin (2013) Combined-Likelihood Inference for KK Designs with Continuous Responses
+
+Lin (2013) Combined-Likelihood Inference for KK Designs with Continuous Responses
+}
+\details{
 Fits a stacked Lin (2013) style covariate-adjusted estimator for KK
 matching-on-the-fly designs with continuous responses using both matched pairs
 and reservoir observations in one combined fit.
-}
-\details{
+
+
 The class name uses `CombinedLikelihood` to match the package terminology used
 for other KK stacked estimators. Statistically, this implementation uses a
 single stacked OLS fit with HC2 heteroskedasticity-robust standard errors,
@@ -47,7 +52,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceContinMultiKKLinCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceContinMultiKKLinCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -99,6 +104,8 @@ response.}
 randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -130,9 +137,18 @@ infer
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the stacked combined estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The estimated treatment effect.
 }

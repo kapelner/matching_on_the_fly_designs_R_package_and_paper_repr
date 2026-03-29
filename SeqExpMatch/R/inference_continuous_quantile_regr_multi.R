@@ -1,6 +1,5 @@
 #' Multivariate Quantile Regression Inference for Continuous Responses
 #'
-#' @description
 #' Fits a quantile regression for continuous responses using the treatment
 #' indicator and all recorded covariates as predictors. The treatment effect is
 #' reported on the response scale at quantile \code{tau}; by default
@@ -8,6 +7,7 @@
 #'
 #' @export
 InferenceContinMultiQuantileRegr = R6::R6Class("InferenceContinMultiQuantileRegr",
+	lock_objects = FALSE,
 	inherit = InferenceContinUnivQuantileRegr,
 	public = list(
 

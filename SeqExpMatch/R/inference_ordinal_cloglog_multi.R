@@ -1,6 +1,5 @@
 #' Multivariate Cumulative Complementary Log-Log Inference for Ordinal Responses
 #'
-#' @description
 #' Cumulative complementary log-log model inference for ordinal responses with
 #' treatment and observed covariates entering linearly into the model index.
 #'
@@ -24,6 +23,7 @@
 #' infer
 #'
 InferenceOrdinalMultiCLLRegr = R6::R6Class("InferenceOrdinalMultiCLLRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniCLLRegr,
 	public = list(
 

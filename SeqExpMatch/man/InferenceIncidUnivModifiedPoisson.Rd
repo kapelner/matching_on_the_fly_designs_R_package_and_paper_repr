@@ -4,12 +4,17 @@
 \alias{InferenceIncidUnivModifiedPoisson}
 \title{Univariate Modified Poisson Inference for Binary Responses}
 \description{
+Univariate Modified Poisson Inference for Binary Responses
+
+Univariate Modified Poisson Inference for Binary Responses
+}
+\details{
 Fits the classic modified Poisson model for binary (incidence) responses using
 a Poisson log-link working model with Huber-White
 sandwich variance. The treatment effect is reported on the log-risk-ratio
 scale.
-}
-\details{
+
+
 This is the practical risk-ratio approach popularized by Zou (2004). The
 working model is Poisson with log link, but inference uses a robust sandwich
 covariance rather than the naive Poisson model-based variance.
@@ -33,7 +38,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceIncidUnivModifiedPoisson}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceIncidUnivModifiedPoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -86,6 +91,8 @@ incidence response.}
 randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -115,9 +122,18 @@ seq_des_inf$compute_treatment_estimate()
 Computes the modified-Poisson estimate of the treatment effect on the
 log-risk-ratio scale.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivModifiedPoisson$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivModifiedPoisson$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivModifiedPoisson-compute_asymp_confidence_interval"></a>}}

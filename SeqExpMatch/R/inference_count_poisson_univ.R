@@ -1,6 +1,5 @@
 #' Univariate Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a Poisson log-link regression for count responses using only the treatment
 #' indicator. The treatment effect is reported on the log-rate scale and inference
 #' uses the model-based Poisson variance.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
@@ -52,6 +52,7 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)

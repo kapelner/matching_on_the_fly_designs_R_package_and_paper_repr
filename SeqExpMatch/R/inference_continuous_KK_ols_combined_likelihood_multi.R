@@ -1,6 +1,5 @@
 #' OLS Compound Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a single joint normal likelihood over all KK design data — matched-pair
 #' differences and reservoir subjects — estimating the treatment effect \eqn{\beta_T}
 #' in one combined OLS.
@@ -34,6 +33,7 @@
 #'
 #' @export
 InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLSKKCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -57,6 +57,7 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' infer <- InferenceContinMultOLSKKCombinedLikelihood$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -72,6 +73,7 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' \code{private$cached_values$hessian} as a side-effect.
 		#'
 		#' @return	Numeric scalar \eqn{\hat\beta_T}.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()

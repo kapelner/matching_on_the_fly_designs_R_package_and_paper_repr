@@ -646,16 +646,15 @@ NULL
 	names(beta_start) = c("(Intercept)", colnames(Xmm))
 
 	glm_start = tryCatch(
-		suppressWarnings(stats::glm.fit(
-			x = cbind(1, Xmm),
-			y = y_clip,
-			family = stats::binomial(link = "logit")
-		)),
+		fast_logistic_regression_cpp(
+			X = cbind(1, Xmm),
+			y = y_clip
+		),
 		error = function(e) NULL
 	)
-	if (!is.null(glm_start) && length(glm_start$coefficients) == length(beta_start)){
-		if (all(is.finite(glm_start$coefficients))){
-			beta_start = as.numeric(glm_start$coefficients)
+	if (!is.null(glm_start) && length(glm_start$b) == length(beta_start)){
+		if (all(is.finite(glm_start$b))){
+			beta_start = as.numeric(glm_start$b)
 			names(beta_start) = c("(Intercept)", colnames(Xmm))
 		}
 	}

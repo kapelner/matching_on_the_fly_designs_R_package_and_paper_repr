@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalLogRank}
 \title{Log-Rank Inference for Survival Data with Censoring}
 \description{
+Log-Rank Inference for Survival Data with Censoring
+
+Log-Rank Inference for Survival Data with Censoring
+}
+\details{
 Non-parametric all-subject inference for survival outcomes supporting right
 censoring, based on the standard two-sample log-rank test. The treatment effect
 estimate is the difference in mean martingale residuals between the treatment and
@@ -40,7 +45,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceSurvivalLogRank}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceSurvivalLogRank}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -74,9 +79,16 @@ infer
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_confidence_interval"></a>}}

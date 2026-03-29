@@ -4,7 +4,13 @@
 \alias{Inference}
 \title{Inference for A Sequential Design}
 \description{
-An abstract R6 Class that estimates, tests and provides intervals for a treatment effect in a completed design.
+Inference for A Sequential Design
+
+Inference for A Sequential Design
+}
+\details{
+An abstract R6 Class that estimates, tests and provides intervals for a
+treatment effect in a completed design.
 This class takes a completed \code{Design} object as an input where this object
 contains data for a fully completed experiment (i.e. all treatment
 assignments were allocated and all responses were collected).
@@ -25,6 +31,7 @@ assignments were allocated and all responses were collected).
 \if{html}{\out{<a id="method-Inference-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an estimation and test object after the design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$new(
   des_obj,
@@ -34,42 +41,98 @@ assignments were allocated and all responses were collected).
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object whose entire n subjects are
+assigned and response y is recorded within.}
+
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed
+to the user. Default is \code{FALSE}}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `Inference` object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
+Computes an exact two-sided p-value. Subclasses that support exact inference override this.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Other arguments passed to the method.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
+Computes an exact confidence interval. Subclasses that support exact inference override this.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_confidence_interval(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Other arguments passed to the method.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Computes the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
+Duplicate this inference object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `Inference` object with the same data
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-clone"></a>}}

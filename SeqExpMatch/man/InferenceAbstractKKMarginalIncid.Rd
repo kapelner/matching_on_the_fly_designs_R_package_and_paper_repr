@@ -10,7 +10,7 @@ Abstract class for all-subject marginal incidence inference in KK designs
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKMarginalIncid}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKMarginalIncid}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -42,6 +42,7 @@ Abstract class for all-subject marginal incidence inference in KK designs
 \if{html}{\out{<a id="method-InferenceAbstractKKMarginalIncid-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKMarginalIncid-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKMarginalIncid$new(
   des_obj,
@@ -51,6 +52,19 @@ Abstract class for all-subject marginal incidence inference in KK designs
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object.}
+
+\item{\code{num_cores}}{The number of CPU cores to use.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKMarginalIncid-clone"></a>}}

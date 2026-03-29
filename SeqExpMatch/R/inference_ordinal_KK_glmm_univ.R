@@ -1,6 +1,5 @@
 #' Univariate GLMM Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a Generalized Linear Mixed Model (GLMM) (via \code{ordinal::clmm})
 #' for ordinal responses under a KK matching-on-the-fly design using only
 #' the treatment indicator as a fixed effect predictor (intercept + treatment)
@@ -39,6 +38,7 @@
 #' infer
 #'
 InferenceOrdinalUnivKKGLMM = R6::R6Class("InferenceOrdinalUnivKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
 

@@ -1,6 +1,5 @@
 #' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'
-#' @description
 #' Internal base class for KK hurdle-Poisson combined-likelihood models. The
 #' fitted model uses a single \pkg{glmmTMB} hurdle-Poisson likelihood over all
 #' subjects, with pair-specific random intercepts active on matched rows and a
@@ -11,9 +10,16 @@
 #' @keywords internal
 #' @noRd
 InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstractKKHurdlePoissonCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
+		#' @description
+		#' Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -26,11 +32,17 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			}
 		},
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_hurdle()
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared_combined_hurdle()
@@ -41,6 +53,9 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared_combined_hurdle()

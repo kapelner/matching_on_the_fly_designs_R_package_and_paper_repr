@@ -1,6 +1,5 @@
 #' A Fixed Design Combining Binary Matching and Greedy Pair Switching
 #'
-#' @description
 #' An R6 class encapsulating a fixed experimental design that first computes
 #' binary matches and then improves the matched design with greedy pair switching
 #' using the \pkg{GreedyExperimentalDesign} package.
@@ -52,7 +51,8 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 
 
 		#' @description
-		#' Draw multiple treatment assignment vectors according to binary match followed by greedy switching.
+		#' Draw multiple treatment assignment vectors according to binary match followed by
+		#' greedy switching.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -60,7 +60,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		draw_ws_according_to_design = function(r = 100){
 			assertCount(r, positive = TRUE)
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
-			self$assert_experiment_completed()
+			self$assert_all_subjects_arrived()
 
 			n = self$get_n()
 			if (n %% 2 != 0) {

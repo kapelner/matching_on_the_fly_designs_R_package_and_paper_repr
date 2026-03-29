@@ -1,7 +1,7 @@
 #' Efron's (1971) Biased Coin Sequential Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for Efron's biased coin sequential experimental design.
+#' An R6 Class encapsulating the data and functionality for Efron's biased coin
+#' sequential experimental design.
 #'
 #' @export
 DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
@@ -10,7 +10,8 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 		#' @description
 		#' Initialize an Efron biased coin sequential experimental design
 		#'
-		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.

@@ -4,11 +4,16 @@
 \alias{DesignSeqOneByOneAtkinson}
 \title{Atkinson's (1982) Covariate-Adjusted Biased Coin Sequential Design}
 \description{
+Atkinson's (1982) Covariate-Adjusted Biased Coin Sequential Design
+
+Atkinson's (1982) Covariate-Adjusted Biased Coin Sequential Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneAtkinson}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{

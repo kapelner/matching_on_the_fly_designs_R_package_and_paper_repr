@@ -1,6 +1,5 @@
 #' Survival Transformation Regression with Dependent Censoring
 #'
-#' @description
 #' Fits a lognormal transformation model for survival responses that jointly models
 #' the event and censoring times. Dependence between the two transformed times is
 #' represented with a Gaussian correlation parameter, allowing the censoring process
@@ -45,6 +44,7 @@
 #' infer
 #'
 InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepCensTransformRegr",
+	lock_objects = FALSE,
 	inherit = InferenceMLEorKMSummaryTable,
 	public = list(
 

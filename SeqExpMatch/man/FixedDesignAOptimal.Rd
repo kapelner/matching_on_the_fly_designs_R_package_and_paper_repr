@@ -4,12 +4,18 @@
 \alias{FixedDesignAOptimal}
 \title{An A-optimal Search Fixed Design}
 \description{
+An A-optimal Search Fixed Design
+
+An A-optimal Search Fixed Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a fixed A-optimal experimental design.
-This design searches for an allocation that minimizes the trace of the inverse information matrix
+This design searches for an allocation that minimizes the trace of the inverse
+information matrix
 (equivalent to minimizing the average variance of the parameter estimates).
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignAOptimal}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignAOptimal}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -69,7 +75,8 @@ Initialize an A-optimal search fixed experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment (default 0.5).}
 

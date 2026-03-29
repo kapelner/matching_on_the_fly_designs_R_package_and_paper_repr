@@ -4,12 +4,19 @@
 \alias{FixedDesignRerandomization}
 \title{A Rerandomization Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed rerandomization experimental design.
-This design generates random allocations and only accepts those that meet a covariate balance criterion.
+A Rerandomization Fixed Design
+
+A Rerandomization Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed rerandomization
+experimental design.
+This design generates random allocations and only accepts those that meet a
+covariate balance criterion.
 For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignRerandomization}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignRerandomization}
 }
 \section{Methods}{
 \subsection{Public methods}{

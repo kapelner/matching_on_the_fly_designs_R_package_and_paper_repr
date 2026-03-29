@@ -1,6 +1,5 @@
 #' Multivariate GEE Inference for KK Designs with Proportion Response
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for proportion (continuous values in (0, 1)) responses under a KK
 #' matching-on-the-fly design using the treatment indicator and all recorded
@@ -22,6 +21,7 @@
 #'
 #' @export
 InferencePropMultiKKGEE = R6::R6Class("InferencePropMultiKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

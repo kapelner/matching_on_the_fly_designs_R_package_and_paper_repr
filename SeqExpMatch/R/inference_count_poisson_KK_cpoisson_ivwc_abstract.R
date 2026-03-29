@@ -1,6 +1,5 @@
 #' Abstract class for Conditional Poisson / Negative Binomial Compound Inference
 #'
-#' @description
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
 #' count responses. For matched pairs, it uses conditional Poisson regression (implemented
 #' via binomial logistic regression on the differences of covariates). For reservoir
@@ -9,14 +8,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoissonCPoissonIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -26,16 +27,18 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			assertNoCensoring(private$any_censoring)
 		},
 
-		# @description
-		# Returns the estimated treatment effect.
+		#' @description
+		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the asymptotic confidence interval.
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -43,9 +46,10 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the asymptotic p-value.
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. For
+		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
@@ -81,34 +85,38 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 
 			# --- Matched pairs: Conditional Poisson via Binomial Trick ---
 			if (m > 0){
-				private$cpoisson_for_matched_pairs()
+				private$cpoisson_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
-			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+			           (estimate_only || (!is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0))
 
 			# --- Reservoir: Negative Binomial ---
 			if (nRT > 0 && nRC > 0){
-				private$negbin_for_reservoir()
+				private$negbin_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
-			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
+			           (estimate_only || (!is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0))
 
 			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
+				if (estimate_only) {
+					# Simple mean if SEs not available
+					private$cached_values$beta_hat_T = (beta_m + beta_r) / 2
+					return(invisible(NULL))
+				}
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T   = beta_m
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T   = beta_r
-				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
@@ -122,7 +130,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			}
 		},
 
-		cpoisson_for_matched_pairs = function(){
+		cpoisson_for_matched_pairs = function(estimate_only = FALSE){
 			KKstats = private$cached_values$KKstats
 			yT = KKstats$yTs_matched
 			yC = KKstats$yCs_matched
@@ -146,27 +154,23 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 
 			# Fit binomial logistic regression
 			mod = tryCatch({
-				if (requireNamespace("fixest", quietly = TRUE)) {
-					# feglm is faster for this than glm.fit
-					f_mod = fixest::feglm.fit(X = Xmm, y = y_prop, weights = weights, family = "binomial")
-					list(b = f_mod$coefficients, ssq_b_1 = diag(fixest::vcov(f_mod))[1])
+				if (estimate_only) {
+					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
+					list(b = res$b, ssq_b_1 = NA_real_)
 				} else {
-					g_mod = stats::glm.fit(x = Xmm, y = y_prop, weights = weights, family = stats::binomial())
-					# Compute vcov from QR
-					R <- qr.R(g_mod$qr)
-					Rinv <- backsolve(R, diag(ncol(R)))
-					vcov <- Rinv %*% t(Rinv)
-					list(b = g_mod$coefficients, ssq_b_1 = vcov[1, 1])
+					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
+					vcov = solve(res$XtWX)
+					list(b = res$b, ssq_b_1 = vcov[1, 1])
 				}
 			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_matched     = as.numeric(mod$b[1])
-			private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
+			if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
 		},
 
-		negbin_for_reservoir = function(){
+		negbin_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
@@ -174,27 +178,32 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 
 			if (private$include_covariates()){
 				X_full = cbind(1, w_r, X_r)
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(2L %in% keep)) keep[r_full] = 2L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
-					j_treat = which(keep == 2L)
+				if (!estimate_only) {
+					qr_full = qr(X_full)
+					r_full  = qr_full$rank
+					if (r_full < ncol(X_full)){
+						keep = qr_full$pivot[seq_len(r_full)]
+						if (!(2L %in% keep)) keep[r_full] = 2L
+						keep    = sort(keep)
+						X_full  = X_full[, keep, drop = FALSE]
+						j_treat = which(keep == 2L)
+					}
 				}
 			} else {
 				X_full = cbind(1, w_r)
 			}
 
-			mod = tryCatch(
-				fast_negbin_regression_with_var(X_full, y_r, j = j_treat),
-				error = function(e) NULL
-			)
+			mod = tryCatch({
+				if (estimate_only) {
+					list(b = fast_negbin_regression(X_full, y_r)$b, ssq_b_j = NA_real_)
+				} else {
+					fast_negbin_regression_with_var(X_full, y_r, j = j_treat)
+				}
+			}, error = function(e) NULL)
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_reservoir     = as.numeric(mod$b[j_treat])
-			private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
+			if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
 		}
 	)
 )

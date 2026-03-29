@@ -1,6 +1,5 @@
 #' Abstract class for LWA-style Marginal Cox Combined-Likelihood Inference
 #'
-#' @description
 #' Fits a single joint marginal Cox model over all KK design data for survival
 #' responses. Matched subjects share their pair ID as a cluster, and reservoir
 #' subjects are assigned singleton cluster IDs. The treatment effect is estimated by
@@ -9,14 +8,10 @@
 #'
 #' @keywords internal
 InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLWACoxCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -25,29 +20,21 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
-		# @description
-		# Returns the combined-likelihood estimate of the treatment effect (log-HR).
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Returns a 1 - alpha confidence interval for beta_T.
-		# @param alpha Significance level; default 0.05 gives a 95% CI.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Returns a 2-sided p-value for H0: beta_T = delta.
-		# @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared_combined_likelihood()
+			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -80,8 +67,9 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 			X_full
 		},
 
-		shared_combined_likelihood = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared_combined_likelihood = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -99,7 +87,7 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 
 			if (sum(private$dead) == 0L){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
@@ -130,24 +118,31 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-			vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
-			if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))){
+			if (is.null(coefs) || !("w" %in% names(coefs))){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			beta = as.numeric(coefs["w"])
-			se = sqrt(as.numeric(vcv["w", "w"]))
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			
+			if (!estimate_only) {
+				vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
+				if (is.null(vcv) || !("w" %in% rownames(vcv))){
+					private$cached_values$s_beta_hat_T = NA_real_
+				} else {
+					se = sqrt(as.numeric(vcv["w", "w"]))
+					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				}
+			}
 			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		}

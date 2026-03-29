@@ -1,6 +1,5 @@
 #' Multivariate Cumulative Probit Inference for Ordinal Responses
 #'
-#' @description
 #' Ordinal probit (cumulative probit) inference for ordinal responses with
 #' treatment and observed covariates entering linearly into the latent normal
 #' index.
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceOrdinalMultiCumulProbitRegr = R6::R6Class("InferenceOrdinalMultiCumulProbitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniCumulProbitRegr,
 	public = list(
 

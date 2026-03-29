@@ -1,6 +1,5 @@
 #' Univariate Newcombe Risk-Difference Inference for Binary Responses
 #'
-#' @description
 #' Fits the Newcombe hybrid score method (Method 10) for the risk difference in a
 #' two-arm binary trial. This method constructs a confidence interval for the
 #' difference between two independent proportions by combining Wilson score intervals
@@ -38,6 +37,7 @@
 #' infer
 #'
 InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRiskDiff",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -46,6 +46,7 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -54,6 +55,7 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 
 		#' @description
 		#' Computes the observed risk-difference estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

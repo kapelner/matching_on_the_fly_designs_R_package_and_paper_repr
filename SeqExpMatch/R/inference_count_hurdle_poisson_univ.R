@@ -1,6 +1,5 @@
 #' Univariate Hurdle Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a hurdle Poisson regression for count responses using only the treatment
 #' indicator in both the count and hurdle components. The reported treatment effect
 #' is the treatment coefficient from the conditional truncated-Poisson count
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountUnivHurdlePoissonRegr = R6::R6Class("InferenceCountUnivHurdlePoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountZeroAugmentedPoissonAbstract,
 	private = list(
 		za_family = function() glmmTMB::truncated_poisson(link = "log"),

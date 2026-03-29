@@ -1,6 +1,5 @@
 #' Univariate Robust Regression Inference for Continuous Responses
 #'
-#' @description
 #' Fits a robust linear regression via \code{MASS::rlm} for continuous responses
 #' using only the treatment indicator as a predictor (intercept + treatment).
 #' This provides a Huber/MM-style robustness upgrade over ordinary least squares
@@ -15,6 +14,7 @@
 #'
 #' @export
 InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -43,6 +43,7 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' seq_des_inf = InferenceContinUnivRobustRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
@@ -53,6 +54,7 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 
 		#' @description
 		#' Computes the robust-regression estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

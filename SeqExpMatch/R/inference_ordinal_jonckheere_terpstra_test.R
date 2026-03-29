@@ -1,6 +1,5 @@
 #' Jonckheere-Terpstra (JT) Test for Ordinal Responses
 #'
-#' @description
 #' Exact Jonckheere-Terpstra (JT) rank test for a two-arm ordered alternative with an
 #' ordinal response. For treatment versus control, the test statistic is the
 #' sum of Mann-Whitney U counts across groups. This class provides the exact
@@ -25,6 +24,7 @@
 #'
 InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 	"InferenceOrdinalJonckheereTerpstraTest",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -33,6 +33,7 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object.
 		#' @param num_cores Number of CPU cores.
 		#' @param verbose Whether to print progress.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -41,6 +42,7 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 
 		#' @description
 		#' Returns the estimated treatment effect (JT superiority measure).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -55,12 +57,14 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 
 		#' @description
 		#' Not applicable: JT test is exact, not asymptotic. Returns NA.
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			c(NA_real_, NA_real_)
 		},
 
 		#' @description
 		#' Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			NA_real_
 		}

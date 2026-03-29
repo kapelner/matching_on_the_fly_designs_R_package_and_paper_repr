@@ -1,6 +1,5 @@
 #' Multivariate Zero/One-Inflated Beta Inference for Proportion Responses
 #'
-#' @description
 #' Fits a zero/one-inflated beta regression for proportion responses using the
 #' treatment indicator and all recorded covariates in the beta mean submodel.
 #' Exact 0 and exact 1 values are modeled with separate inflation masses, and
@@ -35,6 +34,7 @@
 #' infer
 #'
 InferencePropMultiZeroOneInflatedBetaRegr = R6::R6Class("InferencePropMultiZeroOneInflatedBetaRegr",
+	lock_objects = FALSE,
 	inherit = InferencePropZeroOneInflatedBetaAbstract,
 	public = list(
 

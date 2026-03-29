@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -37,6 +36,7 @@
 #' infer
 #'
 InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRegr",
+	lock_objects = FALSE,
 	inherit = InferenceSurvivalUniWeibullRegr,
 	public = list(
 

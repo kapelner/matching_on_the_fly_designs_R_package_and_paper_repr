@@ -1,12 +1,18 @@
-# Zhang Exact Inference Helpers
-#
-# @description
-# Standalone functions to support Zhang (2026) exact test-inversion inference.
-# These functions handle the bisection solver, p-value combination rules,
-# and component-wise p-value logic.
-#
-# @keywords internal
-
+#' Zhang Exact Inference Helpers
+#'
+#' @description Internal method.
+#' Standalone functions to support Zhang (2026) exact test-inversion inference.
+#' These functions handle the bisection solver, p-value combination rules,
+#' and component-wise p-value logic.
+#'
+#' @name zhang_combine_exact_pvals
+#' @param p_M Matched p-value.
+#' @param p_R Reservoir p-value.
+#' @param m Number of matches.
+#' @param nRT Number of treated in reservoir.
+#' @param nRC Number of control in reservoir.
+#' @param method Combination method (Fisher or Stouffer).
+#' @keywords internal
 zhang_combine_exact_pvals = function(p_M, p_R, m, nRT, nRC, method){
 	has_M = m > 0              && is.finite(p_M) && p_M > 0
 	has_R = nRT > 0 && nRC > 0 && is.finite(p_R) && p_R > 0

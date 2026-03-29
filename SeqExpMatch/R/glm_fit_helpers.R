@@ -145,6 +145,48 @@ NULL
 #' @name fast_quasipoisson_regression_with_var_cpp
 NULL
 
+#' Fast Weighted Logistic Regression (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param	weights A numeric vector of weights for each observation.
+#' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated logistic regression coefficients.}
+#' \item{mu}{The fitted values.}
+#' \item{XtWX}{The XtWX matrix at the final iteration.}
+#' \item{converged}{A logical value indicating whether the IRLS algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_logistic_regression_weighted_cpp
+NULL
+
+#' Fast Weighted Poisson Regression (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, expected to be counts.
+#' @param	weights A numeric vector of weights for each observation.
+#' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated Poisson regression coefficients.}
+#' \item{mu}{The fitted values.}
+#' \item{XtWX}{The XtWX matrix at the final iteration.}
+#' \item{converged}{A logical value indicating whether the IRLS algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_poisson_regression_weighted_cpp
+NULL
+
 #' Fast Logistic Regression (R Wrapper)
 #'
 #' This function provides a fast implementation of logistic regression by wrapping
@@ -622,21 +664,10 @@ fast_coxph_regression = function(Xmm, y, dead){
 #' fast_negbin_regression(Xmm, y)
 #' @export
 fast_negbin_regression <- function(Xmm, y) {
-	# if (nrow(Xmm) > 300 & ncol(Xmm) > 5){ #R's canonical version is faster as IRLS is a different algorithm
-	#
-	# } else {
-	# list(
-	#   b = fast_neg_bin_cpp(
-	#     X = Xmm,
-	#     y = as.integer(y)
-	#   )$b
-	# )
-	# }
-	list(b = coef(stats::glm.fit(
-	x = Xmm,
-	y = y,
-	family = MASS::negative.binomial(theta = 1)  # initial theta
-	)))
+	list(b = as.numeric(fast_neg_bin_cpp(
+		X = as.matrix(Xmm),
+		y = as.integer(y)
+	)$b))
 }
 
 #' Fast Negative Binomial Regression with Variance Calculation (R Wrapper)
@@ -660,46 +691,28 @@ fast_negbin_regression <- function(Xmm, y) {
 #'   which typically corresponds to the treatment effect.}
 #' }
 #'
-#' @importFrom	stats glm.fit
-#' @importFrom	MASS negative.binomial
+#' @importFrom	stats coef
 #' @export
 #' @examples
 #' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression_with_var(Xmm, y)
 fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
-	# Use glm.fit for efficiency
-	mod <- stats::glm.fit(
-	x = Xmm,
-	y = y,
-	family = MASS::negative.binomial(theta = 1)  # initial theta
+	Xmm = as.matrix(Xmm)
+	res = fast_neg_bin_with_var_cpp(
+		X = Xmm,
+		y = as.integer(y)
 	)
-
-	# Compute variance-covariance matrix from QR decomposition
-	# The variance-covariance matrix is (X'WX)^-1 * dispersion
-	# where W is the weight matrix from IRLS
-
-	# Get the R matrix from QR decomposition
-	R <- qr.R(mod$qr)
-
-	# Compute (X'WX)^-1 = R^-1 %*% t(R^-1)
-	Rinv <- backsolve(R, diag(ncol(R)))
-	vcov_unscaled <- Rinv %*% t(Rinv)
-
-	# Compute dispersion parameter
-	# For negative binomial, dispersion = sum(weights * residuals^2) / df.residual
-	dispersion <- sum(mod$weights * mod$residuals^2) / mod$df.residual
-
-	# Scale the variance-covariance matrix by dispersion
-	vcov <- vcov_unscaled * dispersion
-
-	# Extract variance of j-th coefficient
-	ssq_b_j <- vcov[j, j]
-
+	
+	# Extract vcov from the Fisher information matrix (Hessian of -logLik)
+	# The Hessian returned by C++ is for [beta, log_theta]
+	hess = res$hess_fisher_info_matrix
+	vcov = tryCatch(solve(hess), error = function(e) matrix(NA_real_, nrow(hess), ncol(hess)))
+	
 	list(
-	b = as.vector(mod$coefficients),
-	ssq_b_j = ssq_b_j,
-	ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_
+		b = as.numeric(res$b),
+		ssq_b_j = if (j <= ncol(Xmm)) as.numeric(vcov[j, j]) else NA_real_,
+		ssq_b_2 = if (ncol(Xmm) >= 2) as.numeric(vcov[2, 2]) else NA_real_
 	)
 }
 
@@ -1054,19 +1067,22 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 #    fit$offset <- offset
 #    fit
 
-# Conditional logistic regression for matched pairs.
-#
-# Replaces bclogit::clogit. For matched pairs (exactly 2 subjects per stratum),
-# the conditional log-likelihood depends only on discordant pairs. Within each
-# discordant pair the contribution reduces to ordinary logistic regression on
-# signed within-pair differences with no intercept.
-#
-# @param y_m       Binary outcome vector (0/1) for matched subjects.
-# @param X_m       Covariate matrix or data.frame (may have 0 columns).
-# @param w_m       Treatment indicator (0/1) for matched subjects.
-# @param strata_m  Integer stratum IDs (pair labels) for matched subjects.
-# @return          Result list from fast_logistic_regression_with_var:
+#' Conditional logistic regression for matched pairs
+#'
+#' @name clogit_helper
+#' @description Internal method.
+#' Replaces bclogit::clogit. For matched pairs (exactly 2 subjects per stratum),
+#' the conditional log-likelihood depends only on discordant pairs. Within each
+#' discordant pair the contribution reduces to ordinary logistic regression on
+#' signed within-pair differences with no intercept.
+#'
+#' @param y_m       Binary outcome vector (0/1) for matched subjects.
+#' @param X_m       Covariate matrix or data.frame (may have 0 columns).
+#' @param w_m       Treatment indicator (0/1) for matched subjects.
+#' @param strata_m  Integer stratum IDs (pair labels) for matched subjects.
+#' @return          Result list from fast_logistic_regression_with_var:
 #                  b[1] = beta_T, ssq_b_j = Var(beta_T). NULL on failure.
+#' @keywords internal
 clogit_helper = function(y_m, X_m, w_m, strata_m){
 	p     = if (is.null(X_m) || ncol(X_m) == 0L) 0L else ncol(X_m)
 	X_mat = if (p > 0L) as.matrix(X_m) else matrix(nrow = length(y_m), ncol = 0L)

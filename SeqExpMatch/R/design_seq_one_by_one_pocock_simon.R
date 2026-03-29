@@ -1,7 +1,7 @@
 #' Pocock & Simon's Minimization Sequential Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a Pocock & Simon sequential experimental design.
+#' An R6 Class encapsulating the data and functionality for a Pocock & Simon
+#' sequential experimental design.
 #' This design minimizes the imbalance across treatments for multiple covariates.
 #'
 #' @export
@@ -11,9 +11,11 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 		#' @description
 		#' Initialize a Pocock & Simon sequential experimental design
 		#'
-		#' @param strata_cols 	The names of the covariates to be used for minimization. These must be factor or categorical variables.
+		#' @param strata_cols     The names of the covariates to be used for minimization. These
+		#'   must be factor or categorical variables.
 		#' @param weights 		A numeric vector of weights for each covariate. Defaults to 1 for all.
-		#' @param p_best 		The probability of assigning the treatment that minimizes the imbalance. Defaults to 0.8.
+		#' @param p_best          The probability of assigning the treatment that minimizes the
+		#'   imbalance. Defaults to 0.8.
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T	The probability of the treatment assignment.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.

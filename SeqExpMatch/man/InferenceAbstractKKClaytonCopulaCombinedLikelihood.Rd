@@ -5,12 +5,17 @@
 \alias{InferenceAbstractKKClaytonCopulaCombinedLikelihood}
 \title{Abstract class for Clayton Copula Combined-Likelihood Inference}
 \description{
+Abstract class for Clayton Copula Combined-Likelihood Inference
+
+Abstract class for Clayton Copula Combined-Likelihood Inference
+}
+\details{
 Fits a single joint likelihood over all KK design data for survival responses using
 a Clayton survival copula with Weibull AFT margins for matched pairs and standard
 Weibull AFT singleton contributions for reservoir subjects. The treatment effect is
 reported on the AFT log-time-ratio scale.
-}
-\details{
+
+
 This keeps the package's established \code{CombinedLikelihood} terminology even though
 the matched and reservoir parts are combined through a joint copula-based likelihood
 rather than a classical Gaussian-style likelihood. The matched-pair contribution uses
@@ -19,7 +24,7 @@ contribute ordinary univariate Weibull AFT terms.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAbstractKKClaytonCopulaCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceAbstractKKClaytonCopulaCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -51,6 +56,7 @@ contribute ordinary univariate Weibull AFT terms.
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$new(
   des_obj,
@@ -60,46 +66,93 @@ contribute ordinary univariate Weibull AFT terms.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the combined-likelihood estimate of the treatment effect (log-time ratio).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an asymptotic confidence interval for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Returns a 2-sided p-value for H0: beta_T = delta.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaCombinedLikelihood$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-clone"></a>}}

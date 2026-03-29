@@ -5,6 +5,11 @@
 \alias{InferenceAbstractKKPoissonCPoissonCombinedLikelihood}
 \title{Abstract class for Conditional Poisson Combined-Likelihood Compound Inference}
 \description{
+Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
+
+Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
+}
+\details{
 Fits a single joint likelihood over all KK design data for count responses.
 The matched-pair component uses the conditional Poisson likelihood; conditioning
 on each pair's total count n_k = yT_k + yC_k reduces it to a weighted binomial
@@ -25,7 +30,7 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKPoissonCPoissonCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKPoissonCPoissonCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -57,6 +62,7 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonCombinedLikelihood$new(
   des_obj,
@@ -66,39 +72,76 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the combined-likelihood estimate of the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonCombinedLikelihood$compute_treatment_estimate(
-  
+  estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns a 1 - alpha confidence interval for beta_T.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Returns a 2-sided p-value for H0: beta_T = delta.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonCombinedLikelihood-clone"></a>}}

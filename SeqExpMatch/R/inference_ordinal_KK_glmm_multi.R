@@ -1,6 +1,5 @@
 #' Multivariate GLMM Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a cumulative-link mixed model via \code{ordinal::clmm} for ordinal
 #' responses under a KK matching-on-the-fly design using the treatment indicator
 #' and all recorded covariates as fixed effects. The matched-pair strata enter
@@ -39,6 +38,7 @@
 #' infer
 #'
 InferenceOrdinalMultiKKGLMM = R6::R6Class("InferenceOrdinalMultiKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
 	),

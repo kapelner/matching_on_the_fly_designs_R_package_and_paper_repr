@@ -1,8 +1,9 @@
 #' A Cluster Randomized Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed cluster randomized experimental design.
-#' This design randomizes entire groups (clusters) of subjects together using the \pkg{randomizr} package.
+#' An R6 Class encapsulating the data and functionality for a fixed cluster
+#' randomized experimental design.
+#' This design randomizes entire groups (clusters) of subjects together using the
+#' \pkg{randomizr} package.
 #'
 #' @export
 FixedDesignCluster = R6::R6Class("FixedDesignCluster",

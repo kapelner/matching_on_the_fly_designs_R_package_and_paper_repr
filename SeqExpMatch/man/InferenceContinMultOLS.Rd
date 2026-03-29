@@ -4,6 +4,11 @@
 \alias{InferenceContinMultOLS}
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
+Simple Mean Difference Inference based on Maximum Likelihood
+
+Simple Mean Difference Inference based on Maximum Likelihood
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
@@ -69,7 +74,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinMultOLS}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceContinMultOLS}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -131,6 +136,8 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -141,9 +148,16 @@ displayed to the user. Default is \code{TRUE}.}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate estimate
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLS$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLS$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The setting-appropriate (see description) numeric estimate of the treatment effect
 }

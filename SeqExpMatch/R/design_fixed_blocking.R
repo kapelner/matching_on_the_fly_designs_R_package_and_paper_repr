@@ -1,7 +1,7 @@
 #' A stratified blocking Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed stratified blocking experimental design.
+#' An R6 Class encapsulating the data and functionality for a fixed stratified
+#' blocking experimental design.
 #'
 #' @export
 FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
@@ -11,7 +11,8 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' Initialize a fixed stratified blocking experimental design
 		#'
 		#' @param strata_cols A character vector of column names to use for stratification.
-		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.

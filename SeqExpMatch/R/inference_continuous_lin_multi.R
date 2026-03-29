@@ -1,6 +1,5 @@
 #' Lin (2013) Covariate-Adjusted OLS Inference for Continuous Responses
 #'
-#' @description
 #' Fits the Lin (2013) covariate-adjusted linear estimator for continuous responses.
 #' The working model includes an intercept, treatment
 #' indicator, centered covariates, and treatment-by-centered-covariate
@@ -8,6 +7,7 @@
 #'
 #' @export
 InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -32,6 +32,7 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		#' seq_des_inf = InferenceContinMultLin$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -42,6 +43,7 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		#' Computes Lin's covariate-adjusted estimate of the treatment effect.
 		#'
 		#' @return The estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

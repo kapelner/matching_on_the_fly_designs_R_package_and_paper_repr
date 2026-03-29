@@ -1,7 +1,7 @@
 #' A Blocked and Cluster Randomized Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed blocked and cluster randomized experimental design.
+#' An R6 Class encapsulating the data and functionality for a fixed blocked and
+#' cluster randomized experimental design.
 #' This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 #'
 #' @export

@@ -5,6 +5,13 @@
 \title{Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
 Outcomes)}
 \description{
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)
+
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)
+}
+\details{
 A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
 designs with proportion responses. Inference is performed on the \strong{logit (log-odds)
 scale}: responses \eqn{y \in (0,1)} are transformed via \eqn{\text{logit}(y) = \log(y/(1-y))}
@@ -65,7 +72,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{EDI::InferenceAbstractKKQuantileRegrIVWC}} -> \code{InferencePropMultiKKQuantileRegrIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{EDI::InferenceAbstractKKQuantileRegrIVWC} -> \code{InferencePropMultiKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -128,6 +135,8 @@ bootstrap resampling.
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{FALSE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }

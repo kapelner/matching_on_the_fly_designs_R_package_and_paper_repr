@@ -1,6 +1,5 @@
 #' Multivariate Clayton Copula Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a joint copula-based likelihood for KK matching-on-the-fly designs with survival
 #' responses using the treatment indicator and all recorded covariates. Matched pairs are
 #' modeled with a Clayton copula and Weibull AFT margins; reservoir subjects contribute
@@ -35,6 +34,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaCombinedLikelihood,
 	public = list(
 

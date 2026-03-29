@@ -4,12 +4,18 @@
 \alias{DesignSeqOneByOneUrn}
 \title{Wei's Urn Sequential Design}
 \description{
-An R6 Class encapsulating the data and functionality for Wei's Urn sequential experimental design.
+Wei's Urn Sequential Design
+
+Wei's Urn Sequential Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for Wei's Urn sequential
+experimental design.
 This design uses an adaptive urn model where the probability of assignment to a group
 decreases as the number of subjects in that group increases.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneUrn}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneUrn}
 }
 \section{Methods}{
 \subsection{Public methods}{

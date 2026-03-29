@@ -1,6 +1,5 @@
 #' KK Hurdle Poisson IVWC Inference for Count Responses
 #'
-#' @description
 #' Internal base class for KK hurdle-Poisson inverse-variance weighted combined
 #' inference. The matched-pair component is fit with a hurdle-Poisson mixed model
 #' using pair random intercepts, and the reservoir component is fit with an
@@ -10,9 +9,16 @@
 #' @keywords internal
 #' @noRd
 InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoissonIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
+		#' @description
+		#' Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param num_cores The number of CPU cores to use.
+		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -25,11 +31,17 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			}
 		},
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -37,6 +49,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
@@ -48,8 +63,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			}
 		},
 
-		# Overridden to avoid the heavy summary() call during randomization iterations.
-		# Extracts the fixed-effect coefficient for "w" directly from the fit.
+		#' @description
+		#' Overridden to avoid the heavy summary() call during randomization iterations.
+		#' Extracts the fixed-effect coefficient for "w" directly from the fit.
 		compute_treatment_estimate_during_randomization_inference = function(){
 			Xmm = private$build_model_matrix()
 			m_vec = private$m

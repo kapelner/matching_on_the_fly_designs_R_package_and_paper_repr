@@ -1,6 +1,5 @@
 #' Multivariate Risk-Difference Regression for Binary Responses
 #'
-#' @description
 #' Fits a direct risk-difference estimator for binary (incidence) responses
 #' under non-KK designs using treatment and all recorded covariates in a linear
 #' probability model with HC2 heteroskedasticity-robust variance. The treatment
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceIncidMultiRiskDiff = R6::R6Class("InferenceIncidMultiRiskDiff",
+	lock_objects = FALSE,
 	inherit = InferenceIncidUnivRiskDiff,
 	public = list(
 

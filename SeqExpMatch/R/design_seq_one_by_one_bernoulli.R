@@ -1,6 +1,5 @@
 #' A completely randomized / Bernoulli Sequential Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #'
 #' @export

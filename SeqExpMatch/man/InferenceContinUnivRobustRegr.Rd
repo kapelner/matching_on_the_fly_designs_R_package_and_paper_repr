@@ -4,13 +4,18 @@
 \alias{InferenceContinUnivRobustRegr}
 \title{Univariate Robust Regression Inference for Continuous Responses}
 \description{
+Univariate Robust Regression Inference for Continuous Responses
+
+Univariate Robust Regression Inference for Continuous Responses
+}
+\details{
 Fits a robust linear regression via \code{MASS::rlm} for continuous responses
 using only the treatment indicator as a predictor (intercept + treatment).
 This provides a Huber/MM-style robustness upgrade over ordinary least squares
 when outcomes are heavy-tailed or outlier-prone. Inference is based on the
 coefficient table returned by \code{summary.rlm()}.
-}
-\details{
+
+
 The \code{method} argument is passed to \code{MASS::rlm} and may be either
 \code{"M"} or \code{"MM"}. For \code{"M"}, the fit uses Huber's psi
 function. Approximate confidence intervals and p-values use the reported
@@ -34,7 +39,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinUnivRobustRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceContinUnivRobustRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -94,6 +99,8 @@ bootstrap resampling.
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to
 the user. Default is \code{FALSE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -121,9 +128,16 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the robust-regression estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinUnivRobustRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinUnivRobustRegr$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinUnivRobustRegr-compute_asymp_confidence_interval"></a>}}

@@ -4,12 +4,17 @@
 \alias{InferenceIncidUnivKKNewcombeRiskDiff}
 \title{Univariate IVWC Newcombe Risk-Difference Inference for KK Designs}
 \description{
+Univariate IVWC Newcombe Risk-Difference Inference for KK Designs
+
+Univariate IVWC Newcombe Risk-Difference Inference for KK Designs
+}
+\details{
 Implements a compound Newcombe risk-difference estimator for KK designs.
 This class pools information from matched pairs (using the Paired Newcombe
 method) and the reservoir (using the Independent Newcombe method) via
 inverse-variance weighted combination (IVWC).
-}
-\details{
+
+
 The matched-pair component uses the discordant pairs to estimate the treatment
 effect and its variance. The reservoir component treats unmatched subjects as
 independent samples. The two estimates are combined using the standard IVWC
@@ -42,7 +47,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceIncidUnivKKNewcombeRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceIncidUnivKKNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -92,6 +97,8 @@ Initialize the inference object.
 \item{\code{num_cores}}{CPU cores.}
 
 \item{\code{verbose}}{Flag for progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -102,9 +109,18 @@ Initialize the inference object.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the IVWC Newcombe estimate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivKKNewcombeRiskDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivKKNewcombeRiskDiff$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}

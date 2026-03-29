@@ -1,6 +1,5 @@
 #' Univariate GEE Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{multgee})
 #' for ordinal responses under a KK matching-on-the-fly design using only
 #' the treatment indicator as a predictor (treatment). Matched pairs are
@@ -41,6 +40,7 @@
 #' infer
 #'
 InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 
@@ -60,6 +60,7 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			

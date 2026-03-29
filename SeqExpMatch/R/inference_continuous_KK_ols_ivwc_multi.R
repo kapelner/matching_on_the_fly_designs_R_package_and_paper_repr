@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -8,6 +7,7 @@
 #'
 #' @export
 InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -28,6 +28,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
@@ -52,6 +53,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 		#' seq_des_inf = InferenceContinMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$compute_estimate_from_matched_and_reservoir(
@@ -91,10 +93,6 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 
 
 	#' @description
-
-
-
-
 	#' Computes a 1-alpha level frequentist confidence interval
 	#' differently for all response types, estimate types, and
 	#' test types.
@@ -130,8 +128,6 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	},
 
 	#' @description
-
-
 	#' Computes a 2-sided p-value
 	#'
 	#' @param delta The null difference to test against. For any

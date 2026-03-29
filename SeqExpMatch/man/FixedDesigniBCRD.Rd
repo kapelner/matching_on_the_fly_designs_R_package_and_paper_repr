@@ -4,10 +4,16 @@
 \alias{FixedDesigniBCRD}
 \title{A balanced completely randomized Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed balanced completely randomized experimental design.
+A balanced completely randomized Fixed Design
+
+A balanced completely randomized Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed balanced
+completely randomized experimental design.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesigniBCRD}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesigniBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -67,7 +73,8 @@ Initialize a fixed balanced completely randomized experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

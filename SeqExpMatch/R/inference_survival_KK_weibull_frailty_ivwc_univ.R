@@ -1,6 +1,5 @@
 #' Univariate Weibull Frailty Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 #' using only the treatment indicator. For matched pairs, it uses a Weibull shared
 #' frailty model. For reservoir subjects, it uses a standard Weibull regression.
@@ -37,6 +36,7 @@
 #' infer
 #'
 InferenceSurvivalUnivKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalUnivKKWeibullFrailtyIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWeibullFrailtyIVWC,
 	public = list(
 

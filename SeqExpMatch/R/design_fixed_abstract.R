@@ -1,6 +1,5 @@
 #' A Fixed Design
 #'
-#' @description
 #' An abstract R6 Class encapsulating the data and functionality for a fixed experimental design.
 #' This class takes care of whole-experiment randomization.
 #'
@@ -12,7 +11,8 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#' @description
 		#' Initialize a fixed experimental design
 		#'
-		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.

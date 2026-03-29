@@ -4,11 +4,17 @@
 \alias{FixedDesignFactorial}
 \title{A Factorial Fixed Design}
 \description{
+A Factorial Fixed Design
+
+A Factorial Fixed Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a fixed factorial experimental design.
-This design handles multiple treatment factors and balances assignments across all factor combinations.
+This design handles multiple treatment factors and balances assignments across
+all factor combinations.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignFactorial}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignFactorial}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -69,7 +75,8 @@ Initialize a factorial fixed experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{factors}}{A list where names are factor names and values are number of levels (e.g. list(A=2, B=2)).}
+\item{\code{factors}}{A list where names are factor names and values are number of
+levels (e.g. list(A=2, B=2)).}
 
 \item{\code{response_type}}{The data type of response values.}
 

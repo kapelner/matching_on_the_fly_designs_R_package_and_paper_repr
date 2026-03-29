@@ -1,20 +1,21 @@
 #' Abstract class for Robust-Regression Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a single stacked robust regression over matched-pair differences and reservoir
 #' observations for KK matching-on-the-fly designs with continuous responses.
 #'
 #' @keywords internal
 InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstractKKRobustRegrCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
@@ -26,16 +27,18 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			private$rlm_method = method
 		},
 
-		# @description
-		# Returns the combined robust-regression estimate of the treatment effect.
+		#' @description
+		#' Returns the combined robust-regression estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$fit_combined()
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the approximate confidence interval.
-		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the approximate confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 -
+		#'   \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$fit_combined()
@@ -43,9 +46,10 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the approximate p-value.
-		# @param delta The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the approximate p-value.
+		#' @param delta The null difference to test against. For any treatment effect at all this
+		#'   is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$fit_combined()
@@ -53,6 +57,9 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
+		#' @description
+		#' Duplicate
+		#' @param verbose A flag indicating whether messages should be displayed.
 		duplicate = function(verbose = FALSE){
 			i = super$duplicate(verbose = verbose)
 			i

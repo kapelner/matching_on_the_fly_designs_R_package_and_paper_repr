@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalUnivKKGEE}
 \title{Univariate GEE Inference for KK Designs with Ordinal Response}
 \description{
+Univariate GEE Inference for KK Designs with Ordinal Response
+
+Univariate GEE Inference for KK Designs with Ordinal Response
+}
+\details{
 Fits a Generalized Estimating Equations (GEE) model (using \pkg{multgee})
 for ordinal responses under a KK matching-on-the-fly design using only
 the treatment indicator as a predictor (treatment). Matched pairs are
@@ -11,8 +16,8 @@ treated as clusters (with exchangeable correlation structure); reservoir subject
 each form their own singleton cluster. Unlike conditional-logit-only matched-pair
 analyses, all subjects (matched and reservoir) are included. Inference is based on
 sandwich-robust standard errors, so the test statistic is Z-distributed.
-}
-\details{
+
+
 This class requires the \pkg{multgee} package, which is listed in Suggests
 and is not installed automatically with \pkg{SeqExpMatch}.
 Install \pkg{multgee} before using this class.
@@ -44,7 +49,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAbstractKKGEE]{EDI::InferenceAbstractKKGEE}} -> \code{InferenceOrdinalUnivKKGEE}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKGEE} -> \code{InferenceOrdinalUnivKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -105,6 +110,8 @@ parallelization falls back to R's
 session-forking overhead.}
 
 \item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }

@@ -4,10 +4,15 @@
 \alias{FixedDesignBernoulli}
 \title{A completely randomized / Bernoulli Fixed Design}
 \description{
+A completely randomized / Bernoulli Fixed Design
+
+A completely randomized / Bernoulli Fixed Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a fixed Bernoulli experimental design.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBernoulli}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBernoulli}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -67,7 +72,8 @@ Initialize a fixed Bernoulli experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

@@ -1,6 +1,5 @@
 #' Ridit Analysis for Ordinal Responses
 #'
-#' @description
 #' Performs Ridit analysis (Relative to an Identified Distribution unit) for
 #' comparing two groups on an ordinal scale. Ridit analysis provides a
 #' distribution-free way to estimate the probability that a randomly selected
@@ -25,6 +24,7 @@
 #' infer
 #'
 InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -36,6 +36,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#'   Must be one of "control", "treatment", or "pooled". Default is "control".
 		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, reference = "control", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			assertChoice(reference, c("control", "treatment", "pooled"))
@@ -47,6 +48,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#' @description
 		#' Returns the estimated treatment effect (Mean Ridit - 0.5).
 		#' @return The numeric estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

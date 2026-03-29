@@ -1,6 +1,5 @@
 #' Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs
 #'
-#' @description
 #' Fits the combined stratified Cox partial likelihood (matched pairs + reservoir)
 #' using only the treatment indicator.
 #'
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceSurvivalUnivKKStratCoxCombinedLikelihood = R6::R6Class("InferenceSurvivalUnivKKStratCoxCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKStratCoxCombinedLikelihood,
 	public = list(
 

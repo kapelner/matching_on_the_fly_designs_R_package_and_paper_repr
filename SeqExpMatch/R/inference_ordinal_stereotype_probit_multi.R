@@ -1,6 +1,5 @@
 #' Multivariate Stereotype Probit Inference for Ordinal Responses
 #
-#' @description
 #' Stereotype probit inference for ordinal responses using treatment plus observed covariates.
 #'
 #' @export
@@ -30,6 +29,7 @@
 #' infer
 #'
 InferenceOrdinalMultiStereotypeProbitRegr = R6::R6Class("InferenceOrdinalMultiStereotypeProbitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniStereotypeProbitRegr,
 	public = list(
 

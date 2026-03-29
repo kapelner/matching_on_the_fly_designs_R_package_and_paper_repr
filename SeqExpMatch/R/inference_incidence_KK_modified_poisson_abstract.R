@@ -2,14 +2,21 @@
 #'
 #' @keywords internal
 InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoisson",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared(estimate_only = FALSE)
@@ -17,6 +24,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared(estimate_only = FALSE)

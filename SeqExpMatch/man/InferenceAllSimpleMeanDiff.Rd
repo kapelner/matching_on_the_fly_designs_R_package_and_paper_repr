@@ -4,6 +4,11 @@
 \alias{InferenceAllSimpleMeanDiff}
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
+Simple Mean Difference Inference based on Maximum Likelihood
+
+Simple Mean Difference Inference based on Maximum Likelihood
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
@@ -28,7 +33,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAllSimpleMeanDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceAllSimpleMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -62,9 +67,16 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate estimate for mean difference
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The setting-appropriate (see description) numeric estimate of the treatment effect
 }

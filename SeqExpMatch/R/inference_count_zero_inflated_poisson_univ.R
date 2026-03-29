@@ -1,6 +1,5 @@
 #' Univariate Zero-Inflated Poisson Regression Inference for Count Responses
 #'
-#' @description
 #' Fits a zero-inflated Poisson regression for count responses using only the
 #' treatment indicator in both the count and zero-inflation components. The
 #' reported treatment effect is the treatment coefficient from the conditional
@@ -33,6 +32,7 @@
 #' infer
 #'
 InferenceCountUnivZeroInflatedPoissonRegr = R6::R6Class("InferenceCountUnivZeroInflatedPoissonRegr",
+	lock_objects = FALSE,
 	inherit = InferenceCountZeroAugmentedPoissonAbstract,
 	private = list(
 		za_family = function() poisson(link = "log"),

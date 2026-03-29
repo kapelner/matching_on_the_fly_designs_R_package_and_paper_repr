@@ -1,8 +1,8 @@
 #' A Factorial Fixed Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a fixed factorial experimental design.
-#' This design handles multiple treatment factors and balances assignments across all factor combinations.
+#' This design handles multiple treatment factors and balances assignments across
+#' all factor combinations.
 #'
 #' @export
 FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
@@ -11,7 +11,8 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#' @description
 		#' Initialize a factorial fixed experimental design
 		#'
-		#' @param factors 	A list where names are factor names and values are number of levels (e.g. list(A=2, B=2)).
+		#' @param factors         A list where names are factor names and values are number of
+		#'   levels (e.g. list(A=2, B=2)).
 		#' @param response_type 	The data type of response values.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.

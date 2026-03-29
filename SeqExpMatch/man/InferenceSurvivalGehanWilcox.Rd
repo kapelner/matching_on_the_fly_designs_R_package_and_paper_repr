@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalGehanWilcox}
 \title{Gehan-Wilcoxon (Peto-Prentice) Inference for Survival Data with Censoring}
 \description{
+Gehan-Wilcoxon (Peto-Prentice) Inference for Survival Data with Censoring
+
+Gehan-Wilcoxon (Peto-Prentice) Inference for Survival Data with Censoring
+}
+\details{
 Non-parametric inference for survival outcomes supporting censored data, using
 the Peto-Prentice modification of the Gehan-Wilcoxon test. The treatment effect
 estimate is the mean difference in Peto-Prentice weighted martingale residuals
@@ -83,7 +88,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceSurvivalGehanWilcox}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceSurvivalGehanWilcox}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -119,9 +124,16 @@ Returns the mean difference in Peto-Prentice weighted martingale residuals
 between the treatment and control groups. Positive values indicate that treatment
 subjects experienced fewer early events than expected.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
 }

@@ -3,20 +3,21 @@
 %   R/inference_survival_KK_strat_cox_combined_likelihood_abstract.R
 \name{InferenceAbstractKKStratCoxCombinedLikelihood}
 \alias{InferenceAbstractKKStratCoxCombinedLikelihood}
-\title{Abstract class for Stratified Cox Combined-Likelihood Compound Inference}
+\title{Abstract class for Stratified Cox Combined-Likelihood Inference}
 \description{
-Fits a single joint Cox model over all KK design data for survival responses.
-Reservoir subjects (m_vec == 0) share stratum 0 (common baseline hazard);
-matched subjects belong to their own pair stratum (strata 1..m), which conditions
-away each pair's baseline hazard identically to stratified Cox.
+Abstract class for Stratified Cox Combined-Likelihood Inference
 
-The combined partial likelihood is therefore:
-L = L_strat_pairs(beta_T, beta_xs) x L_cox_reservoir(beta_T, beta_xs)
-and is maximised by a single coxph call with strata(stratum).
+Abstract class for Stratified Cox Combined-Likelihood Inference
+}
+\details{
+Fits a single joint stratified Cox model over all KK design data for survival
+responses. Matched subjects share their pair ID as a stratum; reservoir subjects
+are assigned to a single shared "reservoir" stratum. The treatment effect beta_T
+and covariate slopes beta_xs are shared across all strata.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKStratCoxCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKStratCoxCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -48,6 +49,7 @@ and is maximised by a single coxph call with strata(stratum).
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxCombinedLikelihood-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxCombinedLikelihood$new(
   des_obj,
@@ -57,37 +59,76 @@ and is maximised by a single coxph call with strata(stratum).
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the combined-likelihood estimate of the treatment effect (log-HR).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns a 1 - alpha confidence interval for beta_T.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Returns a 2-sided p-value for H0: beta_T = delta.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxCombinedLikelihood-clone"></a>}}

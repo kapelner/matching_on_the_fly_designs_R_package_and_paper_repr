@@ -1,6 +1,5 @@
 #' Multivariate Probit CLMM Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a cumulative-link mixed model via \code{ordinal::clmm} with a probit
 #' link for ordinal responses under a KK matching-on-the-fly design using the
 #' treatment indicator and all recorded covariates as fixed effects. Matched
@@ -39,6 +38,7 @@
 #' infer
 #'
 InferenceOrdinalMultiKKGLMMProbit = R6::R6Class("InferenceOrdinalMultiKKGLMMProbit",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
 	),

@@ -4,6 +4,11 @@
 \alias{InferenceContinUnivQuantileRegr}
 \title{Univariate Quantile Regression Inference for Continuous Responses}
 \description{
+Univariate Quantile Regression Inference for Continuous Responses
+
+Univariate Quantile Regression Inference for Continuous Responses
+}
+\details{
 Fits a quantile regression for continuous responses using only the treatment
 indicator as a predictor. The treatment effect is reported on the response
 scale at quantile \code{tau}; by default \code{tau = 0.5}, so this is median
@@ -35,7 +40,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinUnivQuantileRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceContinUnivQuantileRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -91,6 +96,8 @@ estimates the median treatment effect.}
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -118,9 +125,18 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the quantile-regression estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinUnivQuantileRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinUnivQuantileRegr$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinUnivQuantileRegr-compute_asymp_confidence_interval"></a>}}

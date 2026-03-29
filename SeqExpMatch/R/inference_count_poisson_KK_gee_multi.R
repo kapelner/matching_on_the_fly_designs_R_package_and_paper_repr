@@ -1,6 +1,5 @@
 #' Multivariate GEE Inference for KK Designs with Count Response
 #'
-#' @description
 #' Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 #' for count responses under a KK matching-on-the-fly design using the treatment
 #' indicator and all recorded covariates as predictors. A Poisson working model with
@@ -16,6 +15,7 @@
 #'
 #' @export
 InferenceCountPoissonMultiKKGEE = R6::R6Class("InferenceCountPoissonMultiKKGEE",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
 

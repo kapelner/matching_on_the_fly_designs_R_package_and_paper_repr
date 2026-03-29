@@ -11,7 +11,7 @@ when outcomes are heavy-tailed or outlier-prone. Inference is based on the
 coefficient table returned by \code{summary.rlm()}.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceContinUnivRobustRegr]{EDI::InferenceContinUnivRobustRegr}} -> \code{InferenceContinMultiRobustRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceContinUnivRobustRegr} -> \code{InferenceContinMultiRobustRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

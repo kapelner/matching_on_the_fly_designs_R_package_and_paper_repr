@@ -4,16 +4,80 @@
 \alias{InferenceBaiAdjustedT}
 \title{Inference based on Maximum Likelihood for KK designs}
 \description{
-Inference for mean difference
+Inference based on Maximum Likelihood for KK designs
+
+Inference based on Maximum Likelihood for KK designs
 }
 \details{
+Inference for mean difference
+
+
 This class requires the \pkg{nbpMatching} package, which is listed in Suggests
 and is not installed automatically with \pkg{SeqExpMatch}. Install it manually with
 \code{install.packages("nbpMatching")} before using this class.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `InferenceBaiAdjustedT$compute_treatment_estimate`
+## ------------------------------------------------
+
+\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_treatment_estimate()
+}
+
+
+## ------------------------------------------------
+## Method `InferenceBaiAdjustedT$compute_asymp_confidence_interval`
+## ------------------------------------------------
+
+\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_asymp_confidence_interval()
+}
+
+
+## ------------------------------------------------
+## Method `InferenceBaiAdjustedT$compute_asymp_two_sided_pval_for_treatment_effect`
+## ------------------------------------------------
+
+\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+}
+
+}
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceBaiAdjustedT}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceBaiAdjustedT}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -45,6 +109,8 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{<a id="method-InferenceBaiAdjustedT-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBaiAdjustedT-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a sequential experimental design estimation and test object after the
+sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBaiAdjustedT$new(
   des_obj,
@@ -55,13 +121,71 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize
+  the sampling during randomization-based inference
+and bootstrap resampling. The default is 1 for serial computation. For simple
+estimators (e.g. mean difference
+and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
+complex models (e.g. GLMs),
+parallelization falls back to R's \code{parallel::mclapply} which incurs
+session-forking overhead.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed
+to the user. Default is \code{TRUE}}
+
+\item{\code{convex_flag}}{A flag indicating whether the estimator should use a convex
+  combination of the Bai et al
+matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBaiAdjustedT-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBaiAdjustedT-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Computes the appropriate estimate for compound mean difference across pairs and reservoir
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceBaiAdjustedT$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceBaiAdjustedT$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_treatment_estimate()
+}
+
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -69,8 +193,48 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{<a id="method-InferenceBaiAdjustedT-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBaiAdjustedT-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval
+
+Here we use the theory that MLE's computed for GLM's are asymptotically normal
+(except in the case
+of estimat_type "median difference" where a nonparametric bootstrap confidence
+interval (see the \code{controlTest::quantileControlTest} method)
+is employed. Hence these confidence intervals are asymptotically valid and thus
+approximate for any sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBaiAdjustedT$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_asymp_confidence_interval()
+}
+
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -78,10 +242,43 @@ and is not installed automatically with \pkg{SeqExpMatch}. Install it manually w
 \if{html}{\out{<a id="method-InferenceBaiAdjustedT-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBaiAdjustedT-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes a 2-sided p-value
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBaiAdjustedT$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all
+this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+
+seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+}
+
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

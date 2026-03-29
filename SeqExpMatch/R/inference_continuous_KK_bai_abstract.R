@@ -1,6 +1,5 @@
 #' Inference based on Maximum Likelihood for KK designs
 #'
-#' @description
 #' Inference for mean difference
 #'
 #' @details
@@ -10,20 +9,30 @@
 #'
 #' @keywords internal
 InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
-	# @description
-	# Initialize a sequential experimental design estimation and test object after the sequential design is completed.
-		# @param des_obj		A DesignSeqOneByOne object whose entire n subjects are assigned and response y is recorded within.
-		# @param num_cores			The number of CPU cores to use to parallelize the sampling during randomization-based inference
-		# 							and bootstrap resampling. The default is 1 for serial computation. For simple estimators (e.g. mean difference
-		# 							and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For complex models (e.g. GLMs),
-		# 							parallelization falls back to R's \code{parallel::mclapply} which incurs session-forking overhead.
-		# @param verbose			A flag indicating whether messages should be displayed to the user. Default is \code{TRUE}
-	# @param convex_flag       A flag indicating whether the estimator should use a convex combination of the Bai et al
-	# 					matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
-	#
+	#' @description
+	#' Initialize a sequential experimental design estimation and test object after the
+	#' sequential design is completed.
+		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
+		#'   and response y is recorded within.
+		#' @param num_cores                       The number of CPU cores to use to parallelize
+		#'   the sampling during randomization-based inference
+		#' and bootstrap resampling. The default is 1 for serial computation. For simple
+		#' estimators (e.g. mean difference
+		#' and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
+		#' complex models (e.g. GLMs),
+		#' parallelization falls back to R's \code{parallel::mclapply} which incurs
+		#' session-forking overhead.
+		#' @param verbose                 A flag indicating whether messages should be displayed
+		#'   to the user. Default is \code{TRUE}
+	#' @param convex_flag       A flag indicating whether the estimator should use a convex
+	#'   combination of the Bai et al
+	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
+	#'
+	#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE, make_fork_cluster = NULL){
 		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
 		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
@@ -33,27 +42,28 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		assertNoCensoring(private$any_censoring)
 	},
 
-	#
-	# @description
-	# Computes the appropriate estimate for compound mean difference across pairs and reservoir
-	#
-	# @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
-	#
-	# @examples
-	# \dontrun{
-	# seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-	# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-	#
-	# seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
-	# seq_des_inf$compute_treatment_estimate()
-	# }
-	#
+	#'
+	#' @description
+	#' Computes the appropriate estimate for compound mean difference across pairs and reservoir
+	#'
+	#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
+	#'
+	#' @examples
+	#' \dontrun{
+	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+	#'
+	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf$compute_treatment_estimate()
+	#' }
+	#'
+	#' @param estimate_only If TRUE, skip variance component calculations.
 	compute_treatment_estimate = function(estimate_only = FALSE){
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
@@ -81,34 +91,36 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		private$cached_values$beta_hat_T
 	},
 
-	# @description
-
-
-	# Computes a 1-alpha level frequentist confidence interval
-	#
-	# Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in the case
-	# of estimat_type "median difference" where a nonparametric bootstrap confidence interval (see the \code{controlTest::quantileControlTest} method)
-	# is employed. Hence these confidence intervals are asymptotically valid and thus approximate for any sample size.
-	#
-	# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
-	#
-	# @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-	#
-	# @examples
-	# \dontrun{
-	# seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-	# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-	#
-	# seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
-	# seq_des_inf$compute_asymp_confidence_interval()
-	# }
-	#
+	#' @description
+	#' Computes a 1-alpha level frequentist confidence interval
+	#'
+	#' Here we use the theory that MLE's computed for GLM's are asymptotically normal
+	#' (except in the case
+	#' of estimat_type "median difference" where a nonparametric bootstrap confidence
+	#' interval (see the \code{controlTest::quantileControlTest} method)
+	#' is employed. Hence these confidence intervals are asymptotically valid and thus
+	#' approximate for any sample size.
+	#'
+	#' @param alpha                                   The confidence level in the computed
+	#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
+	#'
+	#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+	#'
+	#' @examples
+	#' \dontrun{
+	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+	#'
+	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf$compute_asymp_confidence_interval()
+	#' }
+	#'
 	compute_asymp_confidence_interval = function(alpha = 0.05){
 		assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 		if (is.null(private$cached_values$beta_hat_T)){
@@ -121,30 +133,29 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		private$compute_z_or_t_ci_from_s_and_df(alpha)
 	},
 
-	# @description
-
-
-	# Computes a 2-sided p-value
-	#
-	# @param delta	The null difference to test against. For any treatment effect at all this is set to zero (the default).
-	#
-	# @return 	The approximate frequentist p-value
-	#
-	# @examples
-	# \dontrun{
-	# seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-	# seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-	# seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-	#
-	# seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
-	# seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-	# }
-	#
+	#' @description
+	#' Computes a 2-sided p-value
+	#'
+	#' @param delta   The null difference to test against. For any treatment effect at all
+	#'   this is set to zero (the default).
+	#'
+	#' @return 	The approximate frequentist p-value
+	#'
+	#' @examples
+	#' \dontrun{
+	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+	#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+	#'
+	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	#' }
+	#'
 	compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 		assertNumeric(delta)
 		if (is.null(private$cached_values$beta_hat_T)){
@@ -162,7 +173,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 
 	private = list(
 	convex_flag = NULL,
-
 	compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
 		if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 		
@@ -195,12 +205,10 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		)
 		return(res)
 	},
-
 	duplicate = function(){
 		i = super$duplicate()
 		i
 	},
-
 	shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -224,7 +232,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	                                            }
 	  }
 	},
-
 	compute_bai_variance_for_pairs = function(){
 		pairs_df = data.frame(
 		pair_id = 1 : private$cached_values$KKstats$m,
@@ -285,7 +292,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		# The variance cannot be negative.
 		max(v_sq, 1e-8)
 	},
-
 	compute_halves = function(){
 		if (!is.null(private$cached_values$halves)) return(private$cached_values$halves)
 		

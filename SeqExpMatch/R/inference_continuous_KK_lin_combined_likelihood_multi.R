@@ -1,6 +1,5 @@
 #' Lin (2013) Combined-Likelihood Inference for KK Designs with Continuous Responses
 #'
-#' @description
 #' Fits a stacked Lin (2013) style covariate-adjusted estimator for KK
 #' matching-on-the-fly designs with continuous responses using both matched pairs
 #' and reservoir observations in one combined fit.
@@ -23,6 +22,7 @@
 #'
 #' @export
 InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiKKLinCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -49,6 +49,7 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 		#' infer <- InferenceContinMultiKKLinCombinedLikelihood$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -62,6 +63,7 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 		#' Computes the stacked combined estimate of the treatment effect.
 		#'
 		#' @return The estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$fit_combined()
 			private$cached_values$beta_hat_T

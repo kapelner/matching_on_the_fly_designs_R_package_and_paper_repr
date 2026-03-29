@@ -4,11 +4,16 @@
 \alias{FixedDesignGreedy}
 \title{A Greedy Search Fixed Design}
 \description{
+A Greedy Search Fixed Design
+
+A Greedy Search Fixed Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
 Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignGreedy}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignGreedy}
 }
 \section{Methods}{
 \subsection{Public methods}{

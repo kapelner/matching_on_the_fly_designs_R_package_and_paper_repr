@@ -3,38 +3,21 @@
 %   R/inference_survival_KK_weibull_frailty_combined_likelihood_abstract.R
 \name{InferenceAbstractKKWeibullFrailtyCombinedLikelihood}
 \alias{InferenceAbstractKKWeibullFrailtyCombinedLikelihood}
-\title{Abstract class for Weibull Frailty Combined-Likelihood Compound Inference}
+\title{Abstract class for Weibull Frailty Combined-Likelihood Inference}
 \description{
-Fits a single joint parametric Weibull frailty model over all KK design data
-for survival (or count) responses. Matched subjects belong to their pair cluster
-(frailty integrates away the pair-level baseline); reservoir subjects are assigned
-unique singleton cluster IDs (singleton frailty degenerates to standard Weibull),
-so the joint likelihood is:
-L = L_pairs_frailty(beta_T, beta_xs) x L_reservoir_weibull(beta_T, beta_xs).
+Abstract class for Weibull Frailty Combined-Likelihood Inference
+
+Abstract class for Weibull Frailty Combined-Likelihood Inference
 }
 \details{
-As with the IVWC analogue, the matched-pairs frailty estimator differs between the
-univariate and multivariate subclasses:
-
-\strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
-to fit a fully parametric Weibull gamma-frailty model with only the treatment
-indicator on ALL data (matched + reservoir singletons). The PH coefficient and
-Weibull shape \eqn{\rho} are both taken from \code{parfm}, and the AFT log-time
-ratio is recovered as \eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
-
-\strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
-prohibitively slow with many covariates. Instead, the treatment PH coefficient
-\eqn{\hat\beta_\mathrm{PH}} and its SE are obtained from
-\code{survival::coxph()} with a \code{frailty(cluster, distribution = "gamma")}
-term on ALL data; the Weibull shape \eqn{\hat\rho} is estimated separately from a
-\code{survival::survreg()} fit on all data. The AFT conversion and delta-method SE
-follow identically to the IVWC multivariate subclass.
-
-The \pkg{parfm} package is required only for the univariate subclass.
+Fits a single joint Weibull frailty model over all KK design data for survival
+responses. Matched subjects share their pair ID as a frailty cluster; reservoir
+subjects are assigned to singleton clusters. The treatment effect beta_T and
+covariate slopes beta_xs are shared across all subjects.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKWeibullFrailtyCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKWeibullFrailtyCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -66,6 +49,7 @@ The \pkg{parfm} package is required only for the univariate subclass.
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyCombinedLikelihood$new(
   des_obj,
@@ -75,39 +59,76 @@ The \pkg{parfm} package is required only for the univariate subclass.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the combined-likelihood estimate of the treatment effect (log-HR).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_treatment_estimate(
-  
+  estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns a 1 - alpha confidence interval for beta_T.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Returns a 2-sided p-value for H0: beta_T = delta.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-clone"></a>}}

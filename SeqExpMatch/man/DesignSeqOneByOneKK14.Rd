@@ -4,12 +4,17 @@
 \alias{DesignSeqOneByOneKK14}
 \title{A Sequential Design}
 \description{
+A Sequential Design
+
+A Sequential Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneKK14}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -75,7 +80,8 @@ Initialize a KK14 sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

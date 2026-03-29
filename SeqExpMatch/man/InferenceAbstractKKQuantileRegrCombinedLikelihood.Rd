@@ -5,6 +5,11 @@
 \alias{InferenceAbstractKKQuantileRegrCombinedLikelihood}
 \title{Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs}
 \description{
+Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
+
+Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
+}
+\details{
 Fits a single joint quantile regression over all KK design data by stacking
 matched-pair differences and reservoir observations into one design matrix.
 
@@ -21,7 +26,7 @@ Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{InferenceAbstractKKQuantileRegrCombinedLikelihood}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{InferenceAbstractKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -53,6 +58,7 @@ Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrCombinedLikelihood-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrCombinedLikelihood$new(
   des_obj,
@@ -64,37 +70,81 @@ Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1.}
+
+\item{\code{transform_y_fn}}{A function applied to y values before quantile regression.}
+
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize sampling.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is FALSE.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Returns the combined-likelihood estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns a 1 - alpha confidence interval for beta_T.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level; default 0.05 gives a 95% CI.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Returns a 2-sided p-value for H0: beta_T = delta.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null value; default 0.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrCombinedLikelihood-clone"></a>}}

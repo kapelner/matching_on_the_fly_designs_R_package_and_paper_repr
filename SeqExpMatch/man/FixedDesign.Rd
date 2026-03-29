@@ -4,12 +4,17 @@
 \alias{FixedDesign}
 \title{A Fixed Design}
 \description{
+A Fixed Design
+
+A Fixed Design
+}
+\details{
 An abstract R6 Class encapsulating the data and functionality for a fixed experimental design.
 This class takes care of whole-experiment randomization.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{FixedDesign}
+\code{EDI::Design} -> \code{FixedDesign}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -69,7 +74,8 @@ Initialize a fixed experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

@@ -1,6 +1,5 @@
 #' Binomial Identity-Link Inference for Binary Responses
 #'
-#' @description
 #' Internal base class for binomial identity-link regression inference on
 #' incidence outcomes. The treatment effect is reported on the risk-difference
 #' scale.
@@ -8,27 +7,29 @@
 #' @keywords internal
 #' @noRd
 InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIdentityAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		# @description
-		# Returns the treatment effect estimate (risk difference).
+		#' @description
+		#' Returns the treatment effect estimate (risk difference).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes an asymptotic confidence interval for the risk difference.
-		# @param alpha The confidence level is 1 - alpha. Default 0.05.
+		#' @description
+		#' Computes an asymptotic confidence interval for the risk difference.
+		#' @param alpha The confidence level is 1 - alpha. Default 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes an asymptotic two-sided p-value for the treatment effect.
-		# @param delta Null treatment effect. Default 0.
+		#' @description
+		#' Computes an asymptotic two-sided p-value for the treatment effect.
+		#' @param delta Null treatment effect. Default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()

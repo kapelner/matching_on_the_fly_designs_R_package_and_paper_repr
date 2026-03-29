@@ -4,12 +4,17 @@
 \alias{FixedDesignDOptimal}
 \title{A D-optimal Search Fixed Design}
 \description{
+A D-optimal Search Fixed Design
+
+A D-optimal Search Fixed Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a fixed D-optimal experimental design.
 This design searches for an allocation that maximizes the determinant of the information matrix
 (equivalent to minimizing the variance of the parameter estimates).
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignDOptimal}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignDOptimal}
 }
 \section{Methods}{
 \subsection{Public methods}{

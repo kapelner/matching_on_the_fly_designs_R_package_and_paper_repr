@@ -1,6 +1,5 @@
 #' Lin (2013) IVWC Inference for KK Designs with Continuous Responses
 #'
-#' @description
 #' Fits a Lin (2013) style covariate-adjusted estimator for KK
 #' matching-on-the-fly designs with continuous responses by combining matched-pair
 #' and reservoir estimators via inverse-variance weighting.
@@ -12,6 +11,7 @@
 #'
 #' @export
 InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
@@ -35,6 +35,7 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		#' seq_des_inf = InferenceContinMultiKKLinIVWC$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -48,6 +49,7 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		#' Computes the IVWC Lin estimate of the treatment effect.
 		#'
 		#' @return The estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_T_reservoir) && is.null(private$cached_values$beta_T_matched)){
 				private$compute_estimate_from_matched_and_reservoir(

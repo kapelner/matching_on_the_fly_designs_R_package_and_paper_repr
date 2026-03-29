@@ -4,11 +4,16 @@
 \alias{DesignSeqOneByOneiBCRD}
 \title{An incomplete / balanced completely randomized Sequential Design}
 \description{
+An incomplete / balanced completely randomized Sequential Design
+
+An incomplete / balanced completely randomized Sequential Design
+}
+\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneiBCRD}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneiBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -70,7 +75,8 @@ Initialize a balanced sequential experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

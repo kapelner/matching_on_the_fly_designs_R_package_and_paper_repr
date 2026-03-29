@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalJonckheereTerpstraTest}
 \title{Jonckheere-Terpstra (JT) Test for Ordinal Responses}
 \description{
+Jonckheere-Terpstra (JT) Test for Ordinal Responses
+
+Jonckheere-Terpstra (JT) Test for Ordinal Responses
+}
+\details{
 Exact Jonckheere-Terpstra (JT) rank test for a two-arm ordered alternative with an
 ordinal response. For treatment versus control, the test statistic is the
 sum of Mann-Whitney U counts across groups. This class provides the exact
@@ -27,7 +32,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalJonckheereTerpstraTest}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceOrdinalJonckheereTerpstraTest}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -77,6 +82,8 @@ Initialize the JT test object.
 \item{\code{num_cores}}{Number of CPU cores.}
 
 \item{\code{verbose}}{Whether to print progress.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -87,9 +94,18 @@ Initialize the JT test object.
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect (JT superiority measure).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
@@ -114,6 +130,13 @@ Not applicable: JT test is exact, not asymptotic. Returns NA.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Description for alpha}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
@@ -126,6 +149,13 @@ Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Description for delta}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-clone"></a>}}

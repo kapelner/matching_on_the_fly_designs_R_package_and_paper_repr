@@ -1,6 +1,5 @@
 #' Multivariate Stratified Cox / Standard Cox Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 #' using the treatment indicator and all recorded covariates. For matched pairs, it uses
 #' stratified Cox proportional hazards regression (each pair is a stratum). For reservoir
@@ -37,6 +36,7 @@
 #' infer
 #'
 InferenceSurvivalMultiKKStratCoxIVWC = R6::R6Class("InferenceSurvivalMultiKKStratCoxIVWC",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKStratCoxIVWC,
 	public = list(
 

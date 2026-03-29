@@ -1,6 +1,5 @@
 #' Abstract mixin: Zhang combined randomisation CI for quantile regression
 #'
-#' @description
 #' Provides \code{compute_confidence_interval_rand()}
 #' via Zhang's combined test-inversion method for both Bernoulli (\eqn{m = 0},
 #' all subjects in the reservoir) and KK matching-on-the-fly designs
@@ -8,17 +7,18 @@
 #'
 #' @keywords internal
 InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 
-		# @description
-		# Computes a randomization-based confidence interval via Zhang's combined test.
-		#
-		# @param alpha					The confidence level is 1 - \code{alpha}.
-		# @param r		Number of random sign-flips / permutations.
-		# @param pval_epsilon			Bisection convergence tolerance.
-		# @param show_progress			Ignored.
-		# @return 	A length-2 numeric vector giving the lower and upper CI boundary.
+		#' @description
+		#' Computes a randomization-based confidence interval via Zhang's combined test.
+		#'
+		#' @param alpha					The confidence level is 1 - \code{alpha}.
+		#' @param r		Number of random sign-flips / permutations.
+		#' @param pval_epsilon			Bisection convergence tolerance.
+		#' @param show_progress			Ignored.
+		#' @return 	A length-2 numeric vector giving the lower and upper CI boundary.
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE){
 			if (!is.null(private[["custom_randomization_statistic_function"]])){
 				stop("Custom randomization statistic functions are not supported for the Zhang combined CI method used by ", class(self)[1], ". The method uses its own fixed QR-based test statistics.")

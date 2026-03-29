@@ -8,7 +8,7 @@ using namespace Eigen;
 using namespace LBFGSpp;
 
 // Forward declaration from fast_logistic_regression.cpp
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8);
+ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights = Eigen::VectorXd(), int maxit = 100, double tol = 1e-8);
 
 namespace {
 

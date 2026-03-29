@@ -4,6 +4,11 @@
 \alias{InferenceCountUnivRobustPoissonRegr}
 \title{Univariate Robust Poisson Regression Inference for Count Responses}
 \description{
+Univariate Robust Poisson Regression Inference for Count Responses
+
+Univariate Robust Poisson Regression Inference for Count Responses
+}
+\details{
 Fits a Poisson log-link regression for count responses using only the treatment
 indicator. The treatment effect is reported on the log-rate scale and inference
 uses a Huber-White sandwich variance rather than the model-based Poisson variance.
@@ -35,7 +40,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceCountUnivRobustPoissonRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceCountUnivRobustPoissonRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -97,6 +102,8 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -107,9 +114,18 @@ displayed to the user. Default is \code{TRUE}.}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the appropriate estimate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountUnivRobustPoissonRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceCountUnivRobustPoissonRegr$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 The log-rate treatment-effect estimate.
 }

@@ -1,6 +1,5 @@
 #' Univariate Conditional Poisson Combined-Likelihood Compound Inference for KK Designs
 #'
-#' @description
 #' Fits a compound estimator for KK matching-on-the-fly designs with count
 #' responses using only the treatment indicator (no additional covariates).
 #' Jointly maximises L_cond_Poisson(pairs) + L_Poisson(reservoir) via BFGS.
@@ -30,6 +29,7 @@
 #' infer
 #'
 InferenceCountPoissonUnivKKCPoissonCombinedLikelihood = R6::R6Class("InferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKPoissonCPoissonCombinedLikelihood,
 	public = list(
 

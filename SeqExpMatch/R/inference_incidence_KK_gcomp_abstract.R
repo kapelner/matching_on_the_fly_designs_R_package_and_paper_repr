@@ -1,6 +1,5 @@
 #' Marginal Standardization / G-Computation for Binary Responses in KK Designs
 #'
-#' @description
 #' Internal base class for all-subject incidence-outcome g-computation estimators
 #' under KK matching-on-the-fly designs. A logistic working model is fit on all
 #' subjects, then potential-outcome risks under all-treated and all-control
@@ -18,25 +17,40 @@
 #' @keywords internal
 #' @noRd
 InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
 
+		#' @description
+		#' Compute treatment estimate
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$get_effect_estimate()
 		},
 
+		#' @description
+		#' Compute asymp confidence interval
+		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
 
+		#' @description
+		#' Compute asymp two sided pval for treatment effect
+		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
 
+		#' @description
+		#' Compute bootstrap two sided pval
+		#' @param delta Description for delta
+		#' @param B Description for B
+		#' @param na.rm Description for na.rm
 		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
 			if (is.null(delta)){
 				delta = private$default_null_value()

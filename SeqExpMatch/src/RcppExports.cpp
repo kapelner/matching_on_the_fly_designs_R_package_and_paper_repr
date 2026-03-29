@@ -610,6 +610,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_logistic_regression_weighted_cpp
+List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit, double tol);
+RcppExport SEXP _EDI_fast_logistic_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_weighted_cpp(X, y, weights, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_logistic_regression_with_var_cpp
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j);
 RcppExport SEXP _EDI_fast_logistic_regression_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP) {
@@ -861,6 +876,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_cpp(X, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_poisson_regression_weighted_cpp
+List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit, double tol);
+RcppExport SEXP _EDI_fast_poisson_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_weighted_cpp(X, y, weights, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2248,6 +2278,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_identity_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_cpp, 4},
     {"_EDI_fast_identity_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_with_var_cpp, 5},
     {"_EDI_fast_logistic_regression_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_cpp, 4},
+    {"_EDI_fast_logistic_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_weighted_cpp, 5},
     {"_EDI_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_with_var_cpp, 3},
     {"_EDI_fast_logrank_stats_cpp", (DL_FUNC) &_EDI_fast_logrank_stats_cpp, 3},
     {"_EDI_matrix_rank_cpp", (DL_FUNC) &_EDI_matrix_rank_cpp, 2},
@@ -2267,6 +2298,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_expand_continuation_ratio_data_cpp", (DL_FUNC) &_EDI_expand_continuation_ratio_data_cpp, 4},
     {"_EDI_expand_adjacent_category_data_cpp", (DL_FUNC) &_EDI_expand_adjacent_category_data_cpp, 4},
     {"_EDI_fast_poisson_regression_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_cpp, 4},
+    {"_EDI_fast_poisson_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_weighted_cpp, 5},
     {"_EDI_fast_poisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_poisson_regression_with_var_cpp, 5},
     {"_EDI_fast_quasipoisson_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_quasipoisson_regression_with_var_cpp, 5},
     {"_EDI_compute_poisson_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_poisson_distr_parallel_cpp, 6},

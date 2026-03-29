@@ -1,6 +1,5 @@
 #' Paired Sign Test Inference for KK Designs with Ordinal Response
 #'
-#' @description
 #' Fits a paired sign test for ordinal responses under a KK matching-on-the-fly design.
 #' For matched pairs, it considers the sign of the within-pair differences.
 #' Reservoir subjects are not included in this simple paired test.
@@ -12,7 +11,8 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal",
+#' verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
 #'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
@@ -22,6 +22,7 @@
 #' infer
 #'
 InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
+	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
 
@@ -30,6 +31,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param	num_cores			Number of CPU cores.
 		#' @param	verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -40,6 +42,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 
 		#' @description
 		#' Returns the estimated treatment effect (proportion of pairs where T > C).
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

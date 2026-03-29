@@ -1,6 +1,5 @@
 #' Log-Rank Inference for Survival Data with Censoring
 #'
-#' @description
 #' Non-parametric all-subject inference for survival outcomes supporting right
 #' censoring, based on the standard two-sample log-rank test. The treatment effect
 #' estimate is the difference in mean martingale residuals between the treatment and
@@ -37,12 +36,14 @@
 #' infer
 #'
 InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
 
 		#' @description
 		#' Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

@@ -4,12 +4,18 @@
 \alias{FixedDesignBinaryMatch}
 \title{A Binary Match Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed binary match experimental design.
+A Binary Match Fixed Design
+
+A Binary Match Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed binary match
+experimental design.
 This design pairs subjects based on covariate distances and randomizes within pairs.
 Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBinaryMatch}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBinaryMatch}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -4,6 +4,11 @@
 \alias{InferenceAbstractKKQuantileRegrIVWC}
 \title{Abstract Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs}
 \description{
+Abstract Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+
+Abstract Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+}
+\details{
 An abstract base class providing shared quantile regression logic for KK matching-on-the-fly
 designs. Subclasses override the \code{transform_y_fn} private$m field to apply a response
 transformation before quantile regression (e.g., \code{identity} for continuous,
@@ -11,7 +16,7 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{InferenceAbstractKKQuantileRegrIVWC}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{EDI::InferenceAbstractQuantileRandCI} -> \code{InferenceAbstractKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -43,6 +48,7 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$new(
   des_obj,
@@ -54,37 +60,97 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{tau}}{The quantile level for regression, strictly
+  between 0 and 1. The default \code{tau = 0.5}
+estimates the median treatment effect.}
+
+\item{\code{transform_y_fn}}{A function applied to y values before quantile regression.
+  Subclasses pass
+\code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.}
+
+\item{\code{num_cores}}{The number of CPU cores to use to parallelize sampling.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.
+Default is \code{FALSE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Computes the appropriate quantile regression compound estimate
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate numeric estimate of the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
+of the quantile regression estimator (z-based).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is zero.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-clone"></a>}}

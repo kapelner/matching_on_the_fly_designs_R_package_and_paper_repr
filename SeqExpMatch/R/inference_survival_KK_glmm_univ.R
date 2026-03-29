@@ -1,6 +1,5 @@
 #' Univariate GLMM Inference for KK Designs with Survival Response (no censoring)
 #'
-#' @description
 #' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for uncensored
 #' survival (time-to-event) responses under a KK matching-on-the-fly design using only
 #' the treatment indicator as a fixed-effect predictor (intercept + treatment). A
@@ -20,6 +19,7 @@
 #'
 #' @export
 InferenceSurvivalUnivKKGLMM = R6::R6Class("InferenceSurvivalUnivKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
 

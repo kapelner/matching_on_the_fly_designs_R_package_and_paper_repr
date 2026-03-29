@@ -1,6 +1,5 @@
 #' Univariate GLMM Inference for KK Designs with Proportion Response
 #'
-#' @description
 #' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for proportion
 #' (continuous values in (0, 1)) responses under a KK matching-on-the-fly design
 #' using only the treatment indicator as a fixed-effect predictor (intercept +
@@ -19,6 +18,7 @@
 #'
 #' @export
 InferencePropUnivKKGLMM = R6::R6Class("InferencePropUnivKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
 

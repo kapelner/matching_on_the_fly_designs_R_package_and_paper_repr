@@ -1,6 +1,5 @@
 #' Marginal Standardization / G-Computation for Proportion Responses
 #'
-#' @description
 #' Internal base class for proportion-outcome g-computation estimators. A
 #' fractional logit working model is fit, then potential-outcome mean
 #' proportions under all-treated and all-control assignments are standardized
@@ -18,50 +17,53 @@
 #' @keywords internal
 #' @noRd
 InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the g-computation inference object.
-		# @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
-		# @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
-		# @param verbose Whether to print progress messages.
+		#' @description
+		#' Initialize the g-computation inference object.
+		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
+		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
+		#' @param verbose Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
-		# @description
-		# Computes the g-computation treatment-effect estimate.
+		#' @description
+		#' Computes the g-computation treatment-effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$md
 		},
 
-		# @description
-		# Computes a 1 - \code{alpha} confidence interval.
-		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
+		#' @description
+		#' Computes a 1 - \code{alpha} confidence interval.
+		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
 
-		# @description
-		# Computes a two-sided p-value for the treatment effect.
-		# @param delta The null mean difference. Defaults to 0.
+		#' @description
+		#' Computes a two-sided p-value for the treatment effect.
+		#' @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
 
-		# @description
-		# Computes a bootstrap two-sided p-value for the treatment effect.
-		# @param delta The null mean difference. Defaults to 0.
-		# @param B Number of bootstrap samples.
-		# @param na.rm Whether to remove non-finite bootstrap replicates.
+		#' @description
+		#' Computes a bootstrap two-sided p-value for the treatment effect.
+		#' @param delta The null mean difference. Defaults to 0.
+		#' @param B Number of bootstrap samples.
+		#' @param na.rm Whether to remove non-finite bootstrap replicates.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
 			assertNumeric(delta, len = 1)
 			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
@@ -69,6 +71,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 
 		#' @description
 		#' Abbreviated bootstrap sampler that reuses the reduced column layout.
+		#' @param B Description for B
+		#' @param show_progress Description for show_progress
+		#' @param max_resample_attempts Description for max_resample_attempts
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = 50){
 			assertCount(B, positive = TRUE)
 			assertCount(max_resample_attempts, positive = TRUE)
@@ -84,6 +89,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			y = private$y
 			w = private$w
 
+			#' @description
+			#' Draw sample
+			#' @param ... Other arguments passed to the method.
 			draw_sample = function(...){
 				set_package_threads(1L)
 				attempt = 1

@@ -4,6 +4,11 @@
 \alias{InferencePropUniBetaRegr}
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
+Simple Mean Difference Inference based on Maximum Likelihood
+
+Simple Mean Difference Inference based on Maximum Likelihood
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
@@ -36,13 +41,12 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferencePropUniBetaRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferencePropUniBetaRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferencePropUniBetaRegr-new}{\code{InferencePropUniBetaRegr$new()}}
-\item \href{#method-InferencePropUniBetaRegr-compute_treatment_estimate}{\code{InferencePropUniBetaRegr$compute_treatment_estimate()}}
 \item \href{#method-InferencePropUniBetaRegr-clone}{\code{InferencePropUniBetaRegr$clone()}}
 }
 }
@@ -61,6 +65,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -98,21 +103,10 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropUniBetaRegr-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropUniBetaRegr-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropUniBetaRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The setting-appropriate (see description) numeric estimate of the treatment effect
 }
 }
 \if{html}{\out{<hr>}}

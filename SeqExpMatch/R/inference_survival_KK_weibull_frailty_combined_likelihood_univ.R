@@ -1,6 +1,5 @@
 #' Univariate Weibull Frailty Combined-Likelihood Inference for KK Designs
 #'
-#' @description
 #' Fits a single joint parametric Weibull gamma-frailty model (matched pairs +
 #' reservoir as singletons) using only the treatment indicator.
 #'
@@ -32,6 +31,7 @@
 #' infer
 #'
 InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWeibullFrailtyCombinedLikelihood,
 	public = list(
 

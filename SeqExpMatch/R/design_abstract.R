@@ -1,13 +1,7 @@
-# A Design
-#
-# @description
-# An abstract R6 Class encapsulating the data and functionality for an experimental design.
-# This class takes care of data storage and response handling.
-#
-# @keywords internal
 #' An Abstract Experimental Design
 #'
-#' @description
+#' @name Design
+#' @description Internal method.
 #' An abstract R6 Class encapsulating the data and functionality for an experimental design.
 #' This class takes care of data storage and response handling.
 #'
@@ -18,7 +12,8 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Initialize an experimental design
 		#'
-		#' @param response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size (if fixed).
@@ -422,6 +417,7 @@ Design = R6::R6Class("Design",
 
 
 	private = list(
+		all_subject_data_cache = list(),
 		t = 0L,
 		n = NULL,
 		Xraw = data.table(),
@@ -510,38 +506,49 @@ Design = R6::R6Class("Design",
 			i_present_y = which(!is.na(private$y))
 			i_all = 1 : private$t
 			i_all_y_present = intersect(i_all, i_present_y)
+			
+			# Cache lookup
+			# Since covariates are fixed and NA positions in y are fixed during randomization,
+			# the set of subjects with responses up to t is constant for a given t.
+			cache_key = as.character(private$t)
+			if (!is.null(private$all_subject_data_cache[[cache_key]])) {
+				cpp_result = private$all_subject_data_cache[[cache_key]]
+			} else {
+				# Call consolidated C++ function for all matrix computations
+				cpp_result = compute_all_subject_data_cpp(
+					as.matrix(private$X[1:private$t, , drop = FALSE]),
+					private$t,
+					as.integer(i_all_y_present)
+				)
+				# Restore column names
+				X_names = colnames(private$X)
 
-			# Call consolidated C++ function for all matrix computations
-			cpp_result = compute_all_subject_data_cpp(
-				as.matrix(private$X[1:private$t, , drop = FALSE]),
-				private$t,
-				as.integer(i_all_y_present)
-			)
+				if (length(cpp_result$cols_prev) > 0) {
+					nms = X_names[cpp_result$cols_prev]
+					colnames(cpp_result$X_prev) = nms
+					names(cpp_result$xt_prev) = nms
+				}
 
-			# Restore column names
-			X_names = colnames(private$X)
+				if (length(cpp_result$cols_all) > 0) {
+					colnames(cpp_result$X_all) = X_names[cpp_result$cols_all]
+				}
 
-			if (length(cpp_result$cols_prev) > 0) {
-				nms = X_names[cpp_result$cols_prev]
-				colnames(cpp_result$X_prev) = nms
-				names(cpp_result$xt_prev) = nms
-			}
+				if (length(cpp_result$cols_all_scaled) > 0) {
+					nms = X_names[cpp_result$cols_all_scaled]
+					colnames(cpp_result$X_all_scaled) = nms
+					names(cpp_result$xt_all_scaled) = nms
+				}
 
-			if (length(cpp_result$cols_all) > 0) {
-				colnames(cpp_result$X_all) = X_names[cpp_result$cols_all]
-			}
-
-			if (length(cpp_result$cols_all_scaled) > 0) {
-				nms = X_names[cpp_result$cols_all_scaled]
-				colnames(cpp_result$X_all_scaled) = nms
-				names(cpp_result$xt_all_scaled) = nms
-			}
-
-			if (length(cpp_result$cols_all_with_y_scaled) > 0) {
-				colnames(cpp_result$X_all_with_y_scaled) = X_names[cpp_result$cols_all_with_y_scaled]
+				if (length(cpp_result$cols_all_with_y_scaled) > 0) {
+					colnames(cpp_result$X_all_with_y_scaled) = X_names[cpp_result$cols_all_with_y_scaled]
+				}
+				
+				if (is.null(private$all_subject_data_cache)) private$all_subject_data_cache = list()
+				private$all_subject_data_cache[[cache_key]] = cpp_result
 			}
 
 			# Add the simple array slices that don't need C++ optimization
+			# These MUST NOT be cached because w and y change during randomization!
 			cpp_result$w_all_with_y_scaled = private$w[i_all_y_present]
 			cpp_result$y_all = private$y[i_all_y_present]
 			cpp_result$dead_all = private$dead[i_all_y_present]

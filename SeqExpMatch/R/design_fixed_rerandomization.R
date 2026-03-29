@@ -1,8 +1,9 @@
 #' A Rerandomization Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed rerandomization experimental design.
-#' This design generates random allocations and only accepts those that meet a covariate balance criterion.
+#' An R6 Class encapsulating the data and functionality for a fixed rerandomization
+#' experimental design.
+#' This design generates random allocations and only accepts those that meet a
+#' covariate balance criterion.
 #' For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 #'
 #' @export

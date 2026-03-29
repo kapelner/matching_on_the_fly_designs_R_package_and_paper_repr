@@ -1,6 +1,5 @@
 #' Multivariate G-Computation for Ordinal Responses
 #'
-#' @description
 #' Fits a proportional odds model adjusting for all baseline covariates, then
 #' standardizes to estimate the marginal mean difference.
 #'
@@ -31,6 +30,7 @@
 #' infer$
 #'   compute_treatment_estimate()
 InferenceOrdinalMultiGCompMeanDiff = R6::R6Class("InferenceOrdinalMultiGCompMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalGCompAbstract,
 	private = list(
 		build_design_matrix = function(){

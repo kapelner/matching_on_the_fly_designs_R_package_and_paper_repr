@@ -4,6 +4,11 @@
 \alias{InferenceAllSimpleWilcox}
 \title{Wilcoxon Rank-Sum Inference for Any Sequential Design}
 \description{
+Wilcoxon Rank-Sum Inference for Any Sequential Design
+
+Wilcoxon Rank-Sum Inference for Any Sequential Design
+}
+\details{
 Non-parametric inference based on the two-sample Wilcoxon rank-sum test
 (Mann-Whitney U) for any sequential experimental design (Bernoulli, Efron, iBCRD,
 or KK). The treatment effect estimate is the Hodges-Lehmann pseudo-median of
@@ -41,7 +46,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAllSimpleWilcox}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceAllSimpleWilcox}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -91,6 +96,8 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel bootstrap/randomization. Default 1.}
 
 \item{\code{verbose}}{Whether to print progress messages. Default \code{FALSE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -123,9 +130,16 @@ infer
 Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
 differences.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_asymp_confidence_interval"></a>}}

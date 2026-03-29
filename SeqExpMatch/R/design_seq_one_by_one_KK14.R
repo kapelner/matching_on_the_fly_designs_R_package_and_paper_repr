@@ -1,6 +1,5 @@
 #' A Sequential Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
@@ -12,7 +11,8 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#' @description
 		#' Initialize a KK14 sequential experimental design
 		#'
-		#' @param	response_type 	"continuous", "incidence", "proportion", "count", "survival", or "ordinal".
+		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
+		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.

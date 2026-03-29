@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalContRatioRegr}
 \title{Continuation-Ratio Logit Inference based on Maximum Likelihood}
 \description{
+Continuation-Ratio Logit Inference based on Maximum Likelihood
+
+Continuation-Ratio Logit Inference based on Maximum Likelihood
+}
+\details{
 Continuation-ratio logit model inference for ordinal responses. This model
 conditions on "having reached category k" before comparing category k vs >k.
 It is particularly useful when categories represent a progression.
@@ -35,13 +40,12 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceOrdinalContRatioRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceOrdinalContRatioRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceOrdinalContRatioRegr-new}{\code{InferenceOrdinalContRatioRegr$new()}}
-\item \href{#method-InferenceOrdinalContRatioRegr-compute_treatment_estimate}{\code{InferenceOrdinalContRatioRegr$compute_treatment_estimate()}}
 \item \href{#method-InferenceOrdinalContRatioRegr-clone}{\code{InferenceOrdinalContRatioRegr$clone()}}
 }
 }
@@ -60,6 +64,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -97,21 +102,10 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalContRatioRegr-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalContRatioRegr-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalContRatioRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The setting-appropriate (see description) numeric estimate of the treatment effect
 }
 }
 \if{html}{\out{<hr>}}

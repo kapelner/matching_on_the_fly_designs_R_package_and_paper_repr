@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalUniAdjCatLogitRegr}
 \title{Adjacent-Category Logit Inference for Ordinal Responses}
 \description{
+Adjacent-Category Logit Inference for Ordinal Responses
+
+Adjacent-Category Logit Inference for Ordinal Responses
+}
+\details{
 Adjacent-category logit inference for ordinal responses. The model assumes a
 common treatment effect across the logits of each category versus the next
 category.
@@ -26,13 +31,12 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceOrdinalUniAdjCatLogitRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceOrdinalUniAdjCatLogitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceOrdinalUniAdjCatLogitRegr-new}{\code{InferenceOrdinalUniAdjCatLogitRegr$new()}}
-\item \href{#method-InferenceOrdinalUniAdjCatLogitRegr-compute_treatment_estimate}{\code{InferenceOrdinalUniAdjCatLogitRegr$compute_treatment_estimate()}}
 \item \href{#method-InferenceOrdinalUniAdjCatLogitRegr-clone}{\code{InferenceOrdinalUniAdjCatLogitRegr$clone()}}
 }
 }
@@ -51,6 +55,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -88,21 +93,10 @@ session-forking overhead.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalUniAdjCatLogitRegr-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniAdjCatLogitRegr-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
-Computes the adjacent-category treatment effect estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniAdjCatLogitRegr$compute_treatment_estimate()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The estimated treatment log-odds ratio shared across adjacent categories.
 }
 }
 \if{html}{\out{<hr>}}

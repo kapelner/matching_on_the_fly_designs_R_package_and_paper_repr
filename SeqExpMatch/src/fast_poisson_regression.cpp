@@ -21,10 +21,12 @@ double clamp_eta_for_exp(double eta) {
 
 ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 const Eigen::VectorXd& y,
+                             const Eigen::VectorXd& weights = Eigen::VectorXd(),
 							 int maxit = 100,
 							 double tol = 1e-8) {
 	const int n = X.rows();
 	const int p = X.cols();
+    bool use_weights = (weights.size() == n);
     ModelResult res;
 
 	res.b = VectorXd::Zero(p);
@@ -32,6 +34,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 	VectorXd eta = mu.array().log().matrix();
 
 	VectorXd XtWz(p);
+    VectorXd w(n);
 
 	for (int iter = 0; iter < maxit; ++iter) {
 		for (int i = 0; i < n; ++i) {
@@ -39,10 +42,16 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 		}
 		mu = eta.array().exp().matrix();
 		mu = mu.array().max(1e-10);
+        
+        if (use_weights) {
+            w = mu.cwiseProduct(weights);
+        } else {
+            w = mu;
+        }
 
 		VectorXd z = eta + (y - mu).cwiseQuotient(mu);
-		res.XtWX.noalias() = X.transpose() * mu.asDiagonal() * X;
-		XtWz.noalias() = X.transpose() * (mu.cwiseProduct(z));
+		res.XtWX.noalias() = X.transpose() * w.asDiagonal() * X;
+		XtWz.noalias() = X.transpose() * (w.cwiseProduct(z));
 
 		VectorXd beta_new = res.XtWX.ldlt().solve(XtWz);
 		if (!beta_new.allFinite()) {
@@ -65,7 +74,13 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 	}
 	res.mu = eta.array().exp().matrix();
 	res.mu = res.mu.array().max(1e-10);
-	res.XtWX.noalias() = X.transpose() * res.mu.asDiagonal() * X;
+    
+    if (use_weights) {
+        w = res.mu.cwiseProduct(weights);
+    } else {
+        w = res.mu;
+    }
+	res.XtWX.noalias() = X.transpose() * w.asDiagonal() * X;
 
 	return res;
 }
@@ -77,7 +92,22 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
 									 int maxit = 100,
 									 double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(X, y, maxit, tol);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), maxit, tol);
+    return List::create(
+		Named("b") = res.b,
+		Named("mu") = res.mu,
+		Named("XtWX") = res.XtWX,
+		Named("converged") = res.converged
+	);
+}
+
+// [[Rcpp::export]]
+List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
+                                          const Eigen::VectorXd& y,
+                                          const Eigen::VectorXd& weights,
+                                          int maxit = 100,
+                                          double tol = 1e-8) {
+	ModelResult res = fast_poisson_internal(X, y, weights, maxit, tol);
     return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -92,7 +122,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 											  int j = 2,
 											  int maxit = 100,
 											  double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(Xmm, y, maxit, tol);
+	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol);
 	res.ssq_b_j = compute_diagonal_inverse_entry(res.XtWX, j);
 	res.ssq_b_2 = (Xmm.cols() >= 2) ? compute_diagonal_inverse_entry(res.XtWX, 2) : NA_REAL;
 
@@ -111,7 +141,7 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 												   int j = 2,
 												   int maxit = 100,
 												   double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(Xmm, y, maxit, tol);
+	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol);
 
 	const int df_resid = Xmm.rows() - Xmm.cols();
 	if (df_resid > 0) {
@@ -188,7 +218,7 @@ NumericVector compute_poisson_distr_parallel_cpp(
 			}
 		}
 
-		ModelResult res = fast_poisson_internal(X_full, y_shifted);
+		ModelResult res = fast_poisson_internal(X_full, y_shifted, Eigen::VectorXd());
 		if (res.converged && p_full >= 2 && std::isfinite(res.b[1])) {
 			results[b] = res.b[1];
 		}

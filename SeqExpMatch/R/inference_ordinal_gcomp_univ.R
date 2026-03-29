@@ -1,6 +1,5 @@
 #' Univariate G-Computation for Ordinal Responses
 #'
-#' @description
 #' Fits a proportional odds model with only the treatment indicator, then
 #' standardizes to estimate the marginal mean difference.
 #'
@@ -31,6 +30,7 @@
 #' infer$
 #'   compute_treatment_estimate()
 InferenceOrdinalUniGCompMeanDiff = R6::R6Class("InferenceOrdinalUniGCompMeanDiff",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalGCompAbstract,
 	private = list(
 		build_design_matrix = function(){

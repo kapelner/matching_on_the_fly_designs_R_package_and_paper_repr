@@ -1,6 +1,5 @@
 #' A Greedy Search Fixed Design
 #'
-#' @description
 #' An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
 #' Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
 #'

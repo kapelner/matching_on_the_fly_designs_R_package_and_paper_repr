@@ -2,14 +2,16 @@
 #'
 #' @keywords internal
 InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
-		# @description
-		# Initialize the inference object.
-		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		# @param num_cores			Number of CPU cores for parallel processing.
-		# @param verbose			Whether to print progress messages.
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param num_cores			Number of CPU cores for parallel processing.
+		#' @param verbose			Whether to print progress messages.
+		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -22,16 +24,18 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			}
 		},
 
-		# @description
-		# Returns the estimated treatment effect.
+		#' @description
+		#' Returns the estimated treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		# @description
-		# Computes the asymptotic confidence interval.
-		# @param alpha					The confidence level in the computed confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
@@ -39,9 +43,10 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		# @description
-		# Computes the asymptotic p-value.
-		# @param delta					The null difference to test against. For any treatment effect at all this is set to zero (the default).
+		#' @description
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. For
+		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
@@ -53,19 +58,19 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			}
 		},
 
-		# @description
-		# Overridden to provide a warning about slowness.
-		# @param r		Number of randomization iterations.
-		# @param ... 					Additional arguments passed to super.
+		#' @description
+		#' Overridden to provide a warning about slowness.
+		#' @param r		Number of randomization iterations.
+		#' @param ... 					Additional arguments passed to super.
 		compute_confidence_interval_rand = function(r = 501, ...){
 			warning("Randomization-based confidence intervals for GLMM models are extremely slow because they require many hundreds or thousands of model fits. Consider using asymptotic or bootstrap intervals instead.")
 			super$compute_confidence_interval_rand(r = r, ...)
 		},
 
-		# @description
-		# Overridden to provide a warning about slowness.
-		# @param r		Number of randomization iterations.
-		# @param ... 					Additional arguments passed to super.
+		#' @description
+		#' Overridden to provide a warning about slowness.
+		#' @param r		Number of randomization iterations.
+		#' @param ... 					Additional arguments passed to super.
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, ...){
 			warning("Randomization-based p-values for GLMM models are slow because they require many model fits.")
 			super$compute_two_sided_pval_for_treatment_effect_rand(r = r, ...)

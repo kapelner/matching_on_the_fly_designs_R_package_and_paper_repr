@@ -1,6 +1,5 @@
 #' Simple Mean Difference Inference based on Maximum Likelihood
 #'
-#' @description
 #' The methods that support confidence intervals and testing for the mean difference
 #' in all response types (except Weibull with censoring)
 #' sequential experimental design estimation and test object
@@ -9,6 +8,7 @@
 #'
 #' @export
 InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
+	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
 
@@ -34,6 +34,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#'
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			get_survival_stat_diff(
 				private$y,

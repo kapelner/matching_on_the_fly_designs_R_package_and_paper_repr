@@ -4,12 +4,17 @@
 \alias{InferenceIncidUnivMiettinenNurminenRiskDiff}
 \title{Univariate Miettinen-Nurminen Risk-Difference Inference for Binary Responses}
 \description{
+Univariate Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+
+Univariate Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+}
+\details{
 Fits the classical Miettinen-Nurminen score method for the risk difference in a
 two-arm binary trial. The point estimate is the observed risk difference, while
 confidence intervals and p-values are obtained by inverting the constrained
 score test under the null \eqn{p_T - p_C = \delta}.
-}
-\details{
+
+
 This class is intentionally unadjusted. It operates on the \eqn{2 \times 2}
 table induced by treatment assignment and incidence response, and is therefore
 the natural classical binary-endpoint complement to the regression-based
@@ -34,7 +39,7 @@ seq_des_inf$compute_treatment_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceIncidUnivMiettinenNurminenRiskDiff}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{InferenceIncidUnivMiettinenNurminenRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -85,6 +90,8 @@ completed design with an incidence response.
 \item{\code{num_cores}}{The number of CPU cores to use for bootstrap and randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -113,9 +120,18 @@ seq_des_inf$compute_treatment_estimate()
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the observed risk-difference estimate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivMiettinenNurminenRiskDiff$compute_treatment_estimate()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivMiettinenNurminenRiskDiff$compute_treatment_estimate(
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_confidence_interval"></a>}}

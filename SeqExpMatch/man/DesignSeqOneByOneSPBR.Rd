@@ -4,11 +4,17 @@
 \alias{DesignSeqOneByOneSPBR}
 \title{A stratified permuted block Sequential Design (SPBR)}
 \description{
-An R6 Class encapsulating the data and functionality for a stratified permuted block sequential experimental design.
+A stratified permuted block Sequential Design (SPBR)
+
+A stratified permuted block Sequential Design (SPBR)
+}
+\details{
+An R6 Class encapsulating the data and functionality for a stratified permuted
+block sequential experimental design.
 This design ensures balance within specified strata using blocks of a fixed size.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneSPBR}
+\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -76,7 +82,8 @@ Initialize a stratified permuted block sequential experimental design
 
 \item{\code{block_size}}{The size of the permuted blocks.}
 
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or "ordinal".}
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
 
 \item{\code{prob_T}}{Probability of treatment assignment.}
 

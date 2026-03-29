@@ -1,6 +1,5 @@
 #' Multivariate Adjacent-Category Logit Inference for Ordinal Responses
 #'
-#' @description
 #' Adjacent-category logit inference for ordinal responses with treatment and
 #' observed covariates entering linearly into the adjacent-category logits.
 #'
@@ -23,6 +22,7 @@
 #'
 InferenceOrdinalMultiAdjCatLogitRegr = R6::R6Class(
 	"InferenceOrdinalMultiAdjCatLogitRegr",
+	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniAdjCatLogitRegr,
 	public = list(
 

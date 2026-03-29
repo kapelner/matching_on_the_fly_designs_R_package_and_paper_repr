@@ -1,7 +1,7 @@
 #' A Binary Match Fixed Design
 #'
-#' @description
-#' An R6 Class encapsulating the data and functionality for a fixed binary match experimental design.
+#' An R6 Class encapsulating the data and functionality for a fixed binary match
+#' experimental design.
 #' This design pairs subjects based on covariate distances and randomizes within pairs.
 #' Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 #'
@@ -71,6 +71,8 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				verbose    = private$verbose
 			)
 			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(search_obj, form = "one_zero")
+			# resultsBinaryMatchSearch returns num_designs x n, we need n x num_designs
+			w_mat = t(w_mat)
 			storage.mode(w_mat) = "numeric"
 
 			# If fewer unique designs exist than requested, recycle columns

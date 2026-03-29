@@ -168,4 +168,6 @@ test_poisson_optimizations.R
 test_slow_ci_rand.R
 batch_update_inference.py
 test_bootstrap_fail.R
+test_inplace_env.R
+test_unlock_binding.R
 

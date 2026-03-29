@@ -4,11 +4,17 @@
 \alias{FixedDesignBlockedCluster}
 \title{A Blocked and Cluster Randomized Fixed Design}
 \description{
-An R6 Class encapsulating the data and functionality for a fixed blocked and cluster randomized experimental design.
+A Blocked and Cluster Randomized Fixed Design
+
+A Blocked and Cluster Randomized Fixed Design
+}
+\details{
+An R6 Class encapsulating the data and functionality for a fixed blocked and
+cluster randomized experimental design.
 This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlockedCluster}
+\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBlockedCluster}
 }
 \section{Methods}{
 \subsection{Public methods}{

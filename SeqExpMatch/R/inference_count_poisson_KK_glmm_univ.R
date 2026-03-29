@@ -1,6 +1,5 @@
 #' Univariate GLMM Inference for KK Designs with Count Response
 #'
-#' @description
 #' Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for count
 #' responses under a KK matching-on-the-fly design using only the treatment indicator
 #' as a fixed-effect predictor (intercept + treatment). A Poisson log-link working
@@ -17,6 +16,7 @@
 #'
 #' @export
 InferenceCountPoissonUnivKKGLMM = R6::R6Class("InferenceCountPoissonUnivKKGLMM",
+	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
 
