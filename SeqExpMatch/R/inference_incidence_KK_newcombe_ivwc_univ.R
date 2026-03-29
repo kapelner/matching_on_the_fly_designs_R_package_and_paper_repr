@@ -58,7 +58,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 
 		#' @description
 		#' Returns the IVWC Newcombe estimate.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined()
 			private$cached_values$beta_hat_T
 		},

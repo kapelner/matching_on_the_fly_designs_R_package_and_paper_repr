@@ -51,8 +51,8 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 
 		# @description
 		# Returns the combined-likelihood estimate of the treatment effect (AFT log-time ratio).
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -218,7 +218,10 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 			}
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$KKstats)){
@@ -253,6 +256,7 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 				res = private$fit_fast_approx(dat, cov_str)
 				if (is.null(res)){
 					private$cached_values$beta_hat_T   = NA_real_
+			if (estimate_only) return(invisible(NULL))
 					private$cached_values$s_beta_hat_T = NA_real_
 					private$cached_values$is_z         = TRUE
 					return(invisible(NULL))

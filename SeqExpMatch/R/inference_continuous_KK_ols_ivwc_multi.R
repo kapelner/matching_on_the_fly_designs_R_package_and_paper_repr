@@ -52,7 +52,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 		#' seq_des_inf = InferenceContinMultOLS$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#'
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_T_reservoir) & is.null(private$cached_values$beta_T_matched)){
 				private$compute_estimate_from_matched_and_reservoir(
 					private$ols_for_matched_pairs,

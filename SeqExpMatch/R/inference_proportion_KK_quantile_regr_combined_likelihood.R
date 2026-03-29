@@ -52,7 +52,7 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 
 		#' @description
 		#' Returns the estimated treatment effect.
-		compute_treatment_estimate = function() super$compute_treatment_estimate()
+		compute_treatment_estimate = function(estimate_only = FALSE) super$compute_treatment_estimate()
 
 
 	)

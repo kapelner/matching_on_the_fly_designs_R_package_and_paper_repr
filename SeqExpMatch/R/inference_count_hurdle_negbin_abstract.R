@@ -19,8 +19,8 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			assertNoCensoring(private$any_censoring)
 		},
 
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -46,7 +46,10 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			data.frame(w = private$w)
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
@@ -56,6 +59,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				private$cached_values$beta_hat_T = NA_real_
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))

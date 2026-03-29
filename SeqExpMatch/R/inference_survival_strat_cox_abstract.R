@@ -13,8 +13,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 	public = list(
 
 
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -36,10 +36,14 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 	),
 
 	private = list(
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			mod = private$generate_mod()
 			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
+			if (estimate_only) return(invisible(NULL))
 			se = if (is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
 			private$cached_values$s_beta_hat_T = se
 			private$cached_values$is_z = TRUE

@@ -25,8 +25,8 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 
 		# @description
 		# Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
 
@@ -66,7 +66,10 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 			x_names
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$md)) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()

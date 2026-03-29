@@ -26,7 +26,7 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			}
 		},
 
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_hurdle()
 			private$cached_values$beta_hat_T
 		},

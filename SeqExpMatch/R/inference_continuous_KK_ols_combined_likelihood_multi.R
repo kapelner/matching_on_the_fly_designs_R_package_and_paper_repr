@@ -72,7 +72,7 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' \code{private$cached_values$hessian} as a side-effect.
 		#'
 		#' @return	Numeric scalar \eqn{\hat\beta_T}.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()
 			}

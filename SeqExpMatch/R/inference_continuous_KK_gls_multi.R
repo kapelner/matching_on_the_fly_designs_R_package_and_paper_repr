@@ -75,9 +75,9 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#' Computes the appropriate GLS estimate
 		#'
 		#' @return	The setting-appropriate numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
-				private$shared()
+				private$shared(estimate_only = estimate_only)
 			}
 			private$cached_values$beta_hat_T
 		},
@@ -116,7 +116,10 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 	),
 
 	private = list(
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(0L, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -136,6 +139,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 				mod_ols = lm(y ~ ., data = dat)
 				cs = coef(summary(mod_ols))
 				private$cached_values$beta_hat_T   = cs["w", "Estimate"]
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = cs["w", "Std. Error"]
 				private$cached_values$df            = mod_ols$df.residual
 				private$cached_values$is_z          = FALSE

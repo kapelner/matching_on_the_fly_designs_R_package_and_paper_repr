@@ -61,7 +61,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		#' Computes the appropriate estimate.
 		#'
 		#' @return	The log-rate treatment-effect estimate.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		}
@@ -136,9 +136,13 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		},
 
 		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$is_z) && (estimate_only || !is.na(private$cached_values$s_beta_hat_T))) return(invisible(NULL))
 			model_output = private$generate_mod(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T = model_output$b[2]
+			if (estimate_only) return(invisible(NULL))
 
 			ssq = model_output$ssq_b_2
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {

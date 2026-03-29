@@ -36,7 +36,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 
 		# @description
 		# Returns the combined-likelihood estimate of the treatment effect.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood()
 			private$cached_values$beta_hat_T
 		},

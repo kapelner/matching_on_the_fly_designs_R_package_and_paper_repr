@@ -54,7 +54,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	# seq_des_inf$compute_treatment_estimate()
 	# }
 	#
-	compute_treatment_estimate = function(){
+	compute_treatment_estimate = function(estimate_only = FALSE){
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		nRT = private$cached_values$KKstats$nRT
@@ -201,7 +201,10 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		i
 	},
 
-	shared = function(){
+	shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		m = private$cached_values$KKstats$m

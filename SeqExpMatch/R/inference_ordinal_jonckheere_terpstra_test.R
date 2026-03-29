@@ -41,8 +41,8 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 
 		#' @description
 		#' Returns the estimated treatment effect (JT superiority measure).
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -67,13 +67,17 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 	),
 
 	private = list(
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			
 			res = exact_jonckheere_terpstra_pval_cpp(as.integer(private$y), as.integer(private$w))
 			
 			private$cached_values$superiority = res$superiority
 			private$cached_values$beta_hat_T = res$superiority - 0.5
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$p_exact = res$p_exact
 			private$cached_values$p_lower = res$p_lower
 			private$cached_values$p_upper = res$p_upper

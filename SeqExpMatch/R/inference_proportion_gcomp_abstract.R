@@ -34,7 +34,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 
 		# @description
 		# Computes the g-computation treatment-effect estimate.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$md
 		},
@@ -394,6 +394,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		},
 
 		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$md) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_named_design_matrix()

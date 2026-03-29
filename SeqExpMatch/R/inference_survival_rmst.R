@@ -48,7 +48,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#' Computes the appropriate estimate for mean difference
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$beta_hat_T = get_survival_stat_diff(
 					private$y,

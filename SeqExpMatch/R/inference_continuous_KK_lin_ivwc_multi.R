@@ -48,7 +48,7 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		#' Computes the IVWC Lin estimate of the treatment effect.
 		#'
 		#' @return The estimated treatment effect.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_T_reservoir) && is.null(private$cached_values$beta_T_matched)){
 				private$compute_estimate_from_matched_and_reservoir(
 					private$lin_for_matched_pairs,

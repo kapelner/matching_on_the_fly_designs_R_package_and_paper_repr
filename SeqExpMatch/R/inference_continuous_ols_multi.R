@@ -56,7 +56,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		#'
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			full_X_matrix = private$create_design_matrix()
 			mod = lm.fit(full_X_matrix, private$y) #can't beat R's built-in OLS
 			private$cached_values$beta_hat_T = coef(mod)[2]
@@ -184,7 +184,10 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 			return(res)
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 #			private$cached_values$summary_table =
 #				stats::coef(summary(lm(private$des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$des_obj_priv_int$w), private$get_X()))))
 			full_X_matrix = private$create_design_matrix()
@@ -192,6 +195,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 
 			mod = fast_ols_with_var_cpp(full_X_matrix, private$y)
 			private$cached_values$beta_hat_T = mod$b[2]
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
 			private$cached_values$is_z = FALSE
 			private$cached_values$df = private$n - (ncol(private$get_X()) + 2)

@@ -44,8 +44,8 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#'
 		#' seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
-		compute_treatment_estimate = function(){
-			private$compute_shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -141,7 +141,10 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 
 		# Computes the Peto-Prentice weighted martingale residual estimate and SE.
 		# Results are cached in private$cached_values.
-		compute_shared = function(){
+		compute_shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			y    = private$y
@@ -157,6 +160,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			)
 			if (is.null(cox_null)){
 				private$cached_values$beta_hat_T   = NA_real_
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}

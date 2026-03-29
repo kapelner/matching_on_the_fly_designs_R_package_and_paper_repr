@@ -34,7 +34,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#'
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			get_survival_stat_diff(
 				private$y,
 				private$dead,

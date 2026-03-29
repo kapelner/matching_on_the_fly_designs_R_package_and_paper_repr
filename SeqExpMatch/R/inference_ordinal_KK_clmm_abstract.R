@@ -17,8 +17,8 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 		},
 
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -51,7 +51,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			as.data.frame(X_model)
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			mod = private$fit_clmm()
 			summ = if (!is.null(mod)) tryCatch(summary(mod), error = function(e) NULL) else NULL
@@ -63,6 +66,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			if (is.null(mod) || is.null(summ)){
 				private$cached_values$beta_hat_T   = NA_real_
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))

@@ -28,7 +28,7 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 
 		# @description
 		# Returns the combined robust-regression estimate of the treatment effect.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$fit_combined()
 			private$cached_values$beta_hat_T
 		},

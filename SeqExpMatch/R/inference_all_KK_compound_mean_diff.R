@@ -33,7 +33,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 				private$compute_reservoir_and_match_statistics()
@@ -181,7 +181,10 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			return(res)
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
 			}

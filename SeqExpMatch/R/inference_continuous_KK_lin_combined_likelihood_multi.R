@@ -62,7 +62,7 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 		#' Computes the stacked combined estimate of the treatment effect.
 		#'
 		#' @return The estimated treatment effect.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$fit_combined()
 			private$cached_values$beta_hat_T
 		},

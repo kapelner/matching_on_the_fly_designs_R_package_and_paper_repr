@@ -44,7 +44,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' @description
 		#' Computes the fractional-logit estimate of the treatment effect on the
 		#' log-odds scale.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
@@ -207,6 +207,9 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		},
 
 		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
@@ -222,6 +225,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 			}
 
 			private$cached_values$beta_hat_T = fit$beta_hat
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = fit$se
 			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_full) - (if (is.null(fit$vcov)) 2L else ncol(fit$vcov))

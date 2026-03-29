@@ -33,8 +33,8 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 
 		# @description
 		# Returns the combined-likelihood estimate of the treatment effect (log-time ratio).
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -185,7 +185,10 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 			}
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			m_vec = private$m
@@ -202,6 +205,7 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
 					private$cached_values$beta_hat_T = fit$beta
+			if (estimate_only) return(invisible(NULL))
 					private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
 					private$cached_values$theta_hat = fit$theta
 					private$best_par = fit$best_par

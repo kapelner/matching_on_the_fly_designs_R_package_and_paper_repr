@@ -43,8 +43,8 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 
 		#' @description
 		#' Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
-		compute_treatment_estimate = function(){
-			private$compute_shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -97,7 +97,10 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 
 	private = list(
 
-		compute_shared = function(){
+		compute_shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			logrank_stats = tryCatch(
@@ -111,6 +114,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 
 			if (is.null(logrank_stats)){
 				private$cached_values$beta_hat_T = NA_real_
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$logrank_score = NA_real_
 				private$cached_values$logrank_var = NA_real_

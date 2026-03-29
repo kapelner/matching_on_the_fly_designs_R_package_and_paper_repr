@@ -163,6 +163,9 @@ benchmark_output.log
 comprehensive_tests_run.log
 package_tests/analyze_comprehensive_tests.R
 package_tests/comprehensive_tests.R
-package_tests/comprehensive_tests_results_nc_1.csv
+package_tests/comprehensive_tests_results_nc_*.csv
 test_poisson_optimizations.R
 test_slow_ci_rand.R
+batch_update_inference.py
+test_bootstrap_fail.R
+

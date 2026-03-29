@@ -44,8 +44,8 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 
 		#' @description
 		#' Computes the observed risk-difference estimate.
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -114,7 +114,10 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 			private$cached_values$summary_table = NULL
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			counts = private$get_counts()
@@ -132,6 +135,7 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 
 			private$cached_values$mn_counts = counts
 			private$cached_values$beta_hat_T = est
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 			private$cached_values$is_z = TRUE
 			private$cached_values$df = counts$n_t + counts$n_c - 2

@@ -144,7 +144,7 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 
 		#' @description
 		#' Returns the incidence treatment estimate (log odds ratio).
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			stats = private$get_exact_zhang_stats()
 			zhang_incid_treatment_estimate(stats)
 		}

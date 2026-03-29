@@ -35,7 +35,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$yTs = private$y[private$w == 1]
 				private$cached_values$yCs = private$y[private$w == 0]
@@ -136,7 +136,10 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			return(res)
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 					if (is.null(private$cached_values$beta_hat_T)){
 						self$compute_treatment_estimate()
 					}

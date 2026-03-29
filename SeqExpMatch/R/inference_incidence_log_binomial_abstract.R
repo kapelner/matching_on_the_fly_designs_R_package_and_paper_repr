@@ -11,8 +11,8 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 	public = list(
 		# @description
 		# Returns the treatment effect estimate (log risk ratio).
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -64,7 +64,10 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 			}
 		},
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
@@ -89,6 +92,7 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 			}
 
 			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat])
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
 			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)

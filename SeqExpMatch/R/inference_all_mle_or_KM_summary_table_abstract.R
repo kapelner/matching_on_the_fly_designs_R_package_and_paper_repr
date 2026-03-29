@@ -38,8 +38,8 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		# seq_des_inf$compute_treatment_estimate()
 		# }
 		#
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -74,7 +74,10 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 	private = list(
 		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
 
-		shared = function(){
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
 			model_output = private$generate_mod() # Implemented by child classes (Weibull, NegBin)
 
@@ -112,6 +115,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 				treatment_coef_name = names(full_coefficients)[length(full_coefficients)]
 			}
 			private$cached_values$beta_hat_T = full_coefficients[treatment_coef_name]
+			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = full_std_errs[treatment_coef_name]
 			private$cached_values$is_z = TRUE
 		}
