@@ -57,7 +57,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$compute_shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			private$cached_values$is_z = TRUE
 			private$compute_z_or_t_ci_from_s_and_df(alpha)

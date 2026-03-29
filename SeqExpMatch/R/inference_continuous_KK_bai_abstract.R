@@ -24,11 +24,11 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	# @param convex_flag       A flag indicating whether the estimator should use a convex combination of the Bai et al
 	# 					matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#
-	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE, make_fork_cluster = NULL){
 		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
 		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
 		}
-		super$initialize(des_obj, num_cores, verbose)
+		super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		private$convex_flag = convex_flag
 		assertNoCensoring(private$any_censoring)
 	},
@@ -55,6 +55,8 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	# }
 	#
 	compute_treatment_estimate = function(){
+		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		nRT = private$cached_values$KKstats$nRT
 		nRC = private$cached_values$KKstats$nRC
 		m = private$cached_values$KKstats$m
@@ -200,6 +202,8 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	},
 
 	shared = function(){
+		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		m = private$cached_values$KKstats$m
 		nRT = private$cached_values$KKstats$nRT
 		nRC = private$cached_values$KKstats$nRC

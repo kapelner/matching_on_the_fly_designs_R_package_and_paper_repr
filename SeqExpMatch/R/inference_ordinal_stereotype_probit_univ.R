@@ -41,9 +41,9 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -68,7 +68,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("Stereotype probit regression: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},

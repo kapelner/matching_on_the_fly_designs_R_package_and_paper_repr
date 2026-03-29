@@ -34,6 +34,7 @@
 #' }
 #' @name fast_ols_cpp
 #' @rdname fast_ols_cpp
+#' @export
 NULL
 
 #' Fast Ordinary Least Squares (OLS) Regression with Variance (C++ Backend)
@@ -73,6 +74,75 @@ NULL
 #'
 #' @name fast_ols_with_var_cpp
 #' @rdname fast_ols_with_var_cpp
+#' @export
+NULL
+
+#' Fast Poisson Regression (C++ Backend)
+#'
+#' This function provides a fast implementation of Poisson regression using a C++ backend.
+#' It is designed to efficiently estimate regression coefficients for count outcomes.
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, expected to be counts.
+#' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated Poisson regression coefficients.}
+#' \item{mu}{The fitted values.}
+#' \item{XtWX}{The XtWX matrix at the final iteration.}
+#' \item{converged}{A logical value indicating whether the IRLS algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_poisson_regression_cpp
+NULL
+
+#' Fast Poisson Regression with Variance Calculation (C++ Backend)
+#'
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	y A numeric vector of the response variable, expected to be counts.
+#' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the obtained Poisson regression coefficients.}
+#' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
+#' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient.}
+#' \item{mu}{The fitted values.}
+#' \item{converged}{A logical value indicating whether the IRLS algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_poisson_regression_with_var_cpp
+NULL
+
+#' Fast Quasi-Poisson Regression with Variance Calculation (C++ Backend)
+#'
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	y A numeric vector of the response variable, expected to be counts.
+#' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the obtained Poisson regression coefficients.}
+#' \item{ssq_b_j}{The squared standard error (variance) of the j-th estimated coefficient.}
+#' \item{ssq_b_2}{The squared standard error (variance) of the second estimated coefficient.}
+#' \item{dispersion}{The estimated dispersion parameter.}
+#' \item{mu}{The fitted values.}
+#' \item{converged}{A logical value indicating whether the IRLS algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_quasipoisson_regression_with_var_cpp
 NULL
 
 #' Fast Logistic Regression (R Wrapper)

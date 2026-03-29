@@ -51,7 +51,18 @@ InferenceOrdinalMultiCumulProbitRegr = R6::R6Class("InferenceOrdinalMultiCumulPr
 			X_full
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_ordinal_probit_regression_cpp(
+					X = private$cumulative_probit_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_probit_regression_with_var_cpp(
 				X = private$cumulative_probit_design_matrix(),
 				y = as.numeric(private$y)

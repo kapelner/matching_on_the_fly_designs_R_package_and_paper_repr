@@ -42,9 +42,9 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 		#'   between 0 and 1. Default is 0.5.
 		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, tau, qlogis, num_cores, verbose)
+			super$initialize(des_obj, tau, qlogis, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		},

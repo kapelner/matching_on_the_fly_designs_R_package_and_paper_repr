@@ -16,7 +16,7 @@
 #'
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCopulaIVWC",
-	inherit = InferenceAsymp,
+	inherit = InferenceKKPassThrough,
 	public = list(
 
 		# @description
@@ -24,12 +24,12 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
 		# @description

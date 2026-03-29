@@ -43,7 +43,18 @@ InferenceOrdinalMultiCLLRegr = R6::R6Class("InferenceOrdinalMultiCLLRegr",
 			X_full
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_ordinal_cloglog_regression_cpp(
+					X = private$cloglog_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b), # Match the [2] indexing in shared()
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_cloglog_regression_with_var_cpp(
 				X = private$cloglog_design_matrix(),
 				y = as.numeric(private$y)

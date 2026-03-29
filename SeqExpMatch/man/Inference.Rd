@@ -14,6 +14,9 @@ assignments were allocated and all responses were collected).
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Inference-new}{\code{Inference$new()}}
+\item \href{#method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-Inference-compute_exact_confidence_interval}{\code{Inference$compute_exact_confidence_interval()}}
+\item \href{#method-Inference-compute_treatment_estimate}{\code{Inference$compute_treatment_estimate()}}
 \item \href{#method-Inference-duplicate}{\code{Inference$duplicate()}}
 \item \href{#method-Inference-clone}{\code{Inference$clone()}}
 }
@@ -23,7 +26,39 @@ assignments were allocated and all responses were collected).
 \if{latex}{\out{\hypertarget{method-Inference-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Inference$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$new(
+  des_obj,
+  num_cores = 1,
+  verbose = FALSE,
+  make_fork_cluster = NULL
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-compute_exact_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_exact_confidence_interval}{}}}
+\subsection{Method \code{compute_exact_confidence_interval()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_confidence_interval(...)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
 }

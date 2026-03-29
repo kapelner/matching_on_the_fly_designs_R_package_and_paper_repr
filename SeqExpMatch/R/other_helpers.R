@@ -675,7 +675,7 @@ NULL
 	)
 }
 
-.fit_zero_one_inflated_beta = function(y, Xmm){
+.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE){
 	y = as.numeric(y)
 	Xmm = as.matrix(Xmm)
 	if (length(y) != nrow(Xmm)){
@@ -751,6 +751,13 @@ NULL
 	param_names = c(colnames(Xfull), "log_phi", "alpha0", "alpha1")
 	coef_full = best_params
 	names(coef_full) = param_names
+
+	if (estimate_only) {
+		return(list(
+			coefficients = coef_full,
+			vcov = NULL
+		))
+	}
 
 	vcov_full = best$vcov
 	if (!is.matrix(vcov_full) || any(dim(vcov_full) != length(param_names))){

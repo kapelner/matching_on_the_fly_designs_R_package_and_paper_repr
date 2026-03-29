@@ -43,7 +43,7 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 	),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			# Multivariate: covariates + treatment (mirrors InferenceSurvivalMultiCoxPHRegr)
 			X_cov_orig = private$get_X()
 			# Try fast C++ path with progressively lower correlation thresholds.
@@ -65,13 +65,16 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 					colnames(full_X_matrix) = "treatment"
 				}
 				full_X_matrix_last = full_X_matrix
-				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix), error = function(e) NULL)
+				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix, estimate_only = estimate_only), error = function(e) NULL)
 				if (!is.null(mod)) return(mod)
 			}
 			# All fast C++ paths failed: one robust survreg fallback on the most-reduced matrix
 			surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix_last)
 			if (!is.null(surv_mod)) {
 				full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
+				if (estimate_only) {
+					return(list(coefficients = full_coefficients, vcov = NULL))
+				}
 				full_vcov = surv_mod$var
 				if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
 					colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)

@@ -39,11 +39,19 @@ InferenceCountMultiNegBinRegr = R6::R6Class("InferenceCountMultiNegBinRegr",
 	),
 
 	private = list(
-		generate_mod = function(){
-			fast_negbin_regression_with_var(
-				Xmm = private$create_design_matrix(),
-				y = private$y
-			)
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_negbin_regression(
+					Xmm = private$create_design_matrix(),
+					y = private$y
+				)
+				list(b = res$b, ssq_b_2 = NA_real_)
+			} else {
+				fast_negbin_regression_with_var(
+					Xmm = private$create_design_matrix(),
+					y = private$y
+				)
+			}
 		}
 	)
 )

@@ -13,17 +13,13 @@ NumericVector compute_weighted_sqd_distances_cpp(
 	NumericVector weighted_sqd_distances(n);
 
 	for (int r = 0; r < n; ++r) {
-	NumericVector diff(d);
-	for (int j = 0; j < d; ++j) {
-		diff[j] = x_new[j] - X_all_scaled_col_subset(reservoir_indices[r] - 1, j);
-	}
-
-	double sqd_weighted_sum = 0.0;
-	for (int j = 0; j < d; ++j) {
-		sqd_weighted_sum += diff[j] * diff[j] * covariate_weights[j];
-	}
-
-	weighted_sqd_distances[r] = sqd_weighted_sum;
+		int row_idx = reservoir_indices[r] - 1; // 1-based to 0-based
+		double sqd_weighted_sum = 0.0;
+		for (int j = 0; j < d; ++j) {
+			double diff = x_new[j] - X_all_scaled_col_subset(row_idx, j);
+			sqd_weighted_sum += diff * diff * covariate_weights[j];
+		}
+		weighted_sqd_distances[r] = sqd_weighted_sum;
 	}
 
 	return weighted_sqd_distances;

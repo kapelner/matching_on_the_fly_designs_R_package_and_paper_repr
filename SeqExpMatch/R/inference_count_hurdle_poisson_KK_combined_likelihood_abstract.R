@@ -14,12 +14,12 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 	inherit = InferenceAsymp,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("glmmTMB", quietly = TRUE)){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
@@ -36,7 +36,7 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},

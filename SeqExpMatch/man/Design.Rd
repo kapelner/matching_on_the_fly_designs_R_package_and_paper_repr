@@ -34,6 +34,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
+\item \href{#method-Design-resample_design}{\code{Design$resample_design()}}
 \item \href{#method-Design-clone}{\code{Design$clone()}}
 }
 }
@@ -378,6 +379,17 @@ Duplicate this design object
 \subsection{Returns}{
 A new `Design` object with the same data
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-resample_design"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-resample_design}{}}}
+\subsection{Method \code{resample_design()}}{
+Resample this design for bootstrap inference.
+Draws n subjects with replacement and updates w, y, dead (and m for KK designs).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$resample_design()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-clone"></a>}}

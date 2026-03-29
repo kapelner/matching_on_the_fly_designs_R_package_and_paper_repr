@@ -91,7 +91,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			fit_T = tryCatch(survival::survfit(survival::Surv(y[w == 1], dead[w == 1]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
 			fit_C = tryCatch(survival::survfit(survival::Surv(y[w == 0], dead[w == 0]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
 			if (is.null(fit_T) || is.null(fit_C)){
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			q_T = quantile(fit_T, 0.5)
 			q_C = quantile(fit_C, 0.5)
@@ -103,7 +103,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			hi_C  = as.numeric(q_C$upper)
 			# Fall back to bootstrap if either median or its CI is not estimable
 			if (!is.finite(med_T) || !is.finite(med_C) || !is.finite(lo_T) || !is.finite(hi_T) || !is.finite(lo_C) || !is.finite(hi_C)){
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			# Back-calculate SE for each median from the Brookmeyer-Crowley CI,
 			# then combine under independence for the difference

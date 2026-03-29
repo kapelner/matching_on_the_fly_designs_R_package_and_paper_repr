@@ -39,6 +39,10 @@ Inference = R6::R6Class("Inference",
 			set_package_threads(num_cores)
 			private$make_fork_cluster = if (is.null(make_fork_cluster)) .Platform$OS.type == "unix" else isTRUE(make_fork_cluster)
 			private$use_mirai = num_cores > 1L && !private$make_fork_cluster && requireNamespace("mirai", quietly = TRUE)
+			# Fork cluster is created lazily at the first par_lapply call that needs it.
+			# Eager creation caused copy-on-write overhead in the main process for all
+			# subsequent writes to pre-fork memory, which hurt single-threaded operations
+			# even when no parallel work was dispatched.
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
@@ -52,6 +56,26 @@ Inference = R6::R6Class("Inference",
 					".\n"
 				))
 			}
+		},
+
+		# @description
+		# Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+		compute_exact_two_sided_pval_for_treatment_effect = function(...){
+			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
+		},
+
+		# @description
+		# Computes an exact confidence interval. Subclasses that support exact inference override this.
+		compute_exact_confidence_interval = function(...){
+			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
+		},
+
+		# @description
+		# Computes the treatment estimate.
+		# @param estimate_only If TRUE, skip variance component calculations.
+		# @return A numeric treatment estimate.
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			stop("Must be implemented by concrete class.")
 		},
 
 		# @description
@@ -72,8 +96,9 @@ Inference = R6::R6Class("Inference",
 				clone_private = i$.__enclos_env__$private
 				fn = clone_private$custom_randomization_statistic_function
 				environment(fn) = environment(i$initialize)
-				field = "custom_randomization_statistic_function"
-				assign(field, fn, envir = clone_private)
+				if (bindingIsLocked("custom_randomization_statistic_function", clone_private))
+					unlockBinding("custom_randomization_statistic_function", clone_private)
+				clone_private[["custom_randomization_statistic_function"]] = fn
 			}
 			i
 		}
@@ -107,6 +132,14 @@ Inference = R6::R6Class("Inference",
 		X = NULL,
 		cached_values = list(),
 
+		# Returns the number of C++ OpenMP threads to use for a parallel C++ function
+		# with n_work_items items of work. Caps threads so that each thread handles
+		# at least 10 items; for tiny r/B values this prevents thread-management
+		# overhead from dominating over the actual computation.
+		n_cpp_threads = function(n_work_items) {
+			min(private$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
+		},
+
 		get_or_create_fork_cluster = function(){
 			if (is.null(private$fork_cluster)){
 				private$fork_cluster = parallel::makeForkCluster(private$num_cores)
@@ -114,10 +147,14 @@ Inference = R6::R6Class("Inference",
 			private$fork_cluster
 		},
 
-		par_lapply = function(X, FUN, n_cores, show_progress = FALSE){
+		par_lapply = function(X, FUN, n_cores, show_progress = FALSE, export_list = NULL){
 			if (n_cores <= 1L) return(lapply(X, FUN))
 			if (isTRUE(private$make_fork_cluster)){
 				cl = private$get_or_create_fork_cluster()
+				if (!is.null(export_list) && length(export_list) > 0L) {
+					export_env = list2env(export_list, parent = emptyenv())
+					parallel::clusterExport(cl, names(export_list), envir = export_env)
+				}
 				parallel::parLapply(cl, X, FUN)
 			} else if (isTRUE(private$use_mirai)){
 				private$ensure_mirai_daemons(n_cores)

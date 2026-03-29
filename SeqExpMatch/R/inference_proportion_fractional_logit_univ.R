@@ -35,9 +35,9 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' seq_des_inf = InferencePropUniFractionalLogit$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -45,7 +45,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' Computes the fractional-logit estimate of the treatment effect on the
 		#' log-odds scale.
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
 
@@ -56,7 +56,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#'   1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -66,7 +66,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 		#' @param delta The null treatment effect on the log-odds scale.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -113,7 +113,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 			private$cached_values$summary_table = NULL
 		},
 
-		fit_fractional_logit = function(X_full){
+		fit_fractional_logit = function(X_full, estimate_only = FALSE){
 			X_curr = X_full
 
 			repeat {
@@ -125,15 +125,15 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 				}
 
 				mod = tryCatch(
-					suppressWarnings(stats::glm.fit(x = X_fit, y = as.numeric(private$y), family = stats::binomial(link = "logit"))),
+					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 					error = function(e) NULL
 				)
 				if (is.null(mod)){
 					return(NULL)
 				}
 
-				coef_hat = as.numeric(mod$coefficients)
-				converged = isTRUE(mod$converged) && length(coef_hat) == ncol(X_fit) && all(is.finite(coef_hat))
+				coef_hat = as.numeric(mod$b)
+				converged = all(is.finite(coef_hat))
 				if (!converged){
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
@@ -142,7 +142,18 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 					next
 				}
 
-				mu_hat = pmin(pmax(as.numeric(mod$fitted.values), .Machine$double.eps), 1 - .Machine$double.eps)
+				if (estimate_only){
+					return(list(
+						beta_hat = coef_hat[j_treat],
+						se = NA_real_,
+						coefficients = coef_hat,
+						vcov = NULL,
+						summary_table = NULL
+					))
+				}
+
+				mu_hat = inv_logit(X_fit %*% coef_hat)
+				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
 				W = mu_hat * (1 - mu_hat)
 				if (any(!is.finite(W)) || any(W <= 0)){
 					if (ncol(X_curr) <= 2L) return(NULL)
@@ -195,8 +206,8 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 			}
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
@@ -204,7 +215,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 			}
 			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 
-			fit = private$fit_fractional_logit(X_full)
+			fit = private$fit_fractional_logit(X_full, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
@@ -213,7 +224,7 @@ InferencePropUniFractionalLogit = R6::R6Class("InferencePropUniFractionalLogit",
 			private$cached_values$beta_hat_T = fit$beta_hat
 			private$cached_values$s_beta_hat_T = fit$se
 			private$cached_values$is_z = TRUE
-			private$cached_values$df = nrow(X_full) - ncol(fit$vcov)
+			private$cached_values$df = nrow(X_full) - (if (is.null(fit$vcov)) 2L else ncol(fit$vcov))
 			private$cached_values$full_coefficients = fit$coefficients
 			private$cached_values$full_vcov = fit$vcov
 			private$cached_values$summary_table = fit$summary_table

@@ -52,69 +52,10 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
-		},
-
-		#' @description
-		#' Computes the stereotype logistic treatment effect estimate.
-		#'
-		#' @return	The estimated treatment coefficient.
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
-		},
-
-		#' @description
-		#' Computes a profile-likelihood confidence interval for the stereotype
-		#' treatment effect.
-		#'
-		#' @param alpha	The confidence level in the computed confidence interval is
-		#' 				\eqn{1 - \alpha}. The default is \code{0.05}.
-		#'
-		#' @return	A profile-likelihood confidence interval for the treatment effect.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			beta_hat = self$compute_treatment_estimate()
-			ll_hat = private$profile_loglik(beta_hat)
-			cutoff = stats::qchisq(1 - alpha, df = 1)
-			target = ll_hat - cutoff / 2
-
-			find_bound = function(direction){
-				step = 0.25
-				edge = beta_hat + direction * step
-				for (iter in 1:40){
-					ll_edge = private$profile_loglik(edge)
-					if (is.finite(ll_edge) && ll_edge <= target){
-						f = function(b) private$profile_loglik(b) - target
-						return(stats::uniroot(f, lower = min(beta_hat, edge), upper = max(beta_hat, edge))$root)
-					}
-					step = step * 2
-					edge = beta_hat + direction * step
-				}
-				NA_real_
-			}
-
-			stats::setNames(c(find_bound(-1), find_bound(1)), c("2.5%", "97.5%"))
-		},
-
-		#' @description
-		#' Computes a profile-likelihood ratio p-value for the stereotype treatment
-		#' effect.
-		#'
-		#' @param delta	The null treatment effect. Only \code{0} is supported.
-		#'
-		#' @return	The approximate frequentist p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (!identical(delta, 0)) stop("Only delta = 0 is currently supported for stereotype logistic inference.")
-			beta_hat = self$compute_treatment_estimate()
-			ll_hat = private$profile_loglik(beta_hat)
-			ll_null = private$profile_loglik(0)
-			lr_stat = max(0, 2 * (ll_hat - ll_null))
-			stats::pchisq(lr_stat, df = 1, lower.tail = FALSE)
 		}
 	),
 
@@ -125,7 +66,18 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 			Xmm
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_stereotype_logit_cpp(
+					X = private$stereotype_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b[1]),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_stereotype_logit_with_var_cpp(
 				X = private$stereotype_design_matrix(),
 				y = as.numeric(private$y)

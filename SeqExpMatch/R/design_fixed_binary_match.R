@@ -3,6 +3,7 @@
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed binary match experimental design.
 #' This design pairs subjects based on covariate distances and randomizes within pairs.
+#' Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 #'
 #' @export
 FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
@@ -33,6 +34,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			if (prob_T != 0.5){
 				stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
 			}
+			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
 			private$mahal_match = mahal_match
 			private$uses_covariates = TRUE
@@ -46,57 +48,55 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			assertCount(r, positive = TRUE)
+			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			self$assert_all_subjects_arrived()
-			private$ensure_pairs_computed()
+			private$ensure_bms_computed()
 			n = self$get_n()
 			if (is.null(private$m)){
-				# Fallback BCRD
-				w_mat = replicate(r, sample(c(rep(1, n/2), rep(0, n/2))))
-				return(matrix(as.numeric(w_mat), nrow = n, ncol = r))
+				# No covariates: fall back to BCRD
+				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
 
-			# Use C++ for fast generation of many replicates
-			res = generate_permutations_kk_cpp(as.integer(private$m), as.integer(r), as.numeric(private$prob_T))
-			return(res$w_mat)
+			# Cap at the total number of unique balanced allocations for small n
+			max_designs_cap = if (n/2 < 30) floor(2^(n/2)) else r
+			max_designs = min(r, max_designs_cap)
+
+			search_obj = GreedyExperimentalDesign::initBinaryMatchExperimentalDesignSearchObject(
+				private$bms,
+				max_designs = max_designs,
+				wait       = TRUE,
+				start      = TRUE,
+				num_cores  = private$num_cores,
+				verbose    = private$verbose
+			)
+			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(search_obj, form = "one_zero")
+			storage.mode(w_mat) = "numeric"
+
+			# If fewer unique designs exist than requested, recycle columns
+			if (ncol(w_mat) < r){
+				w_mat = w_mat[, rep(seq_len(ncol(w_mat)), length.out = r), drop = FALSE]
+			}
+			w_mat[, seq_len(r), drop = FALSE]
 		}
 	),
 
 	private = list(
 		mahal_match = NULL,
+		bms = NULL,
 
-		ensure_pairs_computed = function(){
+		ensure_bms_computed = function(){
 			n = self$get_n()
-			if (is.null(private$m) && !is.null(private$X) && ncol(private$X) > 0){
+			if (is.null(private$bms) && !is.null(private$X) && ncol(private$X) > 0){
 				X = private$X[1:n, , drop = FALSE]
-				if (private$mahal_match){
-					S_X = var(X)
-					if (abs(det(S_X)) < 1e-10){
-						S_X = S_X + diag(1e-6, ncol(X))
-					}
-					S_X_inv = solve(S_X)
-					D = matrix(0, n, n)
-					for (i in 1 : (n - 1)){
-						for (j in (i + 1) : n){
-							xdiff = X[i, ] - X[j, ]
-							D[i, j] = D[j, i] = xdiff %*% (S_X_inv %*% xdiff)
-						}
-					}
-				} else {
-					D = as.matrix(dist(X))^2
-				}
-				
-				diag(D) = .Machine$double.xmax
-				
-				# API call to nbpMatching::nonbimatch
-				dist_obj = nbpMatching::distancematrix(D)
-				match_obj = nbpMatching::nonbimatch(dist_obj)
-				matches = match_obj$matches
-				
-				# Convert to m vector (pair IDs)
-				m_vec = rep(NA_integer_, n)
-				for (i in 1 : nrow(matches)){
-					m_vec[as.integer(matches$Group1.Row[i])] = i
-					m_vec[as.integer(matches$Group2.Row[i])] = i
+				private$bms = GreedyExperimentalDesign::computeBinaryMatchStructure(X, mahal_match = private$mahal_match)
+
+				# Build pair-ID vector m where m[i] = pair index for subject i
+				m_vec = integer(n)
+				pairs = private$bms$indicies_pairs
+				for (i in seq_len(nrow(pairs))){
+					m_vec[pairs[i, 1]] = i
+					m_vec[pairs[i, 2]] = i
 				}
 				private$m = m_vec
 			}

@@ -3,7 +3,7 @@
 .libPaths(c("local_R_lib", .libPaths()))
 
 # Load necessary packages
-packages = c("SeqExpMatch", "microbenchmark", "data.table", "dplyr", "PTE", "mlbench", "AppliedPredictiveModeling", "qgam")
+packages = c("EDI", "microbenchmark", "data.table", "dplyr", "PTE", "mlbench", "AppliedPredictiveModeling", "qgam")
 for (p in packages) {
     if (!require(p, character.only = TRUE)) {
         install.packages(p, repos = "https://cloud.r-project.org/", lib = "local_R_lib")
@@ -29,7 +29,7 @@ pval_epsilon = 0.05
 beta_T = 0.2
 SD_NOISE = 0.1
 
-prepare_des_obj = function(response_type, dataset_name = "airquality", design_class = SeqDesignKK14) {
+prepare_des_obj = function(response_type, dataset_name = "airquality", design_class = DesignSeqOneByOneKK14) {
     D = datasets_and_response_models[[dataset_name]]
     X_design = as.data.frame(D$X)
     n = min(nrow(X_design), MAX_N_DATASET)
@@ -137,11 +137,11 @@ for (response_type in names(categorized_classes)) {
     flush.console()
     if (!(response_type %in% names(datasets_and_response_models$airquality$y_original))) next
     
-    des_obj_kk14 = prepare_des_obj(response_type, design_class = SeqDesignKK14)
-    des_obj_kk21 = prepare_des_obj(response_type, design_class = SeqDesignKK21)
+    des_obj_kk14 = prepare_des_obj(response_type, design_class = DesignSeqOneByOneKK14)
+    des_obj_kk21 = prepare_des_obj(response_type, design_class = DesignSeqOneByOneKK21)
     
     for (inf_class_name in unique(categorized_classes[[response_type]])) {
-        if (inf_class_name == "DesignInferenceAllKKCompoundMeanDiff") next
+        if (inf_class_name == "InferenceAllKKCompoundMeanDiff") next
         
         cat(sprintf("  %s:\n", inf_class_name))
         flush.console()
@@ -187,14 +187,14 @@ for (response_type in names(categorized_classes)) {
             flush.console()
             
             # 1. boot (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
                 bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
             w_original = current_des_obj$.__enclos_env__$private$w
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
@@ -202,14 +202,14 @@ for (response_type in names(categorized_classes)) {
             # 3. custom_ci (New object, reset design cache for cold measurement)
             current_des_obj$.__enclos_env__$private$X = NULL
             current_des_obj$.__enclos_env__$private$w = w_original
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
                 bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
             } else NA
@@ -220,7 +220,7 @@ for (response_type in names(categorized_classes)) {
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             asymp_pval_time = if (!is.null(inf_obj)) {
                 bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
             } else NA

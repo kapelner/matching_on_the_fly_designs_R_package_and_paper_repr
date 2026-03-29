@@ -33,9 +33,9 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object.
 		#' @param num_cores Number of CPU cores.
 		#' @param verbose Whether to print progress.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -51,6 +51,18 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		compute_exact_two_sided_pval_for_treatment_effect = function(){
 			private$shared()
 			private$cached_values$p_exact
+		},
+
+		#' @description
+		#' Not applicable: JT test is exact, not asymptotic. Returns NA.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			c(NA_real_, NA_real_)
+		},
+
+		#' @description
+		#' Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			NA_real_
 		}
 	),
 

@@ -401,6 +401,21 @@ Design = R6::R6Class("Design",
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
 			d
+		},
+
+		#' @description
+		#' Resample this design for bootstrap inference.
+		#' Draws n subjects with replacement and updates w, y, dead (and m for KK designs).
+		resample_design = function(){
+			n = private$n
+			i_b = sample(n, n, replace = TRUE)
+			private$w    = private$w[i_b]
+			private$y    = private$y[i_b]
+			private$dead = private$dead[i_b]
+			if (!is.null(private$m)){
+				private$m = private$m[i_b]
+			}
+			invisible(self)
 		}
 
 	),

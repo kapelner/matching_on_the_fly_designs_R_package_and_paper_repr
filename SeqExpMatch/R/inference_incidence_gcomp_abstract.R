@@ -7,6 +7,13 @@
 #' covariate distribution. Inference uses a sandwich-robust covariance for the
 #' regression coefficients and the delta method for the marginal estimand.
 #'
+#' @details
+#' The implementation is optimized for resampling-based inference (bootstrap and
+#' randomization). It utilizes a fast C++ IRLS solver for the underlying logistic
+#' regression. During resampling draws, it bypasses the expensive calculation of
+#' the sandwich covariance matrix and delta-method standard errors, as only the
+#' point estimate is required for the distribution.
+#'
 #' @keywords internal
 #' @noRd
 InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
@@ -18,16 +25,16 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		# @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		# @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		# @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
 		# @description
 		# Computes the g-computation treatment-effect estimate.
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$get_effect_estimate()
 		},
 
@@ -36,7 +43,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
 
@@ -44,7 +51,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		# Computes a two-sided p-value for the treatment effect.
 		# @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
 
@@ -91,8 +98,15 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$cached_values$se_log_rr = NA_real_
 		},
 
-		effects_are_usable = function(effects){
+		effects_are_usable = function(effects, estimate_only = FALSE){
 			estimand = private$get_estimand_type()
+			if (estimate_only) {
+				if (identical(estimand, "RD")){
+					return(is.finite(effects$rd))
+				} else {
+					return(is.finite(effects$rr) && effects$rr > 0)
+				}
+			}
 			if (identical(estimand, "RD")){
 				is.finite(effects$rd) && is.finite(effects$se_rd) && effects$se_rd > 0
 			} else {
@@ -113,7 +127,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
 		},
 
-		fit_logistic_with_sandwich = function(X_full){
+		fit_logistic_with_sandwich = function(X_full, estimate_only = FALSE){
 			X_curr = X_full
 
 			repeat {
@@ -125,15 +139,15 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				}
 
 				mod = tryCatch(
-					suppressWarnings(stats::glm.fit(x = X_fit, y = as.numeric(private$y), family = stats::binomial())),
+					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 					error = function(e) NULL
 				)
 				if (is.null(mod)){
 					return(NULL)
 				}
 
-				coef_hat = as.numeric(mod$coefficients)
-				converged = isTRUE(mod$converged) && length(coef_hat) == ncol(X_fit) && all(is.finite(coef_hat))
+				coef_hat = as.numeric(mod$b)
+				converged = all(is.finite(coef_hat))
 				if (!converged){
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
@@ -142,8 +156,17 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					next
 				}
 
-				mu_hat_raw = as.numeric(mod$fitted.values)
-				mu_hat = pmin(pmax(mu_hat_raw, .Machine$double.eps), 1 - .Machine$double.eps)
+				if (estimate_only){
+					return(list(
+						X = X_fit,
+						j_treat = j_treat,
+						coefficients = coef_hat,
+						estimate_only = TRUE
+					))
+				}
+
+				mu_hat = inv_logit(X_fit %*% coef_hat)
+				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
 				W = mu_hat * (1 - mu_hat)
 				if (any(!is.finite(W)) || any(W <= 0)){
 					if (ncol(X_curr) <= 2L) return(NULL)
@@ -182,7 +205,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					coefficients = coef_hat,
 					vcov = vcov_robust,
 					mu_hat = mu_hat,
-					post_fit = post_fit
+					post_fit = post_fit,
+					estimate_only = FALSE
 				))
 			}
 		},
@@ -192,6 +216,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			coef_hat = fit$coefficients
 			vcov_robust = fit$vcov
 			j_treat = fit$j_treat
+			estimate_only = isTRUE(fit$estimate_only)
 
 			X1 = X_fit
 			X0 = X_fit
@@ -205,17 +230,33 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			risk1 = mean(risk1_i)
 			risk0 = mean(risk0_i)
 
+			rd = risk1 - risk0
+			log_rr = if (risk1 > 0 && risk0 > 0) log(risk1) - log(risk0) else NA_real_
+			rr = if (is.finite(log_rr)) exp(log_rr) else NA_real_
+
+			if (estimate_only){
+				return(list(
+					risk1 = risk1,
+					risk0 = risk0,
+					rd = rd,
+					se_rd = NA_real_,
+					log_rr = log_rr,
+					rr = rr,
+					se_log_rr = NA_real_,
+					full_coefficients = coef_hat,
+					full_vcov = NULL,
+					summary_table = NULL
+				))
+			}
+
 			grad1 = as.numeric(crossprod(X1, risk1_i * (1 - risk1_i))) / nrow(X1)
 			grad0 = as.numeric(crossprod(X0, risk0_i * (1 - risk0_i))) / nrow(X0)
 
-			rd = risk1 - risk0
 			grad_rd = grad1 - grad0
 			var_rd = as.numeric(t(grad_rd) %*% vcov_robust %*% grad_rd)
 
-			log_rr = if (risk1 > 0 && risk0 > 0) log(risk1) - log(risk0) else NA_real_
 			grad_log_rr = if (risk1 > 0 && risk0 > 0) grad1 / risk1 - grad0 / risk0 else rep(NA_real_, length(grad1))
 			var_log_rr = if (all(is.finite(grad_log_rr))) as.numeric(t(grad_log_rr) %*% vcov_robust %*% grad_log_rr) else NA_real_
-			rr = if (is.finite(log_rr)) exp(log_rr) else NA_real_
 
 			std_err = sqrt(pmax(diag(vcov_robust), 0))
 			z_vals = coef_hat / std_err
@@ -241,6 +282,9 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		},
 
 		compute_standardized_effects = function(fit){
+			if (isTRUE(fit$estimate_only)){
+				return(private$compute_standardized_effects_r(fit))
+			}
 			X_fit = fit$X
 			coef_hat = fit$coefficients
 			j_treat = fit$j_treat
@@ -335,8 +379,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			2 * stats::pnorm(-abs(z_stat))
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$rd) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
@@ -344,13 +388,13 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			}
 			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 
-			fit = private$fit_logistic_with_sandwich(X_full)
+			fit = private$fit_logistic_with_sandwich(X_full, estimate_only = estimate_only)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
-			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects)) && ncol(X_full) > 2L){
-				fit = private$fit_logistic_with_sandwich(X_full[, 1:2, drop = FALSE])
+			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
+				fit = private$fit_logistic_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)
 				effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			}
-			if (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects)){
+			if (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}

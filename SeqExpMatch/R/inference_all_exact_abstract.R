@@ -137,9 +137,9 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @param des_obj   A completed \code{Design} object with incidence response.
 		#' @param num_cores Number of CPU cores for parallel bisection search.
 		#' @param verbose   Flag for progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
 		#' @description

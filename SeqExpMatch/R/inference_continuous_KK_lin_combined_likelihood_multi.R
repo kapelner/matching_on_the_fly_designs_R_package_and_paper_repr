@@ -49,12 +49,12 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 		#' infer <- InferenceContinMultiKKLinCombinedLikelihood$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 

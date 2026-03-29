@@ -3,6 +3,7 @@
 #' @description
 #' An R6 Class encapsulating the data and functionality for a fixed rerandomization experimental design.
 #' This design generates random allocations and only accepts those that meet a covariate balance criterion.
+#' For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 #'
 #' @export
 FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
@@ -46,6 +47,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			assertCount(r, positive = TRUE)
 			self$assert_all_subjects_arrived()
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
@@ -53,7 +55,36 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				return(replicate(r, sample(c(rep(1, n_T), rep(0, n - n_T)))))
 			}
 
-			# Precompute S_inv if needed
+			# Use GED for the balanced even-n case
+			use_ged = private$prob_T == 0.5 && n %% 2 == 0 &&
+					  requireNamespace("GreedyExperimentalDesign", quietly = TRUE) &&
+					  requireNamespace("rJava", quietly = TRUE)
+
+			if (use_ged){
+				private$covariate_impute_if_necessary_and_then_create_model_matrix()
+				X = private$X[1:n, , drop = FALSE]
+				cutoff = if (is.null(private$obj_val_cutoff)) Inf else private$obj_val_cutoff
+				search_obj = GreedyExperimentalDesign::initRerandomizationExperimentalDesignObject(
+					X                      = X,
+					obj_val_cutoff_to_include = cutoff,
+					max_designs            = r,
+					objective              = private$objective,
+					wait                   = TRUE,
+					start                  = TRUE,
+					num_cores              = private$num_cores,
+					verbose                = private$verbose
+				)
+				res = GreedyExperimentalDesign::resultsRerandomizationSearch(search_obj, include_assignments = TRUE, form = "one_zero")
+				w_mat = res$ending_indicTs
+				storage.mode(w_mat) = "numeric"
+				# Recycle if fewer were found than requested (tight cutoff)
+				if (ncol(w_mat) < r){
+					w_mat = w_mat[, rep(seq_len(ncol(w_mat)), length.out = r), drop = FALSE]
+				}
+				return(w_mat[, seq_len(r), drop = FALSE])
+			}
+
+			# Fallback pure-R for unbalanced or odd-n cases
 			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
 				X = private$X[1:n, , drop = FALSE]
 				S = var(X)
@@ -63,18 +94,11 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				private$S_inv = solve(S)
 			}
 
-			if (private$num_cores > 1 && requireNamespace("pbmcapply", quietly = TRUE)){
-				w_list = pbmcapply::pbmclapply(1:r, function(i) {
-					private$generate_one_rerandomized_w()
-				}, mc.cores = private$num_cores)
-				return(do.call(cbind, w_list))
-			} else {
-				w_mat = matrix(NA_real_, nrow = n, ncol = r)
-				for (j in 1:r){
-					w_mat[, j] = private$generate_one_rerandomized_w()
-				}
-				return(w_mat)
+			w_mat = matrix(NA_real_, nrow = n, ncol = r)
+			for (j in seq_len(r)){
+				w_mat[, j] = private$generate_one_rerandomized_w()
 			}
+			w_mat
 		}
 	),
 
@@ -85,41 +109,17 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 
 		generate_one_rerandomized_w = function(){
 			n = self$get_n()
-			if (is.null(private$X) || ncol(private$X) == 0){
-				n_T = round(n * private$prob_T)
-				return(sample(c(rep(1, n_T), rep(0, n - n_T))))
-			}
-
-			# Ensure S_inv is available
-			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
-				X = private$X[1:n, , drop = FALSE]
-				S = var(X)
-				if (abs(det(S)) < 1e-10){
-					S = S + diag(1e-6, ncol(X))
-				}
-				private$S_inv = solve(S)
-			}
-
 			X = private$X[1:n, , drop = FALSE]
 			n_T = round(n * private$prob_T)
-			
-			attempts = 0
-			max_attempts = 10000 
-			
+
 			repeat {
-				attempts = attempts + 1
 				if (private$prob_T == 0.5){
 					w_cand = sample(c(rep(1, n_T), rep(0, n - n_T)))
 				} else {
 					w_cand = rbinom(n, 1, private$prob_T)
 				}
-				
 				obj_val = private$compute_obj(X, w_cand)
-				
-				if (is.null(private$obj_val_cutoff) || obj_val <= private$obj_val_cutoff || attempts >= max_attempts){
-					if (private$verbose && attempts >= max_attempts){
-						warning("Rerandomization reached max attempts without finding a design below cutoff.")
-					}
+				if (is.null(private$obj_val_cutoff) || obj_val <= private$obj_val_cutoff){
 					return(w_cand)
 				}
 			}
@@ -127,14 +127,11 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 
 		compute_obj = function(X, w){
 			if (private$objective == "mahal_dist"){
-				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
-				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
-				diff = x_T_bar - x_C_bar
+				diff = colMeans(X[w == 1, , drop = FALSE]) - colMeans(X[w == 0, , drop = FALSE])
 				return(as.numeric(diff %*% private$S_inv %*% diff))
 			} else if (private$objective == "abs_sum_diff"){
-				x_T_bar = colMeans(X[w == 1, , drop = FALSE])
-				x_C_bar = colMeans(X[w == 0, , drop = FALSE])
-				return(sum(abs(x_T_bar - x_C_bar)))
+				diff = colMeans(X[w == 1, , drop = FALSE]) - colMeans(X[w == 0, , drop = FALSE])
+				return(sum(abs(diff)))
 			}
 			stop("Unsupported objective")
 		}

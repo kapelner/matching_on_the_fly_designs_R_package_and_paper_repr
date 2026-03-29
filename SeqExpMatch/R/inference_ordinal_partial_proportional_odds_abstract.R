@@ -21,9 +21,10 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		initialize = function(des_obj,
 				nonparallel = character(0),
 				num_cores = 1,
-				verbose = FALSE){
+				verbose = FALSE,
+				make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 			assertCharacter(nonparallel, null.ok = TRUE)
 			private$nonparallel = unique(nonparallel)

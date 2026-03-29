@@ -44,19 +44,10 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
-		},
-
-		#' @description
-		#' Computes the adjacent-category treatment effect estimate.
-		#'
-		#' @return	The estimated treatment log-odds ratio shared across adjacent categories.
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
 		}
 	),
 
@@ -67,7 +58,18 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 			Xmm
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_adjacent_category_logit_cpp(
+					X = private$adjacent_category_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b[1]),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_adjacent_category_logit_with_var_cpp(
 				X = private$adjacent_category_design_matrix(),
 				y = as.numeric(private$y)

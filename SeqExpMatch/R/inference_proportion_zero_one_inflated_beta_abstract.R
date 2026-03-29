@@ -18,30 +18,30 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 	inherit = InferenceAsymp,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
-		compute_treatment_estimate = function(){
-			private$shared()
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
 				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
@@ -102,12 +102,12 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 			private$cached_values$summary_table = NULL
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			fit = NULL
 			for (Xmm in private$build_design_matrix_candidates()){
-				fit = .fit_zero_one_inflated_beta(private$y, Xmm)
+				fit = .fit_zero_one_inflated_beta(private$y, Xmm, estimate_only = estimate_only)
 				if (!is.null(fit)) break
 			}
 			if (is.null(fit)){
@@ -117,8 +117,19 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 
 			coef_full = fit$coefficients
 			vcov_full = fit$vcov
-			if (!("treatment" %in% names(coef_full)) || !("treatment" %in% rownames(vcov_full))){
+			if (!("treatment" %in% names(coef_full)) || (!estimate_only && !("treatment" %in% rownames(vcov_full)))){
 				private$set_failed_fit_cache()
+				return(invisible(NULL))
+			}
+
+			if (estimate_only) {
+				private$cached_values$beta_hat_T = as.numeric(coef_full["treatment"])
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z = TRUE
+				private$cached_values$df = private$n - length(coef_full)
+				private$cached_values$full_coefficients = coef_full
+				private$cached_values$full_vcov = NULL
+				private$cached_values$summary_table = NULL
 				return(invisible(NULL))
 			}
 

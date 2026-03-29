@@ -54,38 +54,36 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-		},
-
-
-		#' @description
-		#' Computes the appropriate estimate
-		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
 		}
 		),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
-			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
-
-			# Ensure names are set for shared()
-			names(res$b) = colnames(Xmm)
-
-			# Return in expected format
-			list(
-				b = res$b,
-				ssq_b_2 = res$ssq_b_2
-			)
+			
+			if (estimate_only) {
+				res = fast_beta_regression(Xmm = Xmm, y = private$y)
+				# Ensure names are set for shared()
+				names(res$b) = colnames(Xmm)
+				return(list(
+					b = res$b,
+					ssq_b_2 = NA_real_
+				))
+			} else {
+				res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
+				# Ensure names are set for shared()
+				names(res$b) = colnames(Xmm)
+				return(list(
+					b = res$b,
+					ssq_b_2 = res$ssq_b_2
+				))
+			}
 		}
 	)
 ) # End of R6::R6Class

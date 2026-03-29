@@ -29,9 +29,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# Duplicate objects for thread safety
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
+			is_KK_local = private$is_KK
 
 			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
-			# cost, then only parallelize if computation outweighs fork overhead (~500ms per worker).
+			# cost, then only parallelize if computation outweighs overhead per worker.
+			# For a persistent fork cluster the per-call overhead is ~10ms (socket round-trip);
+			# for mclapply (per-call fork) it is ~500ms.
 			actual_cores = private$num_cores
 			if (actual_cores > 1L) {
 				t_boot_warmup = system.time({
@@ -40,37 +43,52 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					w_des$resample_design()
 					w_inf$.__enclos_env__$private$w = w_des$.__enclos_env__$private$w
 					w_inf$.__enclos_env__$private$y = w_des$.__enclos_env__$private$y
-					if (private$is_KK) {
+					if (is_KK_local && !is.null(w_inf$.__enclos_env__$private$compute_basic_match_data)) {
 						w_inf$.__enclos_env__$private$m = w_des$.__enclos_env__$private$m
 						w_inf$.__enclos_env__$private$compute_basic_match_data()
 					}
-					tryCatch(w_inf$compute_treatment_estimate(), error = function(e) NA_real_)
+					tryCatch(w_inf$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 				})[[3]]
-				fork_overhead_estimate = 0.5  # ~500ms per fork for large R sessions
+				fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
 				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores))
 					actual_cores = 1L
 			}
 
-			boot_distr = unlist(private$par_lapply(1:B, function(idx) {
-				set_package_threads(1L)
-				worker_des = des_template$duplicate()
-				worker_inf = inf_template$duplicate()
-				worker_inf$.__enclos_env__$private$num_cores = 1L
-				
-				# Resample design
-				worker_des$resample_design()
-				
-				# Update inference object with resampled design
-				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
-				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-				if (private$is_KK) {
-					worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
-					worker_inf$.__enclos_env__$private$compute_basic_match_data()
-				}
-				
-				# Compute estimate
-				tryCatch(worker_inf$compute_treatment_estimate(), error = function(e) NA_real_)
-			}, n_cores = actual_cores, show_progress = show_progress))
+			# Fork-cluster path: use parLapply with closure capture.
+			# (clusterExport + environment(fn)=globalenv() is broken: parLapply serializes
+			# a snapshot of master's globalenv, not the worker's live globalenv.)
+			if (isTRUE(private$make_fork_cluster) && actual_cores > 1L) {
+				cl = private$get_or_create_fork_cluster()
+				boot_distr = unlist(parallel::parLapply(cl, 1:B, function(idx) {
+					try(set_package_threads(1L), silent = TRUE)
+					worker_des = des_template$duplicate()
+					worker_inf = inf_template$duplicate()
+					worker_inf$.__enclos_env__$private$num_cores = 1L
+					worker_des$resample_design()
+					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
+					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+					if (is_KK_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
+						worker_inf$.__enclos_env__$private$compute_basic_match_data()
+					}
+					tryCatch(worker_inf$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
+				}))
+			} else {
+				boot_distr = unlist(private$par_lapply(1:B, function(idx) {
+					set_package_threads(1L)
+					worker_des = des_template$duplicate()
+					worker_inf = inf_template$duplicate()
+					worker_inf$.__enclos_env__$private$num_cores = 1L
+					worker_des$resample_design()
+					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
+					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+					if (is_KK_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
+						worker_inf$.__enclos_env__$private$compute_basic_match_data()
+					}
+					tryCatch(worker_inf$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
+				}, n_cores = actual_cores, show_progress = show_progress))
+			}
 
 			if (!is.numeric(boot_distr)) boot_distr = as.numeric(boot_distr)
 			
@@ -80,15 +98,44 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		},
 
 		#' @description
+		#' Computes a bootstrap-based two-sided p-value for the treatment effect.
+		#'
+		#' @param delta					Null hypothesis value. Default 0.
+		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
+		#'
+		#' @return 	A bootstrap two-sided p-value.
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
+			assertNumeric(delta, len = 1)
+			assertCount(B, positive = TRUE)
+			assertFlag(na.rm)
+			boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
+			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
+			else if (any(!is.finite(boot_distr))) return(NA_real_)
+			if (length(boot_distr) == 0L) return(NA_real_)
+			est = as.numeric(self$compute_treatment_estimate())
+			if (length(est) == 0L || !is.finite(est[1])) return(NA_real_)
+			est = est[1]
+			# Shift bootstrap distribution to be centered at delta (null hypothesis)
+			boot_null = boot_distr - mean(boot_distr) + delta
+			n_bs = length(boot_null)
+			min(1, max(2 / n_bs, 2 * min(
+				sum(boot_null >= est) / n_bs,
+				sum(boot_null <= est) / n_bs
+			)))
+		},
+
+		#' @description
 		#' Computes a bootstrap-based confidence interval.
 		#'
 		#' @param alpha					The confidence level 1 - \code{alpha}. Default 0.05.
 		#' @param B						Number of bootstrap samples. Default 501.
 		#' @param type					Type of bootstrap CI: "percentile" (default) or "basic".
+		#' @param na.rm					Remove non-finite bootstrap replicates. Default TRUE. Non-finite replicates are always removed internally.
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "percentile", show_progress = TRUE){
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "percentile", na.rm = TRUE, show_progress = TRUE){
 			private$assert_design_supports_resampling("Bootstrap inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertChoice(type, c("percentile", "basic"))

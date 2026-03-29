@@ -50,30 +50,29 @@ InferenceOrdinalUniPropOddsRegr = R6::R6Class("InferenceOrdinalUniPropOddsRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
-		},
-
-
-		#' @description
-		#' Computes the appropriate estimate
-		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
 		}
 		),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			# Proportional odds model logit(P(Y <= k)) = alpha_k - beta * w
 			# We use fast_ordinal_regression_with_var_cpp
 			# Xmm should NOT include intercept as fast_ordinal_regression_cpp handles intercepts (alphas)
 			Xmm = matrix(private$w, ncol = 1)
 			colnames(Xmm) = c("treatment")
+			
+			if (estimate_only) {
+				res = fast_ordinal_regression_cpp(X = Xmm, y = as.numeric(private$y))
+				return(list(
+					b = c(NA, res$b[1]), # Match the [2] indexing in shared()
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
 
 			# Return in expected format

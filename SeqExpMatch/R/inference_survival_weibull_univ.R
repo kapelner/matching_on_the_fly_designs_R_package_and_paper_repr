@@ -43,16 +43,19 @@ InferenceSurvivalUniWeibullRegr = R6::R6Class("InferenceSurvivalUniWeibullRegr",
 	),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			# Univariate: treatment only, no covariates (mirrors InferenceSurvivalUniCoxPHRegr)
 			full_X_matrix = matrix(private$w, ncol = 1)
 			colnames(full_X_matrix) = "treatment"
-			mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix), error = function(e) NULL)
+			mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix, estimate_only = estimate_only), error = function(e) NULL)
 			if (!is.null(mod)) return(mod)
 			# Fast path failed: fall back to robust_survreg with multiple random initializations
 			surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix)
 			if (!is.null(surv_mod)) {
 				full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
+				if (estimate_only) {
+					return(list(coefficients = full_coefficients, vcov = NULL))
+				}
 				full_vcov = surv_mod$var
 				if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
 					colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
@@ -62,7 +65,7 @@ InferenceSurvivalUniWeibullRegr = R6::R6Class("InferenceSurvivalUniWeibullRegr",
 			stop("Weibull regression failed to converge even after robust retries.")
 		},
 
-		weibull_generate_mod_from_X = function(full_X_matrix){
+		weibull_generate_mod_from_X = function(full_X_matrix, estimate_only = FALSE){
 			weibull_regr_mod = fast_weibull_regression(
 				private$y,
 				private$dead,
@@ -71,11 +74,16 @@ InferenceSurvivalUniWeibullRegr = R6::R6Class("InferenceSurvivalUniWeibullRegr",
 			# fast_weibull_regression already names coefficients correctly (only retained columns after
 			# collinearity dropping), so no name re-assignment is needed here.
 
-			if (is.null(weibull_regr_mod$coefficients) || is.null(weibull_regr_mod$vcov) || !is.matrix(weibull_regr_mod$vcov)){
+			if (is.null(weibull_regr_mod$coefficients) || (!estimate_only && (is.null(weibull_regr_mod$vcov) || !is.matrix(weibull_regr_mod$vcov)))){
 				stop("fast_weibull_regression failed to return valid coefficients or vcov.")
 			}
 
 			full_coefficients = c(weibull_regr_mod$coefficients, "log(scale)" = weibull_regr_mod$log_sigma)
+			
+			if (estimate_only) {
+				return(list(coefficients = full_coefficients, vcov = NULL))
+			}
+
 			full_vcov = weibull_regr_mod$vcov
 			colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
 

@@ -52,23 +52,14 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
-		},
-
-		#' @description
-		#' Computes the appropriate estimate.
-		#'
-		#' @return	The log-rate treatment-effect estimate.
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		}
 	),
 
 	private = list(
-		fit_poisson_with_var = function(Xmm){
+		fit_poisson_with_var = function(Xmm, estimate_only = FALSE){
 			reduced = private$reduce_design_matrix_preserving_treatment(Xmm)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
@@ -76,16 +67,20 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 			}
 
 			mod = tryCatch(
-				fast_poisson_regression_with_var_cpp(X_fit, private$y, j = reduced$j_treat),
+				if (estimate_only) {
+					fast_poisson_regression_cpp(X_fit, private$y)
+				} else {
+					fast_poisson_regression_with_var_cpp(X_fit, private$y, j = reduced$j_treat)
+				},
 				error = function(e) NULL
 			)
-			if (is.null(mod) || !isTRUE(mod$converged)){
+			if (is.null(mod) || (is.logical(mod$converged) && !isTRUE(mod$converged))){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
 			coef_hat = as.numeric(mod$b)
-			ssq_b_2 = as.numeric(mod$ssq_b_j)
-			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat)) || !is.finite(ssq_b_2) || ssq_b_2 < 0){
+			ssq_b_2 = if (estimate_only) NA_real_ else as.numeric(mod$ssq_b_j)
+			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat)) || (!estimate_only && (!is.finite(ssq_b_2) || ssq_b_2 < 0))){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
@@ -95,10 +90,10 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 			list(b = b_full, ssq_b_2 = ssq_b_2)
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
-			private$fit_poisson_with_var(Xmm)
+			private$fit_poisson_with_var(Xmm, estimate_only = estimate_only)
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){

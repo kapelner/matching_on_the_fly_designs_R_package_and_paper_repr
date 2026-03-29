@@ -23,12 +23,12 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
 		# @description
@@ -39,18 +39,22 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 		},
 
 		# @description
+		# Computes an asymptotic confidence interval for the treatment effect.
+		# @param alpha Significance level. Default 0.05.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			private$shared()
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+
+		# @description
 		# Returns a 2-sided p-value for H0: beta_T = delta.
 		# @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
 			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				# For non-zero delta, we can still use the same logic if we have beta_hat_T and s_beta_hat_T
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			}
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
 		# @description

@@ -167,12 +167,10 @@ NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X,
 	return weights;
 }
 
-// Optimized using Frisch-Waugh-Lovell (FWL) theorem.
-// At each step k, instead of fitting (p-k) full OLS regressions of size n x (k+3),
-// we maintain an orthonormal basis Q for the "base" model [1, X_sel, w] via incremental
-// Gram-Schmidt, compute e_y = (I - QQ')y once per step, and for each candidate j compute
-// e_j = (I - QQ')x_j. FWL guarantees the t-statistic is identical to the full OLS fit.
-// Cost: O(n*p^2) vs O(n*p^4) for the naive approach.
+// Optimized using Frisch-Waugh-Lovell (FWL) theorem and incremental residual updates.
+// We maintain E_x (residuals of candidates) and e_y (residuals of outcome) orthogonal
+// to the selected basis Q. At each step, selecting best_j allows updating all
+// remaining E_x columns in O(n*p) total, leading to O(n*p^2) overall.
 // [[Rcpp::export]]
 NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 													 const NumericVector& y,
@@ -191,16 +189,15 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
-	// Orthonormal basis Q for "base" model: starts as span{1, w}, grows as covariates are selected.
-	// Pre-allocate for maximum size: intercept + w + p covariates = p+2 columns.
+	// Basis Q starts with intercept and treatment indicator w
 	Eigen::MatrixXd Q(n, p + 2);
 	int m = 0;
 
-	// q_0 = (1/sqrt(n)) * ones (intercept direction)
+	// Intercept
 	Q.col(0).setConstant(1.0 / std::sqrt(static_cast<double>(n)));
 	m = 1;
 
-	// Gram-Schmidt: add w, orthogonalizing against intercept
+	// Add w, orthogonalizing against intercept
 	{
 	Eigen::VectorXd u = w_vec - Q.col(0).dot(w_vec) * Q.col(0);
 	double nm = u.norm();
@@ -210,43 +207,46 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 	}
 	}
 
-	// e_y = (I - Q_m Q_m') y: y residualized from base model, updated incrementally
+	// Initial residuals: outcome e_y and ALL candidates E_x
 	Eigen::VectorXd e_y = y_vec - Q.leftCols(m) * (Q.leftCols(m).transpose() * y_vec);
-	double c = e_y.squaredNorm(); // ||e_y||^2, maintained incrementally
+	double c = e_y.squaredNorm();
+
+	Eigen::MatrixXd E_x = X_map;
+	for (int j = 0; j < p; ++j) {
+		E_x.col(j) -= Q.leftCols(m) * (Q.leftCols(m).transpose() * E_x.col(j));
+	}
 
 	std::vector<bool> used(p, false);
 
 	for (int step = 0; step < p; ++step) {
-	// df = n - (m base columns + 1 for candidate x_j)
 	int df = n - m - 1;
 	if (df <= 0) break;
 
 	double best_stat = -1.0;
 	int best_j = -1;
+	double best_b = 0.0;
+	double best_a = 0.0;
 
 	for (int j = 0; j < p; ++j) {
 		if (used[j]) continue;
 
-		// e_j = x_j - Q Q' x_j: residual of x_j orthogonal to base model
-		Eigen::VectorXd xj = X_map.col(j);
-		Eigen::VectorXd e_j = xj - Q.leftCols(m) * (Q.leftCols(m).transpose() * xj);
-		double b = e_j.squaredNorm(); // ||e_j||^2
-		if (b < eps) continue;        // x_j collinear with base model
+		double b = E_x.col(j).squaredNorm();
+		if (b < 1e-10) continue; // x_j collinear
 
-		double a = e_j.dot(e_y);     // e_j' e_y (proportional to FWL coefficient for x_j)
-		// SSE of full model via FWL = ||e_y||^2 - (e_j' e_y)^2 / ||e_j||^2
+		double a = E_x.col(j).dot(e_y);
 		double sse = c - a * a / b;
 		if (sse < 0.0) sse = 0.0;
 		double sigma2 = sse / static_cast<double>(df);
 		if (sigma2 <= 0.0 || !std::isfinite(sigma2)) continue;
 
-		// |t| = |b1_hat / se(b1_hat)| = |a/b| / sqrt(sigma2/b) = |a| / sqrt(b * sigma2)
 		double stat = std::fabs(a) / std::sqrt(b * sigma2);
 		if (!R_finite(stat)) stat = 0.0;
 
 		if (stat > best_stat) {
-		best_stat = stat;
-		best_j = j;
+			best_stat = stat;
+			best_j = j;
+			best_b = b;
+			best_a = a;
 		}
 	}
 
@@ -255,20 +255,24 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 	weights[best_j] = best_stat;
 	used[best_j] = true;
 
-	// Update Q: Gram-Schmidt of x_{best_j} against current basis
+	// Update Q with best candidate: q_new = e_j / ||e_j||
 	if (m < p + 2) {
-		Eigen::VectorXd xbest = X_map.col(best_j);
-		Eigen::VectorXd u = xbest - Q.leftCols(m) * (Q.leftCols(m).transpose() * xbest);
-		double nm = u.norm();
-		if (nm > 1e-8) {
-		Q.col(m) = u / nm;
-		// Update e_y incrementally: e_y_new = e_y_old - (q_new . e_y_old) * q_new
-		double proj = Q.col(m).dot(e_y);
-		e_y -= proj * Q.col(m);
-		c -= proj * proj;
+		Q.col(m) = E_x.col(best_j) / std::sqrt(best_b);
+		const Eigen::VectorXd q_new = Q.col(m);
+
+		// Update e_y: e_y -= (q_new' e_y) * q_new
+		double proj_y = q_new.dot(e_y);
+		e_y -= proj_y * q_new;
+		c -= proj_y * proj_y;
 		if (c < 0.0) c = 0.0;
-		m++;
+
+		// Update ALL remaining candidate residuals E_x: E_x_j -= (q_new' E_x_j) * q_new
+		for (int j = 0; j < p; ++j) {
+			if (!used[j]) {
+				E_x.col(j) -= q_new.dot(E_x.col(j)) * q_new;
+			}
 		}
+		m++;
 	}
 	}
 
@@ -531,7 +535,7 @@ static double univariate_negbin_tstat(
 
 	// Build design matrix [1, x]
 	Eigen::MatrixXd X(n, 2);
-	X.col(0).setOnes();
+	X.col(0).setConstant(1.0);
 	X.col(1) = x;
 
 	// Initialize with Poisson regression coefficients (theta -> infinity)
@@ -787,7 +791,7 @@ static double univariate_weibull_tstat(
 
 	// Build design matrix [1, x]
 	Eigen::MatrixXd X(n, 2);
-	X.col(0).setOnes();
+	X.col(0).setConstant(1.0);
 	X.col(1) = x;
 
 	// Initialize with OLS on log(y)
@@ -1205,7 +1209,7 @@ NumericVector kk21_stepwise_beta_weights_cpp(const NumericMatrix& X,
 
 			// Build design matrix: [1, x_j, selected_covs..., w]
 			Eigen::MatrixXd Xmm(n, k + 3);
-			Xmm.col(0).setOnes();
+			Xmm.col(0).setConstant(1.0);
 			Xmm.col(1) = X_map.col(j);
 			for (int idx = 0; idx < k; ++idx) {
 				Xmm.col(2 + idx) = X_map.col(selected[idx]);
@@ -1266,7 +1270,7 @@ NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X,
 
 			// Build design matrix: [1, x_j, selected_covs..., w]
 			Eigen::MatrixXd Xmm(n, k + 3);
-			Xmm.col(0).setOnes();
+			Xmm.col(0).setConstant(1.0);
 			Xmm.col(1) = X_map.col(j);
 			for (int idx = 0; idx < k; ++idx) {
 				Xmm.col(2 + idx) = X_map.col(selected[idx]);
@@ -1301,22 +1305,6 @@ static double multivariate_ordinal_tstat(
     const Eigen::VectorXd& y,
     int coef_idx = 1
 ) {
-    // We can call the newly created fast_ordinal_regression_cpp but from C++ 
-    // we need a C++ way. Since it's in a different file, I'll just re-implement a minimal version here 
-    // or use the R function via Rcpp::Function if I have to.
-    // Better yet, I'll just put the logic here.
-    
-    // For now, to keep it simple and consistent with other weights:
-    // We'll use a series of binary regressions and average them? No, that's not "standard".
-    // I'll just use a call to the R function or implement a simple version.
-    
-    // Actually, I'll just implement a simple univariate ordinal t-stat here for kk21_ordinal_weights_cpp.
-    // And for stepwise, I'll use the multivariate version.
-    
-    // To avoid duplication, I should have put OrdinalRegression in a header.
-    // I'll just use the R function for now to save time and ensure correctness, 
-    // as it's only called once per covariate per subject.
-    
     Function f("fast_ordinal_regression_with_var_cpp");
     List res = f(wrap(X), wrap(y));
     NumericVector b = res["b"];
@@ -1385,7 +1373,6 @@ NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X,
             }
 
             // Build design matrix: [x_j, selected_covs..., w]
-            // (Ordinal regression handles intercepts internally)
             Eigen::MatrixXd Xmm(n, k + 2);
             Xmm.col(0) = X_map.col(j);
             for (int idx = 0; idx < k; ++idx) {
@@ -1416,5 +1403,5 @@ NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X,
         selected.push_back(best_j);
     }
 
-    return weights;
+	return weights;
 }

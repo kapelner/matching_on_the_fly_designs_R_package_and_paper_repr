@@ -55,8 +55,9 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 
 		#' @description
 		#' Abstract method to compute the treatment estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return 	A scalar treatment estimate.
-		compute_treatment_estimate = function(){
+		compute_treatment_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
 		}
 	),

@@ -38,7 +38,12 @@ designs. A bisection algorithm inverts the combined p-value to construct the CI.
 \subsection{Method \code{new()}}{
 Initialize the Zhang inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$new(des_obj, num_cores = 1, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$new(
+  des_obj,
+  num_cores = 1,
+  verbose = FALSE,
+  make_fork_cluster = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

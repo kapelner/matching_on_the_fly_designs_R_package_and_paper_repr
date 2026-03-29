@@ -50,7 +50,18 @@ InferenceOrdinalMultiStereotypeLogitRegr = R6::R6Class("InferenceOrdinalMultiSte
 			X_full
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_stereotype_logit_cpp(
+					X = private$stereotype_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_stereotype_logit_with_var_cpp(
 				X = private$stereotype_design_matrix(),
 				y = as.numeric(private$y)

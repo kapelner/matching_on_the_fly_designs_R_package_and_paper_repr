@@ -36,9 +36,9 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' seq_des_inf = InferenceIncidUnivMiettinenNurminenRiskDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 

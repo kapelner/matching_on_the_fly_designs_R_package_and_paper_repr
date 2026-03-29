@@ -19,28 +19,29 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 
 		#' @description
 		#' Computes the treatment estimate using the underlying model.
-		compute_treatment_estimate = function(){
-			private$shared()
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
 	),
 
 	private = list(
-		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
+		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
 
 		get_standard_error = function(){
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$cached_values$s_beta_hat_T
 		},
 
 		get_degrees_of_freedom = function(){
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$cached_values$df
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$is_z)) return(invisible(NULL))
-			model_output = private$generate_mod() #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.na(private$cached_values$s_beta_hat_T))) return(invisible(NULL))
+			model_output = private$generate_mod(estimate_only = estimate_only) #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.
 			private$cached_values$beta_hat_T = model_output$b[2]
 
 			ssq = model_output$ssq_b_2

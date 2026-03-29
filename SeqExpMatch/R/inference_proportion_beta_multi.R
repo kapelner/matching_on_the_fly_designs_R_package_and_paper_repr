@@ -40,27 +40,28 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 	),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			Xmm = private$create_design_matrix()
 			# create_design_matrix is [Intercept, Treatment, Covariates]
-			colnames(Xmm) = c("(Intercept)", "treatment", paste0("x", 1:(ncol(Xmm)-2)))
+			colnames(Xmm) = c("(Intercept)", "treatment", if(ncol(Xmm) > 2) paste0("x", 1:(ncol(Xmm)-2)) else NULL)
 
-			res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
-
-			# Ensure names are set for shared()
-			names(res$b) = colnames(Xmm)
-			# Standard error extraction in shared() needs vcov with names
-			# We only returned ssq_b_2 (variance of treatment effect).
-			# Let's return a dummy vcov matrix with the correct diagonal entry for treatment.
-			p = ncol(Xmm)
-			vcov_matrix = matrix(0, p, p)
-			vcov_matrix[2, 2] = res$ssq_b_2
-			colnames(vcov_matrix) = rownames(vcov_matrix) = colnames(Xmm)
-
-			list(
-				b = res$b,
-				ssq_b_2 = res$ssq_b_2
-			)
+			if (estimate_only) {
+				res = fast_beta_regression(Xmm = Xmm, y = private$y)
+				# Ensure names are set for shared()
+				names(res$b) = colnames(Xmm)
+				return(list(
+					b = res$b,
+					ssq_b_2 = NA_real_
+				))
+			} else {
+				res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
+				# Ensure names are set for shared()
+				names(res$b) = colnames(Xmm)
+				return(list(
+					b = res$b,
+					ssq_b_2 = res$ssq_b_2
+				))
+			}
 		}
 	)
-)
+	)

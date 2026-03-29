@@ -60,8 +60,18 @@ InferenceRand = R6::R6Class("InferenceRand",
 					if (!is.null(w_inf)) w_inf$.__enclos_env__$private$num_cores = 1L
 					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				})[[3]]
-				if (!(t_rand_warmup * r > 0.5 * actual_rand_cores)) actual_rand_cores = 1L
-			} else if (actual_rand_cores > 1L && !need_thread_objs) actual_rand_cores = 1L
+				fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
+				
+				# Better logic: if total estimated time is much greater than overhead, use all cores.
+				# We multiply overhead by actual_rand_cores to account for total fork cost.
+				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0) {
+					actual_rand_cores = 1L
+				}
+			} else if (actual_rand_cores > 1L && !need_thread_objs) {
+				# Lightweight stats (yw only) are so fast that fork overhead usually dominates 
+				# unless r is very large. Default to serial for lightweight unless num_cores is small.
+				if (r < 2000) actual_rand_cores = 1L
+			}
 
 			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
 				set_package_threads(1L)
@@ -220,7 +230,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (private$object_has_private_method(thread_inf_obj, "compute_reservoir_and_match_statistics")) thread_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
 			}
 
-			estimate = tryCatch(thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(), error = function(e) NA_real_)
+			estimate = tryCatch(thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE), error = function(e) NA_real_)
 			if (is.list(estimate) && "b" %in% names(estimate)) return(as.numeric(estimate$b[1]))
 			as.numeric(estimate)
 		},
@@ -298,8 +308,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 			perms
 		},
 
-		compute_treatment_estimate_during_randomization_inference = function(){
-			if (is.null(private$custom_randomization_statistic_function)) self$compute_treatment_estimate()
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (is.null(private$custom_randomization_statistic_function)) self$compute_treatment_estimate(estimate_only = estimate_only)
 			else private$custom_randomization_statistic_function()
 		}
 	)

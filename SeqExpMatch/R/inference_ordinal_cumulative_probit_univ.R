@@ -50,20 +50,10 @@ InferenceOrdinalUniCumulProbitRegr = R6::R6Class("InferenceOrdinalUniCumulProbit
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
-		},
-
-
-		#' @description
-		#' Computes the appropriate estimate
-		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
 		}
 		),
 
@@ -74,7 +64,18 @@ InferenceOrdinalUniCumulProbitRegr = R6::R6Class("InferenceOrdinalUniCumulProbit
 			Xmm
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_ordinal_probit_regression_cpp(
+					X = private$cumulative_probit_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b[1]),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_probit_regression_with_var_cpp(
 				X = private$cumulative_probit_design_matrix(),
 				y = as.numeric(private$y)

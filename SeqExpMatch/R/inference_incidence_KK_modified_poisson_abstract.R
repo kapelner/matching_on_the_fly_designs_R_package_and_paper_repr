@@ -6,20 +6,20 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 	public = list(
 
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
 
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -44,21 +44,31 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$cached_values$summary_table = NULL
 		},
 
-		fit_modified_poisson = function(X_fit, j_treat){
+		fit_modified_poisson = function(X_fit, j_treat, estimate_only = FALSE){
 			mod = tryCatch(
-				suppressWarnings(stats::glm.fit(x = X_fit, y = as.numeric(private$y), family = stats::poisson(link = "log"))),
+				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || !isTRUE(mod$converged)){
+			if (is.null(mod)){
 				return(NULL)
 			}
 
-			coef_hat = as.numeric(mod$coefficients)
+			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(NULL)
 			}
 
-			mu_hat = as.numeric(mod$fitted.values)
+			if (estimate_only){
+				return(list(
+					beta_hat = coef_hat[j_treat],
+					se = NA_real_,
+					coefficients = coef_hat,
+					vcov = NULL,
+					summary_table = NULL
+				))
+			}
+
+			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
 				return(NULL)
 			}
@@ -102,8 +112,8 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			)
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
@@ -119,13 +129,13 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				return(invisible(NULL))
 			}
 
-			fit = private$fit_modified_poisson(X_fit, j_treat)
+			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
 			if (is.null(fit) && ncol(X_full) > 2L){
 				reduced = private$reduce_design_matrix_preserving_treatment(X_full[, 1:2, drop = FALSE])
 				X_fit = reduced$X
 				j_treat = reduced$j_treat
 				if (!is.null(X_fit) && is.finite(j_treat) && nrow(X_fit) > ncol(X_fit)){
-					fit = private$fit_modified_poisson(X_fit, j_treat)
+					fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
 				}
 			}
 			if (is.null(fit)){

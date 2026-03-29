@@ -1,4 +1,4 @@
-ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_cores = 1, verbose = FALSE){
+ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 	assertResponseType(des_obj$get_response_type(), "ordinal")
 	super_obj$initialize(des_obj, num_cores, verbose)
 	assertNoCensoring(private_env$any_censoring)

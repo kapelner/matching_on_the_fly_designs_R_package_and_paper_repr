@@ -12,35 +12,16 @@ InferenceIncidMultiLogRegr = R6::R6Class("InferenceIncidMultiLogRegr",
 	inherit = InferenceIncidUnivLogRegr,
 	public = list(
 
-
-		#' @description
-		#' Computes the appropriate estimate
-		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-		#'
-		#' seq_des_inf = InferenceContinMultOLS$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
-		#' }
-		#'
-		compute_treatment_estimate = function(){
-			fast_logistic_regression(private$create_design_matrix(), private$y)$b[2]
-		}
 	),
 
 	private = list(
-		generate_mod = function(){
-			fast_logistic_regression_with_var(private$create_design_matrix(), private$y)
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_logistic_regression(private$create_design_matrix(), private$y)
+				list(b = res$b, ssq_b_2 = NA_real_)
+			} else {
+				fast_logistic_regression_with_var(private$create_design_matrix(), private$y)
+			}
 		}
 	)
 )

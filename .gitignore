@@ -159,4 +159,10 @@ test_raw.out
 collate_greedy.txt
 collate_urn.txt
 test_fixed_greedy.R
-
+benchmark_output.log
+comprehensive_tests_run.log
+package_tests/analyze_comprehensive_tests.R
+package_tests/comprehensive_tests.R
+package_tests/comprehensive_tests_results_nc_1.csv
+test_poisson_optimizations.R
+test_slow_ci_rand.R

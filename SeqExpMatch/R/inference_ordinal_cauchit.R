@@ -29,25 +29,26 @@ InferenceOrdinalUniCauchitRegr = R6::R6Class("InferenceOrdinalUniCauchitRegr",
 		#'   response y is recorded within.
 		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
-		},
-
-		#' @description
-		#' Computes the appropriate estimate
-		#' @return The setting-appropriate numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
-			private$shared()
-			private$cached_values$beta_hat_T
 		}
 	),
 
 	private = list(
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			Xmm = matrix(private$w, ncol = 1)
 			colnames(Xmm) = c("treatment")
+			
+			if (estimate_only) {
+				res = fast_ordinal_cauchit_regression_cpp(X = Xmm, y = as.numeric(private$y))
+				return(list(
+					b = c(NA, res$b[1]),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_cauchit_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
 			list(
 				b = c(NA, res$b[1]),
@@ -99,7 +100,18 @@ InferenceOrdinalMultiCauchitRegr = R6::R6Class("InferenceOrdinalMultiCauchitRegr
 			X_full
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_ordinal_cauchit_regression_cpp(
+					X = private$cauchit_design_matrix(),
+					y = as.numeric(private$y)
+				)
+				return(list(
+					b = c(NA, res$b),
+					ssq_b_2 = NA_real_
+				))
+			}
+
 			res = fast_ordinal_cauchit_regression_with_var_cpp(
 				X = private$cauchit_design_matrix(),
 				y = as.numeric(private$y)

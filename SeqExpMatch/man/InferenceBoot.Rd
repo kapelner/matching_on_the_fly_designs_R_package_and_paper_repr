@@ -14,6 +14,7 @@ Abstract class for bootstrap-based inference.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceBoot-compute_bootstrap_two_sided_pval}{\code{InferenceBoot$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-InferenceBoot-compute_bootstrap_confidence_interval}{\code{InferenceBoot$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceBoot-clone}{\code{InferenceBoot$clone()}}
 }
@@ -21,6 +22,9 @@ Abstract class for bootstrap-based inference.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
@@ -56,6 +60,34 @@ A vector of length \code{B} containing the bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceBoot-compute_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceBoot-compute_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Computes a bootstrap-based two-sided p-value for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$compute_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  na.rm = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null hypothesis value. Default 0.}
+
+\item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A bootstrap two-sided p-value.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBoot-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBoot-compute_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bootstrap_confidence_interval()}}{
@@ -65,6 +97,7 @@ Computes a bootstrap-based confidence interval.
   alpha = 0.05,
   B = 501,
   type = "percentile",
+  na.rm = TRUE,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}
 }
@@ -77,6 +110,8 @@ Computes a bootstrap-based confidence interval.
 \item{\code{B}}{Number of bootstrap samples. Default 501.}
 
 \item{\code{type}}{Type of bootstrap CI: "percentile" (default) or "basic".}
+
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default TRUE. Non-finite replicates are always removed internally.}
 
 \item{\code{show_progress}}{Show progress bar.}
 }

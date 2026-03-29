@@ -60,8 +60,8 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			
 			if (!requireNamespace("multgee", quietly = TRUE)){
 				stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")

@@ -37,9 +37,9 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' seq_des_inf = InferenceIncidUnivModifiedPoisson$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -47,7 +47,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' Computes the modified-Poisson estimate of the treatment effect on the
 		#' log-risk-ratio scale.
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
 
@@ -58,7 +58,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#'   1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -68,7 +68,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' @param delta The null treatment effect on the log-risk-ratio scale.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$assert_finite_se()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -105,21 +105,31 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			private$cached_values$summary_table = NULL
 		},
 
-		fit_modified_poisson = function(X_fit, j_treat){
+		fit_modified_poisson = function(X_fit, j_treat, estimate_only = FALSE){
 			mod = tryCatch(
-				suppressWarnings(stats::glm.fit(x = X_fit, y = as.numeric(private$y), family = stats::poisson(link = "log"))),
+				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || !isTRUE(mod$converged)){
+			if (is.null(mod)){
 				return(NULL)
 			}
 
-			coef_hat = as.numeric(mod$coefficients)
+			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(NULL)
 			}
 
-			mu_hat = as.numeric(mod$fitted.values)
+			if (estimate_only){
+				return(list(
+					beta_hat = coef_hat[j_treat],
+					se = NA_real_,
+					coefficients = coef_hat,
+					vcov = NULL,
+					summary_table = NULL
+				))
+			}
+
+			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
 				return(NULL)
 			}
@@ -162,8 +172,8 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			)
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
@@ -179,7 +189,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 				return(invisible(NULL))
 			}
 
-			fit = private$fit_modified_poisson(X_fit, j_treat)
+			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))

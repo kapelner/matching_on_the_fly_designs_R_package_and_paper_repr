@@ -21,7 +21,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		# @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		# @param num_cores			Number of CPU cores for parallel processing.
 		# @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
@@ -30,7 +30,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			if (!requireNamespace("aftgee", quietly = TRUE)) {
 				stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
 			}

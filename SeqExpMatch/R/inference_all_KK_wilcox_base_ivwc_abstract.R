@@ -8,7 +8,7 @@
 #'
 #' @keywords internal
 InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIVWC",
-	inherit = InferenceAsymp,
+	inherit = InferenceKKPassThrough,
 	public = list(
 
 		# @description

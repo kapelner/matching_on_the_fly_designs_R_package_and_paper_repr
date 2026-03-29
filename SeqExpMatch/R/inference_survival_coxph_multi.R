@@ -33,23 +33,28 @@ InferenceSurvivalMultiCoxPHRegr = R6::R6Class("InferenceSurvivalMultiCoxPHRegr",
 		#' )
 		#'
 		#' seq_des_inf = InferenceSurvivalMultiCoxPHRegr$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
-		#' }
-		#'
-		compute_treatment_estimate = function(){
-			private$generate_mod()$b[2]
-		}
-	),
+		#   seq_des_inf$compute_treatment_estimate()
+		# }
+		#
+		),
 
-	private = list(
-		generate_mod = function(){
+		private = list(
+		generate_mod = function(estimate_only = FALSE){
 			surv_obj = survival::Surv(private$y, private$dead)
 			tryCatch({
 				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ cbind(private$w, private$get_X())))
-				list(
-					b = c(0, stats::coef(coxph_mod)),
-					ssq_b_2 = stats::coef(summary(coxph_mod))[1, 3]^2
-				)
+
+				if (estimate_only) {
+					list(
+						b = c(0, stats::coef(coxph_mod)),
+						ssq_b_2 = NA_real_
+					)
+				} else {
+					list(
+						b = c(0, stats::coef(coxph_mod)),
+						ssq_b_2 = as.numeric(stats::vcov(coxph_mod))[1]
+					)
+				}
 			}, error = function(e){
 				list(
 					b = c(NA, NA),
@@ -57,5 +62,5 @@ InferenceSurvivalMultiCoxPHRegr = R6::R6Class("InferenceSurvivalMultiCoxPHRegr",
 				)
 			})
 		}
-	)
-)
+		)
+		)

@@ -54,27 +54,26 @@ InferenceCountUnivNegBinRegr = R6::R6Class("InferenceCountUnivNegBinRegr",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
-		},
-
-		#' @description
-		#' Computes the appropriate estimate
-		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
-		compute_treatment_estimate = function(){
-			private$shared() # Ensure the model is fitted and cached values are populated
-			private$cached_values$beta_hat_T
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		}
 	),
 
 	private = list(
-		generate_mod = function(){
-			fast_negbin_regression_with_var(
-				Xmm = cbind(1, private$w), # just Intercept + Treatment
-				y = private$y
-			)
+		generate_mod = function(estimate_only = FALSE){
+			if (estimate_only) {
+				res = fast_negbin_regression(
+					Xmm = cbind(1, private$w),
+					y = private$y
+				)
+				list(b = res$b, ssq_b_2 = NA_real_)
+			} else {
+				fast_negbin_regression_with_var(
+					Xmm = cbind(1, private$w), # just Intercept + Treatment
+					y = private$y
+				)
+			}
 		}
 	)
 )

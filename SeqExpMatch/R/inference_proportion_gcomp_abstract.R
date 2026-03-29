@@ -8,6 +8,13 @@
 #' covariance for the regression coefficients and the delta method for the
 #' marginal mean-difference estimand.
 #'
+#' @details
+#' The implementation is optimized for resampling-based inference. It utilizes a
+#' fast C++ IRLS solver for the underlying fractional logit regression. During
+#' resampling draws, it bypasses the calculation of the sandwich covariance
+#' matrix and delta-method standard errors, providing a significant speedup when
+#' computing bootstrap or randomization distributions.
+#'
 #' @keywords internal
 #' @noRd
 InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
@@ -19,16 +26,16 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		# @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
 		# @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		# @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 
 		# @description
 		# Computes the g-computation treatment-effect estimate.
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$cached_values$md
 		},
 
@@ -37,7 +44,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		# @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
 
@@ -46,7 +53,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		# @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
 
@@ -62,13 +69,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 
 		#' @description
 		#' Abbreviated bootstrap sampler that reuses the reduced column layout.
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, max_resample_attempts = 50){
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = 50){
 			assertCount(B, positive = TRUE)
 			assertCount(max_resample_attempts, positive = TRUE)
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			cols = private$gcomp_design_colnames
 			if (is.null(cols)){
-				return(super$approximate_bootstrap_distribution_beta_hat_T(B, max_resample_attempts))
+				return(super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress))
 			}
 
 			X_full = private$build_named_design_matrix()
@@ -137,7 +144,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			private$cached_values$se_md = NA_real_
 		},
 
-		effects_are_usable = function(effects){
+		effects_are_usable = function(effects, estimate_only = FALSE){
+			if (estimate_only) return(is.finite(effects$md))
 			is.finite(effects$md) && is.finite(effects$se_md) && effects$se_md > 0
 		},
 
@@ -152,7 +160,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
 		},
 
-		fit_fractional_logit_with_sandwich = function(X_full){
+		fit_fractional_logit_with_sandwich = function(X_full, estimate_only = FALSE){
 			X_curr = X_full
 
 			repeat {
@@ -164,15 +172,15 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				}
 
 				mod = tryCatch(
-					suppressWarnings(stats::glm.fit(x = X_fit, y = as.numeric(private$y), family = stats::binomial(link = "logit"))),
+					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 					error = function(e) NULL
 				)
 				if (is.null(mod)){
 					return(NULL)
 				}
 
-				coef_hat = as.numeric(mod$coefficients)
-				converged = isTRUE(mod$converged) && length(coef_hat) == ncol(X_fit) && all(is.finite(coef_hat))
+				coef_hat = as.numeric(mod$b)
+				converged = all(is.finite(coef_hat))
 				if (!converged){
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
@@ -181,7 +189,19 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					next
 				}
 
-				mu_hat = pmin(pmax(as.numeric(mod$fitted.values), .Machine$double.eps), 1 - .Machine$double.eps)
+				if (estimate_only){
+					private$gcomp_design_colnames = colnames(X_fit)
+					private$gcomp_design_j_treat = j_treat
+					return(list(
+						X = X_fit,
+						j_treat = j_treat,
+						coefficients = coef_hat,
+						estimate_only = TRUE
+					))
+				}
+
+				mu_hat = inv_logit(X_fit %*% coef_hat)
+				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
 				W = mu_hat * (1 - mu_hat)
 				if (any(!is.finite(W)) || any(W <= 0)){
 					if (ncol(X_curr) <= 2L) return(NULL)
@@ -222,7 +242,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					j_treat = j_treat,
 					coefficients = coef_hat,
 					vcov = vcov_robust,
-					post_fit = post_fit
+					post_fit = post_fit,
+					estimate_only = FALSE
 				))
 			}
 		},
@@ -232,6 +253,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			coef_hat = fit$coefficients
 			vcov_robust = fit$vcov
 			j_treat = fit$j_treat
+			estimate_only = isTRUE(fit$estimate_only)
 
 			X1 = X_fit
 			X0 = X_fit
@@ -245,10 +267,23 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			mean1 = mean(mean1_i)
 			mean0 = mean(mean0_i)
 
+			md = mean1 - mean0
+
+			if (estimate_only){
+				return(list(
+					mean1 = mean1,
+					mean0 = mean0,
+					md = md,
+					se_md = NA_real_,
+					full_coefficients = coef_hat,
+					full_vcov = NULL,
+					summary_table = NULL
+				))
+			}
+
 			grad1 = as.numeric(crossprod(X1, mean1_i * (1 - mean1_i))) / nrow(X1)
 			grad0 = as.numeric(crossprod(X0, mean0_i * (1 - mean0_i))) / nrow(X0)
 
-			md = mean1 - mean0
 			grad_md = grad1 - grad0
 			var_md = as.numeric(t(grad_md) %*% vcov_robust %*% grad_md)
 
@@ -273,6 +308,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		},
 
 		compute_standardized_effects = function(fit){
+			if (isTRUE(fit$estimate_only)){
+				return(private$compute_standardized_effects_r(fit))
+			}
 			coef_hat = fit$coefficients
 			fast = fit$post_fit
 			if (is.null(fast)){
@@ -306,37 +344,27 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		bootstrap_effect_from_sample = function(X_b, y_b){
 			if (nrow(X_b) == 0) return(NA_real_)
 			mod = tryCatch(
-				suppressWarnings(stats::glm.fit(
-					x = X_b,
-					y = as.numeric(y_b),
-					family = stats::binomial(link = "logit")
-				)),
+				fast_logistic_regression_cpp(X = X_b, y = as.numeric(y_b)),
 				error = function(e) NULL
 			)
 			if (is.null(mod)){
 				return(NA_real_)
 			}
-			coef_hat = as.numeric(mod$coefficients)
-			if (!isTRUE(mod$converged) || length(coef_hat) != ncol(X_b) || any(!is.finite(coef_hat))){
+			coef_hat = as.numeric(mod$b)
+			if (any(!is.finite(coef_hat))){
 				return(NA_real_)
 			}
 
-			mu_hat = pmin(pmax(as.numeric(mod$fitted.values), .Machine$double.eps), 1 - .Machine$double.eps)
-			post_fit = tryCatch(
-				gcomp_fractional_logit_post_fit_cpp(
-					X_fit = X_b,
-					y = as.numeric(y_b),
-					coef_hat = coef_hat,
-					mu_hat = mu_hat,
-					j_treat = private$gcomp_design_j_treat
-				),
-				error = function(e) NULL
-			)
-			if (is.null(post_fit)){
-				return(NA_real_)
-			}
+			X1 = X_b
+			X0 = X_b
+			j_treat = private$gcomp_design_j_treat
+			X1[, j_treat] = 1
+			X0[, j_treat] = 0
 
-			md_val = post_fit$md
+			risk1 = mean(stats::plogis(X1 %*% coef_hat))
+			risk0 = mean(stats::plogis(X0 %*% coef_hat))
+
+			md_val = risk1 - risk0
 			if (!is.finite(md_val)){
 				return(NA_real_)
 			}
@@ -365,18 +393,18 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			2 * stats::pnorm(-abs(z_stat))
 		},
 
-		shared = function(){
-			if (!is.null(private$cached_values$summary_table)) return(invisible(NULL))
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$md) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_named_design_matrix()
 
-			fit = private$fit_fractional_logit_with_sandwich(X_full)
+			fit = private$fit_fractional_logit_with_sandwich(X_full, estimate_only = estimate_only)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
-			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects)) && ncol(X_full) > 2L){
-				fit = private$fit_fractional_logit_with_sandwich(X_full[, 1:2, drop = FALSE])
+			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
+				fit = private$fit_fractional_logit_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)
 				effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			}
-			if (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects)){
+			if (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}

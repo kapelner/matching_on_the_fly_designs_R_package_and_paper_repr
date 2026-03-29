@@ -13,9 +13,9 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 	inherit = InferenceAsymp,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 			assertNoCensoring(private$any_censoring)
 		},
 

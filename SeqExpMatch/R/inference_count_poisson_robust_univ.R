@@ -52,9 +52,9 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
 		#' @description
@@ -62,7 +62,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		#'
 		#' @return	The log-rate treatment-effect estimate.
 		compute_treatment_estimate = function(){
-			private$shared()
+			private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		}
 	),
@@ -74,7 +74,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 			Xmm
 		},
 
-		fit_count_model_with_var = function(Xmm){
+		fit_count_model_with_var = function(Xmm, estimate_only = FALSE){
 			reduced = private$reduce_design_matrix_preserving_treatment(Xmm)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
@@ -83,19 +83,26 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 			}
 
 			mod = tryCatch(
-				suppressWarnings(stats::glm.fit(x = X_fit, y = private$y, family = stats::poisson(link = "log"))),
+				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || !isTRUE(mod$converged)){
+			if (is.null(mod)){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
-			coef_hat = as.numeric(stats::coef(mod))
+			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
-			mu_hat = as.numeric(mod$fitted.values)
+			if (estimate_only){
+				b_full = rep(NA_real_, ncol(Xmm))
+				b_full[reduced$keep] = coef_hat
+				names(b_full) = colnames(Xmm)
+				return(list(b = b_full, ssq_b_2 = NA_real_))
+			}
+
+			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
@@ -124,8 +131,23 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 			list(b = b_full, ssq_b_2 = ssq_b_2)
 		},
 
-		generate_mod = function(){
-			private$fit_count_model_with_var(private$build_design_matrix())
+		generate_mod = function(estimate_only = FALSE){
+			private$fit_count_model_with_var(private$build_design_matrix(), estimate_only = estimate_only)
+		},
+
+		shared = function(estimate_only = FALSE){
+			if (!is.null(private$cached_values$is_z) && (estimate_only || !is.na(private$cached_values$s_beta_hat_T))) return(invisible(NULL))
+			model_output = private$generate_mod(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T = model_output$b[2]
+
+			ssq = model_output$ssq_b_2
+			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
+				private$cached_values$s_beta_hat_T = sqrt(ssq)
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
+			private$cached_values$is_z = TRUE
+			private$cached_values$df = model_output$df %||% NA_real_
 		}
 	)
 )

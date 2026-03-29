@@ -14,7 +14,20 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 
 
 		compute_treatment_estimate = function(){
-			private$generate_mod()$b[2]
+			private$shared()
+			private$cached_values$beta_hat_T
+		},
+
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			private$shared()
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			assertNumeric(delta)
+			private$shared()
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
@@ -23,6 +36,16 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 	),
 
 	private = list(
+		shared = function(){
+			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			mod = private$generate_mod()
+			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
+			se = if (is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
+			private$cached_values$s_beta_hat_T = se
+			private$cached_values$is_z = TRUE
+			private$cached_values$df = NA_real_
+		},
+
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()."),
 
 		compute_strata_info = function(X_full){

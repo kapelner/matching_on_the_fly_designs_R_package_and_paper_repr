@@ -6,6 +6,7 @@
 \description{
 An R6 Class encapsulating the data and functionality for a fixed rerandomization experimental design.
 This design generates random allocations and only accepts those that meet a covariate balance criterion.
+For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignRerandomization}
@@ -43,6 +44,7 @@ This design generates random allocations and only accepts those that meet a cova
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="randomize"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-randomize'><code>EDI::FixedDesign$randomize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>EDI::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
