@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for a fixed greedy experime
 Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignGreedy}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignGreedy}
 }
 \section{Methods}{
 \subsection{Public methods}{

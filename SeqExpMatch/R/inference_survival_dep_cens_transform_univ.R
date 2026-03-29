@@ -57,7 +57,7 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 			X
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			mod = .fit_dep_cens_transform_model(
 				y = private$y,
 				dead = private$dead,

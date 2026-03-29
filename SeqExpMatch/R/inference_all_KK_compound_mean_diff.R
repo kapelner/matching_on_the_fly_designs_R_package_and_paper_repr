@@ -150,7 +150,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 				y_mat,
 				w_mat,
 				m_mat,
-				private$num_cores
+				private$n_cpp_threads(ncol(y_mat))
 			)
 
 			return(res)
@@ -172,7 +172,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 				as.numeric(y),
 				w_mat,
 				m_mat,
-				private$num_cores
+				private$n_cpp_threads(ncol(w_mat))
 			)
 			return(res)
 		},

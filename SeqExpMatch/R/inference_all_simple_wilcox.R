@@ -131,7 +131,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				as.numeric(private$y),
 				as.integer(private$w),
 				indices_mat,
-				private$num_cores
+				private$n_cpp_threads(B)
 			)
 		},
 
@@ -154,7 +154,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				t_code = 3L
 			}
 			
-			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, private$num_cores)
+			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, private$n_cpp_threads(nsim))
 			return(res)
 		},
 

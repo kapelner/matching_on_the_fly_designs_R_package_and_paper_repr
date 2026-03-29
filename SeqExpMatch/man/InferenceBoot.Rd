@@ -13,7 +13,7 @@ Abstract class for bootstrap-based inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{InferenceBoot}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{InferenceBoot}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -15,7 +15,7 @@ This design pairs subjects based on covariate distances and randomizes within pa
 Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBinaryMatch}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBinaryMatch}
 }
 \section{Methods}{
 \subsection{Public methods}{

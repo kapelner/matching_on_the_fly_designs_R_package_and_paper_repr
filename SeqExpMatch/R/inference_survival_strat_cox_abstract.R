@@ -143,7 +143,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			)
 		},
 
-		generate_mod = function(){
+		generate_mod = function(estimate_only = FALSE){
 			surv_obj = survival::Surv(private$y, private$dead)
 			X_full = private$get_X()
 			strata_info = private$compute_strata_info(X_full)

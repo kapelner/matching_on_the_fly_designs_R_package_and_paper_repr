@@ -14,7 +14,7 @@ This design searches for an allocation that maximizes the determinant of the inf
 (equivalent to minimizing the variance of the parameter estimates).
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignDOptimal}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignDOptimal}
 }
 \section{Methods}{
 \subsection{Public methods}{

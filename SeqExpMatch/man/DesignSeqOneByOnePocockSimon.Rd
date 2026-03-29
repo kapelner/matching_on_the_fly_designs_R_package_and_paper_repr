@@ -14,7 +14,7 @@ sequential experimental design.
 This design minimizes the imbalance across treatments for multiple covariates.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOnePocockSimon}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOnePocockSimon}
 }
 \section{Methods}{
 \subsection{Public methods}{

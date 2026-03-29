@@ -15,7 +15,7 @@ This design randomizes entire groups (clusters) of subjects together using the
 \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignCluster}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignCluster}
 }
 \section{Methods}{
 \subsection{Public methods}{

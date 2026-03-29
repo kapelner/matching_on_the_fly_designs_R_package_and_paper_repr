@@ -168,7 +168,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 			}
 
 			X_covars = private$get_X()
-			res = compute_ols_bootstrap_parallel_cpp(y, X_covars, w, indices_mat, private$num_cores)
+			res = compute_ols_bootstrap_parallel_cpp(y, X_covars, w, indices_mat, private$n_cpp_threads(ncol(indices_mat)))
 			return(res)
 		},
 
@@ -179,7 +179,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 			w_mat = permutations$w_mat
 			X_covars = private$get_X()
 
-			res = compute_ols_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), private$num_cores)
+			res = compute_ols_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
 			return(res)
 		},
 

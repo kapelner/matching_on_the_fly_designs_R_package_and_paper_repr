@@ -24,7 +24,7 @@ and is not installed automatically with \pkg{SeqExpMatch}.
 Install \pkg{geepack} before using this class.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceAbstractKKGEE} -> \code{InferencePropUnivKKGEE}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAbstractKKGEE]{EDI::InferenceAbstractKKGEE}} -> \code{InferencePropUnivKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{

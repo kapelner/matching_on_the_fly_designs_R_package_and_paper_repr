@@ -14,7 +14,7 @@ one experimental design.
 }
 \keyword{internal}
 \section{Super class}{
-\code{EDI::Design} -> \code{DesignSeqOneByOne}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{DesignSeqOneByOne}
 }
 \section{Methods}{
 \subsection{Public methods}{

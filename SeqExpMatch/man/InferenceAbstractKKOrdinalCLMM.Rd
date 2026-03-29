@@ -10,7 +10,7 @@ Abstract class for ordinal CLMM-based Inference in KK designs
 }
 \keyword{internal}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{InferenceAbstractKKOrdinalCLMM}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceAbstractKKOrdinalCLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -12,7 +12,7 @@ A completely randomized / Bernoulli Fixed Design
 An R6 Class encapsulating the data and functionality for a fixed Bernoulli experimental design.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBernoulli}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBernoulli}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -15,7 +15,7 @@ sequential experimental design estimation and test object
 after the sequential design is completed.
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMforGLMs} -> \code{InferenceIncidUnivLogRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceIncidUnivLogRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

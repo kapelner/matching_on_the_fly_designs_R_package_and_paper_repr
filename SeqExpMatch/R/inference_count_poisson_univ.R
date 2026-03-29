@@ -103,7 +103,7 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 			if (is.null(w_mat)) return(NULL)
 			X_covars = private$get_X()
 			log_transform = transform_responses == "log"
-			compute_poisson_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), log_transform, private$num_cores)
+			compute_poisson_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), log_transform, private$n_cpp_threads(ncol(w_mat)))
 		}
 	)
 )

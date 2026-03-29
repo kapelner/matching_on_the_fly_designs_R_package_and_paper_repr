@@ -225,7 +225,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				as.integer(m_vec),
 				indices_mat, # Back to 1-based, let C++ handle it if needed or check impl
 				m_mat,
-				private$num_cores
+				private$n_cpp_threads(B)
 			)
 		}
 	)

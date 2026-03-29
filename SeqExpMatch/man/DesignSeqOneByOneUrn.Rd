@@ -15,7 +15,7 @@ This design uses an adaptive urn model where the probability of assignment to a 
 decreases as the number of subjects in that group increases.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneUrn}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneUrn}
 }
 \section{Methods}{
 \subsection{Public methods}{

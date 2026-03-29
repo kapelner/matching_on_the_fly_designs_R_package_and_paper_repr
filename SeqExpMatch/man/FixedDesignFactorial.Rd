@@ -14,7 +14,7 @@ This design handles multiple treatment factors and balances assignments across
 all factor combinations.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignFactorial}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignFactorial}
 }
 \section{Methods}{
 \subsection{Public methods}{

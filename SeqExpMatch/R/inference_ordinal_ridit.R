@@ -129,7 +129,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 				as.integer(y),
 				permutations$w_mat,
 				private$reference,
-				private$num_cores
+				private$n_cpp_threads(ncol(permutations$w_mat))
 			)
 		},
 
@@ -167,7 +167,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 				as.integer(w),
 				indices_mat,
 				private$reference,
-				private$num_cores
+				private$n_cpp_threads(B)
 			)
 		}
 	)

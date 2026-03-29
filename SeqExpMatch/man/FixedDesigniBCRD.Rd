@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for a fixed balanced
 completely randomized experimental design.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesigniBCRD}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesigniBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{

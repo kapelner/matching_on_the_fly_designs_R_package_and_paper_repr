@@ -15,7 +15,7 @@ where block sizes are randomly chosen from a specified set for each stratum. Thi
 is commonly used in clinical trials to prevent predictability of treatment assignments.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneRandomBlockSize}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneRandomBlockSize}
 }
 \section{Methods}{
 \subsection{Public methods}{

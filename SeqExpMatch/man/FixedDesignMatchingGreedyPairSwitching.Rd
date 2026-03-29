@@ -14,7 +14,7 @@ binary matches and then improves the matched design with greedy pair switching
 using the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignMatchingGreedyPairSwitching}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignMatchingGreedyPairSwitching}
 }
 \section{Methods}{
 \subsection{Public methods}{

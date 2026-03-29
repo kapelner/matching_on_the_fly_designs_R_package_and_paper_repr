@@ -15,7 +15,7 @@ information matrix
 (equivalent to minimizing the average variance of the parameter estimates).
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignAOptimal}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignAOptimal}
 }
 \section{Methods}{
 \subsection{Public methods}{

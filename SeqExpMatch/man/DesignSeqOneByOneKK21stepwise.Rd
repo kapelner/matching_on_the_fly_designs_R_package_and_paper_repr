@@ -25,7 +25,7 @@ seq_des = DesignSeqOneByOneKK21stepwise$new(n = 6, response_type = "continuous")
 
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{EDI::DesignSeqOneByOneKK14} -> \code{EDI::DesignSeqOneByOneKK21} -> \code{DesignSeqOneByOneKK21stepwise}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{\link[EDI:DesignSeqOneByOneKK14]{EDI::DesignSeqOneByOneKK14}} -> \code{\link[EDI:DesignSeqOneByOneKK21]{EDI::DesignSeqOneByOneKK21}} -> \code{DesignSeqOneByOneKK21stepwise}
 }
 \section{Methods}{
 \subsection{Public methods}{

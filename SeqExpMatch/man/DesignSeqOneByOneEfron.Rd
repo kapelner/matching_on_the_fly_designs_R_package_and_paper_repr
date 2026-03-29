@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for Efron's biased coin
 sequential experimental design.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneEfron}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneEfron}
 }
 \section{Methods}{
 \subsection{Public methods}{

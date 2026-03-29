@@ -14,7 +14,7 @@ This class takes care of whole-experiment randomization.
 }
 \keyword{internal}
 \section{Super class}{
-\code{EDI::Design} -> \code{FixedDesign}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{FixedDesign}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneAtkinson}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{

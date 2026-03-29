@@ -69,7 +69,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 				as.numeric(delta),
 				t_code,
 				is_fixed_matching,
-				private$num_cores
+				private$n_cpp_threads(nsim)
 			)
 			return(res)
 		},

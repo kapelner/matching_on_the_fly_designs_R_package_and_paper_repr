@@ -14,7 +14,7 @@ block sequential experimental design.
 This design ensures balance within specified strata using blocks of a fixed size.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneSPBR}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{

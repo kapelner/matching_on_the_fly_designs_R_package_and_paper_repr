@@ -133,7 +133,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 
 			# Optimization: w_mat is already pre-computed in generate_permutations
 			w_mat = permutations$w_mat
-			res = compute_simple_mean_diff_parallel_cpp(as.numeric(y), w_mat, as.numeric(delta), private$num_cores)
+			res = compute_simple_mean_diff_parallel_cpp(as.numeric(y), w_mat, as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
 			return(res)
 		},
 

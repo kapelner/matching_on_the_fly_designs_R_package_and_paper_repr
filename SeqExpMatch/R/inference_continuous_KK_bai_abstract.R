@@ -201,7 +201,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			as.numeric(delta),
 			halves_idx,
 			as.logical(private$convex_flag),
-			private$num_cores
+			private$n_cpp_threads(ncol(w_mat))
 		)
 		return(res)
 	},

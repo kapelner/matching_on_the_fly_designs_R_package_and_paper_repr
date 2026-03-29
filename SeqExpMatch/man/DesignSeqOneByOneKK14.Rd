@@ -14,7 +14,7 @@ This class takes care of data initialization and sequential assignments. The cla
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneKK14}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneKK14}
 }
 \section{Methods}{
 \subsection{Public methods}{

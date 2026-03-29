@@ -11,12 +11,6 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		#' @description
-		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
-		#' @param verbose			Whether to print progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
@@ -25,17 +19,11 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
 		},
 
-		#' @description
-		#' Returns the combined-likelihood estimate of the treatment effect (log-HR).
-		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description
-		#' Returns a 1 - alpha confidence interval for beta_T.
-		#' @param alpha Significance level; default 0.05 gives a 95% CI.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared_combined_likelihood(estimate_only = FALSE)
@@ -43,9 +31,6 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
-		#' @description
-		#' Returns a 2-sided p-value for H0: beta_T = delta.
-		#' @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared_combined_likelihood(estimate_only = FALSE)

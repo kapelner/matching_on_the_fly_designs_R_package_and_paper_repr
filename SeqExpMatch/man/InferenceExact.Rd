@@ -9,7 +9,7 @@ Abstract class for Zhang (2026) exact test-inversion inference.
 }
 \keyword{internal}
 \section{Super class}{
-\code{EDI::Inference} -> \code{InferenceExact}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceExact}
 }
 \section{Methods}{
 \subsection{Public methods}{

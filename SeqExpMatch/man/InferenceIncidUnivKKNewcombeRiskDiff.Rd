@@ -47,7 +47,7 @@ infer
 
 }
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceBoot} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceKKPassThrough} -> \code{EDI::InferenceKKPassThroughCompound} -> \code{InferenceIncidUnivKKNewcombeRiskDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceIncidUnivKKNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{

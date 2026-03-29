@@ -13,7 +13,7 @@ An R6 Class encapsulating the data and functionality for a fixed stratified
 blocking experimental design.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBlocking}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlocking}
 }
 \section{Methods}{
 \subsection{Public methods}{

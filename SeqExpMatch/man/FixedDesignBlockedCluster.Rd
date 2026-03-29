@@ -14,7 +14,7 @@ cluster randomized experimental design.
 This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignBlockedCluster}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlockedCluster}
 }
 \section{Methods}{
 \subsection{Public methods}{

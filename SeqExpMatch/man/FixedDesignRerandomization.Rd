@@ -16,7 +16,7 @@ covariate balance criterion.
 For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 }
 \section{Super classes}{
-\code{EDI::Design} -> \code{EDI::FixedDesign} -> \code{FixedDesignRerandomization}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignRerandomization}
 }
 \section{Methods}{
 \subsection{Public methods}{
