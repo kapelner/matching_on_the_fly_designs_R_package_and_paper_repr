@@ -1,7 +1,69 @@
 .libPaths(c("Rlib", .libPaths()))
 library(testthat)
-library(SeqExpMatch)
+library(EDI)
 library(data.table)
+
+make_exact_fisher_2x2 <- function(w, y) {
+	matrix(
+		c(
+			sum(w == 1L & y == 1L),
+			sum(w == 1L & y == 0L),
+			sum(w == 0L & y == 1L),
+			sum(w == 0L & y == 0L)
+		),
+		nrow = 2,
+		byrow = TRUE
+	)
+}
+
+format_exact_fisher_tables <- function(table_list) {
+	table_list <- Filter(function(tab) sum(tab[1, ]) > 0L && sum(tab[2, ]) > 0L, table_list)
+	if (length(table_list) == 1L) {
+		return(table_list[[1]])
+	}
+	table_array <- array(0, dim = c(2L, 2L, length(table_list)))
+	for (k in seq_along(table_list)) {
+		table_array[, , k] <- table_list[[k]]
+	}
+	table_array
+}
+
+build_blocking_exact_fisher_tables <- function(des) {
+	des_priv <- des$.__enclos_env__$private
+	w <- des_priv$w
+	y <- des_priv$y
+	strata_cols <- des_priv$strata_cols
+	if (is.null(strata_cols) || length(strata_cols) == 0L) {
+		return(make_exact_fisher_2x2(w, y))
+	}
+	Xraw <- des_priv$Xraw
+	strata_keys <- vapply(seq_along(w), function(i) {
+		paste(vapply(strata_cols, function(col) {
+			val <- Xraw[i, ][[col]]
+			if (is.na(val)) "NA" else as.character(val)
+		}, character(1)), collapse = "|")
+	}, character(1))
+	format_exact_fisher_tables(lapply(split(seq_along(w), strata_keys), function(idx) {
+		make_exact_fisher_2x2(w[idx], y[idx])
+	}))
+}
+
+build_kk_exact_fisher_tables <- function(des) {
+	des_priv <- des$.__enclos_env__$private
+	w <- des_priv$w
+	y <- des_priv$y
+	m <- as.integer(des_priv$m)
+	m[is.na(m)] <- 0L
+	table_list <- lapply(sort(unique(m[m > 0L])), function(match_id) {
+		idx <- which(m == match_id)
+		make_exact_fisher_2x2(w[idx], y[idx])
+	})
+	reservoir_idx <- which(m == 0L)
+	if (length(reservoir_idx) > 0L) {
+		table_list[[length(table_list) + 1L]] <- make_exact_fisher_2x2(w[reservoir_idx], y[reservoir_idx])
+	}
+	format_exact_fisher_tables(table_list)
+}
 
 test_that("compute_confidence_interval_rand works for continuous response", {
 	set.seed(123)
@@ -113,11 +175,11 @@ test_that("compute_confidence_interval_rand works for ordinal response (cumulati
 
 test_that("compute_confidence_interval_rand throws error for unsupported types", {
 	n <- 20
-	des_incid <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	des_incid <- DesignSeqOneByOneEfron$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) des_incid$add_subject_to_experiment_and_assign(data.table(x=1))
 	des_incid$add_all_subject_responses(rbinom(n, 1, 0.5))
 	inf_incid <- InferenceIncidUnivLogRegr$new(des_incid)
-	expect_error(inf_incid$compute_confidence_interval_rand(), "Confidence intervals are not supported for randomization tests for incidence outcomes")
+	expect_error(inf_incid$compute_confidence_interval_rand(), "Zhang randomization inference requires Bernoulli or matching designs")
 
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	for (i in 1:n) des_count$add_subject_to_experiment_and_assign(data.table(x=1))
@@ -129,7 +191,7 @@ test_that("compute_confidence_interval_rand throws error for unsupported types",
 	expect_true(all(is.finite(ci_count)))
 })
 
-test_that("Zhang exact incidence CI matches across serial and multicore", {
+test_that("Zhang incidence inference is available through randomization and exact APIs", {
 	set.seed(321)
 	n <- 24
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
@@ -140,13 +202,127 @@ test_that("Zhang exact incidence CI matches across serial and multicore", {
 	prob <- plogis(-0.2 + 0.8 * treatment)
 	des$add_all_subject_responses(rbinom(n, 1, prob))
 
+	inf_rand_serial <- InferenceIncidUnivLogRegr$new(des, num_cores = 1, verbose = FALSE)
+	inf_rand_parallel <- InferenceIncidUnivLogRegr$new(des, num_cores = 4, verbose = FALSE)
 	inf_serial <- InferenceIncidExactZhang$new(des, num_cores = 1, verbose = FALSE)
 	inf_parallel <- InferenceIncidExactZhang$new(des, num_cores = 4, verbose = FALSE)
 
-	ci_serial <- inf_serial$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
-	ci_parallel <- inf_parallel$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
+	ci_rand_serial <- inf_rand_serial$compute_confidence_interval_rand(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
+	ci_rand_parallel <- inf_rand_parallel$compute_confidence_interval_rand(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
+	ci_exact_serial <- inf_serial$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
+	ci_exact_parallel <- inf_parallel$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
+	p_rand <- inf_rand_serial$compute_two_sided_pval_for_treatment_effect_rand(delta = 0)
+	p_exact <- inf_serial$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
 
-	expect_length(ci_serial, 2)
-	expect_true(all(is.finite(ci_serial)))
-	expect_equal(ci_parallel, ci_serial, tolerance = 1e-8)
+	expect_length(ci_rand_serial, 2)
+	expect_true(all(is.finite(ci_rand_serial)))
+	expect_equal(ci_rand_parallel, ci_rand_serial, tolerance = 1e-8)
+	expect_equal(ci_exact_serial, ci_rand_serial, tolerance = 1e-8)
+	expect_equal(ci_exact_parallel, ci_rand_serial, tolerance = 1e-8)
+	expect_true(is.finite(p_rand))
+	expect_equal(p_exact, p_rand, tolerance = 1e-12)
+})
+
+test_that("Fisher exact inference matches fisher.test for iBCRD incidence", {
+	set.seed(2026)
+	n <- 20
+	des <- DesignSeqOneByOneiBCRD$new(n = n, response_type = "incidence", verbose = FALSE)
+	for (i in seq_len(n)) {
+		des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+	}
+	w <- des$.__enclos_env__$private$w
+	y <- rbinom(n, 1, plogis(-0.3 + 0.7 * w))
+	des$add_all_subject_responses(y)
+
+	ref <- stats::fisher.test(make_exact_fisher_2x2(w, y), conf.level = 0.90)
+	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
+
+	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.10)
+	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
+
+	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
+	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
+})
+
+test_that("Fisher exact inference matches mantelhaen.test for blocking incidence", {
+	set.seed(2027)
+	n <- 16
+	x_dat <- data.table(site = rep(c("A", "B"), each = n / 2), x1 = rnorm(n))
+	des <- DesignSeqOneByOneSPBR$new(
+		strata_cols = "site",
+		block_size = 4,
+		n = n,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	for (i in seq_len(n)) {
+		des$add_subject_to_experiment_and_assign(x_dat[i, ])
+	}
+	w <- des$.__enclos_env__$private$w
+	y <- rbinom(n, 1, plogis(-0.5 + 0.9 * w + 0.4 * (x_dat$site == "B")))
+	des$add_all_subject_responses(y)
+
+	ref_tables <- build_blocking_exact_fisher_tables(des)
+	ref <- stats::mantelhaen.test(ref_tables, exact = TRUE, conf.level = 0.95)
+	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
+
+	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.05)
+	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
+
+	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
+	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
+	expect_error(
+		inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0.2),
+		"Stratified Fisher exact inference only supports delta = 0"
+	)
+})
+
+test_that("Fisher exact inference matches mantelhaen.test for KK incidence", {
+	set.seed(2028)
+	x_dat <- data.table(x1 = c(-3, 3, -3.01, 3.01, 0, 0.01))
+	des <- DesignSeqOneByOneKK14$new(
+		n = nrow(x_dat),
+		response_type = "incidence",
+		t_0_pct = 0.34,
+		lambda = 0.99,
+		verbose = FALSE
+	)
+	for (i in seq_len(nrow(x_dat))) {
+		des$add_subject_to_experiment_and_assign(x_dat[i, ])
+	}
+	m <- des$.__enclos_env__$private$m
+	expect_true(any(m > 0L))
+
+	w <- des$.__enclos_env__$private$w
+	y <- c(1L, 0L, 0L, 1L, 1L, 0L)
+	des$add_all_subject_responses(y)
+
+	ref_tables <- build_kk_exact_fisher_tables(des)
+	ref <- stats::mantelhaen.test(ref_tables, exact = TRUE, conf.level = 0.95)
+	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
+
+	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.05)
+	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
+
+	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
+	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
+})
+
+test_that("Fisher exact inference is rejected for unsupported incidence designs", {
+	n <- 12
+	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	for (i in seq_len(n)) {
+		des$add_subject_to_experiment_and_assign(data.table(x1 = i))
+	}
+	des$add_all_subject_responses(rep(c(0L, 1L), length.out = n))
+
+	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
+
+	expect_error(
+		inf_exact$compute_exact_two_sided_pval_for_treatment_effect(),
+		"Fisher exact inference requires iBCRD, blocking, or matching designs"
+	)
 })

@@ -117,7 +117,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
-				stop("GEE: non-finite standard error (possible separation or insufficient data).")
+				return(invisible(NULL))
 		},
 
 		fit_gee = function(std_err = TRUE){

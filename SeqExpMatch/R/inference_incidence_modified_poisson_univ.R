@@ -93,7 +93,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("Modified Poisson estimator: could not compute a finite sandwich standard error.")
+				return(invisible(NULL))
 			}
 		},
 

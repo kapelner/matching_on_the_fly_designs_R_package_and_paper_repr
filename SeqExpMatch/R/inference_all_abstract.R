@@ -65,14 +65,14 @@ Inference = R6::R6Class("Inference",
 		#' Computes an exact two-sided p-value. Subclasses that support exact inference override this.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_two_sided_pval_for_treatment_effect = function(...){
-			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
+			stop("Exact inference is only supported for exact inference classes.")
 		},
 
 		#' @description
 		#' Computes an exact confidence interval. Subclasses that support exact inference override this.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_confidence_interval = function(...){
-			stop("Zhang incidence inference is only supported for InferenceIncidExactZhang and related classes.")
+			stop("Exact inference is only supported for exact inference classes.")
 		},
 
 		#' @description
@@ -114,7 +114,18 @@ Inference = R6::R6Class("Inference",
 		private = list(
 		finalize = function(){
 			if (!is.null(private$fork_cluster)){
-				try(parallel::stopCluster(private$fork_cluster), silent = TRUE)
+				# Close each worker's socket connection directly instead of calling
+				# parallel::stopCluster(). stopCluster() sends DONE to workers and may
+				# wait for socket acknowledgement; if workers have been killed externally
+				# (e.g. by a benchmark watchdog) this blocks for up to the OS socket
+				# timeout (~60 s) per worker. Closing the connection is non-blocking:
+				# workers detect EOF on their next read and exit on their own.
+				tryCatch(
+					for (node in private$fork_cluster) {
+						tryCatch(close(node$con), error = function(e) NULL)
+					},
+					error = function(e) NULL
+				)
 				private$fork_cluster = NULL
 			}
 		},
@@ -149,7 +160,21 @@ Inference = R6::R6Class("Inference",
 
 		get_or_create_fork_cluster = function(){
 			if (is.null(private$fork_cluster)){
-				private$fork_cluster = parallel::makeForkCluster(private$num_cores)
+				# Retry with increasing delays on port-conflict failures
+				for (attempt in 1:5) {
+					private$fork_cluster = tryCatch(
+						parallel::makeForkCluster(private$num_cores),
+						error = function(e) {
+							if (attempt < 5 && grepl("port|socket|cannot be opened", e$message, ignore.case = TRUE)) {
+								Sys.sleep(0.5 * attempt)
+								NULL
+							} else {
+								stop(e)
+							}
+						}
+					)
+					if (!is.null(private$fork_cluster)) break
+				}
 			}
 			private$fork_cluster
 		},

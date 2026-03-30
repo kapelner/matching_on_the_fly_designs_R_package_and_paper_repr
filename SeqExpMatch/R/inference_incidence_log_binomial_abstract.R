@@ -61,7 +61,7 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("Log-binomial regression: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

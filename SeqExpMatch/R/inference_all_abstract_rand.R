@@ -74,17 +74,26 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 			actual_rand_cores = private$num_cores
 			if (actual_rand_cores > 1L && need_thread_objs) {
-				t_rand_warmup = system.time({
+				do_warmup_iter = function() {
 					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 					w_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
 					if (!is.null(w_inf)) w_inf$.__enclos_env__$private$num_cores = 1L
 					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
-				})[[3]]
+				}
+				# Run warmup TWICE and use the second timing. The first call often pays
+				# cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
+				# that inflate the estimate 5–15× vs steady-state cost, causing the guard to
+				# wrongly choose parallel for small r values like r = 19.
+				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
+				t_rand_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
+				# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
+				# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
 				fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
-				
+				cluster_create_overhead = if (isTRUE(private$make_fork_cluster) && is.null(private$fork_cluster)) 0.3 else 0.0
+
 				# Better logic: if total estimated time is much greater than overhead, use all cores.
 				# We multiply overhead by actual_rand_cores to account for total fork cost.
-				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0) {
+				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0 + cluster_create_overhead) {
 					actual_rand_cores = 1L
 				}
 			} else if (actual_rand_cores > 1L && !need_thread_objs) {
@@ -208,7 +217,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (!is.null(permutations$w_mat)) {
-				function(i) list(w = permutations$w_mat[, i], m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, i] else NULL)
+				n_avail = ncol(permutations$w_mat)
+				function(i) { j = ((i - 1L) %% n_avail) + 1L; list(w = permutations$w_mat[, j], m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, j] else NULL) }
 			} else function(i) permutations[[i]]
 
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {

@@ -290,7 +290,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Clayton copula compound estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

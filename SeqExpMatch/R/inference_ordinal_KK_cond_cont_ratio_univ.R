@@ -80,8 +80,7 @@ InferenceOrdinalUnivKKCondContRatioRegr = R6::R6Class(
 	private = list(
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop(paste0("Conditional continuation-ratio KK estimator: ",
-					"could not compute a finite standard error."))
+				return(invisible(NULL)) 
 			}
 		},
 

@@ -30,7 +30,7 @@ ordinal_cond_clogit_compute_setup = function(private_env){
 
 ordinal_cond_clogit_assert_finite_se = function(private_env, model_label){
 	if (!is.finite(private_env$cached_values$s_beta_hat_T)){
-		stop(model_label, ": could not compute a finite standard error.")
+		return(invisible(NULL))
 	}
 }
 

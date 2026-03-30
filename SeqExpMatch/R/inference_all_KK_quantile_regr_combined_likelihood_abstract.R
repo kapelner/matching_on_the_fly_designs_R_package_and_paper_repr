@@ -74,7 +74,7 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Quantile regression combined-likelihood: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

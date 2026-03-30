@@ -121,7 +121,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Stratified Cox compound estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

@@ -32,6 +32,36 @@ test_that("Inference works for incidence", {
 	expect_true(is.numeric(est))
 })
 
+test_that("Azriel inference is gated to blocked incidence designs", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	for (stratum in c("A", "A", "A", "A", "B", "B", "B", "B")) {
+		des$add_subject(data.frame(stratum = stratum))
+	}
+	des$add_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	inf <- InferenceIncidAzriel$new(des, verbose = FALSE)
+	expect_true(is.numeric(inf$compute_treatment_estimate()))
+	ci <- inf$compute_asymp_confidence_interval()
+	expect_length(ci, 2)
+	expect_true(all(is.finite(ci)))
+	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	expect_true(is.numeric(pval))
+	expect_true(is.finite(pval))
+
+	des_bad <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
+	for (i in 1:8) {
+		des_bad$add_subject_to_experiment_and_assign(data.frame(x = i))
+	}
+	des_bad$add_all_subject_responses(rbinom(8, 1, 0.5))
+	expect_error(InferenceIncidAzriel$new(des_bad, verbose = FALSE), "blocking design")
+})
+
 test_that("Inference works for count", {
 	n <- 20
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)

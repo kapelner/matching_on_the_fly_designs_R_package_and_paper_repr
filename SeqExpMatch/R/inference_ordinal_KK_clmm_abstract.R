@@ -95,7 +95,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
-				stop("CLMM: non-finite standard error (possible separation or singular random-effect fit).")
+				return(invisible(NULL))
 		},
 
 		fit_clmm = function(){

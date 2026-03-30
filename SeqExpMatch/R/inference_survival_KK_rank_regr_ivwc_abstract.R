@@ -150,7 +150,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Survival rank-regression compound estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

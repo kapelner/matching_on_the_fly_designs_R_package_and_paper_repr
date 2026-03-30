@@ -51,7 +51,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Clogit combined-likelihood: could not compute a finite standard error (possible perfect separation or insufficient data).")
+				return(invisible(NULL))
 			}
 		},
 

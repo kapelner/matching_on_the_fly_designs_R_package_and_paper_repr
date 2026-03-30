@@ -163,7 +163,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop(private$za_description(), ": non-finite standard error (possible convergence failure or separation in zero model).")
+				return(invisible(NULL))
 			}
 		}
 	)

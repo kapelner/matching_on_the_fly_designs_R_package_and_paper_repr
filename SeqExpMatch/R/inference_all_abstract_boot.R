@@ -35,9 +35,13 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# cost, then only parallelize if computation outweighs overhead per worker.
 			# For a persistent fork cluster the per-call overhead is ~10ms (socket round-trip);
 			# for mclapply (per-call fork) it is ~500ms.
+			# We run the warmup iteration TWICE and use the second timing. The first call often
+			# pays cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
+			# that can inflate the estimate 5–15× vs steady-state cost, causing the guard to
+			# wrongly choose parallel for small B values like r = 19.
 			actual_cores = private$num_cores
 			if (actual_cores > 1L) {
-				t_boot_warmup = system.time({
+				do_warmup_iter = function() {
 					w_des = des_template$duplicate()
 					w_inf = inf_template$duplicate(); w_inf$.__enclos_env__$private$num_cores = 1L
 					w_des$resample_design()
@@ -48,9 +52,14 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 						w_inf$.__enclos_env__$private$compute_basic_match_data()
 					}
 					tryCatch(w_inf$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
-				})[[3]]
+				}
+				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
+				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
+				# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
+				# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
 				fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
-				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores))
+				cluster_create_overhead = if (isTRUE(private$make_fork_cluster) && is.null(private$fork_cluster)) 0.3 else 0.0
+				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores + cluster_create_overhead))
 					actual_cores = 1L
 			}
 
@@ -143,7 +152,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B, show_progress)
 			boot_distr = boot_distr[is.finite(boot_distr)]
-			if (length(boot_distr) < B / 2) stop("Too many bootstrap samples failed.")
+			if (length(boot_distr) < B / 2) stop("Bootstrap confidence interval returned NA bounds")
 
 			est = self$compute_treatment_estimate()
 			

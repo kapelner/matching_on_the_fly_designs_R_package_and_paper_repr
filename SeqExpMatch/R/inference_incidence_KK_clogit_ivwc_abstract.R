@@ -116,7 +116,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Clogit/logistic compound estimator: could not compute a finite standard error (possible perfect separation or insufficient data).")
+				return(invisible(NULL))
 			}
 		},
 

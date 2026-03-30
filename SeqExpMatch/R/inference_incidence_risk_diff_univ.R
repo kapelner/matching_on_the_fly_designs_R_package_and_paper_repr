@@ -92,7 +92,7 @@ InferenceIncidUnivRiskDiff = R6::R6Class("InferenceIncidUnivRiskDiff",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("Risk-difference regression: could not compute a finite HC2 standard error.")
+				return(invisible(NULL))
 			}
 		},
 

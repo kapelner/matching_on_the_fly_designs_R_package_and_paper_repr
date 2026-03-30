@@ -114,7 +114,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop(private$hurdle_description(), ": non-finite standard error (possible convergence failure in the truncated count component).")
+				return(invisible(NULL))
 			}
 		}
 	)

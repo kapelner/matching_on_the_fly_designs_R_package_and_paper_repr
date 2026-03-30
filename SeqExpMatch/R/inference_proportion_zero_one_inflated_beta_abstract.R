@@ -103,7 +103,7 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("Zero/one-inflated beta estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 

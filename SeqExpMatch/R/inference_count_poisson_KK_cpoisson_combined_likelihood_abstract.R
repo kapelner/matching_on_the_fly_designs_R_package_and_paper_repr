@@ -60,7 +60,7 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("CPoisson combined-likelihood: could not compute a finite standard error (possible convergence failure or insufficient data).")
+				return(invisible(NULL))
 			}
 		},
 

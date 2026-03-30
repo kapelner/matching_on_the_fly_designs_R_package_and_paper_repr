@@ -18,6 +18,7 @@ Abstract class for randomization-based confidence interval inference.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand}{\code{InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-InferenceRandCI-compute_confidence_interval_rand}{\code{InferenceRandCI$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceRandCI-clone}{\code{InferenceRandCI$clone()}}
 }
@@ -31,11 +32,28 @@ Abstract class for randomization-based confidence interval inference.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand}{}}}
+\subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand(
+  r = 501,
+  delta = 0,
+  transform_responses = "none",
+  na.rm = TRUE,
+  show_progress = TRUE,
+  permutations = NULL,
+  type = NULL,
+  args_for_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-compute_confidence_interval_rand"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_confidence_interval_rand}{}}}
@@ -46,7 +64,9 @@ Computes a randomization-based confidence interval.
   alpha = 0.05,
   r = 501,
   pval_epsilon = 0.005,
-  show_progress = TRUE
+  show_progress = TRUE,
+  type = NULL,
+  args_for_type = NULL
 )}\if{html}{\out{</div>}}
 }
 

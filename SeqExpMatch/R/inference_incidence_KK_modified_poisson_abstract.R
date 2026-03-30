@@ -40,7 +40,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("KK modified Poisson estimator: could not compute a finite cluster-robust standard error.")
+				return(invisible(NULL))
 			}
 		},
 

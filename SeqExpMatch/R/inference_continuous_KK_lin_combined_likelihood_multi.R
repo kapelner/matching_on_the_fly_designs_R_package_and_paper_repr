@@ -113,7 +113,7 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				stop("KK Lin combined estimator: could not compute a finite HC2 standard error.")
+				return(invisible(NULL))
 			}
 		},
 

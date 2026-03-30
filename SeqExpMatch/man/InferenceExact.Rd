@@ -2,10 +2,10 @@
 % Please edit documentation in R/inference_all_abstract_exact.R
 \name{InferenceExact}
 \alias{InferenceExact}
-\title{Exact Inference via Zhang's Method}
+\title{Exact Inference API}
 \description{
 Internal method.
-Abstract class for Zhang (2026) exact test-inversion inference.
+Thin interface for exact inference methods.
 }
 \keyword{internal}
 \section{Super class}{
@@ -32,23 +32,26 @@ Abstract class for Zhang (2026) exact test-inversion inference.
 \if{html}{\out{<a id="method-InferenceExact-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
-Computes an exact confidence interval via Zhang's combined test.
+Computes an exact confidence interval for the requested exact method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceExact$compute_exact_confidence_interval(
-  type = "Zhang",
   alpha = 0.05,
-  args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = 0.005))
+  pval_epsilon = 0.005,
+  type = NULL,
+  args_for_type = NULL
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{type}}{The type of exact inference. Currently only "Zhang" is supported.}
-
 \item{\code{alpha}}{Significance level.}
 
-\item{\code{args_for_type}}{A list of parameters including combination_method and pval_epsilon.}
+\item{\code{pval_epsilon}}{Reserved for future exact methods that invert p-values.}
+
+\item{\code{type}}{Exact inference type. Concrete subclasses provide a default.}
+
+\item{\code{args_for_type}}{Structured per-type arguments as a list.}
 }
 \if{html}{\out{</div>}}
 }
@@ -57,23 +60,23 @@ Computes an exact confidence interval via Zhang's combined test.
 \if{html}{\out{<a id="method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
-Computes an exact two-sided p-value via Zhang's combined test.
+Computes an exact two-sided p-value for the requested exact method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect(
-  type = "Zhang",
   delta = 0,
-  args_for_type = list(Zhang = list(combination_method = "Fisher"))
+  type = NULL,
+  args_for_type = NULL
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{type}}{The type of exact inference.}
+\item{\code{delta}}{Null treatment effect on the log-odds-ratio scale.}
 
-\item{\code{delta}}{Null treatment effect (log-odds ratio).}
+\item{\code{type}}{Exact inference type. Concrete subclasses provide a default.}
 
-\item{\code{args_for_type}}{A list containing combination_method.}
+\item{\code{args_for_type}}{Structured per-type arguments as a list.}
 }
 \if{html}{\out{</div>}}
 }

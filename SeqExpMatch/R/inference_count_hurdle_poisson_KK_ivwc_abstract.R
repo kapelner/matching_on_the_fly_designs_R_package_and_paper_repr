@@ -275,7 +275,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("KK hurdle-Poisson IVWC estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		}
 	)

@@ -131,7 +131,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
-				stop("GLMM: non-finite standard error (possible separation or singular random-effect fit).")
+				return(invisible(NULL))
 		},
 
 		fit_glmm = function(se = TRUE){

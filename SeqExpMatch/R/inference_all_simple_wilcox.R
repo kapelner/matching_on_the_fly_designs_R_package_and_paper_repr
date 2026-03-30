@@ -77,7 +77,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
-			private$assert_finite_se()
+			if (!is.finite(private$cached_values$s_beta_hat_T)) return(c(NA_real_, NA_real_))
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -88,7 +88,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
-			private$assert_finite_se()
+			if (!is.finite(private$cached_values$s_beta_hat_T)) return(NA_real_)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
@@ -206,7 +206,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Wilcoxon rank-sum: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		}
 	)

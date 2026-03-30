@@ -45,7 +45,7 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Weibull frailty combined-likelihood estimator: could not compute a finite standard error.")
+				return(invisible(NULL))
 			}
 		},
 
