@@ -164,6 +164,44 @@ InferenceRand = R6::R6Class("InferenceRand",
 	private = list(
 		custom_randomization_statistic_function = NULL,
 
+		generate_permutations = function(r){
+			assertCount(r, positive = TRUE)
+			if (is.null(private$cached_values$permutations_cache)) {
+				private$cached_values$permutations_cache = list()
+			}
+
+			design_sig = private$stable_signature(list(
+				class = class(private$des_obj),
+				n = private$n,
+				prob_T = private$prob_T,
+				m = private$des_obj_priv_int$m,
+				strata_cols = private$des_obj_priv_int$strata_cols
+			))
+			cache_key = paste0(as.integer(r), "|", design_sig)
+			cached = private$cached_values$permutations_cache[[cache_key]]
+			if (!is.null(cached)) return(cached)
+
+			des_template = private$des_obj$duplicate()
+			w_mat = des_template$draw_ws_according_to_design(as.integer(r))
+			if (!is.matrix(w_mat)) {
+				w_mat = matrix(as.numeric(w_mat), nrow = private$n)
+			}
+			storage.mode(w_mat) = "numeric"
+
+			permutations = list(
+				w_mat = w_mat,
+				m_mat = NULL
+			)
+			private$cached_values$permutations_cache[[cache_key]] = permutations
+			permutations
+		},
+
+		build_randomization_distribution_cache_key = function(r, delta, transform_responses, permutations){
+			delta_key = formatC(as.numeric(delta), digits = 17, format = "fg", flag = "#")
+			perm_sig = private$stable_signature(permutations)
+			paste(as.integer(r), delta_key, transform_responses, perm_sig, sep = "|")
+		},
+
 		setup_randomization_template_and_shifts = function(delta, transform_responses){
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
@@ -210,7 +248,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(thread_inf_obj$.__enclos_env__$private$compute_basic_match_data))
 				thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 
-			estimate = tryCatch(thread_inf_obj$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE), error = function(e) NA_real_)
+				estimate = tryCatch(
+					thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
+					error = function(e) NA_real_
+				)
 			if (is.list(estimate) && "b" %in% names(estimate)) return(as.numeric(estimate$b[1]))
 			as.numeric(estimate)
 		},

@@ -291,7 +291,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			inf_template = self$duplicate()
 			results = parallel::mclapply(bound_specs, function(spec){
 				worker_inf = inf_template$duplicate()
-				worker_inf$.__enclos_env__$self$num_cores = child_budget
 				worker_private = worker_inf$.__enclos_env__$private
 				exact_stats = worker_private$get_exact_zhang_stats()
 				p_fn = function(delta_0){
@@ -358,10 +357,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			model_cache_keys = setdiff(names(src_cache), excluded_cache_keys)
 			for (key in model_cache_keys) {
 				inf_template$.__enclos_env__$private$cached_values[[key]] = src_cache[[key]]
-			}
-			n_cores_ci = min(2L, self$num_cores)
+				}
+				n_cores_ci = min(2L, self$num_cores)
+				child_budget = max(1L, as.integer(floor(self$num_cores / n_cores_ci)))
 
-			# Helper to restore model cache on a freshly-duplicated worker object.
+				# Helper to restore model cache on a freshly-duplicated worker object.
 			# duplicate() clears cached_values, so we re-populate model-fit entries
 			# from inf_template (which holds the copies set above).
 			restore_model_cache = function(worker_inf) {
@@ -379,20 +379,19 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				cl = private$get_or_create_fork_cluster()
 				results = parallel::parLapply(cl, bound_specs, function(spec) {
 					worker_inf = inf_template$duplicate()
-					worker_inf$.__enclos_env__$self$num_cores = 1L
 					restore_model_cache(worker_inf)
 					worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
 						r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol,
 						transform_responses = transform_responses, lower = spec$lower,
 						show_progress = FALSE, permutations = permutations)
 				})
-			} else {
-				results = private$par_lapply(bound_specs, function(spec) {
-					worker_inf = inf_template$duplicate(); worker_inf$.__enclos_env__$self$num_cores = 1L
-					restore_model_cache(worker_inf)
-					worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol, transform_responses = transform_responses, lower = spec$lower, show_progress = FALSE, permutations = permutations)
-				}, n_cores = n_cores_ci)
-			}
+				} else {
+					results = private$par_lapply(bound_specs, function(spec) {
+						worker_inf = inf_template$duplicate()
+						restore_model_cache(worker_inf)
+						worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol, transform_responses = transform_responses, lower = spec$lower, show_progress = FALSE, permutations = permutations)
+					}, n_cores = n_cores_ci, budget = child_budget)
+				}
 			c(results[[1]], results[[2]])
 		},
 

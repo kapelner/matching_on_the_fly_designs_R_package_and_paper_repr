@@ -85,6 +85,7 @@ get_global_mirai_cores = function() {
 
 # Internal helper to get the current core count budget
 get_num_cores = function() {
+  if (!is.null(edi_env$num_cores_override)) return(edi_env$num_cores_override)
   cl = get_global_fork_cluster()
   if (!is.null(cl)) return(length(cl))
   mirai_cores = get_global_mirai_cores()

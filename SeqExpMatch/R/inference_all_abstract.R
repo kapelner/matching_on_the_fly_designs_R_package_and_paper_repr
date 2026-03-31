@@ -147,10 +147,17 @@ Inference = R6::R6Class("Inference",
 			min(self$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
 		},
 
-		par_lapply = function(X, FUN, n_cores = self$num_cores, show_progress = FALSE, export_list = NULL){
-
+		par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){
 			if (n_cores <= 1L) return(lapply(X, FUN))
-			
+
+			# Wrap FUN to ensure worker budget is respected
+			BUDGET_FUN = function(x) {
+				edi_env = asNamespace("EDI")$edi_env
+				edi_env$num_cores_override = as.integer(budget)
+				on.exit(edi_env$num_cores_override <- NULL)
+				FUN(x)
+			}
+
 			global_cl = get_global_fork_cluster()
 			global_mirai_cores = get_global_mirai_cores()
 
@@ -159,10 +166,10 @@ Inference = R6::R6Class("Inference",
 					export_env = list2env(export_list, parent = emptyenv())
 					parallel::clusterExport(global_cl, names(export_list), envir = export_env)
 				}
-				parallel::parLapply(global_cl, X, FUN)
+				parallel::parLapply(global_cl, X, BUDGET_FUN)
 			} else if (!is.null(global_mirai_cores)){
 				private$ensure_mirai_daemons(global_mirai_cores)
-				tasks = lapply(X, function(x) mirai::mirai({FUN(x)}, FUN = FUN, x = x))
+				tasks = lapply(X, function(x) mirai::mirai({BUDGET_FUN(x)}, BUDGET_FUN = BUDGET_FUN, FUN = FUN, x = x, budget = budget))
 				lapply(tasks, function(m) m[])
 			} else if (.Platform$OS.type != "unix"){
 				if (!isTRUE(private$warned_no_parallel)){
@@ -172,12 +179,13 @@ Inference = R6::R6Class("Inference",
 				lapply(X, FUN)
 			} else {
 				if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
-					pbmcapply::pbmclapply(X, FUN, mc.cores = n_cores)
+					pbmcapply::pbmclapply(X, BUDGET_FUN, mc.cores = n_cores)
 				} else {
-					parallel::mclapply(X, FUN, mc.cores = n_cores)
+					parallel::mclapply(X, BUDGET_FUN, mc.cores = n_cores)
 				}
 			}
 		},
+
 
 		ensure_mirai_daemons = function(n){
 			s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
@@ -234,14 +242,22 @@ Inference = R6::R6Class("Inference",
 			method_name %in% names(private)
 		},
 
-		object_has_private_method = function(obj, method_name){
-			method_name %in% names(obj$.__enclos_env__$private)
-		},
+			object_has_private_method = function(obj, method_name){
+				method_name %in% names(obj$.__enclos_env__$private)
+			},
 
-		assert_design_supports_resampling = function(method_family){
-			if (isTRUE(private$supports_design_resampling)) return(invisible(NULL))
-			stop(method_family, " is not available for plain FixedDesign objects. Use asymptotic inference or a concrete design subclass.")
-		},
+			get_or_create_fork_cluster = function(){
+				cl = get_global_fork_cluster()
+				if (is.null(cl)) {
+					stop("No global fork cluster is initialized. Call set_num_cores() first.")
+				}
+				cl
+			},
+
+			assert_design_supports_resampling = function(method_family){
+				if (isTRUE(private$supports_design_resampling)) return(invisible(NULL))
+				stop(method_family, " is not available for plain FixedDesign objects. Use asymptotic inference or a concrete design subclass.")
+			},
 
 		create_design_matrix = function(){
 			cbind(1, private$w, private$get_X())

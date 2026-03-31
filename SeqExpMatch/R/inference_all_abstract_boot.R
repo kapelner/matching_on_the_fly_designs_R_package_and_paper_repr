@@ -43,7 +43,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (actual_cores > 1L) {
 				do_warmup_iter = function() {
 					w_des = des_template$duplicate()
-					w_inf = inf_template$duplicate(); w_inf$.__enclos_env__$self$num_cores = 1L
 					w_des$resample_design()
 					w_inf$.__enclos_env__$private$w = w_des$.__enclos_env__$private$w
 					w_inf$.__enclos_env__$private$y = w_des$.__enclos_env__$private$y
@@ -71,7 +70,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					boot_distr = unlist(parallel::parLapply(cl, 1:B, function(idx) {
 						worker_des = des_template$duplicate()
 						worker_inf = inf_template$duplicate()
-						worker_inf$.__enclos_env__$self$num_cores = 1L
 						worker_des$resample_design()
 						worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 						worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
@@ -85,7 +83,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					boot_distr = unlist(private$par_lapply(1:B, function(idx) {
 						worker_des = des_template$duplicate()
 						worker_inf = inf_template$duplicate()
-						worker_inf$.__enclos_env__$self$num_cores = 1L
 						worker_des$resample_design()
 						worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 						worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
