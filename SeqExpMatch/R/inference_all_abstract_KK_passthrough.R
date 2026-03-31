@@ -25,14 +25,14 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
 			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
-			if (private$is_KK){
-				# For fixed binary matching, we need to ensure pairs are computed first
-				if (is(des_obj, "FixedDesignBinaryMatch")){
-					des_obj$.__enclos_env__$private$ensure_pairs_computed()
+				if (private$has_match_structure){
+					# For fixed binary matching, we need to ensure pairs are computed first
+					if (is(des_obj, "FixedDesignBinaryMatch")){
+						des_obj$.__enclos_env__$private$ensure_bms_computed()
+					}
+					private$m = des_obj$.__enclos_env__$private$m
+					private$compute_basic_match_data()
 				}
-				private$m = des_obj$.__enclos_env__$private$m
-				private$compute_basic_match_data()
-			}
 		},
 
 
@@ -62,9 +62,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'
 		#' @param show_progress Description for show_progress
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE){
-			if (!private$is_KK){
-				super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress)
-			} else {
+				if (!private$has_match_structure){
+					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress)
+				} else {
 				assertCount(B, positive = TRUE)
 
 				if (is.null(private$cached_values$KKstats)){

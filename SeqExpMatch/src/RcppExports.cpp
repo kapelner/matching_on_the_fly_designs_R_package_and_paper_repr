@@ -99,6 +99,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_azriel_block_se_cpp
+double compute_azriel_block_se_cpp(const NumericVector& y, const IntegerVector& m_vec, int n_total);
+RcppExport SEXP _EDI_compute_azriel_block_se_cpp(SEXP ySEXP, SEXP m_vecSEXP, SEXP n_totalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type m_vec(m_vecSEXP);
+    Rcpp::traits::input_parameter< int >::type n_total(n_totalSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_azriel_block_se_cpp(y, m_vec, n_total));
+    return rcpp_result_gen;
+END_RCPP
+}
 // base_bootstrap_loop_cpp
 NumericVector base_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& dead, const NumericMatrix& X, const NumericVector& w, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
 RcppExport SEXP _EDI_base_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP wSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
@@ -1869,6 +1882,64 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// distance_matrix_euclidean_sq_cpp
+NumericMatrix distance_matrix_euclidean_sq_cpp(const NumericMatrix& X);
+RcppExport SEXP _EDI_distance_matrix_euclidean_sq_cpp(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(distance_matrix_euclidean_sq_cpp(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// distance_matrix_custom_cpp
+NumericMatrix distance_matrix_custom_cpp(const NumericMatrix& X, const Function& dist_fn);
+RcppExport SEXP _EDI_distance_matrix_custom_cpp(SEXP XSEXP, SEXP dist_fnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Function& >::type dist_fn(dist_fnSEXP);
+    rcpp_result_gen = Rcpp::wrap(distance_matrix_custom_cpp(X, dist_fn));
+    return rcpp_result_gen;
+END_RCPP
+}
+// distance_matrix_sum_abs_diff_cpp
+NumericMatrix distance_matrix_sum_abs_diff_cpp(const NumericMatrix& X);
+RcppExport SEXP _EDI_distance_matrix_sum_abs_diff_cpp(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(distance_matrix_sum_abs_diff_cpp(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// distance_matrix_mahal_cpp
+NumericMatrix distance_matrix_mahal_cpp(const NumericMatrix& X);
+RcppExport SEXP _EDI_distance_matrix_mahal_cpp(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(distance_matrix_mahal_cpp(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// optimal_blocks_distance_matrix_cpp
+NumericMatrix optimal_blocks_distance_matrix_cpp(const NumericMatrix& X, const int dist_code, Nullable<Function> dist_fn);
+RcppExport SEXP _EDI_optimal_blocks_distance_matrix_cpp(SEXP XSEXP, SEXP dist_codeSEXP, SEXP dist_fnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const int >::type dist_code(dist_codeSEXP);
+    Rcpp::traits::input_parameter< Nullable<Function> >::type dist_fn(dist_fnSEXP);
+    rcpp_result_gen = Rcpp::wrap(optimal_blocks_distance_matrix_cpp(X, dist_code, dist_fn));
+    return rcpp_result_gen;
+END_RCPP
+}
 // d_optimal_search_cpp
 IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T);
 RcppExport SEXP _EDI_d_optimal_search_cpp(SEXP PSEXP, SEXP nsimSEXP, SEXP n_TSEXP) {
@@ -2244,6 +2315,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_var_cpp", (DL_FUNC) &_EDI_var_cpp, 1},
     {"_EDI_atkinson_assign_weight_cpp", (DL_FUNC) &_EDI_atkinson_assign_weight_cpp, 5},
     {"_EDI_atkinson_redraw_batch_cpp", (DL_FUNC) &_EDI_atkinson_redraw_batch_cpp, 4},
+    {"_EDI_compute_azriel_block_se_cpp", (DL_FUNC) &_EDI_compute_azriel_block_se_cpp, 3},
     {"_EDI_base_bootstrap_loop_cpp", (DL_FUNC) &_EDI_base_bootstrap_loop_cpp, 8},
     {"_EDI_beta_loglik_cpp", (DL_FUNC) &_EDI_beta_loglik_cpp, 4},
     {"_EDI_beta_dev_resids_cpp", (DL_FUNC) &_EDI_beta_dev_resids_cpp, 4},
@@ -2370,6 +2442,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_newcombe_paired_ci_cpp", (DL_FUNC) &_EDI_newcombe_paired_ci_cpp, 5},
     {"_EDI_compute_ols_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_distr_parallel_cpp, 5},
     {"_EDI_compute_ols_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_bootstrap_parallel_cpp, 5},
+    {"_EDI_distance_matrix_euclidean_sq_cpp", (DL_FUNC) &_EDI_distance_matrix_euclidean_sq_cpp, 1},
+    {"_EDI_distance_matrix_custom_cpp", (DL_FUNC) &_EDI_distance_matrix_custom_cpp, 2},
+    {"_EDI_distance_matrix_sum_abs_diff_cpp", (DL_FUNC) &_EDI_distance_matrix_sum_abs_diff_cpp, 1},
+    {"_EDI_distance_matrix_mahal_cpp", (DL_FUNC) &_EDI_distance_matrix_mahal_cpp, 1},
+    {"_EDI_optimal_blocks_distance_matrix_cpp", (DL_FUNC) &_EDI_optimal_blocks_distance_matrix_cpp, 3},
     {"_EDI_d_optimal_search_cpp", (DL_FUNC) &_EDI_d_optimal_search_cpp, 3},
     {"_EDI_a_optimal_search_cpp", (DL_FUNC) &_EDI_a_optimal_search_cpp, 4},
     {"_EDI_compute_pair_averages_cpp", (DL_FUNC) &_EDI_compute_pair_averages_cpp, 3},

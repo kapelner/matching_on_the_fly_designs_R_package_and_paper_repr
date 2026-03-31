@@ -51,6 +51,8 @@ InferenceIncidUnivKKGCompRiskDiff = R6::R6Class("InferenceIncidUnivKKGCompRiskDi
 		get_estimand_type = function() "RD"
 	)
 )
+
+#' @export
 InferenceIncidUnivKKGCompRiskRatio = R6::R6Class("InferenceIncidUnivKKGCompRiskRatio",
 	lock_objects = FALSE,
 	inherit = InferenceIncidKKGCompAbstract,

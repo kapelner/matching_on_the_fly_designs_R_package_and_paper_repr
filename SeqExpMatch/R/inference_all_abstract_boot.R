@@ -29,7 +29,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# Duplicate objects for thread safety
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
-			is_KK_local = private$is_KK
+				has_match_structure_local = private$has_match_structure
 
 			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
 			# cost, then only parallelize if computation outweighs overhead per worker.
@@ -47,7 +47,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					w_des$resample_design()
 					w_inf$.__enclos_env__$private$w = w_des$.__enclos_env__$private$w
 					w_inf$.__enclos_env__$private$y = w_des$.__enclos_env__$private$y
-					if (is_KK_local && !is.null(w_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						if (has_match_structure_local && !is.null(w_inf$.__enclos_env__$private$compute_basic_match_data)) {
 						w_inf$.__enclos_env__$private$m = w_des$.__enclos_env__$private$m
 						w_inf$.__enclos_env__$private$compute_basic_match_data()
 					}
@@ -71,12 +71,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				boot_distr = unlist(parallel::parLapply(cl, 1:B, function(idx) {
 					try(set_package_threads(1L), silent = TRUE)
 					worker_des = des_template$duplicate()
-					worker_inf = inf_template$duplicate()
-					worker_inf$.__enclos_env__$private$num_cores = 1L
+					worker_inf = inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE)
 					worker_des$resample_design()
 					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-					if (is_KK_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
 						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 						worker_inf$.__enclos_env__$private$compute_basic_match_data()
 					}
@@ -86,12 +85,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				boot_distr = unlist(private$par_lapply(1:B, function(idx) {
 					set_package_threads(1L)
 					worker_des = des_template$duplicate()
-					worker_inf = inf_template$duplicate()
-					worker_inf$.__enclos_env__$private$num_cores = 1L
+					worker_inf = inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE)
 					worker_des$resample_design()
 					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-					if (is_KK_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
 						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 						worker_inf$.__enclos_env__$private$compute_basic_match_data()
 					}

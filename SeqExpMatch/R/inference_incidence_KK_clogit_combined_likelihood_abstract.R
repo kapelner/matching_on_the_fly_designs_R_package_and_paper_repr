@@ -49,6 +49,11 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
+		get_standard_error = function(){
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			private$cached_values$s_beta_hat_T
+		},
+
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))

@@ -16,9 +16,8 @@ pocock_simon_assign_and_update_cpp(
 \item{counts}{A matrix of dimensions (sum of levels) x (number of treatments).
 Modified in place.}
 
-\item{subject_levels_idx}{An integer vector of indices indicating which rows of the
-counts matrix
-                        the current subject belongs to.}
+\item{subject_levels_idx}{An integer vector of indices indicating which rows of the counts matrix
+the current subject belongs to.}
 
 \item{weights}{A numeric vector of weights for each covariate.}
 

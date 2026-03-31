@@ -10,7 +10,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
-			if (private$des_obj_priv_int$response_type == "incidence"){
+			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
 				if (!identical(transform_responses, "none")) {
 					stop("transform_responses is not supported for incidence randomization inference.")
 				}
@@ -46,7 +46,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			assertLogical(show_progress); show_progress = isTRUE(show_progress) && private$num_cores == 1
 
 			resp_type = private$des_obj_priv_int$response_type
-			if (resp_type == "incidence"){
+			if (resp_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
 				rand_type = if (is.null(type)) "Zhang" else type
 				exact_args = private$normalize_exact_inference_args(
 					rand_type,
@@ -144,8 +144,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
 			args = args_for_type[[type]]
 			assertList(args)
-			is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "FixedDesignBernoulli")
-			if (!is_bernoulli && !private$is_KK) stop("Zhang randomization inference requires Bernoulli or matching designs.")
+				is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "FixedDesignBernoulli")
+				if (!is_bernoulli && !private$has_match_structure) stop("Zhang randomization inference requires Bernoulli or matching designs.")
 			assertResponseType(private$des_obj$get_response_type(), "incidence")
 			assertNoCensoring(private$any_censoring)
 			assertChoice(args$combination_method, c("Fisher", "Stouffer", "min_p"))
@@ -186,7 +186,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		},
 
 		compute_exact_pval_matched_pairs = function(delta_0) {
-			if (!private$is_KK) return(NA_real_)
+				if (!private$has_match_structure) return(NA_real_)
 			exact_stats = private$get_exact_zhang_stats()
 			if (exact_stats$m == 0L || exact_stats$d_plus + exact_stats$d_minus == 0L) return(NA_real_)
 			zhang_exact_binom_pval_cpp(exact_stats$d_plus, exact_stats$d_minus, delta_0)
@@ -201,12 +201,12 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 		get_exact_zhang_stats = function(){
 			if (!is.null(private$cached_values$incid_exact_zhang_stats)) return(private$cached_values$incid_exact_zhang_stats)
-			if (private$is_KK){
+				if (private$has_match_structure){
 				if (is.null(private$cached_values$KKstats)){
 					private$m = private$des_obj_priv_int$m
 					m_vec = if (is.null(private$m)) rep(0, private$n) else private$m
 					m_vec[is.na(m_vec)] = 0
-					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$des_obj$get_X())
+					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$get_X())
 				}
 				KKstats = private$cached_values$KKstats
 				exact_stats = list(

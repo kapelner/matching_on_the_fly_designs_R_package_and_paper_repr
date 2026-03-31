@@ -44,6 +44,8 @@ InferenceIncidMultiGCompRiskDiff = R6::R6Class("InferenceIncidMultiGCompRiskDiff
 		}
 	)
 )
+
+#' @export
 InferenceIncidMultiGCompRiskRatio = R6::R6Class("InferenceIncidMultiGCompRiskRatio",
 	lock_objects = FALSE,
 	inherit = InferenceIncidUnivGCompRiskRatio,

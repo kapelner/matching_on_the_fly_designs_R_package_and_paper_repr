@@ -34,7 +34,8 @@ Inference = R6::R6Class("Inference",
 			private$y_temp = private$y
 			private$w = private$des_obj_priv_int$w
 			private$dead = private$des_obj_priv_int$dead
-			private$is_KK = is(des_obj, "DesignSeqOneByOneKK14") || is(des_obj, "FixedDesignBinaryMatch")
+			private$is_KK = is(des_obj, "DesignSeqOneByOneKK14")
+			private$has_match_structure = private$is_KK || is(des_obj, "FixedDesignBinaryMatch")
 			private$n = des_obj$get_n()
 			private$prob_T = des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
@@ -86,10 +87,14 @@ Inference = R6::R6Class("Inference",
 		#' @description
 		#' Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
+		#' @param num_cores 	The number of cores for the duplicate. Default 1.
+		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork cluster. Default FALSE.
 		#' @return 			A new `Inference` object with the same data
-		duplicate = function(verbose = FALSE){
+		duplicate = function(verbose = FALSE, num_cores = 1, make_fork_cluster = FALSE){
 			i = self$clone()
 			i$.__enclos_env__$private$verbose = verbose
+			i$.__enclos_env__$private$num_cores = num_cores
+			i$.__enclos_env__$private$make_fork_cluster = make_fork_cluster
 			i$.__enclos_env__$private$fork_cluster = NULL
 			i$.__enclos_env__$private$cached_values = list()
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
@@ -132,6 +137,7 @@ Inference = R6::R6Class("Inference",
 		des_obj = NULL,		des_obj_priv_int = NULL,
 		m = NULL,
 		is_KK = NULL,
+		has_match_structure = NULL,
 		supports_design_resampling = FALSE,
 		any_censoring = NULL,
 		num_cores = NULL,

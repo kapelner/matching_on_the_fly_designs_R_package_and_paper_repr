@@ -69,16 +69,15 @@ InferenceRand = R6::R6Class("InferenceRand",
 				})
 			}
 
-			if (!is.null(inf_template) && private$is_KK && private$object_has_private_method(inf_template, "compute_basic_match_data"))
-				inf_template$.__enclos_env__$private$compute_basic_match_data()
+				if (!is.null(inf_template) && private$has_match_structure && private$object_has_private_method(inf_template, "compute_basic_match_data"))
+					inf_template$.__enclos_env__$private$compute_basic_match_data()
 
 			actual_rand_cores = private$num_cores
 			if (actual_rand_cores > 1L && need_thread_objs) {
 				do_warmup_iter = function() {
 					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
-					w_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
-					if (!is.null(w_inf)) w_inf$.__enclos_env__$private$num_cores = 1L
-					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					w_inf = if (!is.null(inf_template)) inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE) else NULL
+					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, get_perm_data, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				}
 				# Run warmup TWICE and use the second timing. The first call often pays
 				# cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
@@ -102,13 +101,19 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (r < 2000) actual_rand_cores = 1L
 			}
 
+			get_perm_data = if (use_perms) {
+				if (!is.null(permutations$w_mat)) {
+					n_avail = ncol(permutations$w_mat)
+					function(i) { j = ((i - 1L) %% n_avail) + 1L; list(w = permutations$w_mat[, j], m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, j] else NULL) }
+				} else function(i) permutations[[i]]
+			} else NULL
+
 			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
 				set_package_threads(1L)
 				suppressWarnings({
 					worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
-					worker_inf = if (!is.null(inf_template)) inf_template$duplicate() else NULL
-					if (!is.null(worker_inf)) worker_inf$.__enclos_env__$private$num_cores = 1L
-					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					worker_inf = if (!is.null(inf_template)) inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE) else NULL
+					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, get_perm_data, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				})
 			}, n_cores = actual_rand_cores, show_progress = show_progress))
 
@@ -128,7 +133,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
-			if (private$des_obj_priv_int$response_type == "incidence") stop("Randomization tests are not supported for incidence. Use Zhang method.")
+			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 
 			cache_key = private$build_randomization_distribution_cache_key(r, delta, transform_responses, permutations)
@@ -183,7 +188,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 
 			if (delta != 0 && !bypass_checks){
-				if (private$des_obj_priv_int$response_type == "incidence") stop("randomization tests with delta nonzero not supported for incidence")
+				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
 				if (private$des_obj_priv_int$response_type == "count" && !(transform_responses %in% c("log1p", "already_transformed", "log"))) stop("delta nonzero requires log1p for counts")
 				if (private$des_obj_priv_int$response_type == "proportion" && transform_responses != "logit") stop("delta nonzero requires logit for proportions")
 				if (private$des_obj_priv_int$response_type == "survival" && transform_responses != "log") stop("delta nonzero requires log for survival")
@@ -214,12 +219,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 			list(template = template, y_delta = y_delta, base_template_y = base_template_y, base_template_dead = base_template_dead, lightweight_custom_context = lightweight_custom_context)
 		},
 
-		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context){
+		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, get_perm_data, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context){
 			use_perms = !is.null(perm_idx)
-			get_perm_data = if (!is.null(permutations$w_mat)) {
-				n_avail = ncol(permutations$w_mat)
-				function(i) { j = ((i - 1L) %% n_avail) + 1L; list(w = permutations$w_mat[, j], m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, j] else NULL) }
-			} else function(i) permutations[[i]]
 
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {
 				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = base_template_y
@@ -230,9 +231,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (use_perms) {
 				perm_data = get_perm_data(perm_idx)
 				thread_des_obj$.__enclos_env__$private$w = perm_data$w
-				if (private$is_KK && private$object_has_private_method(thread_des_obj, "m")) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
-				thread_inf_obj$.__enclos_env__$private$w = perm_data$w
-				if (private$is_KK && private$object_has_private_method(thread_inf_obj, "m")) thread_inf_obj$.__enclos_env__$private$m = perm_data$m_vec
+					if (private$has_match_structure && !is.null(perm_data$m_vec) && private$object_has_private_method(thread_des_obj, "m")) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
+					thread_inf_obj$.__enclos_env__$private$w = perm_data$w
+					if (private$has_match_structure && !is.null(perm_data$m_vec) && private$object_has_private_method(thread_inf_obj, "m")) thread_inf_obj$.__enclos_env__$private$m = perm_data$m_vec
 				thread_inf_obj$.__enclos_env__$private$des_obj_priv_int = thread_des_obj$.__enclos_env__$private
 				thread_inf_obj$.__enclos_env__$private$y = thread_des_obj$.__enclos_env__$private$y
 				thread_inf_obj$.__enclos_env__$private$dead = thread_des_obj$.__enclos_env__$private$dead
@@ -250,7 +251,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				y_sim[w_sim == 1] = y_delta[w_sim == 1]; thread_inf_obj$.__enclos_env__$private$y = y_sim
 			}
 
-			if (private$is_KK && (is.null(private$custom_randomization_statistic_function) || isTRUE(custom_stat_analysis$needs_match_data)) && private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
+				if (private$has_match_structure && (is.null(private$custom_randomization_statistic_function) || isTRUE(custom_stat_analysis$needs_match_data)) && private$object_has_private_method(thread_inf_obj, "compute_basic_match_data")){
 				w_key = if(use_perms) private$stable_signature(perm_data$w) else NULL
 				cached_match = if(!is.null(w_key)) private$cached_values$m_cache[[w_key]] else NULL
 				if (!is.null(cached_match)) thread_inf_obj$.__enclos_env__$private$m = cached_match

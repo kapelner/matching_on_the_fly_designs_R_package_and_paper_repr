@@ -62,10 +62,10 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		},
 
 		design_supports_exact_fisher = function(){
-			is(private$des_obj, "DesignSeqOneByOneiBCRD") ||
-				is(private$des_obj, "FixedDesigniBCRD") ||
-				private$is_supported_blocking_design(private$des_obj) ||
-				private$is_KK
+				is(private$des_obj, "DesignSeqOneByOneiBCRD") ||
+					is(private$des_obj, "FixedDesigniBCRD") ||
+					private$is_supported_blocking_design(private$des_obj) ||
+					private$has_match_structure
 		},
 
 		is_supported_blocking_design = function(des_obj){
@@ -118,7 +118,7 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				return(private$cached_values$incid_exact_fisher_tables)
 			}
 			fisher_tables =
-				if (private$is_KK) {
+					if (private$has_match_structure) {
 					private$build_exact_fisher_tables_kk()
 				} else if (private$is_supported_blocking_design(private$des_obj)) {
 					private$build_exact_fisher_tables_blocking()

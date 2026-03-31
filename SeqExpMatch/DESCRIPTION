@@ -47,7 +47,10 @@ Suggests:
     Rfit,
     testthat,
     VGAM,
-    GreedyExperimentalDesign
+    GreedyExperimentalDesign,
+    ompr,
+    ompr.roi,
+    ROI.plugin.glpk
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 Collate:
     'RcppExports.R'
@@ -68,6 +71,7 @@ Collate:
     'design_fixed_greedy.R'
     'design_fixed_ibcrd.R'
     'design_fixed_matching_greedy_pair_switching.R'
+    'design_fixed_optimal_blocks.R'
     'design_fixed_rerandomization.R'
     'design_seq_one_by_one_atkinson.R'
     'design_seq_one_by_one_bernoulli.R'
@@ -83,6 +87,7 @@ Collate:
     'zhang_inference_helpers.R'
     'inference_all_abstract.R'
     'inference_all_abstract_exact.R'
+    'inference_incidence_exact_binomial.R'
     'inference_indicidence_exact_fisher.R'
     'inference_all_abstract_rand.R'
     'inference_all_abstract_rand_ci.R'
@@ -100,6 +105,7 @@ Collate:
     'inference_all_KK_wilcox_regr_ivwc_multi.R'
     'inference_all_KK_wilcox_regr_ivwc_univ.R'
     'inference_all_mean_diff.R'
+    'inference_incidence_simple_prop_diff_pooled.R'
     'inference_incidence_azriel.R'
     'inference_all_abstract_mle_or_KM_for_GLMs.R'
     'inference_all_abstract_mle_or_KM_summary_table.R'

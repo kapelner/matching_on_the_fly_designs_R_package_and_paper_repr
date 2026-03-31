@@ -200,7 +200,6 @@ for (response_type in names(categorized_classes)) {
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
-            current_des_obj$.__enclos_env__$private$X = NULL
             current_des_obj$.__enclos_env__$private$w = w_original
             inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {

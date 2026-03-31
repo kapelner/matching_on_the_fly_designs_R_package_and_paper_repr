@@ -8,28 +8,44 @@ print_progress = function(pb, i, total) {
 set_package_threads = function(num_cores) {
 	# Ensure it's an integer
 	n = as.integer(num_cores)
-	
+
+	# Check if we are already at the target to avoid slow Sys.setenv and other calls
+	if (!is.null(options(".edi_last_set_threads")[[1]]) && options(".edi_last_set_threads")[[1]] == n) {
+		return(invisible(NULL))
+	}
+
 	# R packages with global thread setters
 	if (requireNamespace("data.table", quietly = TRUE)) {
 		data.table::setDTthreads(n)
 	}
 	if (requireNamespace("fixest", quietly = TRUE)) {
-		fixest::setFixest_nthreads(n)
+		try(fixest::setFixest_nthreads(n), silent = TRUE)
 	}
-	
+
 	# Environment variables for OpenMP and BLAS/LAPACK
 	# This helps prevent thread explosion in child processes
 	# that call multi-threaded native libraries.
+	# Sys.setenv is relatively slow, so we only do it if needed.
 	Sys.setenv(OMP_NUM_THREADS = n)
 	Sys.setenv(MKL_NUM_THREADS = n)
 	Sys.setenv(OPENBLAS_NUM_THREADS = n)
 	Sys.setenv(VECLIB_MAXIMUM_THREADS = n)
 	Sys.setenv(NUMEXPR_NUM_THREADS = n)
-}
 
+	options(".edi_last_set_threads" = n)
+	invisible(NULL)
+}
 assert_greedy_experimental_design_installed = function(caller) {
 	if (!requireNamespace("GreedyExperimentalDesign", quietly = TRUE)) {
 		stop("Package 'GreedyExperimentalDesign' is required for ", caller, ".")
+	}
+}
+
+assert_optimal_blocks_libraries_installed = function(caller) {
+	required_pkgs = c("ompr", "ompr.roi", "ROI.plugin.glpk", "randomizr")
+	missing_pkgs = required_pkgs[!vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+	if (length(missing_pkgs) > 0L) {
+		stop("Packages ", paste(missing_pkgs, collapse = ", "), " are required for ", caller, ".")
 	}
 }
 

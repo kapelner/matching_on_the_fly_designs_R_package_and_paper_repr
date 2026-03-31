@@ -13,6 +13,8 @@ The methods that support confidence intervals and testing for the mean differenc
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
 after the sequential design is completed.
+For incidence responses coded as 0/1, the asymptotic inference is numerically
+equivalent to Welch-Satterthwaite unpooled two-sample inference.
 }
 \examples{
 \dontrun{
