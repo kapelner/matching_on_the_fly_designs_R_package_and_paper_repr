@@ -4,11 +4,22 @@
 \alias{InferenceIncidAzriel}
 \title{Azriel Blocked Incidence Inference}
 \description{
+Azriel Blocked Incidence Inference
+
+Azriel Blocked Incidence Inference
+}
+\details{
 Unadjusted blocked-design incidence inference using the simple mean-difference
 point estimate with a block-stratified standard error.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{InferenceIncidAzriel}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceRand}
+-> \\code{EDI::InferenceRandCI}
+-> \\code{EDI::InferenceBoot}
+-> \\code{EDI::InferenceAsymp}
+-> \\code{EDI::InferenceAllSimpleMeanDiff}
+-> \code{InferenceIncidAzriel}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -20,43 +31,51 @@ point estimate with a block-stratified standard error.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_confidence_interval_rand'><code>EDI::InferenceAllSimpleMeanDiff$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_treatment_estimate'><code>EDI::InferenceAllSimpleMeanDiff$compute_treatment_estimate()</code></a></span></li>
+<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
+<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
+<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
+<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></li>
+<li><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::InferenceAllSimpleMeanDiff$compute_confidence_interval_rand()</code></li>
+<li><code>EDI::InferenceAllSimpleMeanDiff$compute_treatment_estimate()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidAzriel-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidAzriel-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize Azriel blocked-design incidence inference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidAzriel$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE,
-  make_fork_cluster = NULL
-)}\if{html}{\out{</div>}}
+\preformatted{InferenceIncidAzriel$new(des_obj, num_cores = 1, verbose = FALSE)}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed design object.}
+
+\item{\code{num_cores}}{Number of CPU cores to use.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{InferenceIncidAzriel} object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidAzriel-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidAzriel-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidAzriel$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceIncidAzriel$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

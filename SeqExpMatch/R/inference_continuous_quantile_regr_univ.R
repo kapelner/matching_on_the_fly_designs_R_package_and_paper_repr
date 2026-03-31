@@ -40,14 +40,13 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' seq_des_inf = InferenceContinUnivQuantileRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$tau = tau
 		},

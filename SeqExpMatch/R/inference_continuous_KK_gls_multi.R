@@ -61,10 +61,9 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#' infer <- InferenceContinMultGLS$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 
 			if (!requireNamespace("nlme", quietly = TRUE)) {
@@ -123,7 +122,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
 			full_X_matrix = private$create_design_matrix()

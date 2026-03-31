@@ -20,25 +20,41 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 	inherit = InferenceAbstractQuantileRandCI,
 	public = list(
 
-		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		#' @description
+		#' Initialize KK quantile-regression combined-likelihood inference.
+		#' @param des_obj A completed KK design object.
+		#' @param tau Target quantile level.
+		#' @param transform_y_fn Optional response transformation.
+		#' @param num_cores Number of CPU cores to use.
+		#' @param verbose Whether to print progress messages.
+		#' @return A new inference object.
+		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
 			}
 		},
 
+		#' @description
+		#' Compute the quantile-regression treatment estimate.
+		#' @param estimate_only Whether to skip standard-error calculations.
+		#' @return The treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute an asymptotic confidence interval.
+		#' @param alpha Significance level.
+		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared_combined_likelihood(estimate_only = FALSE)
@@ -46,6 +62,10 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute an asymptotic two-sided p-value for the treatment effect.
+		#' @param delta Null treatment effect value.
+		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared_combined_likelihood(estimate_only = FALSE)

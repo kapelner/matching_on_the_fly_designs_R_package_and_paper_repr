@@ -31,6 +31,17 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 		},
 
 		#' @description
+		#' Adds a subject and assigns treatment.
+		#' Sets a single-block match vector once all subjects have arrived.
+		#' @param x_new A data frame with one row representing the new subject's covariates.
+		#' @return The treatment assignment (0 or 1).
+		add_subject_to_experiment_and_assign = function(x_new){
+			w_t = super$add_subject_to_experiment_and_assign(x_new)
+			private$m = rep(1L, private$t)
+			w_t
+		},
+
+		#' @description
 		#' Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)

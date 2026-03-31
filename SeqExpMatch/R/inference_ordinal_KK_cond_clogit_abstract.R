@@ -1,4 +1,4 @@
-ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_cores = 1, verbose = FALSE){
 	assertResponseType(des_obj$get_response_type(), "ordinal")
 	super_obj$initialize(des_obj, num_cores, verbose)
 	assertNoCensoring(private_env$any_censoring)
@@ -7,7 +7,7 @@ ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, num_c
 
 ordinal_cond_clogit_compute_setup = function(private_env){
 	m_vec = private_env$m
-	if (is.null(m_vec)) m_vec = rep(0L, private_env$n)
+	if (is.null(m_vec)) m_vec = rep(NA_integer_, private_env$n)
 	m_vec[is.na(m_vec)] = 0L
 
 	strata_ids = m_vec

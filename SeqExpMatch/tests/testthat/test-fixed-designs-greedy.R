@@ -59,6 +59,7 @@ test_that("FixedDesignGreedy works", {
 test_that("FixedDesigniBCRD works", {
 	n = 10
 	des = FixedDesigniBCRD$new(n = n, verbose = FALSE)
+	expect_identical(des$get_block_ids(), rep(1L, n))
 	for (i in 1:n) {
 		des$add_subject(data.frame(x1 = i))
 	}

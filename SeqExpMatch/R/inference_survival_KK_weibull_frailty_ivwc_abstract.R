@@ -46,8 +46,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			if (!requireNamespace("parfm", quietly = TRUE)) {
 				stop("Package 'parfm' is required for ", class(self)[1], ". Please install it.")
 			}
@@ -55,7 +54,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		#' @description
@@ -117,7 +116,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			ssq_m  = NA_real_
 			if (m > 0){
 				m_vec = private$m
-				if (is.null(m_vec)) m_vec = rep(0L, private$n)
+				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_matched = which(m_vec > 0)
 				y_m       = private$y[i_matched]
@@ -324,7 +323,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 
 		weibull_frailty_for_matched_pairs = function(){
 			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
 			i_matched = which(m_vec > 0)

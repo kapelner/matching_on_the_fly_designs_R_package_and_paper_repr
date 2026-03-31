@@ -81,10 +81,9 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 		#' 							and bootstrap resampling. The default is 1 for serial computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, tau, qlogis, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, tau, qlogis, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		}

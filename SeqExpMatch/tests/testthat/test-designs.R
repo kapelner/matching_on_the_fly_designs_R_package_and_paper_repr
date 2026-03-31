@@ -61,6 +61,11 @@ test_that("DesignSeqOneByOneiBCRD works", {
 	x_new <- data.frame(x1 = rnorm(1))
 	w <- des$add_subject_to_experiment_and_assign(x_new)
 	expect_true(w %in% c(0, 1))
+	expect_error(des$get_block_ids(), "undefined")
+	for (i in 2:10) {
+		des$add_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+	}
+	expect_identical(des$get_block_ids(), rep(1L, 10))
 })
 
 test_that("DesignSeqOneByOneUrn works", {

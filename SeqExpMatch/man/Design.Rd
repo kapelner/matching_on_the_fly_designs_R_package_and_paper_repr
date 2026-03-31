@@ -19,7 +19,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-add_all_subject_assignments}{\code{Design$add_all_subject_assignments()}}
 \item \href{#method-Design-is_fixed_sample_size}{\code{Design$is_fixed_sample_size()}}
 \item \href{#method-Design-assert_all_subjects_arrived}{\code{Design$assert_all_subjects_arrived()}}
-\item \href{#method-Design-assert_experiment_completed}{\code{Design$assert_experiment_completed()}}
+\item \code{Design$assert_all_responses_recorded()}
 \item \href{#method-Design-check_experiment_completed}{\code{Design$check_experiment_completed()}}
 \item \href{#method-Design-assert_even_allocation}{\code{Design$assert_even_allocation()}}
 \item \href{#method-Design-assert_fixed_sample}{\code{Design$assert_fixed_sample()}}
@@ -30,6 +30,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_X}{\code{Design$get_X()}}
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
+\item \href{#method-Design-get_block_ids}{\code{Design$get_block_ids()}}
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
@@ -41,7 +42,6 @@ This class takes care of data storage and response handling.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-new"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize an experimental design
 \subsection{Usage}{
@@ -79,11 +79,10 @@ A new `Design` object
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_subject"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_subject}{}}}
 \subsection{Method \code{add_subject()}}{
 Add subject-specific measurements for the next subject entrant
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_subject(x_new, allow_new_cols = TRUE)}\if{html}{\out{</div>}}
+\preformatted{Design$add_subject(x_new, allow_new_cols = TRUE)}
 }
 
 \subsection{Arguments}{
@@ -98,11 +97,10 @@ Add subject-specific measurements for the next subject entrant
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_subject_response"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_subject_response}{}}}
 \subsection{Method \code{add_subject_response()}}{
 For CARA designs, add subject response for the a subject
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_subject_response(t, y, dead = 1)}\if{html}{\out{</div>}}
+\preformatted{Design$add_subject_response(t, y, dead = 1)}
 }
 
 \subsection{Arguments}{
@@ -119,11 +117,10 @@ For CARA designs, add subject response for the a subject
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_all_subject_responses"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_all_subject_responses}{}}}
 \subsection{Method \code{add_all_subject_responses()}}{
 For non-CARA designs, add all subject responses
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
+\preformatted{Design$add_all_subject_responses(ys, deads = NULL)}
 }
 
 \subsection{Arguments}{
@@ -138,11 +135,10 @@ For non-CARA designs, add all subject responses
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_all_subject_assignments"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_all_subject_assignments}{}}}
 \subsection{Method \code{add_all_subject_assignments()}}{
 For analysis on already-completed experimental data
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_all_subject_assignments(w)}\if{html}{\out{</div>}}
+\preformatted{Design$add_all_subject_assignments(w)}
 }
 
 \subsection{Arguments}{
@@ -155,11 +151,10 @@ For analysis on already-completed experimental data
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-is_fixed_sample_size"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-is_fixed_sample_size}{}}}
 \subsection{Method \code{is_fixed_sample_size()}}{
 Check if this design was initialized with a fixed sample size n
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$is_fixed_sample_size()}\if{html}{\out{</div>}}
+\preformatted{Design$is_fixed_sample_size()}
 }
 
 \subsection{Returns}{
@@ -168,31 +163,28 @@ TRUE if fixed.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_all_subjects_arrived"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_all_subjects_arrived}{}}}
 \subsection{Method \code{assert_all_subjects_arrived()}}{
 Asserts if all subjects arrived.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_all_subjects_arrived()}\if{html}{\out{</div>}}
+\preformatted{Design$assert_all_subjects_arrived()}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-assert_experiment_completed"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_experiment_completed}{}}}
-\subsection{Method \code{assert_experiment_completed()}}{
-Asserts if the experiment is completed.
+\if{html}{\out{<a id="method-Design-assert_all_responses_recorded"></a>}}
+\subsection{Method \code{assert_all_responses_recorded()}}{
+Asserts if all responses are recorded.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_experiment_completed()}\if{html}{\out{</div>}}
+\preformatted{Design$assert_all_responses_recorded()}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-check_experiment_completed"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-check_experiment_completed}{}}}
 \subsection{Method \code{check_experiment_completed()}}{
 Checks if the experiment is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$check_experiment_completed()}\if{html}{\out{</div>}}
+\preformatted{Design$check_experiment_completed()}
 }
 
 \subsection{Returns}{
@@ -201,31 +193,28 @@ Checks if the experiment is completed.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_even_allocation"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_even_allocation}{}}}
 \subsection{Method \code{assert_even_allocation()}}{
 Checks if the experiment has a 50-50 allocation.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_even_allocation()}\if{html}{\out{</div>}}
+\preformatted{Design$assert_even_allocation()}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_fixed_sample"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_fixed_sample}{}}}
 \subsection{Method \code{assert_fixed_sample()}}{
 Checks if the experiment has a fixed sample size.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_fixed_sample()}\if{html}{\out{</div>}}
+\preformatted{Design$assert_fixed_sample()}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-any_censoring"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-any_censoring}{}}}
 \subsection{Method \code{any_censoring()}}{
 Checks if the experiment has any censored responses
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$any_censoring()}\if{html}{\out{</div>}}
+\preformatted{Design$any_censoring()}
 }
 
 \subsection{Returns}{
@@ -234,11 +223,10 @@ Checks if the experiment has any censored responses
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_t"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_t}{}}}
 \subsection{Method \code{get_t()}}{
 Get t
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_t()}\if{html}{\out{</div>}}
+\preformatted{Design$get_t()}
 }
 
 \subsection{Returns}{
@@ -247,11 +235,10 @@ The current number of subjects.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X_raw"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_X_raw}{}}}
 \subsection{Method \code{get_X_raw()}}{
 Get raw X information
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_X_raw()}\if{html}{\out{</div>}}
+\preformatted{Design$get_X_raw()}
 }
 
 \subsection{Returns}{
@@ -260,11 +247,10 @@ A data frame of subject data.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X_imp"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_X_imp}{}}}
 \subsection{Method \code{get_X_imp()}}{
 Get imputed X information
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_X_imp()}\if{html}{\out{</div>}}
+\preformatted{Design$get_X_imp()}
 }
 
 \subsection{Returns}{
@@ -273,11 +259,10 @@ Same as \code{Xraw} except with imputations.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_X}{}}}
 \subsection{Method \code{get_X()}}{
 Get X matrix
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_X()}\if{html}{\out{</div>}}
+\preformatted{Design$get_X()}
 }
 
 \subsection{Returns}{
@@ -286,11 +271,10 @@ A numeric matrix of subject data.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_y"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_y}{}}}
 \subsection{Method \code{get_y()}}{
 Get y
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_y()}\if{html}{\out{</div>}}
+\preformatted{Design$get_y()}
 }
 
 \subsection{Returns}{
@@ -299,11 +283,10 @@ A numeric vector of subject responses.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_w"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_w}{}}}
 \subsection{Method \code{get_w()}}{
 Get w
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_w()}\if{html}{\out{</div>}}
+\preformatted{Design$get_w()}
 }
 
 \subsection{Returns}{
@@ -311,12 +294,23 @@ A binary vector of subject assignments.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_block_ids"></a>}}
+\subsection{Method \code{get_block_ids()}}{
+If the design is a block design, get block identifiers (otherwise halts)
+\subsection{Usage}{
+\preformatted{Design$get_block_ids()}
+}
+
+\subsection{Returns}{
+An integer vector of block identifiers.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_n"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_n}{}}}
 \subsection{Method \code{get_n()}}{
 Get n, the sample size
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_n()}\if{html}{\out{</div>}}
+\preformatted{Design$get_n()}
 }
 
 \subsection{Returns}{
@@ -325,11 +319,10 @@ The number of subjects.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_dead"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_dead}{}}}
 \subsection{Method \code{get_dead()}}{
 Get dead
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_dead()}\if{html}{\out{</div>}}
+\preformatted{Design$get_dead()}
 }
 
 \subsection{Returns}{
@@ -338,11 +331,10 @@ A binary vector of whether the subject is dead.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_prob_T"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_prob_T}{}}}
 \subsection{Method \code{get_prob_T()}}{
 Get probability of treatment
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_prob_T()}\if{html}{\out{</div>}}
+\preformatted{Design$get_prob_T()}
 }
 
 \subsection{Returns}{
@@ -351,11 +343,10 @@ The specified probability.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_response_type"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_response_type}{}}}
 \subsection{Method \code{get_response_type()}}{
 Get response type
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_response_type()}\if{html}{\out{</div>}}
+\preformatted{Design$get_response_type()}
 }
 
 \subsection{Returns}{
@@ -364,11 +355,10 @@ The specified response type.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-duplicate"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
 Duplicate this design object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
+\preformatted{Design$duplicate(verbose = FALSE)}
 }
 
 \subsection{Arguments}{
@@ -384,22 +374,20 @@ A new `Design` object with the same data
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-resample_design"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-resample_design}{}}}
 \subsection{Method \code{resample_design()}}{
 Resample this design for bootstrap inference.
 Draws n subjects with replacement and updates w, y, dead (and m for KK designs).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$resample_design()}\if{html}{\out{</div>}}
+\preformatted{Design$resample_design()}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{Design$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

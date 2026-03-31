@@ -44,10 +44,9 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		}
 	),

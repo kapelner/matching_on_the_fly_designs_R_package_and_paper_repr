@@ -52,45 +52,51 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceContinMultiKKLinCombinedLikelihood}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceRand}
+-> \\code{EDI::InferenceRandCI}
+-> \\code{EDI::InferenceBoot}
+-> \\code{EDI::InferenceAsymp}
+-> \\code{EDI::InferenceKKPassThrough}
+-> \\code{EDI::InferenceKKPassThroughCompound}
+-> \code{InferenceContinMultiKKLinCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceContinMultiKKLinCombinedLikelihood-new}{\code{InferenceContinMultiKKLinCombinedLikelihood$new()}}
-\item \href{#method-InferenceContinMultiKKLinCombinedLikelihood-compute_treatment_estimate}{\code{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate()}}
-\item \href{#method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_confidence_interval}{\code{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceContinMultiKKLinCombinedLikelihood-clone}{\code{InferenceContinMultiKKLinCombinedLikelihood$clone()}}
+\item \code{InferenceContinMultiKKLinCombinedLikelihood$new()}
+\item \code{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate()}
+\item \code{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_confidence_interval()}
+\item \code{InferenceContinMultiKKLinCombinedLikelihood$
+compute_asymp_two_sided_pval_for_treatment_effect()}
+\item \code{InferenceContinMultiKKLinCombinedLikelihood$clone()}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
+<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
+<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
+<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultiKKLinCombinedLikelihood-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultiKKLinCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$new(
   des_obj,
   num_cores = 1,
-  verbose = FALSE,
-  make_fork_cluster = NULL
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -104,8 +110,6 @@ response.}
 randomization inference.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -132,12 +136,10 @@ infer
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultiKKLinCombinedLikelihood-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultiKKLinCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Computes the stacked combined estimate of the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate(
+\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -154,12 +156,10 @@ The estimated treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes a 1 - \code{alpha} confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_confidence_interval(
+\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
@@ -177,12 +177,11 @@ A confidence interval for the treatment effect.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultiKKLinCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes a two-sided p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
+\preformatted{InferenceContinMultiKKLinCombinedLikelihood$
+compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -200,11 +199,10 @@ The approximate p-value.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultiKKLinCombinedLikelihood-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinMultiKKLinCombinedLikelihood-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultiKKLinCombinedLikelihood$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceContinMultiKKLinCombinedLikelihood$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

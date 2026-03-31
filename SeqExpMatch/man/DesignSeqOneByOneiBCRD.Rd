@@ -13,52 +13,54 @@ An R6 Class encapsulating the data and functionality for a sequential experiment
 This class takes care of data initialization and sequential assignments.
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneiBCRD}
+\\code{EDI::Design}
+-> \\code{EDI::DesignSeqOneByOne}
+-> \code{DesignSeqOneByOneiBCRD}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignSeqOneByOneiBCRD-new}{\code{DesignSeqOneByOneiBCRD$new()}}
+\item \code{DesignSeqOneByOneiBCRD$add_subject_to_experiment_and_assign()}
 \item \href{#method-DesignSeqOneByOneiBCRD-assign_wt}{\code{DesignSeqOneByOneiBCRD$assign_wt()}}
-\item \href{#method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design}{\code{DesignSeqOneByOneiBCRD$draw_ws_according_to_design()}}
+\item \code{DesignSeqOneByOneiBCRD$draw_ws_according_to_design()}
 \item \href{#method-DesignSeqOneByOneiBCRD-clone}{\code{DesignSeqOneByOneiBCRD$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_even_allocation"><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>EDI::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-assert_experiment_completed'><code>EDI::Design$assert_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_fixed_sample"><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>EDI::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="check_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>EDI::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="duplicate"><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>EDI::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X"><a href='../../EDI/html/Design.html#method-Design-get_X'><code>EDI::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_imp"><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>EDI::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_raw"><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>EDI::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_subject_to_experiment_and_assign"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_subject_to_experiment_and_assign'><code>EDI::DesignSeqOneByOne$add_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>EDI::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
+<li><code>EDI::Design$add_all_subject_assignments()</code></li>
+<li><code>EDI::Design$add_all_subject_responses()</code></li>
+<li><code>EDI::Design$add_subject()</code></li>
+<li><code>EDI::Design$add_subject_response()</code></li>
+<li><code>EDI::Design$any_censoring()</code></li>
+<li><code>EDI::Design$assert_all_responses_recorded()</code></li>
+<li><code>EDI::Design$assert_all_subjects_arrived()</code></li>
+<li><code>EDI::Design$assert_even_allocation()</code></li>
+<li><code>EDI::Design$assert_fixed_sample()</code></li>
+<li><code>EDI::Design$check_experiment_completed()</code></li>
+<li><code>EDI::Design$duplicate()</code></li>
+<li><code>EDI::Design$get_X()</code></li>
+<li><code>EDI::Design$get_X_imp()</code></li>
+<li><code>EDI::Design$get_X_raw()</code></li>
+<li><code>EDI::Design$get_block_ids()</code></li>
+<li><code>EDI::Design$get_dead()</code></li>
+<li><code>EDI::Design$get_n()</code></li>
+<li><code>EDI::Design$get_prob_T()</code></li>
+<li><code>EDI::Design$get_response_type()</code></li>
+<li><code>EDI::Design$get_t()</code></li>
+<li><code>EDI::Design$get_w()</code></li>
+<li><code>EDI::Design$get_y()</code></li>
+<li><code>EDI::Design$is_fixed_sample_size()</code></li>
+<li><code>EDI::Design$resample_design()</code></li>
+<li><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></li>
+<li><code>EDI::DesignSeqOneByOne$supports_resampling()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a balanced sequential experimental design
 \subsection{Usage}{
@@ -95,12 +97,31 @@ A new `DesignSeqOneByOneiBCRD` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-add_subject_to_experiment_and_assign"></a>}}
+\subsection{Method \code{add_subject_to_experiment_and_assign()}}{
+Adds a subject and assigns treatment.
+Sets a single-block match vector once all subjects have arrived.
+\subsection{Usage}{
+\preformatted{DesignSeqOneByOneiBCRD$add_subject_to_experiment_and_assign(x_new)}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment assignment (0 or 1).
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-assign_wt"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
 Assign the next subject to a treatment group
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$assign_wt()}\if{html}{\out{</div>}}
+\preformatted{DesignSeqOneByOneiBCRD$assign_wt()}
 }
 
 \subsection{Returns}{
@@ -109,11 +130,10 @@ The treatment assignment (0 or 1)
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
 Draw multiple treatment assignment vectors according to balanced randomization.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+\preformatted{DesignSeqOneByOneiBCRD$draw_ws_according_to_design(r = 100)}
 }
 
 \subsection{Arguments}{
@@ -129,11 +149,10 @@ A matrix of size n x r.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{DesignSeqOneByOneiBCRD$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

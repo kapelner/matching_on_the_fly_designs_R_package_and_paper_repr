@@ -41,8 +41,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop(
@@ -52,7 +51,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				)
 			}
 			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$any_censoring){
 				stop(
 					"Wilcoxon rank-sum inference does not support censored survival data. ",

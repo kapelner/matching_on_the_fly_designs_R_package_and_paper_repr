@@ -11,12 +11,12 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 		},
 
 		compute_treatment_estimate = function(estimate_only = FALSE){
@@ -75,7 +75,7 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 			}
 
 			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
 			strata_id = m_vec

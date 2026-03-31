@@ -5,12 +5,22 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 	lock_objects = FALSE,
 	inherit = InferenceExact,
 	public = list(
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		#' @description
+		#' Initialize exact Fisher inference for incidence outcomes.
+		#' @param des_obj A completed design object.
+		#' @param num_cores Number of CPU cores to use.
+		#' @param verbose Whether to print progress messages.
+		#' @return A new \code{InferenceIncidExactFisher} object.
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
+		#' @description
+		#' Compute the Fisher exact treatment estimate on the log-odds scale.
+		#' @param estimate_only Ignored for this estimator.
+		#' @return The treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$get_exact_fisher_log_or_estimate()
 		}

@@ -24,20 +24,34 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		#' @description
+		#' Initialize combined-likelihood conditional-Poisson inference for KK count data.
+		#' @param des_obj A completed KK design object.
+		#' @param num_cores Number of CPU cores to use.
+		#' @param verbose Whether to print progress messages.
+		#' @return A new inference object.
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
+		#' @description
+		#' Compute the treatment estimate.
+		#' @param estimate_only Whether to skip standard-error calculations.
+		#' @return The treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Compute an asymptotic confidence interval.
+		#' @param alpha Significance level.
+		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared_combined_likelihood(estimate_only = FALSE)
@@ -45,6 +59,10 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Compute an asymptotic two-sided p-value for the treatment effect.
+		#' @param delta Null treatment effect value.
+		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared_combined_likelihood(estimate_only = FALSE)

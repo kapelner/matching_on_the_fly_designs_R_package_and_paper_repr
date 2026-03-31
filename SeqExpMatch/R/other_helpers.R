@@ -404,7 +404,7 @@ NULL
 
 .compute_kk_basic_match_data = function(X, n, y, w, m_vec){
 	if (is.null(m_vec)){
-		m_vec = rep(0, n)
+		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
 	compute_zhang_match_data_cpp(w, m_vec, y, X)
@@ -412,7 +412,7 @@ NULL
 
 .compute_kk_lin_basic_match_data = function(X, n, y, w, m_vec){
 	if (is.null(m_vec)){
-		m_vec = rep(0, n)
+		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
 	compute_kk_lin_match_data_cpp(w, m_vec, y, X)

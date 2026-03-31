@@ -18,14 +18,12 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param nonparallel Covariate names that may vary across thresholds.
 		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
 		initialize = function(des_obj,
 				nonparallel = character(0),
 				num_cores = 1,
-				verbose = FALSE,
-				make_fork_cluster = NULL){
+				verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertCharacter(nonparallel, null.ok = TRUE)
 			private$nonparallel = unique(nonparallel)

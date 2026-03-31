@@ -28,6 +28,9 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 						verbose = FALSE
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			if (!is.null(n)) {
+				private$m = rep(1L, as.integer(n))
+			}
 		},
 
 		#' @description

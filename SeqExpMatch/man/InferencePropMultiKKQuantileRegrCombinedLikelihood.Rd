@@ -42,46 +42,60 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrCombinedLikelihood]{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood}} -> \code{InferencePropMultiKKQuantileRegrCombinedLikelihood}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceRand}
+-> \\code{EDI::InferenceRandCI}
+-> \\code{EDI::InferenceBoot}
+-> \\code{EDI::InferenceAsymp}
+-> \\code{EDI::InferenceKKPassThrough}
+-> \\code{EDI::InferenceKKPassThroughCompound}
+-> \\code{EDI::InferenceAbstractQuantileRandCI}
+->
+\\code{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood}
+-> \code{InferencePropMultiKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropMultiKKQuantileRegrCombinedLikelihood-new}{\code{InferencePropMultiKKQuantileRegrCombinedLikelihood$new()}}
-\item \href{#method-InferencePropMultiKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{\code{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}}
-\item \href{#method-InferencePropMultiKKQuantileRegrCombinedLikelihood-clone}{\code{InferencePropMultiKKQuantileRegrCombinedLikelihood$clone()}}
+\item \code{InferencePropMultiKKQuantileRegrCombinedLikelihood$new()}
+\item \code{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}
+\item \code{InferencePropMultiKKQuantileRegrCombinedLikelihood$clone()}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>EDI::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
+<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
+<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><code>EDI::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></li>
+<li>
+<code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$
+compute_asymp_confidence_interval()</code></li>
+</li>
+<li>
+<code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$
+compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
+</li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrCombinedLikelihood-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiKKQuantileRegrCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$new(
+\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$new(
   des_obj,
   tau = 0.5,
   num_cores = 1,
-  verbose = FALSE,
-  make_fork_cluster = NULL
+  verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -97,19 +111,15 @@ between 0 and 1. Default is 0.5.}
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrCombinedLikelihood-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
+\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -124,11 +134,10 @@ Returns the estimated treatment effect.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrCombinedLikelihood-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropMultiKKQuantileRegrCombinedLikelihood-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferencePropMultiKKQuantileRegrCombinedLikelihood$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

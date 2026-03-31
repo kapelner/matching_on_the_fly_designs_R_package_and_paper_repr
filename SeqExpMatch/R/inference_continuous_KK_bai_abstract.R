@@ -32,12 +32,11 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#'   combination of the Bai et al
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#'
-	#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE, make_fork_cluster = NULL){
+	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
 		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
 		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
 		}
-		super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+		super$initialize(des_obj, num_cores, verbose)
 		private$convex_flag = convex_flag
 		assertNoCensoring(private$any_censoring)
 	},

@@ -9,55 +9,75 @@ Exact Fisher Incidence Inference
 Exact Fisher Incidence Inference
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidExactFisher}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceExact}
+-> \code{InferenceIncidExactFisher}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceIncidExactFisher-new}{\code{InferenceIncidExactFisher$new()}}
-\item \href{#method-InferenceIncidExactFisher-compute_treatment_estimate}{\code{InferenceIncidExactFisher$compute_treatment_estimate()}}
+\item \code{InferenceIncidExactFisher$compute_treatment_estimate()}
 \item \href{#method-InferenceIncidExactFisher-clone}{\code{InferenceIncidExactFisher$clone()}}
 }
 }
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize exact Fisher inference for incidence outcomes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE,
-  make_fork_cluster = NULL
-)}\if{html}{\out{</div>}}
+\preformatted{InferenceIncidExactFisher$new(des_obj, num_cores = 1, verbose = FALSE)}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed design object.}
+
+\item{\code{num_cores}}{Number of CPU cores to use.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{InferenceIncidExactFisher} object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Compute the Fisher exact treatment estimate on the log-odds scale.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceIncidExactFisher$compute_treatment_estimate(estimate_only = FALSE)}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{Ignored for this estimator.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceIncidExactFisher$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

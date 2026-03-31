@@ -36,11 +36,10 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#'   Must be one of "control", "treatment", or "pooled". Default is "control".
 		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, reference = "control", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, reference = "control", num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			assertChoice(reference, c("control", "treatment", "pooled"))
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			private$reference = reference
 			assertNoCensoring(private$any_censoring)
 		},

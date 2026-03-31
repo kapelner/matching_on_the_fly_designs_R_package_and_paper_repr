@@ -38,46 +38,47 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKWilcoxBaseIVWC]{EDI::InferenceAbstractKKWilcoxBaseIVWC}} -> \code{InferenceAllKKWilcoxIVWC}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceRand}
+-> \\code{EDI::InferenceRandCI}
+-> \\code{EDI::InferenceBoot}
+-> \\code{EDI::InferenceAsymp}
+-> \\code{EDI::InferenceKKPassThrough}
+-> \\code{EDI::InferenceAbstractKKWilcoxBaseIVWC}
+-> \code{InferenceAllKKWilcoxIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAllKKWilcoxIVWC-new}{\code{InferenceAllKKWilcoxIVWC$new()}}
-\item \href{#method-InferenceAllKKWilcoxIVWC-compute_treatment_estimate}{\code{InferenceAllKKWilcoxIVWC$compute_treatment_estimate()}}
-\item \href{#method-InferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \code{InferenceAllKKWilcoxIVWC$compute_treatment_estimate()}
+\item \code{InferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval()}
+\item \code{InferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}
 \item \href{#method-InferenceAllKKWilcoxIVWC-clone}{\code{InferenceAllKKWilcoxIVWC$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWilcoxBaseIVWC" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWilcoxBaseIVWC.html#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval'><code>EDI::InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
+<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
+<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
+<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><code>EDI::InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE,
-  make_fork_cluster = NULL
-)}\if{html}{\out{</div>}}
+\preformatted{InferenceAllKKWilcoxIVWC$new(des_obj, num_cores = 1, verbose = FALSE)}
 }
 
 \subsection{Arguments}{
@@ -88,8 +89,6 @@ Initialize the inference object.
 \item{\code{num_cores}}{Number of CPU cores for parallel processing.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{make_fork_cluster}}{Whether to use a fork cluster for parallelization.}
 }
 \if{html}{\out{</div>}}
 }
@@ -117,11 +116,10 @@ infer
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Returns the estimated treatment effect (Hodges-Lehmann median shift).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceAllKKWilcoxIVWC$compute_treatment_estimate(estimate_only = FALSE)}
 }
 
 \subsection{Arguments}{
@@ -134,11 +132,10 @@ Returns the estimated treatment effect (Hodges-Lehmann median shift).
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes the non-parametric confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\preformatted{InferenceAllKKWilcoxIVWC$compute_asymp_confidence_interval(alpha = 0.05)}
 }
 
 \subsection{Arguments}{
@@ -151,12 +148,10 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes the non-parametric p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
+\preformatted{InferenceAllKKWilcoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -172,11 +167,10 @@ treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxIVWC-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxIVWC-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxIVWC$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceAllKKWilcoxIVWC$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

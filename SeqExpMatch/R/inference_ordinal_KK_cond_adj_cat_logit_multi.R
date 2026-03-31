@@ -35,7 +35,7 @@ InferenceOrdinalMultiKKCondAdjCatLogitRegr = R6::R6Class(
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(0L, private$n)
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
 			# Define strata

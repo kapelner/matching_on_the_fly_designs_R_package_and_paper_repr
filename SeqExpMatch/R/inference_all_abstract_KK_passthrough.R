@@ -22,9 +22,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' session-forking overhead.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+			super$initialize(des_obj, num_cores, verbose)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
 					if (is(des_obj, "FixedDesignBinaryMatch")){
@@ -78,7 +77,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				X = private$get_X()
 				m_vec = private$m
 				if (is.null(m_vec)){
-					m_vec = rep(0, n)
+					m_vec = rep(NA_integer_, n)
 				}
 				m_vec[is.na(m_vec)] = 0
 				m = private$cached_values$KKstats$m

@@ -17,8 +17,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param num_cores Number of CPU cores for parallel processing.
 		#' @param verbose Whether to print progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
@@ -27,7 +26,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			if (private$any_censoring){
 				stop(class(self)[1], " does not support censored survival data.")
 			}

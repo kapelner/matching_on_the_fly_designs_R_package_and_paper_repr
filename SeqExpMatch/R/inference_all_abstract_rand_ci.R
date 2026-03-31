@@ -7,6 +7,17 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 	lock_objects = FALSE,
 	inherit = InferenceRand,
 	public = list(
+		#' @description
+		#' Compute a randomization-based two-sided p-value for the treatment effect.
+		#' @param r Number of randomization vectors.
+		#' @param delta Null treatment effect value.
+		#' @param transform_responses Response transformation to apply during the test.
+		#' @param na.rm Whether to remove non-finite simulated statistics.
+		#' @param show_progress Whether to show progress.
+		#' @param permutations Optional pre-generated assignment draws.
+		#' @param type Optional incidence-specific exact randomization type.
+		#' @param args_for_type Optional arguments keyed by \code{type}.
+		#' @return A two-sided p-value.
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
@@ -38,6 +49,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#' @param r		Number of randomization vectors.
 		#' @param pval_epsilon			Bisection tolerance.
 		#' @param show_progress		Show progress.
+		#' @param type Optional incidence-specific exact randomization type.
+		#' @param args_for_type Optional arguments keyed by \code{type}.
 		#' @return 	Randomization CI.
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
@@ -416,17 +429,33 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 	lock_objects = FALSE,
 	inherit = InferenceRandCI,
 	public = list(
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		#' @description
+		#' Initialize exact Zhang incidence inference.
+		#' @param des_obj A completed design object.
+		#' @param num_cores Number of CPU cores to use.
+		#' @param verbose Whether to print progress messages.
+		#' @return A new \code{InferenceIncidExactZhang} object.
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
+		#' @description
+		#' Compute the Zhang incidence treatment estimate.
+		#' @param estimate_only Ignored for this estimator.
+		#' @return The treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			stats = private$get_exact_zhang_stats()
 			zhang_incid_treatment_estimate(stats)
 		},
 
+		#' @description
+		#' Compute an exact Zhang confidence interval.
+		#' @param alpha Significance level.
+		#' @param pval_epsilon Bisection tolerance for the inversion routine.
+		#' @param args_for_type Optional arguments keyed by exact type.
+		#' @return A confidence interval.
 		compute_exact_confidence_interval = function(alpha = 0.05, pval_epsilon = 0.005, args_for_type = NULL){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
@@ -438,6 +467,11 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 			private$compute_exact_confidence_interval_rand("Zhang", alpha, exact_args)
 		},
 
+		#' @description
+		#' Compute the exact Zhang two-sided p-value for a treatment effect.
+		#' @param delta Null treatment effect value.
+		#' @param args_for_type Optional arguments keyed by exact type.
+		#' @return A two-sided p-value.
 		compute_exact_two_sided_pval_for_treatment_effect = function(delta = 0, args_for_type = NULL){
 			assertNumeric(delta, len = 1)
 			exact_args = private$normalize_exact_inference_args(

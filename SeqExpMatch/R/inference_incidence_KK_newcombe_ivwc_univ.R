@@ -47,13 +47,12 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param num_cores CPU cores.
 		#' @param verbose Flag for progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

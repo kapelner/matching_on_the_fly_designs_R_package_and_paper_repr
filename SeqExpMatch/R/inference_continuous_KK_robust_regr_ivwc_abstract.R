@@ -16,14 +16,13 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
 		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
 		},

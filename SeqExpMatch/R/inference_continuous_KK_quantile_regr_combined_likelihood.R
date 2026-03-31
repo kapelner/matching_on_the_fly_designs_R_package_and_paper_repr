@@ -32,10 +32,9 @@ InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceCont
 		#' = FALSE)
 		#' infer
 		#'
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, tau, identity, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, tau, identity, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

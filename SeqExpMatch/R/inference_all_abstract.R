@@ -18,13 +18,11 @@ Inference = R6::R6Class("Inference",
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{FALSE}
 		#' @return A new `Inference` object.
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
 			assertClass(des_obj, "Design")
 			assertCount(num_cores, positive = TRUE)
 			assertFlag(verbose)
-			assertFlag(make_fork_cluster, null.ok = TRUE)
-			des_obj$assert_experiment_completed()
+			des_obj$assert_all_responses_recorded()
 
 			private$cached_values = list()
 			private$any_censoring = des_obj$any_censoring()
@@ -41,8 +39,40 @@ Inference = R6::R6Class("Inference",
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
 			private$num_cores = num_cores
 			set_package_threads(num_cores)
-			private$make_fork_cluster = if (is.null(make_fork_cluster)) .Platform$OS.type == "unix" else isTRUE(make_fork_cluster)
-			private$use_mirai = num_cores > 1L && !private$make_fork_cluster && requireNamespace("mirai", quietly = TRUE)
+			
+			# Logic for parallelization and cluster reuse
+			global_cl = get_global_fork_cluster()
+			is_linux = Sys.info()["sysname"] == "Linux"
+			
+			if (!is.null(global_cl)) {
+				# A global cluster already exists. If user passed a different num_cores, warn them.
+				if (!missing(num_cores) && num_cores != length(global_cl)) {
+					warning(paste0("we're defaulting to the cluster which has num_cores = ", length(global_cl), 
+					               " was set by create_global_fork_cluster and thus ignoring your specification of num_cores = ", num_cores))
+				}
+				private$fork_cluster = global_cl
+				private$owns_cluster = FALSE
+				private$num_cores = length(global_cl)
+				private$make_fork_cluster = TRUE
+				private$use_mirai = FALSE
+			} else {
+				# No global cluster exists.
+				if (is_linux && num_cores > 1) {
+					stop("on linux, you should set the global cluster by using create_global_fork_cluster")
+				}
+				
+				# For non-Linux (or num_cores=1 on Linux), we decide between mclapply (fork) and mirai.
+				# On non-Linux, mclapply is just lapply, so we prefer mirai for actual parallelization.
+				private$make_fork_cluster = is_linux # true if num_cores=1 on linux (trivial case)
+				private$owns_cluster = FALSE
+				private$use_mirai = num_cores > 1L && !is_linux && requireNamespace("mirai", quietly = TRUE)
+				
+				if (num_cores > 1L && !is_linux && !private$use_mirai) {
+					warning("Parallelization requested (num_cores > 1) but 'mirai' package is not installed. Falling back to serial execution. Please install 'mirai' for cross-platform parallel support.")
+					private$num_cores = 1L
+				}
+			}
+
 			# Fork cluster is created lazily at the first par_lapply call that needs it.
 			# Eager creation caused copy-on-write overhead in the main process for all
 			# subsequent writes to pre-fork memory, which hurt single-threaded operations
@@ -88,7 +118,8 @@ Inference = R6::R6Class("Inference",
 		#' Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
 		#' @param num_cores 	The number of cores for the duplicate. Default 1.
-		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork cluster. Default FALSE.
+		#' @param make_fork_cluster 	Whether the duplicate should be allowed to
+		#'   create a fork cluster. Default FALSE.
 		#' @return 			A new `Inference` object with the same data
 		duplicate = function(verbose = FALSE, num_cores = 1, make_fork_cluster = FALSE){
 			i = self$clone()
@@ -118,7 +149,7 @@ Inference = R6::R6Class("Inference",
 
 		private = list(
 		finalize = function(){
-			if (!is.null(private$fork_cluster)){
+			if (isTRUE(private$owns_cluster) && !is.null(private$fork_cluster)){
 				# Close each worker's socket connection directly instead of calling
 				# parallel::stopCluster(). stopCluster() sends DONE to workers and may
 				# wait for socket acknowledgement; if workers have been killed externally
@@ -145,6 +176,7 @@ Inference = R6::R6Class("Inference",
 		use_mirai = FALSE,
 		warned_no_parallel = FALSE,
 		fork_cluster = NULL,
+		owns_cluster = FALSE,
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
@@ -179,7 +211,10 @@ Inference = R6::R6Class("Inference",
 							}
 						}
 					)
-					if (!is.null(private$fork_cluster)) break
+					if (!is.null(private$fork_cluster)) {
+						private$owns_cluster = TRUE
+						break
+					}
 				}
 			}
 			private$fork_cluster

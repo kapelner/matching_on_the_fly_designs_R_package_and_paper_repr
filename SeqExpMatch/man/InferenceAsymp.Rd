@@ -13,41 +13,44 @@ Abstract class for asymptotic inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{InferenceAsymp}
+\\code{EDI::Inference}
+-> \\code{EDI::InferenceRand}
+-> \\code{EDI::InferenceRandCI}
+-> \\code{EDI::InferenceBoot}
+-> \code{InferenceAsymp}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAsymp-compute_asymp_confidence_interval}{\code{InferenceAsymp$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceAsymp-compute_treatment_estimate}{\code{InferenceAsymp$compute_treatment_estimate()}}
+\item \code{InferenceAsymp$compute_asymp_confidence_interval()}
+\item \code{InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()}
+\item \code{InferenceAsymp$compute_treatment_estimate()}
 \item \href{#method-InferenceAsymp-clone}{\code{InferenceAsymp$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
+<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::Inference$initialize()</code></li>
+<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
+<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
+<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
+<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
+<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
+<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
 Computes an asymptotic confidence interval based on Wald-type tests.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\preformatted{InferenceAsymp$compute_asymp_confidence_interval(alpha = 0.05)}
 }
 
 \subsection{Arguments}{
@@ -62,12 +65,10 @@ A Wald-type confidence interval.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
 Computes an asymptotic two-sided p-value for the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect(delta = 0)}\if{html}{\out{</div>}}
+\preformatted{InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect(delta = 0)}
 }
 
 \subsection{Arguments}{
@@ -83,11 +84,10 @@ The asymptotic p-value.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
 Abstract method to compute the treatment estimate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceAsymp$compute_treatment_estimate(estimate_only = FALSE)}
 }
 
 \subsection{Arguments}{
@@ -103,11 +103,10 @@ A scalar treatment estimate.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceAsymp$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

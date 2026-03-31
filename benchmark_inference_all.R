@@ -14,6 +14,22 @@ for (p in packages) {
 # Load datasets and setup as in simple_tests.R
 max_n_dataset = 100 
 source("package_tests/_dataset_load.R")
+
+CORE_COUNTS = c(5, 2, 1) # User requested order
+
+# Pre-create global clusters to avoid repeated 300ms startup penalty
+# We benchmark one core count at a time, so we create/stop for each iteration of num_cores
+# but since the current script structure is nested differently, let's just 
+# handle it inside the loop or create once for the max cores.
+# Actually, the user wants the objects to automatically pick it up.
+# So we will wrap the num_cores loop logic.
+
+# NOTE: Since Inference objects are recreated for every task, we want a persistent 
+# cluster for the duration of each (response_type, inf_class, num_cores) triplet.
+# But even better, let's just create it once for the largest num_cores and reuse it.
+# However, the benchmark needs to test 5, 2, and 1 cores specifically.
+# So we will manage the global cluster inside the num_cores loop.
+
 MAX_N_DATASET = 100
 
 custom_rand_stat = function(){
@@ -23,7 +39,6 @@ custom_rand_stat = function(){
     (mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
 }
 
-CORE_COUNTS = c(5, 2, 1) # User requested order
 r = 19
 pval_epsilon = 0.05
 beta_T = 0.2
@@ -186,29 +201,38 @@ for (response_type in names(categorized_classes)) {
             cat(sprintf("    num_cores = %d: ", num_cores))
             flush.console()
             
+            # Use the new global cluster management if num_cores > 1
+            if (num_cores > 1) {
+                create_global_fork_cluster(num_cores)
+            } else {
+                # Ensure no global cluster exists for serial runs
+                # Using tryCatch to avoid warning if no cluster exists
+                tryCatch(stop_global_fork_cluster(), warning = function(w) NULL)
+            }
+            
             # 1. boot (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
                 bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
             w_original = current_des_obj$.__enclos_env__$private$w
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
             current_des_obj$.__enclos_env__$private$w = w_original
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
                 bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
             } else NA
@@ -219,13 +243,18 @@ for (response_type in names(categorized_classes)) {
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE, make_fork_cluster = TRUE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
             asymp_pval_time = if (!is.null(inf_obj)) {
                 bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
             } else NA
             asymp_ci_time = if (!is.null(inf_obj)) {
                 bm_safe("asymp_ci", quote(inf_obj$compute_asymp_confidence_interval()))
             } else NA
+            
+            # Cleanup global cluster after this num_cores iteration
+            if (num_cores > 1) {
+                stop_global_fork_cluster()
+            }
 
             row = data.table(
                 num_cores = num_cores,

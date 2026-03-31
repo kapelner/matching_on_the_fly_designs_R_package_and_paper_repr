@@ -9,28 +9,27 @@ Thin interface for exact inference methods.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceExact}
+\\code{EDI::Inference} -> \code{InferenceExact}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceExact-compute_exact_confidence_interval}{\code{InferenceExact$compute_exact_confidence_interval()}}
-\item \href{#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect}{\code{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()}}
+\item \code{InferenceExact$compute_exact_confidence_interval()}
+\item \code{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()}
 \item \href{#method-InferenceExact-clone}{\code{InferenceExact$clone()}}
 }
 }
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
+<li><code>EDI::Inference$compute_treatment_estimate()</code></li>
+<li><code>EDI::Inference$duplicate()</code></li>
+<li><code>EDI::Inference$initialize()</code></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceExact-compute_exact_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
 Computes an exact confidence interval for the requested exact method.
 \subsection{Usage}{
@@ -57,12 +56,10 @@ Computes an exact confidence interval for the requested exact method.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
 Computes an exact two-sided p-value for the requested exact method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect(
+\preformatted{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect(
   delta = 0,
   type = NULL,
   args_for_type = NULL
@@ -83,11 +80,10 @@ Computes an exact two-sided p-value for the requested exact method.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceExact-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceExact-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceExact$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\preformatted{InferenceExact$clone(deep = FALSE)}
 }
 
 \subsection{Arguments}{

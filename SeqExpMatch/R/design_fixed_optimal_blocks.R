@@ -9,6 +9,18 @@
 FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 	inherit = FixedDesign,
 	public = list(
+			#' @description
+			#' Initialize a fixed optimal-blocks design.
+			#' @param K Number of blocks to form.
+			#' @param dist Distance specification, either a function or one of
+			#'   \code{"euclidean"}, \code{"sum_abs_diff"}, or \code{"mahal"}.
+			#' @param response_type The response type for the design.
+			#' @param prob_T Treatment assignment probability within each block.
+			#' @param include_is_missing_as_a_new_feature Whether to include missingness indicators.
+			#' @param n Planned sample size.
+			#' @param num_cores Number of CPU cores available to the design.
+			#' @param verbose Whether to print progress messages.
+			#' @return A new \code{FixedDesignOptimalBlocks} object.
 			initialize = function(
 					K,
 				dist = "euclidean",
@@ -36,6 +48,10 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				}
 			},
 
+		#' @description
+		#' Draw treatment assignments according to the optimal-blocks design.
+		#' @param r Number of assignment vectors to draw.
+		#' @return A numeric matrix with one assignment vector per column.
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			block_ids = private$get_or_compute_block_ids()

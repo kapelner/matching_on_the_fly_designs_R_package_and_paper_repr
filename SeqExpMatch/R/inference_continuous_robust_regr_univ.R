@@ -43,11 +43,10 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' seq_des_inf = InferenceContinUnivRobustRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		#' @param make_fork_cluster Whether to use a fork cluster for parallelization.
-		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE, make_fork_cluster = NULL){
+		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
-			super$initialize(des_obj, num_cores, verbose, make_fork_cluster = make_fork_cluster)
+			super$initialize(des_obj, num_cores, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
 		},

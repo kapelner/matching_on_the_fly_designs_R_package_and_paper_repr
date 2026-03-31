@@ -49,6 +49,31 @@ Design = R6::R6Class("Design",
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
 			private$num_cores = num_cores
 			set_package_threads(num_cores)
+			
+			# Logic for parallelization and cluster reuse
+			global_cl = get_global_fork_cluster()
+			is_linux = Sys.info()["sysname"] == "Linux"
+			
+			if (!is.null(global_cl)) {
+				# A global cluster already exists. If user passed a different num_cores, warn them.
+				if (!missing(num_cores) && num_cores != length(global_cl)) {
+					warning(paste0("we're defaulting to the cluster which has num_cores = ", length(global_cl), 
+					               " was set by create_global_fork_cluster and thus ignoring your specification of num_cores = ", num_cores))
+				}
+				private$num_cores = length(global_cl)
+			} else {
+				# No global cluster exists.
+				if (is_linux && num_cores > 1) {
+					stop("on linux, you should set the global cluster by using create_global_fork_cluster")
+				}
+				
+				# Non-Linux check for mirai if num_cores > 1
+				if (num_cores > 1L && !is_linux && !requireNamespace("mirai", quietly = TRUE)) {
+					warning("Parallelization requested (num_cores > 1) but 'mirai' package is not installed. Falling back to serial execution. Please install 'mirai' for cross-platform parallel support.")
+					private$num_cores = 1L
+				}
+			}
+			
 			private$verbose = verbose
 
 			if (private$fixed_sample){
@@ -269,8 +294,8 @@ Design = R6::R6Class("Design",
 		},
 
 		#' @description
-		#' Asserts if the experiment is completed.
-		assert_experiment_completed = function(){
+		#' Asserts if all responses are recorded.
+		assert_all_responses_recorded = function(){
 			self$assert_all_subjects_arrived()
 			if (sum(!is.na(private$y)) != length(private$w)){
 				stop("This experiment is incomplete as all responses aren't recorded yet.")
@@ -357,6 +382,34 @@ Design = R6::R6Class("Design",
 			private$w
 		},
 
+		#' @description If the design is a block design, get block identifiers (otherwise halts)
+		#'
+		#' @return 			An integer vector of block identifiers.
+		get_block_ids = function(){
+			block_ids = private$m
+			strata_cols = private$strata_cols
+			Xraw = private$Xraw
+			if (is.null(block_ids) && !is.null(strata_cols) && length(strata_cols) > 0L &&
+					nrow(Xraw) == length(private$y)) {
+				strata_keys = vapply(seq_len(nrow(Xraw)), function(i) {
+					vals = vapply(strata_cols, function(col) {
+						val = Xraw[i, ][[col]]
+						if (is.na(val)) "NA" else as.character(val)
+					}, character(1))
+					paste(vals, collapse = "|")
+				}, character(1))
+				block_ids = match(strata_keys, unique(strata_keys))
+			}
+			if (is.null(block_ids)) {
+				stop("Block identifiers are undefined for this design.")
+			}
+			block_ids = as.integer(block_ids)
+			if (length(block_ids) != length(private$y)) {
+				stop("Block identifiers are improperly sized for this design.")
+			}
+			block_ids
+		},
+
 		#' @description Get n, the sample size
 		#'
 		#' @return 			The number of subjects.
@@ -391,7 +444,7 @@ Design = R6::R6Class("Design",
 		#' @param verbose 	A flag for verbosity.
 		#' @return 			A new `Design` object with the same data
 		duplicate = function(verbose = FALSE){
-			self$assert_experiment_completed() #can't duplicate without the experiment being done
+			self$assert_all_responses_recorded() #can't duplicate without the experiment being done
 			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
@@ -428,6 +481,7 @@ Design = R6::R6Class("Design",
 		y = numeric(),
 		dead = numeric(),
 		m = NULL,
+		strata_cols = NULL,
 		prob_T = NULL,
 		response_type = NULL,
 		fixed_sample = NULL,
