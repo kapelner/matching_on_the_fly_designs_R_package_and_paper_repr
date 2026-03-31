@@ -52,6 +52,15 @@ InferenceIncidUnivKKGCompRiskDiff = R6::R6Class("InferenceIncidUnivKKGCompRiskDi
 	)
 )
 
+#' Univariate G-Computation Risk-Ratio Inference for KK Designs with Binary Responses
+#'
+#' Fits an all-subject logistic working model for a KK incidence outcome using
+#' only the treatment indicator, then estimates the marginal risk ratio by
+#' standardizing predicted risks under all-treated and all-control assignments
+#' over the empirical covariate distribution. Matched pairs are treated as
+#' clusters and reservoir subjects are treated as singletons when computing the
+#' sandwich covariance.
+#'
 #' @export
 InferenceIncidUnivKKGCompRiskRatio = R6::R6Class("InferenceIncidUnivKKGCompRiskRatio",
 	lock_objects = FALSE,

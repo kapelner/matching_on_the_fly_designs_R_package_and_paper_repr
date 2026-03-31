@@ -44,9 +44,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			if (!requireNamespace("parfm", quietly = TRUE)) {
 				stop("Package 'parfm' is required for ", class(self)[1], ". Please install it.")
 			}
@@ -54,7 +53,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 		},
 
 		#' @description
@@ -171,7 +170,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (!is.null(X) && is.null(colnames(X))) colnames(X) = paste0("x", seq_len(ncol(X)))
 			cov_str = if (!is.null(X)) paste(colnames(X), collapse = " + ") else NULL
 
-			cores_to_use = private$num_cores
+			cores_to_use = self$num_cores
 
 			beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 				# --- Matched pairs component ---

@@ -20,119 +20,65 @@ assignments were allocated and all responses were collected).
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Inference-new}{\code{Inference$new()}}
-\item \code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}
-\item \code{Inference$compute_exact_confidence_interval()}
-\item \code{Inference$compute_treatment_estimate()}
+\item \href{#method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-Inference-compute_exact_confidence_interval}{\code{Inference$compute_exact_confidence_interval()}}
+\item \href{#method-Inference-compute_treatment_estimate}{\code{Inference$compute_treatment_estimate()}}
 \item \href{#method-Inference-duplicate}{\code{Inference$duplicate()}}
 \item \href{#method-Inference-clone}{\code{Inference$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-new"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize an estimation and test object after the design is completed.
 \subsection{Usage}{
-\preformatted{Inference$new(des_obj, num_cores = 1, verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{Design} object whose entire n subjects are
-assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize the sampling.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be displayed
-to the user. Default is \code{FALSE}}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `Inference` object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
-Computes an exact two-sided p-value. Subclasses that support exact inference override this.
 \subsection{Usage}{
-\preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Other arguments passed to the method.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
-Computes an exact confidence interval. Subclasses that support exact inference override this.
 \subsection{Usage}{
-\preformatted{Inference$compute_exact_confidence_interval(...)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_confidence_interval(...)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Other arguments passed to the method.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the treatment estimate.
 \subsection{Usage}{
-\preformatted{Inference$compute_treatment_estimate(estimate_only = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric treatment estimate.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
-Duplicate this inference object
 \subsection{Usage}{
-\preformatted{Inference$duplicate(verbose = FALSE, num_cores = 1, make_fork_cluster = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$duplicate(verbose = FALSE, make_fork_cluster = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
-
-\item{\code{num_cores}}{The number of cores for the duplicate. Default 1.}
-
-\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.
-  Default FALSE.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `Inference` object with the same data
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{Inference$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

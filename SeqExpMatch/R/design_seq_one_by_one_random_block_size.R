@@ -30,7 +30,6 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
 		#'   should we include another dummy variable for its missingness? Default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param num_cores The number of CPU cores to use to parallelize the sampling.
 		#' @param verbose A flag indicating whether messages should be displayed. Default is
 		#'   \code{FALSE}.
 		#' @return	A new `DesignSeqOneByOneRandomBlockSize` object
@@ -42,12 +41,12 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						num_cores = 1,
+						
 						verbose = FALSE
 					) {
 			assertIntegerish(block_sizes, lower = 1, any.missing = FALSE, min.len = 1)
 			
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			
 			private$strata_cols = strata_cols
 			private$block_sizes = as.integer(block_sizes)

@@ -17,14 +17,13 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("glmmTMB", quietly = TRUE)){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
@@ -145,7 +144,7 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		fit_hurdle_model = function(model_data){
 			dat = model_data$dat
 			has_pairs = isTRUE(model_data$has_pairs)
-			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
+			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
 			formula_cond = private$build_cond_formula(dat, has_pairs = has_pairs)
 			formula_zi = private$build_zi_formula(dat, has_pairs = has_pairs)

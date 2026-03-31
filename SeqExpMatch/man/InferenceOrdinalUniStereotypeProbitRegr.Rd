@@ -44,136 +44,83 @@ infer
 
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \code{InferenceOrdinalUniStereotypeProbitRegr}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{InferenceOrdinalUniStereotypeProbitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceOrdinalUniStereotypeProbitRegr$new()}
-\item \code{InferenceOrdinalUniStereotypeProbitRegr$compute_treatment_estimate()}
-\item \code{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_confidence_interval()}
-\item
-  \code{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceOrdinalUniStereotypeProbitRegr$clone()}
+\item \href{#method-InferenceOrdinalUniStereotypeProbitRegr-new}{\code{InferenceOrdinalUniStereotypeProbitRegr$new()}}
+\item \href{#method-InferenceOrdinalUniStereotypeProbitRegr-compute_treatment_estimate}{\code{InferenceOrdinalUniStereotypeProbitRegr$compute_treatment_estimate()}}
+\item \href{#method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_confidence_interval}{\code{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceOrdinalUniStereotypeProbitRegr-clone}{\code{InferenceOrdinalUniStereotypeProbitRegr$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeProbitRegr-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeProbitRegr-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a stereotype probit inference object for a completed ordinal
-sequential design.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$new(
-  des_obj,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal response.}
-
-\item{\code{num_cores}}{Number of CPU cores for bootstrap/randomization helpers.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeProbitRegr-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeProbitRegr-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Compute the estimated stereotype probit treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUniStereotypeProbitRegr$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The estimated treatment coefficient.
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute an approximate confidence interval for the treatment effect. If
-the model-based standard error is unavailable, falls back to the bootstrap
-interval.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level for the interval.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A confidence interval for the treatment effect.
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeProbitRegr-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Compute an approximate two-sided p-value for the treatment effect. If
-the model-based standard error is unavailable, falls back to the bootstrap
-p-value.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUniStereotypeProbitRegr$
-compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect to test.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUniStereotypeProbitRegr-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUniStereotypeProbitRegr-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUniStereotypeProbitRegr$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUniStereotypeProbitRegr$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

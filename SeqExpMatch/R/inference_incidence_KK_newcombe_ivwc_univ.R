@@ -45,14 +45,13 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
-		#' @param num_cores CPU cores.
 		#' @param verbose Flag for progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

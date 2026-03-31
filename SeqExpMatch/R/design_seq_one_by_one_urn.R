@@ -18,7 +18,6 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 		#' @param	response_type 	The data type of response values.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag for verbosity.
 		#' @return	A new `DesignSeqOneByOneUrn` object
 		#'
@@ -28,13 +27,13 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 						response_type = "continuous",
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						num_cores = 1,
+						
 						verbose = FALSE
 					) {
 			assertNumber(alpha, lower = 0)
 			assertNumber(beta, lower = 0)
 			
-			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose)
 			
 			private$alpha = alpha
 			private$beta = beta

@@ -14,7 +14,6 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
-		#' @param num_cores The number of CPU cores.
 		#' @param verbose A flag for verbosity.
 		#'
 		#' @return	A new `FixedDesignBernoulli` object
@@ -23,10 +22,10 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						num_cores = 1,
+						
 						verbose = FALSE
 					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 		},
 
 		#' @description

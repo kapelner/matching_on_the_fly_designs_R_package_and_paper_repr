@@ -5,36 +5,6 @@ print_progress = function(pb, i, total) {
 	}
 }
 
-set_package_threads = function(num_cores) {
-	# Ensure it's an integer
-	n = as.integer(num_cores)
-
-	# Check if we are already at the target to avoid slow Sys.setenv and other calls
-	if (!is.null(options(".edi_last_set_threads")[[1]]) && options(".edi_last_set_threads")[[1]] == n) {
-		return(invisible(NULL))
-	}
-
-	# R packages with global thread setters
-	if (requireNamespace("data.table", quietly = TRUE)) {
-		data.table::setDTthreads(n)
-	}
-	if (requireNamespace("fixest", quietly = TRUE)) {
-		try(fixest::setFixest_nthreads(n), silent = TRUE)
-	}
-
-	# Environment variables for OpenMP and BLAS/LAPACK
-	# This helps prevent thread explosion in child processes
-	# that call multi-threaded native libraries.
-	# Sys.setenv is relatively slow, so we only do it if needed.
-	Sys.setenv(OMP_NUM_THREADS = n)
-	Sys.setenv(MKL_NUM_THREADS = n)
-	Sys.setenv(OPENBLAS_NUM_THREADS = n)
-	Sys.setenv(VECLIB_MAXIMUM_THREADS = n)
-	Sys.setenv(NUMEXPR_NUM_THREADS = n)
-
-	options(".edi_last_set_threads" = n)
-	invisible(NULL)
-}
 assert_greedy_experimental_design_installed = function(caller) {
 	if (!requireNamespace("GreedyExperimentalDesign", quietly = TRUE)) {
 		stop("Package 'GreedyExperimentalDesign' is required for ", caller, ".")
@@ -59,24 +29,24 @@ assert_optimal_blocks_libraries_installed = function(caller) {
 #' logit(0.25)
 #' @export
 logit = function(p){
-	if (any(p <= 0 | p >= 1, na.rm = TRUE)){
-		stop("p must be between 0 and 1 non-inclusive")
-	}
+	p = pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, p))
 	log(p / (1 - p))
 }
 
-#' Inverse Logit
+#' Inverse Logit Function
 #'
-#' Calculates the inverse logit i.e., 1 / (1 + exp(-x))
+#' Computes the inverse logit of a real number or vector.
 #'
-#' @param	x		Any real number
-#' @return	Its corresponding inverse logit value between 0 and 1 non inclusive
+#' @param    x               Any real number
+#' @return   Its corresponding inverse logit value between 0 and 1 non inclusive
 #' @export
 #' @examples
 #' inv_logit(c(-1, 0, 1))
 inv_logit = function(x){
-	1 / (1 + exp(-x))
+	p = 1 / (1 + exp(-x))
+	pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, p))
 }
+
 
 drop_linearly_dependent_cols = function(M){
 	M = as.matrix(M)

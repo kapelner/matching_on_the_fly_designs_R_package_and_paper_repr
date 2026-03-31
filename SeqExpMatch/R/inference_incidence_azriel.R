@@ -11,10 +11,9 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 		#' @description
 		#' Initialize Azriel blocked-design incidence inference.
 		#' @param des_obj A completed design object.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidAzriel} object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			if (!private$design_is_supported_blocking(des_obj)) {
 				stop(class(self)[1], " requires a blocking design.")
@@ -23,7 +22,7 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 			if (is.null(private$m)){
 				stop(class(self)[1], " requires a blocking design.")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		}
 	),

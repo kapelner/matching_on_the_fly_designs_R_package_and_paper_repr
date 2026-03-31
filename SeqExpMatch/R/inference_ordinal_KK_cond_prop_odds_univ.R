@@ -41,7 +41,6 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 		#' a completed KK design with an ordinal response.
 		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
 		#' are assigned and whose ordinal response y is recorded.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#'   The default is 1 for serial computation. For simple
@@ -52,12 +51,12 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

@@ -75,15 +75,14 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 		#' 							The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
 		#' 							Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
 		#' 							different percentile of the treatment effect distribution.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#' 							and bootstrap resampling. The default is 1 for serial computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, tau, qlogis, num_cores, verbose)
+			super$initialize(des_obj, tau, qlogis, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 		}

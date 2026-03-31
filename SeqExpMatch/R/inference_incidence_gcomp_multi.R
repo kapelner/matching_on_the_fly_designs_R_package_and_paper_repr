@@ -45,6 +45,13 @@ InferenceIncidMultiGCompRiskDiff = R6::R6Class("InferenceIncidMultiGCompRiskDiff
 	)
 )
 
+#' Multivariate G-Computation Risk-Ratio Inference for Binary Responses
+#'
+#' Fits a logistic working model for an incidence outcome using treatment and all
+#' recorded covariates, then estimates the marginal risk ratio by standardizing
+#' predicted risks under all-treated and all-control assignments over the
+#' empirical covariate distribution.
+#'
 #' @export
 InferenceIncidMultiGCompRiskRatio = R6::R6Class("InferenceIncidMultiGCompRiskRatio",
 	lock_objects = FALSE,

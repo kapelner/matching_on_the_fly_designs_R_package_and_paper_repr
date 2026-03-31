@@ -20,7 +20,6 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		#'
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object with a continuous
 		#'   response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and
 		#'   randomization inference.
 		#' @param verbose Whether to print progress messages.
 		#'
@@ -35,12 +34,12 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		#' seq_des_inf = InferenceContinMultiKKLinIVWC$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

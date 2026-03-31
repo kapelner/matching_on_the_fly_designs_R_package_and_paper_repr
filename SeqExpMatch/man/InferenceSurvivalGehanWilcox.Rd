@@ -24,243 +24,70 @@ The p-value uses \code{survival::survdiff(rho = 1)} (Peto-Prentice / Fleming-Har
 p=1, q=0), which is distinct from the log-rank test (\code{rho = 0}) used in
 \code{InferenceSurvivalKMDiff}.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceSurvivalGehanWilcox$compute_treatment_estimate`
-## ------------------------------------------------
-
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-
-## ------------------------------------------------
-## Method `InferenceSurvivalGehanWilcox$compute_asymp_confidence_interval`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_asymp_confidence_interval()
-}
-
-## ------------------------------------------------
-## Method `InferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-}
-}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \code{InferenceSurvivalGehanWilcox}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{InferenceSurvivalGehanWilcox}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceSurvivalGehanWilcox$compute_treatment_estimate()}
-\item \code{InferenceSurvivalGehanWilcox$compute_asymp_confidence_interval()}
-\item \code{InferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceSurvivalGehanWilcox$compute_confidence_interval_rand()}
+\item \href{#method-InferenceSurvivalGehanWilcox-compute_treatment_estimate}{\code{InferenceSurvivalGehanWilcox$compute_treatment_estimate()}}
+\item \href{#method-InferenceSurvivalGehanWilcox-compute_asymp_confidence_interval}{\code{InferenceSurvivalGehanWilcox$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceSurvivalGehanWilcox-compute_confidence_interval_rand}{\code{InferenceSurvivalGehanWilcox$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceSurvivalGehanWilcox-clone}{\code{InferenceSurvivalGehanWilcox$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::Inference$initialize()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalGehanWilcox-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalGehanWilcox-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the mean difference in Peto-Prentice weighted martingale residuals
-between the treatment and control groups. Positive values indicate that treatment
-subjects experienced fewer early events than expected.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalGehanWilcox$compute_treatment_estimate(estimate_only = FALSE)}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalGehanWilcox-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalGehanWilcox-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a (1 - alpha)-level confidence interval based on the asymptotic normality
-of the Peto-Prentice weighted martingale residual mean difference. Falls back to
-bootstrap if the SE is unavailable.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalGehanWilcox$compute_asymp_confidence_interval(alpha = 0.05)}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level. Default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector of length 2: (lower, upper) confidence bounds.
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_asymp_confidence_interval()
-}
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalGehanWilcox-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the Peto-Prentice (Gehan-Wilcoxon) two-sided p-value via
-\code{survival::survdiff(rho = 1)}, which puts greater weight on early events
-relative to the standard log-rank test (\code{rho = 0}).
-For delta != 0, not yet implemented.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect to test against. Default is 0.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A p-value in [0, 1].
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
-seq_des$add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-seq_des_inf = InferenceSurvivalGehanWilcox$new(seq_des)
-seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
-}
-}
-\if{html}{\out{</div>}}
-
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalGehanWilcox-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalGehanWilcox-compute_confidence_interval_rand}{}}}
 \subsection{Method \code{compute_confidence_interval_rand()}}{
-Randomization confidence intervals are not supported for this class because
-the Peto-Prentice weighted score scale is not commensurate with the time-ratio
-null used by the randomization CI bisection algorithm.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalGehanWilcox$compute_confidence_interval_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$compute_confidence_interval_rand(
   alpha = 0.05,
   r = 501,
   pval_epsilon = 0.005,
@@ -268,26 +95,14 @@ null used by the randomization CI bisection algorithm.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Unused.}
-
-\item{\code{r}}{Unused.}
-
-\item{\code{pval_epsilon}}{Unused.}
-
-\item{\code{show_progress}}{Unused.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalGehanWilcox-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalGehanWilcox-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalGehanWilcox$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalGehanWilcox$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

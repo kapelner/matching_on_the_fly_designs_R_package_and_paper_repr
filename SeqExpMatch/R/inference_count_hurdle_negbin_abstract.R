@@ -16,11 +16,10 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

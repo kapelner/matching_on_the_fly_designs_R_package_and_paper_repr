@@ -17,7 +17,6 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 		#' @param prob_T Probability of treatment assignment (default 0.5).
 		#' @param include_is_missing_as_a_new_feature Flag for missingness indicators.
 		#' @param n Sample size (if fixed).
-		#' @param num_cores Number of CPU cores.
 		#' @param verbose Flag for verbosity.
 		#'
 		#' @return A new `FixedDesignAOptimal` object
@@ -27,13 +26,13 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			if (prob_T != 0.5){
 				stop("A-optimal exchange search currently only supports even treatment allocation (prob_T = 0.5)")
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$uses_covariates = TRUE
 		},
 

@@ -10,7 +10,6 @@
 #'   \code{"ordinal"}.
 #' @param nonparallel Character vector of covariate names from \code{des_obj$
 #'   get_X()} that should vary by threshold. Treatment is always kept parallel.
-#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 #' @param verbose Whether to print progress messages.
 #'
 #' @export

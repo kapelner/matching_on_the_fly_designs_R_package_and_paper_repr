@@ -15,146 +15,66 @@ using the treatment indicator and all recorded covariates for continuous respons
 Minimises the joint check-function loss over both data sources simultaneously.
 Inference is based on the stacked combined-likelihood quantile-regression fit.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceContinMultKKQuantileRegrCombinedLikelihood$new`
-## ------------------------------------------------
-
-set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceContinMultKKQuantileRegrCombinedLikelihood$new(seq_des, verbose
-= FALSE)
-infer
-
-}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \\code{EDI::InferenceKKPassThroughCompound}
--> \\code{EDI::InferenceAbstractQuantileRandCI}
-->
-\\code{EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood}
--> \code{InferenceContinMultKKQuantileRegrCombinedLikelihood}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{::InferenceKKPassThroughCompound} -> \code{::InferenceAbstractQuantileRandCI} -> \code{::InferenceAbstractKKQuantileRegrCombinedLikelihood} -> \code{InferenceContinMultKKQuantileRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceContinMultKKQuantileRegrCombinedLikelihood$new()}
-\item \code{InferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}
-\item \code{InferenceContinMultKKQuantileRegrCombinedLikelihood$clone()}
+\item \href{#method-InferenceContinMultKKQuantileRegrCombinedLikelihood-new}{\code{InferenceContinMultKKQuantileRegrCombinedLikelihood$new()}}
+\item \href{#method-InferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{\code{InferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate()}}
+\item \href{#method-InferenceContinMultKKQuantileRegrCombinedLikelihood-clone}{\code{InferenceContinMultKKQuantileRegrCombinedLikelihood$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></li>
-<li>
-<code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$
-compute_asymp_confidence_interval()</code></li>
-</li>
-<li>
-<code>EDI::InferenceAbstractKKQuantileRegrCombinedLikelihood$
-compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
-</li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_confidence_interval'><code>::InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKQuantileRegrCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceAbstractKKQuantileRegrCombinedLikelihood.html#method-InferenceAbstractKKQuantileRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>::InferenceAbstractKKQuantileRegrCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
 \subsection{Usage}{
-\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$new(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$new(
   des_obj,
   tau = 0.5,
-  num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. Default is 0.5.}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceContinMultKKQuantileRegrCombinedLikelihood$new(seq_des, verbose
-= FALSE)
-infer
-
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultKKQuantileRegrCombinedLikelihood-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultKKQuantileRegrCombinedLikelihood-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultKKQuantileRegrCombinedLikelihood$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

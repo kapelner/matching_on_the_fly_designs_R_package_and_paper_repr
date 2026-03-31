@@ -15,145 +15,96 @@ observations for KK matching-on-the-fly designs with continuous responses.
 }
 \keyword{internal}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \\code{EDI::InferenceKKPassThroughCompound}
--> \code{InferenceAbstractKKRobustRegrCombinedLikelihood}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{::InferenceKKPassThroughCompound} -> \code{InferenceAbstractKKRobustRegrCombinedLikelihood}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$new()}
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_treatment_estimate()}
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_confidence_interval()}
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$
-compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$duplicate()}
-\item \code{InferenceAbstractKKRobustRegrCombinedLikelihood$clone()}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-new}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$new()}}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_treatment_estimate}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_treatment_estimate()}}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_confidence_interval}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-duplicate}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$duplicate()}}
+\item \href{#method-InferenceAbstractKKRobustRegrCombinedLikelihood-clone}{\code{InferenceAbstractKKRobustRegrCombinedLikelihood$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$new(
   des_obj,
   method = "MM",
-  num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{method}}{Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the combined robust-regression estimate of the treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the approximate confidence interval.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 -
-\code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the approximate p-value.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$
-compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this
-is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
-Duplicate
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$duplicate(verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKRobustRegrCombinedLikelihood-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKRobustRegrCombinedLikelihood-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

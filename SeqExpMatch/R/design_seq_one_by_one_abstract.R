@@ -15,17 +15,16 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		#' @param include_is_missing_as_a_new_feature If missing data is present, include a dummy
 		#'   variable for it.
 		#' @param n The sample size (if fixed).
-		#' @param num_cores Number of CPU cores for parallel processing.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(
 				response_type = "continuous",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 		},
 
 		#' @description

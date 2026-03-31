@@ -14,161 +14,117 @@ one experimental design.
 }
 \keyword{internal}
 \section{Super class}{
-\\code{EDI::Design} -> \code{DesignSeqOneByOne}
+\code{::Design} -> \code{DesignSeqOneByOne}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignSeqOneByOne-new}{\code{DesignSeqOneByOne$new()}}
-\item \code{DesignSeqOneByOne$supports_resampling()}
-\item \code{DesignSeqOneByOne$add_subject_to_experiment_and_assign()}
+\item \href{#method-DesignSeqOneByOne-supports_resampling}{\code{DesignSeqOneByOne$supports_resampling()}}
+\item \href{#method-DesignSeqOneByOne-add_subject_to_experiment_and_assign}{\code{DesignSeqOneByOne$add_subject_to_experiment_and_assign()}}
 \item \href{#method-DesignSeqOneByOne-assign_wt}{\code{DesignSeqOneByOne$assign_wt()}}
-\item \code{DesignSeqOneByOne$draw_ws_according_to_design()}
-\item \code{DesignSeqOneByOne$print_current_subject_assignment()}
+\item \href{#method-DesignSeqOneByOne-draw_ws_according_to_design}{\code{DesignSeqOneByOne$draw_ws_according_to_design()}}
+\item \href{#method-DesignSeqOneByOne-print_current_subject_assignment}{\code{DesignSeqOneByOne$print_current_subject_assignment()}}
 \item \href{#method-DesignSeqOneByOne-clone}{\code{DesignSeqOneByOne$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Design$add_all_subject_assignments()</code></li>
-<li><code>EDI::Design$add_all_subject_responses()</code></li>
-<li><code>EDI::Design$add_subject()</code></li>
-<li><code>EDI::Design$add_subject_response()</code></li>
-<li><code>EDI::Design$any_censoring()</code></li>
-<li><code>EDI::Design$assert_all_responses_recorded()</code></li>
-<li><code>EDI::Design$assert_all_subjects_arrived()</code></li>
-<li><code>EDI::Design$assert_even_allocation()</code></li>
-<li><code>EDI::Design$assert_fixed_sample()</code></li>
-<li><code>EDI::Design$check_experiment_completed()</code></li>
-<li><code>EDI::Design$duplicate()</code></li>
-<li><code>EDI::Design$get_X()</code></li>
-<li><code>EDI::Design$get_X_imp()</code></li>
-<li><code>EDI::Design$get_X_raw()</code></li>
-<li><code>EDI::Design$get_block_ids()</code></li>
-<li><code>EDI::Design$get_dead()</code></li>
-<li><code>EDI::Design$get_n()</code></li>
-<li><code>EDI::Design$get_prob_T()</code></li>
-<li><code>EDI::Design$get_response_type()</code></li>
-<li><code>EDI::Design$get_t()</code></li>
-<li><code>EDI::Design$get_w()</code></li>
-<li><code>EDI::Design$get_y()</code></li>
-<li><code>EDI::Design$is_fixed_sample_size()</code></li>
-<li><code>EDI::Design$resample_design()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_assignments"><a href='../..//html/Design.html#method-Design-add_all_subject_assignments'><code>::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_responses"><a href='../..//html/Design.html#method-Design-add_all_subject_responses'><code>::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_subject"><a href='../..//html/Design.html#method-Design-add_subject'><code>::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_subject_response"><a href='../..//html/Design.html#method-Design-add_subject_response'><code>::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_block_ids"><a href='../..//html/Design.html#method-Design-get_block_ids'><code>::Design$get_block_ids()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="resample_design"><a href='../..//html/Design.html#method-Design-resample_design'><code>::Design$resample_design()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-new"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential one-by-one design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$new(
   response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{response_type}}{The data type of response values.}
-
-\item{\code{prob_T}}{The probability of the treatment assignment.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present, include a dummy
-variable for it.}
-
-\item{\code{n}}{The sample size (if fixed).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-supports_resampling"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-supports_resampling}{}}}
 \subsection{Method \code{supports_resampling()}}{
-Checks if the design supports resampling.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$supports_resampling()}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$supports_resampling()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-Always TRUE for sequential designs.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-add_subject_to_experiment_and_assign"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_subject_to_experiment_and_assign}{}}}
 \subsection{Method \code{add_subject_to_experiment_and_assign()}}{
-Adds a subject and assigns treatment.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$add_subject_to_experiment_and_assign(x_new)}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment assignment (0 or 1).
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-assign_wt"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
-Assigns treatment to the current subject.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$assign_wt()}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$assign_wt()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-The treatment assignment (0 or 1).
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
-Draws treatment vectors according to the design.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$draw_ws_according_to_design(r = 100)}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of vectors to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-print_current_subject_assignment"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-print_current_subject_assignment}{}}}
 \subsection{Method \code{print_current_subject_assignment()}}{
-Prints the current subject's assignment.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$print_current_subject_assignment()}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$print_current_subject_assignment()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{DesignSeqOneByOne$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

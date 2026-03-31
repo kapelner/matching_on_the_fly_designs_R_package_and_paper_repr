@@ -33,7 +33,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 		#' infer <- InferenceAllKKWilcoxIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop("Rank-based compound inference is not recommended for incidence data; clogit or compound mean difference estimators are preferred.")
@@ -42,7 +42,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			if (private$any_censoring){
 				stop(class(self)[1], " does not currently support censored survival data. Use restricted mean or Cox-based methods instead.")
 			}

@@ -34,12 +34,11 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#'   response y is recorded within.
 		#' @param reference The group to use as the "Identified Distribution" (reference).
 		#'   Must be one of "control", "treatment", or "pooled". Default is "control".
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, reference = "control", num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, reference = "control",  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			assertChoice(reference, c("control", "treatment", "pooled"))
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			private$reference = reference
 			assertNoCensoring(private$any_censoring)
 		},

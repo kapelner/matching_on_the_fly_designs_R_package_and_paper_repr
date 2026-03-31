@@ -17,7 +17,6 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#' @param mahal_match 	Match using Mahalanobis distance. Default is \code{FALSE} (Euclidean).
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignBinaryMatch` object
@@ -28,14 +27,14 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				mahal_match = FALSE,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			if (prob_T != 0.5){
 				stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
 			}
 			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$mahal_match = mahal_match
 			private$uses_covariates = TRUE
 		},
@@ -67,7 +66,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				max_designs = max_designs,
 				wait       = TRUE,
 				start      = TRUE,
-				num_cores  = private$num_cores,
+				num_cores  = self$num_cores,
 				verbose    = private$verbose
 			)
 			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(search_obj, form = "one_zero")

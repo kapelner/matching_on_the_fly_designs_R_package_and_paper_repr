@@ -21,17 +21,16 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @param transform_y_fn  A function applied to y values before quantile regression.
 		#'   Subclasses pass
 		#' \code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.
-		#' @param num_cores			The number of CPU cores to use to parallelize sampling.
 		#' @param verbose                 A flag indicating whether messages should be displayed.
 		#'   Default is \code{FALSE}.
-		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()

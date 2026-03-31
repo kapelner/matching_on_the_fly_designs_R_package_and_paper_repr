@@ -14,13 +14,9 @@ Inference = R6::R6Class("Inference",
 		#' Initialize an estimation and test object after the design is completed.
 		#' @param des_obj         A completed \code{Design} object whose entire n subjects are
 		#'   assigned and response y is recorded within.
-		#' @param num_cores			The number of CPU cores to use to parallelize the sampling.
-		#' @param verbose                 A flag indicating whether messages should be displayed
-		#'   to the user. Default is \code{FALSE}
-		#' @return A new `Inference` object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, verbose = FALSE){
 			assertClass(des_obj, "Design")
-			assertCount(num_cores, positive = TRUE)
+
 			assertFlag(verbose)
 			des_obj$assert_all_responses_recorded()
 
@@ -37,46 +33,7 @@ Inference = R6::R6Class("Inference",
 			private$n = des_obj$get_n()
 			private$prob_T = des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
-			private$num_cores = num_cores
-			set_package_threads(num_cores)
 			
-			# Logic for parallelization and cluster reuse
-			global_cl = get_global_fork_cluster()
-			is_linux = Sys.info()["sysname"] == "Linux"
-			
-			if (!is.null(global_cl)) {
-				# A global cluster already exists. If user passed a different num_cores, warn them.
-				if (!missing(num_cores) && num_cores != length(global_cl)) {
-					warning(paste0("we're defaulting to the cluster which has num_cores = ", length(global_cl), 
-					               " was set by create_global_fork_cluster and thus ignoring your specification of num_cores = ", num_cores))
-				}
-				private$fork_cluster = global_cl
-				private$owns_cluster = FALSE
-				private$num_cores = length(global_cl)
-				private$make_fork_cluster = TRUE
-				private$use_mirai = FALSE
-			} else {
-				# No global cluster exists.
-				if (is_linux && num_cores > 1) {
-					stop("on linux, you should set the global cluster by using create_global_fork_cluster")
-				}
-				
-				# For non-Linux (or num_cores=1 on Linux), we decide between mclapply (fork) and mirai.
-				# On non-Linux, mclapply is just lapply, so we prefer mirai for actual parallelization.
-				private$make_fork_cluster = is_linux # true if num_cores=1 on linux (trivial case)
-				private$owns_cluster = FALSE
-				private$use_mirai = num_cores > 1L && !is_linux && requireNamespace("mirai", quietly = TRUE)
-				
-				if (num_cores > 1L && !is_linux && !private$use_mirai) {
-					warning("Parallelization requested (num_cores > 1) but 'mirai' package is not installed. Falling back to serial execution. Please install 'mirai' for cross-platform parallel support.")
-					private$num_cores = 1L
-				}
-			}
-
-			# Fork cluster is created lazily at the first par_lapply call that needs it.
-			# Eager creation caused copy-on-write overhead in the main process for all
-			# subsequent writes to pre-fork memory, which hurt single-threaded operations
-			# even when no parallel work was dispatched.
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$permutations_cache = list()
@@ -117,16 +74,13 @@ Inference = R6::R6Class("Inference",
 		#' @description
 		#' Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
-		#' @param num_cores 	The number of cores for the duplicate. Default 1.
-		#' @param make_fork_cluster 	Whether the duplicate should be allowed to
-		#'   create a fork cluster. Default FALSE.
-		#' @return 			A new `Inference` object with the same data
-		duplicate = function(verbose = FALSE, num_cores = 1, make_fork_cluster = FALSE){
+		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork cluster. Default FALSE.
+		#' @return 			A new \code{Inference} object with the same data
+		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			i = self$clone()
 			i$.__enclos_env__$private$verbose = verbose
-			i$.__enclos_env__$private$num_cores = num_cores
-			i$.__enclos_env__$private$make_fork_cluster = make_fork_cluster
 			i$.__enclos_env__$private$fork_cluster = NULL
+
 			i$.__enclos_env__$private$cached_values = list()
 			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
@@ -147,23 +101,23 @@ Inference = R6::R6Class("Inference",
 		}
 		),
 
-		private = list(
-		finalize = function(){
-			if (isTRUE(private$owns_cluster) && !is.null(private$fork_cluster)){
-				# Close each worker's socket connection directly instead of calling
-				# parallel::stopCluster(). stopCluster() sends DONE to workers and may
-				# wait for socket acknowledgement; if workers have been killed externally
-				# (e.g. by a benchmark watchdog) this blocks for up to the OS socket
-				# timeout (~60 s) per worker. Closing the connection is non-blocking:
-				# workers detect EOF on their next read and exit on their own.
-				tryCatch(
-					for (node in private$fork_cluster) {
-						tryCatch(close(node$con), error = function(e) NULL)
-					},
-					error = function(e) NULL
-				)
-				private$fork_cluster = NULL
+	active = list(
+		#' @field num_cores Current number of cores for this inference object.
+		#'   Defaults to the global budget unless overridden on the object.
+		num_cores = function(value) {
+			if (missing(value)) {
+				if (!is.null(private$num_cores_override)) return(private$num_cores_override)
+				return(get_num_cores())
 			}
+			checkmate::assertCount(value, positive = TRUE)
+			private$num_cores_override = as.integer(value)
+			invisible(self)
+		}
+	),
+
+	private = list(
+		finalize = function(){
+			# We no longer own the cluster, it is global.
 		},
 		des_obj = NULL,		des_obj_priv_int = NULL,
 		m = NULL,
@@ -171,12 +125,8 @@ Inference = R6::R6Class("Inference",
 		has_match_structure = NULL,
 		supports_design_resampling = FALSE,
 		any_censoring = NULL,
-		num_cores = NULL,
-		make_fork_cluster = NULL,
-		use_mirai = FALSE,
 		warned_no_parallel = FALSE,
 		fork_cluster = NULL,
-		owns_cluster = FALSE,
 		verbose = FALSE,
 		n = NULL,
 		p = NULL,
@@ -186,51 +136,32 @@ Inference = R6::R6Class("Inference",
 		dead = NULL,
 		y_temp = NULL,
 		X = NULL,
-		cached_values = list(),
+			cached_values = list(),
+			num_cores_override = NULL,
 
 		# Returns the number of C++ OpenMP threads to use for a parallel C++ function
 		# with n_work_items items of work. Caps threads so that each thread handles
 		# at least 10 items; for tiny r/B values this prevents thread-management
 		# overhead from dominating over the actual computation.
 		n_cpp_threads = function(n_work_items) {
-			min(private$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
+			min(self$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
 		},
 
-		get_or_create_fork_cluster = function(){
-			if (is.null(private$fork_cluster)){
-				# Retry with increasing delays on port-conflict failures
-				for (attempt in 1:5) {
-					private$fork_cluster = tryCatch(
-						parallel::makeForkCluster(private$num_cores),
-						error = function(e) {
-							if (attempt < 5 && grepl("port|socket|cannot be opened", e$message, ignore.case = TRUE)) {
-								Sys.sleep(0.5 * attempt)
-								NULL
-							} else {
-								stop(e)
-							}
-						}
-					)
-					if (!is.null(private$fork_cluster)) {
-						private$owns_cluster = TRUE
-						break
-					}
-				}
-			}
-			private$fork_cluster
-		},
+		par_lapply = function(X, FUN, n_cores = self$num_cores, show_progress = FALSE, export_list = NULL){
 
-		par_lapply = function(X, FUN, n_cores, show_progress = FALSE, export_list = NULL){
 			if (n_cores <= 1L) return(lapply(X, FUN))
-			if (isTRUE(private$make_fork_cluster)){
-				cl = private$get_or_create_fork_cluster()
+			
+			global_cl = get_global_fork_cluster()
+			global_mirai_cores = get_global_mirai_cores()
+
+			if (!is.null(global_cl)){
 				if (!is.null(export_list) && length(export_list) > 0L) {
 					export_env = list2env(export_list, parent = emptyenv())
-					parallel::clusterExport(cl, names(export_list), envir = export_env)
+					parallel::clusterExport(global_cl, names(export_list), envir = export_env)
 				}
-				parallel::parLapply(cl, X, FUN)
-			} else if (isTRUE(private$use_mirai)){
-				private$ensure_mirai_daemons(n_cores)
+				parallel::parLapply(global_cl, X, FUN)
+			} else if (!is.null(global_mirai_cores)){
+				private$ensure_mirai_daemons(global_mirai_cores)
 				tasks = lapply(X, function(x) mirai::mirai({FUN(x)}, FUN = FUN, x = x))
 				lapply(tasks, function(m) m[])
 			} else if (.Platform$OS.type != "unix"){

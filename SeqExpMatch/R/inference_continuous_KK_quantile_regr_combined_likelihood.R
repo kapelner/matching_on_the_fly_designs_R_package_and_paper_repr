@@ -14,7 +14,6 @@ InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceCont
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param	tau				The quantile level for regression, strictly between 0 and 1. Default is 0.5.
-		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
 		#' @examples
 		#' set.seed(1)
@@ -32,9 +31,9 @@ InferenceContinMultKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceCont
 		#' = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, tau, identity, num_cores, verbose)
+			super$initialize(des_obj, tau, identity, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

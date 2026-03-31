@@ -17,7 +17,6 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		#'
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a
 		#'   continuous response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and
 		#'   randomization inference.
 		#' @param verbose Whether to print progress messages.
 		#'
@@ -32,9 +31,9 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		#' seq_des_inf = InferenceContinMultLin$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

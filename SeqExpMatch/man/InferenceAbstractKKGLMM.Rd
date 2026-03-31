@@ -10,154 +10,100 @@ Abstract class for GLMM-based Inference
 }
 \keyword{internal}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \code{InferenceAbstractKKGLMM}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{InferenceAbstractKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAbstractKKGLMM-new}{\code{InferenceAbstractKKGLMM$new()}}
-\item \code{InferenceAbstractKKGLMM$compute_treatment_estimate()}
-\item \code{InferenceAbstractKKGLMM$compute_asymp_confidence_interval()}
-\item \code{InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceAbstractKKGLMM$compute_confidence_interval_rand()}
-\item \code{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()}
+\item \href{#method-InferenceAbstractKKGLMM-compute_treatment_estimate}{\code{InferenceAbstractKKGLMM$compute_treatment_estimate()}}
+\item \href{#method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval}{\code{InferenceAbstractKKGLMM$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceAbstractKKGLMM-compute_confidence_interval_rand}{\code{InferenceAbstractKKGLMM$compute_confidence_interval_rand()}}
+\item \href{#method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand}{\code{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-InferenceAbstractKKGLMM-clone}{\code{InferenceAbstractKKGLMM$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKGLMM-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$new(des_obj, num_cores = 1, verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$compute_treatment_estimate(estimate_only = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed
-confidence interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic p-value.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For
-any treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_confidence_interval_rand}{}}}
 \subsection{Method \code{compute_confidence_interval_rand()}}{
-Overridden to provide a warning about slowness.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$compute_confidence_interval_rand(r = 501, ...)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_confidence_interval_rand(r = 501, ...)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization iterations.}
-
-\item{\code{...}}{Additional arguments passed to super.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand}{}}}
 \subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
-Overridden to provide a warning about slowness.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand(
   r = 501,
   ...
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization iterations.}
-
-\item{\code{...}}{Additional arguments passed to super.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKGLMM-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceAbstractKKGLMM$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

@@ -23,8 +23,6 @@ compute_poisson_distr_parallel_cpp(
 \item{delta}{Null treatment effect shift.}
 
 \item{log_transform}{If TRUE, apply multiplicative delta shift (exp scale); otherwise additive.}
-
-\item{num_cores}{Number of OpenMP threads.}
 }
 \value{
 Numeric vector of length nsim with treatment coefficients.

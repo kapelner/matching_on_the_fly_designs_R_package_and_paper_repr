@@ -17,16 +17,14 @@ Design = R6::R6Class("Design",
 		#' @param prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size (if fixed).
-		#' @param num_cores Number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `Design` object
 		initialize = function(
 				response_type = "continuous",
 				prob_T = 0.5,
-				include_is_missing_as_a_new_feature = TRUE,
+				include_is_missing_as_a_new_feature = FALSE,
 				n = NULL,
-				num_cores = 1,
 				verbose = FALSE
 			) {
 			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
@@ -34,7 +32,6 @@ Design = R6::R6Class("Design",
 			assertFlag(include_is_missing_as_a_new_feature)
 			assertFlag(verbose)
 			assertCount(n, null.ok = TRUE)
-			assertCount(num_cores, positive = TRUE)
 
 			if (is.null(n)){
 				private$fixed_sample = FALSE
@@ -47,35 +44,10 @@ Design = R6::R6Class("Design",
 			private$prob_T = prob_T
 			private$response_type = response_type
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
-			private$num_cores = num_cores
-			set_package_threads(num_cores)
-			
-			# Logic for parallelization and cluster reuse
-			global_cl = get_global_fork_cluster()
-			is_linux = Sys.info()["sysname"] == "Linux"
-			
-			if (!is.null(global_cl)) {
-				# A global cluster already exists. If user passed a different num_cores, warn them.
-				if (!missing(num_cores) && num_cores != length(global_cl)) {
-					warning(paste0("we're defaulting to the cluster which has num_cores = ", length(global_cl), 
-					               " was set by create_global_fork_cluster and thus ignoring your specification of num_cores = ", num_cores))
-				}
-				private$num_cores = length(global_cl)
-			} else {
-				# No global cluster exists.
-				if (is_linux && num_cores > 1) {
-					stop("on linux, you should set the global cluster by using create_global_fork_cluster")
-				}
-				
-				# Non-Linux check for mirai if num_cores > 1
-				if (num_cores > 1L && !is_linux && !requireNamespace("mirai", quietly = TRUE)) {
-					warning("Parallelization requested (num_cores > 1) but 'mirai' package is not installed. Falling back to serial execution. Please install 'mirai' for cross-platform parallel support.")
-					private$num_cores = 1L
-				}
-			}
-			
-			private$verbose = verbose
 
+			# Ensure budget is respected among openmp and other packages
+
+			private$verbose = verbose
 			if (private$fixed_sample){
 				private$y = 	rep(NA_real_, n)
 				private$w = 	rep(NA_real_, n)
@@ -468,6 +440,10 @@ Design = R6::R6Class("Design",
 
 	),
 
+	active = list(
+		#' @field num_cores Current number of cores in the global budget.
+		num_cores = function() get_num_cores()
+	),
 
 	private = list(
 		all_subject_data_cache = list(),
@@ -485,7 +461,6 @@ Design = R6::R6Class("Design",
 		prob_T = NULL,
 		response_type = NULL,
 		fixed_sample = NULL,
-		num_cores = NULL,
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
@@ -519,15 +494,15 @@ Design = R6::R6Class("Design",
 				#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
 				private$Ximp = tryCatch({
 										if (any(!is.na(private$y))){
-											suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE, num.threads = private$num_cores)[, 1 : ncol(private$Ximp)])
+											suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE, num.threads = self$num_cores)[, 1 : ncol(private$Ximp)])
 										} else {
-											suppressWarnings(missRanger(private$Ximp, verbose = FALSE, num.threads = private$num_cores))
+											suppressWarnings(missRanger(private$Ximp, verbose = FALSE, num.threads = self$num_cores))
 										}
 									}, error = function(e){
 										if (any(!is.na(private$y))){
-											suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), num.threads = private$num_cores)$ximp[, 1 : ncol(private$Ximp)])
+											suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), num.threads = self$num_cores)$ximp[, 1 : ncol(private$Ximp)])
 										} else {
-											suppressWarnings(missForest(private$Ximp, num.threads = private$num_cores)$ximp)
+											suppressWarnings(missForest(private$Ximp, num.threads = self$num_cores)$ximp)
 										}
 									}
 								)

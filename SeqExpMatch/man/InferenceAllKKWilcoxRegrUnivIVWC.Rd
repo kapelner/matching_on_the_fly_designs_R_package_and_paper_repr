@@ -16,118 +16,83 @@ For reservoir subjects, it uses a standard rank-based linear model with the trea
 assignment as the sole predictor. This is the univariate (covariate-free) variant.
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \code{InferenceAllKKWilcoxRegrUnivIVWC}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{InferenceAllKKWilcoxRegrUnivIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceAllKKWilcoxRegrUnivIVWC$new()}
-\item \code{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate()}
-\item \code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval()}
-\item \code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceAllKKWilcoxRegrUnivIVWC$clone()}
+\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-new}{\code{InferenceAllKKWilcoxRegrUnivIVWC$new()}}
+\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate()}}
+\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceAllKKWilcoxRegrUnivIVWC-clone}{\code{InferenceAllKKWilcoxRegrUnivIVWC$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
 \subsection{Usage}{
-\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$new(des_obj, num_cores = 1, verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
-
-\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Returns the estimated treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
 \subsection{Usage}{
-\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes the asymptotic two-sided p-value.
 \subsection{Usage}{
-\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. Default is zero.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKWilcoxRegrUnivIVWC-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllKKWilcoxRegrUnivIVWC-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKWilcoxRegrUnivIVWC$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

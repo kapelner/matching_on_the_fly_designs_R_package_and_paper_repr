@@ -44,41 +44,52 @@ def transform_line(line: str, width: int) -> list[str]:
     line = PKG_LINK_RE.sub(lambda m: "<li><code>" + m.group(1) + "</code></li>", line)
     line = line.replace("\\\\preformatted{", r"\preformatted{")
 
+    indent_len = len(line) - len(line.lstrip(" "))
+    indent = line[:indent_len]
+    stripped = line[indent_len:]
+
     if len(line) <= width:
         return [line]
 
-    match = ITEM_HREF_RE.match(line)
+    match = ITEM_HREF_RE.match(stripped)
     if match:
-        return [f"{match.group(1)}\\href{{{match.group(2)}}}", match.group(3)]
+        return [
+            indent + f"{match.group(1)}\\href{{{match.group(2)}}}",
+            indent + match.group(3),
+        ]
 
-    match = ITEM_TWOARG_RE.match(line)
+    match = ITEM_TWOARG_RE.match(stripped)
     if match:
-        return [match.group(1), match.group(2)]
+        return [indent + match.group(1), indent + match.group(2)]
 
     if " -> " in line:
         parts = line.split(" -> ")
         return [parts[0], *["-> " + part for part in parts[1:]]]
 
-    if line.startswith("<li><code>") and "</code></li>" in line:
-        return ["<li>", line[4:], "</li>"]
+    if stripped.startswith("<li><code>") and "</code></li>" in stripped:
+        return [indent + "<li>", indent + stripped[4:], indent + "</li>"]
 
-    if line.startswith(r"\preformatted{") and line.endswith("}") and "$" in line:
-        left, right = line.split("$", 1)
-        return [left + "$", right]
+    if stripped.startswith(r"\preformatted{") and stripped.endswith("}") and "$" in stripped:
+        left, right = stripped.split("$", 1)
+        return [indent + left + "$", indent + right]
 
-    if line.startswith(r"\code{") and "$" in line:
-        left, right = line.split("$", 1)
-        return [left + "$", right]
+    if stripped.startswith(r"\code{") and "$" in stripped:
+        left, right = stripped.split("$", 1)
+        return [indent + left + "$", indent + right]
 
-    if line.startswith("{") and line.endswith("}") and " " in line:
+    if stripped.startswith("{") and stripped.endswith("}") and " " in stripped:
         wrapped = textwrap.wrap(
-            line[1:-1],
+            stripped[1:-1],
             width=max(1, width - 2),
             break_long_words=False,
             break_on_hyphens=False,
         )
         if len(wrapped) > 1:
-            return ["{" + wrapped[0], *wrapped[1:-1], wrapped[-1] + "}"]
+            return [
+                indent + "{" + wrapped[0],
+                *[indent + piece for piece in wrapped[1:-1]],
+                indent + wrapped[-1] + "}",
+            ]
 
     return wrap_plain(line, width)
 

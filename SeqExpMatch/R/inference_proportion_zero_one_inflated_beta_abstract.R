@@ -21,11 +21,10 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

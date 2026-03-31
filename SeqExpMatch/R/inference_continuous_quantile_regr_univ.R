@@ -26,7 +26,6 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
 		#'   \code{tau = 0.5}
 		#'   estimates the median treatment effect.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
 		#'
 		#' @examples
@@ -40,13 +39,13 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' seq_des_inf = InferenceContinUnivQuantileRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$tau = tau
 		},

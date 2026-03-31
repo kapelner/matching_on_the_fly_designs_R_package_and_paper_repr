@@ -15,14 +15,13 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

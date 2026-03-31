@@ -15,7 +15,6 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignGreedy` object
@@ -26,14 +25,14 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			if (prob_T != 0.5){
 				stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
 			}
 			assert_greedy_experimental_design_installed("FixedDesignGreedy")
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
@@ -63,7 +62,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				objective  = private$objective,
 				wait       = TRUE,
 				start      = TRUE,
-				num_cores  = private$num_cores,
+				num_cores  = self$num_cores,
 				verbose    = private$verbose
 			)
 			w_mat = GreedyExperimentalDesign::resultsGreedySearch(search_obj, max_vectors = r, form = "one_zero")$ending_indicTs

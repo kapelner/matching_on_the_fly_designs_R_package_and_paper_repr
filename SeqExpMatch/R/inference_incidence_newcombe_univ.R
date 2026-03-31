@@ -44,11 +44,10 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 		#' @description
 		#' Initialize a Newcombe risk-difference inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

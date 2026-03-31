@@ -47,113 +47,73 @@ seq_des_inf$
 
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \code{InferenceSurvivalRestrictedMeanDiff}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{InferenceSurvivalRestrictedMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceSurvivalRestrictedMeanDiff$compute_treatment_estimate()}
-\item \code{InferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval()}
-\item \code{InferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}
-\item \code{InferenceSurvivalRestrictedMeanDiff$compute_confidence_interval_rand()}
-\item \code{InferenceSurvivalRestrictedMeanDiff$clone()}
+\item \href{#method-InferenceSurvivalRestrictedMeanDiff-compute_treatment_estimate}{\code{InferenceSurvivalRestrictedMeanDiff$compute_treatment_estimate()}}
+\item \href{#method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval}{\code{InferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceSurvivalRestrictedMeanDiff-compute_confidence_interval_rand}{\code{InferenceSurvivalRestrictedMeanDiff$compute_confidence_interval_rand()}}
+\item \href{#method-InferenceSurvivalRestrictedMeanDiff-clone}{\code{InferenceSurvivalRestrictedMeanDiff$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::Inference$initialize()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate for mean difference
 \subsection{Usage}{
-\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The setting-appropriate (see description) numeric estimate of the treatment effect
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a 1-alpha level frequentist confidence interval
-differently for all response types, estimate types, and
-test types.
-
-Here we use the theory that MLE's computed for GLM's are asymptotically normal.
-Hence these confidence intervals are asymptotically valid
-and thus approximate for any sample size.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
-\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The approximate frequentist p-value
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_confidence_interval_rand}{}}}
 \subsection{Method \code{compute_confidence_interval_rand()}}{
-Computes a 1-alpha level frequentist confidence interval for the randomization test
 \subsection{Usage}{
-\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_confidence_interval_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_confidence_interval_rand(
   alpha = 0.05,
   r = 501,
   pval_epsilon = 0.005,
@@ -161,30 +121,14 @@ Computes a 1-alpha level frequentist confidence interval for the randomization t
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-
-\item{\code{r}}{The number of randomization vectors. The default is 501.}
-
-\item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
-
-\item{\code{show_progress}}{Show a text progress indicator.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A 1 - alpha sized frequentist confidence interval
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceSurvivalRestrictedMeanDiff$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

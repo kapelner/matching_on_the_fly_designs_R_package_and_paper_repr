@@ -13,8 +13,7 @@ bisection_ci_parallel_cpp(
   u_upper,
   pval_th,
   tol,
-  transform_responses,
-  num_cores = 1L
+  transform_responsesL
 )
 }
 \arguments{
@@ -35,8 +34,6 @@ bisection_ci_parallel_cpp(
 \item{tol}{Tolerance for convergence (in p-value space)}
 
 \item{transform_responses}{String: "none", "log", or "logit"}
-
-\item{num_cores}{Passed through to pval_fn for inner parallelism}
 }
 \value{
 Numeric vector of length 2: [lower_bound, upper_bound]

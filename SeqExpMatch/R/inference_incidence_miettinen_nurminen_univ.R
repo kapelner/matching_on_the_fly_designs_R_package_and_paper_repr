@@ -21,7 +21,6 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' Initialize a Miettinen-Nurminen risk-difference inference object for a
 		#' completed design with an incidence response.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
 		#'
 		#' @examples
@@ -36,9 +35,9 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' seq_des_inf = InferenceIncidUnivMiettinenNurminenRiskDiff$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

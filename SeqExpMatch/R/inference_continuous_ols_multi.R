@@ -18,7 +18,6 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#' after the sequential design is completed.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#'   The default is 1 for serial computation. For simple
@@ -30,9 +29,9 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

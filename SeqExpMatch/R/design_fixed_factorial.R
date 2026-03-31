@@ -16,7 +16,6 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#' @param response_type 	The data type of response values.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignFactorial` object
@@ -25,13 +24,13 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 				response_type = "continuous",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			assertList(factors, types = "numeric", min.len = 1)
 			# We don't use prob_T in the standard way here, as we have multiple factors
 			# But base Design needs it. We'll set it to 0.5.
-			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose)
 			private$factors = factors
 			
 			# Precompute all combinations

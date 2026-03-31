@@ -19,13 +19,7 @@ and is not installed automatically with \pkg{SeqExpMatch}.
 Install \pkg{glmmTMB} before using this class.
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceAbstractKKGLMM}
--> \code{InferenceIncidUnivKKGLMM}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceAbstractKKGLMM} -> \code{InferenceIncidUnivKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -36,33 +30,30 @@ Install \pkg{glmmTMB} before using this class.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceAbstractKKGLMM$compute_asymp_confidence_interval()</code></li>
-<li>
-<code>EDI::InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
-</li>
-<li><code>EDI::InferenceAbstractKKGLMM$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceAbstractKKGLMM$compute_treatment_estimate()</code></li>
-<li>
-<code>EDI::InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-</li>
-<li><code>EDI::InferenceAbstractKKGLMM$initialize()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval'><code>::InferenceAbstractKKGLMM$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect'><code>::InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_confidence_interval_rand'><code>::InferenceAbstractKKGLMM$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="compute_treatment_estimate"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_treatment_estimate'><code>::InferenceAbstractKKGLMM$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGLMM" data-id="initialize"><a href='../..//html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-initialize'><code>::InferenceAbstractKKGLMM$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivKKGLMM-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivKKGLMM-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivKKGLMM$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivKKGLMM$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

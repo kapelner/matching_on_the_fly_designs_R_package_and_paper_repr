@@ -15,77 +15,52 @@ discordant matched pairs. This class is available for
 designs, only the matched-pair data are used and the reservoir is ignored.
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceExact}
--> \code{InferenceIncidenceExactBinomial}
+\code{::Inference} -> \code{::InferenceExact} -> \code{InferenceIncidenceExactBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceIncidenceExactBinomial$new()}
-\item \code{InferenceIncidenceExactBinomial$compute_treatment_estimate()}
-\item \code{InferenceIncidenceExactBinomial$clone()}
+\item \href{#method-InferenceIncidenceExactBinomial-new}{\code{InferenceIncidenceExactBinomial$new()}}
+\item \href{#method-InferenceIncidenceExactBinomial-compute_treatment_estimate}{\code{InferenceIncidenceExactBinomial$compute_treatment_estimate()}}
+\item \href{#method-InferenceIncidenceExactBinomial-clone}{\code{InferenceIncidenceExactBinomial$clone()}}
 }
 }
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../..//html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidenceExactBinomial-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize exact matched-pair binomial inference for incidence outcomes.
 \subsection{Usage}{
-\preformatted{InferenceIncidenceExactBinomial$new(des_obj, num_cores = 1, verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidenceExactBinomial$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed design object.}
-
-\item{\code{num_cores}}{Number of CPU cores to use.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{InferenceIncidenceExactBinomial} object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidenceExactBinomial-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Compute the matched-pair treatment estimate on the log-odds scale.
 \subsection{Usage}{
-\preformatted{InferenceIncidenceExactBinomial$compute_treatment_estimate(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidenceExactBinomial$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{Ignored for this estimator.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidenceExactBinomial-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceIncidenceExactBinomial$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidenceExactBinomial$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

@@ -161,8 +161,6 @@ collate_urn.txt
 test_fixed_greedy.R
 benchmark_output.log
 comprehensive_tests_run.log
-package_tests/analyze_comprehensive_tests.R
-package_tests/comprehensive_tests.R
 package_tests/comprehensive_tests_results_nc_*.csv
 test_poisson_optimizations.R
 test_slow_ci_rand.R
@@ -173,5 +171,5 @@ test_unlock_binding.R
 document_error.log
 install.log
 test.log
-
+benchmark_final.log
 

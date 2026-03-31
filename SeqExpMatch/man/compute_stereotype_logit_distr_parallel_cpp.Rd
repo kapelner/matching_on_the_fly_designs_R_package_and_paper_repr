@@ -20,8 +20,6 @@ compute_stereotype_logit_distr_parallel_cpp(
 \item{w_mat}{Integer matrix of permuted treatment assignments (n x nsim).}
 
 \item{delta}{Null treatment effect (additive shift).}
-
-\item{num_cores}{Number of OpenMP threads.}
 }
 \value{
 Numeric vector of length nsim with treatment coefficients.

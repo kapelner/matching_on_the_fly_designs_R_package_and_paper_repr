@@ -15,11 +15,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("glmmTMB", quietly = TRUE)){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
@@ -84,7 +83,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			formula_cond = private$build_formula(dat)
 			formula_zi = private$build_zi_formula(dat)
 
-			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
+			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
 			mod = tryCatch(
 				suppressWarnings(suppressMessages(

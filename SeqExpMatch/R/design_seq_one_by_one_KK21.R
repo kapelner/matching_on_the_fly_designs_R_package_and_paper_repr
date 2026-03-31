@@ -30,7 +30,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param num_cores The number of CPU cores to use to parallelize the sampling during
 		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
 		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
@@ -83,7 +82,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
-			num_cores = 1,
+			
 			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -95,7 +94,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			survival_use_speedup_for_no_censoring = TRUE,
 			ordinal_use_speedup = TRUE
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose, lambda, t_0_pct, morrison, p)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p)
 			if (is.null(num_boot)){
 				num_boot = 500
 			} else {

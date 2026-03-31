@@ -19,156 +19,80 @@ This class provides a direct additive treatment-effect model for binary
 outcomes. With only the treatment indicator in the design matrix, the point
 estimate coincides with the empirical risk difference.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceIncidUnivRiskDiff$new`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
-for (i in 1:20) {
-	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
-	p_i = plogis(-0.8 + 0.5 * w_i)
-	seq_des$add_subject_response(i, rbinom(1, 1, p_i))
-}
-seq_des_inf = InferenceIncidUnivRiskDiff$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \code{InferenceIncidUnivRiskDiff}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{InferenceIncidUnivRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceIncidUnivRiskDiff-new}{\code{InferenceIncidUnivRiskDiff$new()}}
-\item \code{InferenceIncidUnivRiskDiff$compute_treatment_estimate()}
-\item \code{InferenceIncidUnivRiskDiff$compute_asymp_confidence_interval()}
-\item \code{InferenceIncidUnivRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect()}
+\item \href{#method-InferenceIncidUnivRiskDiff-compute_treatment_estimate}{\code{InferenceIncidUnivRiskDiff$compute_treatment_estimate()}}
+\item \href{#method-InferenceIncidUnivRiskDiff-compute_asymp_confidence_interval}{\code{InferenceIncidUnivRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceIncidUnivRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceIncidUnivRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceIncidUnivRiskDiff-clone}{\code{InferenceIncidUnivRiskDiff$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivRiskDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivRiskDiff-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a risk-difference inference object for a completed
-design with a binary response.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivRiskDiff$new(des_obj, num_cores = 1, verbose = FALSE)}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an
-incidence response.}
-
-\item{\code{num_cores}}{The number of CPU cores to use for bootstrap and
-randomization inference.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
-for (i in 1:20) {
-	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
-	p_i = plogis(-0.8 + 0.5 * w_i)
-	seq_des$add_subject_response(i, rbinom(1, 1, p_i))
-}
-seq_des_inf = InferenceIncidUnivRiskDiff$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivRiskDiff$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivRiskDiff-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivRiskDiff-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the direct risk-difference estimate of the treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivRiskDiff$compute_treatment_estimate(estimate_only = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivRiskDiff$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivRiskDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a 1 - \code{alpha} confidence interval using the HC2 robust
-standard error.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivRiskDiff$compute_asymp_confidence_interval(alpha = 0.05)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivRiskDiff$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is
-1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidUnivRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivRiskDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a two-sided p-value for the treatment effect.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivRiskDiff$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null treatment effect on the risk-difference scale.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidUnivRiskDiff-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidUnivRiskDiff-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceIncidUnivRiskDiff$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidUnivRiskDiff$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

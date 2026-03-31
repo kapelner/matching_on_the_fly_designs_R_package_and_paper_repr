@@ -19,7 +19,6 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignRerandomization` object
@@ -31,10 +30,10 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$obj_val_cutoff = obj_val_cutoff
 			private$objective = objective
 			private$uses_covariates = TRUE
@@ -72,7 +71,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 					objective              = private$objective,
 					wait                   = TRUE,
 					start                  = TRUE,
-					num_cores              = private$num_cores,
+					num_cores              = self$num_cores,
 					verbose                = private$verbose
 				)
 				res = GreedyExperimentalDesign::resultsRerandomizationSearch(search_obj, include_assignments = TRUE, form = "one_zero")

@@ -6,6 +6,9 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(survival))
 
 pkgload::load_all("SeqExpMatch")
+# Set global number of cores for parallelization
+set_num_cores(5)
+
 args <- commandArgs(trailingOnly = TRUE)
 verbose <- !("--quiet" %in% args)
 vbcat <- function(...) {

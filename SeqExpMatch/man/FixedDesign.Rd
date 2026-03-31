@@ -14,7 +14,7 @@ This class takes care of whole-experiment randomization.
 }
 \keyword{internal}
 \section{Super class}{
-\\code{EDI::Design} -> \code{FixedDesign}
+\code{::Design} -> \code{FixedDesign}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -22,123 +22,89 @@ This class takes care of whole-experiment randomization.
 \item \href{#method-FixedDesign-new}{\code{FixedDesign$new()}}
 \item \href{#method-FixedDesign-randomize}{\code{FixedDesign$randomize()}}
 \item \href{#method-FixedDesign-supports_resampling}{\code{FixedDesign$supports_resampling()}}
-\item \code{FixedDesign$draw_ws_according_to_design()}
+\item \href{#method-FixedDesign-draw_ws_according_to_design}{\code{FixedDesign$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesign-clone}{\code{FixedDesign$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Design$add_all_subject_assignments()</code></li>
-<li><code>EDI::Design$add_all_subject_responses()</code></li>
-<li><code>EDI::Design$add_subject()</code></li>
-<li><code>EDI::Design$add_subject_response()</code></li>
-<li><code>EDI::Design$any_censoring()</code></li>
-<li><code>EDI::Design$assert_all_responses_recorded()</code></li>
-<li><code>EDI::Design$assert_all_subjects_arrived()</code></li>
-<li><code>EDI::Design$assert_even_allocation()</code></li>
-<li><code>EDI::Design$assert_fixed_sample()</code></li>
-<li><code>EDI::Design$check_experiment_completed()</code></li>
-<li><code>EDI::Design$duplicate()</code></li>
-<li><code>EDI::Design$get_X()</code></li>
-<li><code>EDI::Design$get_X_imp()</code></li>
-<li><code>EDI::Design$get_X_raw()</code></li>
-<li><code>EDI::Design$get_block_ids()</code></li>
-<li><code>EDI::Design$get_dead()</code></li>
-<li><code>EDI::Design$get_n()</code></li>
-<li><code>EDI::Design$get_prob_T()</code></li>
-<li><code>EDI::Design$get_response_type()</code></li>
-<li><code>EDI::Design$get_t()</code></li>
-<li><code>EDI::Design$get_w()</code></li>
-<li><code>EDI::Design$get_y()</code></li>
-<li><code>EDI::Design$is_fixed_sample_size()</code></li>
-<li><code>EDI::Design$resample_design()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_assignments"><a href='../..//html/Design.html#method-Design-add_all_subject_assignments'><code>::Design$add_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_responses"><a href='../..//html/Design.html#method-Design-add_all_subject_responses'><code>::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_subject"><a href='../..//html/Design.html#method-Design-add_subject'><code>::Design$add_subject()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_subject_response"><a href='../..//html/Design.html#method-Design-add_subject_response'><code>::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_block_ids"><a href='../..//html/Design.html#method-Design-get_block_ids'><code>::Design$get_block_ids()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="resample_design"><a href='../..//html/Design.html#method-Design-resample_design'><code>::Design$resample_design()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-new"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesign$new(
   response_type = "continuous",
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  num_cores = 1,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
-"ordinal".}
-
-\item{\code{prob_T}}{Probability of treatment assignment.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-
-\item{\code{n}}{The sample size.}
-
-\item{\code{num_cores}}{The number of CPU cores.}
-
-\item{\code{verbose}}{A flag for verbosity.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `FixedDesign` object
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-randomize"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-randomize}{}}}
 \subsection{Method \code{randomize()}}{
-Randomize treatment assignments for the entire experiment.
 \subsection{Usage}{
-\preformatted{FixedDesign$randomize()}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$randomize()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-supports_resampling"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-supports_resampling}{}}}
 \subsection{Method \code{supports_resampling()}}{
-Check if the design supports resampling.
 \subsection{Usage}{
-\preformatted{FixedDesign$supports_resampling()}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$supports_resampling()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-TRUE if supported.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors.
 \subsection{Usage}{
-\preformatted{FixedDesign$draw_ws_according_to_design(r = 100)}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{FixedDesign$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

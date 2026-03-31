@@ -24,7 +24,6 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj  A completed \code{DesignSeqOneByOne} object.
-		#' @param num_cores    Number of CPU cores for parallel bootstrap/randomization. Default 1.
 		#' @param verbose      Whether to print progress messages. Default \code{FALSE}.
 		#' @examples
 		#' set.seed(1)
@@ -41,7 +40,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
 			if (res_type == "incidence"){
 				stop(
@@ -51,7 +50,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				)
 			}
 			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			if (private$any_censoring){
 				stop(
 					"Wilcoxon rank-sum inference does not support censored survival data. ",

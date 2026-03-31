@@ -25,7 +25,6 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#'   whose continuous response y is recorded.
 		#' @param method                  Robust-regression fitting method for \code{MASS::rlm}; one
 		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#' 							and bootstrap resampling.
@@ -43,10 +42,10 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' seq_des_inf = InferenceContinUnivRobustRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
-		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, method = "MM",  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
 		},

@@ -20,7 +20,6 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
 		#'   should we include another dummy variable for its missingness? The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL}.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @return	A new `DesignSeqOneByOneBernoulli` object
 		#'
@@ -29,10 +28,10 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						num_cores = 1,
+						
 						verbose = FALSE
 					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 		},
 
 		#' @description

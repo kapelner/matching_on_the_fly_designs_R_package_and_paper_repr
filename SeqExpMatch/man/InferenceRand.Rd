@@ -13,51 +13,45 @@ Abstract class for randomization-based inference.
 }
 \keyword{internal}
 \section{Super class}{
-\\code{EDI::Inference} -> \code{InferenceRand}
+\code{::Inference} -> \code{InferenceRand}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceRand$set_custom_randomization_statistic_function()}
-\item \code{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()}
-\item \code{InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()}
+\item \href{#method-InferenceRand-set_custom_randomization_statistic_function}{\code{InferenceRand$set_custom_randomization_statistic_function()}}
+\item \href{#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null}{\code{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()}}
+\item \href{#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand}{\code{InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-InferenceRand-clone}{\code{InferenceRand$clone()}}
 }
 }
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$compute_treatment_estimate()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::Inference$initialize()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../..//html/Inference.html#method-Inference-compute_treatment_estimate'><code>::Inference$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-set_custom_randomization_statistic_function"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRand-set_custom_randomization_statistic_function}{}}}
 \subsection{Method \code{set_custom_randomization_statistic_function()}}{
-Set Custom Randomization Statistic Computation
 \subsection{Usage}{
-\preformatted{InferenceRand$set_custom_randomization_statistic_function(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$set_custom_randomization_statistic_function(
   custom_randomization_statistic_function
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{custom_randomization_statistic_function}}{A function that returns a scalar value.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null}{}}}
 \subsection{Method \code{compute_beta_hat_T_randomization_distr_under_sharp_null()}}{
-Under the sharp null, computes the randomization distribution.
 \subsection{Usage}{
-\preformatted{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null(
   r = 501,
   delta = 0,
   transform_responses = "none",
@@ -66,31 +60,13 @@ Under the sharp null, computes the randomization distribution.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of randomization vectors.}
-
-\item{\code{delta}}{The null difference.}
-
-\item{\code{transform_responses}}{Type of transformation.}
-
-\item{\code{show_progress}}{Show progress bar.}
-
-\item{\code{permutations}}{Pre-computed permutations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A vector of estimates.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand}{}}}
 \subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
-Computes a randomization-based p-value.
 \subsection{Usage}{
-\preformatted{InferenceRand$compute_two_sided_pval_for_treatment_effect_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$compute_two_sided_pval_for_treatment_effect_rand(
   r = 501,
   delta = 0,
   transform_responses = "none",
@@ -100,33 +76,14 @@ Computes a randomization-based p-value.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization vectors.}
-
-\item{\code{delta}}{Null difference.}
-
-\item{\code{transform_responses}}{Transformation.}
-
-\item{\code{na.rm}}{Remove NAs.}
-
-\item{\code{show_progress}}{Show progress.}
-
-\item{\code{permutations}}{Pre-computed permutations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Randomization p-value.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRand-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceRand$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

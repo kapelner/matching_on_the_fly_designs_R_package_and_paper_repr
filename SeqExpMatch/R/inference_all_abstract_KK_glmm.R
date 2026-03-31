@@ -9,14 +9,13 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("glmmTMB", quietly = TRUE)){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
@@ -150,8 +149,8 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
 
 			# Respect the core budget provided by the user. If we are in an outer 
-			# parallel loop (e.g. mclapply), private$num_cores will be 1L.
-			glmm_control = glmmTMB::glmmTMBControl(parallel = private$num_cores)
+			# parallel loop (e.g. mclapply), self$num_cores will be 1L.
+			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(

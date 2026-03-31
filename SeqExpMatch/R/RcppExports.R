@@ -774,8 +774,7 @@ pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weigh
 
 #' Pocock-Simon Minimization Redraw Assignments
 #'
-#' @param x_levels_matrix A matrix where each row is a subject and each column
-#'   is the row index in counts for that covariate.
+#' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.
 #' @param num_levels_total Total number of levels across all covariates.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.
@@ -876,3 +875,4 @@ zhang_exact_fisher_pval_cpp <- function(n11, n10, n01, n00, delta_0) {
 compute_zhang_match_data_cpp <- function(w, m_vec, y, X) {
     .Call(`_EDI_compute_zhang_match_data_cpp`, w, m_vec, y, X)
 }
+

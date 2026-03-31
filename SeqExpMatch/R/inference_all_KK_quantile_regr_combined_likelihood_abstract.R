@@ -25,17 +25,16 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		#' @param des_obj A completed KK design object.
 		#' @param tau Target quantile level.
 		#' @param transform_y_fn Optional response transformation.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new inference object.
-		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			if (!requireNamespace("quantreg", quietly = TRUE)) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()

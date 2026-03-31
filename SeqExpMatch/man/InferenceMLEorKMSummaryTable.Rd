@@ -14,150 +14,72 @@ An abstract R6 Class that provides asymptotic tests and intervals for a
 treatment effect in a sequential design
 where the common denominator is a summary table from a glm.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceMLEorKMSummaryTable$compute_treatment_estimate`
-## ------------------------------------------------
-
-\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = InferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-
-}
 \keyword{internal}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \code{InferenceMLEorKMSummaryTable}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{InferenceMLEorKMSummaryTable}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceMLEorKMSummaryTable$compute_treatment_estimate()}
-\item \code{InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval()}
-\item \code{InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect()}
+\item \href{#method-InferenceMLEorKMSummaryTable-compute_treatment_estimate}{\code{InferenceMLEorKMSummaryTable$compute_treatment_estimate()}}
+\item \href{#method-InferenceMLEorKMSummaryTable-compute_asymp_confidence_interval}{\code{InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceMLEorKMSummaryTable-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceMLEorKMSummaryTable-clone}{\code{InferenceMLEorKMSummaryTable$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceKKPassThrough$initialize()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="initialize"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-initialize'><code>::InferenceKKPassThrough$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceMLEorKMSummaryTable-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceMLEorKMSummaryTable-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate estimate for mean difference
 \subsection{Usage}{
-\preformatted{InferenceMLEorKMSummaryTable$compute_treatment_estimate(estimate_only = FALSE)}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The setting-appropriate (see description) numeric estimate of the treatment effect
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-
-seq_des_inf = InferenceContinMultOLS$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
-}
-
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{InferenceMLEorKMSummaryTable$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceMLEorKMSummaryTable-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceMLEorKMSummaryTable-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a 1-alpha level frequentist confidence interval
 \subsection{Usage}{
-\preformatted{InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval(alpha = 0.05)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed
-confidence interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceMLEorKMSummaryTable-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceMLEorKMSummaryTable-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a 2-sided p-value
 \subsection{Usage}{
-\preformatted{InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For
-any treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The approximate frequentist p-value
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceMLEorKMSummaryTable-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceMLEorKMSummaryTable-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceMLEorKMSummaryTable$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceMLEorKMSummaryTable$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

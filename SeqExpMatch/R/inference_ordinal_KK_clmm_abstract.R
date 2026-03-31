@@ -9,14 +9,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("ordinal", quietly = TRUE)){
 				stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")

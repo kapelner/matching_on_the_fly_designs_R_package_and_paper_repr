@@ -16,7 +16,6 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag for verbosity.
 		#' @param lambda The penalty parameter for covariate imbalance.
 		#' @param t_0_pct The percentage of subjects to allocate before matching begins.
@@ -29,14 +28,14 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						num_cores = 1,
+						
 						verbose = FALSE,
 						lambda = NULL,
 						t_0_pct = NULL,
 						morrison = FALSE,
 						p = NULL
 					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$uses_covariates = TRUE
 			private$lambda = if (is.null(lambda)) 0.1 else lambda
 			private$t_0_pct = if (is.null(t_0_pct)) 0.35 else t_0_pct

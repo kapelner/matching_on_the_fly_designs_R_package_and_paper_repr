@@ -56,7 +56,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(r, positive = TRUE); assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			assertLogical(show_progress); show_progress = isTRUE(show_progress) && private$num_cores == 1
+			assertLogical(show_progress); show_progress = isTRUE(show_progress) && self$num_cores == 1
 
 			resp_type = private$des_obj_priv_int$response_type
 			if (resp_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
@@ -70,7 +70,15 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
 
-			is_glm = inherits(self, "InferenceMLEorKMforGLMs") || inherits(self, "InferenceAbstractKKGEE") || inherits(self, "InferenceAbstractKKGLMM")
+			is_glm = inherits(self, "InferenceMLEorKMforGLMs") || 
+			         inherits(self, "InferenceAbstractKKGEE") || 
+			         inherits(self, "InferenceAbstractKKGLMM") ||
+			         inherits(self, "InferenceKKPassThrough") ||
+			         inherits(self, "InferencePropUniFractionalLogit") ||
+			         inherits(self, "InferencePropZeroOneInflatedBetaAbstract") ||
+			         inherits(self, "InferencePropGCompAbstract") ||
+			         inherits(self, "InferenceCountZeroAugmentedPoissonAbstract") ||
+			         inherits(self, "InferenceCountHurdleNegBinAbstract")
 			temp_inf = if (resp_type %in% c("count", "proportion", "survival")) self$duplicate() else self
 			transform_arg = "none"
 			
@@ -108,20 +116,20 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			bisect_steps_estimate = 10L
 			# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
 			# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
-			fork_overhead_per_worker = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
-			cluster_create_overhead = if (isTRUE(private$make_fork_cluster) && is.null(private$fork_cluster)) 0.3 else 0.0
+			fork_overhead_per_worker = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
+			cluster_create_overhead = if (!is.null(get_global_fork_cluster()) && is.null(get_global_fork_cluster())) 0.3 else 0.0
 
 			# Only parallelize the two bounds if the total bisection cost is significant
 			# AND we have exactly 2 cores (or r is so small that inner-loop parallelization is useless).
 			# Otherwise, we let the inner loop (in compute_two_sided_pval_for_treatment_effect_rand)
 			# handle the parallelization.
-			use_parallel_bounds = private$num_cores == 2L &&
+			use_parallel_bounds = self$num_cores == 2L &&
 			                      (t_ci_warmup * bisect_steps_estimate * r > fork_overhead_per_worker * 2L + cluster_create_overhead)
 
 			if (use_parallel_bounds) {
 				ci = private$compute_ci_both_bounds_parallel(r, bounds$l, bounds$est, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, perms, inf_obj = temp_inf)
 			} else {
-				# Run bounds sequentially, inner loops will parallelize across private$num_cores
+				# Run bounds sequentially, inner loops will parallelize across self$num_cores
 				ci = c(
 					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, bounds$l, bounds$est, alpha / 2, pval_epsilon, transform_arg, TRUE, show_progress, perms),
 					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, FALSE, show_progress, perms)
@@ -262,7 +270,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			ci_width = mle_ci[2] - mle_ci[1]
 			lo_bound = mle_ci[1] - 0.5 * ci_width
 			hi_bound = mle_ci[2] + 0.5 * ci_width
-			if (private$num_cores > 1L) {
+			if (self$num_cores > 1L) {
 				private$compute_zhang_ci_bounds_parallel(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method)
 			} else {
 				p_fn = function(delta_0){
@@ -279,12 +287,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 		compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
 			bound_specs = list(list(inside = est, outside = lo_bound), list(inside = est, outside = hi_bound))
-			child_budget = max(1L, as.integer(floor(private$num_cores / 2)))
+			child_budget = max(1L, as.integer(floor(self$num_cores / 2)))
 			inf_template = self$duplicate()
 			results = parallel::mclapply(bound_specs, function(spec){
 				worker_inf = inf_template$duplicate()
-				worker_inf$.__enclos_env__$private$num_cores = child_budget
-				set_package_threads(child_budget)
+				worker_inf$.__enclos_env__$self$num_cores = child_budget
 				worker_private = worker_inf$.__enclos_env__$private
 				exact_stats = worker_private$get_exact_zhang_stats()
 				p_fn = function(delta_0){
@@ -293,7 +300,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 					zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
 				}
 				zhang_bisect_ci_boundary(p_fn, inside = spec$inside, outside = spec$outside, pval_th = alpha, tol = pval_epsilon)
-			}, mc.cores = min(2L, private$num_cores))
+			}, mc.cores = min(2L, self$num_cores))
 			c(results[[1]], results[[2]])
 		},
 
@@ -352,7 +359,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			for (key in model_cache_keys) {
 				inf_template$.__enclos_env__$private$cached_values[[key]] = src_cache[[key]]
 			}
-			n_cores_ci = min(2L, private$num_cores)
+			n_cores_ci = min(2L, self$num_cores)
 
 			# Helper to restore model cache on a freshly-duplicated worker object.
 			# duplicate() clears cached_values, so we re-populate model-fit entries
@@ -368,12 +375,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 			# Fork-cluster path: export inf_template once per worker to avoid serializing
 			# the (potentially large) R6 object on every task dispatch.
-			if (isTRUE(private$make_fork_cluster) && n_cores_ci > 1L) {
+			if (!is.null(get_global_fork_cluster()) && n_cores_ci > 1L) {
 				cl = private$get_or_create_fork_cluster()
 				results = parallel::parLapply(cl, bound_specs, function(spec) {
 					worker_inf = inf_template$duplicate()
-					worker_inf$.__enclos_env__$private$num_cores = 1L
-					try(set_package_threads(1L), silent = TRUE)
+					worker_inf$.__enclos_env__$self$num_cores = 1L
 					restore_model_cache(worker_inf)
 					worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
 						r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol,
@@ -382,8 +388,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				})
 			} else {
 				results = private$par_lapply(bound_specs, function(spec) {
-					worker_inf = inf_template$duplicate(); worker_inf$.__enclos_env__$private$num_cores = 1L
-					set_package_threads(1L)
+					worker_inf = inf_template$duplicate(); worker_inf$.__enclos_env__$self$num_cores = 1L
 					restore_model_cache(worker_inf)
 					worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol, transform_responses = transform_responses, lower = spec$lower, show_progress = FALSE, permutations = permutations)
 				}, n_cores = n_cores_ci)
@@ -432,12 +437,11 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @description
 		#' Initialize exact Zhang incidence inference.
 		#' @param des_obj A completed design object.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExactZhang} object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

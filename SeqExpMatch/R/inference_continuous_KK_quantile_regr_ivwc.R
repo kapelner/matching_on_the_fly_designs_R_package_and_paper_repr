@@ -49,7 +49,6 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' effect. Pass a different value (e.g. \code{tau = 0.25} or
 		#'                                                         \code{tau = 0.75}) to target the
 		#' corresponding percentile of the treatment effect distribution.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#'   The default is 1 for serial computation. For simple
@@ -76,9 +75,9 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' infer <- InferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, tau = 0.5, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, tau, identity, num_cores, verbose)
+			super$initialize(des_obj, tau, identity, verbose)
 			assertNoCensoring(private$any_censoring)
 		}
 

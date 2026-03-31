@@ -12,8 +12,7 @@ bisection_ci_single_bound_cpp(
   pval_th,
   tol,
   transform_responses,
-  lower,
-  num_cores = 1L
+  lowerL
 )
 }
 \description{

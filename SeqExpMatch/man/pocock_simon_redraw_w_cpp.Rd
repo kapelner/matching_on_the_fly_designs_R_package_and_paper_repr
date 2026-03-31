@@ -13,9 +13,8 @@ pocock_simon_redraw_w_cpp(
 )
 }
 \arguments{
-\item{x_levels_matrix}{A matrix where each row is a subject and each column is the row index in
-  counts for that
-covariate.}
+\item{x_levels_matrix}{A matrix where each row is a subject and each column
+is the row index in counts for that covariate.}
 
 \item{num_levels_total}{Total number of levels across all covariates.}
 

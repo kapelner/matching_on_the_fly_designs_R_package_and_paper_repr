@@ -72,91 +72,50 @@ infer
 
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \\code{EDI::InferenceKKPassThroughCompound}
--> \\code{EDI::InferenceAbstractQuantileRandCI}
--> \\code{EDI::InferenceAbstractKKQuantileRegrIVWC}
--> \code{InferencePropMultiKKQuantileRegrIVWC}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{::InferenceKKPassThroughCompound} -> \code{::InferenceAbstractQuantileRandCI} -> \code{::InferenceAbstractKKQuantileRegrIVWC} -> \code{InferencePropMultiKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferencePropMultiKKQuantileRegrIVWC$new()}
-\item \code{InferencePropMultiKKQuantileRegrIVWC$clone()}
+\item \href{#method-InferencePropMultiKKQuantileRegrIVWC-new}{\code{InferencePropMultiKKQuantileRegrIVWC$new()}}
+\item \href{#method-InferencePropMultiKKQuantileRegrIVWC-clone}{\code{InferencePropMultiKKQuantileRegrIVWC$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></li>
-<li>
-<code>EDI::InferenceAbstractKKQuantileRegrIVWC$
-compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
-</li>
-<li><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand'><code>::InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval'><code>::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_treatment_estimate"><a href='../..//html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_treatment_estimate'><code>::InferenceAbstractKKQuantileRegrIVWC$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropMultiKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrIVWC$new(
-  des_obj,
-  tau = 0.5,
-  num_cores = 1,
-  verbose = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrIVWC$new(des_obj, tau = 0.5, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{tau}}{The quantile level for regression on the logit
-scale, strictly between 0 and 1.
-                          The default \code{tau = 0.5} estimates the median log-odds-ratio treatment
-  effect.
-                          Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to
-  target a
-                          different percentile of the treatment effect distribution.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-                          and bootstrap resampling. The default is 1 for serial computation.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropMultiKKQuantileRegrIVWC-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropMultiKKQuantileRegrIVWC-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferencePropMultiKKQuantileRegrIVWC$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropMultiKKQuantileRegrIVWC$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

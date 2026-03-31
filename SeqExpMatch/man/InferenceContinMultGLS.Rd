@@ -32,183 +32,80 @@ This class requires the \pkg{nlme} package, which is listed in Suggests and is n
 installed automatically with \pkg{SeqExpMatch}.
 Install \pkg{nlme} before using this class.
 }
-\examples{
-
-## ------------------------------------------------
-## Method `InferenceContinMultGLS$new`
-## ------------------------------------------------
-
-set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceContinMultGLS$new(seq_des, verbose = FALSE)
-infer
-
-}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \code{InferenceContinMultGLS}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{InferenceContinMultGLS}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceContinMultGLS-new}{\code{InferenceContinMultGLS$new()}}
-\item \code{InferenceContinMultGLS$compute_treatment_estimate()}
-\item \code{InferenceContinMultGLS$compute_asymp_confidence_interval()}
-\item \code{InferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect()}
+\item \href{#method-InferenceContinMultGLS-compute_treatment_estimate}{\code{InferenceContinMultGLS$compute_treatment_estimate()}}
+\item \href{#method-InferenceContinMultGLS-compute_asymp_confidence_interval}{\code{InferenceContinMultGLS$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceContinMultGLS-clone}{\code{InferenceContinMultGLS$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultGLS-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultGLS-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a sequential experimental design estimation and test object
-after the sequential design is completed.
 \subsection{Usage}{
-\preformatted{InferenceContinMultGLS$new(des_obj, num_cores = 1, verbose = FALSE)}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
-are assigned and response y is recorded within.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{set.seed(1)
-x_dat <- data.frame(
-  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-)
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-FALSE)
-for (i in seq_len(nrow(x_dat))) {
-  seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-}
-seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-infer <- InferenceContinMultGLS$new(seq_des, verbose = FALSE)
-infer
-
-}
-\if{html}{\out{</div>}}
-
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultGLS-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultGLS-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
-Computes the appropriate GLS estimate
 \subsection{Usage}{
-\preformatted{InferenceContinMultGLS$compute_treatment_estimate(estimate_only = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The setting-appropriate numeric estimate of the treatment effect
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultGLS-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultGLS-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes a 1-alpha level frequentist confidence interval
-differently for all response types, estimate types, and
-test types.
 \subsection{Usage}{
-\preformatted{InferenceContinMultGLS$compute_asymp_confidence_interval(alpha = 0.05)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A (1 - alpha)-sized frequentist confidence interval for the treatment effect
-}
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultGLS-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
-Computes a 2-sided p-value
 \subsection{Usage}{
-\preformatted{InferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$compute_asymp_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null difference to test against. For any
-treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The approximate frequentist p-value
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinMultGLS-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinMultGLS-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceContinMultGLS$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultGLS$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

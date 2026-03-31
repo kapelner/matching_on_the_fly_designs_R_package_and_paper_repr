@@ -17,7 +17,6 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 		#' @param prob_T	The probability of the treatment assignment for each cluster.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_cores	The number of CPU cores.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignCluster` object
@@ -28,11 +27,11 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			assertCharacter(cluster_col, len = 1)
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$cluster_col = cluster_col
 			private$uses_covariates = TRUE
 		},

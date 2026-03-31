@@ -1,9 +1,14 @@
 
 # Set library path
+dir.create("local_R_lib", recursive = TRUE, showWarnings = FALSE)
 .libPaths(c("local_R_lib", .libPaths()))
 
-# Load necessary packages
-packages = c("EDI", "microbenchmark", "data.table", "dplyr", "PTE", "mlbench", "AppliedPredictiveModeling", "qgam")
+# Always benchmark the current source tree, not a stale installed EDI copy.
+install.packages("SeqExpMatch", repos = NULL, type = "source", lib = "local_R_lib")
+library(EDI)
+
+# Load remaining packages
+packages = c("microbenchmark", "data.table", "dplyr", "PTE", "mlbench", "AppliedPredictiveModeling", "qgam")
 for (p in packages) {
     if (!require(p, character.only = TRUE)) {
         install.packages(p, repos = "https://cloud.r-project.org/", lib = "local_R_lib")
@@ -179,7 +184,7 @@ for (response_type in names(categorized_classes)) {
         # Pre-screen with num_cores=1: skip if all operations time out (class too slow to benchmark)
         cat("    [pre-screen 1 core]: ")
         flush.console()
-        inf_obj_screen = tryCatch(inf_class$new(current_des_obj, num_cores = 1L, verbose = FALSE), error = function(e) NULL)
+        inf_obj_screen = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
         screen_times = list(
             boot = if (!is.null(inf_obj_screen))
                 bm_safe("boot", quote(inf_obj_screen$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
@@ -201,38 +206,32 @@ for (response_type in names(categorized_classes)) {
             cat(sprintf("    num_cores = %d: ", num_cores))
             flush.console()
             
-            # Use the new global cluster management if num_cores > 1
-            if (num_cores > 1) {
-                create_global_fork_cluster(num_cores)
-            } else {
-                # Ensure no global cluster exists for serial runs
-                # Using tryCatch to avoid warning if no cluster exists
-                tryCatch(stop_global_fork_cluster(), warning = function(w) NULL)
-            }
+            # Set the global number of cores
+            set_num_cores(num_cores)
             
             # 1. boot (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
                 bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
             w_original = current_des_obj$.__enclos_env__$private$w
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
             current_des_obj$.__enclos_env__$private$w = w_original
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
                 bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
             } else NA
             
             # 4. rand (New object)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
             } else NA
@@ -243,7 +242,7 @@ for (response_type in names(categorized_classes)) {
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)
-            inf_obj = tryCatch(inf_class$new(current_des_obj, num_cores = num_cores, verbose = FALSE), error = function(e) NULL)
+            inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             asymp_pval_time = if (!is.null(inf_obj)) {
                 bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
             } else NA
@@ -251,10 +250,8 @@ for (response_type in names(categorized_classes)) {
                 bm_safe("asymp_ci", quote(inf_obj$compute_asymp_confidence_interval()))
             } else NA
             
-            # Cleanup global cluster after this num_cores iteration
-            if (num_cores > 1) {
-                stop_global_fork_cluster()
-            }
+            # Unset cores
+            unset_num_cores()
 
             row = data.table(
                 num_cores = num_cores,

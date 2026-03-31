@@ -11,19 +11,29 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 	inherit = InferenceKKPassThrough,
 	public = list(
 
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj A completed KK design object.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 		},
 
+		#' @description
+		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @param estimate_only Whether to skip standard-error calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
+		#' @description
+		#' Computes an asymptotic confidence interval for the treatment effect.
+		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared_combined_likelihood(estimate_only = FALSE)
@@ -31,6 +41,9 @@ InferenceAbstractKKWeibullFrailtyCombinedLikelihood = R6::R6Class("InferenceAbst
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
+		#' @description
+		#' Returns a 2-sided p-value for H0: beta_T = delta.
+		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared_combined_likelihood(estimate_only = FALSE)

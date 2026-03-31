@@ -15,7 +15,6 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		#' @param prob_T The probability of treatment assignment. Must be \code{0.5}.
 		#' @param include_is_missing_as_a_new_feature Flag for missingness indicators.
 		#' @param n The sample size.
-		#' @param num_cores The number of CPU cores to use.
 		#' @param verbose A flag for verbosity.
 		#' @param max_designs The number of searched designs to retain.
 		#' @param objective The imbalance objective passed to \pkg{GreedyExperimentalDesign}.
@@ -28,7 +27,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n,
-				num_cores = 1,
+				
 				verbose = FALSE,
 				max_designs = 100,
 				objective = "mahal_dist",
@@ -40,7 +39,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			}
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
 
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 
 			private$max_designs = max_designs
 			private$objective = objective
@@ -78,7 +77,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				objective = private$objective,
 				wait = private$wait,
 				start = TRUE,
-				num_cores = private$num_cores,
+				num_cores = self$num_cores,
 				verbose = private$verbose
 			)
 

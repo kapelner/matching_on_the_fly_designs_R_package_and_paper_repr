@@ -39,11 +39,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# pays cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
 			# that can inflate the estimate 5–15× vs steady-state cost, causing the guard to
 			# wrongly choose parallel for small B values like r = 19.
-			actual_cores = private$num_cores
+			actual_cores = self$num_cores
 			if (actual_cores > 1L) {
 				do_warmup_iter = function() {
 					w_des = des_template$duplicate()
-					w_inf = inf_template$duplicate(); w_inf$.__enclos_env__$private$num_cores = 1L
+					w_inf = inf_template$duplicate(); w_inf$.__enclos_env__$self$num_cores = 1L
 					w_des$resample_design()
 					w_inf$.__enclos_env__$private$w = w_des$.__enclos_env__$private$w
 					w_inf$.__enclos_env__$private$y = w_des$.__enclos_env__$private$y
@@ -57,8 +57,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
 				# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
 				# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
-				fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
-				cluster_create_overhead = if (isTRUE(private$make_fork_cluster) && is.null(private$fork_cluster)) 0.3 else 0.0
+				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
+				cluster_create_overhead = if (!is.null(get_global_fork_cluster()) && is.null(get_global_fork_cluster())) 0.3 else 0.0
 				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores + cluster_create_overhead))
 					actual_cores = 1L
 			}
@@ -66,30 +66,30 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# Fork-cluster path: use parLapply with closure capture.
 			# (clusterExport + environment(fn)=globalenv() is broken: parLapply serializes
 			# a snapshot of master's globalenv, not the worker's live globalenv.)
-			if (isTRUE(private$make_fork_cluster) && actual_cores > 1L) {
-				cl = private$get_or_create_fork_cluster()
-				boot_distr = unlist(parallel::parLapply(cl, 1:B, function(idx) {
-					try(set_package_threads(1L), silent = TRUE)
-					worker_des = des_template$duplicate()
-					worker_inf = inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE)
-					worker_des$resample_design()
-					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
-					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-						if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
-						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
+				if (!is.null(get_global_fork_cluster()) && actual_cores > 1L) {
+					cl = private$get_or_create_fork_cluster()
+					boot_distr = unlist(parallel::parLapply(cl, 1:B, function(idx) {
+						worker_des = des_template$duplicate()
+						worker_inf = inf_template$duplicate()
+						worker_inf$.__enclos_env__$self$num_cores = 1L
+						worker_des$resample_design()
+						worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
+						worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+							if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+							worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 						worker_inf$.__enclos_env__$private$compute_basic_match_data()
 					}
 					tryCatch(worker_inf$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 				}))
-			} else {
-				boot_distr = unlist(private$par_lapply(1:B, function(idx) {
-					set_package_threads(1L)
-					worker_des = des_template$duplicate()
-					worker_inf = inf_template$duplicate(num_cores = 1L, make_fork_cluster = FALSE)
-					worker_des$resample_design()
-					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
-					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-						if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+				} else {
+					boot_distr = unlist(private$par_lapply(1:B, function(idx) {
+						worker_des = des_template$duplicate()
+						worker_inf = inf_template$duplicate()
+						worker_inf$.__enclos_env__$self$num_cores = 1L
+						worker_des$resample_design()
+						worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
+						worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+							if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
 						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 						worker_inf$.__enclos_env__$private$compute_basic_match_data()
 					}

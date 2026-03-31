@@ -46,6 +46,15 @@ InferenceIncidMultiKKGCompRiskDiff = R6::R6Class("InferenceIncidMultiKKGCompRisk
 	)
 )
 
+#' Multivariate G-Computation Risk-Ratio Inference for KK Designs with Binary Responses
+#'
+#' Fits an all-subject logistic working model for a KK incidence outcome using
+#' treatment and all recorded covariates, then estimates the marginal risk
+#' ratio by standardizing predicted risks under all-treated and all-control
+#' assignments over the empirical covariate distribution. Matched pairs are
+#' treated as clusters and reservoir subjects are treated as singletons when
+#' computing the sandwich covariance.
+#'
 #' @export
 InferenceIncidMultiKKGCompRiskRatio = R6::R6Class("InferenceIncidMultiKKGCompRiskRatio",
 	lock_objects = FALSE,

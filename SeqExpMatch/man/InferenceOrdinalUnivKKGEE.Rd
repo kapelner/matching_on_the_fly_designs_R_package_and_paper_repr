@@ -49,13 +49,7 @@ infer
 
 }
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceAbstractKKGEE}
--> \code{InferenceOrdinalUnivKKGEE}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceAbstractKKGEE} -> \code{InferenceOrdinalUnivKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -67,61 +61,38 @@ infer
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceAbstractKKGEE$compute_asymp_confidence_interval()</code></li>
-<li>
-<code>EDI::InferenceAbstractKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
-</li>
-<li><code>EDI::InferenceAbstractKKGEE$compute_treatment_estimate()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_confidence_interval'><code>::InferenceAbstractKKGEE$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_two_sided_pval_for_treatment_effect'><code>::InferenceAbstractKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKGEE" data-id="compute_treatment_estimate"><a href='../..//html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_treatment_estimate'><code>::InferenceAbstractKKGEE$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUnivKKGEE-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUnivKKGEE-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a univariate GEE inference object for a completed KK design
-with an ordinal response.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUnivKKGEE$new(des_obj, num_cores = 1, verbose = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKGEE$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-are assigned and whose ordinal response y is recorded.}
-
-\item{\code{num_cores}}{The number of CPU cores to use to parallelize
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
-
-\item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalUnivKKGEE-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalUnivKKGEE-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceOrdinalUnivKKGEE$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKGEE$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

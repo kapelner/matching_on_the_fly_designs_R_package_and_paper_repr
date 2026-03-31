@@ -31,11 +31,10 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		#' @description
 		#' Initialize the JT test object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object.
-		#' @param num_cores Number of CPU cores.
 		#' @param verbose Whether to print progress.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

@@ -8,12 +8,11 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		#' @description
 		#' Initialize exact Fisher inference for incidence outcomes.
 		#' @param des_obj A completed design object.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExactFisher} object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

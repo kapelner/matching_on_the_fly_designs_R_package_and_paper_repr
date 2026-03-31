@@ -18,7 +18,6 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 			#' @param prob_T Treatment assignment probability within each block.
 			#' @param include_is_missing_as_a_new_feature Whether to include missingness indicators.
 			#' @param n Planned sample size.
-			#' @param num_cores Number of CPU cores available to the design.
 			#' @param verbose Whether to print progress messages.
 			#' @return A new \code{FixedDesignOptimalBlocks} object.
 			initialize = function(
@@ -28,7 +27,7 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_cores = 1,
+				
 				verbose = FALSE
 			) {
 			assertCount(K, positive = TRUE)
@@ -39,7 +38,7 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				assertChoice(dist, c("euclidean", "sum_abs_diff", "mahal"))
 			}
 				assert_optimal_blocks_libraries_installed("FixedDesignOptimalBlocks")
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, num_cores, verbose)
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 				private$K = as.integer(K)
 				private$dist_spec = dist
 				private$uses_covariates = TRUE

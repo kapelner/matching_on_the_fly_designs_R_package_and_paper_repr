@@ -49,7 +49,6 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 		#' with an ordinal response.
 		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
 		#' 							are assigned and whose ordinal response y is recorded.
-		#' @param num_cores The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference and
 		#'   bootstrap resampling.
 		#'   The default is 1 for serial computation. For simple
@@ -60,8 +59,8 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 		#'   \code{parallel::mclapply}, which incurs
 		#'   session-forking overhead.
 		#' @param	verbose			Whether to print progress messages. Default is \code{FALSE}.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
+		initialize = function(des_obj,  verbose = FALSE){
+			super$initialize(des_obj, verbose)
 			
 			if (!requireNamespace("multgee", quietly = TRUE)){
 				stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")

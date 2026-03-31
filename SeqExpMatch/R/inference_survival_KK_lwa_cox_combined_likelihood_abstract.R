@@ -15,15 +15,14 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 		#' @description
 		#' Initialize LWA-style combined-likelihood Cox inference for KK survival data.
 		#' @param des_obj A completed KK design object.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new inference object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 		},
 
 		#' @description

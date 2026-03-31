@@ -18,25 +18,17 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' sequential design is completed.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
-		#' @param num_cores                       The number of CPU cores to use to parallelize
-		#'   the sampling during randomization-based inference
-		#' and bootstrap resampling. The default is 1 for serial computation. For simple
-		#' estimators (e.g. mean difference
-		#' and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
-		#' complex models (e.g. GLMs),
-		#' parallelization falls back to R's \code{parallel::mclapply} which incurs
-		#' session-forking overhead.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
 	#' @param convex_flag       A flag indicating whether the estimator should use a convex
 	#'   combination of the Bai et al
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#'
-	initialize = function(des_obj, num_cores = 1, verbose = TRUE, convex_flag = FALSE){
+	initialize = function(des_obj, verbose = TRUE, convex_flag = FALSE){
 		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
 		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
 		}
-		super$initialize(des_obj, num_cores, verbose)
+		super$initialize(des_obj, verbose)
 		private$convex_flag = convex_flag
 		assertNoCensoring(private$any_censoring)
 	},
@@ -204,8 +196,8 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		)
 		return(res)
 	},
-	duplicate = function(){
-		i = super$duplicate()
+	duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
+		i = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 		i
 	},
 	shared = function(estimate_only = FALSE){

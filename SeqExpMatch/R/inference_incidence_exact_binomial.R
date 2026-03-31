@@ -13,12 +13,11 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		#' @description
 		#' Initialize exact matched-pair binomial inference for incidence outcomes.
 		#' @param des_obj A completed design object.
-		#' @param num_cores Number of CPU cores to use.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidenceExactBinomial} object.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			if (!private$design_supports_exact_binomial()) {
 				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")

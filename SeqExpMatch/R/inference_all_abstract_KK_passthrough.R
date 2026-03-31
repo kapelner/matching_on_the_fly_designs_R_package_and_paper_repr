@@ -12,7 +12,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
-		#' @param num_cores                       The number of CPU cores to use to parallelize
 		#'   the sampling during randomization-based inference
 		#' and bootstrap resampling. The default is 1 for serial computation. For simple
 		#' estimators (e.g. mean difference
@@ -22,8 +21,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' session-forking overhead.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
-			super$initialize(des_obj, num_cores, verbose)
+		initialize = function(des_obj,  verbose = FALSE){
+			super$initialize(des_obj, verbose)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
 					if (is(des_obj, "FixedDesignBinaryMatch")){
@@ -95,7 +94,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				}
 
 				# Pure R KK bootstrap implementation
-				if (private$num_cores == 1) {
+				if (self$num_cores == 1) {
 					pb = NULL
 					if (private$verbose) {
 						pb = utils::txtProgressBar(min = 0, max = B, style = 3)
@@ -121,7 +120,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						i_b = c(i_reservoir_b, i_matched_b)
 						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
 						boot_inf_obj = self$duplicate()
-						boot_inf_obj$.__enclos_env__$private$num_cores = 1L
+						boot_inf_obj$.__enclos_env__$self$num_cores = 1L
 						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
@@ -138,7 +137,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					return(beta_hat_T_bs)
 				} else {
 					# Parallel bootstrap execution for KK designs
-					cores_to_use = private$num_cores
+					cores_to_use = self$num_cores
 
 					# Warm-up guard: run 1 iteration at 1 thread to estimate per-iteration cost.
 					# Fork overhead on large R sessions can be 0.1-1s; only parallelize if
@@ -159,7 +158,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						m_vec_b_w = c(rep(0, n_reservoir), m_vm_w)
 						t_warmup_kk = system.time({
 							boot_w = self$duplicate()
-							boot_w$.__enclos_env__$private$num_cores = 1L
+							boot_w$.__enclos_env__$self$num_cores = 1L
 							boot_w$.__enclos_env__$private$y = y[i_b_w]
 							boot_w$.__enclos_env__$private$dead = dead[i_b_w]
 							boot_w$.__enclos_env__$private$w = w[i_b_w]
@@ -171,7 +170,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
 							tryCatch(boot_w$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 						})[[3]]
-						fork_overhead_estimate = if (isTRUE(private$make_fork_cluster)) 0.01 else 0.5
+						fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
 						if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
 							cores_to_use = 1L
 					}
@@ -181,7 +180,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 
 					# Internal task for bootstrap execution
 					kk_task = function(b) {
-						try(set_package_threads(1L), silent = TRUE)
 						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 						if (m > 0) {
 							pairs_to_include = sample(seq_len(m), m, replace = TRUE)
@@ -198,7 +196,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						i_b = c(i_reservoir_b, i_matched_b)
 						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
 						boot_inf_obj = kk_template$duplicate()
-						boot_inf_obj$.__enclos_env__$private$num_cores = 1L
+						boot_inf_obj$.__enclos_env__$self$num_cores = 1L
 						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
@@ -212,13 +210,12 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						}, error = function(e) NA_real_)
 					}
 
-					if (isTRUE(private$make_fork_cluster) && cores_to_use > 1L) {
+					if (!is.null(get_global_fork_cluster()) && cores_to_use > 1L) {
 						cl = private$get_or_create_fork_cluster()
 						beta_hat_T_bs = unlist(parallel::parLapply(cl, 1:B, kk_task))
 					} else {
 						has_res_stat_local = has_res_stat
 						beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
-							set_package_threads(1L)
 							i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 							if (m > 0) {
 								pairs_to_include = sample(1:m, m, replace = TRUE)
@@ -235,7 +232,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							i_b = c(i_reservoir_b, i_matched_b)
 							m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
 							boot_inf_obj = kk_template$duplicate()
-							boot_inf_obj$.__enclos_env__$private$num_cores = 1L
+							boot_inf_obj$.__enclos_env__$self$num_cores = 1L
 							boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 							boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 							boot_inf_obj$.__enclos_env__$private$w = w[i_b]

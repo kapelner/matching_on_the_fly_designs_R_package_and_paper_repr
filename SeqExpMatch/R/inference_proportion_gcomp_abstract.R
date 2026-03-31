@@ -24,11 +24,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @description
 		#' Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
-		#' @param num_cores The number of CPU cores to use for bootstrap and randomization inference.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "proportion")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -92,7 +91,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			#' Draw sample
 			#' @param ... Other arguments passed to the method.
 			draw_sample = function(...){
-				set_package_threads(1L)
 				attempt = 1
 				repeat {
 					i_b = sample_int_replace_cpp(n, n)
@@ -106,10 +104,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				private$bootstrap_effect_from_sample(X_b, y_b)
 			}
 
-			if (private$num_cores == 1){
+			if (self$num_cores == 1){
 				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
 			} else {
-				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), n_cores = min(2L, private$num_cores)))
+				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), n_cores = min(2L, self$num_cores)))
 			}
 		}
 	),

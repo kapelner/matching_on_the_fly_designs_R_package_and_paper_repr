@@ -39,11 +39,10 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 		#' Initialize a stereotype probit inference object for a completed ordinal
 		#' sequential design.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
-		#' @param num_cores Number of CPU cores for bootstrap/randomization helpers.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

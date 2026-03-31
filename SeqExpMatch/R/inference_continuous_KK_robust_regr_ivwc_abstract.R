@@ -14,15 +14,14 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
-		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, method = "MM", num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, method = "MM",  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
 		},
@@ -60,8 +59,9 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' @description
 		#' Duplicate
 		#' @param verbose A flag indicating whether messages should be displayed.
-		duplicate = function(verbose = FALSE){
-			i = super$duplicate(verbose = verbose)
+		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
+		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
+			i = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			i
 		}
 	),

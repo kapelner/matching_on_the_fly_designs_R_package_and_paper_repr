@@ -40,7 +40,6 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' @description
 		#' Initialize the inference object.
 		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
 		#' @examples
 		#' set.seed(1)
@@ -57,9 +56,9 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' infer <- InferenceContinMultOLSKKCombinedLikelihood$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 		},
 

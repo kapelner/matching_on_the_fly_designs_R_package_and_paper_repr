@@ -16,46 +16,40 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 }
 \keyword{internal}
 \section{Super classes}{
-\\code{EDI::Inference}
--> \\code{EDI::InferenceRand}
--> \\code{EDI::InferenceRandCI}
--> \\code{EDI::InferenceBoot}
--> \\code{EDI::InferenceAsymp}
--> \\code{EDI::InferenceKKPassThrough}
--> \\code{EDI::InferenceKKPassThroughCompound}
--> \code{InferenceAbstractQuantileRandCI}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceBoot} -> \code{::InferenceAsymp} -> \code{::InferenceKKPassThrough} -> \code{::InferenceKKPassThroughCompound} -> \code{InferenceAbstractQuantileRandCI}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \code{InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()}
-\item \code{InferenceAbstractQuantileRandCI$clone()}
+\item \href{#method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand}{\code{InferenceAbstractQuantileRandCI$compute_confidence_interval_rand()}}
+\item \href{#method-InferenceAbstractQuantileRandCI-clone}{\code{InferenceAbstractQuantileRandCI$clone()}}
 }
 }
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><code>EDI::Inference$compute_exact_confidence_interval()</code></li>
-<li><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::Inference$duplicate()</code></li>
-<li><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></li>
-<li><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></li>
-<li><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></li>
-<li><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></li>
-<li><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></li>
-<li><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></li>
-<li><code>EDI::InferenceAsymp$compute_treatment_estimate()</code></li>
-<li><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></li>
-<li><code>EDI::InferenceKKPassThrough$initialize()</code></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../..//html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_treatment_estimate"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_treatment_estimate'><code>::InferenceAsymp$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThrough" data-id="initialize"><a href='../..//html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-initialize'><code>::InferenceKKPassThrough$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-compute_confidence_interval_rand}{}}}
 \subsection{Method \code{compute_confidence_interval_rand()}}{
-Computes a randomization-based confidence interval via Zhang's combined test.
 \subsection{Usage}{
-\preformatted{InferenceAbstractQuantileRandCI$compute_confidence_interval_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$compute_confidence_interval_rand(
   alpha = 0.05,
   r = 499,
   pval_epsilon = 0.005,
@@ -63,29 +57,14 @@ Computes a randomization-based confidence interval via Zhang's combined test.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The confidence level is 1 - \code{alpha}.}
-
-\item{\code{r}}{Number of random sign-flips / permutations.}
-
-\item{\code{pval_epsilon}}{Bisection convergence tolerance.}
-
-\item{\code{show_progress}}{Ignored.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A length-2 numeric vector giving the lower and upper CI boundary.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
-\preformatted{InferenceAbstractQuantileRandCI$clone(deep = FALSE)}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

@@ -22,14 +22,13 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param num_cores			Number of CPU cores for parallel processing.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, num_cores = 1, verbose = FALSE){
+		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "survival")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, num_cores, verbose)
+			super$initialize(des_obj, verbose)
 		},
 
 		#' @description
@@ -70,8 +69,9 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#' @description
 		#' Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
-		duplicate = function(verbose = FALSE){
-			inf_obj = super$duplicate(verbose = verbose)
+		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
+		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
+			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		},
 
