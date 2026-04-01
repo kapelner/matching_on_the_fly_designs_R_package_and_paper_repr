@@ -77,6 +77,10 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		},
+
 		build_lin_design_matrix = function(){
 			X = as.matrix(private$get_X())
 			p = ncol(X)

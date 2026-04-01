@@ -114,11 +114,12 @@ Computes a randomization-based confidence interval.
 \item{\code{ci_search_control}}{Optional control list for randomization-CI search. Supported
 entries are \code{fallback}, \code{seed}, \code{max_radius_se_mult},
 \code{max_radius_scale_mult}, \code{max_expansions}, \code{seed_boot_B},
-and Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
-\code{mc_min_draws}, and \code{mc_conf_level}. It also accepts
-midpoint-cache settings \code{pval_cache_enable} and \code{pval_cache_resolution}.
-Set \code{mc_enable = FALSE} to force full enumeration of all requested
-randomization draws.}
+Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
+\code{mc_min_draws}, and \code{mc_conf_level}, midpoint-cache settings
+\code{pval_cache_enable} and \code{pval_cache_resolution}, and model-fit
+reuse settings \code{fit_warm_start_enable} and
+\code{fit_reuse_factorizations}. Set \code{mc_enable = FALSE} to force
+full enumeration of all requested randomization draws.}
 }
 \if{html}{\out{</div>}}
 }

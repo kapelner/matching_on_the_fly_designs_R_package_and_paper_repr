@@ -103,6 +103,14 @@ skip_benchmark_step = function(label, inference_class, response_type, operation,
     NA_real_
 }
 
+is_expected_benchmark_error = function(msg) {
+    any(grepl(c(
+        "not supported",
+        "incomplete as all responses aren't recorded yet",
+        "requires Bernoulli or matching designs"
+    ), msg, ignore.case = TRUE))
+}
+
 namespace_content = readLines("SeqExpMatch/NAMESPACE")
 inf_classes = grep("^export\\(Inference", namespace_content, value = TRUE)
 inf_classes = gsub("export\\(|\\)", "", inf_classes)
@@ -181,6 +189,9 @@ bm_safe = function(label, expr, env = parent.frame(), num_cores_to_restore = NUL
             grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
             cat(sprintf(" (TIMEOUT >%.1fs) ", t_elapsed))
             Inf
+        } else if (is_expected_benchmark_error(e$message)) {
+            cat(sprintf(" (SKIP: %s) ", e$message))
+            NA
         } else {
             cat(sprintf(" (ERROR: %s) ", e$message))
             NA

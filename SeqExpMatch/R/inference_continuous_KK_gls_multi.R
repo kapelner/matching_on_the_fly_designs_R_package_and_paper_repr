@@ -116,70 +116,105 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 	),
 
 	private = list(
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+		fit_warm_rho = NULL,
 
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		},
+		fit_group_id_signature = NULL,
+		fit_group_id_cached = NULL,
 
-			full_X_matrix = private$create_design_matrix()
-			# Full matrix has Intercept, w, and covariates.
-			# Drop col 1 (manual intercept); gls/lm add their own.
-			X_model = full_X_matrix[, -1, drop = FALSE]
-			# Pin the treatment column name so coefficient lookup is unambiguous.
-			colnames(X_model)[1] = "w"
+		get_ci_fit_controls = function(){
+			ctrl = private$randomization_mc_control
+			list(
+				warm_start = !is.null(ctrl) && isTRUE(ctrl$fit_warm_start_enable),
+				reuse_factorizations = !is.null(ctrl) && isTRUE(ctrl$fit_reuse_factorizations)
+			)
+		},
 
-			dat = data.frame(y = private$y, X_model)
+		set_failed_fit_cache = function(){
+			private$cached_values$beta_hat_T = NA_real_
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$is_z = FALSE
+		},
 
-			m = max(m_vec)
-			if (m == 0L) {
-				# No matched pairs — degenerate GLS equals OLS, so run OLS directly.
-				mod_ols = lm(y ~ ., data = dat)
-				cs = coef(summary(mod_ols))
-				private$cached_values$beta_hat_T   = cs["w", "Estimate"]
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = cs["w", "Std. Error"]
-				private$cached_values$df            = mod_ols$df.residual
-				private$cached_values$is_z          = FALSE
-				return(invisible(NULL))
+		get_group_id = function(m_vec, reuse_factorizations = FALSE){
+			signature = paste(m_vec, collapse = ",")
+			if (reuse_factorizations && identical(signature, private$fit_group_id_signature) && !is.null(private$fit_group_id_cached)) {
+				return(private$fit_group_id_cached)
 			}
-
-			# Matched pairs share a group_id; reservoir subjects each get a unique one.
 			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L) {
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
 			}
-			dat$group_id = factor(group_id)
+			if (reuse_factorizations) {
+				private$fit_group_id_signature = signature
+				private$fit_group_id_cached = group_id
+			}
+			group_id
+		},
 
-			# Fit GLS with compound symmetry within matched pairs (REML for unbiased variance components).
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
+			fit_controls = private$get_ci_fit_controls()
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
+			full_X_matrix = private$create_design_matrix()
+			X_model = full_X_matrix[, -1, drop = FALSE]
+			colnames(X_model)[1] = "w"
+			dat = data.frame(y = private$y, X_model)
+
+			m = max(m_vec)
+			if (m == 0L) {
+				mod_ols = stats::lm(y ~ ., data = dat)
+				coef_vec = tryCatch(stats::coef(mod_ols), error = function(e) NULL)
+				beta = if (!is.null(coef_vec) && "w" %in% names(coef_vec)) as.numeric(coef_vec[["w"]]) else NA_real_
+				private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+				if (estimate_only) return(invisible(NULL))
+				cs = stats::coef(summary(mod_ols))
+				private$cached_values$s_beta_hat_T = cs["w", "Std. Error"]
+				private$cached_values$df = mod_ols$df.residual
+				private$cached_values$is_z = FALSE
+				return(invisible(NULL))
+			}
+
+			dat$group_id = factor(private$get_group_id(m_vec, reuse_factorizations = fit_controls$reuse_factorizations))
+			cor_struct = if (fit_controls$warm_start && estimate_only && is.finite(private$fit_warm_rho)) {
+				nlme::corCompSymm(value = max(min(private$fit_warm_rho, 0.95), -0.95), form = ~ 1 | group_id)
+			} else {
+				nlme::corCompSymm(form = ~ 1 | group_id)
+			}
+
 			mod = tryCatch({
 				nlme::gls(y ~ . - group_id, data = dat,
-					correlation = nlme::corCompSymm(form = ~ 1 | group_id),
+					correlation = cor_struct,
 					method = "REML")
 			}, error = function(e) NULL)
 
 			if (is.null(mod)) {
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$df            = NA_real_
-				private$cached_values$is_z          = FALSE
+				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			coef_table = summary(mod)$tTable
-			treat_idx  = which(rownames(coef_table) == "w")
-			if (length(treat_idx) == 0L) treat_idx = 2L
+			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
+			beta = if (!is.null(coef_vec) && "w" %in% names(coef_vec)) as.numeric(coef_vec[["w"]]) else NA_real_
+			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+			rho = tryCatch(as.numeric(stats::coef(mod$modelStruct$corStruct, unconstrained = FALSE)[1]), error = function(e) NA_real_)
+			if (is.finite(rho)) private$fit_warm_rho = rho
+			if (estimate_only) return(invisible(NULL))
 
-			private$cached_values$beta_hat_T   = coef_table[treat_idx, "Value"]
+			coef_table = summary(mod)$tTable
+			treat_idx = which(rownames(coef_table) == "w")
+			if (length(treat_idx) == 0L) treat_idx = 2L
 			private$cached_values$s_beta_hat_T = coef_table[treat_idx, "Std.Error"]
-			# Subtract 1 extra df for the estimated within-pair correlation rho.
-			# GLS uses REML to estimate rho and sigma^2; treating rho as known (df = N - p)
-			# slightly overstates precision, so we use N - p - 1 as a conservative correction.
-			private$cached_values$df            = mod$dims$N - mod$dims$p - 1L
-			private$cached_values$is_z          = FALSE
+			private$cached_values$df = mod$dims$N - mod$dims$p - 1L
+			private$cached_values$is_z = FALSE
 		}
 	)
 )

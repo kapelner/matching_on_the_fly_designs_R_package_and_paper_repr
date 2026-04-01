@@ -54,11 +54,12 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#' @param ci_search_control Optional control list for randomization-CI search. Supported
 		#'   entries are \code{fallback}, \code{seed}, \code{max_radius_se_mult},
 		#'   \code{max_radius_scale_mult}, \code{max_expansions}, \code{seed_boot_B},
-		#'   and Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
-		#'   \code{mc_min_draws}, and \code{mc_conf_level}. It also accepts
-		#'   midpoint-cache settings \code{pval_cache_enable} and \code{pval_cache_resolution}.
-		#'   Set \code{mc_enable = FALSE} to force full enumeration of all requested
-		#'   randomization draws.
+		#'   Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
+		#'   \code{mc_min_draws}, and \code{mc_conf_level}, midpoint-cache settings
+		#'   \code{pval_cache_enable} and \code{pval_cache_resolution}, and model-fit
+		#'   reuse settings \code{fit_warm_start_enable} and
+		#'   \code{fit_reuse_factorizations}. Set \code{mc_enable = FALSE} to force
+		#'   full enumeration of all requested randomization draws.
 		#' @return 	Randomization CI.
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL, ci_search_control = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
@@ -203,7 +204,9 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				mc_enable = as.integer(r) >= 200L,
 				mc_batch_size = default_mc_batch,
 				mc_min_draws = min(as.integer(r), max(100L, 2L * default_mc_batch)),
-				mc_conf_level = 0.99
+				mc_conf_level = 0.99,
+				fit_warm_start_enable = TRUE,
+				fit_reuse_factorizations = TRUE
 			)
 			assertList(ci_search_control, null.ok = TRUE)
 			ctrl = utils::modifyList(defaults, if (is.null(ci_search_control)) list() else ci_search_control)
@@ -219,6 +222,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			assertCount(as.integer(ctrl$mc_batch_size), positive = TRUE)
 			assertCount(as.integer(ctrl$mc_min_draws), positive = TRUE)
 			assertNumber(ctrl$mc_conf_level, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			assertFlag(ctrl$fit_warm_start_enable)
+			assertFlag(ctrl$fit_reuse_factorizations)
 			ctrl$max_expansions = as.integer(ctrl$max_expansions)
 			ctrl$seed_boot_B = as.integer(ctrl$seed_boot_B)
 			ctrl$pval_cache_resolution = as.numeric(ctrl$pval_cache_resolution)

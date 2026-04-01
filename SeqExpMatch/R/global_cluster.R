@@ -1,6 +1,35 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
 
+#' Get the default parallel dispatch policy
+#'
+#' Returns EDI's built-in blocklist-first dispatch policy. This is the policy
+#' used when the user has not installed a custom dispatch override.
+#'
+#' Do not expect a universal "more cores is faster" rule.
+#'
+#' @return A named list describing the built-in dispatch policy.
+#'
+#' @export
+get_parallel_dispatch_policy = function() {
+  list(
+    bootstrap = list(
+      serial_inference_class_patterns = c(
+        "^InferenceIncid",
+        "^InferenceSurvival(?!.*KK)",
+        "^InferenceAllKKWilcoxIVWC$"
+      ),
+      serial_response_types = c("incidence")
+    ),
+    rand_ci = list(
+      serial_inference_class_patterns = c("^InferenceIncid"),
+      serial_response_types = c("incidence")
+    )
+  )
+}
+
+edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
+
 #' Set the number of cores for parallelization
 #' 
 #' This function initializes a persistent parallel cluster (either a fork cluster
@@ -16,10 +45,13 @@ edi_env = new.env(parent = emptyenv())
 #' are forced to run serially, while the remaining workloads are allowed to use
 #' their method-specific warmup heuristics and native thread caps.
 #'
-#' The current forced-serial blocklist covers incidence randomization confidence
+#' The default forced-serial blocklist covers incidence randomization confidence
 #' intervals, bootstrap for non-regression KK Wilcoxon inference, bootstrap for
 #' non-KK survival procedures, and bootstrap for incidence procedures. Do not
 #' expect a universal "more cores is faster" rule.
+#'
+#' If you want to change the default policy, use
+#' \code{set_parallel_dispatch_policy()}.
 #' 
 #' @param num_cores Integer number of worker processes to make available.
 #' @param force_mirai If \code{TRUE}, forces the use of the \code{mirai} package
@@ -55,6 +87,72 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
     edi_env$global_fork_cluster = parallel::makeForkCluster(num_cores)
   }
   
+  invisible(NULL)
+}
+
+#' Update the parallel dispatch policy
+#'
+#' EDI uses an empirical, blocklist-first dispatch policy to decide when an
+#' inference routine should be forced serial even if multiple cores are
+#' available. This function lets the user update that default policy without
+#' editing package internals.
+#'
+#' @details
+#' The policy can be updated in two ways:
+#' \itemize{
+#'   \item Pass a named list to merge with the built-in default policy
+#'   configuration. Supported top-level keys are \code{bootstrap} and
+#'   \code{rand_ci}, and each key may contain
+#'   \code{serial_inference_class_patterns} and
+#'   \code{serial_response_types}.
+#'   \item Pass a custom function with signature
+#'   \code{function(inference_class, response_type, operation)} that returns a
+#'   list with at least \code{force_serial} and \code{reason}.
+#' }
+#'
+#' Use \code{reset = TRUE} to restore the built-in default policy. Do not expect
+#' a universal "more cores is faster" rule.
+#'
+#' @param policy Either \code{NULL}, a named list of policy overrides, or a
+#'   custom function. If \code{NULL} and \code{reset = FALSE}, the current
+#'   effective policy configuration is returned invisibly.
+#' @param reset If \code{TRUE}, restore the built-in default policy and remove
+#'   any custom function override.
+#'
+#' @return Invisible \code{NULL} or the current policy configuration.
+#'
+#' @export
+set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
+  checkmate::assertFlag(reset)
+
+  if (isTRUE(reset)) {
+    edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
+    edi_env$parallel_dispatch_policy_override = NULL
+    return(invisible(edi_env$parallel_dispatch_policy_config))
+  }
+
+  if (is.null(policy)) {
+    return(invisible(edi_env$parallel_dispatch_policy_config))
+  }
+
+  if (is.function(policy)) {
+    edi_env$parallel_dispatch_policy_override = policy
+    return(invisible(NULL))
+  }
+
+  checkmate::assertList(policy, names = "named")
+  current_config = edi_env$parallel_dispatch_policy_config
+  for (nm in names(policy)) {
+    if (!nm %in% names(current_config)) {
+      stop("Unknown policy section: ", nm, call. = FALSE)
+    }
+    if (!is.list(policy[[nm]])) {
+      stop("Policy section '", nm, "' must be a list.", call. = FALSE)
+    }
+    current_config[[nm]] = utils::modifyList(current_config[[nm]], policy[[nm]])
+  }
+  edi_env$parallel_dispatch_policy_config = current_config
+  edi_env$parallel_dispatch_policy_override = NULL
   invisible(NULL)
 }
 
@@ -114,29 +212,32 @@ get_num_cores = function() {
 # benchmark suite. Everything else remains eligible for the usual warmup-based
 # parallel heuristics. Do not expect a universal "more cores is faster" rule.
 edi_parallel_dispatch_policy = function(inference_class, response_type, operation) {
+  if (is.function(edi_env$parallel_dispatch_policy_override)) {
+    return(edi_env$parallel_dispatch_policy_override(inference_class, response_type, operation))
+  }
+
   inference_class = as.character(inference_class[[1]])
   response_type = as.character(response_type[[1]])
   operation = as.character(operation[[1]])
 
-  is_incid = grepl("^InferenceIncid", inference_class) ||
-    grepl("^InferenceIncidence", inference_class)
-  is_survival_nonkk = grepl("^InferenceSurvival", inference_class) &&
-    !grepl("KK", inference_class, fixed = TRUE)
-  is_nonregr_kk_wilcox = identical(inference_class, "InferenceAllKKWilcoxIVWC")
+  config = edi_env$parallel_dispatch_policy_config
+  matches_any = function(value, patterns) {
+    if (is.null(patterns) || length(patterns) == 0L) return(FALSE)
+    any(vapply(patterns, function(pattern) grepl(pattern, value, perl = TRUE), logical(1)))
+  }
 
   reason = NULL
-
   if (identical(operation, "bootstrap")) {
-    if (is_incid && identical(response_type, "incidence")) {
-      reason = "bootstrap for incidence inference is forced serial by benchmark policy"
-    } else if (is_survival_nonkk && identical(response_type, "survival")) {
-      reason = "bootstrap for non-KK survival inference is forced serial by benchmark policy"
-    } else if (is_nonregr_kk_wilcox) {
-      reason = "bootstrap for non-regression KK Wilcoxon inference is forced serial by benchmark policy"
+    op_cfg = config$bootstrap
+    if (matches_any(inference_class, op_cfg$serial_inference_class_patterns) ||
+        matches_any(response_type, op_cfg$serial_response_types)) {
+      reason = "bootstrap is forced serial by benchmark policy"
     }
   } else if (identical(operation, "rand_ci")) {
-    if (is_incid && identical(response_type, "incidence")) {
-      reason = "randomization confidence intervals for incidence inference are forced serial by benchmark policy"
+    op_cfg = config$rand_ci
+    if (matches_any(inference_class, op_cfg$serial_inference_class_patterns) ||
+        matches_any(response_type, op_cfg$serial_response_types)) {
+      reason = "randomization confidence intervals are forced serial by benchmark policy"
     }
   }
 

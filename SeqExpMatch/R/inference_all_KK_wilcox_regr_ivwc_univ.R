@@ -69,6 +69,10 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 
 	private = list(
 
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		},
+
 		include_covariates = function(){
 			FALSE
 		},

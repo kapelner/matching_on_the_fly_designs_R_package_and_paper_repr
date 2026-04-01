@@ -68,6 +68,11 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 
 	private = list(
 		rlm_method = NULL,
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			preserve = if (is.null(permutations$m_mat)) c("kk_robust_ivwc_matched_reduced_design", "kk_robust_ivwc_reservoir_reduced_design") else character()
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, preserve_cache_keys = preserve)
+		},
 		rlm_force_M = FALSE,
 
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),

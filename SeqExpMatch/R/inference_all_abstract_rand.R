@@ -191,6 +191,95 @@ InferenceRand = R6::R6Class("InferenceRand",
 			format(as.numeric(delta), scientific = TRUE, digits = 17)
 		},
 
+		build_fast_randomization_worker_cache = function(prev_cache = NULL, preserve_cache_keys = character()){
+			cache = list()
+			if (is.null(prev_cache)) {
+				cache$rand_distr_cache = list()
+				return(cache)
+			}
+			always_keep = c("permutations_cache", "m_cache", "t0s_rand", "custom_stat_analysis")
+			for (nm in unique(c(always_keep, preserve_cache_keys))) {
+				if (!is.null(prev_cache[[nm]])) cache[[nm]] = prev_cache[[nm]]
+			}
+			cache$rand_distr_cache = list()
+			cache
+		},
+
+		compute_fast_randomization_distr_via_reused_worker = function(y, permutations, delta, transform_responses, preserve_cache_keys = character()){
+			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
+			if (is.null(permutations)) return(NULL)
+
+			nsim = if (!is.null(permutations$w_mat)) ncol(permutations$w_mat) else length(permutations)
+			if (!isTRUE(nsim > 0L)) return(numeric(0))
+
+			get_perm_data = if (!is.null(permutations$w_mat)) {
+				w_mat = permutations$w_mat
+				m_mat = permutations$m_mat
+				function(i) {
+					list(
+						w = w_mat[, i],
+						m_vec = if (!is.null(m_mat)) m_mat[, i] else NULL
+					)
+				}
+			} else {
+				function(i) permutations[[i]]
+			}
+
+			actual_rand_cores = min(private$effective_parallel_cores("rand_pval", self$num_cores), nsim)
+			chunk_n = max(1L, min(as.integer(actual_rand_cores), nsim))
+			chunk_id = ceiling(seq_len(nsim) / ceiling(nsim / chunk_n))
+			chunks = split(seq_len(nsim), chunk_id)
+
+			run_chunk = function(idxs) {
+				worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+				worker$num_cores = 1L
+				w_priv = worker$.__enclos_env__$private
+				base_m = w_priv$m
+				base_cache = w_priv$cached_values
+				w_priv$y = as.numeric(y)
+				w_priv$y_temp = w_priv$y
+				if (!is.null(w_priv$des_obj_priv_int)) {
+					w_priv$des_obj_priv_int$y = w_priv$y
+				}
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) {
+					perm_data = get_perm_data(idxs[k])
+					w_priv$w = as.integer(perm_data$w)
+					w_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
+					if (!is.null(w_priv$des_obj_priv_int)) {
+						w_priv$des_obj_priv_int$w = w_priv$w
+						w_priv$des_obj_priv_int$m = w_priv$m
+						w_priv$des_obj_priv_int$y = w_priv$y
+					}
+					w_priv$cached_values = private$build_fast_randomization_worker_cache(
+						if (k == 1L) base_cache else w_priv$cached_values,
+						preserve_cache_keys = preserve_cache_keys
+					)
+					est = tryCatch(
+						w_priv$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
+						error = function(e) NA_real_
+					)
+					if (is.list(est) && "b" %in% names(est)) est = est$b[1]
+					out[k] = as.numeric(est)[1]
+				}
+				out
+			}
+
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_rand_cores,
+				budget = 1L,
+				show_progress = FALSE,
+				export_list = list(
+					permutations = permutations,
+					y = y,
+					transform_responses = transform_responses,
+					preserve_cache_keys = preserve_cache_keys
+				)
+			), use.names = FALSE))
+		},
+
 		compute_two_sided_randomization_pval_from_t0s = function(t0s, t){
 			na_t0s = !is.finite(t0s)
 			nsim_adj = sum(!na_t0s)

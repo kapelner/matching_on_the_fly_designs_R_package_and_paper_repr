@@ -64,6 +64,10 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		},
+
 		build_design_matrix_candidates = function(){
 			X_cov_orig = as.matrix(private$predictors_df())
 			if (ncol(X_cov_orig) == 0L){

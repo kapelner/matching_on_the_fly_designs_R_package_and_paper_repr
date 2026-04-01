@@ -62,6 +62,10 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 		),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")

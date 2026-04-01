@@ -81,9 +81,15 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 
 	private = list(
 		rlm_method = NULL,
+		fit_warm_coefficients = NULL,
+		fit_warm_keep = NULL,
 
 		build_design_matrix = function(){
 			cbind(1, private$w)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
 		},
 
 		set_failed_fit_cache = function(){
@@ -93,57 +99,113 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			private$cached_values$df = NA_real_
 		},
 
+		get_ci_fit_controls = function(){
+			ctrl = private$randomization_mc_control
+			list(
+				warm_start = !is.null(ctrl) && isTRUE(ctrl$fit_warm_start_enable),
+				reuse_factorizations = !is.null(ctrl) && isTRUE(ctrl$fit_reuse_factorizations)
+			)
+		},
+
+		reduce_design_matrix_for_rlm = function(X_full, reuse_factorizations = FALSE){
+			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
+			if (ncol(X_full) < 2L) return(list(X = NULL, j_treat = NA_integer_))
+
+			if (reuse_factorizations && !is.null(private$fit_warm_keep) && length(private$fit_warm_keep) > 0L &&
+				max(private$fit_warm_keep) <= ncol(X_full) && 2L %in% private$fit_warm_keep) {
+				X_try = X_full[, private$fit_warm_keep, drop = FALSE]
+				j_try = match(2L, private$fit_warm_keep)
+				if (!is.na(j_try) && nrow(X_try) > ncol(X_try) && qr(X_try)$rank == ncol(X_try)) {
+					return(list(X = X_try, j_treat = j_try))
+				}
+			}
+
+			qr_X = qr(X_full)
+			keep = qr_X$pivot[seq_len(qr_X$rank)]
+			if (!(2L %in% keep)) keep[qr_X$rank] = 2L
+			keep = sort(unique(keep))
+			if (reuse_factorizations) private$fit_warm_keep = keep
+			list(X = X_full[, keep, drop = FALSE], j_treat = match(2L, keep))
+		},
+
+		fit_rlm_model = function(X, y, warm_start = FALSE){
+			make_fit_args = function(method, init = NULL){
+				args = list(x = X, y = y, method = method)
+				if (identical(method, "M")) args$psi = MASS::psi.huber
+				if (!is.null(init)) args$init = init
+				args
+			}
+
+			run_rlm = function(method, init = NULL){
+				fit = tryCatch(do.call(MASS::rlm, make_fit_args(method, init)), error = function(e) e)
+				if (inherits(fit, "error") && !is.null(init)) {
+					fit = tryCatch(do.call(MASS::rlm, make_fit_args(method, NULL)), error = function(e) e)
+				}
+				fit
+			}
+
+			start_coef = NULL
+			if (warm_start && !is.null(private$fit_warm_coefficients) && length(private$fit_warm_coefficients) == ncol(X)) {
+				start_coef = unname(private$fit_warm_coefficients)
+			}
+
+			method_to_try = private$rlm_method
+			mod = run_rlm(method_to_try, start_coef)
+			if (inherits(mod, "error") && identical(method_to_try, "MM")) {
+				msg = if (length(mod$message) == 0L) "" else mod$message
+				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
+					mod = run_rlm("M", start_coef)
+				}
+			}
+			if (inherits(mod, "error") || is.null(mod)) return(NULL)
+
+			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
+			if (!is.null(coef_vec) && length(coef_vec) == ncol(X)) {
+				private$fit_warm_coefficients = unname(coef_vec)
+			}
+			mod
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
+			fit_controls = private$get_ci_fit_controls()
 			X_full = private$build_design_matrix()
-			if (is.null(dim(X_full))) {
-				X_full = matrix(X_full, ncol = 2L)
-			}
-			if (ncol(X_full) < 2L) {
+			reduced = private$reduce_design_matrix_for_rlm(X_full, reuse_factorizations = fit_controls$reuse_factorizations)
+			X = reduced$X
+			j_treat = reduced$j_treat
+			if (is.null(X) || !is.finite(j_treat)) {
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) colnames(private$get_X()) else NULL)
-			qr_X = qr(X_full)
-			keep = qr_X$pivot[seq_len(qr_X$rank)]
-			if (!(2L %in% keep)) {
-				keep[qr_X$rank] = 2L
-			}
-			keep = sort(unique(keep))
-			X = X_full[, keep, drop = FALSE]
-
+			coef_names = c("(Intercept)", "treatment", if (ncol(X) > 2L) paste0("x", seq_len(ncol(X) - 2L)) else NULL)
+			colnames(X) = coef_names
 			df = nrow(X) - ncol(X)
 			if (df <= 0L) {
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			mod = tryCatch({
-				if (identical(private$rlm_method, "M")) {
-					MASS::rlm(x = X, y = private$y, method = "M", psi = MASS::psi.huber)
-				} else {
-					MASS::rlm(x = X, y = private$y, method = private$rlm_method)
-				}
-			}, error = function(e) NULL)
-
+			mod = private$fit_rlm_model(X, private$y, warm_start = fit_controls$warm_start && estimate_only)
 			if (is.null(mod)) {
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
+
+			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
+			beta = if (!is.null(coef_vec) && length(coef_vec) >= j_treat) as.numeric(coef_vec[j_treat]) else NA_real_
+			private$cached_values$full_coefficients = coef_vec
+			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+			if (estimate_only) return(invisible(NULL))
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if (is.null(coef_table) || !("treatment" %in% rownames(coef_table))) {
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-			beta = as.numeric(coef_table["treatment", "Value"])
 			se = as.numeric(coef_table["treatment", "Std. Error"])
-			private$cached_values$full_coefficients = stats::coef(mod)
 			private$cached_values$full_vcov = tryCatch(
 				stats::vcov(mod),
 				error = function(e) {
@@ -152,9 +214,6 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 					mat
 				}
 			)
-
-			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 			private$cached_values$is_z = FALSE
 			private$cached_values$df = df

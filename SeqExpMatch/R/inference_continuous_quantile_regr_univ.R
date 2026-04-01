@@ -80,9 +80,14 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 
 	private = list(
 		tau = NULL,
+		fit_warm_keep = NULL,
 
 		build_design_matrix = function(){
 			cbind(1, private$w)
+		},
+
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
 		},
 
 		set_failed_fit_cache = function(){
@@ -92,18 +97,66 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 			private$cached_values$df = NA_real_
 		},
 
+		get_ci_fit_controls = function(){
+			ctrl = private$randomization_mc_control
+			list(
+				warm_start = !is.null(ctrl) && isTRUE(ctrl$fit_warm_start_enable),
+				reuse_factorizations = !is.null(ctrl) && isTRUE(ctrl$fit_reuse_factorizations)
+			)
+		},
+
+		reduce_design_matrix_for_quantile = function(X_full, reuse_factorizations = FALSE){
+			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
+			if (ncol(X_full) < 2L) return(list(X = NULL, j_treat = NA_integer_))
+
+			if (reuse_factorizations && !is.null(private$fit_warm_keep) && length(private$fit_warm_keep) > 0L &&
+				max(private$fit_warm_keep) <= ncol(X_full) && 2L %in% private$fit_warm_keep) {
+				X_try = X_full[, private$fit_warm_keep, drop = FALSE]
+				j_try = match(2L, private$fit_warm_keep)
+				if (!is.na(j_try) && nrow(X_try) > ncol(X_try) && qr(X_try)$rank == ncol(X_try)) {
+					return(list(X = X_try, j_treat = j_try))
+				}
+			}
+
+			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			if (reuse_factorizations && !is.null(reduced$X) && is.finite(reduced$j_treat)) {
+				qr_X = qr(X_full)
+				keep = qr_X$pivot[seq_len(qr_X$rank)]
+				if (!(2L %in% keep)) keep[qr_X$rank] = 2L
+				private$fit_warm_keep = sort(unique(keep))
+			}
+			reduced
+		},
+
+		fit_quantile_model = function(X_fit, estimate_only = FALSE){
+			if (estimate_only) {
+				fit = tryCatch(
+					suppressWarnings(getFromNamespace("rq.fit", "quantreg")(x = X_fit, y = private$y, tau = private$tau, method = "br")),
+					error = function(e) NULL
+				)
+				if (is.null(fit) || is.null(fit$coefficients)) return(NULL)
+				coef_vec = as.numeric(fit$coefficients)
+				if (length(coef_vec) != ncol(X_fit)) return(NULL)
+				names(coef_vec) = colnames(X_fit)
+				fit$coefficients = coef_vec
+				return(fit)
+			}
+
+			dat = as.data.frame(X_fit)
+			dat$y__ = private$y
+			tryCatch(
+				suppressWarnings(quantreg::rq(y__ ~ . - 1, tau = private$tau, data = dat)),
+				error = function(e) NULL
+			)
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
+			fit_controls = private$get_ci_fit_controls()
 			X_full = private$build_design_matrix()
-			if (is.null(dim(X_full))){
-				X_full = matrix(X_full, ncol = 2L)
-			}
-
-			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			reduced = private$reduce_design_matrix_for_quantile(X_full, reuse_factorizations = fit_controls$reuse_factorizations)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 
@@ -114,29 +167,26 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 
 			coef_names = c("(Intercept)", "treatment", if (ncol(X_fit) > 2L) paste0("x", seq_len(ncol(X_fit) - 2L)) else NULL)
 			colnames(X_fit) = coef_names
-			dat = as.data.frame(X_fit)
-			dat$y__ = private$y
-
-			fit = tryCatch(
-				suppressWarnings(quantreg::rq(y__ ~ . - 1, tau = private$tau, data = dat)),
-				error = function(e) NULL
-			)
+			fit = private$fit_quantile_model(X_fit, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			beta = tryCatch(as.numeric(coef(fit)[["treatment"]]), error = function(e) NA_real_)
-			se = .extract_se_from_rq_fit(fit, "treatment")
-
-			full_coef = tryCatch(as.numeric(coef(fit)), error = function(e) NULL)
-			if (!is.null(full_coef) && length(full_coef) == length(coef_names)){
-				names(full_coef) = coef_names
-				private$cached_values$full_coefficients = full_coef
+			coef_vec = tryCatch(
+				if (estimate_only) as.numeric(fit$coefficients) else as.numeric(stats::coef(fit)),
+				error = function(e) NULL
+			)
+			if (!is.null(coef_vec) && length(coef_vec) == length(coef_names)){
+				names(coef_vec) = coef_names
+				private$cached_values$full_coefficients = coef_vec
 			}
 
+			beta = if (!is.null(coef_vec) && length(coef_vec) >= j_treat) as.numeric(coef_vec[j_treat]) else NA_real_
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
 			if (estimate_only) return(invisible(NULL))
+
+			se = .extract_se_from_rq_fit(fit, "treatment")
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
