@@ -72,9 +72,10 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			is_z = private$cached_values$is_z
 			df = private$cached_values$df
 			
-			if (is.na(beta_hat_T) || is.na(s_beta_hat_T)) return(c(NA_real_, NA_real_))
+			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(c(NA_real_, NA_real_))
+			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(c(NA_real_, NA_real_))
 			
-			mult = if (is_z) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
+			mult = if (isTRUE(is_z) || !is.finite(df)) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
 			ci = c(beta_hat_T - mult * s_beta_hat_T, beta_hat_T + mult * s_beta_hat_T)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
@@ -86,10 +87,11 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			is_z = private$cached_values$is_z
 			df = private$cached_values$df
 			
-			if (is.na(beta_hat_T) || is.na(s_beta_hat_T)) return(NA_real_)
+			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(NA_real_)
+			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(NA_real_)
 			
 			val = (beta_hat_T - delta) / s_beta_hat_T
-			if (is_z) 2 * stats::pnorm(-abs(val)) else 2 * stats::pt(-abs(val), df = df)
+			if (isTRUE(is_z) || !is.finite(df)) 2 * stats::pnorm(-abs(val)) else 2 * stats::pt(-abs(val), df = df)
 		}
 	)
 )

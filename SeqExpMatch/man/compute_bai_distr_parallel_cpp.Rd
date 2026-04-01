@@ -26,6 +26,8 @@ compute_bai_distr_parallel_cpp(
 \item{halves_idx}{Integer matrix of half-sample indices.}
 
 \item{convex_flag}{Logical flag for convex combination.}
+
+\item{num_cores}{Number of OpenMP threads.}
 }
 \value{
 Numeric vector of Bai adjusted T statistics.

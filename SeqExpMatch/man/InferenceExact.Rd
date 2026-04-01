@@ -9,7 +9,7 @@ Thin interface for exact inference methods.
 }
 \keyword{internal}
 \section{Super class}{
-\code{::Inference} -> \code{InferenceExact}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceExact}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -22,9 +22,9 @@ Thin interface for exact inference methods.
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../..//html/Inference.html#method-Inference-compute_treatment_estimate'><code>::Inference$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -32,6 +32,7 @@ Thin interface for exact inference methods.
 \if{html}{\out{<a id="method-InferenceExact-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
+Computes an exact confidence interval for the requested exact method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceExact$compute_exact_confidence_interval(
   alpha = 0.05,
@@ -41,11 +42,25 @@ Thin interface for exact inference methods.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+
+\item{\code{pval_epsilon}}{Reserved for future exact methods that invert p-values.}
+
+\item{\code{type}}{Exact inference type. Concrete subclasses provide a default.}
+
+\item{\code{args_for_type}}{Structured per-type arguments as a list.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
+Computes an exact two-sided p-value for the requested exact method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceExact$compute_exact_two_sided_pval_for_treatment_effect(
   delta = 0,
@@ -54,6 +69,17 @@ Thin interface for exact inference methods.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect on the log-odds-ratio scale.}
+
+\item{\code{type}}{Exact inference type. Concrete subclasses provide a default.}
+
+\item{\code{args_for_type}}{Structured per-type arguments as a list.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceExact-clone"></a>}}

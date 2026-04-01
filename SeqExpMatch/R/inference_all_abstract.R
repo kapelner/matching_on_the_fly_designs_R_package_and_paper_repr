@@ -14,6 +14,7 @@ Inference = R6::R6Class("Inference",
 		#' Initialize an estimation and test object after the design is completed.
 		#' @param des_obj         A completed \code{Design} object whose entire n subjects are
 		#'   assigned and response y is recorded within.
+		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj, verbose = FALSE){
 			assertClass(des_obj, "Design")
 
@@ -147,13 +148,34 @@ Inference = R6::R6Class("Inference",
 			min(self$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
 		},
 
+		parallel_dispatch_policy = function(operation) {
+			edi_parallel_dispatch_policy(
+				inference_class = class(self)[1],
+				response_type = private$des_obj$get_response_type(),
+				operation = operation
+			)
+		},
+
+		effective_parallel_cores = function(operation, requested_cores = self$num_cores) {
+			requested_cores = max(1L, as.integer(requested_cores))
+			policy = private$parallel_dispatch_policy(operation)
+			if (requested_cores > 1L && isTRUE(policy$force_serial)) {
+				return(1L)
+			}
+			requested_cores
+		},
+
 			par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){
 				if (length(X) == 0L) return(list())
 				n_cores = max(1L, min(as.integer(n_cores), length(X)))
 				budget = max(1L, as.integer(budget))
+				chunk_count = min(length(X), max(1L, 4L * n_cores))
+				chunk_size = max(1L, ceiling(length(X) / chunk_count))
+				chunks = split(X, ceiling(seq_along(X) / chunk_size))
 
-				# Wrap FUN to ensure worker budget is respected
-				BUDGET_FUN = function(x) {
+				# Run a whole chunk under the requested worker budget so we do not
+				# pay scheduler/export overhead once per iteration.
+				RUN_CHUNK = function(chunk) {
 					ns = asNamespace("EDI")
 					edi_env = ns$edi_env
 					prev_override = edi_env$num_cores_override
@@ -167,9 +189,15 @@ Inference = R6::R6Class("Inference",
 						edi_env$num_cores_override = prev_override
 						ns$set_package_threads(prev_threads)
 					}, add = TRUE)
-					FUN(x)
+					lapply(chunk, FUN)
 				}
-				if (n_cores <= 1L) return(lapply(X, BUDGET_FUN))
+
+				flatten_chunk_results = function(results) {
+					if (length(results) == 0L) return(list())
+					unlist(results, recursive = FALSE, use.names = FALSE)
+				}
+
+				if (n_cores <= 1L) return(RUN_CHUNK(X))
 
 				global_cl = get_global_fork_cluster()
 				global_mirai_cores = get_global_mirai_cores()
@@ -181,43 +209,43 @@ Inference = R6::R6Class("Inference",
 							export_env = list2env(export_list, parent = emptyenv())
 							parallel::clusterExport(worker_cl, names(export_list), envir = export_env)
 						}
-						parallel::parLapply(worker_cl, X, BUDGET_FUN)
+						flatten_chunk_results(parallel::parLapply(worker_cl, chunks, RUN_CHUNK))
 					}, error = function(e) {
 					# If the persistent cluster has been killed externally (for example by a
 					# timeout watchdog), clear it and fall back to a one-shot Unix fork apply.
 					# This prevents stale socket connections from poisoning subsequent calls.
 					msg = conditionMessage(e)
-					if (.Platform$OS.type == "unix" &&
-						grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
-						edi_env$global_fork_cluster = NULL
-						try(parallel::stopCluster(global_cl), silent = TRUE)
-						if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) {
-							return(pbmcapply::pbmclapply(X, BUDGET_FUN, mc.cores = n_cores))
+						if (.Platform$OS.type == "unix" &&
+							grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
+							edi_env$global_fork_cluster = NULL
+							try(parallel::stopCluster(global_cl), silent = TRUE)
+							if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) {
+								return(flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
+							}
+							return(flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
 						}
-						return(parallel::mclapply(X, BUDGET_FUN, mc.cores = n_cores))
-					}
-						stop(e)
+							stop(e)
 					})
 				} else if (!is.null(global_mirai_cores)){
 					requested_mirai_cores = min(n_cores, global_mirai_cores)
 					private$ensure_mirai_daemons(requested_mirai_cores)
 					on.exit(private$ensure_mirai_daemons(global_mirai_cores), add = TRUE)
-					tasks = lapply(X, function(x) mirai::mirai({BUDGET_FUN(x)}, BUDGET_FUN = BUDGET_FUN, FUN = FUN, x = x, budget = budget))
-					lapply(tasks, function(m) m[])
+					tasks = lapply(chunks, function(chunk) mirai::mirai({RUN_CHUNK(chunk)}, RUN_CHUNK = RUN_CHUNK, chunk = chunk))
+					flatten_chunk_results(lapply(tasks, function(m) m[]))
 				} else if (.Platform$OS.type != "unix"){
 					if (!isTRUE(private$warned_no_parallel)){
 						message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
 						private$warned_no_parallel = TRUE
 					}
-					lapply(X, BUDGET_FUN)
+					RUN_CHUNK(X)
 				} else {
-				if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
-					pbmcapply::pbmclapply(X, BUDGET_FUN, mc.cores = n_cores)
-				} else {
-					parallel::mclapply(X, BUDGET_FUN, mc.cores = n_cores)
+					if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
+						flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
+					} else {
+						flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
+					}
 				}
-			}
-		},
+			},
 
 
 		ensure_mirai_daemons = function(n){

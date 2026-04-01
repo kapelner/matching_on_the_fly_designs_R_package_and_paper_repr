@@ -63,8 +63,13 @@ is_row_completed = function(rep_val, beta_val, dataset_val, response_val, design
 }
 
 if (nrow(existing_results_dt) > 0L) {
-	for (row_idx in seq_len(nrow(existing_results_dt))) {
-		row = existing_results_dt[row_idx]
+	rows_to_cache = if ("status" %in% colnames(existing_results_dt)) {
+		existing_results_dt[status == "ok"]
+	} else {
+		existing_results_dt
+	}
+	for (row_idx in seq_len(nrow(rows_to_cache))) {
+		row = rows_to_cache[row_idx]
 		mark_row_completed(
 			row$rep,
 			row$beta_T,
@@ -172,7 +177,9 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 			error_message = ifelse(is.null(error_message), NA_character_, as.character(error_message))
 		)
 	), use.names = TRUE)
-	mark_row_completed(rep_curr, beta_T, dataset_name, response_type, design_type, inference_class, function_run)
+	if (identical(status, "ok")) {
+		mark_row_completed(rep_curr, beta_T, dataset_name, response_type, design_type, inference_class, function_run)
+	}
 	write_results_if_needed(force = TRUE)
 }
 
@@ -182,7 +189,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
 	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff")
-	skip_ci_rand   = is(seq_des_inf, "InferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "InferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff")
+	skip_ci_rand   = is(seq_des_inf, "InferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "InferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
 	skip_ci_rand_custom = FALSE
 	
 	skip_ci = beta_T == 1 && (
@@ -325,7 +332,8 @@ safe_call = function(label, expr){
 		return(invisible(NULL))
 	}
 
-	if (response_type == "incidence"){
+	supports_exact_inference = is(seq_des_inf, "InferenceExact") || is(seq_des_inf, "InferenceIncidExactZhang")
+	if (response_type == "incidence" && supports_exact_inference){
 		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
 		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = pval_epsilon))))
 	}

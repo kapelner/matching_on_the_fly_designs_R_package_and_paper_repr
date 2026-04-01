@@ -91,7 +91,8 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' @param r Unused.
 		#' @param pval_epsilon Unused.
 		#' @param show_progress Unused.
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
+		#' @param ci_search_control Unused.
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalLogRank due to inconsistent estimator units on the log-rank score scale.")
 		}
 	),

@@ -160,8 +160,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' @param	r		The number of randomization vectors. The default is 501.
 		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
 		#' @param	show_progress		Show a text progress indicator.
+		#' @param ci_search_control Unused.
 		#' @return	A 1 - alpha sized frequentist confidence interval
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalKMDiff due to inconsistent estimator units on the transformed scale.")
 		}
 	),

@@ -51,12 +51,37 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#' @param show_progress		Show progress.
 		#' @param type Optional incidence-specific exact randomization type.
 		#' @param args_for_type Optional arguments keyed by \code{type}.
+		#' @param ci_search_control Optional control list for randomization-CI search. Supported
+		#'   entries are \code{fallback}, \code{seed}, \code{max_radius_se_mult},
+		#'   \code{max_radius_scale_mult}, \code{max_expansions}, \code{seed_boot_B},
+		#'   and Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
+		#'   \code{mc_min_draws}, and \code{mc_conf_level}. It also accepts
+		#'   midpoint-cache settings \code{pval_cache_enable} and \code{pval_cache_resolution}.
+		#'   Set \code{mc_enable = FALSE} to force full enumeration of all requested
+		#'   randomization draws.
 		#' @return 	Randomization CI.
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL, ci_search_control = NULL){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(r, positive = TRUE); assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
 			assertLogical(show_progress); show_progress = isTRUE(show_progress) && self$num_cores == 1
+			ci_search_control = private$normalize_randomization_ci_search_control(ci_search_control, r, pval_epsilon)
+			ci_search_control$mc_stop_threshold = alpha / 2
+
+			dispatch_cores = private$effective_parallel_cores("rand_ci", self$num_cores)
+			if (dispatch_cores != self$num_cores) {
+				serial_inf = self$duplicate(verbose = private$verbose)
+				serial_inf$num_cores = dispatch_cores
+				return(serial_inf$compute_confidence_interval_rand(
+					alpha = alpha,
+					r = r,
+					pval_epsilon = pval_epsilon,
+					show_progress = show_progress,
+					type = type,
+					args_for_type = args_for_type,
+					ci_search_control = ci_search_control
+				))
+			}
 
 			resp_type = private$des_obj_priv_int$response_type
 			if (resp_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
@@ -94,20 +119,38 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				if (!is_glm) temp_inf$.__enclos_env__$private$y = log(pmax(.Machine$double.eps, temp_inf$.__enclos_env__$private$y))
 			}
 			if (resp_type %in% c("count", "proportion", "survival")) temp_inf$.__enclos_env__$private$cached_values = list()
+			old_mc_control = temp_inf$.__enclos_env__$private$randomization_mc_control
+			temp_inf$.__enclos_env__$private$randomization_mc_control = ci_search_control
+			on.exit({ temp_inf$.__enclos_env__$private$randomization_mc_control = old_mc_control }, add = TRUE)
 
 			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
-			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms)
+			ci_pval_cache = if (isTRUE(ci_search_control$pval_cache_enable)) new.env(parent = emptyenv()) else NULL
+			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms, ci_search_control, ci_pval_cache)
+			if (!all(is.finite(c(bounds$l, bounds$u)))) {
+				fallback_ci = as.numeric(bounds$fallback_ci)
+				fallback_mode = ci_search_control$fallback
+				if (identical(fallback_mode, "error")) {
+					stop("Randomization CI search failed to bracket the target p-value within the configured search radius.")
+				}
+				if (identical(fallback_mode, "na") || length(fallback_ci) < 2L || !all(is.finite(fallback_ci[1:2]))) {
+					ci = c(NA_real_, NA_real_)
+				} else {
+					ci = sort(fallback_ci[1:2])
+				}
+				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+				return(ci)
+			}
 
-				# Run the lower and upper bounds sequentially and reserve all available
-				# cores for the inner p-value computations inside each bisection step.
-				ci = c(
-					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-						r, bounds$l, bounds$est, alpha / 2, pval_epsilon, transform_arg, TRUE, show_progress, perms
-					),
-					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-						r, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, FALSE, show_progress, perms
-					)
+			# Run the lower and upper bounds sequentially and reserve all available
+			# cores for the inner p-value computations inside each bisection step.
+			ci = c(
+				temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+					r, bounds$l, bounds$est, alpha / 2, pval_epsilon, transform_arg, TRUE, show_progress, perms, ci_search_control, ci_pval_cache
+				),
+				temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+					r, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, FALSE, show_progress, perms, ci_search_control, ci_pval_cache
 				)
+			)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		}
@@ -122,6 +165,66 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				stop("args_for_type is only used for incidence randomization inference.")
 			}
 			invisible(NULL)
+		},
+
+		compute_randomization_ci_pval_cached = function(inf_obj, r, delta, transform_responses, permutations, ci_search_control, ci_pval_cache){
+			cache_enabled = isTRUE(ci_search_control$pval_cache_enable) && !is.null(ci_pval_cache)
+			if (cache_enabled) {
+				cache_key = private$normalize_delta_for_cache(delta, ci_search_control$pval_cache_resolution)
+				if (!is.null(ci_pval_cache[[cache_key]])) return(ci_pval_cache[[cache_key]])
+			}
+			pval = tryCatch(
+				as.numeric(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(
+					r,
+					delta = delta,
+					transform_responses = transform_responses,
+					na.rm = FALSE,
+					show_progress = FALSE,
+					permutations = permutations
+				)),
+				error = function(e) NA_real_
+			)
+			if (length(pval) == 0L) pval = NA_real_ else pval = pval[1]
+			if (cache_enabled) ci_pval_cache[[cache_key]] = pval
+			pval
+		},
+
+		normalize_randomization_ci_search_control = function(ci_search_control, r, pval_epsilon){
+			default_mc_batch = min(as.integer(r), max(25L, as.integer(ceiling(2 * sqrt(as.integer(r))))))
+			defaults = list(
+				fallback = "fallback",
+				seed = "asymp_then_boot",
+				max_radius_se_mult = 12,
+				max_radius_scale_mult = 6,
+				max_expansions = 5L,
+				seed_boot_B = max(51L, min(as.integer(r), 201L)),
+				pval_cache_enable = TRUE,
+				pval_cache_resolution = pval_epsilon,
+				mc_enable = as.integer(r) >= 200L,
+				mc_batch_size = default_mc_batch,
+				mc_min_draws = min(as.integer(r), max(100L, 2L * default_mc_batch)),
+				mc_conf_level = 0.99
+			)
+			assertList(ci_search_control, null.ok = TRUE)
+			ctrl = utils::modifyList(defaults, if (is.null(ci_search_control)) list() else ci_search_control)
+			assertChoice(ctrl$fallback, c("fallback", "na", "error"))
+			assertChoice(ctrl$seed, c("asymp_then_boot", "boot_then_asymp", "asymp_only", "boot_only", "none"))
+			assertNumber(ctrl$max_radius_se_mult, lower = 0, finite = TRUE)
+			assertNumber(ctrl$max_radius_scale_mult, lower = 0, finite = TRUE)
+			assertCount(as.integer(ctrl$max_expansions), positive = TRUE)
+			assertCount(as.integer(ctrl$seed_boot_B), positive = TRUE)
+			assertFlag(ctrl$pval_cache_enable)
+			assertNumber(ctrl$pval_cache_resolution, lower = .Machine$double.eps, finite = TRUE)
+			assertFlag(ctrl$mc_enable)
+			assertCount(as.integer(ctrl$mc_batch_size), positive = TRUE)
+			assertCount(as.integer(ctrl$mc_min_draws), positive = TRUE)
+			assertNumber(ctrl$mc_conf_level, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			ctrl$max_expansions = as.integer(ctrl$max_expansions)
+			ctrl$seed_boot_B = as.integer(ctrl$seed_boot_B)
+			ctrl$pval_cache_resolution = as.numeric(ctrl$pval_cache_resolution)
+			ctrl$mc_batch_size = min(as.integer(r), as.integer(ctrl$mc_batch_size))
+			ctrl$mc_min_draws = min(as.integer(r), max(as.integer(ctrl$mc_batch_size), as.integer(ctrl$mc_min_draws)))
+			ctrl
 		},
 
 		normalize_exact_inference_args = function(type, args_for_type = NULL, pval_epsilon = NULL){
@@ -283,53 +386,90 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				c(results[[1]], results[[2]])
 			},
 
-		build_randomization_ci_search_bounds = function(inf_obj, r, alpha, transform_arg, permutations){
+		build_randomization_ci_search_bounds = function(inf_obj, r, alpha, transform_arg, permutations, ci_search_control, ci_pval_cache){
+			normalize_ci = function(ci){
+				ci = as.numeric(ci)
+				if (length(ci) < 2L || !all(is.finite(ci[1:2]))) return(c(NA_real_, NA_real_))
+				sort(ci[1:2])
+			}
 			obj_private = inf_obj$.__enclos_env__$private
 			if (transform_arg == "none" && (is.null(obj_private$cached_values$t0s_rand) || length(obj_private$cached_values$t0s_rand) < r)) {
-				inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r, 0, transform_arg, FALSE, show_progress = FALSE, permutations = permutations)
+				private$compute_randomization_ci_pval_cached(inf_obj, r, 0, transform_arg, permutations, ci_search_control, ci_pval_cache)
 			}
 			est = as.numeric(inf_obj$compute_treatment_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) est = NA_real_ else est = est[1]
-			asym_ci = tryCatch(as.numeric(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2)), error = function(e) c(NA_real_, NA_real_))
-			if (length(asym_ci) < 2L || !all(is.finite(asym_ci[1:2]))) asym_ci = c(NA_real_, NA_real_) else asym_ci = sort(asym_ci[1:2])
-			if (!is.finite(est) && all(is.finite(asym_ci))) est = mean(asym_ci)
-			if (!all(is.finite(asym_ci))) {
-				scale_guess = stats::sd(obj_private$y, na.rm = TRUE)
-				if (!is.finite(scale_guess) || scale_guess <= 0) scale_guess = stats::IQR(obj_private$y, na.rm = TRUE) / 1.349
-				if (!is.finite(scale_guess) || scale_guess <= 0) scale_guess = 1
-				if (!is.finite(est)) est = stats::median(obj_private$y, na.rm = TRUE)
-				if (!is.finite(est)) est = 0
-				asym_ci = c(est - 2 * scale_guess, est + 2 * scale_guess)
+			asym_ci = normalize_ci(tryCatch(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2), error = function(e) c(NA_real_, NA_real_)))
+			boot_ci = c(NA_real_, NA_real_)
+			need_boot = ci_search_control$seed %in% c("boot_then_asymp", "boot_only") || !all(is.finite(asym_ci))
+			if (need_boot) {
+				boot_ci = normalize_ci(tryCatch(inf_obj$compute_bootstrap_confidence_interval(alpha = alpha * 2, B = ci_search_control$seed_boot_B, na.rm = TRUE, show_progress = FALSE), error = function(e) c(NA_real_, NA_real_)))
 			}
-			l = asym_ci[1]; u = asym_ci[2]
-			if (l >= est) l = est - max(abs(u - est), 1); if (u <= est) u = est + max(abs(est - l), 1)
-			list(est = est, l = private$expand_bound(inf_obj, l, est, r, transform_arg, permutations, alpha / 2, TRUE), u = private$expand_bound(inf_obj, u, est, r, transform_arg, permutations, alpha / 2, FALSE))
+			if (!is.finite(est) && all(is.finite(asym_ci))) est = mean(asym_ci)
+			if (!is.finite(est) && all(is.finite(boot_ci))) est = mean(boot_ci)
+			response_scale = stats::sd(obj_private$y, na.rm = TRUE)
+			if (!is.finite(response_scale) || response_scale <= 0) response_scale = stats::IQR(obj_private$y, na.rm = TRUE) / 1.349
+			if (!is.finite(response_scale) || response_scale <= 0) response_scale = 1
+			if (!is.finite(est)) est = stats::median(obj_private$y, na.rm = TRUE)
+			if (!is.finite(est)) est = 0
+			se_guess = NA_real_
+			if (all(is.finite(asym_ci))) se_guess = max(abs(asym_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
+			if (!is.finite(se_guess) && all(is.finite(boot_ci))) se_guess = max(abs(boot_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
+			if (!is.finite(se_guess) || se_guess <= 0) se_guess = response_scale / sqrt(max(1, obj_private$n))
+			if (!is.finite(se_guess) || se_guess <= 0) se_guess = response_scale
+			default_seed_ci = sort(c(est - 2 * se_guess, est + 2 * se_guess))
+			if (!all(is.finite(asym_ci)) && !all(is.finite(boot_ci))) {
+				asym_ci = default_seed_ci
+			}
+			fallback_ci = if (all(is.finite(asym_ci))) asym_ci else if (all(is.finite(boot_ci))) boot_ci else c(NA_real_, NA_real_)
+			seed_ci = switch(ci_search_control$seed,
+				asymp_then_boot = if (all(is.finite(asym_ci))) asym_ci else if (all(is.finite(boot_ci))) boot_ci else default_seed_ci,
+				boot_then_asymp = if (all(is.finite(boot_ci))) boot_ci else if (all(is.finite(asym_ci))) asym_ci else default_seed_ci,
+				asymp_only = if (all(is.finite(asym_ci))) asym_ci else c(NA_real_, NA_real_),
+				boot_only = if (all(is.finite(boot_ci))) boot_ci else c(NA_real_, NA_real_),
+				none = default_seed_ci
+			)
+			max_radius = max(ci_search_control$max_radius_se_mult * se_guess, ci_search_control$max_radius_scale_mult * response_scale, 1)
+			min_radius = min(max(se_guess, 10 * .Machine$double.eps), max_radius)
+			l = max(seed_ci[1], est - max_radius)
+			u = min(seed_ci[2], est + max_radius)
+			if (!is.finite(l) || l >= est) l = est - min_radius
+			if (!is.finite(u) || u <= est) u = est + min_radius
+			l = private$expand_bound(inf_obj, l, est, r, transform_arg, permutations, alpha / 2, TRUE, max_radius, ci_search_control$max_expansions, ci_search_control, ci_pval_cache)
+			u = private$expand_bound(inf_obj, u, est, r, transform_arg, permutations, alpha / 2, FALSE, max_radius, ci_search_control$max_expansions, ci_search_control, ci_pval_cache)
+			list(est = est, l = l, u = u, fallback_ci = fallback_ci)
 		},
 
-		expand_bound = function(inf_obj, bound, est, r, transform_arg, permutations, target_pval, lower){
+		expand_bound = function(inf_obj, bound, est, r, transform_arg, permutations, target_pval, lower, max_radius, max_expansions, ci_search_control, ci_pval_cache){
 			evaluate_pval = function(delta) {
-				pval = tryCatch(as.numeric(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r, delta, transform_arg, FALSE, FALSE, permutations)), error = function(e) NA_real_)
-				if (length(pval) == 0L) return(NA_real_) else pval[1]
+				private$compute_randomization_ci_pval_cached(inf_obj, r, delta, transform_arg, permutations, ci_search_control, ci_pval_cache)
 			}
+			if (!is.finite(bound) || !is.finite(est) || !is.finite(max_radius) || max_radius <= 0) return(NA_real_)
+			bound = if (lower) max(bound, est - max_radius) else min(bound, est + max_radius)
 			pval_bound = evaluate_pval(bound)
 			if (is.finite(pval_bound) && pval_bound < target_pval) return(bound)
-			step = if (is.finite(abs(est - bound)) && abs(est - bound) > 0) abs(est - bound) else 1
-			for (iter in seq_len(12L)) {
-				step = step * 2; candidate = if (lower) est - step else est + step
-				if (is.finite(evaluate_pval(candidate)) && evaluate_pval(candidate) < target_pval) { bound = candidate; break }
-				bound = candidate
+			step = abs(est - bound)
+			if (!is.finite(step) || step <= 0) step = min(max_radius / 4, 1)
+			for (iter in seq_len(max_expansions)) {
+				step = min(step * 2, max_radius)
+				candidate = if (lower) est - step else est + step
+				pval_candidate = evaluate_pval(candidate)
+				if (is.finite(pval_candidate) && pval_candidate < target_pval) return(candidate)
+				if (step >= max_radius) break
 			}
-			bound
+			NA_real_
 		},
 
-			compute_ci_by_inverting_the_randomization_test_iteratively = function(r, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL){
-			pval_l = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = l, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations))
-			pval_u = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = u, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations))
+			compute_ci_by_inverting_the_randomization_test_iteratively = function(r, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL, ci_search_control = NULL, ci_pval_cache = NULL){
+			evaluate_pval = function(delta) {
+				private$compute_randomization_ci_pval_cached(self, r, delta, transform_responses, permutations, ci_search_control, ci_pval_cache)
+			}
+			pval_l = evaluate_pval(l)
+			pval_u = evaluate_pval(u)
 			if (length(pval_l) == 0) pval_l = NA_real_; if (length(pval_u) == 0) pval_u = NA_real_
 			for (k in seq_len(30L)) {
 				if (!is.na(pval_l) && !is.na(pval_u)) break
-				if (is.na(pval_l)) { l = (l + u) / 2; pval_l = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = l, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations)) }
-				if (is.na(pval_u)) { u = (l + u) / 2; pval_u = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = u, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations)) }
+				if (is.na(pval_l)) { l = (l + u) / 2; pval_l = evaluate_pval(l) }
+				if (is.na(pval_u)) { u = (l + u) / 2; pval_u = evaluate_pval(u) }
 			}
 			if (is.na(pval_l) || is.na(pval_u) || !all(is.finite(c(l, u)))) return(NA_real_)
 			iter = 0; progress_label = if (lower) "CI lower" else "CI upper"
@@ -339,7 +479,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 					if (isTRUE(show_progress)) cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g) done\n", progress_label, iter, pval_span, tol))
 					return(if(lower) l else u)
 				}
-				m = (l + u) / 2.0; pval_m = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = m, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations))
+				m = (l + u) / 2.0; pval_m = evaluate_pval(m)
 				if (is.na(pval_m)) { if (lower) { l = m; pval_l = 0 } else { u = m; pval_u = 0 }; iter = iter + 1; next }
 				if (pval_m >= pval_th && lower) { u = m; pval_u = pval_m }
 				else if (pval_m >= pval_th && !lower) { l = m; pval_l = pval_m }

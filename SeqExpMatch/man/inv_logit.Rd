@@ -2,7 +2,7 @@
 % Please edit documentation in R/other_helpers.R
 \name{inv_logit}
 \alias{inv_logit}
-\title{Inverse Logit}
+\title{Inverse Logit Function}
 \usage{
 inv_logit(x)
 }
@@ -13,7 +13,7 @@ inv_logit(x)
 Its corresponding inverse logit value between 0 and 1 non inclusive
 }
 \description{
-Calculates the inverse logit i.e., 1 / (1 + exp(-x))
+Computes the inverse logit of a real number or vector.
 }
 \examples{
 inv_logit(c(-1, 0, 1))

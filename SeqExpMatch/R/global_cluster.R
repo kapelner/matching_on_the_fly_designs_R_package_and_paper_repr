@@ -7,7 +7,21 @@ edi_env = new.env(parent = emptyenv())
 #' on Unix-like systems or a mirai cluster on others) to be used by all Design
 #' and Inference objects. This avoids the overhead of creating clusters
 #' repeatedly.
+#'
+#' @details
+#' \code{set_num_cores()} sets a global upper bound for parallel work. It does
+#' not guarantee that every inference routine will use all requested workers.
+#' EDI's inference dispatcher applies a blocklist-first heuristic informed by
+#' package benchmarks: workloads that have shown consistent multicore slowdowns
+#' are forced to run serially, while the remaining workloads are allowed to use
+#' their method-specific warmup heuristics and native thread caps.
+#'
+#' The current forced-serial blocklist covers incidence randomization confidence
+#' intervals, bootstrap for non-regression KK Wilcoxon inference, bootstrap for
+#' non-KK survival procedures, and bootstrap for incidence procedures. Do not
+#' expect a universal "more cores is faster" rule.
 #' 
+#' @param num_cores Integer number of worker processes to make available.
 #' @param force_mirai If \code{TRUE}, forces the use of the \code{mirai} package
 #'   even on systems where forking is available.
 #' 
@@ -94,6 +108,48 @@ get_num_cores = function() {
   1L
 }
 
+# Internal helper for empirical parallel dispatch policy.
+# This is intentionally conservative and only forces serial execution for
+# inference families that have shown repeat multicore regressions in the package
+# benchmark suite. Everything else remains eligible for the usual warmup-based
+# parallel heuristics. Do not expect a universal "more cores is faster" rule.
+edi_parallel_dispatch_policy = function(inference_class, response_type, operation) {
+  inference_class = as.character(inference_class[[1]])
+  response_type = as.character(response_type[[1]])
+  operation = as.character(operation[[1]])
+
+  is_incid = grepl("^InferenceIncid", inference_class) ||
+    grepl("^InferenceIncidence", inference_class)
+  is_survival_nonkk = grepl("^InferenceSurvival", inference_class) &&
+    !grepl("KK", inference_class, fixed = TRUE)
+  is_nonregr_kk_wilcox = identical(inference_class, "InferenceAllKKWilcoxIVWC")
+
+  reason = NULL
+
+  if (identical(operation, "bootstrap")) {
+    if (is_incid && identical(response_type, "incidence")) {
+      reason = "bootstrap for incidence inference is forced serial by benchmark policy"
+    } else if (is_survival_nonkk && identical(response_type, "survival")) {
+      reason = "bootstrap for non-KK survival inference is forced serial by benchmark policy"
+    } else if (is_nonregr_kk_wilcox) {
+      reason = "bootstrap for non-regression KK Wilcoxon inference is forced serial by benchmark policy"
+    }
+  } else if (identical(operation, "rand_ci")) {
+    if (is_incid && identical(response_type, "incidence")) {
+      reason = "randomization confidence intervals for incidence inference are forced serial by benchmark policy"
+    }
+  }
+
+  list(
+    force_serial = !is.null(reason),
+    reason = reason,
+    inference_class = inference_class,
+    response_type = response_type,
+    operation = operation
+  )
+}
+
+# Internal helper
 set_package_threads = function(num_cores) {
   # Ensure it's an integer
   num_cores = as.integer(num_cores)

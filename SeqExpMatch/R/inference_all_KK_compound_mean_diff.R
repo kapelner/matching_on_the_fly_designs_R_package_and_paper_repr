@@ -39,13 +39,19 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 				private$compute_basic_match_data()
 				private$compute_reservoir_and_match_statistics()
 			}
-			private$cached_values$beta_hat_T = 	if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
-													private$cached_values$KKstats$d_bar
-												} else if (private$cached_values$KKstats$m == 0){ #sometimes there's no matches
-													private$cached_values$KKstats$r_bar
-												} else {
-													private$cached_values$KKstats$w_star * private$cached_values$KKstats$d_bar + (1 - private$cached_values$KKstats$w_star) * private$cached_values$KKstats$r_bar #proper weighting
-												}
+			KKstats = private$cached_values$KKstats
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			m = KKstats$m
+			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
+			no_matches = !is.finite(m) || m == 0
+			private$cached_values$beta_hat_T = if (reservoir_unusable){
+				KKstats$d_bar
+			} else if (no_matches){ #sometimes there's no matches
+				KKstats$r_bar
+			} else {
+				KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
+			}
 			private$cached_values$beta_hat_T
 		},
 
@@ -99,12 +105,13 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @param	r		The number of randomization vectors. The default is 501.
 		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
 		#' @param	show_progress			Show a text progress indicator.
+		#' @param ci_search_control Optional randomization-CI search control list passed through to the base method.
 		#' @return	A 1 - alpha sized frequentist confidence interval
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE){
+		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
 				stop("Randomization confidence intervals are not supported for InferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
 			}
-			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress)
+			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
 	),
 
@@ -187,11 +194,16 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			ssqD = private$cached_values$KKstats$ssqD_bar
 			ssqR = private$cached_values$KKstats$ssqR
 
+			nRT = private$cached_values$KKstats$nRT
+			nRC = private$cached_values$KKstats$nRC
+			m = private$cached_values$KKstats$m
+			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
+			no_matches = !is.finite(m) || m == 0
 			private$cached_values$s_beta_hat_T =
-				if (private$cached_values$KKstats$nRT <= 1 || private$cached_values$KKstats$nRC <= 1){
+				if (reservoir_unusable){
 					# Only matched pairs are usable; fall back to ssqR if ssqD is degenerate
 					if (is.finite(ssqD) && ssqD > 0) sqrt(ssqD) else if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
-				} else if (private$cached_values$KKstats$m == 0){
+				} else if (no_matches){
 					# No matched pairs
 					if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
 				} else {

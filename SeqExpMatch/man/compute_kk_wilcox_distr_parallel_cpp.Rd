@@ -26,6 +26,8 @@ compute_kk_wilcox_distr_parallel_cpp(
 \item{transform_code}{Integer code for response transformation.}
 
 \item{is_fixed_matching}{Logical flag for fixed matching designs.}
+
+\item{num_cores}{Number of OpenMP threads.}
 }
 \value{
 Numeric vector of KK Wilcoxon statistics.

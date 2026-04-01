@@ -72,7 +72,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(inf_template) && private$has_match_structure && private$object_has_private_method(inf_template, "compute_basic_match_data"))
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
-			actual_rand_cores = self$num_cores
+			actual_rand_cores = private$effective_parallel_cores("rand_pval", self$num_cores)
 			if (actual_rand_cores > 1L && need_thread_objs) {
 				do_warmup_iter = function() {
 					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
@@ -152,26 +152,131 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
 
-			if (!is.null(cache_key) && !is.null(private$cached_values$rand_distr_cache[[cache_key]]) && length(private$cached_values$rand_distr_cache[[cache_key]]) >= r) {
-				t0s = private$cached_values$rand_distr_cache[[cache_key]][seq_len(r)]
-			} else {
-				t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(r, delta, transform_responses, show_progress, permutations)
-				if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] = t0s
-			}
-
 			t = private$compute_treatment_estimate_during_randomization_inference()
 			if (length(t) != 1 || !is.finite(t)) return(NA_real_)
 
-			na_t0s = !is.finite(t0s)
-			nsim_adj = sum(!na_t0s)
-			if (nsim_adj == 0L) return(NA_real_)
-			
-			min(1, max(2 / nsim_adj, 2 * min(sum(t0s >= t, na.rm = TRUE) / nsim_adj, sum(t0s <= t, na.rm = TRUE) / nsim_adj)))
+			mc_pval = private$compute_two_sided_pval_with_sequential_mc(
+				t = t,
+				r = r,
+				delta = delta,
+				transform_responses = transform_responses,
+				show_progress = show_progress,
+				permutations = permutations,
+				cache_key = cache_key
+			)
+			if (!is.null(mc_pval)) return(mc_pval)
+
+			t0s = private$get_randomization_distribution_prefix(
+				r = r,
+				delta = delta,
+				transform_responses = transform_responses,
+				show_progress = show_progress,
+				permutations = permutations,
+				cache_key = cache_key
+			)
+
+			private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
 		}
 	),
 
 	private = list(
 		custom_randomization_statistic_function = NULL,
+		randomization_mc_control = NULL,
+
+		normalize_delta_for_cache = function(delta, resolution = NULL){
+			if (!is.finite(delta)) return("NA")
+			if (!is.null(resolution) && is.finite(resolution) && resolution > 0) {
+				delta = round(as.numeric(delta) / resolution) * resolution
+			}
+			format(as.numeric(delta), scientific = TRUE, digits = 17)
+		},
+
+		compute_two_sided_randomization_pval_from_t0s = function(t0s, t){
+			na_t0s = !is.finite(t0s)
+			nsim_adj = sum(!na_t0s)
+			if (nsim_adj == 0L) return(NA_real_)
+			min(1, max(2 / nsim_adj, 2 * min(sum(t0s >= t, na.rm = TRUE) / nsim_adj, sum(t0s <= t, na.rm = TRUE) / nsim_adj)))
+		},
+
+		compute_two_sided_randomization_pval_band = function(t0s, t, conf_level){
+			valid = is.finite(t0s)
+			n = sum(valid)
+			if (n == 0L) return(c(NA_real_, NA_real_))
+			x_ge = sum(t0s[valid] >= t)
+			x_le = sum(t0s[valid] <= t)
+			binom_band = function(x){
+				alpha_band = 1 - conf_level
+				lower = if (x <= 0L) 0 else stats::qbeta(alpha_band / 2, x, n - x + 1)
+				upper = if (x >= n) 1 else stats::qbeta(1 - alpha_band / 2, x + 1, n - x)
+				c(lower, upper)
+			}
+			band_ge = binom_band(x_ge)
+			band_le = binom_band(x_le)
+			band = c(2 * min(band_ge[1], band_le[1]), 2 * min(band_ge[2], band_le[2]))
+			pmin(1, pmax(0, band))
+		},
+
+		subset_permutations = function(permutations, indices){
+			if (is.null(permutations)) return(NULL)
+			if (!is.null(permutations$w_mat)) {
+				list(
+					w_mat = permutations$w_mat[, indices, drop = FALSE],
+					m_mat = if (!is.null(permutations$m_mat)) permutations$m_mat[, indices, drop = FALSE] else NULL
+				)
+			} else {
+				permutations[indices]
+			}
+		},
+
+		get_randomization_distribution_prefix = function(r, delta, transform_responses, show_progress, permutations, cache_key, batch_size = NULL){
+			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
+			cached = if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] else NULL
+			have = length(cached)
+			target = if (is.null(batch_size)) as.integer(r) else min(as.integer(r), have + as.integer(batch_size))
+			if (have < target) {
+				idx = seq.int(have + 1L, target)
+				new_t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(
+					r = length(idx),
+					delta = delta,
+					transform_responses = transform_responses,
+					show_progress = isTRUE(show_progress) && target >= r && have == 0L,
+					permutations = private$subset_permutations(permutations, idx)
+				)
+				cached = c(cached, new_t0s)
+				if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] = cached
+			}
+			cached[seq_len(target)]
+		},
+
+		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key){
+			mc_control = private$randomization_mc_control
+			if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
+			batch_size = min(as.integer(r), as.integer(mc_control$mc_batch_size))
+			min_draws = min(as.integer(r), as.integer(mc_control$mc_min_draws))
+			if (batch_size <= 0L || min_draws <= 0L || batch_size >= as.integer(r)) return(NULL)
+			conf_level = mc_control$mc_conf_level
+			threshold = mc_control$mc_stop_threshold
+			repeat {
+				t0s = private$get_randomization_distribution_prefix(
+					r = r,
+					delta = delta,
+					transform_responses = transform_responses,
+					show_progress = FALSE,
+					permutations = permutations,
+					cache_key = cache_key,
+					batch_size = batch_size
+				)
+				n_valid = sum(is.finite(t0s))
+				p_hat = private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
+				if (length(t0s) >= as.integer(r) || n_valid < min_draws || !is.finite(p_hat)) {
+					if (length(t0s) >= as.integer(r) || !is.finite(p_hat)) return(p_hat)
+				} else {
+					band = private$compute_two_sided_randomization_pval_band(t0s, t, conf_level)
+					if (is.finite(band[1]) && is.finite(band[2]) && (band[2] < threshold || band[1] > threshold)) return(p_hat)
+				}
+				if (length(t0s) >= as.integer(r)) return(p_hat)
+			}
+		},
 
 		generate_permutations = function(r){
 			assertCount(r, positive = TRUE)

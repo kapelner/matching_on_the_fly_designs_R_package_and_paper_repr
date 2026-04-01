@@ -7,6 +7,8 @@
 set_num_cores(num_cores, force_mirai = FALSE)
 }
 \arguments{
+\item{num_cores}{Integer number of worker processes to make available.}
+
 \item{force_mirai}{If \code{TRUE}, forces the use of the \code{mirai} package
 even on systems where forking is available.}
 }
@@ -18,4 +20,17 @@ This function initializes a persistent parallel cluster (either a fork cluster
 on Unix-like systems or a mirai cluster on others) to be used by all Design
 and Inference objects. This avoids the overhead of creating clusters
 repeatedly.
+}
+\details{
+\code{set_num_cores()} sets a global upper bound for parallel work. It does
+not guarantee that every inference routine will use all requested workers.
+EDI's inference dispatcher applies a blocklist-first heuristic informed by
+package benchmarks: workloads that have shown consistent multicore slowdowns
+are forced to run serially, while the remaining workloads are allowed to use
+their method-specific warmup heuristics and native thread caps.
+
+The current forced-serial blocklist covers incidence randomization confidence
+intervals, bootstrap for non-regression KK Wilcoxon inference, bootstrap for
+non-KK survival procedures, and bootstrap for incidence procedures. Do not
+expect a universal "more cores is faster" rule.
 }

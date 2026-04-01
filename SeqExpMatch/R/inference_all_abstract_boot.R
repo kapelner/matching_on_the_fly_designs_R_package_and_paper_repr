@@ -39,7 +39,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# pays cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
 			# that can inflate the estimate 5–15× vs steady-state cost, causing the guard to
 			# wrongly choose parallel for small B values like r = 19.
-				actual_cores = self$num_cores
+				actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 				if (actual_cores > 1L) {
 					do_warmup_iter = function() {
 						w_des = des_template$duplicate()

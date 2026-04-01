@@ -15,7 +15,7 @@ discordant matched pairs. This class is available for
 designs, only the matched-pair data are used and the reservoir is ignored.
 }
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceExact} -> \code{InferenceIncidenceExactBinomial}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidenceExactBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -28,9 +28,9 @@ designs, only the matched-pair data are used and the reservoir is ignored.
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../..//html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -38,21 +38,45 @@ designs, only the matched-pair data are used and the reservoir is ignored.
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidenceExactBinomial-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize exact matched-pair binomial inference for incidence outcomes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidenceExactBinomial$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed design object.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{InferenceIncidenceExactBinomial} object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidenceExactBinomial-compute_treatment_estimate}{}}}
 \subsection{Method \code{compute_treatment_estimate()}}{
+Compute the matched-pair treatment estimate on the log-odds scale.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidenceExactBinomial$compute_treatment_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{Ignored for this estimator.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidenceExactBinomial-clone"></a>}}
