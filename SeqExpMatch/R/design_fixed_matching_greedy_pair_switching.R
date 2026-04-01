@@ -87,9 +87,12 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				form = "one_zero"
 			)
 
-			w_mat = private$extract_allocation_matrix(w_mat, n = n, r = r)
-			storage.mode(w_mat) = "numeric"
-			w_mat
+			private$validate_allocation_matrix(
+				private$extract_allocation_matrix(w_mat, n = n, r = r),
+				n = n,
+				r = r,
+				require_balanced = TRUE
+			)
 		}
 	),
 
@@ -101,6 +104,34 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		
 		draw_one_w = function(){
 			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		},
+
+		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){
+			if (is.vector(w_mat)) {
+				w_mat = matrix(w_mat, nrow = n, ncol = 1)
+			}
+			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
+				stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
+			}
+
+			w_mat = w_mat[, seq_len(r), drop = FALSE]
+			storage.mode(w_mat) = "numeric"
+
+			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+				stop("resultsBinaryMatchThenGreedySearch returned non-finite treatment assignments.")
+			}
+			if (any(!(w_mat %in% c(0, 1)))) {
+				stop("resultsBinaryMatchThenGreedySearch returned an invalid treatment assignment matrix.")
+			}
+
+			if (isTRUE(require_balanced)) {
+				treated_counts = colSums(w_mat)
+				if (any(treated_counts != n / 2)) {
+					stop("resultsBinaryMatchThenGreedySearch returned an unbalanced allocation.")
+				}
+			}
+
+			w_mat
 		},
 
 		extract_allocation_matrix = function(res, n, r){
@@ -121,15 +152,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			} else {
 				stop("resultsBinaryMatchThenGreedySearch returned an unsupported result type.")
 			}
-
-			if (is.vector(w_mat)) {
-				w_mat = matrix(w_mat, nrow = n, ncol = 1)
-			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-				stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
-			}
-			storage.mode(w_mat) = "numeric"
-			w_mat[, seq_len(r), drop = FALSE]
+			w_mat
 		}
 	)
 )

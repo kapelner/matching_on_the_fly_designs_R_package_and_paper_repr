@@ -57,7 +57,8 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
-			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			assertNumeric(private$y, any.missing = FALSE)
+			private$y = private$sanitize_beta_response(private$y)
 		}
 		),
 
@@ -66,12 +67,21 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
 		},
 
+		sanitize_beta_response = function(y){
+			assertNumeric(y, any.missing = FALSE)
+			n = length(y)
+			if (n == 0L) return(y)
+			y = pmin(1, pmax(0, as.numeric(y)))
+			(y * (n - 1) + 0.5) / n
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
+			y_beta = private$sanitize_beta_response(private$y)
 			
 			if (estimate_only) {
-				res = fast_beta_regression(Xmm = Xmm, y = private$y)
+				res = fast_beta_regression(Xmm = Xmm, y = y_beta)
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(
@@ -79,7 +89,7 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 					ssq_b_2 = NA_real_
 				))
 			} else {
-				res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
+				res = fast_beta_regression_with_var(Xmm = Xmm, y = y_beta)
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(

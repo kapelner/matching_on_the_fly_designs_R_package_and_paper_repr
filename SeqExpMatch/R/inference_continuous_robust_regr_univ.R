@@ -85,7 +85,9 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		fit_warm_keep = NULL,
 
 		build_design_matrix = function(){
-			cbind(1, private$w)
+			X = cbind(1, private$w)
+			colnames(X) = c("(Intercept)", "treatment")
+			X
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
@@ -180,8 +182,15 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 				return(invisible(NULL))
 			}
 
-			coef_names = c("(Intercept)", "treatment", if (ncol(X) > 2L) paste0("x", seq_len(ncol(X) - 2L)) else NULL)
-			colnames(X) = coef_names
+			if (is.null(colnames(X)) || length(colnames(X)) != ncol(X)) {
+				if (ncol(X) == 1L && isTRUE(j_treat == 1L)) {
+					colnames(X) = "treatment"
+				} else if (ncol(X) == 1L) {
+					colnames(X) = "(Intercept)"
+				} else {
+					colnames(X) = c("(Intercept)", "treatment", if (ncol(X) > 2L) paste0("x", seq_len(ncol(X) - 2L)) else NULL)[seq_len(ncol(X))]
+				}
+			}
 			df = nrow(X) - ncol(X)
 			if (df <= 0L) {
 				private$set_failed_fit_cache()

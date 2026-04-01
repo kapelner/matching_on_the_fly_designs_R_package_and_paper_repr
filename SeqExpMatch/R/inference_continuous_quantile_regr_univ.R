@@ -83,7 +83,9 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		fit_warm_keep = NULL,
 
 		build_design_matrix = function(){
-			cbind(1, private$w)
+			X = cbind(1, private$w)
+			colnames(X) = c("(Intercept)", "treatment")
+			X
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
@@ -165,8 +167,16 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 				return(invisible(NULL))
 			}
 
-			coef_names = c("(Intercept)", "treatment", if (ncol(X_fit) > 2L) paste0("x", seq_len(ncol(X_fit) - 2L)) else NULL)
-			colnames(X_fit) = coef_names
+			if (is.null(colnames(X_fit)) || length(colnames(X_fit)) != ncol(X_fit)) {
+				if (ncol(X_fit) == 1L && isTRUE(j_treat == 1L)) {
+					colnames(X_fit) = "treatment"
+				} else if (ncol(X_fit) == 1L) {
+					colnames(X_fit) = "(Intercept)"
+				} else {
+					colnames(X_fit) = c("(Intercept)", "treatment", if (ncol(X_fit) > 2L) paste0("x", seq_len(ncol(X_fit) - 2L)) else NULL)[seq_len(ncol(X_fit))]
+				}
+			}
+			coef_names = colnames(X_fit)
 			fit = private$fit_quantile_model(X_fit, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$set_failed_fit_cache()

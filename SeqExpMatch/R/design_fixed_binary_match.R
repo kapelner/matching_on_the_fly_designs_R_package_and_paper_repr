@@ -72,19 +72,40 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(search_obj, form = "one_zero")
 			# resultsBinaryMatchSearch returns num_designs x n, we need n x num_designs
 			w_mat = t(w_mat)
-			storage.mode(w_mat) = "numeric"
-
-			# If fewer unique designs exist than requested, recycle columns
-			if (ncol(w_mat) < r){
-				w_mat = w_mat[, rep(seq_len(ncol(w_mat)), length.out = r), drop = FALSE]
-			}
-			w_mat[, seq_len(r), drop = FALSE]
+			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),
 
 	private = list(
 		mahal_match = NULL,
 		bms = NULL,
+
+		validate_allocation_matrix = function(w_mat, n, r){
+			if (is.vector(w_mat)) {
+				w_mat = matrix(w_mat, nrow = n, ncol = 1)
+			}
+			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
+				stop("resultsBinaryMatchSearch returned an unexpected allocation matrix shape.")
+			}
+
+			storage.mode(w_mat) = "numeric"
+			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+				stop("resultsBinaryMatchSearch returned non-finite treatment assignments.")
+			}
+			if (any(!(w_mat %in% c(0, 1)))) {
+				stop("resultsBinaryMatchSearch returned an invalid treatment assignment matrix.")
+			}
+
+			treated_counts = colSums(w_mat)
+			if (any(treated_counts != n / 2)) {
+				stop("resultsBinaryMatchSearch returned an unbalanced allocation.")
+			}
+
+			if (ncol(w_mat) < r){
+				w_mat = w_mat[, rep(seq_len(ncol(w_mat)), length.out = r), drop = FALSE]
+			}
+			w_mat[, seq_len(r), drop = FALSE]
+		},
 
 		ensure_bms_computed = function(){
 			n = self$get_n()

@@ -34,27 +34,29 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 			y_reservoir_T = private$cached_values$KKstats$y_reservoir[private$cached_values$KKstats$w_reservoir == 1] #get the reservoir responses from the treatment
 			y_reservoir_C = private$cached_values$KKstats$y_reservoir[private$cached_values$KKstats$w_reservoir == 0] #get the reservoir responses from the control
 
-			ssqD_bar = if (m > 1){
+			ssqD_bar = if (is.finite(m) && m > 1){
 							var_cpp(private$cached_values$KKstats$y_matched_diffs) / m
 						} else {
 							NA_real_
 						}
-			ssqR = if (nRT > 1 && nRC > 1 && nR > 2){
+			ssqR = if (is.finite(nRT) && is.finite(nRC) && nRT > 1 && nRC > 1 && nR > 2){
 						(var_cpp(y_reservoir_T) * (nRT - 1) + var_cpp(y_reservoir_C) * (nRC - 1)) /
 							(nR - 2) * (1 / nRT + 1 / nRC)
 					} else {
 						NA_real_
 					}
 
-			private$cached_values$KKstats$d_bar = if (m > 0) mean_cpp(private$cached_values$KKstats$y_matched_diffs) else {
+			private$cached_values$KKstats$d_bar = if (is.finite(m) && m > 0) mean_cpp(private$cached_values$KKstats$y_matched_diffs) else {
 				NA_real_
 			}
 			private$cached_values$KKstats$ssqD_bar = ssqD_bar
-			private$cached_values$KKstats$r_bar = if (nRT > 0 && nRC > 0) mean_cpp(y_reservoir_T) - mean_cpp(y_reservoir_C) else {
+			private$cached_values$KKstats$r_bar = if (is.finite(nRT) && is.finite(nRC) && nRT > 0 && nRC > 0) mean_cpp(y_reservoir_T) - mean_cpp(y_reservoir_C) else {
 				NA_real_
 			}
 			private$cached_values$KKstats$ssqR = ssqR
-			private$cached_values$KKstats$w_star = if (!is.na(ssqR) && !is.na(ssqD_bar)) ssqR / (ssqR + ssqD_bar) else {
+			private$cached_values$KKstats$w_star = if (is.finite(ssqR) && is.finite(ssqD_bar) && (ssqR + ssqD_bar) > 0) {
+				ssqR / (ssqR + ssqD_bar)
+			} else {
 				NA_real_
 			}
 		}
