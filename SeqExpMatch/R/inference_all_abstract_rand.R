@@ -108,7 +108,16 @@ InferenceRand = R6::R6Class("InferenceRand",
 					worker_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
 					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				})
-			}, n_cores = actual_rand_cores, show_progress = show_progress))
+			}, n_cores = actual_rand_cores, show_progress = show_progress,
+			export_list = list(
+				des_template = des_template,
+				inf_template = inf_template,
+				permutations = permutations,
+				delta = delta,
+				setup = setup,
+				custom_stat_analysis = custom_stat_analysis,
+				use_perms = use_perms
+			)))
 
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			beta_hat_T_diff_ws

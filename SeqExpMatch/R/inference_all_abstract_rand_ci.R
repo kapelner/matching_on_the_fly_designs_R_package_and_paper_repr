@@ -98,43 +98,16 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms)
 
-			# The previous strategy was to parallelize the two bounds (lower and upper) if num_cores > 1.
-			# However, this caps parallelization at 2 cores. For heavy designs (like KK designs), 
-			# it is much better to run the bounds sequentially and parallelize the inner randomization 
-			# distribution loop (r iterations) across all available cores.
-			
-			# We decide whether to parallelize the bounds or the inner loop based on the cost.
-			# If the cost per iteration is high, we definitely want the inner loop to use all cores.
-			t_ci_warmup = system.time(tryCatch(
-				temp_inf$compute_two_sided_pval_for_treatment_effect_rand(
-					r = 1L, delta = bounds$est, transform_responses = transform_arg,
-					show_progress = FALSE, permutations = NULL),
-				# Error handler for compute_two_sided_pval_for_treatment_effect_rand
-				error = function(e) NULL
-			))[[3]]
-			
-			bisect_steps_estimate = 10L
-			# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
-			# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
-			fork_overhead_per_worker = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
-			cluster_create_overhead = if (!is.null(get_global_fork_cluster()) && is.null(get_global_fork_cluster())) 0.3 else 0.0
-
-			# Only parallelize the two bounds if the total bisection cost is significant
-			# AND we have exactly 2 cores (or r is so small that inner-loop parallelization is useless).
-			# Otherwise, we let the inner loop (in compute_two_sided_pval_for_treatment_effect_rand)
-			# handle the parallelization.
-			use_parallel_bounds = self$num_cores == 2L &&
-			                      (t_ci_warmup * bisect_steps_estimate * r > fork_overhead_per_worker * 2L + cluster_create_overhead)
-
-			if (use_parallel_bounds) {
-				ci = private$compute_ci_both_bounds_parallel(r, bounds$l, bounds$est, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, perms, inf_obj = temp_inf)
-			} else {
-				# Run bounds sequentially, inner loops will parallelize across self$num_cores
+				# Run the lower and upper bounds sequentially and reserve all available
+				# cores for the inner p-value computations inside each bisection step.
 				ci = c(
-					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, bounds$l, bounds$est, alpha / 2, pval_epsilon, transform_arg, TRUE, show_progress, perms),
-					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, FALSE, show_progress, perms)
+					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+						r, bounds$l, bounds$est, alpha / 2, pval_epsilon, transform_arg, TRUE, show_progress, perms
+					),
+					temp_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
+						r, bounds$est, bounds$u, alpha / 2, pval_epsilon, transform_arg, FALSE, show_progress, perms
+					)
 				)
-			}
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		}
@@ -285,23 +258,30 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 		},
 
-		compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
-			bound_specs = list(list(inside = est, outside = lo_bound), list(inside = est, outside = hi_bound))
-			child_budget = max(1L, as.integer(floor(self$num_cores / 2)))
-			inf_template = self$duplicate()
-			results = parallel::mclapply(bound_specs, function(spec){
-				worker_inf = inf_template$duplicate()
-				worker_private = worker_inf$.__enclos_env__$private
-				exact_stats = worker_private$get_exact_zhang_stats()
-				p_fn = function(delta_0){
-					p_M = if (exact_stats$m > 0) worker_private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
-					p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) worker_private$compute_exact_pval_reservoir(delta_0) else NA_real_
-					zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
-				}
-				zhang_bisect_ci_boundary(p_fn, inside = spec$inside, outside = spec$outside, pval_th = alpha, tol = pval_epsilon)
-			}, mc.cores = min(2L, self$num_cores))
-			c(results[[1]], results[[2]])
-		},
+			compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
+				bound_specs = list(list(inside = est, outside = lo_bound), list(inside = est, outside = hi_bound))
+				n_cores_ci = min(2L, self$num_cores)
+				child_budget = max(1L, as.integer(floor(self$num_cores / n_cores_ci)))
+				inf_template = self$duplicate()
+				results = private$par_lapply(bound_specs, function(spec){
+					worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+					worker_private = worker_inf$.__enclos_env__$private
+					exact_stats = worker_private$get_exact_zhang_stats()
+					p_fn = function(delta_0){
+						p_M = if (exact_stats$m > 0) worker_private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
+						p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) worker_private$compute_exact_pval_reservoir(delta_0) else NA_real_
+						zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
+					}
+					zhang_bisect_ci_boundary(p_fn, inside = spec$inside, outside = spec$outside, pval_th = alpha, tol = pval_epsilon)
+				}, n_cores = n_cores_ci, budget = child_budget,
+				export_list = list(
+					inf_template = inf_template,
+					combination_method = combination_method,
+					alpha = alpha,
+					pval_epsilon = pval_epsilon
+				))
+				c(results[[1]], results[[2]])
+			},
 
 		build_randomization_ci_search_bounds = function(inf_obj, r, alpha, transform_arg, permutations){
 			obj_private = inf_obj$.__enclos_env__$private
@@ -342,60 +322,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			bound
 		},
 
-		compute_ci_both_bounds_parallel = function(r, l_lower, u_lower, l_upper, u_upper, pval_th, tol, transform_responses, permutations = NULL, inf_obj = self){
-			bound_specs = list(list(l = l_lower, u = u_lower, lower = TRUE), list(l = l_upper, u = u_upper, lower = FALSE))
-			inf_template = inf_obj$duplicate()
-			# Copy model-fit cache into inf_template so workers can inherit it without
-			# recomputing expensive estimates (e.g. Rfit, GLMs) on every bisection step.
-			# The worker's duplicate() call will clear cached_values; we re-copy inside
-			# the worker closure from inf_template after that duplicate() call.
-			# Keys excluded: large/stale caches not needed by the CI bisection.
-			excluded_cache_keys = c("boot_distr_cache", "rand_distr_cache", "permutations_cache",
-			                        "m_cache", "t0s_rand", "custom_stat_analysis",
-			                        "generated_permutation_sig_counter")
-			src_cache = inf_obj$.__enclos_env__$private$cached_values
-			model_cache_keys = setdiff(names(src_cache), excluded_cache_keys)
-			for (key in model_cache_keys) {
-				inf_template$.__enclos_env__$private$cached_values[[key]] = src_cache[[key]]
-				}
-				n_cores_ci = min(2L, self$num_cores)
-				child_budget = max(1L, as.integer(floor(self$num_cores / n_cores_ci)))
-
-				# Helper to restore model cache on a freshly-duplicated worker object.
-			# duplicate() clears cached_values, so we re-populate model-fit entries
-			# from inf_template (which holds the copies set above).
-			restore_model_cache = function(worker_inf) {
-				tmpl_cache = inf_template$.__enclos_env__$private$cached_values
-				keys_to_restore = setdiff(names(tmpl_cache), excluded_cache_keys)
-				for (key in keys_to_restore) {
-					worker_inf$.__enclos_env__$private$cached_values[[key]] = tmpl_cache[[key]]
-				}
-				invisible(NULL)
-			}
-
-			# Fork-cluster path: export inf_template once per worker to avoid serializing
-			# the (potentially large) R6 object on every task dispatch.
-			if (!is.null(get_global_fork_cluster()) && n_cores_ci > 1L) {
-				cl = private$get_or_create_fork_cluster()
-				results = parallel::parLapply(cl, bound_specs, function(spec) {
-					worker_inf = inf_template$duplicate()
-					restore_model_cache(worker_inf)
-					worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(
-						r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol,
-						transform_responses = transform_responses, lower = spec$lower,
-						show_progress = FALSE, permutations = permutations)
-				})
-				} else {
-					results = private$par_lapply(bound_specs, function(spec) {
-						worker_inf = inf_template$duplicate()
-						restore_model_cache(worker_inf)
-						worker_inf$.__enclos_env__$private$compute_ci_by_inverting_the_randomization_test_iteratively(r, l = spec$l, u = spec$u, pval_th = pval_th, tol = tol, transform_responses = transform_responses, lower = spec$lower, show_progress = FALSE, permutations = permutations)
-					}, n_cores = n_cores_ci, budget = child_budget)
-				}
-			c(results[[1]], results[[2]])
-		},
-
-		compute_ci_by_inverting_the_randomization_test_iteratively = function(r, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL){
+			compute_ci_by_inverting_the_randomization_test_iteratively = function(r, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL){
 			pval_l = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = l, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations))
 			pval_u = as.numeric(self$compute_two_sided_pval_for_treatment_effect_rand(r, delta = u, transform_responses = transform_responses, show_progress = FALSE, permutations = permutations))
 			if (length(pval_l) == 0) pval_l = NA_real_; if (length(pval_u) == 0) pval_u = NA_real_

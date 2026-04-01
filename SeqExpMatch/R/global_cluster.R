@@ -21,8 +21,11 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
   # Clear any existing clusters first
   unset_num_cores()
 
+  # Set package/native thread budgets before workers are created so forked
+  # children inherit the intended global thread settings.
+  set_package_threads(num_cores)
+
   if (as.integer(num_cores) <= 1L) {
-    set_package_threads(1L)
     return(invisible(NULL))
   }
   
@@ -38,9 +41,6 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
     edi_env$global_fork_cluster = parallel::makeForkCluster(num_cores)
   }
   
-  # Set package threads globally
-  set_package_threads(num_cores)
-  
   invisible(NULL)
 }
 
@@ -55,14 +55,15 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
 unset_num_cores = function() {
   # Handle fork cluster
   if (!is.null(edi_env$global_fork_cluster)) {
-    parallel::stopCluster(edi_env$global_fork_cluster)
+    cl = edi_env$global_fork_cluster
     edi_env$global_fork_cluster = NULL
+    tryCatch(parallel::stopCluster(cl), error = function(e) invisible(NULL))
   }
   
   # Handle mirai cluster
   if (!is.null(edi_env$global_mirai_num_cores)) {
     if (requireNamespace("mirai", quietly = TRUE)) {
-      mirai::daemons(0) # Stop daemons
+      tryCatch(mirai::daemons(0), error = function(e) invisible(NULL)) # Stop daemons
     }
     edi_env$global_mirai_num_cores = NULL
   }
@@ -103,12 +104,12 @@ set_package_threads = function(num_cores) {
   }
 
   # R packages with global thread setters
-  if (requireNamespace("data.table", quietly = TRUE)) {
-    data.table::setDTthreads(num_cores)
-  }
-  if (requireNamespace("fixest", quietly = TRUE)) {
-    try(fixest::setFixest_nthreads(num_cores), silent = TRUE)
-  }
+	  if (requireNamespace("data.table", quietly = TRUE)) {
+	    data.table::setDTthreads(num_cores)
+	  }
+	  if (requireNamespace("fixest", quietly = TRUE)) {
+	    suppressWarnings(try(fixest::setFixest_nthreads(num_cores), silent = TRUE))
+	  }
 
   # Environment variables for OpenMP and BLAS/LAPACK
   # This helps prevent thread explosion in child processes

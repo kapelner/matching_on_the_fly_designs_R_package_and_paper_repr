@@ -1,10 +1,10 @@
 
-# Set library path
-dir.create("local_R_lib", recursive = TRUE, showWarnings = FALSE)
-.libPaths(c("local_R_lib", .libPaths()))
+# # Set library path
+# dir.create("local_R_lib", recursive = TRUE, showWarnings = FALSE)
+# .libPaths(c("local_R_lib", .libPaths()))
 
-# Always benchmark the current source tree, not a stale installed EDI copy.
-install.packages("SeqExpMatch", repos = NULL, type = "source", lib = "local_R_lib")
+# # Always benchmark the current source tree, not a stale installed EDI copy.
+# install.packages("SeqExpMatch", repos = NULL, type = "source", lib = "local_R_lib")
 library(EDI)
 
 # Load remaining packages
@@ -97,7 +97,7 @@ if (file.exists(results_file)) file.remove(results_file)
 
 MAX_BM_SECS = 10
 
-bm_safe = function(label, expr, env = parent.frame()) {
+bm_safe = function(label, expr, env = parent.frame(), num_cores_to_restore = NULL) {
     cat(sprintf("%s\n", label))
     flush.console()
     t_start = proc.time()[["elapsed"]]
@@ -122,6 +122,15 @@ bm_safe = function(label, expr, env = parent.frame()) {
             system(sprintf("kill %d 2>/dev/null", watchdog_pid), ignore.stdout = TRUE)
     }
 
+    restore_parallel_state = function() {
+        if (is.null(num_cores_to_restore) || is.na(num_cores_to_restore) || num_cores_to_restore <= 1L) {
+            return(invisible(NULL))
+        }
+        try(unset_num_cores(), silent = TRUE)
+        try(set_num_cores(as.integer(num_cores_to_restore)), silent = TRUE)
+        invisible(NULL)
+    }
+
     res = tryCatch({
         setTimeLimit(elapsed = MAX_BM_SECS, transient = TRUE)
         on.exit({ setTimeLimit(elapsed = Inf, transient = FALSE); kill_watchdog() }, add = TRUE)
@@ -132,6 +141,7 @@ bm_safe = function(label, expr, env = parent.frame()) {
         duration = round(t_end - t_start, 3)
         # C++ code bypasses setTimeLimit; check manually
         if (duration >= MAX_BM_SECS) {
+            restore_parallel_state()
             cat(sprintf(" (TIMEOUT >%.1fs) ", duration))
             return(Inf)
         }
@@ -140,6 +150,7 @@ bm_safe = function(label, expr, env = parent.frame()) {
     }, error = function(e) {
         kill_watchdog()
         t_elapsed = round(proc.time()[["elapsed"]] - t_start, 3)
+        restore_parallel_state()
         if (t_elapsed >= MAX_BM_SECS - 1 ||
             grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
             cat(sprintf(" (TIMEOUT >%.1fs) ", t_elapsed))
@@ -212,14 +223,14 @@ for (response_type in names(categorized_classes)) {
             # 1. boot (New object)
             inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             boot_time = if (!is.null(inf_obj)) {
-                bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
+                bm_safe("boot", quote(inf_obj$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)), num_cores_to_restore = num_cores)
             } else NA
             
             # 2. ci (New object; save w before in case draw_ws_according_to_design corrupts it)
             w_original = current_des_obj$.__enclos_env__$private$w
             inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)), num_cores_to_restore = num_cores)
             } else NA
 
             # 3. custom_ci (New object, reset design cache for cold measurement)
@@ -227,27 +238,27 @@ for (response_type in names(categorized_classes)) {
             inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             custom_ci_time = if (!is.null(inf_obj) && !is_heavy_model) {
                 tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
-                bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)), num_cores_to_restore = num_cores)
             } else NA
             
             # 4. rand (New object)
             inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
+                bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)), num_cores_to_restore = num_cores)
             } else NA
             
             # 5. ci_after_rand (REUSE object from rand)
             ci_after_rand_time = if (!is.null(inf_obj) && !is_heavy_model) {
-                bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)))
+                bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)), num_cores_to_restore = num_cores)
             } else NA
             
             # 6. asymp (Asymptotic p-value/CI)
             inf_obj = tryCatch(inf_class$new(current_des_obj, verbose = FALSE), error = function(e) NULL)
             asymp_pval_time = if (!is.null(inf_obj)) {
-                bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()))
+                bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()), num_cores_to_restore = num_cores)
             } else NA
             asymp_ci_time = if (!is.null(inf_obj)) {
-                bm_safe("asymp_ci", quote(inf_obj$compute_asymp_confidence_interval()))
+                bm_safe("asymp_ci", quote(inf_obj$compute_asymp_confidence_interval()), num_cores_to_restore = num_cores)
             } else NA
             
             # Unset cores

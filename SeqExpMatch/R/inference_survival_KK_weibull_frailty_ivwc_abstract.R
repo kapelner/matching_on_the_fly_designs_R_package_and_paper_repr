@@ -174,60 +174,38 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 
 			beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 				# --- Matched pairs component ---
-				beta_m = NA_real_
-				ssq_m  = NA_real_
+				beta_m = NA_real_; ssq_m  = NA_real_
 				if (m > 0) {
 					pairs_b = sample(1:m, m, replace = TRUE)
-					i_match_b = integer(0)
-					cluster_b = integer(0)
+					i_match_b = integer(0); cluster_b = integer(0)
 					for (new_id in 1:m) {
-						orig_id = pairs_b[new_id]
-						idx = which(m_vec == orig_id)
-						i_match_b = c(i_match_b, idx)
-						cluster_b = c(cluster_b, rep(new_id, length(idx)))
+						orig_id = pairs_b[new_id]; idx = which(m_vec == orig_id)
+						i_match_b = c(i_match_b, idx); cluster_b = c(cluster_b, rep(new_id, length(idx)))
 					}
-					dat_m = data.frame(
-						time = y[i_match_b],
-						event = dead[i_match_b],
-						w = w[i_match_b],
-						cluster = factor(cluster_b)
-					)
+					dat_m = data.frame(time = y[i_match_b], event = dead[i_match_b], w = w[i_match_b], cluster = factor(cluster_b))
 					if (!is.null(X)) dat_m = cbind(dat_m, X[i_match_b, , drop = FALSE])
-					res_m = private$fit_fast_approx(dat_m, cov_str)
-					if (!is.null(res_m)) {
-						beta_m = res_m$beta_aft
-						ssq_m  = res_m$ssq_aft
-					}
+					res_m = fit_fast_approx_fn(dat_m, cov_str)
+					if (!is.null(res_m)) { beta_m = res_m$beta_aft; ssq_m  = res_m$ssq_aft }
 				}
-
 				# --- Reservoir component ---
-				beta_r = NA_real_
-				ssq_r  = NA_real_
+				beta_r = NA_real_; ssq_r  = NA_real_
 				if (n_reservoir > 0) {
 					i_res_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 					X_r = if (!is.null(X)) cbind(w = w[i_res_b], X[i_res_b, , drop = FALSE]) else matrix(w[i_res_b], ncol = 1, dimnames = list(NULL, "w"))
 					mod_r = tryCatch(fast_weibull_regression(y[i_res_b], dead[i_res_b], X_r), error = function(e) NULL)
 					if (!is.null(mod_r)) {
-						beta_r = as.numeric(mod_r$coefficients["w"])
-						ssq_r  = if (is.matrix(mod_r$vcov) && "w" %in% colnames(mod_r$vcov)) mod_r$vcov["w", "w"] else NA_real_
+						beta_r = as.numeric(mod_r$coefficients["w"]); ssq_r  = if (is.matrix(mod_r$vcov) && "w" %in% colnames(mod_r$vcov)) mod_r$vcov["w", "w"] else NA_real_
 					}
 				}
-
 				# --- Pooling ---
 				m_ok = is.finite(beta_m) && is.finite(ssq_m) && ssq_m > 0
 				r_ok = is.finite(beta_r) && is.finite(ssq_r) && ssq_r > 0
-
-				if (m_ok && r_ok) {
-					w_star = ssq_r / (ssq_r + ssq_m)
-					w_star * beta_m + (1 - w_star) * beta_r
-				} else if (m_ok) {
-					beta_m
-				} else if (r_ok) {
-					beta_r
-				} else {
-					NA_real_
-				}
-			}, n_cores = cores_to_use))
+				if (m_ok && r_ok) { w_star = ssq_r / (ssq_r + ssq_m); return(w_star * beta_m + (1 - w_star) * beta_r)
+				} else if (m_ok) { return(beta_m)
+				} else if (r_ok) { return(beta_r) }
+				NA_real_
+			}, n_cores = cores_to_use,
+			export_list = list(m = m, m_vec = m_vec, y = y, dead = dead, w = w, X = X, cov_str = cov_str, i_reservoir = i_reservoir, n_reservoir = n_reservoir, fit_fast_approx_fn = private$fit_fast_approx)))
 			beta_hat_T_bs
 		},
 

@@ -107,7 +107,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			if (self$num_cores == 1){
 				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
 			} else {
-				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), n_cores = min(2L, self$num_cores)))
+				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), 
+				n_cores = min(2L, self$num_cores),
+				export_list = list(draw_sample = draw_sample, n = n, y = y, w = w, X_fit = X_fit, sample_int_replace_cpp = EDI:::sample_int_replace_cpp)))
 			}
 		}
 	),

@@ -147,37 +147,70 @@ Inference = R6::R6Class("Inference",
 			min(self$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
 		},
 
-		par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){
-			if (n_cores <= 1L) return(lapply(X, FUN))
+			par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){
+				if (length(X) == 0L) return(list())
+				n_cores = max(1L, min(as.integer(n_cores), length(X)))
+				budget = max(1L, as.integer(budget))
 
-			# Wrap FUN to ensure worker budget is respected
-			BUDGET_FUN = function(x) {
-				edi_env = asNamespace("EDI")$edi_env
-				edi_env$num_cores_override = as.integer(budget)
-				on.exit(edi_env$num_cores_override <- NULL)
-				FUN(x)
-			}
-
-			global_cl = get_global_fork_cluster()
-			global_mirai_cores = get_global_mirai_cores()
-
-			if (!is.null(global_cl)){
-				if (!is.null(export_list) && length(export_list) > 0L) {
-					export_env = list2env(export_list, parent = emptyenv())
-					parallel::clusterExport(global_cl, names(export_list), envir = export_env)
+				# Wrap FUN to ensure worker budget is respected
+				BUDGET_FUN = function(x) {
+					ns = asNamespace("EDI")
+					edi_env = ns$edi_env
+					prev_override = edi_env$num_cores_override
+					prev_threads = getOption(".edi_last_set_threads")
+					if (is.null(prev_threads) || length(prev_threads) != 1L || !is.finite(prev_threads)) {
+						prev_threads = 1L
+					}
+					edi_env$num_cores_override = budget
+					ns$set_package_threads(budget)
+					on.exit({
+						edi_env$num_cores_override = prev_override
+						ns$set_package_threads(prev_threads)
+					}, add = TRUE)
+					FUN(x)
 				}
-				parallel::parLapply(global_cl, X, BUDGET_FUN)
-			} else if (!is.null(global_mirai_cores)){
-				private$ensure_mirai_daemons(global_mirai_cores)
-				tasks = lapply(X, function(x) mirai::mirai({BUDGET_FUN(x)}, BUDGET_FUN = BUDGET_FUN, FUN = FUN, x = x, budget = budget))
-				lapply(tasks, function(m) m[])
-			} else if (.Platform$OS.type != "unix"){
-				if (!isTRUE(private$warned_no_parallel)){
-					message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
-					private$warned_no_parallel = TRUE
-				}
-				lapply(X, FUN)
-			} else {
+				if (n_cores <= 1L) return(lapply(X, BUDGET_FUN))
+
+				global_cl = get_global_fork_cluster()
+				global_mirai_cores = get_global_mirai_cores()
+
+				if (!is.null(global_cl)){
+					worker_cl = global_cl[seq_len(min(n_cores, length(global_cl)))]
+					tryCatch({
+						if (!is.null(export_list) && length(export_list) > 0L) {
+							export_env = list2env(export_list, parent = emptyenv())
+							parallel::clusterExport(worker_cl, names(export_list), envir = export_env)
+						}
+						parallel::parLapply(worker_cl, X, BUDGET_FUN)
+					}, error = function(e) {
+					# If the persistent cluster has been killed externally (for example by a
+					# timeout watchdog), clear it and fall back to a one-shot Unix fork apply.
+					# This prevents stale socket connections from poisoning subsequent calls.
+					msg = conditionMessage(e)
+					if (.Platform$OS.type == "unix" &&
+						grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
+						edi_env$global_fork_cluster = NULL
+						try(parallel::stopCluster(global_cl), silent = TRUE)
+						if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) {
+							return(pbmcapply::pbmclapply(X, BUDGET_FUN, mc.cores = n_cores))
+						}
+						return(parallel::mclapply(X, BUDGET_FUN, mc.cores = n_cores))
+					}
+						stop(e)
+					})
+				} else if (!is.null(global_mirai_cores)){
+					requested_mirai_cores = min(n_cores, global_mirai_cores)
+					private$ensure_mirai_daemons(requested_mirai_cores)
+					on.exit(private$ensure_mirai_daemons(global_mirai_cores), add = TRUE)
+					tasks = lapply(X, function(x) mirai::mirai({BUDGET_FUN(x)}, BUDGET_FUN = BUDGET_FUN, FUN = FUN, x = x, budget = budget))
+					lapply(tasks, function(m) m[])
+				} else if (.Platform$OS.type != "unix"){
+					if (!isTRUE(private$warned_no_parallel)){
+						message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
+						private$warned_no_parallel = TRUE
+					}
+					lapply(X, BUDGET_FUN)
+				} else {
 				if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
 					pbmcapply::pbmclapply(X, BUDGET_FUN, mc.cores = n_cores)
 				} else {

@@ -207,41 +207,41 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						}, error = function(e) NA_real_)
 					}
 
-					if (!is.null(get_global_fork_cluster()) && cores_to_use > 1L) {
-						cl = private$get_or_create_fork_cluster()
-						beta_hat_T_bs = unlist(parallel::parLapply(cl, 1:B, kk_task))
-					} else {
-						has_res_stat_local = has_res_stat
-						beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
-							i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-							if (m > 0) {
-								pairs_to_include = sample(1:m, m, replace = TRUE)
-								i_matched_b = integer(0); m_vec_b_matched = integer(0)
-								for (new_pair_id in 1:m) {
-									orig_pid = pairs_to_include[new_pair_id]
-									pair_idx = which(m_vec == orig_pid)
-									i_matched_b = c(i_matched_b, pair_idx)
-									m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
-								}
-							} else {
-								i_matched_b = integer(0); m_vec_b_matched = integer(0)
+					# Use private$par_lapply which handles both persistent fork clusters and other strategies.
+					beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
+						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+						if (m > 0) {
+							pairs_to_include = sample(1:m, m, replace = TRUE)
+							i_matched_b = integer(0); m_vec_b_matched = integer(0)
+							for (new_pair_id in 1:m) {
+								orig_pid = pairs_to_include[new_pair_id]
+								pair_idx = which(m_vec == orig_pid)
+								i_matched_b = c(i_matched_b, pair_idx)
+								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
 							}
-							i_b = c(i_reservoir_b, i_matched_b)
-							m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
-							boot_inf_obj = kk_template$duplicate()
-							boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-							boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-							boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-							boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-							boot_inf_obj$.__enclos_env__$private$cached_values = list()
-							tryCatch({
-								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
-								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-								if (has_res_stat_local) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
-							}, error = function(e) NA_real_)
-						}, n_cores = cores_to_use, show_progress = private$verbose))
-					}
+						} else {
+							i_matched_b = integer(0); m_vec_b_matched = integer(0)
+						}
+						i_b = c(i_reservoir_b, i_matched_b)
+						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
+						worker_inf = kk_template$duplicate()
+						worker_inf$.__enclos_env__$private$y = y[i_b]
+						worker_inf$.__enclos_env__$private$dead = dead[i_b]
+						worker_inf$.__enclos_env__$private$w = w[i_b]
+						worker_inf$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+						worker_inf$.__enclos_env__$private$cached_values = list()
+						tryCatch({
+							worker_inf$.__enclos_env__$private$m = m_vec_b
+							worker_inf$.__enclos_env__$private$compute_basic_match_data()
+							if (has_res_stat) worker_inf$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+							worker_inf$compute_treatment_estimate(estimate_only = TRUE)
+						}, error = function(e) NA_real_)
+					}, n_cores = cores_to_use, show_progress = private$verbose,
+					export_list = list(
+						i_reservoir = i_reservoir, n_reservoir = n_reservoir, m = m, m_vec = m_vec,
+						y = y, dead = dead, w = w, X = X, kk_template = kk_template,
+						has_res_stat = has_res_stat
+					)))
 					return(beta_hat_T_bs)
 				}
 			}
