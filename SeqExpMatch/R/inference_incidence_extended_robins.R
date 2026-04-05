@@ -13,8 +13,24 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 			if (!is.null(private$cached_values$robins_s_beta_hat_T)) {
 				return(private$cached_values$robins_s_beta_hat_T)
 			}
-			#TO-DO
-			private$cached_values$robins_s_beta_hat_T
+			m = private$des_obj$get_block_ids()
+			B = length(unique(m))
+			n_B = sum(m == 1)
+			n_B_over_two = n_B / 2
+			variance_tot = 0
+			for (b in 1 : B){
+				y_b = private$des_obj_priv_int$y[m == b]
+				w_b = private$des_obj_priv_int$w[m == b]
+				p_hat_T_b = sum(y_b[w_b == 1]) / n_B_over_two
+				p_hat_C_b = sum(y_b[w_b == 0]) / n_B_over_two
+				m_1_b = max(p_hat_T_b, p_hat_C_b)
+				m_0_b = min(p_hat_T_b, p_hat_C_b)
+				variance_tot = variance_tot + 
+					m_1_b * (1 - m_1_b) / n_B_over_two +
+					m_0_b * (1 - m_0_b) / n_B_over_two +
+					((2 * m_0_b - m_1_b) * (1 - m_1_b) - m_0_b * (1 - m_0_b))  / n_B
+			}
+			private$cached_values$robins_s_beta_hat_T = 1 / B * sqrt(variance_tot)
 		}
 	)
 )

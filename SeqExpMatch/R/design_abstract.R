@@ -198,6 +198,31 @@ Design = R6::R6Class("Design",
 		},
 
 		#' @description
+		#' Checks whether this design is a blocking design.
+		assert_blocking_design = function(){
+			if (!private$design_is_supported_blocking(self)){
+				stop("This design requires a blocking design.")
+			}
+		},
+
+		#' @description
+		#' Checks whether all blocks have the same number of subjects.
+		#'
+		#' @return `TRUE` invisibly if the block sizes are equal.
+		assert_equal_block_sizes = function(){
+			self$assert_blocking_design()
+			block_ids = self$get_block_ids()
+			block_sizes = as.integer(table(block_ids))
+			if (length(block_sizes) <= 1L){
+				return(invisible(TRUE))
+			}
+			if (any(block_sizes != block_sizes[1L])) {
+				stop("All blocks must have the same number of subjects.")
+			}
+			invisible(TRUE)
+		},
+
+		#' @description
 		#' Checks if the experiment has a fixed sample size.
 		assert_fixed_sample = function(){
 			if (!private$fixed_sample){
@@ -349,6 +374,12 @@ Design = R6::R6Class("Design",
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
 		verbose = NULL,
+		design_is_supported_blocking = function(des_obj){
+			is(des_obj, "DesignSeqOneByOneKK14") ||
+				is(des_obj, "FixedDesignBlocking") ||
+				is(des_obj, "DesignSeqOneByOneSPBR") ||
+				is(des_obj, "DesignSeqOneByOneRandomBlockSize")
+		},
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
 		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
 		resample_design = function(){

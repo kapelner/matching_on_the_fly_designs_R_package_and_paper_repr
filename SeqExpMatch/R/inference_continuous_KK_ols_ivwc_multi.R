@@ -106,7 +106,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	#'
 	#' @examples
 	#' \dontrun{
-	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
@@ -135,7 +135,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	#'
 	#' @examples
 	#' \dontrun{
-	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
+	#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])

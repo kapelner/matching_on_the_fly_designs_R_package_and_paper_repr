@@ -47,17 +47,6 @@ finagle_different_responses_from_continuous = function(y_cont){
 #fit a *.* model for all types
 #draw y's differently in each simulation
 datasets_and_response_models = list(
-	airquality = list(
-	X = airquality_subset %>% model.matrix(Wind ~ 0 + ., .) %>% apply(2, scale) %>% `/`(ncol(.)) %>% data.table %>% select(where(~ !any(is.na(.)))),
-	y_original = finagle_different_responses_from_continuous(airquality_subset$Wind),
-	beta_T = list(
-		continuous = 0.2,
-		incidence =  2,
-		proportion = 0.3,
-		count =      0.3,
-		survival =   1
-	)
-	),
 	cars = list(
 	X = cars_subset %>% model.matrix(Price ~ 0 + ., .) %>% apply(2, scale) %>% `/`(ncol(.)) %>% data.table %>% select(where(~ !any(is.na(.)))),
 	y_original = finagle_different_responses_from_continuous(cars_subset$Price),
@@ -73,6 +62,17 @@ datasets_and_response_models = list(
 	y_original = list(count = glass_subset$Type),
 	beta_T = list(
 		count =      1
+	)
+	),
+	airquality = list(
+	X = airquality_subset %>% model.matrix(Wind ~ 0 + ., .) %>% apply(2, scale) %>% `/`(ncol(.)) %>% data.table %>% select(where(~ !any(is.na(.)))),
+	y_original = finagle_different_responses_from_continuous(airquality_subset$Wind),
+	beta_T = list(
+		continuous = 0.2,
+		incidence =  2,
+		proportion = 0.3,
+		count =      0.3,
+		survival =   1
 	)
 	),
 	pima = list(

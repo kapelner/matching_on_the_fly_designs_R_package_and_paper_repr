@@ -61,7 +61,7 @@ test_that("DesignSeqOneByOneiBCRD works", {
 	x_new <- data.frame(x1 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
 	expect_true(w %in% c(0, 1))
-	expect_error(des$get_block_ids(), "undefined")
+	expect_error(des$get_block_ids(), "undefined|improperly sized")
 	for (i in 2:10) {
 		des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 	}
@@ -101,6 +101,32 @@ test_that("DesignSeqOneByOneSPBR works", {
 	expect_equal(dim(W), c(8, 3))
 	expect_true(all(colSums(W[1:4, , drop = FALSE]) == 2))
 	expect_true(all(colSums(W[5:8, , drop = FALSE]) == 2))
+})
+
+test_that("Design asserts equal block sizes", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	expect_true(des$assert_equal_block_sizes())
+
+	des_bad <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des_bad$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3), rep("B", 5))))
+	des_bad$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des_bad$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	expect_error(des_bad$assert_equal_block_sizes(), "same number of subjects")
 })
 
 test_that("DesignSeqOneByOneRandomBlockSize works", {
@@ -154,19 +180,23 @@ test_that("Response types work", {
 test_that("m is only populated for blocking and KK designs", {
 	bernoulli_des <- DesignSeqOneByOneBernoulli$new(response_type = "continuous", n = 4, verbose = FALSE)
 	bernoulli_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = 0))
-	expect_null(bernoulli_des$get_m())
+	expect_null(bernoulli_des$.__enclos_env__$private$m)
 
 	blocking_des <- FixedDesignBlocking$new(response_type = "continuous", strata_cols = "stratum", n = 4, verbose = FALSE)
 	blocking_des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "B", "B")))
-	expect_equal(blocking_des$get_m(), c(1L, 1L, 2L, 2L))
+	blocking_des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
+	blocking_des$add_all_subject_responses(c(0, 1, 0, 1))
+	expect_equal(blocking_des$get_block_ids(), c(1L, 1L, 2L, 2L))
 
 	for (des in list(
 		DesignSeqOneByOneKK14$new(response_type = "continuous", n = 6, verbose = FALSE),
 		DesignSeqOneByOneKK21$new(response_type = "continuous", n = 6, verbose = FALSE),
 		DesignSeqOneByOneKK21stepwise$new(response_type = "continuous", n = 6, verbose = FALSE)
 	)) {
-		expect_true(is.null(des$get_m()) || is.integer(des$get_m()) || is.numeric(des$get_m()))
-		des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-		expect_true(is.null(des$get_m()) || is.integer(des$get_m()) || is.numeric(des$get_m()))
+		for (i in 1:6) {
+			des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+		}
+		des$add_all_subject_responses(rnorm(6))
+		expect_true(is.null(des$.__enclos_env__$private$m) || is.integer(des$.__enclos_env__$private$m) || is.numeric(des$.__enclos_env__$private$m))
 	}
 })

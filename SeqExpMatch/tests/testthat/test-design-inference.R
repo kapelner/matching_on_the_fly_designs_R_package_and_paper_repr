@@ -58,7 +58,7 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	expected_pval <- 2 * stats::pt(-abs(expected_est / se), df = df)
 
 	expect_equal(est, expected_est, tolerance = 1e-12)
-	expect_equal(ci, expected_ci, tolerance = 1e-12)
+	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
 	expect_equal(pval, expected_pval, tolerance = 1e-12)
 
 	des_bad <- DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous", verbose = FALSE)
@@ -104,7 +104,7 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 	expected_pval <- 2 * stats::pnorm(-abs(expected_est / expected_se))
 
 	expect_equal(est, expected_est, tolerance = 1e-12)
-	expect_equal(ci, expected_ci, tolerance = 1e-12)
+	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
 	expect_equal(as.numeric(pval), expected_pval, tolerance = 1e-12)
 
 	des_bad <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
@@ -113,6 +113,67 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 	}
 	add_all_subject_responses_seq(des_bad, rbinom(8, 1, 0.5))
 	expect_error(InferenceIncidAzriel$new(des_bad, verbose = FALSE), "blocking design")
+})
+
+test_that("Azriel inference requires even treatment allocation", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		prob_T = 0.25,
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "A", "A", "B", "B", "B", "B")))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	expect_error(
+		InferenceIncidAzriel$new(des, verbose = FALSE),
+		"even treatment allocation"
+	)
+})
+
+test_that("Azriel inference requires equal block sizes", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3), rep("B", 5))))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	expect_error(
+		InferenceIncidAzriel$new(des, verbose = FALSE),
+		"same number of subjects"
+	)
+})
+
+test_that("Azriel and Extended Robins standard errors are comparable in a blocked simulation", {
+	set.seed(20260405)
+	se_pairs <- vapply(seq_len(25), function(i) {
+		des <- FixedDesignBlocking$new(
+			strata_cols = "stratum",
+			n = 8,
+			response_type = "incidence",
+			verbose = FALSE
+		)
+		des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
+		des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+		des$add_all_subject_responses(rbinom(8, 1, 0.5))
+
+		inf_azriel <- InferenceIncidAzriel$new(des, verbose = FALSE)
+		inf_robins <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
+		c(
+			azriel = inf_azriel$.__enclos_env__$private$get_standard_error(),
+			robins = inf_robins$.__enclos_env__$private$get_standard_error()
+		)
+	}, numeric(2))
+
+	expect_true(all(is.finite(se_pairs)))
+	expect_true(all(se_pairs["azriel", ] >= se_pairs["robins", ] - 1e-12))
+	expect_gt(mean(se_pairs["azriel", ] - se_pairs["robins", ]), 0)
 })
 
 test_that("Inference works for count", {
