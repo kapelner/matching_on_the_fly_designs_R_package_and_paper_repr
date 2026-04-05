@@ -7,8 +7,11 @@ using namespace Rcpp;
 ModelResult fast_ols_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
     ModelResult res;
     res.XtWX = X.transpose() * X; // XtWX is just XtX here
-    Eigen::VectorXd Xty = X.transpose() * y;
-    res.b = res.XtWX.ldlt().solve(Xty);
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
+    res.b = cod.solve(y);
+    if (!res.b.allFinite()) {
+        res.b = Eigen::VectorXd::Constant(X.cols(), NA_REAL);
+    }
     return res;
 }
 

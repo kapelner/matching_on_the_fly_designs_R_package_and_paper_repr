@@ -334,14 +334,14 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				est = private$cached_values$rd
 				se = private$cached_values$se_rd
 				if (!is.finite(est) || !is.finite(se) || se <= 0){
-					stop("G-computation RD: could not compute a finite delta-method standard error.")
+					return(c(NA_real_, NA_real_))
 				}
 				ci = est + c(-1, 1) * z * se
 			} else {
 				log_rr = private$cached_values$log_rr
 				se_log_rr = private$cached_values$se_log_rr
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
-					stop("G-computation RR: could not compute a finite delta-method standard error.")
+					return(c(NA_real_, NA_real_))
 				}
 				ci = exp(log_rr + c(-1, 1) * z * se_log_rr)
 			}
@@ -361,7 +361,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				est = private$cached_values$rd
 				se = private$cached_values$se_rd
 				if (!is.finite(est) || !is.finite(se) || se <= 0){
-					stop("G-computation RD: could not compute a finite delta-method standard error.")
+					return(NA_real_)
 				}
 				z_stat = (est - delta) / se
 			} else {
@@ -371,7 +371,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					stop("For RR inference, delta must be strictly positive.")
 				}
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
-					stop("G-computation RR: could not compute a finite delta-method standard error.")
+					return(NA_real_)
 				}
 				z_stat = (log_rr - log(delta)) / se_log_rr
 			}

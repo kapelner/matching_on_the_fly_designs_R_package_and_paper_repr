@@ -22,6 +22,19 @@ NumericVector compute_ols_distr_parallel_cpp(
 	int n = y.size();
 	int p_covars = X_covars.cols();
 	int p_full = p_covars + 2; // Intercept + w + covars
+
+	if (X_covars.rows() != n) {
+		stop("compute_ols_distr_parallel_cpp: X_covars rows must match length(y).");
+	}
+	if (w_mat.rows() != n) {
+		stop("compute_ols_distr_parallel_cpp: w_mat rows must match length(y).");
+	}
+	if (nsim <= 0) {
+		return NumericVector(0);
+	}
+	if (num_cores < 1) {
+		num_cores = 1;
+	}
 	
 	std::vector<double> results_vec(nsim);
 	
@@ -58,10 +71,11 @@ NumericVector compute_ols_distr_parallel_cpp(
 
 		Eigen::VectorXd Xt_w = X_covars.transpose() * w_d;
 
-		Eigen::MatrixXd XtX(p_full, p_full);
-		XtX(0, 0) = sum_1;
-		XtX(0, 1) = sum_w;
-		XtX.row(0).tail(p_covars) = Xt_1.transpose();
+			Eigen::MatrixXd XtX(p_full, p_full);
+			XtX.setZero();
+			XtX(0, 0) = sum_1;
+			XtX(0, 1) = sum_w;
+			XtX.row(0).tail(p_covars) = Xt_1.transpose();
 		
 		XtX(1, 0) = sum_w;
 		XtX(1, 1) = sum_w;
@@ -76,8 +90,9 @@ NumericVector compute_ols_distr_parallel_cpp(
 		Xty[1] = w_d.dot(y_sim);
 		Xty.tail(p_covars) = X_covars.transpose() * y_sim;
 
-		Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-		res_ptr[b] = beta[1];
+		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(XtX);
+		Eigen::VectorXd beta = cod.solve(Xty);
+		res_ptr[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
 	}
 
 	return wrap(results_vec);
@@ -97,6 +112,19 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 	int n_boot = indices_mat.rows(); // bootstrap sample size (= n for simple bootstrap)
 	int p_covars = X_covars.cols();
 	int p_full = p_covars + 2; // intercept + w + covars
+
+	if (X_covars.rows() != y.size()) {
+		stop("compute_ols_bootstrap_parallel_cpp: X_covars rows must match length(y).");
+	}
+	if (w.size() != y.size()) {
+		stop("compute_ols_bootstrap_parallel_cpp: w length must match length(y).");
+	}
+	if (indices_mat.rows() <= 0 || B <= 0) {
+		return NumericVector(0);
+	}
+	if (num_cores < 1) {
+		num_cores = 1;
+	}
 
 	std::vector<double> results_vec(B, NA_REAL);
 
@@ -135,6 +163,7 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 		Eigen::MatrixXd XtX_c = X_b.transpose() * X_b;
 
 		Eigen::MatrixXd XtX(p_full, p_full);
+		XtX.setZero();
 		XtX(0, 0) = sum_1;
 		XtX(0, 1) = sum_w;
 		XtX.row(0).tail(p_covars) = Xt_1.transpose();
@@ -152,8 +181,9 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 		Xty[1] = w_b.dot(y_b);
 		Xty.tail(p_covars) = X_b.transpose() * y_b;
 
-		Eigen::VectorXd beta = XtX.ldlt().solve(Xty);
-		results_vec[b] = beta[1];
+		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(XtX);
+		Eigen::VectorXd beta = cod.solve(Xty);
+		results_vec[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
 	}
 
 	return wrap(results_vec);

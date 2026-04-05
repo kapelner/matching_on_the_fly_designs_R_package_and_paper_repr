@@ -37,6 +37,12 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
+			}
+			if (is.null(private$cached_values$KKstats$ssqD_bar) ||
+				is.null(private$cached_values$KKstats$ssqR) ||
+				is.null(private$cached_values$KKstats$d_bar) ||
+				is.null(private$cached_values$KKstats$r_bar) ||
+				is.null(private$cached_values$KKstats$w_star)){
 				private$compute_reservoir_and_match_statistics()
 			}
 			KKstats = private$cached_values$KKstats
@@ -44,14 +50,23 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			nRC = KKstats$nRC
 			m = KKstats$m
 			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
-			no_matches = !is.finite(m) || m == 0
-			private$cached_values$beta_hat_T = if (reservoir_unusable){
-				KKstats$d_bar
-			} else if (no_matches){ #sometimes there's no matches
-				KKstats$r_bar
-			} else {
-				KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
-			}
+			no_matches = !is.finite(m) || m <= 1
+			has_matched_est = is.finite(KKstats$d_bar)
+			has_reservoir_est = is.finite(KKstats$r_bar)
+			private$cached_values$beta_hat_T =
+				if (reservoir_unusable && has_matched_est){
+					KKstats$d_bar
+				} else if (no_matches && has_reservoir_est){
+					KKstats$r_bar
+				} else if (has_matched_est && has_reservoir_est){
+					KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
+				} else if (has_reservoir_est){
+					KKstats$r_bar
+				} else if (has_matched_est){
+					KKstats$d_bar
+				} else {
+					NA_real_
+				}
 			private$cached_values$beta_hat_T
 		},
 
@@ -190,6 +205,13 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
 			}
+			if (is.null(private$cached_values$KKstats$ssqD_bar) ||
+				is.null(private$cached_values$KKstats$ssqR) ||
+				is.null(private$cached_values$KKstats$d_bar) ||
+				is.null(private$cached_values$KKstats$r_bar) ||
+				is.null(private$cached_values$KKstats$w_star)){
+				private$compute_reservoir_and_match_statistics()
+			}
 
 			ssqD = private$cached_values$KKstats$ssqD_bar
 			ssqR = private$cached_values$KKstats$ssqR
@@ -198,7 +220,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			nRC = private$cached_values$KKstats$nRC
 			m = private$cached_values$KKstats$m
 			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
-			no_matches = !is.finite(m) || m == 0
+			no_matches = !is.finite(m) || m <= 1
 			private$cached_values$s_beta_hat_T =
 				if (reservoir_unusable){
 					# Only matched pairs are usable; fall back to ssqR if ssqD is degenerate

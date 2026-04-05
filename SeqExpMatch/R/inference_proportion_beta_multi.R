@@ -44,9 +44,10 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 			Xmm = private$create_design_matrix()
 			# create_design_matrix is [Intercept, Treatment, Covariates]
 			colnames(Xmm) = c("(Intercept)", "treatment", if(ncol(Xmm) > 2) paste0("x", 1:(ncol(Xmm)-2)) else NULL)
+			y_beta = private$sanitize_beta_response(private$y)
 
 			if (estimate_only) {
-				res = fast_beta_regression(Xmm = Xmm, y = private$y)
+				res = fast_beta_regression(Xmm = Xmm, y = y_beta)
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(
@@ -54,7 +55,7 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 					ssq_b_2 = NA_real_
 				))
 			} else {
-				res = fast_beta_regression_with_var(Xmm = Xmm, y = private$y)
+				res = fast_beta_regression_with_var(Xmm = Xmm, y = y_beta)
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(

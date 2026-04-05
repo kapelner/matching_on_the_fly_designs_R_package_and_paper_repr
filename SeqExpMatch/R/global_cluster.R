@@ -1,35 +1,6 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
 
-#' Get the default parallel dispatch policy
-#'
-#' Returns EDI's built-in blocklist-first dispatch policy. This is the policy
-#' used when the user has not installed a custom dispatch override.
-#'
-#' Do not expect a universal "more cores is faster" rule.
-#'
-#' @return A named list describing the built-in dispatch policy.
-#'
-#' @export
-get_parallel_dispatch_policy = function() {
-  list(
-    bootstrap = list(
-      serial_inference_class_patterns = c(
-        "^InferenceIncid",
-        "^InferenceSurvival(?!.*KK)",
-        "^InferenceAllKKWilcoxIVWC$"
-      ),
-      serial_response_types = c("incidence")
-    ),
-    rand_ci = list(
-      serial_inference_class_patterns = c("^InferenceIncid"),
-      serial_response_types = c("incidence")
-    )
-  )
-}
-
-edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
-
 #' Set the number of cores for parallelization
 #' 
 #' This function initializes a persistent parallel cluster (either a fork cluster
@@ -89,6 +60,67 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
   
   invisible(NULL)
 }
+
+
+#' Unset the number of cores and stop parallel clusters
+#' 
+#' This function stops any global fork or mirai clusters stored in the package
+#' environment and resets the core count to serial execution.
+#' 
+#' @return Invisible \code{NULL}.
+#' 
+#' @export
+unset_num_cores = function() {
+  # Handle fork cluster
+  if (!is.null(edi_env$global_fork_cluster)) {
+    cl = edi_env$global_fork_cluster
+    edi_env$global_fork_cluster = NULL
+    tryCatch(parallel::stopCluster(cl), error = function(e) invisible(NULL))
+  }
+  
+  # Handle mirai cluster
+  if (!is.null(edi_env$global_mirai_num_cores)) {
+    if (requireNamespace("mirai", quietly = TRUE)) {
+      tryCatch(mirai::daemons(0), error = function(e) invisible(NULL)) # Stop daemons
+    }
+    edi_env$global_mirai_num_cores = NULL
+  }
+  
+  # Reset package threads to 1
+  set_package_threads(1L)
+  
+  invisible(NULL)
+}
+
+
+#' Get the default parallel dispatch policy
+#'
+#' Returns EDI's built-in blocklist-first dispatch policy. This is the policy
+#' used when the user has not installed a custom dispatch override.
+#'
+#' Do not expect a universal "more cores is faster" rule.
+#'
+#' @return A named list describing the built-in dispatch policy.
+#'
+#' @export
+get_parallel_dispatch_policy = function() {
+  list(
+    bootstrap = list(
+      serial_inference_class_patterns = c(
+        "^InferenceIncid",
+        "^InferenceSurvival(?!.*KK)",
+        "^InferenceAllKKWilcoxIVWC$"
+      ),
+      serial_response_types = c("incidence")
+    ),
+    rand_ci = list(
+      serial_inference_class_patterns = c("^InferenceIncid"),
+      serial_response_types = c("incidence")
+    )
+  )
+}
+
+edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
 
 #' Update the parallel dispatch policy
 #'
@@ -153,36 +185,6 @@ set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
   }
   edi_env$parallel_dispatch_policy_config = current_config
   edi_env$parallel_dispatch_policy_override = NULL
-  invisible(NULL)
-}
-
-#' Unset the number of cores and stop parallel clusters
-#' 
-#' This function stops any global fork or mirai clusters stored in the package
-#' environment and resets the core count to serial execution.
-#' 
-#' @return Invisible \code{NULL}.
-#' 
-#' @export
-unset_num_cores = function() {
-  # Handle fork cluster
-  if (!is.null(edi_env$global_fork_cluster)) {
-    cl = edi_env$global_fork_cluster
-    edi_env$global_fork_cluster = NULL
-    tryCatch(parallel::stopCluster(cl), error = function(e) invisible(NULL))
-  }
-  
-  # Handle mirai cluster
-  if (!is.null(edi_env$global_mirai_num_cores)) {
-    if (requireNamespace("mirai", quietly = TRUE)) {
-      tryCatch(mirai::daemons(0), error = function(e) invisible(NULL)) # Stop daemons
-    }
-    edi_env$global_mirai_num_cores = NULL
-  }
-  
-  # Reset package threads to 1
-  set_package_threads(1L)
-  
   invisible(NULL)
 }
 

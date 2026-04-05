@@ -63,7 +63,7 @@ prepare_des_obj = function(response_type, dataset_name = "airquality", design_cl
         } else if (response_type == "incidence") {
             y_t = as.integer(plogis(qlogis(pmax(0.01, pmin(0.99, y[t]))) + (if(w_t == 1) beta_T else 0)) > runif(1))
         } else if (response_type == "proportion") {
-            y_t = plogis(qlogis(pmax(0.01, pmin(0.99, y[t]))) + (if(w_t == 1) beta_T else 0))
+            y_t = plogis(qlogis(pmin(1, pmax(0, y[t]))) + (if(w_t == 1) beta_T else 0))
         } else if (response_type == "count") {
             y_t = as.integer(rpois(1, exp(log(pmax(0.1, y[t])) + (if(w_t == 1) beta_T else 0))))
         } else if (response_type == "survival") {

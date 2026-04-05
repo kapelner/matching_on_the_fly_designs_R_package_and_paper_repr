@@ -157,11 +157,19 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 		},
 
 		only_matches = function(){
-			private$cached_values$KKstats$nRT <= 2 || private$cached_values$KKstats$nRC <= 2
+			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(FALSE)
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			if (!is.finite(nRT) || !is.finite(nRC)) return(FALSE)
+			nRT <= 2 || nRC <= 2
 		},
 
 		only_reservoir = function(){
-			private$cached_values$KKstats$m == 0
+			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(FALSE)
+			m = KKstats$m
+			is.finite(m) && m <= 1
 		},
 
 		reduce_design_matrix_preserving_required = function(X_full, required){

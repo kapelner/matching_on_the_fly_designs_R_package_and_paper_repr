@@ -25,6 +25,20 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 			}
 		},
 
+		only_matches = function(){
+			if (is.null(private$cached_values$KKstats)) return(FALSE)
+			nRT = private$cached_values$KKstats$nRT
+			nRC = private$cached_values$KKstats$nRC
+			if (!is.finite(nRT) || !is.finite(nRC)) return(FALSE)
+			nRT <= 1 || nRC <= 1
+		},
+
+		only_reservoir = function(){
+			if (is.null(private$cached_values$KKstats)) return(FALSE)
+			m = private$cached_values$KKstats$m
+			is.finite(m) && m <= 1
+		},
+
 		compute_reservoir_and_match_statistics = function(){
 			nRC = private$cached_values$KKstats$nRC
 			nRT = private$cached_values$KKstats$nRT

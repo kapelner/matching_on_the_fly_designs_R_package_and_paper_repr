@@ -483,5 +483,3 @@ summary(lm(avg_pow ~ design + response_type + dataset_name, res_summary_tx_effec
 summary(lm(avg_pow ~ design + resp_and_est, res_summary_tx_effect))
 
 summary(lm(avg_pow ~ design + estimate_type + dataset_name, res_summary_tx_effect))
-
-

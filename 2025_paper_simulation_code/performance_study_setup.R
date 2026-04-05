@@ -240,4 +240,3 @@ table(exp_settings$prob_of_adding_responses, exp_settings$design)
 
 
 rm(ns, response_types, designs, test_types, inference_methods, Nsim, Nplot)
-

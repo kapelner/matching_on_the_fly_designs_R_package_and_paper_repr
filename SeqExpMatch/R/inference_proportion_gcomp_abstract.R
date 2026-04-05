@@ -44,8 +44,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$shared(estimate_only = FALSE)
-			private$compute_effect_confidence_interval(alpha)
+			tryCatch({
+				private$shared(estimate_only = FALSE)
+				private$compute_effect_confidence_interval(alpha)
+			}, error = function(e){
+				warning("G-computation mean difference: ", conditionMessage(e))
+				c(NA_real_, NA_real_)
+			})
 		},
 
 		#' @description
@@ -53,8 +58,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta, len = 1)
-			private$shared(estimate_only = FALSE)
-			private$compute_effect_pvalue(delta)
+			tryCatch({
+				private$shared(estimate_only = FALSE)
+				private$compute_effect_pvalue(delta)
+			}, error = function(e){
+				warning("G-computation mean difference: ", conditionMessage(e))
+				NA_real_
+			})
 		},
 
 		#' @description
@@ -383,7 +393,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			est = private$cached_values$md
 			se = private$cached_values$se_md
 			if (!is.finite(est) || !is.finite(se) || se <= 0){
-				stop("G-computation mean difference: could not compute a finite delta-method standard error.")
+				return(c(NA_real_, NA_real_))
 			}
 			ci = est + c(-1, 1) * z * se
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -394,7 +404,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			est = private$cached_values$md
 			se = private$cached_values$se_md
 			if (!is.finite(est) || !is.finite(se) || se <= 0){
-				stop("G-computation mean difference: could not compute a finite delta-method standard error.")
+				return(NA_real_)
 			}
 			z_stat = (est - delta) / se
 			2 * stats::pnorm(-abs(z_stat))

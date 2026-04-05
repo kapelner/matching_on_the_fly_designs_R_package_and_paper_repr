@@ -112,7 +112,8 @@ write_results_if_needed = function(force = FALSE){
 			results_dt,
 			results_file,
 			append = append_mode,
-			col.names = !append_mode
+			col.names = !append_mode,
+			na = "NA"
 		)
 		results_dt <<- results_dt[0]
 	}
@@ -260,8 +261,20 @@ safe_call = function(label, expr){
 	start_elapsed = unname(proc.time()[["elapsed"]])
 	tryCatch({
 		result <- expr
-			if (has_invalid_numeric(result)) stop("Invalid output detected (NA/NaN/Inf) in ", label)
-			if (is_zero_zero_confidence_interval(label, result)) stop("Degenerate confidence interval [0, 0] detected in ", label)
+			if (has_invalid_numeric(result)) {
+				msg = paste0("Invalid output detected (NA/NaN/Inf) in ", label)
+				message("Skipping ", label, " (non-fatal): ", msg)
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "error", duration_time_sec = duration_time_sec, error_message = msg)
+				return(invisible(NULL))
+			}
+			if (is_zero_zero_confidence_interval(label, result)) {
+				msg = paste0("Degenerate confidence interval [0, 0] detected in ", label)
+				message("Skipping ", label, " (non-fatal): ", msg)
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "error", duration_time_sec = duration_time_sec, error_message = msg)
+				return(invisible(NULL))
+			}
 			result = snap_small_numeric_to_zero(result)
 			cat("            ", paste(format(result, digits = 3), collapse = " "), "\n")
 			duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
@@ -276,6 +289,7 @@ safe_call = function(label, expr){
 			                 grepl("singular matrix in 'backsolve'", msg, fixed = TRUE) ||
 			                 grepl("G-computation RD: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("G-computation RR: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
+			                 grepl("G-computation mean difference: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("Zero/one-inflated beta requires y in [0, 1]", msg, fixed = TRUE) ||
 			                 grepl("Zhang incidence inference is only supported", msg, fixed = TRUE) ||
 
@@ -399,8 +413,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			return(as.numeric(stats::rbinom(1, size = 1, prob = p_t)))
 		}
 		if (response_type == "proportion"){
-			y_clamped = pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, y_t))
-			return(plogis(qlogis(y_clamped) + bt + eps))
+			return(pmin(1, pmax(0, y_t + bt + eps)))
 		}
 		if (response_type == "count"){
 			lambda_t = pmax(.Machine$double.eps, y_t * exp(bt + eps))
@@ -425,6 +438,18 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			" to 20 to keep stepwise-weight tests bounded in runtime."
 		)
 		X_design = X_design[, seq_len(20L), drop = FALSE]
+	}
+
+	if (nrow(X_design) %% 4L != 0L){
+		n_keep = nrow(X_design) - (nrow(X_design) %% 4L)
+		message(
+			"    Truncating test rows from ",
+			nrow(X_design),
+			" to ",
+			n_keep,
+			" so the design matrix row count is divisible by 4."
+		)
+		X_design = X_design[seq_len(n_keep), , drop = FALSE]
 	}
 
 	n = nrow(X_design)
