@@ -20,7 +20,10 @@ This class takes care of whole-experiment randomization.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-FixedDesign-new}{\code{FixedDesign$new()}}
-\item \href{#method-FixedDesign-randomize}{\code{FixedDesign$randomize()}}
+\item \href{#method-FixedDesign-assign_w_to_all_subjects}{\code{FixedDesign$assign_w_to_all_subjects()}}
+\item \href{#method-FixedDesign-add_all_subjects_to_experiment}{\code{FixedDesign$add_all_subjects_to_experiment()}}
+\item \href{#method-FixedDesign-add_all_subject_responses}{\code{FixedDesign$add_all_subject_responses()}}
+\item \href{#method-FixedDesign-overwrite_all_subject_assignments}{\code{FixedDesign$overwrite_all_subject_assignments()}}
 \item \href{#method-FixedDesign-supports_resampling}{\code{FixedDesign$supports_resampling()}}
 \item \href{#method-FixedDesign-draw_ws_according_to_design}{\code{FixedDesign$draw_ws_according_to_design()}}
 \item \href{#method-FixedDesign-clone}{\code{FixedDesign$clone()}}
@@ -29,10 +32,7 @@ This class takes care of whole-experiment randomization.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
@@ -52,7 +52,6 @@ This class takes care of whole-experiment randomization.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -63,7 +62,7 @@ This class takes care of whole-experiment randomization.
 Initialize a fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesign$new(
-  response_type = "continuous",
+  response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
@@ -92,14 +91,70 @@ A new `FixedDesign` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FixedDesign-randomize"></a>}}
-\if{latex}{\out{\hypertarget{method-FixedDesign-randomize}{}}}
-\subsection{Method \code{randomize()}}{
-Randomize treatment assignments for the entire experiment.
+\if{html}{\out{<a id="method-FixedDesign-assign_w_to_all_subjects"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-assign_w_to_all_subjects}{}}}
+\subsection{Method \code{assign_w_to_all_subjects()}}{
+Assign treatment to all subjects in the fixed experiment.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$randomize()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$assign_w_to_all_subjects()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesign-add_all_subjects_to_experiment"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-add_all_subjects_to_experiment}{}}}
+\subsection{Method \code{add_all_subjects_to_experiment()}}{
+Add all subjects' covariates to a fixed design at once.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$add_all_subjects_to_experiment(X_all)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{X_all}}{A data frame containing the full covariate matrix.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Invisibly returns the design object.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesign-add_all_subject_responses"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-add_all_subject_responses}{}}}
+\subsection{Method \code{add_all_subject_responses()}}{
+Add all subject responses for a fixed design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{ys}}{The responses as a numeric vector.}
+
+\item{\code{deads}}{The binary vector indicating if dead/censored.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FixedDesign-overwrite_all_subject_assignments"></a>}}
+\if{latex}{\out{\hypertarget{method-FixedDesign-overwrite_all_subject_assignments}{}}}
+\subsection{Method \code{overwrite_all_subject_assignments()}}{
+Overwrite all subject assignments for a fixed design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FixedDesign$overwrite_all_subject_assignments(w)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w}}{The binary responses.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-FixedDesign-supports_resampling"></a>}}

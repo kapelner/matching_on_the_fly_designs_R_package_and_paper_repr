@@ -11,10 +11,8 @@ test_that("InferenceIncidenceExactBinomial matches binom.test for FixedDesignBin
 		x2 = c(0, 0, 1, 1, 0, 0, 1, 1)
 	)
 	des <- FixedDesignBinaryMatch$new(n = nrow(x_dat), response_type = "incidence", verbose = FALSE)
-	for (i in seq_len(nrow(x_dat))) {
-		des$add_subject(x_dat[i, ])
-	}
-	des$randomize()
+	des$add_all_subjects_to_experiment(x_dat)
+	des$assign_w_to_all_subjects()
 	des$.__enclos_env__$private$ensure_bms_computed()
 	m <- as.integer(des$.__enclos_env__$private$m)
 	w <- des$get_w()
@@ -50,7 +48,7 @@ test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
 			verbose = FALSE
 		)
 		for (i in seq_len(nrow(x_dat))) {
-			des$add_subject_to_experiment_and_assign(x_dat[i, ])
+			des$add_one_subject_to_experiment_and_assign(x_dat[i, ])
 		}
 		m <- as.integer(des$.__enclos_env__$private$m)
 		w <- des$.__enclos_env__$private$w
@@ -86,7 +84,7 @@ test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
 test_that("InferenceIncidenceExactBinomial rejects unsupported designs", {
 	des <- DesignSeqOneByOneBernoulli$new(n = 10, response_type = "incidence", verbose = FALSE)
 	for (i in seq_len(10)) {
-		des$add_subject_to_experiment_and_assign(data.table(x1 = i))
+		des$add_one_subject_to_experiment_and_assign(data.table(x1 = i))
 	}
 	des$add_all_subject_responses(rep(c(0L, 1L), length.out = 10))
 

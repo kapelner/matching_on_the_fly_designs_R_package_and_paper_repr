@@ -10,7 +10,7 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		#' Initialize a Bernoulli sequential experimental design
 		#'
 		#' @param	response_type 	The data type of response values which must be one of the following:
-		#' 								"continuous" (the default),
+		#' 								"continuous",
 		#' 								"incidence",
 		#' 								"proportion",
 		#' 								"count",
@@ -24,7 +24,7 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		#' @return	A new `DesignSeqOneByOneBernoulli` object
 		#'
 		initialize = function(
-						response_type = "continuous",
+						response_type,
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,

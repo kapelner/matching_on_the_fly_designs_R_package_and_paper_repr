@@ -13,7 +13,7 @@
 #'   new(n = 6, response_type = "survival")
 #' X = data.table::data.table(MASS::biopsy[1:6, 2:10])
 #' for (i in 1:6) seq_des$
-#'   add_subject_to_experiment_and_assign(X[i, ])
+#'   add_one_subject_to_experiment_and_assign(X[i, ])
 #' seq_des$
 #'   add_all_subject_responses(
 #'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),

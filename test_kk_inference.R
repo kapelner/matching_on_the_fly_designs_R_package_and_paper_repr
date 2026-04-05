@@ -12,8 +12,8 @@ des_obj <- DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 
 cat("Adding subjects...\n")
 for (t in 1:n) {
-	des_obj$add_subject_to_experiment_and_assign(X[t, ])
-	des_obj$add_subject_response(t, y[t], 1)
+	des_obj$add_one_subject_to_experiment_and_assign(X[t, ])
+	des_obj$add_one_subject_response(t, y[t], 1)
 }
 
 cat("Creating InferenceAllKKCompoundMeanDiff...\n")

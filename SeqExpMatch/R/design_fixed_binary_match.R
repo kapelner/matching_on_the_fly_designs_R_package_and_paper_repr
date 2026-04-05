@@ -22,7 +22,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#' @return 			A new `FixedDesignBinaryMatch` object
 		#'
 		initialize = function(
-				response_type = "continuous",
+				response_type,
 				prob_T = 0.5,
 				mahal_match = FALSE,
 				include_is_missing_as_a_new_feature = TRUE,

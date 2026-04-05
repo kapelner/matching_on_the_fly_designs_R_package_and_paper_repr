@@ -88,10 +88,10 @@ run_simulation = function(i, data_set, beta_T, design, morison, n){
 
 
 	for (t in 1 : n){
-	des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	des_obj$add_one_subject_to_experiment_and_assign(X[t, ])
 	w_t = des_obj$get_w()[des_obj$get_t()]
 	y_filled[t] = beta_T * w_t + y[t]
-	des_obj$add_subject_response(t = t, y = as.numeric(y_filled[t]))
+	des_obj$add_one_subject_response(t = t, y = as.numeric(y_filled[t]))
 	}
 
 	#cat("nsim:", i, ", 2\n")

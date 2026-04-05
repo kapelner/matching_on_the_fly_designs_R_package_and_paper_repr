@@ -9,9 +9,11 @@ y = rbinom(n, 1, 0.5)
 
 seq_des = DesignSeqOneByOneBernoulli$new(response_type = "incidence", n = n)
 for (i in 1:n){
-    seq_des$add_subject_to_experiment_and_assign(X[i, , drop=FALSE])
+    seq_des$add_one_subject_to_experiment_and_assign(X[i, , drop=FALSE])
 }
-seq_des$add_all_subject_responses(y)
+for (i in 1:n){
+    seq_des$add_one_subject_response(i, y[i])
+}
 
 inf = InferenceIncidExactZhang$new(seq_des)
 

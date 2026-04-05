@@ -34,7 +34,7 @@ cat("Initializing design ", design_type, " for dataset ", dataset_name, " (n = "
 des_obj = DesignSeqOneByOneBernoulli$new(response_type = response_type, n = n)
 
 for (t in 1 : n){
-	w_t = des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
+	w_t = des_obj$add_one_subject_to_experiment_and_assign(D$X[t, ])
 	y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
 	des_obj$add_subject_response(t, y_t, dead[t])
 }

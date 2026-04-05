@@ -26,12 +26,17 @@ fuel_subset = cars2012 %>%              na.omit %>% slice_sample(n = max_n_datas
 rm(max_n_dataset)
 
 
+clamp_proportion_response = function(y){
+	y = as.numeric(y)
+	pmin(1, pmax(0, y))
+}
+
 finagle_different_responses_from_continuous = function(y_cont){
 	y_scaled = scale(y_cont)
 	list(
 	continuous = y_scaled,
-	incidence =  ifelse(y_cont > median(y_cont), 1, 0),
-	proportion = (y_cont - min(y_cont) + 1e-6) / max(y_cont - min(y_cont) + 2e-6),
+	incidence =  stats::plogis(as.numeric(y_scaled)),
+	proportion = clamp_proportion_response((y_cont - min(y_cont) + 1e-6) / max(y_cont - min(y_cont) + 2e-6)),
 	count =      round(y_cont - min(y_cont)),
 	survival =   y_scaled - min(y_scaled) + 0.1,
 	ordinal =    as.integer(cut(y_cont, breaks = unique(quantile(y_cont, probs = seq(0, 1, length.out = 5))), include.lowest = TRUE))
@@ -171,4 +176,11 @@ datasets_and_response_models = list(
 )
 rm(continuous_example,Glass,Sonar,Soybean,BreastCancer,iris,Ionosphere,abalone,cars2010,cars2011,cars2012)
 rm(airquality_subset,diamonds_subset,boston_subset,cars_subset,glass_subset,pima_subset,sonar_subset,soybean_subset,cancer_subset,ionosphere_subset,abalone_subset,fuel_subset)
+for (dataset_name in names(datasets_and_response_models)){
+	if ("proportion" %in% names(datasets_and_response_models[[dataset_name]]$y_original)) {
+		datasets_and_response_models[[dataset_name]]$y_original$proportion = clamp_proportion_response(datasets_and_response_models[[dataset_name]]$y_original$proportion)
+	}
+}
+
+rm(clamp_proportion_response)
 rm(finagle_different_responses_from_continuous)

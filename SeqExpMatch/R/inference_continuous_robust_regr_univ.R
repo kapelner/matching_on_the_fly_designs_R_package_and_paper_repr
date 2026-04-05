@@ -35,7 +35,7 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' \dontrun{
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "continuous")
 		#' for (i in 1 : 20){
-		#'   seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+		#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 		#' }
 		#' seq_des$add_all_subject_responses(rt(20, df = 3))
 		#'
@@ -94,11 +94,12 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
 		},
 
-		set_failed_fit_cache = function(){
-			private$cached_values$beta_hat_T = NA_real_
+		set_failed_fit_cache = function(reason = NA_character_, beta_hat_T = NA_real_, df = NA_real_){
+			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$is_z = FALSE
-			private$cached_values$df = NA_real_
+			private$cached_values$df = df
+			private$cached_values$fit_failure_reason = reason
 		},
 
 		get_ci_fit_controls = function(){
@@ -118,7 +119,7 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 				X_try = X_full[, private$fit_warm_keep, drop = FALSE]
 				j_try = match(2L, private$fit_warm_keep)
 				if (!is.na(j_try) && nrow(X_try) > ncol(X_try) && qr(X_try)$rank == ncol(X_try)) {
-					return(list(X = X_try, j_treat = j_try))
+					return(list(X = private$repair_reduced_design_matrix_colnames(X_try, j_try), j_treat = j_try))
 				}
 			}
 
@@ -127,7 +128,90 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			if (!(2L %in% keep)) keep[qr_X$rank] = 2L
 			keep = sort(unique(keep))
 			if (reuse_factorizations) private$fit_warm_keep = keep
-			list(X = X_full[, keep, drop = FALSE], j_treat = match(2L, keep))
+			j_treat = match(2L, keep)
+			list(X = private$repair_reduced_design_matrix_colnames(X_full[, keep, drop = FALSE], j_treat), j_treat = j_treat)
+		},
+
+		repair_reduced_design_matrix_colnames = function(X, j_treat){
+			if (is.null(X) || is.null(dim(X)) || !ncol(X)) return(X)
+
+			existing_names = colnames(X)
+			has_usable_names =
+				!is.null(existing_names) &&
+				length(existing_names) == ncol(X) &&
+				!any(is.na(existing_names)) &&
+				all(nzchar(existing_names)) &&
+				!anyDuplicated(existing_names) &&
+				is.finite(j_treat) &&
+				j_treat >= 1L &&
+				j_treat <= ncol(X) &&
+				identical(existing_names[j_treat], "treatment")
+			if (has_usable_names) return(X)
+
+			new_names = rep(NA_character_, ncol(X))
+			if (!is.null(existing_names) && length(existing_names) == ncol(X)) {
+				for (j in seq_len(ncol(X))) {
+					name_j = existing_names[j]
+					if (!is.na(name_j) && nzchar(name_j) && !(name_j %in% new_names)) {
+						new_names[j] = name_j
+					}
+				}
+			}
+
+			if (is.finite(j_treat) && j_treat >= 1L && j_treat <= ncol(X)) {
+				new_names[j_treat] = "treatment"
+			}
+
+			intercept_idx = setdiff(seq_len(ncol(X)), j_treat)
+			if (length(intercept_idx) >= 1L) {
+				intercept_idx = intercept_idx[1L]
+				if (is.na(new_names[intercept_idx]) || identical(new_names[intercept_idx], "treatment")) {
+					new_names[intercept_idx] = "(Intercept)"
+				}
+			}
+
+			for (j in seq_len(ncol(X))) {
+				if (is.na(new_names[j]) || !nzchar(new_names[j])) {
+					new_names[j] = paste0("x", j)
+				}
+			}
+
+			if (anyDuplicated(new_names)) {
+				new_names = make.unique(new_names, sep = "_")
+				if (is.finite(j_treat) && j_treat >= 1L && j_treat <= ncol(X)) {
+					new_names[j_treat] = "treatment"
+				}
+			}
+
+			colnames(X) = new_names
+			X
+		},
+
+		extract_treatment_beta = function(coef_vec, j_treat){
+			if (is.null(coef_vec) || !length(coef_vec) || !is.finite(j_treat) || j_treat < 1L || j_treat > length(coef_vec)) {
+				return(NA_real_)
+			}
+			as.numeric(coef_vec[j_treat])
+		},
+
+		extract_treatment_se = function(coef_table, vcov_mat, j_treat){
+			se = NA_real_
+			if (!is.null(coef_table) && is.matrix(coef_table) && nrow(coef_table) >= j_treat) {
+				se_col = which(colnames(coef_table) %in% c("Std. Error", "Std.Error", "SE"))[1]
+				if (length(se_col) == 1L && is.finite(se_col)) {
+					se = suppressWarnings(as.numeric(coef_table[j_treat, se_col]))
+				}
+				if ((!is.finite(se) || se <= 0) && "treatment" %in% rownames(coef_table) && length(se_col) == 1L && is.finite(se_col)) {
+					se = suppressWarnings(as.numeric(coef_table["treatment", se_col]))
+				}
+			}
+
+			if ((!is.finite(se) || se <= 0) && !is.null(vcov_mat) && is.matrix(vcov_mat) &&
+				nrow(vcov_mat) >= j_treat && ncol(vcov_mat) >= j_treat) {
+				v = suppressWarnings(as.numeric(vcov_mat[j_treat, j_treat]))
+				if (is.finite(v) && v >= 0) se = sqrt(v)
+			}
+			if (is.finite(se) && se > 0) se else NA_real_
 		},
 
 		fit_rlm_model = function(X, y, warm_start = FALSE){
@@ -154,12 +238,12 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			method_to_try = private$rlm_method
 			mod = run_rlm(method_to_try, start_coef)
 			if (inherits(mod, "error") && identical(method_to_try, "MM")) {
-				msg = if (length(mod$message) == 0L) "" else mod$message
-				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
-					mod = run_rlm("M", start_coef)
-				}
+				mod = run_rlm("M", start_coef)
 			}
-			if (inherits(mod, "error") || is.null(mod)) return(NULL)
+			if (inherits(mod, "error") || is.null(mod)) {
+				private$cached_values$fit_failure_reason = "rlm error"
+				return(NULL)
+			}
 
 			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
 			if (!is.null(coef_vec) && length(coef_vec) == ncol(X)) {
@@ -178,43 +262,35 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			X = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X) || !is.finite(j_treat)) {
-				private$set_failed_fit_cache()
+				private$set_failed_fit_cache(reason = "rank failure")
 				return(invisible(NULL))
 			}
 
-			if (is.null(colnames(X)) || length(colnames(X)) != ncol(X)) {
-				if (ncol(X) == 1L && isTRUE(j_treat == 1L)) {
-					colnames(X) = "treatment"
-				} else if (ncol(X) == 1L) {
-					colnames(X) = "(Intercept)"
-				} else {
-					colnames(X) = c("(Intercept)", "treatment", if (ncol(X) > 2L) paste0("x", seq_len(ncol(X) - 2L)) else NULL)[seq_len(ncol(X))]
-				}
-			}
+			X = private$repair_reduced_design_matrix_colnames(X, j_treat)
 			df = nrow(X) - ncol(X)
 			if (df <= 0L) {
-				private$set_failed_fit_cache()
+				private$set_failed_fit_cache(reason = "rank failure")
 				return(invisible(NULL))
 			}
 
 			mod = private$fit_rlm_model(X, private$y, warm_start = fit_controls$warm_start && estimate_only)
 			if (is.null(mod)) {
-				private$set_failed_fit_cache()
+				private$set_failed_fit_cache(reason = if (!is.null(private$cached_values$fit_failure_reason)) private$cached_values$fit_failure_reason else "rlm error")
 				return(invisible(NULL))
 			}
 
 			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
-			beta = if (!is.null(coef_vec) && length(coef_vec) >= j_treat) as.numeric(coef_vec[j_treat]) else NA_real_
+			beta = private$extract_treatment_beta(coef_vec, j_treat)
 			private$cached_values$full_coefficients = coef_vec
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+			private$cached_values$fit_failure_reason = NULL
+			if (!is.finite(beta)) {
+				private$set_failed_fit_cache(reason = "missing treatment coefficient", df = df)
+				return(invisible(NULL))
+			}
 			if (estimate_only) return(invisible(NULL))
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
-			if (is.null(coef_table) || !("treatment" %in% rownames(coef_table))) {
-				private$set_failed_fit_cache()
-				return(invisible(NULL))
-			}
-			se = as.numeric(coef_table["treatment", "Std. Error"])
 			private$cached_values$full_vcov = tryCatch(
 				stats::vcov(mod),
 				error = function(e) {
@@ -223,9 +299,15 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 					mat
 				}
 			)
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			se = private$extract_treatment_se(coef_table, private$cached_values$full_vcov, j_treat)
+			if (!is.finite(se) || se <= 0) {
+				private$set_failed_fit_cache(reason = "non-finite SE", beta_hat_T = beta, df = df)
+				return(invisible(NULL))
+			}
+			private$cached_values$s_beta_hat_T = se
 			private$cached_values$is_z = FALSE
 			private$cached_values$df = df
+			private$cached_values$fit_failure_reason = NULL
 		}
 	)
 )

@@ -22,7 +22,7 @@ seq_des <- DesignSeqOneByOneBernoulli$
 )
 for (i in seq_len(nrow(x_dat))) {
   seq_des$
-  add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+  add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 }
 seq_des$
   add_all_subject_responses(c(0.10, 0.25, 0.20, 0.40, 0.35, 0.55, 0.60, 0.75))

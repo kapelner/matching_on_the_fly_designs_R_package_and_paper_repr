@@ -24,7 +24,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#' @return 			A new `FixedDesignRerandomization` object
 		#'
 		initialize = function(
-				response_type = "continuous",
+				response_type,
 				prob_T = 0.5,
 				obj_val_cutoff = NULL,
 				objective = "mahal_dist",

@@ -16,8 +16,8 @@ cat("1. CONTINUOUS response: ")
 y = D$y_original$continuous
 seq_des = DesignSeqOneByOneKK21$new(response_type = "continuous", n = n)
 for (t in 1:n) {
-	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des$add_subject_response(t, y[t], 1)
+	seq_des$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceAllSimpleMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()
@@ -28,8 +28,8 @@ cat("2. INCIDENCE response: ")
 y = D$y_original$incidence
 seq_des = DesignSeqOneByOneKK21$new(response_type = "incidence", n = n)
 for (t in 1:n) {
-	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des$add_subject_response(t, y[t], 1)
+	seq_des$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceIncidUnivLogRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
@@ -40,8 +40,8 @@ cat("3. PROPORTION response: ")
 y = D$y_original$proportion
 seq_des = DesignSeqOneByOneKK21$new(response_type = "proportion", n = n)
 for (t in 1:n) {
-	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des$add_subject_response(t, y[t], 1)
+	seq_des$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferencePropUniBetaRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
@@ -52,8 +52,8 @@ cat("4. COUNT response: ")
 y = D$y_original$count
 seq_des = DesignSeqOneByOneKK21$new(response_type = "count", n = n)
 for (t in 1:n) {
-	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des$add_subject_response(t, y[t], 1)
+	seq_des$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceCountUnivNegBinRegr$new(seq_des)
 te = inf$compute_treatment_estimate()
@@ -64,8 +64,8 @@ cat("5. SURVIVAL response: ")
 y = D$y_original$survival
 seq_des = DesignSeqOneByOneKK21$new(response_type = "survival", n = n)
 for (t in 1:n) {
-	seq_des$add_subject_to_experiment_and_assign(D$X[t, ])
-	seq_des$add_subject_response(t, y[t], 1)
+	seq_des$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceSurvivalRestrictedMeanDiff$new(seq_des)
 te = inf$compute_treatment_estimate()

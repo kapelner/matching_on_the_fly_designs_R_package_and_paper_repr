@@ -24,7 +24,7 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 		initialize = function(
 						strata_cols,
 						block_size = 4,
-						response_type = "continuous",
+						response_type,
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,

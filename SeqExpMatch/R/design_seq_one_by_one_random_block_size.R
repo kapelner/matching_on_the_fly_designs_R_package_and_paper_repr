@@ -20,7 +20,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		#' Each must be a multiple of the inverse of \code{prob_T} to ensure integer
 		#' treatment/control counts.
 		#' @param	response_type 	The data type of response values which must be one of the following:
-		#' 								"continuous" (the default),
+		#' 								"continuous",
 		#' 								"incidence",
 		#' 								"proportion",
 		#' 								"count",
@@ -37,7 +37,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		initialize = function(
 						strata_cols = NULL,
 						block_sizes = c(4, 6, 8),
-						response_type = "continuous",
+						response_type,
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,

@@ -20,8 +20,8 @@ test_that("KK Wilcox rank-regression fast bootstrap matches the generic KK boots
 
 	des = DesignSeqOneByOneKK14$new(n = n, response_type = "continuous", verbose = FALSE)
 	for (i in seq_len(n)) {
-		w_i = des$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])
-		des$add_subject_response(i, y[i] + 0.2 * w_i)
+		w_i = des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
+		des$add_one_subject_response(i, y[i] + 0.2 * w_i)
 	}
 
 	fast_inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, num_cores = 1, verbose = FALSE)
@@ -74,8 +74,8 @@ test_that("KK Wilcox rank-regression low-level exact solver matches Rfit formula
 	y = as.numeric(rnorm(n))
 	des = DesignSeqOneByOneKK14$new(n = n, response_type = "continuous", verbose = FALSE)
 	for (i in seq_len(n)) {
-		w_i = des$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])
-		des$add_subject_response(i, y[i] + 0.1 * w_i)
+		w_i = des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
+		des$add_one_subject_response(i, y[i] + 0.1 * w_i)
 	}
 	inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, num_cores = 1, verbose = FALSE)
 	priv = inf$.__enclos_env__$private

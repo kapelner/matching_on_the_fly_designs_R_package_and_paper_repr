@@ -31,12 +31,12 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#'
 		#' @examples
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
 		#' seq_des$add_all_subject_responses(
 		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
 		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
@@ -62,12 +62,12 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' @examples
 		#' \dontrun{
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
 		#' seq_des$add_all_subject_responses(
 		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
 		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
@@ -99,12 +99,12 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' @examples
 		#' \dontrun{
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2:10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2:10])
 		#' seq_des$add_all_subject_responses(
 		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
 		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)

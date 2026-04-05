@@ -21,7 +21,7 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#' @return 			A new `FixedDesignFactorial` object
 		initialize = function(
 				factors,
-				response_type = "continuous",
+				response_type,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				

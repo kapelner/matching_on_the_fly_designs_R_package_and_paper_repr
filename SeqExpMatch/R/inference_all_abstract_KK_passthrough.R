@@ -45,12 +45,12 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @examples
 		#' \dontrun{
 		#' seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = "continuous")
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 		#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 		#'
 		#' seq_des_inf = InferenceContinMultOLSKK$new(seq_des)
@@ -59,9 +59,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' }
 		#'
 		#' @param show_progress Description for show_progress
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE){
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE){
 				if (!private$has_match_structure){
-					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress)
+					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug)
 				} else {
 				assertCount(B, positive = TRUE)
 
@@ -86,11 +86,69 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				n_reservoir = length(i_reservoir)
 
 				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
-				if (private$has_private_method("compute_fast_bootstrap_distr")) {
+				if (!isTRUE(debug) && private$has_private_method("compute_fast_bootstrap_distr")) {
 					fast_distr = private$compute_fast_bootstrap_distr(B, i_reservoir, n_reservoir, m, y, w, m_vec)
 					if (!is.null(fast_distr)) {
 						return(fast_distr)
 					}
+				}
+
+				if (isTRUE(debug)) {
+					debug_results = vector("list", B)
+					has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
+					for (b in seq_len(B)) {
+						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
+						if (m > 0) {
+							pairs_to_include = sample(seq_len(m), m, replace = TRUE)
+							i_matched_b = integer(0); m_vec_b_matched = integer(0)
+							for (new_pair_id in seq_len(m)) {
+								orig_pid = pairs_to_include[new_pair_id]
+								pair_idx = which(m_vec == orig_pid)
+								i_matched_b = c(i_matched_b, pair_idx)
+								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
+							}
+						} else {
+							i_matched_b = integer(0); m_vec_b_matched = integer(0)
+						}
+						i_b = c(i_reservoir_b, i_matched_b)
+						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
+						iter_warns = character(0)
+						iter_val = withCallingHandlers(
+							tryCatch({
+								boot_inf_obj = self$duplicate()
+								boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+								boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+								boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+								boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+								boot_inf_obj$.__enclos_env__$private$cached_values = list()
+								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
+								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+								if (has_res_stat_debug) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+								boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
+							}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+							warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+						)
+						debug_results[[b]] = list(
+							val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
+							errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+							warnings = iter_warns
+						)
+					}
+					values = sapply(debug_results, `[[`, "val")
+					errors_list = lapply(debug_results, `[[`, "errors")
+					warnings_list = lapply(debug_results, `[[`, "warnings")
+					num_errors_vec = lengths(errors_list)
+					num_warnings_vec = lengths(warnings_list)
+					return(list(
+						values = values,
+						errors = errors_list,
+						warnings = warnings_list,
+						num_errors = num_errors_vec,
+						num_warnings = num_warnings_vec,
+						prop_iterations_with_errors = mean(num_errors_vec > 0),
+						prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+						prop_illegal_values = mean(!is.finite(values))
+					))
 				}
 
 				# Pure R KK bootstrap implementation

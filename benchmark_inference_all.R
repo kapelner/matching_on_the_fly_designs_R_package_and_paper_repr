@@ -1,4 +1,42 @@
 
+benchmark_args = commandArgs(trailingOnly = TRUE)
+benchmark_is_worker = "--worker" %in% benchmark_args
+benchmark_force_mirai = NULL
+force_mirai_arg = grep("^--force_mirai=", benchmark_args, value = TRUE)
+if (length(force_mirai_arg) > 0L) {
+    force_mirai_value = sub("^--force_mirai=", "", force_mirai_arg[1])
+    if (force_mirai_value == "TRUE") {
+        benchmark_force_mirai = TRUE
+    } else if (force_mirai_value == "FALSE") {
+        benchmark_force_mirai = FALSE
+    } else {
+        stop("Invalid --force_mirai value: ", force_mirai_value, call. = FALSE)
+    }
+}
+
+if (!benchmark_is_worker) {
+    benchmark_script = normalizePath("benchmark_inference_all.R")
+    rscript_bin = file.path(R.home("bin"), "Rscript")
+    launcher_modes = c(FALSE, TRUE)
+    if (file.exists("benchmark_inference_results.csv")) {
+        unlink("benchmark_inference_results.csv")
+    }
+    for (mode in launcher_modes) {
+        cat(sprintf("Launching benchmark worker for force_mirai = %s\n", mode))
+        flush.console()
+        status = system2(
+            rscript_bin,
+            c(benchmark_script, "--worker", paste0("--force_mirai=", mode)),
+            stdout = "",
+            stderr = ""
+        )
+        if (!identical(attr(status, "status"), NULL) && !identical(attr(status, "status"), 0L)) {
+            stop("Benchmark worker failed for force_mirai = ", mode, call. = FALSE)
+        }
+    }
+    quit(save = "no", status = 0)
+}
+
 if (!requireNamespace("pkgload", quietly = TRUE)) {
     stop("The 'pkgload' package is required to benchmark the current EDI source tree.")
 }
@@ -18,8 +56,8 @@ for (p in packages) {
 max_n_dataset = 100 
 source("package_tests/_dataset_load.R")
 
-CORE_COUNTS = c(5, 2, 1)
-FORCE_MIRAI_VALUES = c(TRUE, FALSE)
+CORE_COUNTS = c(1, 2, 5)
+FORCE_MIRAI_VALUES = if (is.null(benchmark_force_mirai)) c(FALSE, TRUE) else benchmark_force_mirai
 
 # Pre-create global clusters to avoid repeated 300ms startup penalty
 # We benchmark one core count at a time, so we create/stop for each iteration of num_cores
@@ -57,7 +95,7 @@ prepare_des_obj = function(response_type, dataset_name = "airquality", design_cl
     des_obj = design_class$new(response_type = response_type, n = n)
     
     for (t in 1:n) {
-        w_t = des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
+        w_t = des_obj$add_one_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
         if (response_type == "continuous") {
             y_t = y[t] + (if(w_t == 1) beta_T else 0) + rnorm(1, 0, SD_NOISE)
         } else if (response_type == "incidence") {
@@ -71,7 +109,7 @@ prepare_des_obj = function(response_type, dataset_name = "airquality", design_cl
         } else if (response_type == "ordinal") {
             y_t = pmax(1, as.integer(y[t] + (if(w_t == 1) beta_T else 0) + rnorm(1, 0, SD_NOISE)))
         }
-        des_obj$add_subject_response(t, y_t, dead = 1)
+        des_obj$add_one_subject_response(t, y_t, dead = 1)
     }
     return(des_obj)
 }

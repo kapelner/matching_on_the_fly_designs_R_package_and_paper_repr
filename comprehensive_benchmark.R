@@ -109,7 +109,7 @@ for (rt in response_types) {
 
 	# Run design
 	for (t in 1:n) {
-		w_t = des_obj$add_subject_to_experiment_and_assign(X_dt[t, ])
+		w_t = des_obj$add_one_subject_to_experiment_and_assign(X_dt[t, ])
 		eta_t = y_controls[t] + beta_T * w_t
 		y_t <- switch(rt,
 				continuous = rnorm(1, eta_t, 1),

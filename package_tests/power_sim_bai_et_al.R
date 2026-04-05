@@ -73,10 +73,10 @@ for (nsim in 1 : Nsim){
 				cur_des_obj = get(paste0("des_obj", mor))
 
 				for (t in 1 : n){
-				cur_des_obj$add_subject_to_experiment_and_assign(X[t, ])
+				cur_des_obj$add_one_subject_to_experiment_and_assign(X[t, ])
 				w_t = cur_des_obj$get_w()[cur_des_obj$get_t()]
 				y[t] = beta_T * w_t + z[t] + errors[t]
-				cur_des_obj$add_subject_response(t = t, y = as.numeric(y[t]))
+				cur_des_obj$add_one_subject_response(t = t, y = as.numeric(y[t]))
 				}
 
 				for(infrence in c("AllKKCompoundMeanDiff", "BaiAdjustedT")){

@@ -321,7 +321,25 @@ Inference = R6::R6Class("Inference",
 			},
 
 		create_design_matrix = function(){
-			cbind(1, private$w, private$get_X())
+			X_cov = private$get_X()
+			if (is.null(X_cov)) {
+				return(cbind(`(Intercept)` = 1, treatment = private$w))
+			}
+
+			X_cov = as.matrix(X_cov)
+			if (!ncol(X_cov)) {
+				return(cbind(`(Intercept)` = 1, treatment = private$w))
+			}
+
+			cov_names = colnames(X_cov)
+			if (is.null(cov_names) || length(cov_names) != ncol(X_cov) ||
+				any(is.na(cov_names)) || any(!nzchar(cov_names)) ||
+				anyDuplicated(cov_names)) {
+				cov_names = paste0("x", seq_len(ncol(X_cov)))
+			}
+			colnames(X_cov) = cov_names
+
+			cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 		},
 
 		get_X = function(){

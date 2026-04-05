@@ -28,10 +28,7 @@ This design randomizes entire groups (clusters) of subjects together using the
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
@@ -51,8 +48,10 @@ This design randomizes entire groups (clusters) of subjects together using the
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="randomize"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-randomize'><code>EDI::FixedDesign$randomize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subjects_to_experiment"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subjects_to_experiment'><code>EDI::FixedDesign$add_all_subjects_to_experiment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="assign_w_to_all_subjects"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-assign_w_to_all_subjects'><code>EDI::FixedDesign$assign_w_to_all_subjects()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-overwrite_all_subject_assignments'><code>EDI::FixedDesign$overwrite_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="supports_resampling"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-supports_resampling'><code>EDI::FixedDesign$supports_resampling()</code></a></span></li>
 </ul>
 </details>
@@ -65,7 +64,7 @@ Initialize a cluster randomized fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignCluster$new(
   cluster_col,
-  response_type = "continuous",
+  response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,

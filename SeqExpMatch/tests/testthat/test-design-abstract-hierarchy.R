@@ -10,14 +10,12 @@ test_that("Design hierarchy supports both fixed and sequential designs", {
 
 test_that("plain FixedDesign supports analysis but not redraw-based resampling", {
 	des = FixedDesign$new(n = 4, response_type = "continuous", verbose = FALSE)
-	for (i in 1:4) {
-		des$add_subject(data.frame(x1 = i))
-	}
-	des$add_all_subject_assignments(c(0, 1, 0, 1))
+	des$add_all_subjects_to_experiment(data.frame(x1 = 1:4))
+	des$overwrite_all_subject_assignments(c(0, 1, 0, 1))
 	des$add_all_subject_responses(c(1, 3, 2, 4))
 
 	expect_false(des$supports_resampling())
-	expect_error(des$randomize(), "Plain FixedDesign objects do not support randomization")
+	expect_error(des$assign_w_to_all_subjects(), "Plain FixedDesign objects do not support randomization")
 
 	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_equal(inf$compute_treatment_estimate(), 2)
@@ -37,4 +35,13 @@ test_that("plain FixedDesign supports analysis but not redraw-based resampling",
 	expect_equal(des$get_t(), 4)
 	expect_true(des$is_blocking_design())
 	expect_true(des$is_complete_blocking_design())
+})
+
+test_that("FixedDesign batch ingest validates input shape and type", {
+	des = FixedDesign$new(n = 4, response_type = "continuous", verbose = FALSE)
+	expect_error(des$add_all_subjects_to_experiment(matrix(1:4, ncol = 1)), "data.frame")
+	expect_error(
+		des$add_all_subjects_to_experiment(data.frame(x1 = 1:3)),
+		"exactly 4 rows"
+	)
 })

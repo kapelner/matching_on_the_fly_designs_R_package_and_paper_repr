@@ -20,10 +20,9 @@ This class takes care of data storage and response handling.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Design-new}{\code{Design$new()}}
-\item \href{#method-Design-add_subject}{\code{Design$add_subject()}}
-\item \href{#method-Design-add_subject_response}{\code{Design$add_subject_response()}}
+\item \href{#method-Design-add_one_subject_response}{\code{Design$add_one_subject_response()}}
 \item \href{#method-Design-add_all_subject_responses}{\code{Design$add_all_subject_responses()}}
-\item \href{#method-Design-add_all_subject_assignments}{\code{Design$add_all_subject_assignments()}}
+\item \href{#method-Design-overwrite_all_subject_assignments}{\code{Design$overwrite_all_subject_assignments()}}
 \item \href{#method-Design-is_fixed_sample_size}{\code{Design$is_fixed_sample_size()}}
 \item \href{#method-Design-assert_all_subjects_arrived}{\code{Design$assert_all_subjects_arrived()}}
 \item \href{#method-Design-assert_all_responses_recorded}{\code{Design$assert_all_responses_recorded()}}
@@ -43,7 +42,6 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
-\item \href{#method-Design-resample_design}{\code{Design$resample_design()}}
 \item \href{#method-Design-clone}{\code{Design$clone()}}
 }
 }
@@ -54,7 +52,7 @@ This class takes care of data storage and response handling.
 Initialize an experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$new(
-  response_type = "continuous",
+  response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = FALSE,
   n = NULL,
@@ -83,31 +81,12 @@ A new `Design` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-add_subject"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_subject}{}}}
-\subsection{Method \code{add_subject()}}{
-Add subject-specific measurements for the next subject entrant
+\if{html}{\out{<a id="method-Design-add_one_subject_response"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-add_one_subject_response}{}}}
+\subsection{Method \code{add_one_subject_response()}}{
+For CARA designs, add a single subject response.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_subject(x_new, allow_new_cols = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x_new}}{A row of the data frame corresponding to the new subject.}
-
-\item{\code{allow_new_cols}}{Allow new features in the new subject's covariates.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-add_subject_response"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_subject_response}{}}}
-\subsection{Method \code{add_subject_response()}}{
-For CARA designs, add subject response for the a subject
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_subject_response(t, y, dead = 1)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Design$add_one_subject_response(t, y, dead = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -126,7 +105,7 @@ For CARA designs, add subject response for the a subject
 \if{html}{\out{<a id="method-Design-add_all_subject_responses"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-add_all_subject_responses}{}}}
 \subsection{Method \code{add_all_subject_responses()}}{
-For non-CARA designs, add all subject responses
+For non-CARA designs, add all subject responses.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
 }
@@ -142,12 +121,12 @@ For non-CARA designs, add all subject responses
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-add_all_subject_assignments"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-add_all_subject_assignments}{}}}
-\subsection{Method \code{add_all_subject_assignments()}}{
+\if{html}{\out{<a id="method-Design-overwrite_all_subject_assignments"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-overwrite_all_subject_assignments}{}}}
+\subsection{Method \code{overwrite_all_subject_assignments()}}{
 For analysis on already-completed experimental data
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$add_all_subject_assignments(w)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Design$overwrite_all_subject_assignments(w)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -399,17 +378,6 @@ Duplicate this design object
 \subsection{Returns}{
 A new `Design` object with the same data
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-resample_design"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-resample_design}{}}}
-\subsection{Method \code{resample_design()}}{
-Resample this design for bootstrap inference.
-Draws n subjects with replacement and updates w, y, dead (and m for KK designs).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$resample_design()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-clone"></a>}}

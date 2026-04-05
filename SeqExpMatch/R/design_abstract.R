@@ -21,7 +21,7 @@ Design = R6::R6Class("Design",
 		#'
 		#' @return 			A new `Design` object
 		initialize = function(
-				response_type = "continuous",
+				response_type,
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = FALSE,
 				n = NULL,
@@ -66,121 +66,23 @@ Design = R6::R6Class("Design",
 		},
 
 		#' @description
-		#' Add subject-specific measurements for the next subject entrant
+		#' For CARA designs, add a single subject response.
 		#'
-		#' @param x_new 			A row of the data frame corresponding to the new subject.
-		#' @param allow_new_cols	Allow new features in the new subject's covariates.
-		add_subject = function(x_new, allow_new_cols = TRUE){
-			assertClass(x_new, "data.frame")
-			x_new = as.data.table(x_new)
-			if (nrow(x_new) != 1){
-				stop("You can only add one subject at a time.")
-			}
-			j_with_NAs = is.na(unlist(x_new))
-			if (any(j_with_NAs) & private$t == 0){
-				x_new = x_new[which(!j_with_NAs)]
-				if (!allow_new_cols){
-					warning("There is missing data in the first subject's covariate value(s). Setting the flag allow_new_cols = FALSE will disallow additional subjects")
-				}
-			}
-
-			xnew_data_types = get_column_types_cpp(x_new)
-			if ("ordered" %in% xnew_data_types){
-				stop("Ordered factor data type is not supported; please convert to either an unordered factor or numeric.")
-			}
-			if ("Date" %in% xnew_data_types){
-				stop("Date data type is not supported; please convert to numeric.")
-			}
-
-			if (private$t > 0){
-				Xraw_data_types = get_column_types_cpp(private$Xraw)
-				colnames_Xraw = names(private$Xraw)
-				colnames_xnew = names(x_new)
-				if (setequal(colnames_Xraw, colnames_xnew)){
-					idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
-					if (length(idx_data_types_that_changed) > 0){
-						for (e in idx_data_types_that_changed){
-							warning("You entered data type ", xnew_data_types[e], " for attribute named ", colnames_Xraw[e], " that was previously entered with data type ", Xraw_data_types[e])
-						}
-					}
-				} else {
-					if (allow_new_cols){ #make NA's in appropriate places
-						new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
-						if (length(new_Xraw_cols) > 0){
-							new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
-							for (j in 1 : length(new_Xraw_cols)){
-								private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
-									character = NA_character_,
-									factor =    NA_character_, #I think this is correct
-									numeric =   NA_real_,
-									logical =   NA_real_, #just let it be zero or one
-									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-								)]
-							}
-						}
-
-						new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
-						if (length(new_xnew_cols) > 0){
-							new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
-							for (j in 1 : length(new_xnew_cols)){
-								x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
-									character = NA_character_,
-									factor =    NA_character_, #I think this is correct
-									numeric =   NA_real_,
-									logical =   NA_real_, #just let it be zero or one
-									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-								)]
-							}
-						}
-
-
-					} else {
-						stop(paste(
-							"The new subject vector has columns:\n  ",
-							paste(colnames_xnew, collapse = ", "),
-							"\nwhich are not the same as the current dataset's columns:\n  ",
-							paste(colnames_Xraw, collapse = ", "),
-							"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
-						))
-					}
-				}
-			}
-			#add new subject's measurements to the raw data frame (there should be the same exact columns even if there are new ones introduced)
-			private$Xraw = rbindlist(list(private$Xraw, x_new))
-			private$p_raw_t = ncol(private$Xraw)
-
-			#iterate t
-			private$t = private$t + 1L #t must be an integer for data.table's fast "set" function below to work
-
-			#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
-			#thus, designs cannot utilize imputations nor model matrices until this condition is met
-			#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
-			if (private$t > (ncol(private$Xraw) + 2) & private$uses_covariates){ #we only need to impute if we need the X's to make the allocation decisions
-				private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			}
-		},
-
-		#' @description
-		#' For CARA designs, add subject response for the a subject
-		#'
-		#' @param t 	 The subject index.
-		#' @param y 	 The response value.
-		#' @param dead	 If the response is censored (0 for survival).
-		add_subject_response = function(t, y, dead = 1) {
-			assertNumeric(t, len = 1) #make sure it's length one here
-			assertNumeric(y, len = 1) #make sure it's length one here
-			assertNumeric(dead, len = 1) #make sure it's length one here
+		#' @param t The subject index.
+		#' @param y The response value.
+		#' @param dead If the response is censored (0 for survival).
+		add_one_subject_response = function(t, y, dead = 1) {
+			assertNumeric(t, len = 1)
+			assertNumeric(y, len = 1)
+			assertNumeric(dead, len = 1)
 			assertChoice(dead, c(0, 1))
 			assertCount(t, positive = TRUE)
 			if (t > private$t){
 				stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", private$t))
 			}
-
 			if (length(private$y) >= t & !is.na(private$y[t])){
 				warning(paste("Overwriting previous response for t =", t, "y[t] =", private$y[t]))
 			}
-
-			#deal with the myriad checks on the response value based on response_type
 			if (private$response_type == "continuous"){
 				assertNumeric(y, any.missing = FALSE)
 			} else if (private$response_type == "incidence"){
@@ -206,7 +108,6 @@ Design = R6::R6Class("Design",
 			if (dead == 0 & private$response_type != "survival"){
 				stop("censored observations are only available for survival response types")
 			}
-			#finally, record the response value and the time at which it was recorded
 			if (private$fixed_sample | t <= length(private$y)){
 				private$y[t] = y
 				private$dead[t] = dead
@@ -220,10 +121,10 @@ Design = R6::R6Class("Design",
 		},
 
 		#' @description
-		#' For non-CARA designs, add all subject responses
+		#' For non-CARA designs, add all subject responses.
 		#'
-		#' @param ys 		The responses as a numeric vector.
-		#' @param deads	    The binary vector indicating if dead/censored.
+		#' @param ys The responses as a numeric vector.
+		#' @param deads The binary vector indicating if dead/censored.
 		add_all_subject_responses = function(ys, deads = NULL) {
 			if (is.null(deads)){
 				deads = rep(1, private$t)
@@ -236,15 +137,15 @@ Design = R6::R6Class("Design",
 			assertNumeric(deads, len = private$t)
 
 			for (t in 1 : private$t){
-				self$add_subject_response(t, ys[t], deads[t]) #piggy back on the checks therein
+				self$add_one_subject_response(t, ys[t], deads[t])
 			}
 		},
 
 		#' @description
 		#' For analysis on already-completed experimental data
 		#'
-		#' @param w 		The binary responses.
-		add_all_subject_assignments = function(w) {
+		#' @param w The binary responses.
+		overwrite_all_subject_assignments = function(w) {
 			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
 			private$w = w
 		},
@@ -421,21 +322,6 @@ Design = R6::R6Class("Design",
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
 			d
-		},
-
-		#' @description
-		#' Resample this design for bootstrap inference.
-		#' Draws n subjects with replacement and updates w, y, dead (and m for KK designs).
-		resample_design = function(){
-			n = private$n
-			i_b = sample(n, n, replace = TRUE)
-			private$w    = private$w[i_b]
-			private$y    = private$y[i_b]
-			private$dead = private$dead[i_b]
-			if (!is.null(private$m)){
-				private$m = private$m[i_b]
-			}
-			invisible(self)
 		}
 
 	),
@@ -465,6 +351,17 @@ Design = R6::R6Class("Design",
 		verbose = NULL,
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
 		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
+		resample_design = function(){
+			n = private$n
+			i_b = sample(n, n, replace = TRUE)
+			private$w    = private$w[i_b]
+			private$y    = private$y[i_b]
+			private$dead = private$dead[i_b]
+			if (!is.null(private$m)){
+				private$m = private$m[i_b]
+			}
+			invisible(self)
+		},
 
 		covariate_impute_if_necessary_and_then_create_model_matrix = function(){
 			#make a copy... sometimes the raw will be the same as the imputed if there are no imputations

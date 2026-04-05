@@ -31,10 +31,10 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 		#' )
-		#' seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "continuous",
+		#' seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type,
 #'   verbose = FALSE)
 		#' for (i in seq_len(nrow(x_dat))) {
-		#'   seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		#'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 		#' }
 		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
 		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
@@ -156,7 +156,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			return(res)
 		},
 
-		compute_treatment_estimate_during_randomization_inference = function(){
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE, ...){
 			if (is.null(private$custom_randomization_statistic_function)) {
 				private$hl_point_estimate(private$y, private$w)
 			} else {

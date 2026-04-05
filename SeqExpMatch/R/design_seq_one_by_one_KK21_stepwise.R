@@ -15,13 +15,13 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#' Kapelner and Krieger (2021) with option to use matching parameters of Morrison and Owen
 		#' (2025)
 		#' @param	response_type 	The data type of response values which must be one of the following:
-		#' 								"continuous" (the default),
+		#' 								"continuous",
 		#' 								"incidence",
 		#' 								"proportion",
 		#' 								"count",
 		#' 								"survival".
 		#'                                                                 This package will enforce
-		#' that all added responses via the \code{add_subject_response} method will be
+		#' that all added responses via the \code{add_one_subject_response} method will be
 		#' 								of the appropriate type.
 		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
 		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
@@ -77,7 +77,7 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#' }
 		#'
 		initialize = function(
-			response_type = "continuous",
+			response_type,
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,

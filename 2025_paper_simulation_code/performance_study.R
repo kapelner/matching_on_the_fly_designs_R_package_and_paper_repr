@@ -66,11 +66,11 @@ for (n_setting in 1 : nrow(exp_settings)){
 	response_added = array(FALSE, n)
 	for (t in 1 : n){
 		x_t = X100[t, ]
-		w_t = des_obj$add_subject_to_experiment_and_assign(x_t)
+		w_t = des_obj$add_one_subject_to_experiment_and_assign(x_t)
 		if (runif(1) < prob_of_adding_response){
 		y_t = response_function(as.numeric(x_t), w_t, betaT)
 		dead_t = ifelse(response_type == "survival", response_functions[["dead"]](y_t), 1)
-		des_obj$add_subject_response(t, y_t, dead_t)
+		des_obj$add_one_subject_response(t, y_t, dead_t)
 		response_added[t] = TRUE
 		}
 	}
@@ -78,7 +78,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 	for (t in which(!response_added)){
 		y_t = response_function(as.numeric(X100[t, ]), des_obj$w[t], betaT)
 		dead_t = ifelse(response_type == "survival", response_functions[["dead"]](y_t), 1)
-		des_obj$add_subject_response(t, y_t, dead_t)
+		des_obj$add_one_subject_response(t, y_t, dead_t)
 	}
 
 	for (inference_method in names(estimands_betaT_one[[response_type]])){

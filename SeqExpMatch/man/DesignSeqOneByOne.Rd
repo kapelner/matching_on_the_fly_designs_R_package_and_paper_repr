@@ -21,7 +21,8 @@ one experimental design.
 \itemize{
 \item \href{#method-DesignSeqOneByOne-new}{\code{DesignSeqOneByOne$new()}}
 \item \href{#method-DesignSeqOneByOne-supports_resampling}{\code{DesignSeqOneByOne$supports_resampling()}}
-\item \href{#method-DesignSeqOneByOne-add_subject_to_experiment_and_assign}{\code{DesignSeqOneByOne$add_subject_to_experiment_and_assign()}}
+\item \href{#method-DesignSeqOneByOne-add_one_subject}{\code{DesignSeqOneByOne$add_one_subject()}}
+\item \href{#method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign}{\code{DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()}}
 \item \href{#method-DesignSeqOneByOne-assign_wt}{\code{DesignSeqOneByOne$assign_wt()}}
 \item \href{#method-DesignSeqOneByOne-draw_ws_according_to_design}{\code{DesignSeqOneByOne$draw_ws_according_to_design()}}
 \item \href{#method-DesignSeqOneByOne-print_current_subject_assignment}{\code{DesignSeqOneByOne$print_current_subject_assignment()}}
@@ -31,10 +32,8 @@ one experimental design.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
@@ -54,7 +53,7 @@ one experimental design.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>EDI::Design$overwrite_all_subject_assignments()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -65,7 +64,7 @@ one experimental design.
 Initialize a sequential one-by-one design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$new(
-  response_type = "continuous",
+  response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
@@ -104,12 +103,31 @@ Always TRUE for sequential designs.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOne-add_subject_to_experiment_and_assign"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_subject_to_experiment_and_assign}{}}}
-\subsection{Method \code{add_subject_to_experiment_and_assign()}}{
+\if{html}{\out{<a id="method-DesignSeqOneByOne-add_one_subject"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_one_subject}{}}}
+\subsection{Method \code{add_one_subject()}}{
+Add subject-specific measurements for the next subject entrant.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_one_subject(x_new, allow_new_cols = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
+
+\item{\code{allow_new_cols}}{Allow new features in the new subject's covariates.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign}{}}}
+\subsection{Method \code{add_one_subject_to_experiment_and_assign()}}{
 Adds a subject and assigns treatment.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_one_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

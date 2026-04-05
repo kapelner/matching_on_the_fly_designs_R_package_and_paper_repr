@@ -21,7 +21,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @return	A new `FixedDesignBlocking` object
 		initialize = function(
 						strata_cols,
-						response_type = "continuous",
+						response_type,
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,

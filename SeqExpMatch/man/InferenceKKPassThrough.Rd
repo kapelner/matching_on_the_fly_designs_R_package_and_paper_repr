@@ -19,12 +19,12 @@ An abstract class
 
 \dontrun{
 seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLSKK$new(seq_des)
@@ -99,7 +99,8 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
-  show_progress = TRUE
+  show_progress = TRUE,
+  debug = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -120,12 +121,12 @@ A vector of length \code{B} with the bootstrap values of the estimates of the
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLSKK$new(seq_des)

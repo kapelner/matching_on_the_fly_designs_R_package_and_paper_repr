@@ -2,11 +2,9 @@ test_that("FixedDesignBinaryMatch works", {
 	n = 10
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
 	des = FixedDesignBinaryMatch$new(n = n, response_type = "continuous", verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
@@ -21,12 +19,10 @@ test_that("FixedDesignRerandomization works", {
 	n = 10
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
 	# Use a very high cutoff so it finds it quickly
-	des = FixedDesignRerandomization$new(n = n, obj_val_cutoff = 100, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignRerandomization$new(response_type = "continuous", n = n, obj_val_cutoff = 100, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
@@ -40,12 +36,10 @@ test_that("FixedDesignRerandomization works", {
 test_that("FixedDesignGreedy works", {
 	n = 10
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
-	des = FixedDesignGreedy$new(n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignGreedy$new(response_type = "continuous", n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
@@ -58,13 +52,11 @@ test_that("FixedDesignGreedy works", {
 
 test_that("FixedDesigniBCRD works", {
 	n = 10
-	des = FixedDesigniBCRD$new(n = n, verbose = FALSE)
+	des = FixedDesigniBCRD$new(response_type = "continuous", n = n, verbose = FALSE)
 	expect_identical(des$get_block_ids(), rep(1L, n))
-	for (i in 1:n) {
-		des$add_subject(data.frame(x1 = i))
-	}
+	des$add_all_subjects_to_experiment(data.frame(x1 = 1:n))
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
@@ -78,12 +70,10 @@ test_that("FixedDesigniBCRD works", {
 test_that("FixedDesignBlocking works", {
 	n = 12
 	X = data.frame(strata = rep(c("A", "B"), each = 6), x1 = rnorm(n))
-	des = FixedDesignBlocking$new(strata_cols = "strata", n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignBlocking$new(response_type = "continuous", strata_cols = "strata", n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	# Check balance within strata
@@ -100,12 +90,10 @@ test_that("FixedDesignBlocking works", {
 test_that("FixedDesignCluster works", {
 	n = 12
 	X = data.frame(cluster = rep(1:4, each = 3), x1 = rnorm(n))
-	des = FixedDesignCluster$new(cluster_col = "cluster", n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignCluster$new(response_type = "continuous", cluster_col = "cluster", n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	
@@ -130,12 +118,10 @@ test_that("FixedDesignCluster works", {
 test_that("FixedDesignFactorial works", {
 	n = 12
 	# 2x2 factorial: 4 combinations
-	des = FixedDesignFactorial$new(factors = list(A=2, B=2), n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(data.frame(x1 = i))
-	}
+	des = FixedDesignFactorial$new(response_type = "continuous", factors = list(A=2, B=2), n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(data.frame(x1 = 1:n))
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	
@@ -160,12 +146,10 @@ test_that("FixedDesignFactorial works", {
 test_that("FixedDesignDOptimal works", {
 	n = 20
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
-	des = FixedDesignDOptimal$new(n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignDOptimal$new(response_type = "continuous", n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)
@@ -179,12 +163,10 @@ test_that("FixedDesignDOptimal works", {
 test_that("FixedDesignAOptimal works", {
 	n = 20
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
-	des = FixedDesignAOptimal$new(n = n, verbose = FALSE)
-	for (i in 1:n) {
-		des$add_subject(X[i, , drop = FALSE])
-	}
+	des = FixedDesignAOptimal$new(response_type = "continuous", n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
 	
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
 	expect_equal(sum(w), n/2)

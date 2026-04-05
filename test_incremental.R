@@ -118,8 +118,8 @@ run_tests_for_response = function(response_type){
 	cat("  Adding subjects...\n")
 	for (t in 1 : n){
 	if (t %% 50 == 0) cat("    Added", t, "subjects\n")
-	des_obj$add_subject_to_experiment_and_assign(D$X[t, ])
-	des_obj$add_subject_response(t, y[t], dead[t])
+	des_obj$add_one_subject_to_experiment_and_assign(D$X[t, ])
+	des_obj$add_one_subject_response(t, y[t], dead[t])
 	}
 	cat("  Added all", n, "subjects\n")
 

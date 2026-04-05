@@ -19,7 +19,7 @@ This class takes care of data initialization and sequential assignments.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignSeqOneByOneiBCRD-new}{\code{DesignSeqOneByOneiBCRD$new()}}
-\item \href{#method-DesignSeqOneByOneiBCRD-add_subject_to_experiment_and_assign}{\code{DesignSeqOneByOneiBCRD$add_subject_to_experiment_and_assign()}}
+\item \href{#method-DesignSeqOneByOneiBCRD-add_one_subject_to_experiment_and_assign}{\code{DesignSeqOneByOneiBCRD$add_one_subject_to_experiment_and_assign()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-assign_wt}{\code{DesignSeqOneByOneiBCRD$assign_wt()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design}{\code{DesignSeqOneByOneiBCRD$draw_ws_according_to_design()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-clone}{\code{DesignSeqOneByOneiBCRD$clone()}}
@@ -28,10 +28,8 @@ This class takes care of data initialization and sequential assignments.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_assignments'><code>EDI::Design$add_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject"><a href='../../EDI/html/Design.html#method-Design-add_subject'><code>EDI::Design$add_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_subject_response'><code>EDI::Design$add_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
@@ -51,7 +49,8 @@ This class takes care of data initialization and sequential assignments.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="resample_design"><a href='../../EDI/html/Design.html#method-Design-resample_design'><code>EDI::Design$resample_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>EDI::Design$overwrite_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_one_subject"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject'><code>EDI::DesignSeqOneByOne$add_one_subject()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>EDI::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
 </ul>
@@ -64,7 +63,7 @@ This class takes care of data initialization and sequential assignments.
 Initialize a balanced sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$new(
-  response_type = "continuous",
+  response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
@@ -93,13 +92,13 @@ A new `DesignSeqOneByOneiBCRD` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-add_subject_to_experiment_and_assign"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-add_subject_to_experiment_and_assign}{}}}
-\subsection{Method \code{add_subject_to_experiment_and_assign()}}{
+\if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-add_one_subject_to_experiment_and_assign"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-add_one_subject_to_experiment_and_assign}{}}}
+\subsection{Method \code{add_one_subject_to_experiment_and_assign()}}{
 Adds a subject and assigns treatment.
 Sets a single-block match vector once all subjects have arrived.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$add_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$add_one_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

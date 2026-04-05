@@ -96,7 +96,7 @@ run_comprehensive_inference_suite <- function(
 		des_init_res <- safe_run_timed(function() {
 		des_obj <- des_class$new(n = n, response_type = rt, verbose = verbose)
 		for (i in seq_len(n)) {
-			des_obj$add_subject_to_experiment_and_assign(X_dt[i, ])
+			des_obj$add_one_subject_to_experiment_and_assign(X_dt[i, ])
 		}
 		des_obj$add_all_subject_responses(y, deads = dead)
 		des_obj

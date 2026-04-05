@@ -30,7 +30,7 @@ robust standard error with residual degrees of freedom \eqn{n - p}.
 \dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "continuous")
 for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
 seq_des$add_all_subject_responses(rt(20, df = 3))
 
@@ -99,7 +99,7 @@ the user. Default is \code{FALSE}.}
 \preformatted{\dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "continuous")
 for (i in 1 : 20){
-  seq_des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
 seq_des$add_all_subject_responses(rt(20, df = 3))
 

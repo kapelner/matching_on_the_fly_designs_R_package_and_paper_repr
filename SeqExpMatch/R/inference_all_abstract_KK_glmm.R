@@ -16,6 +16,9 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
 			super$initialize(des_obj, verbose)
+			if (identical(private$glmm_response_type(), "proportion")) {
+				private$y = .sanitize_proportion_response(private$y, interior = FALSE)
+			}
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("glmmTMB", quietly = TRUE)){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")

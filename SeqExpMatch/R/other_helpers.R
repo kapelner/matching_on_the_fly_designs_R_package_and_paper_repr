@@ -615,6 +615,18 @@ NULL
 	list(coefficients = coefficients, vcov = vcov_full)
 }
 
+
+
+.sanitize_proportion_response = function(y, interior = FALSE){
+	assertNumeric(y, any.missing = FALSE)
+	y = as.numeric(y)
+	if (length(y) == 0L) return(y)
+	if (isTRUE(interior)) {
+		eps = .Machine$double.eps
+		return(pmin(1 - eps, pmax(eps, y)))
+	}
+	pmin(1, pmax(0, y))
+}
 .softmax_three_from_logits = function(alpha0, alpha1){
 	m = max(0, alpha0, alpha1)
 	e0 = exp(alpha0 - m)

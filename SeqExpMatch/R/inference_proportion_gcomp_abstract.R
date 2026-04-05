@@ -72,9 +72,49 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param delta The null mean difference. Defaults to 0.
 		#' @param B Number of bootstrap samples.
 		#' @param na.rm Whether to remove non-finite bootstrap replicates.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
+		#' @param boundary_tol Resample screening threshold for boundary mass near 0/1.
+		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
+		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
+		#' @param min_group_n Minimum number of observations required in each treatment arm.
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE,
+			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
 			assertNumeric(delta, len = 1)
+			old_bootstrap_screening = private$bootstrap_screening_control
+			private$bootstrap_screening_control = list(
+				boundary_tol = boundary_tol,
+				max_boundary_mass = max_boundary_mass,
+				sep_tol = sep_tol,
+				min_group_n = as.integer(min_group_n)
+			)
+			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
 			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
+		},
+
+		#' @description
+		#' Computes a bootstrap confidence interval.
+		#' @param alpha The confidence level 1 - \code{alpha}.
+		#' @param B Number of bootstrap samples.
+		#' @param type Bootstrap CI type.
+		#' @param na.rm Whether to remove non-finite bootstrap replicates.
+		#' @param show_progress Whether to show bootstrap progress.
+		#' @param boundary_tol Resample screening threshold for boundary mass near 0/1.
+		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
+		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
+		#' @param min_group_n Minimum number of observations required in each treatment arm.
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "percentile",
+			na.rm = TRUE, show_progress = TRUE, boundary_tol = 0.02, max_boundary_mass = 0.95,
+			sep_tol = 0.02, min_group_n = 5L){
+			old_bootstrap_screening = private$bootstrap_screening_control
+			private$bootstrap_screening_control = list(
+				boundary_tol = boundary_tol,
+				max_boundary_mass = max_boundary_mass,
+				sep_tol = sep_tol,
+				min_group_n = as.integer(min_group_n)
+			)
+			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
+			super$compute_bootstrap_confidence_interval(
+				alpha = alpha, B = B, type = type, na.rm = na.rm, show_progress = show_progress
+			)
 		},
 
 		#' @description
@@ -82,44 +122,87 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param B Description for B
 		#' @param show_progress Description for show_progress
 		#' @param max_resample_attempts Description for max_resample_attempts
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = 50){
+		#' @param boundary_tol Resample screening threshold for boundary mass near 0/1.
+		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
+		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
+		#' @param min_group_n Minimum number of observations required in each treatment arm.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = 50,
+			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L, debug = FALSE){
 			assertCount(B, positive = TRUE)
 			assertCount(max_resample_attempts, positive = TRUE)
+			assertNumber(boundary_tol, lower = 0, upper = 0.5)
+			assertNumber(max_boundary_mass, lower = 0, upper = 1)
+			assertNumber(sep_tol, lower = 0)
+			assertCount(min_group_n, positive = TRUE)
 			private$shared(estimate_only = TRUE)
 			cols = private$gcomp_design_colnames
 			if (is.null(cols)){
-				return(super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress))
+				return(super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug))
 			}
 
 			X_full = private$build_named_design_matrix()
-			X_fit = X_full[, cols, drop = FALSE]
-			n = nrow(X_fit)
+			n = nrow(X_full)
 			y = private$y
 			w = private$w
 
 			#' @description
 			#' Draw sample
 			#' @param ... Other arguments passed to the method.
-			draw_sample = function(...){
-				attempt = 1
-				repeat {
-					i_b = sample_int_replace_cpp(n, n)
-					w_b = w[i_b]
-					if (any(w_b == 1, na.rm = TRUE) && any(w_b == 0, na.rm = TRUE)) break
-					attempt = attempt + 1
-					if (attempt > max_resample_attempts) return(NA_real_)
+				draw_sample = function(...){
+					attempt = 1
+					repeat {
+						i_b = sample_int_replace_cpp(n, n)
+						w_b = w[i_b]
+						y_b = y[i_b]
+						if (private$bootstrap_sample_is_usable(
+							w_b, y_b,
+							boundary_tol = boundary_tol,
+							max_boundary_mass = max_boundary_mass,
+							sep_tol = sep_tol,
+							min_group_n = min_group_n
+						)) break
+						attempt = attempt + 1
+						if (attempt > max_resample_attempts) return(NA_real_)
+					}
+					X_b = X_full[i_b, , drop = FALSE]
+					private$bootstrap_effect_from_sample(X_b, y_b)
 				}
-				X_b = X_fit[i_b, , drop = FALSE]
-				y_b = y[i_b]
-				private$bootstrap_effect_from_sample(X_b, y_b)
-			}
 
-			if (self$num_cores == 1){
+			if (isTRUE(debug)) {
+				debug_results = vector("list", B)
+				for (b in seq_len(B)) {
+					iter_warns = character(0)
+					iter_val = withCallingHandlers(
+						tryCatch(draw_sample(), error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+						warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+					)
+					debug_results[[b]] = list(
+						val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
+						errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+						warnings = iter_warns
+					)
+				}
+				values = sapply(debug_results, `[[`, "val")
+				errors_list = lapply(debug_results, `[[`, "errors")
+				warnings_list = lapply(debug_results, `[[`, "warnings")
+				num_errors_vec = lengths(errors_list)
+				num_warnings_vec = lengths(warnings_list)
+				return(list(
+					values = values,
+					errors = errors_list,
+					warnings = warnings_list,
+					num_errors = num_errors_vec,
+					num_warnings = num_warnings_vec,
+					prop_iterations_with_errors = mean(num_errors_vec > 0),
+					prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+					prop_illegal_values = mean(!is.finite(values))
+				))
+			} else if (self$num_cores == 1){
 				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
 			} else {
 				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), 
 				n_cores = min(2L, self$num_cores),
-				export_list = list(draw_sample = draw_sample, n = n, y = y, w = w, X_fit = X_fit, sample_int_replace_cpp = EDI:::sample_int_replace_cpp)))
+					export_list = list(draw_sample = draw_sample, n = n, y = y, w = w, X_full = X_full, sample_int_replace_cpp = EDI:::sample_int_replace_cpp)))
 			}
 		}
 	),
@@ -127,6 +210,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 	private = list(
 		gcomp_design_colnames = NULL,
 		gcomp_design_j_treat = NULL,
+			bootstrap_screening_control = NULL,
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 		build_named_design_matrix = function(){
 			X_full = private$build_design_matrix()
@@ -265,6 +349,146 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			}
 		},
 
+			compute_standardized_effect_components = function(X_fit, coef_hat, j_treat, clip_lower = NULL, clip_upper = NULL){
+				X1 = X_fit
+				X0 = X_fit
+				X1[, j_treat] = 1
+				X0[, j_treat] = 0
+
+				eta1 = as.numeric(X1 %*% coef_hat)
+				eta0 = as.numeric(X0 %*% coef_hat)
+				mean1_i = stats::plogis(eta1)
+				mean0_i = stats::plogis(eta0)
+				if (!is.null(clip_lower) || !is.null(clip_upper)) {
+					if (is.null(clip_lower)) clip_lower = 0
+					if (is.null(clip_upper)) clip_upper = 1
+					mean1_i = pmin(clip_upper, pmax(clip_lower, mean1_i))
+					mean0_i = pmin(clip_upper, pmax(clip_lower, mean0_i))
+				}
+
+				list(
+					X1 = X1,
+					X0 = X0,
+					mean1_i = mean1_i,
+					mean0_i = mean0_i,
+					mean1 = mean(mean1_i),
+					mean0 = mean(mean0_i),
+					md = mean(mean1_i) - mean(mean0_i)
+				)
+			},
+
+		stabilize_covariance_matrix = function(vcov_mat, ridge_factor = 1e-8){
+			if (is.null(vcov_mat) || !is.matrix(vcov_mat) || any(!is.finite(vcov_mat))) return(NULL)
+			vcov_sym = (vcov_mat + t(vcov_mat)) / 2
+			eig = tryCatch(eigen(vcov_sym, symmetric = TRUE), error = function(e) NULL)
+			if (is.null(eig) || any(!is.finite(eig$values))) return(NULL)
+			scale = max(1, max(abs(eig$values), na.rm = TRUE))
+			floor_val = ridge_factor * scale
+			vals = pmax(eig$values, floor_val)
+			vcov_psd = eig$vectors %*% diag(vals, nrow = length(vals)) %*% t(eig$vectors)
+			vcov_psd = (vcov_psd + t(vcov_psd)) / 2
+			dimnames(vcov_psd) = dimnames(vcov_mat)
+			vcov_psd
+		},
+
+		invert_information_matrix = function(info_mat, ridge_factor = 1e-8){
+			if (is.null(info_mat) || !is.matrix(info_mat) || any(!is.finite(info_mat))) return(NULL)
+			info_sym = (info_mat + t(info_mat)) / 2
+			eig = tryCatch(eigen(info_sym, symmetric = TRUE), error = function(e) NULL)
+			if (is.null(eig) || any(!is.finite(eig$values))) return(NULL)
+			scale = max(1, max(abs(eig$values), na.rm = TRUE))
+			floor_val = ridge_factor * scale
+			vals = pmax(eig$values, floor_val)
+			inv_info = eig$vectors %*% diag(1 / vals, nrow = length(vals)) %*% t(eig$vectors)
+			inv_info = (inv_info + t(inv_info)) / 2
+			dimnames(inv_info) = dimnames(info_mat)
+			inv_info
+		},
+
+			model_based_covariance_matrix = function(X_fit, coef_hat, clip_lower = 1e-6, clip_upper = 1 - 1e-6){
+				eta = as.numeric(X_fit %*% coef_hat)
+				mu_hat = stats::plogis(eta)
+				mu_hat = pmin(clip_upper, pmax(clip_lower, mu_hat))
+				W = pmin(pmax(as.numeric(mu_hat * (1 - mu_hat)), clip_lower * (1 - clip_upper)), 0.25)
+				info_mat = crossprod(X_fit, X_fit * W)
+				colnames(info_mat) = rownames(info_mat) = names(coef_hat)
+				private$invert_information_matrix(info_mat)
+			},
+
+			finite_difference_md_gradient = function(X_fit, coef_hat, j_treat, clip_lower = NULL, clip_upper = NULL){
+				p = length(coef_hat)
+				grad = rep(NA_real_, p)
+				base_step = .Machine$double.eps^(1/3)
+				for (j in seq_len(p)) {
+					h = base_step * (abs(coef_hat[j]) + 1)
+					if (!is.finite(h) || h <= 0) h = 1e-6
+					beta_plus = coef_hat
+					beta_minus = coef_hat
+					beta_plus[j] = beta_plus[j] + h
+					beta_minus[j] = beta_minus[j] - h
+					md_plus = private$compute_standardized_effect_components(X_fit, beta_plus, j_treat, clip_lower = clip_lower, clip_upper = clip_upper)$md
+					md_minus = private$compute_standardized_effect_components(X_fit, beta_minus, j_treat, clip_lower = clip_lower, clip_upper = clip_upper)$md
+					if (is.finite(md_plus) && is.finite(md_minus)) {
+						grad[j] = (md_plus - md_minus) / (2 * h)
+					}
+				}
+				names(grad) = names(coef_hat)
+				grad
+			},
+
+		variance_from_gradient = function(grad, vcov_mat){
+			if (is.null(vcov_mat) || any(!is.finite(grad)) || any(!is.finite(vcov_mat))) return(NA_real_)
+			var_md = suppressWarnings(as.numeric(t(grad) %*% vcov_mat %*% grad))
+			if (is.finite(var_md) && var_md > 0) var_md else NA_real_
+		},
+
+			resolve_effect_variance = function(X_fit, coef_hat, j_treat, vcov_robust, components){
+				grad1 = as.numeric(crossprod(components$X1, components$mean1_i * (1 - components$mean1_i))) / nrow(components$X1)
+				grad0 = as.numeric(crossprod(components$X0, components$mean0_i * (1 - components$mean0_i))) / nrow(components$X0)
+				grad_md = grad1 - grad0
+
+				var_md = private$variance_from_gradient(grad_md, vcov_robust)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_robust, method = "robust"))
+
+				vcov_stable = private$stabilize_covariance_matrix(vcov_robust)
+				var_md = private$variance_from_gradient(grad_md, vcov_stable)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust"))
+
+				vcov_model = private$model_based_covariance_matrix(X_fit, coef_hat)
+				var_md = private$variance_from_gradient(grad_md, vcov_model)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model, method = "model_based"))
+
+				grad_fd = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat)
+				var_md = private$variance_from_gradient(grad_fd, vcov_stable)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust_fd"))
+
+				var_md = private$variance_from_gradient(grad_fd, vcov_model)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model, method = "model_based_fd"))
+
+				strong_clip = 1e-4
+				components_clipped = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
+				grad1_clip = as.numeric(crossprod(components_clipped$X1, components_clipped$mean1_i * (1 - components_clipped$mean1_i))) / nrow(components_clipped$X1)
+				grad0_clip = as.numeric(crossprod(components_clipped$X0, components_clipped$mean0_i * (1 - components_clipped$mean0_i))) / nrow(components_clipped$X0)
+				grad_md_clip = grad1_clip - grad0_clip
+
+				var_md = private$variance_from_gradient(grad_md_clip, vcov_stable)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust_strong_clip"))
+
+				vcov_model_clip = private$model_based_covariance_matrix(X_fit, coef_hat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
+				var_md = private$variance_from_gradient(grad_md_clip, vcov_model_clip)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model_clip, method = "model_based_strong_clip"))
+
+				grad_fd_clip = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
+				var_md = private$variance_from_gradient(grad_fd_clip, vcov_model_clip)
+				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model_clip, method = "model_based_fd_strong_clip"))
+
+				list(
+					var_md = NA_real_,
+					vcov = if (!is.null(vcov_model_clip)) vcov_model_clip else if (!is.null(vcov_stable)) vcov_stable else vcov_model,
+					method = "failed"
+				)
+			},
+
 		compute_standardized_effects_r = function(fit){
 			X_fit = fit$X
 			coef_hat = fit$coefficients
@@ -272,25 +496,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			j_treat = fit$j_treat
 			estimate_only = isTRUE(fit$estimate_only)
 
-			X1 = X_fit
-			X0 = X_fit
-			X1[, j_treat] = 1
-			X0[, j_treat] = 0
-
-			eta1 = as.numeric(X1 %*% coef_hat)
-			eta0 = as.numeric(X0 %*% coef_hat)
-			mean1_i = stats::plogis(eta1)
-			mean0_i = stats::plogis(eta0)
-			mean1 = mean(mean1_i)
-			mean0 = mean(mean0_i)
-
-			md = mean1 - mean0
+			components = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat)
 
 			if (estimate_only){
 				return(list(
-					mean1 = mean1,
-					mean0 = mean0,
-					md = md,
+					mean1 = components$mean1,
+					mean0 = components$mean0,
+					md = components$md,
 					se_md = NA_real_,
 					full_coefficients = coef_hat,
 					full_vcov = NULL,
@@ -298,14 +510,15 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				))
 			}
 
-			grad1 = as.numeric(crossprod(X1, mean1_i * (1 - mean1_i))) / nrow(X1)
-			grad0 = as.numeric(crossprod(X0, mean0_i * (1 - mean0_i))) / nrow(X0)
-
-			grad_md = grad1 - grad0
-			var_md = as.numeric(t(grad_md) %*% vcov_robust %*% grad_md)
-
-			std_err = sqrt(pmax(diag(vcov_robust), 0))
-			z_vals = coef_hat / std_err
+			var_res = private$resolve_effect_variance(X_fit, coef_hat, j_treat, vcov_robust, components)
+			vcov_used = var_res$vcov
+			std_err = if (!is.null(vcov_used)) sqrt(pmax(diag(vcov_used), 0)) else rep(NA_real_, length(coef_hat))
+			std_err = as.numeric(std_err)
+			names(std_err) = names(coef_hat)
+			z_vals = rep(NA_real_, length(coef_hat))
+			ok_se = is.finite(std_err) & std_err > 0
+			z_vals[ok_se] = coef_hat[ok_se] / std_err[ok_se]
+			names(z_vals) = names(coef_hat)
 			summary_table = cbind(
 				Value = coef_hat,
 				`Std. Error` = std_err,
@@ -314,12 +527,12 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			)
 
 			list(
-				mean1 = mean1,
-				mean0 = mean0,
-				md = md,
-				se_md = if (is.finite(var_md) && var_md >= 0) sqrt(var_md) else NA_real_,
+				mean1 = components$mean1,
+				mean0 = components$mean0,
+				md = components$md,
+				se_md = if (is.finite(var_res$var_md)) sqrt(var_res$var_md) else NA_real_,
 				full_coefficients = coef_hat,
-				full_vcov = vcov_robust,
+				full_vcov = vcov_used,
 				summary_table = summary_table
 			)
 		},
@@ -334,59 +547,74 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				return(private$compute_standardized_effects_r(fit))
 			}
 
-			vcov_robust = fast$vcov
-			colnames(vcov_robust) = rownames(vcov_robust) = names(coef_hat)
-			std_err = fast$std_err
-			names(std_err) = names(coef_hat)
-			z_vals = fast$z_vals
-			names(z_vals) = names(coef_hat)
-			summary_table = cbind(
-				Value = coef_hat,
-				`Std. Error` = std_err,
-				`z value` = z_vals,
-				`Pr(>|z|)` = 2 * stats::pnorm(-abs(z_vals))
-			)
-
-			list(
-				mean1 = fast$mean1,
-				mean0 = fast$mean0,
-				md = fast$md,
-				se_md = fast$se_md,
-				full_coefficients = coef_hat,
-				full_vcov = vcov_robust,
-				summary_table = summary_table
-			)
+			fit$vcov = fast$vcov
+			colnames(fit$vcov) = rownames(fit$vcov) = names(coef_hat)
+			private$compute_standardized_effects_r(fit)
 		},
 
-		bootstrap_effect_from_sample = function(X_b, y_b){
-			if (nrow(X_b) == 0) return(NA_real_)
-			mod = tryCatch(
-				fast_logistic_regression_cpp(X = X_b, y = as.numeric(y_b)),
-				error = function(e) NULL
-			)
-			if (is.null(mod)){
-				return(NA_real_)
-			}
-			coef_hat = as.numeric(mod$b)
-			if (any(!is.finite(coef_hat))){
-				return(NA_real_)
-			}
+			bootstrap_sample_is_usable = function(w_b, y_b, boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
+				if (length(w_b) != length(y_b) || length(y_b) == 0L) return(FALSE)
+				if (any(!is.finite(y_b))) return(FALSE)
+				if (!any(w_b == 1, na.rm = TRUE) || !any(w_b == 0, na.rm = TRUE)) return(FALSE)
 
-			X1 = X_b
-			X0 = X_b
-			j_treat = private$gcomp_design_j_treat
-			X1[, j_treat] = 1
-			X0[, j_treat] = 0
+				boundary_mass = mean(y_b <= boundary_tol | y_b >= 1 - boundary_tol)
+				if (!is.finite(boundary_mass) || boundary_mass >= max_boundary_mass) return(FALSE)
 
-			risk1 = mean(stats::plogis(X1 %*% coef_hat))
-			risk0 = mean(stats::plogis(X0 %*% coef_hat))
+				y1 = y_b[w_b == 1]
+				y0 = y_b[w_b == 0]
+				if (length(y1) < min_group_n || length(y0) < min_group_n) return(FALSE)
 
-			md_val = risk1 - risk0
-			if (!is.finite(md_val)){
-				return(NA_real_)
-			}
-			md_val
-		},
+				sep_hi = min(y1, na.rm = TRUE) >= max(y0, na.rm = TRUE) + sep_tol
+				sep_lo = min(y0, na.rm = TRUE) >= max(y1, na.rm = TRUE) + sep_tol
+				if (isTRUE(sep_hi) || isTRUE(sep_lo)) return(FALSE)
+
+				TRUE
+			},
+
+			bootstrap_fit_from_sample = function(X_b_full, y_b){
+				X_curr = X_b_full
+
+				repeat {
+					reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
+					X_fit = reduced$X
+					j_treat = reduced$j_treat
+					if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+						return(NULL)
+					}
+
+					mod = tryCatch(
+						fast_logistic_regression_cpp(X = X_fit, y = as.numeric(y_b)),
+						error = function(e) NULL
+					)
+					if (is.null(mod)){
+						return(NULL)
+					}
+
+					coef_hat = as.numeric(mod$b)
+					if (all(is.finite(coef_hat))){
+						coef_names = colnames(X_fit)
+						names(coef_hat) = coef_names
+						return(list(X = X_fit, j_treat = j_treat, coefficients = coef_hat))
+					}
+
+					if (ncol(X_curr) <= 2L) return(NULL)
+					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
+					if (!is.finite(drop_col)) return(NULL)
+					X_curr = X_curr[, -drop_col, drop = FALSE]
+				}
+			},
+
+			bootstrap_effect_from_sample = function(X_b_full, y_b){
+				if (nrow(X_b_full) == 0) return(NA_real_)
+				fit = private$bootstrap_fit_from_sample(X_b_full, y_b)
+				if (is.null(fit)) return(NA_real_)
+
+				md_val = private$compute_standardized_effect_components(fit$X, fit$coefficients, fit$j_treat)$md
+				if (!is.finite(md_val)){
+					return(NA_real_)
+				}
+				md_val
+			},
 
 		compute_effect_confidence_interval = function(alpha){
 			z = stats::qnorm(1 - alpha / 2)

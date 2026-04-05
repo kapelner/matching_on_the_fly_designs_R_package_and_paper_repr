@@ -40,7 +40,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			has_match_structure_local = private$has_match_structure
 
 			run_one_boot_iter = function(worker_des, worker_inf) {
-				worker_des$resample_design()
+				worker_des$.__enclos_env__$private$resample_design()
 				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
 				if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
@@ -74,6 +74,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				warnings_list = lapply(debug_results, `[[`, "warnings")
 				num_errors_vec = lengths(errors_list)
 				num_warnings_vec = lengths(warnings_list)
+				# Populate the normal cache so subsequent non-debug calls can reuse the values
+				if (is.null(private$cached_values$boot_distr_cache)) private$cached_values$boot_distr_cache = list()
+				private$cached_values$boot_distr_cache[[cache_key]] = values
 				return(list(
 					values = values,
 					errors = errors_list,
@@ -191,7 +194,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			boot_stats = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t", "bca", "prepivoted", "double-bootstrap", "calibrated", "smoothed")) {
 				private$approximate_bootstrap_statistics_beta_hat_T(B = B, show_progress = show_progress, na.rm = na.rm, smooth = identical(type, "smoothed"))
 			} else {
-				list(theta = private$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress), se = NULL)
+				list(theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress), se = NULL)
 			}
 
 			boot_distr = boot_stats$theta

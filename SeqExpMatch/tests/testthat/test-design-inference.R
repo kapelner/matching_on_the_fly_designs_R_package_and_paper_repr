@@ -3,9 +3,9 @@ test_that("Inference works for continuous", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
-	des$add_all_subject_responses(rnorm(n))
+	add_all_subject_responses_seq(des, rnorm(n))
 
 	# Simple Mean Diff
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
@@ -23,9 +23,9 @@ test_that("Inference works for incidence", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
-	des$add_all_subject_responses(rbinom(n, 1, 0.5))
+	add_all_subject_responses_seq(des, rbinom(n, 1, 0.5))
 
 	inf <- InferenceIncidUnivLogRegr$new(des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()
@@ -34,10 +34,8 @@ test_that("Inference works for incidence", {
 
 test_that("Simple incidence proportion difference uses pooled-variance t inference", {
 	des <- FixedDesign$new(n = 10, response_type = "incidence", verbose = FALSE)
-	for (i in 1:10) {
-		des$add_subject(data.frame(x = i))
-	}
-	des$add_all_subject_assignments(c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
+	des$add_all_subjects_to_experiment(data.frame(x = 1:10))
+	des$overwrite_all_subject_assignments(c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
 	des$add_all_subject_responses(c(1, 1, 0, 1, 0, 0, 1, 0, 0, 0))
 
 	inf <- InferenceIncidenceSimplePropDiffPooled$new(des, verbose = FALSE)
@@ -65,9 +63,9 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 
 	des_bad <- DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous", verbose = FALSE)
 	for (i in 1:6) {
-		des_bad$add_subject_to_experiment_and_assign(data.frame(x = i))
+		des_bad$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	des_bad$add_all_subject_responses(rnorm(6))
+	add_all_subject_responses_seq(des_bad, rnorm(6))
 	expect_error(InferenceIncidenceSimplePropDiffPooled$new(des_bad, verbose = FALSE), "incidence")
 })
 
@@ -78,10 +76,8 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 		response_type = "incidence",
 		verbose = FALSE
 	)
-	for (stratum in c("A", "A", "A", "A", "B", "B", "B", "B")) {
-		des$add_subject(data.frame(stratum = stratum))
-	}
-	des$add_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "A", "A", "B", "B", "B", "B")))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	inf <- InferenceIncidAzriel$new(des, verbose = FALSE)
@@ -113,9 +109,9 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 
 	des_bad <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
 	for (i in 1:8) {
-		des_bad$add_subject_to_experiment_and_assign(data.frame(x = i))
+		des_bad$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	des_bad$add_all_subject_responses(rbinom(8, 1, 0.5))
+	add_all_subject_responses_seq(des_bad, rbinom(8, 1, 0.5))
 	expect_error(InferenceIncidAzriel$new(des_bad, verbose = FALSE), "blocking design")
 })
 
@@ -124,9 +120,9 @@ test_that("Inference works for count", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
-	des$add_all_subject_responses(rpois(n, 5))
+	add_all_subject_responses_seq(des, rpois(n, 5))
 
 	inf <- InferenceCountUnivNegBinRegr$new(des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()
@@ -156,9 +152,9 @@ test_that("Inference works for proportion", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "proportion", verbose = FALSE)
 	set.seed(1)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
-	des$add_all_subject_responses(runif(n))
+	add_all_subject_responses_seq(des, runif(n))
 
 	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()
@@ -170,9 +166,9 @@ test_that("Inference works for survival", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "survival")
 	set.seed(1)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
-	des$add_all_subject_responses(rexp(n), dead = rbinom(n, 1, 0.8))
+	add_all_subject_responses_seq(des, rexp(n), deads = rbinom(n, 1, 0.8))
 
 	# KM Diff
 	inf <- InferenceSurvivalKMDiff$new(des, verbose = FALSE)
@@ -200,10 +196,10 @@ test_that("Inference works for ordinal partial proportional odds", {
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "ordinal")
 	set.seed(10)
 	for (i in 1:n) {
-		des$add_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+		des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 	}
 	y_levels <- sample(1:4, n, replace = TRUE)
-	des$add_all_subject_responses(y_levels)
+	add_all_subject_responses_seq(des, y_levels)
 
 	inf_ppod <- InferenceOrdinalPartialProportionalOdds$new(des, nonparallel = c("x"), verbose = FALSE)
 	est_ppod <- inf_ppod$compute_treatment_estimate()
@@ -220,9 +216,9 @@ test_that("Inference works for incidence KK Newcombe IVWC", {
 
 	seq_des <- DesignSeqOneByOneKK14$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) {
-		seq_des$add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 	}
-	seq_des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(seq_des, y)
 
 	inf <- InferenceIncidUnivKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()

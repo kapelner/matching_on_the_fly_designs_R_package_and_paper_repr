@@ -50,10 +50,17 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
     if (!requireNamespace("mirai", quietly = TRUE)) {
       stop("The 'mirai' package is required for parallelization on this system or when force_mirai = TRUE. Please install it.")
     }
+    edi_env$mirai_has_been_used = TRUE
     # Initialize mirai daemons
     mirai::daemons(num_cores)
     edi_env$global_mirai_num_cores = num_cores
   } else {
+    if (isTRUE(edi_env$mirai_has_been_used)) {
+      stop(
+        "Cannot switch from mirai-backed parallelism to fork-based parallelism in the same R session. ",
+        "Restart R or keep using force_mirai = TRUE. This avoids the nng is not fork-reentrant safe panic."
+      )
+    }
     # Unix-like system, use forking
     edi_env$global_fork_cluster = parallel::makeForkCluster(num_cores)
   }

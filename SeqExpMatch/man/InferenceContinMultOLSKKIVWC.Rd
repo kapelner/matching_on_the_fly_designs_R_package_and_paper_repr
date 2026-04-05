@@ -21,12 +21,12 @@ after the sequential design is completed.
 ## ------------------------------------------------
 
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)
@@ -39,12 +39,12 @@ seq_des_inf$compute_treatment_estimate()
 
 \dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)
@@ -58,12 +58,12 @@ seq_des_inf$compute_asymp_confidence_interval()
 
 \dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)
@@ -153,12 +153,12 @@ The setting-appropriate (see description) numeric estimate of the treatment effe
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)
@@ -200,12 +200,12 @@ A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)
@@ -244,12 +244,12 @@ The approximate frequentist p-value
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6)
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-seq_des$add_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 
 seq_des_inf = InferenceContinMultOLS$new(seq_des)

@@ -29,9 +29,9 @@ covariance rather than the model-based binomial variance.
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "proportion")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
 	mu_i = plogis(-0.5 + 0.8 * w_i)
-	seq_des$add_subject_response(i, rbeta(1, shape1 = 8 * mu_i, shape2 = 8 * (1 - mu_i)))
+	seq_des$add_one_subject_response(i, rbeta(1, shape1 = 8 * mu_i, shape2 = 8 * (1 - mu_i)))
 }
 seq_des_inf = InferencePropUniFractionalLogit$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
@@ -91,9 +91,9 @@ with a proportion response.
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "proportion")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
 	mu_i = plogis(-0.5 + 0.8 * w_i)
-	seq_des$add_subject_response(i, rbeta(1, shape1 = 8 * mu_i, shape2 = 8 * (1 - mu_i)))
+	seq_des$add_one_subject_response(i, rbeta(1, shape1 = 8 * mu_i, shape2 = 8 * (1 - mu_i)))
 }
 seq_des_inf = InferencePropUniFractionalLogit$new(seq_des)
 seq_des_inf$compute_treatment_estimate()

@@ -88,8 +88,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 					iter_warns = character(0)
 					iter_result = withCallingHandlers(
 						tryCatch({
-							worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
-							worker_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
+							worker_des = if (!is.null(des_template)) setup$template$duplicate() else NULL
+							worker_inf = if (!is.null(inf_template)) self$duplicate(verbose = FALSE, make_fork_cluster = FALSE) else NULL
 							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE)
 						}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
@@ -279,22 +279,31 @@ InferenceRand = R6::R6Class("InferenceRand",
 				worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 				worker$num_cores = 1L
 				w_priv = worker$.__enclos_env__$private
+				worker_des = if (!is.null(w_priv$des_obj)) w_priv$des_obj$duplicate(verbose = FALSE) else NULL
+				if (!is.null(worker_des)) private$sync_randomization_worker_state(worker_des, worker)
+				worker_des_priv = if (!is.null(worker_des)) worker_des$.__enclos_env__$private else NULL
 				base_m = w_priv$m
 				base_cache = w_priv$cached_values
 				w_priv$y = as.numeric(y)
 				w_priv$y_temp = w_priv$y
-				if (!is.null(w_priv$des_obj_priv_int)) {
-					w_priv$des_obj_priv_int$y = w_priv$y
+				if (!is.null(worker_des_priv)) {
+					worker_des_priv$y = w_priv$y
+					worker_des_priv$dead = w_priv$dead
+					if (!is.null(base_m)) worker_des_priv$m = base_m
+					private$sync_randomization_worker_state(worker_des, worker)
 				}
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
 					perm_data = get_perm_data(idxs[k])
-					w_priv$w = as.integer(perm_data$w)
-					w_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
-					if (!is.null(w_priv$des_obj_priv_int)) {
-						w_priv$des_obj_priv_int$w = w_priv$w
-						w_priv$des_obj_priv_int$m = w_priv$m
-						w_priv$des_obj_priv_int$y = w_priv$y
+					if (!is.null(worker_des_priv)) {
+						worker_des_priv$w = as.integer(perm_data$w)
+						worker_des_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
+						worker_des_priv$y = w_priv$y
+						worker_des_priv$dead = w_priv$dead
+						private$sync_randomization_worker_state(worker_des, worker)
+					} else {
+						w_priv$w = as.integer(perm_data$w)
+						w_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
 					}
 					w_priv$cached_values = private$build_fast_randomization_worker_cache(
 						if (k == 1L) base_cache else w_priv$cached_values,
@@ -365,6 +374,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 		get_randomization_distribution_prefix = function(r, delta, transform_responses, show_progress, permutations, cache_key, batch_size = NULL){
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
 			cached = if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] else NULL
+			if (length(cached) > 0L && !any(is.finite(cached))) {
+				cached = NULL
+				if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] = NULL
+			}
 			have = length(cached)
 			target = if (is.null(batch_size)) as.integer(r) else min(as.integer(r), have + as.integer(batch_size))
 			if (have < target) {
@@ -470,6 +483,23 @@ InferenceRand = R6::R6Class("InferenceRand",
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
 		},
 
+		sync_randomization_worker_state = function(thread_des_obj, thread_inf_obj){
+			if (is.null(thread_des_obj) || is.null(thread_inf_obj)) return(invisible(NULL))
+			des_priv = thread_des_obj$.__enclos_env__$private
+			inf_priv = thread_inf_obj$.__enclos_env__$private
+
+			inf_priv$des_obj = thread_des_obj
+			inf_priv$des_obj_priv_int = des_priv
+			inf_priv$w = des_priv$w
+			inf_priv$y = des_priv$y
+			inf_priv$y_temp = des_priv$y
+			inf_priv$dead = des_priv$dead
+			if (private$has_match_structure) inf_priv$m = des_priv$m
+
+			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
+			invisible(NULL)
+		},
+
 		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (use_perms) {
@@ -492,11 +522,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 				thread_des_obj$.__enclos_env__$private$w = perm_data$w
 				if (!is.null(perm_data$m_vec)) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
 			} else {
-				thread_des_obj$resample_design()
+				thread_des_obj$.__enclos_env__$private$resample_design()
 			}
 
-			if (!is.null(thread_inf_obj$.__enclos_env__$private$compute_basic_match_data))
-				thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+			private$sync_randomization_worker_state(thread_des_obj, thread_inf_obj)
 
 			iter_error = NULL
 			estimate = tryCatch(
@@ -538,6 +567,15 @@ InferenceRand = R6::R6Class("InferenceRand",
 		},
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (identical(private$des_obj_priv_int$response_type, "proportion") &&
+			    (inherits(self, "InferenceAbstractKKQuantileRegrIVWC") || inherits(self, "InferenceAbstractKKQuantileRegrCombinedLikelihood"))){
+				private$y = .sanitize_proportion_response(private$y, interior = TRUE)
+				private$cached_values$KKstats = NULL
+				private$cached_values$beta_hat_T = NULL
+				private$cached_values$s_beta_hat_T = NULL
+				if (!is.null(private$compute_basic_match_data)) private$compute_basic_match_data()
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
 			if (is.null(private$custom_randomization_statistic_function)) self$compute_treatment_estimate(estimate_only = estimate_only)
 			else private$custom_randomization_statistic_function()
 		}

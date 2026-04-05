@@ -29,9 +29,9 @@ covariance rather than the naive Poisson model-based variance.
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
 	p_i = pmin(0.95, exp(-1 + 0.4 * w_i))
-	seq_des$add_subject_response(i, rbinom(1, 1, p_i))
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
 }
 seq_des_inf = InferenceIncidUnivModifiedPoisson$new(seq_des)
 seq_des_inf$compute_treatment_estimate()
@@ -93,9 +93,9 @@ randomization inference.}
 seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
 for (i in 1:20) {
 	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
-	w_i = seq_des$add_subject_to_experiment_and_assign(x_i)
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
 	p_i = pmin(0.95, exp(-1 + 0.4 * w_i))
-	seq_des$add_subject_response(i, rbinom(1, 1, p_i))
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
 }
 seq_des_inf = InferenceIncidUnivModifiedPoisson$new(seq_des)
 seq_des_inf$compute_treatment_estimate()

@@ -5,10 +5,10 @@ test_that("DesignSeqOneByOnePocockSimon works", {
 		age_cat = sample(c("Young", "Old"), n, replace = TRUE)
 	)
 	
-	des = DesignSeqOneByOnePocockSimon$new(strata_cols = c("gender", "age_cat"), n = n, verbose = FALSE)
+	des = DesignSeqOneByOnePocockSimon$new(response_type = "continuous", strata_cols = c("gender", "age_cat"), n = n, verbose = FALSE)
 	
 	for (i in 1:n) {
-		des$add_subject_to_experiment_and_assign(X[i, , drop = FALSE])
+		des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 	}
 	
 	w = des$get_w()
@@ -20,7 +20,7 @@ test_that("DesignSeqOneByOnePocockSimon works", {
 	expect_lte(abs(sum(w) - n/2), 4) 
 	
 	# Test redraw
-	des$randomize()
+	des$assign_w_to_all_subjects()
 	w2 = des$get_w()
 	expect_length(w2, n)
 })

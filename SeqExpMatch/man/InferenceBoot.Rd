@@ -125,7 +125,11 @@ Computes a bootstrap-based confidence interval.
 
 \item{\code{B}}{Number of bootstrap samples. Default 501.}
 
-\item{\code{type}}{Type of bootstrap CI: "percentile" (default) or "basic".}
+\item{\code{type}}{Bootstrap CI type. Supported values are
+\code{"percentile"}, \code{"basic"}, \code{"studentized"},
+\code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
+\code{"bca"}, \code{"prepivoted"}, \code{"double-bootstrap"},
+\code{"calibrated"}, and \code{"smoothed"}.}
 
 \item{\code{na.rm}}{Remove non-finite bootstrap replicates.
 Default TRUE. Non-finite replicates are always removed internally.}

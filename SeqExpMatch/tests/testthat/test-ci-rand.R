@@ -70,12 +70,12 @@ test_that("compute_confidence_interval_rand works for continuous response", {
 	n <- 40
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "continuous", verbose = TRUE)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1), x2 = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1), x2 = rnorm(1)))
 	}
 	# Add treatment effect of 1.0
 	treatment <- des$.__enclos_env__$private$w
 	y <- rnorm(n) + treatment * 1.0
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = TRUE)
 
@@ -97,13 +97,13 @@ test_that("compute_confidence_interval_rand works for proportion response", {
 	n <- 100
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "proportion", verbose = FALSE)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
 	}
 	treatment <- des$.__enclos_env__$private$w
 	# Simulate proportions
 	mu <- plogis(-0.5 + treatment * 1.0)
 	y <- rbeta(n, shape1 = mu * 10, shape2 = (1 - mu) * 10)
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
 
@@ -125,12 +125,12 @@ test_that("compute_confidence_interval_rand works for survival response (uncenso
 	n <- 50
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "survival", verbose = FALSE)
 	for (i in 1:n) {
-	des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+	des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
 	}
 	treatment <- des$.__enclos_env__$private$w
 	# Simulate survival times (log-normal)
 	y <- exp(1.0 + treatment * 0.8 + rnorm(n, 0, 0.5))
-	des$add_all_subject_responses(y, deads = rep(1, n)) # All events, no censoring
+	add_all_subject_responses_seq(des, y, deads = rep(1, n)) # All events, no censoring
 
 	inf <- InferenceSurvivalUniWeibullRegr$new(des, verbose = FALSE)
 
@@ -153,12 +153,12 @@ test_that("compute_confidence_interval_rand works for ordinal response (cumulati
 	n <- 40
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "ordinal", verbose = FALSE)
 	for (i in 1:n) {
-		des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+		des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
 	}
 	treatment <- des$.__enclos_env__$private$w
 	score <- rnorm(n, mean = treatment * 0.5)
 	y <- 1L + (score > 0) + (score > 1)
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	inf <- InferenceOrdinalUniPropOddsRegr$new(des, verbose = FALSE)
 
@@ -176,14 +176,14 @@ test_that("compute_confidence_interval_rand works for ordinal response (cumulati
 test_that("compute_confidence_interval_rand throws error for unsupported types", {
 	n <- 20
 	des_incid <- DesignSeqOneByOneEfron$new(n = n, response_type = "incidence", verbose = FALSE)
-	for (i in 1:n) des_incid$add_subject_to_experiment_and_assign(data.table(x=1))
-	des_incid$add_all_subject_responses(rbinom(n, 1, 0.5))
+	for (i in 1:n) des_incid$add_one_subject_to_experiment_and_assign(data.table(x=1))
+	add_all_subject_responses_seq(des_incid, rbinom(n, 1, 0.5))
 	inf_incid <- InferenceIncidUnivLogRegr$new(des_incid)
 	expect_error(inf_incid$compute_confidence_interval_rand(), "Zhang randomization inference requires Bernoulli or matching designs")
 
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
-	for (i in 1:n) des_count$add_subject_to_experiment_and_assign(data.table(x=1))
-	des_count$add_all_subject_responses(rpois(n, 5))
+	for (i in 1:n) des_count$add_one_subject_to_experiment_and_assign(data.table(x=1))
+	add_all_subject_responses_seq(des_count, rpois(n, 5))
 	inf_count <- InferenceCountUnivNegBinRegr$new(des_count)
 	ci_count <- inf_count$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 	expect_equal(length(ci_count), 2)
@@ -196,11 +196,11 @@ test_that("Zhang incidence inference is available through randomization and exac
 	n <- 24
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) {
-		des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1), x2 = rnorm(1)))
+		des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1), x2 = rnorm(1)))
 	}
 	treatment <- des$.__enclos_env__$private$w
 	prob <- plogis(-0.2 + 0.8 * treatment)
-	des$add_all_subject_responses(rbinom(n, 1, prob))
+	add_all_subject_responses_seq(des, rbinom(n, 1, prob))
 
 	inf_rand_serial <- InferenceIncidUnivLogRegr$new(des, num_cores = 1, verbose = FALSE)
 	inf_rand_parallel <- InferenceIncidUnivLogRegr$new(des, num_cores = 4, verbose = FALSE)
@@ -228,11 +228,11 @@ test_that("Fisher exact inference matches fisher.test for iBCRD incidence", {
 	n <- 20
 	des <- DesignSeqOneByOneiBCRD$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in seq_len(n)) {
-		des$add_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
+		des$add_one_subject_to_experiment_and_assign(data.table(x1 = rnorm(1)))
 	}
 	w <- des$.__enclos_env__$private$w
 	y <- rbinom(n, 1, plogis(-0.3 + 0.7 * w))
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	ref <- stats::fisher.test(make_exact_fisher_2x2(w, y), conf.level = 0.90)
 	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
@@ -257,11 +257,11 @@ test_that("Fisher exact inference matches mantelhaen.test for blocking incidence
 		verbose = FALSE
 	)
 	for (i in seq_len(n)) {
-		des$add_subject_to_experiment_and_assign(x_dat[i, ])
+		des$add_one_subject_to_experiment_and_assign(x_dat[i, ])
 	}
 	w <- des$.__enclos_env__$private$w
 	y <- rbinom(n, 1, plogis(-0.5 + 0.9 * w + 0.4 * (x_dat$site == "B")))
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	ref_tables <- build_blocking_exact_fisher_tables(des)
 	ref <- stats::mantelhaen.test(ref_tables, exact = TRUE, conf.level = 0.95)
@@ -290,14 +290,14 @@ test_that("Fisher exact inference matches mantelhaen.test for KK incidence", {
 		verbose = FALSE
 	)
 	for (i in seq_len(nrow(x_dat))) {
-		des$add_subject_to_experiment_and_assign(x_dat[i, ])
+		des$add_one_subject_to_experiment_and_assign(x_dat[i, ])
 	}
 	m <- des$.__enclos_env__$private$m
 	expect_true(any(m > 0L))
 
 	w <- des$.__enclos_env__$private$w
 	y <- c(1L, 0L, 0L, 1L, 1L, 0L)
-	des$add_all_subject_responses(y)
+	add_all_subject_responses_seq(des, y)
 
 	ref_tables <- build_kk_exact_fisher_tables(des)
 	ref <- stats::mantelhaen.test(ref_tables, exact = TRUE, conf.level = 0.95)
@@ -315,9 +315,9 @@ test_that("Fisher exact inference is rejected for unsupported incidence designs"
 	n <- 12
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in seq_len(n)) {
-		des$add_subject_to_experiment_and_assign(data.table(x1 = i))
+		des$add_one_subject_to_experiment_and_assign(data.table(x1 = i))
 	}
-	des$add_all_subject_responses(rep(c(0L, 1L), length.out = n))
+	add_all_subject_responses_seq(des, rep(c(0L, 1L), length.out = n))
 
 	inf_exact <- InferenceIncidExactFisher$new(des, verbose = FALSE)
 

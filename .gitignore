@@ -172,4 +172,6 @@ document_error.log
 install.log
 test.log
 benchmark_final.log
+benchmark_run.log
+.codex
 

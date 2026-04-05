@@ -23,7 +23,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		#'
 		#' @return A new \code{FixedDesignMatchingGreedyPairSwitching} object.
 		initialize = function(
-				response_type = "continuous",
+				response_type,
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n,
@@ -101,10 +101,6 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		objective = NULL,
 		wait = NULL,
 		diff_method = NULL,
-		
-		draw_one_w = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
-		},
 
 		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){
 			if (is.vector(w_mat)) {

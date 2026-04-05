@@ -22,7 +22,7 @@
 #' )
 #' for (i in seq_len(nrow(x_dat))) {
 #'   seq_des$
-#'   add_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+#'   add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 #' }
 #' seq_des$
 #'   add_all_subject_responses(c(0.10, 0.25, 0.20, 0.40, 0.35, 0.55, 0.60, 0.75))
@@ -46,7 +46,13 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 			assertResponseType(des_obj$get_response_type(), "proportion")
 			super$initialize(des_obj, tau, qlogis, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$y = .sanitize_proportion_response(private$y, interior = TRUE)
 			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			# Rebuild KK summary data after sanitizing the response, otherwise the
+			# superclass cache can retain raw 0/1 values and qlogis() will produce
+			# non-finite values during the quantile fit and its randomization refits.
+			private$cached_values$KKstats = NULL
+			private$compute_basic_match_data()
 		},
 
 

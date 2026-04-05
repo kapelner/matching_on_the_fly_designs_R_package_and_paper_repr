@@ -24,7 +24,7 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 		initialize = function(
 						alpha = 1,
 						beta = 1,
-						response_type = "continuous",
+						response_type,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						

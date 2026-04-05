@@ -13,12 +13,12 @@ test_that("DesignSeqOneByOneSPBR Stratification and Randomization", {
     age_cat = rep(rep(c("Young", "Old"), each = 5), 2)
   )
   
-  seq_des = DesignSeqOneByOneSPBR$new(strata_cols = strata_cols, block_size = 2, n = n)
+  seq_des = DesignSeqOneByOneSPBR$new(response_type = "continuous", strata_cols = strata_cols, block_size = 2, n = n)
   
   cat("Starting subjects addition...\n")
   assignments = numeric(n)
   for (i in 1:n) {
-    assignments[i] = seq_des$add_subject_to_experiment_and_assign(X[i, ])
+    assignments[i] = seq_des$add_one_subject_to_experiment_and_assign(X[i, ])
   }
   cat("Subjects addition finished.\n")
   
@@ -59,7 +59,10 @@ test_that("DesignSeqOneByOneSPBR Stratification and Randomization", {
   # Test Stratified Bootstrap Indices
   cat("Testing stratified bootstrap...\n")
   # Use an inference class to trigger bootstrap
-  seq_des$add_all_subject_responses(rnorm(n))
+  y = rnorm(n)
+  for (i in 1:n) {
+    seq_des$add_one_subject_response(i, y[i])
+  }
   inf_obj = InferenceAllSimpleMeanDiff$new(seq_des)
   
   # Capture the indices by overriding or just checking the property

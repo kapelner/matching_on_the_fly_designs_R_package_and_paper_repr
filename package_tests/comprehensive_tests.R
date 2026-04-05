@@ -143,7 +143,8 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 		paste(as.character(result), collapse = " ")
 	}
 	result_1 = if (length(result_vec) >= 1) result_vec[1] else NA_character_
-	result_2 = if (grepl("confidence_interval", function_run, fixed = TRUE) && length(result_vec) >= 2) result_vec[2] else NA_character_
+	is_debug_distribution = grepl("_debug$", function_run)
+	result_2 = if ((grepl("confidence_interval", function_run, fixed = TRUE) || is_debug_distribution) && length(result_vec) >= 2) result_vec[2] else NA_character_
 	beta_T_in_confidence_interval = NA
 	if (grepl("confidence_interval", function_run, fixed = TRUE) && length(result) >= 2 && all(is.finite(result[1:2]))){
 		ci_lo = min(result[1:2])
@@ -380,13 +381,23 @@ safe_call = function(label, expr){
 		})
 		if (is.null(debug_result)) return(invisible(NULL))
 		duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
-		stats_vec = c(
-			debug_result$prop_iterations_with_errors,
-			debug_result$prop_iterations_with_warnings,
-			debug_result$prop_illegal_values
-		)
-		cat(sprintf("            prop_err=%.3f  prop_warn=%.3f  prop_illegal=%.3f\n",
+		if (identical(label, "approximate_bootstrap_distribution_beta_hat_T_debug")) {
+			stats_vec = c(
+				debug_result$prop_illegal_values,
+				debug_result$prop_iterations_with_errors,
+				debug_result$prop_iterations_with_warnings
+			)
+			cat(sprintf("            prop_illegal=%.3f  prop_err=%.3f  prop_warn=%.3f\n",
 					stats_vec[1], stats_vec[2], stats_vec[3]))
+		} else {
+			stats_vec = c(
+				debug_result$prop_iterations_with_errors,
+				debug_result$prop_iterations_with_warnings,
+				debug_result$prop_illegal_values
+			)
+			cat(sprintf("            prop_err=%.3f  prop_warn=%.3f  prop_illegal=%.3f\n",
+					stats_vec[1], stats_vec[2], stats_vec[3]))
+		}
 		cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
 		record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type,
 					  class(seq_des_inf)[1], label, stats_vec, status = "ok",
@@ -407,9 +418,14 @@ safe_call = function(label, expr){
 		safe_call_debug("approximate_randomization_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_randomization_distribution_beta_hat_T(r = r, debug = TRUE))
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE))
-		use_log   = response_type == "survival"
-		use_logit = response_type == "proportion"
-		transform_for_rand = if (use_log) "log" else if (use_logit) "logit" else "none"
+		transform_for_rand = switch(
+			response_type,
+			continuous = "none",
+			proportion = "logit",
+			count = "log",
+			survival = "log",
+			"none"
+		)
 		delta_for_rand = 0.5
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)",
 				seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, delta = delta_for_rand, transform_responses = transform_for_rand, show_progress = FALSE))
@@ -447,8 +463,9 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		eps = rnorm(1, 0, SD_NOISE)
 		bt = ifelse(w_t == 1, beta_T, 0)
 		if (response_type == "continuous") return(y_t + bt + eps)
-		if (response_type == "incidence"){
-			p_base = ifelse(y_t > 0, 0.75, 0.25)
+		if (response_type == "incidence") {
+			p_base = if (is.finite(y_t) && y_t >= 0 && y_t <= 1) y_t else stats::plogis(y_t)
+			p_base = pmin(0.95, pmax(0.05, p_base))
 			p_t = plogis(qlogis(p_base) + bt + eps)
 			return(as.numeric(stats::rbinom(1, size = 1, prob = p_t)))
 		}
@@ -533,24 +550,22 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (inherits(des_obj, "DesignSeqOneByOne")){
 		seq_ok = tryCatch({
 			for (t in 1 : n){
-				w_t = des_obj$add_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
+				w_t = des_obj$add_one_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
 				y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
-				des_obj$add_subject_response(t, y_t, dead[t])
+				des_obj$add_one_subject_response(t, y_t, dead[t])
 			}
 			TRUE
 		}, error = function(e){ message("    Skipping design (seq error): ", e$message); FALSE })
 		if (!seq_ok) return(invisible(NULL))
 	} else {
 		# It is a FixedDesign but not a DesignSeqOneByOne
-		for (t in 1 : n){
-			des_obj$add_subject(X_design[t, , drop = FALSE])
-		}
-		randomize_ok = tryCatch({ des_obj$randomize(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
+		des_obj$add_all_subjects_to_experiment(X_design)
+		randomize_ok = tryCatch({ des_obj$assign_w_to_all_subjects(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
 		if (!randomize_ok) return(invisible(NULL))
 		w = des_obj$get_w()
 		for (t in 1 : n){
 			y_t = apply_treatment_effect_and_noise(y[t], w[t], response_type)
-			des_obj$add_subject_response(t, y_t, dead[t])
+			des_obj$add_one_subject_response(t, y_t, dead[t])
 		}
 	}
 

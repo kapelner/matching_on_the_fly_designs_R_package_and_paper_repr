@@ -166,13 +166,13 @@ res = foreach(
 	# stop("boom")
 	# profvis({
 	for (t in 1 : n){
-	w_t = des_obj$add_subject_to_experiment_and_assign(X[t, ])
+	w_t = des_obj$add_one_subject_to_experiment_and_assign(X[t, ])
 	# if (t %% 50 == 0){
 	#   des_obj$print_current_subject_assignment()
 	# }
 	if (runif(1) < prob_of_adding_response){
 		dead_t = ifelse(response_type == "survival", as.numeric(runif(1) > prob_of_uncensored_survival_observation), 1)
-		des_obj$add_subject_response(t, draw_response_with_treatment(X[t], dead_t, w_t, beta_T, response_type), dead = dead_t)
+		des_obj$add_one_subject_response(t, draw_response_with_treatment(X[t], dead_t, w_t, beta_T, response_type), dead = dead_t)
 		response_added[t] = TRUE
 	}
 	}
@@ -181,7 +181,7 @@ res = foreach(
 
 	for (t in which(!response_added)){
 	dead_t = ifelse(response_type == "survival", as.numeric(runif(1) > prob_of_uncensored_survival_observation), 1)
-	suppressWarnings(des_obj$add_subject_response(t, draw_response_with_treatment(X[t, ], dead_t, des_obj$w[t], beta_T, response_type), dead = dead_t))
+	suppressWarnings(des_obj$add_one_subject_response(t, draw_response_with_treatment(X[t, ], dead_t, des_obj$w[t], beta_T, response_type), dead = dead_t))
 	}
 	cat("experiment completed?", des_obj$check_experiment_completed(), "\n")
 	# mean(log(des_obj$y[des_obj$w == 1])) - mean(log(des_obj$y[des_obj$w == 0]))

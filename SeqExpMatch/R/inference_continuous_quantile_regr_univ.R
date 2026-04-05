@@ -33,8 +33,8 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "continuous")
 		#' for (t in 1:20) {
 		#'   x_t = data.frame(x1 = rnorm(1))
-		#'   w_t = seq_des$add_subject_to_experiment_and_assign(x_t)
-		#'   seq_des$add_subject_response(t, x_t$x1 + 0.5 * w_t + rt(1, df = 3))
+		#'   w_t = seq_des$add_one_subject_to_experiment_and_assign(x_t)
+		#'   seq_des$add_one_subject_response(t, x_t$x1 + 0.5 * w_t + rt(1, df = 3))
 		#' }
 		#' seq_des_inf = InferenceContinUnivQuantileRegr$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
