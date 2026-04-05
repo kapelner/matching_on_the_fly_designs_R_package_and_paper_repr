@@ -112,6 +112,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_extended_robins_block_se_cpp
+double compute_extended_robins_block_se_cpp(const NumericVector& y, const NumericVector& w, const IntegerVector& m_vec, int n_total);
+RcppExport SEXP _EDI_compute_extended_robins_block_se_cpp(SEXP ySEXP, SEXP wSEXP, SEXP m_vecSEXP, SEXP n_totalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type m_vec(m_vecSEXP);
+    Rcpp::traits::input_parameter< int >::type n_total(n_totalSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_extended_robins_block_se_cpp(y, w, m_vec, n_total));
+    return rcpp_result_gen;
+END_RCPP
+}
 // base_bootstrap_loop_cpp
 NumericVector base_bootstrap_loop_cpp(const IntegerMatrix& indices, const NumericVector& y, const NumericVector& dead, const NumericMatrix& X, const NumericVector& w, Function duplicate_inference_fn, Function compute_estimate_fn, int num_cores);
 RcppExport SEXP _EDI_base_bootstrap_loop_cpp(SEXP indicesSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP wSEXP, SEXP duplicate_inference_fnSEXP, SEXP compute_estimate_fnSEXP, SEXP num_coresSEXP) {
@@ -2316,6 +2330,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_atkinson_assign_weight_cpp", (DL_FUNC) &_EDI_atkinson_assign_weight_cpp, 5},
     {"_EDI_atkinson_redraw_batch_cpp", (DL_FUNC) &_EDI_atkinson_redraw_batch_cpp, 4},
     {"_EDI_compute_azriel_block_se_cpp", (DL_FUNC) &_EDI_compute_azriel_block_se_cpp, 3},
+    {"_EDI_compute_extended_robins_block_se_cpp", (DL_FUNC) &_EDI_compute_extended_robins_block_se_cpp, 4},
     {"_EDI_base_bootstrap_loop_cpp", (DL_FUNC) &_EDI_base_bootstrap_loop_cpp, 8},
     {"_EDI_beta_loglik_cpp", (DL_FUNC) &_EDI_beta_loglik_cpp, 4},
     {"_EDI_beta_dev_resids_cpp", (DL_FUNC) &_EDI_beta_dev_resids_cpp, 4},

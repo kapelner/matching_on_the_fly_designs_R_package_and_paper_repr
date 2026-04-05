@@ -150,9 +150,26 @@ test_that("Azriel inference requires equal block sizes", {
 	)
 })
 
-test_that("Azriel and Extended Robins standard errors are comparable in a blocked simulation", {
+test_that("Azriel and Extended Robins standard errors match a fixed blocked simulation", {
 	set.seed(20260405)
-	se_pairs <- vapply(seq_len(25), function(i) {
+	expected <- matrix(
+		c(
+			0.3818813079129867, 0.2795084971874737,
+			0.3535533905932738, 0.1767766952966369,
+			0.2886751345948129, 0.2500000000000000,
+			0.2500000000000000, 0.1250000000000000,
+			0.3818813079129867, 0.2795084971874737
+		),
+		ncol = 2L,
+		byrow = TRUE,
+		dimnames = list(
+			NULL,
+			c("azriel", "robins")
+		)
+	)
+
+	ys <- replicate(5, rbinom(8, 1, 0.5), simplify = FALSE)
+	se_pairs <- t(vapply(ys, function(y) {
 		des <- FixedDesignBlocking$new(
 			strata_cols = "stratum",
 			n = 8,
@@ -161,7 +178,7 @@ test_that("Azriel and Extended Robins standard errors are comparable in a blocke
 		)
 		des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
 		des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
-		des$add_all_subject_responses(rbinom(8, 1, 0.5))
+		des$add_all_subject_responses(y)
 
 		inf_azriel <- InferenceIncidAzriel$new(des, verbose = FALSE)
 		inf_robins <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
@@ -169,11 +186,46 @@ test_that("Azriel and Extended Robins standard errors are comparable in a blocke
 			azriel = inf_azriel$.__enclos_env__$private$get_standard_error(),
 			robins = inf_robins$.__enclos_env__$private$get_standard_error()
 		)
-	}, numeric(2))
+	}, numeric(2)))
 
-	expect_true(all(is.finite(se_pairs)))
-	expect_true(all(se_pairs["azriel", ] >= se_pairs["robins", ] - 1e-12))
-	expect_gt(mean(se_pairs["azriel", ] - se_pairs["robins", ]), 0)
+	expect_equal(se_pairs, expected, tolerance = 1e-12)
+	expect_true(all(se_pairs[, "azriel"] >= se_pairs[, "robins"]))
+})
+
+test_that("Extended Robins standard error matches the blockwise formula", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	inf <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
+	se_cpp <- inf$.__enclos_env__$private$get_standard_error()
+
+	m <- des$get_block_ids()
+	B <- length(unique(m))
+	n_B <- sum(m == 1L)
+	n_B_over_two <- n_B / 2
+	variance_tot <- 0
+	for (b in 1:B) {
+		y_b <- des$get_y()[m == b]
+		w_b <- des$get_w()[m == b]
+		p_hat_T_b <- sum(y_b[w_b == 1]) / n_B_over_two
+		p_hat_C_b <- sum(y_b[w_b == 0]) / n_B_over_two
+		m_1_b <- max(p_hat_T_b, p_hat_C_b)
+		m_0_b <- min(p_hat_T_b, p_hat_C_b)
+		variance_tot <- variance_tot +
+			m_1_b * (1 - m_1_b) / n_B_over_two +
+			m_0_b * (1 - m_0_b) / n_B_over_two +
+			((2 * m_0_b - m_1_b) * (1 - m_1_b) - m_0_b * (1 - m_0_b)) / n_B
+	}
+	se_r <- 1 / B * sqrt(variance_tot)
+
+	expect_equal(se_cpp, se_r, tolerance = 1e-12)
 })
 
 test_that("Inference works for count", {

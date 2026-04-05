@@ -33,6 +33,10 @@ compute_azriel_block_se_cpp <- function(y, m_vec, n_total) {
     .Call(`_EDI_compute_azriel_block_se_cpp`, y, m_vec, n_total)
 }
 
+compute_extended_robins_block_se_cpp <- function(y, w, m_vec, n_total) {
+    .Call(`_EDI_compute_extended_robins_block_se_cpp`, y, w, m_vec, n_total)
+}
+
 base_bootstrap_loop_cpp <- function(indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
     .Call(`_EDI_base_bootstrap_loop_cpp`, indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
