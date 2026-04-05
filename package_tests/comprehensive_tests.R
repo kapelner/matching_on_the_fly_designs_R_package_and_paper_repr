@@ -359,6 +359,44 @@ safe_call = function(label, expr){
 	if (!skip_ci){
 		safe_call("compute_asymp_confidence_interval", seq_des_inf$compute_asymp_confidence_interval(0.05))
 	}
+	safe_call_debug = function(label, expr) {
+		if (is_row_completed(rep_curr, beta_T, dataset_name, response_type, design_type, class(seq_des_inf)[1], label)) {
+			return(invisible(NULL))
+		}
+		if (!is.null(pending_rep_header)) { message(pending_rep_header); pending_rep_header <<- NULL }
+		if (!is.null(pending_beta_header)) { message(pending_beta_header); pending_beta_header <<- NULL }
+		if (!is.null(pending_dataset_header)) { message(pending_dataset_header); pending_dataset_header <<- NULL }
+		if (!is.null(pending_response_header)) { message(pending_response_header); pending_response_header <<- NULL }
+		if (!is.null(pending_design_header)) { message(pending_design_header); pending_design_header <<- NULL }
+		if (!is.null(pending_banner)) { message(pending_banner); pending_banner <<- NULL }
+		message("          Calling ", label, "()")
+		start_elapsed = unname(proc.time()[["elapsed"]])
+		debug_result = tryCatch(expr, error = function(e) {
+			dur = unname(proc.time()[["elapsed"]]) - start_elapsed
+			record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type,
+						  class(seq_des_inf)[1], label, NA_character_, status = "error",
+						  duration_time_sec = dur, error_message = e$message)
+			NULL
+		})
+		if (is.null(debug_result)) return(invisible(NULL))
+		duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+		stats_vec = c(
+			debug_result$prop_iterations_with_errors,
+			debug_result$prop_iterations_with_warnings,
+			debug_result$prop_illegal_values
+		)
+		cat(sprintf("            prop_err=%.3f  prop_warn=%.3f  prop_illegal=%.3f\n",
+					stats_vec[1], stats_vec[2], stats_vec[3]))
+		cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
+		record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type,
+					  class(seq_des_inf)[1], label, stats_vec, status = "ok",
+					  duration_time_sec = duration_time_sec)
+	}
+
+	if (!skip_slow && !skip_bootstrap){
+		safe_call_debug("approximate_bootstrap_distribution_beta_hat_T_debug",
+						seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = r, debug = TRUE))
+	}
 	if (!skip_slow && !skip_ci && !skip_bootstrap){
 		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = r, na.rm = TRUE))
 	}
@@ -366,6 +404,8 @@ safe_call = function(label, expr){
 		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE))
 	}
 	if (!skip_slow && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion")){
+		safe_call_debug("approximate_randomization_distribution_beta_hat_T_debug",
+						seq_des_inf$approximate_randomization_distribution_beta_hat_T(r = r, debug = TRUE))
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE))
 		use_log   = response_type == "survival"
 		use_logit = response_type == "proportion"

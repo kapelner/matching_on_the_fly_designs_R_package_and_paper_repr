@@ -22,21 +22,31 @@ InferenceRand = R6::R6Class("InferenceRand",
 		},
 
 		#' @description
-		#' Under the sharp null, computes the randomization distribution.
-		#' @param r						The number of randomization vectors.
-		#' @param delta					The null difference.
-		#' @param transform_responses	Type of transformation.
-		#' @param show_progress		Show progress bar.
-		#' @param permutations		Pre-computed permutations.
-		#' @return 	A vector of estimates.
-		compute_beta_hat_T_randomization_distr_under_sharp_null = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL){
+		#' Computes the randomization distribution of the treatment effect estimate under the sharp null.
+		#'
+		#' @param r						Number of randomization vectors. Default 501.
+		#' @param delta					The null difference. Default 0.
+		#' @param transform_responses	Type of transformation. Default "none".
+		#' @param show_progress			Show progress bar. Default TRUE.
+		#' @param permutations			Pre-computed permutations. Default NULL.
+		#' @param debug					If \code{TRUE}, return a list with the distribution values and
+		#'   per-iteration diagnostics including error messages, warning messages, counts of each,
+		#'   and summary proportions for iterations with errors, warnings, and illegal (non-finite)
+		#'   values. Runs serially. Default \code{FALSE}.
+		#' @return 	When \code{debug = FALSE} (default), a numeric vector of length \code{r}. When
+		#'   \code{debug = TRUE}, a list with: \code{values}, \code{errors} (list of character
+		#'   vectors, one per iteration), \code{warnings} (list of character vectors, one per
+		#'   iteration), \code{num_errors}, \code{num_warnings},
+		#'   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
+		#'   \code{prop_illegal_values}.
+		approximate_randomization_distribution_beta_hat_T = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL, debug = FALSE){
 			private$assert_design_supports_resampling("Randomization inference")
-			assertNumeric(delta); assertCount(r, positive = TRUE)
+			assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
 
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 			setup = private$setup_randomization_template_and_shifts(delta, transform_responses)
-			
-			if (!is.null(permutations) && private$has_private_method("compute_fast_randomization_distr")) {
+
+			if (!isTRUE(debug) && !is.null(permutations) && private$has_private_method("compute_fast_randomization_distr")) {
 				fast_distr = private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses)
 				if (!is.null(fast_distr)) return(fast_distr)
 			}
@@ -44,7 +54,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			custom_stat_analysis = private$analyze_custom_randomization_statistic()
 			use_lightweight_custom_stat = isTRUE(custom_stat_analysis$can_use_lightweight_yw_only)
 			use_perms = !is.null(permutations) && (!is.null(permutations$w_mat) || length(permutations) >= r)
-			
+
 			need_thread_objs = !(use_lightweight_custom_stat && use_perms)
 			inf_template = if (need_thread_objs) self$duplicate() else NULL
 			des_template = if (need_thread_objs) setup$template$duplicate() else NULL
@@ -72,6 +82,41 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(inf_template) && private$has_match_structure && private$object_has_private_method(inf_template, "compute_basic_match_data"))
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
+			if (isTRUE(debug)) {
+				debug_results = vector("list", r)
+				for (idx in seq_len(r)) {
+					iter_warns = character(0)
+					iter_result = withCallingHandlers(
+						tryCatch({
+							worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
+							worker_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
+							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE)
+						}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+					)
+					debug_results[[idx]] = list(
+						val = as.numeric(iter_result$val)[1L],
+						errors = if (!is.null(iter_result$error)) iter_result$error else character(0),
+						warnings = iter_warns
+					)
+				}
+				values = sapply(debug_results, `[[`, "val")
+				errors_list = lapply(debug_results, `[[`, "errors")
+				warnings_list = lapply(debug_results, `[[`, "warnings")
+				num_errors_vec = lengths(errors_list)
+				num_warnings_vec = lengths(warnings_list)
+				return(list(
+					values = values,
+					errors = errors_list,
+					warnings = warnings_list,
+					num_errors = num_errors_vec,
+					num_warnings = num_warnings_vec,
+					prop_iterations_with_errors = mean(num_errors_vec > 0),
+					prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+					prop_illegal_values = mean(!is.finite(values))
+				))
+			}
+
 			actual_rand_cores = private$effective_parallel_cores("rand_pval", self$num_cores)
 			if (actual_rand_cores > 1L && need_thread_objs) {
 				do_warmup_iter = function() {
@@ -97,7 +142,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 					actual_rand_cores = 1L
 				}
 			} else if (actual_rand_cores > 1L && !need_thread_objs) {
-				# Lightweight stats (yw only) are so fast that fork overhead usually dominates 
+				# Lightweight stats (yw only) are so fast that fork overhead usually dominates
 				# unless r is very large. Default to serial for lightweight unless num_cores is small.
 				if (r < 2000) actual_rand_cores = 1L
 			}
@@ -324,7 +369,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			target = if (is.null(batch_size)) as.integer(r) else min(as.integer(r), have + as.integer(batch_size))
 			if (have < target) {
 				idx = seq.int(have + 1L, target)
-				new_t0s = self$compute_beta_hat_T_randomization_distr_under_sharp_null(
+				new_t0s = self$approximate_randomization_distribution_beta_hat_T(
 					r = length(idx),
 					delta = delta,
 					transform_responses = transform_responses,
@@ -425,7 +470,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
 		},
 
-		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context){
+		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (use_perms) {
 				if (!is.null(permutations$w_mat)) {
@@ -437,7 +482,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {
 				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = base_template_y
 				if (delta != 0) y_sim[w_sim == 1] = y_delta[w_sim == 1]
-				return(private$evaluate_lightweight_custom_randomization_statistic(lightweight_custom_context, y_sim, w_sim, base_template_dead))
+				val = private$evaluate_lightweight_custom_randomization_statistic(lightweight_custom_context, y_sim, w_sim, base_template_dead)
+				if (isTRUE(debug)) return(list(val = val, error = NULL))
+				return(val)
 			}
 
 			if (use_perms) {
@@ -451,12 +498,14 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(thread_inf_obj$.__enclos_env__$private$compute_basic_match_data))
 				thread_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 
-				estimate = tryCatch(
-					thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
-					error = function(e) NA_real_
-				)
-			if (is.list(estimate) && "b" %in% names(estimate)) return(as.numeric(estimate$b[1]))
-			as.numeric(estimate)
+			iter_error = NULL
+			estimate = tryCatch(
+				thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
+				error = function(e) { iter_error <<- conditionMessage(e); NA_real_ }
+			)
+			val = if (is.list(estimate) && "b" %in% names(estimate)) as.numeric(estimate$b[1]) else as.numeric(estimate)
+			if (isTRUE(debug)) return(list(val = val, error = iter_error))
+			val
 		},
 
 		analyze_custom_randomization_statistic = function(){

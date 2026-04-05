@@ -32,7 +32,7 @@ Abstract class for bootstrap-based inference.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="compute_beta_hat_T_randomization_distr_under_sharp_null"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null'><code>EDI::InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
@@ -47,7 +47,8 @@ Creates the bootstrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
-  show_progress = TRUE
+  show_progress = TRUE,
+  debug = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -57,11 +58,21 @@ Creates the bootstrap distribution of the estimate for the treatment effect
 \item{\code{B}}{Number of bootstrap samples. The default is 501.}
 
 \item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+per-iteration diagnostics including error messages, warning messages, counts of each,
+and summary proportions for iterations with errors, warnings, and illegal (non-finite)
+values. Runs serially. Default \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A vector of length \code{B} containing the bootstrap estimates.
+When \code{debug = FALSE} (default), a numeric vector of length \code{B}
+  containing the bootstrap estimates. When \code{debug = TRUE}, a list with: \code{values},
+  \code{errors} (list of character vectors, one per iteration), \code{warnings} (list of
+  character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
+  \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
+  \code{prop_illegal_values}.
 }
 }
 \if{html}{\out{<hr>}}

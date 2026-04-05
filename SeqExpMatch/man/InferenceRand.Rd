@@ -19,7 +19,7 @@ Abstract class for randomization-based inference.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceRand-set_custom_randomization_statistic_function}{\code{InferenceRand$set_custom_randomization_statistic_function()}}
-\item \href{#method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null}{\code{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null()}}
+\item \href{#method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{\code{InferenceRand$approximate_randomization_distribution_beta_hat_T()}}
 \item \href{#method-InferenceRand-compute_two_sided_pval_for_treatment_effect_rand}{\code{InferenceRand$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-InferenceRand-clone}{\code{InferenceRand$clone()}}
 }
@@ -55,37 +55,48 @@ Set Custom Randomization Statistic Computation
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceRand-compute_beta_hat_T_randomization_distr_under_sharp_null}{}}}
-\subsection{Method \code{compute_beta_hat_T_randomization_distr_under_sharp_null()}}{
-Under the sharp null, computes the randomization distribution.
+\if{html}{\out{<a id="method-InferenceRand-approximate_randomization_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_randomization_distribution_beta_hat_T()}}{
+Computes the randomization distribution of the treatment effect estimate under the sharp null.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$compute_beta_hat_T_randomization_distr_under_sharp_null(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$approximate_randomization_distribution_beta_hat_T(
   r = 501,
   delta = 0,
   transform_responses = "none",
   show_progress = TRUE,
-  permutations = NULL
+  permutations = NULL,
+  debug = FALSE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{r}}{The number of randomization vectors.}
+\item{\code{r}}{Number of randomization vectors. Default 501.}
 
-\item{\code{delta}}{The null difference.}
+\item{\code{delta}}{The null difference. Default 0.}
 
-\item{\code{transform_responses}}{Type of transformation.}
+\item{\code{transform_responses}}{Type of transformation. Default "none".}
 
-\item{\code{show_progress}}{Show progress bar.}
+\item{\code{show_progress}}{Show progress bar. Default TRUE.}
 
-\item{\code{permutations}}{Pre-computed permutations.}
+\item{\code{permutations}}{Pre-computed permutations. Default NULL.}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+per-iteration diagnostics including error messages, warning messages, counts of each,
+and summary proportions for iterations with errors, warnings, and illegal (non-finite)
+values. Runs serially. Default \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A vector of estimates.
+When \code{debug = FALSE} (default), a numeric vector of length \code{r}. When
+  \code{debug = TRUE}, a list with: \code{values}, \code{errors} (list of character
+  vectors, one per iteration), \code{warnings} (list of character vectors, one per
+  iteration), \code{num_errors}, \code{num_warnings},
+  \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
+  \code{prop_illegal_values}.
 }
 }
 \if{html}{\out{<hr>}}

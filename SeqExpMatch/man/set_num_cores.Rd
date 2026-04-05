@@ -29,11 +29,11 @@ package benchmarks: workloads that have shown consistent multicore slowdowns
 are forced to run serially, while the remaining workloads are allowed to use
 their method-specific warmup heuristics and native thread caps.
 
-The current forced-serial blocklist covers incidence randomization confidence
+The default forced-serial blocklist covers incidence randomization confidence
 intervals, bootstrap for non-regression KK Wilcoxon inference, bootstrap for
 non-KK survival procedures, and bootstrap for incidence procedures. Do not
 expect a universal "more cores is faster" rule.
 
-Use \code{set_parallel_dispatch_policy()} to update or reset that policy.
-Use \code{get_parallel_dispatch_policy()} to inspect the built-in default.
+If you want to change the default policy, use
+\code{set_parallel_dispatch_policy()}.
 }
