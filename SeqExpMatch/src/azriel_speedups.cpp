@@ -1,6 +1,6 @@
 #include <Rcpp.h>
 #include <algorithm>
-#include <unordered_map>
+#include <vector>
 
 using namespace Rcpp;
 
@@ -64,14 +64,28 @@ double compute_extended_robins_block_se_cpp(const NumericVector& y,
     return NA_REAL;
   }
 
+  int max_block_id = 0;
+  for (int i = 0; i < m_vec.size(); ++i) {
+    const int match_id = m_vec[i];
+    if (match_id != NA_INTEGER && match_id > max_block_id) {
+      max_block_id = match_id;
+    }
+  }
+  if (max_block_id <= 0) {
+    return NA_REAL;
+  }
+
   struct BlockAccumulator {
     int n = 0;
     double sum_t = 0.0;
     double sum_c = 0.0;
   };
 
-  std::unordered_map<int, BlockAccumulator> blocks;
-  blocks.reserve(static_cast<std::size_t>(y.size()));
+  std::vector<BlockAccumulator> blocks(static_cast<std::size_t>(max_block_id) + 1);
+  int total_t = 0;
+  int total_c = 0;
+  double total_sum_t = 0.0;
+  double total_sum_c = 0.0;
 
   for (int i = 0; i < y.size(); ++i) {
     const int match_id = m_vec[i];
@@ -82,22 +96,32 @@ double compute_extended_robins_block_se_cpp(const NumericVector& y,
       return NA_REAL;
     }
 
-    BlockAccumulator& block = blocks[match_id];
+    BlockAccumulator& block = blocks[static_cast<std::size_t>(match_id)];
     block.n += 1;
     if (w[i] == 1.0) {
+      ++total_t;
       block.sum_t += y[i];
+      total_sum_t += y[i];
     } else {
+      ++total_c;
       block.sum_c += y[i];
+      total_sum_c += y[i];
     }
   }
 
-  if (blocks.empty()) {
+  if (total_t <= 0 || total_c <= 0) {
     return NA_REAL;
   }
 
+  const double p_hat_T = total_sum_t / static_cast<double>(total_t);
+  const double p_hat_C = total_sum_c / static_cast<double>(total_c);
+  const double var_robbins_ext =
+    (p_hat_T * (1.0 - p_hat_T) + p_hat_C * (1.0 - p_hat_C)) /
+    static_cast<double>(n_total);
+
   double variance_tot = 0.0;
-  for (const auto& entry : blocks) {
-    const BlockAccumulator& block = entry.second;
+  for (int block_id = 1; block_id <= max_block_id; ++block_id) {
+    const BlockAccumulator& block = blocks[static_cast<std::size_t>(block_id)];
     if (block.n <= 1) {
       return NA_REAL;
     }
@@ -115,5 +139,5 @@ double compute_extended_robins_block_se_cpp(const NumericVector& y,
       ((2.0 * m_0_b - m_1_b) * (1.0 - m_1_b) - m_0_b * (1.0 - m_0_b)) / n_b;
   }
 
-  return (1.0 / static_cast<double>(blocks.size())) * std::sqrt(variance_tot);
+  return std::sqrt(variance_tot + var_robbins_ext);
 }

@@ -154,11 +154,11 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 	set.seed(20260405)
 	expected <- matrix(
 		c(
-			0.3818813079129867, 0.2795084971874737,
-			0.3535533905932738, 0.1767766952966369,
-			0.2886751345948129, 0.2500000000000000,
-			0.2500000000000000, 0.1250000000000000,
-			0.3818813079129867, 0.2795084971874737
+			0.3818813079129866, 0.6059599821770412,
+			0.3535533905932738, 0.4330127018922193,
+			0.2886751345948129, 0.5448623679425842,
+			0.2500000000000000, 0.3423265984407288,
+			0.3818813079129866, 0.6059599821770412
 		),
 		ncol = 2L,
 		byrow = TRUE,
@@ -223,7 +223,12 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 			m_0_b * (1 - m_0_b) / n_B_over_two +
 			((2 * m_0_b - m_1_b) * (1 - m_1_b) - m_0_b * (1 - m_0_b)) / n_B
 	}
-	se_r <- 1 / B * sqrt(variance_tot)
+	p_hat_T <- mean(des$get_y()[des$get_w() == 1])
+	p_hat_C <- mean(des$get_y()[des$get_w() == 0])
+	var_robbins_ext <- 1 / des$get_n() * (
+		p_hat_T * (1 - p_hat_T) + p_hat_C * (1 - p_hat_C)
+	)
+	se_r <- sqrt(variance_tot + var_robbins_ext)
 
 	expect_equal(se_cpp, se_r, tolerance = 1e-12)
 })
