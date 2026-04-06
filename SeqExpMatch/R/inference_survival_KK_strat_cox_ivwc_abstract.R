@@ -144,7 +144,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			formula_str = "survival::Surv(y, dead) ~ w + strata(strata)"
 
 			if (private$include_covariates()){
-				X_m = as.matrix(private$X[i_matched[i_valid], , drop = FALSE])
+				X_m = as.matrix(private$get_X()[i_matched[i_valid], , drop = FALSE])
 				# QR-reduce to full rank while always preserving the treatment column
 				X_full = cbind(w = dat$w, X_m)
 				qr_full = qr(X_full)

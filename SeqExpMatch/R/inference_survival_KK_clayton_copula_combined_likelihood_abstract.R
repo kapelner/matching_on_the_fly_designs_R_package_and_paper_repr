@@ -122,7 +122,7 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 				return(private$filtered_cov_cache)
 			}
 
-			X_cov_orig = as.matrix(private$X)
+			X_cov_orig = as.matrix(private$get_X())
 			if (is.null(colnames(X_cov_orig))){
 				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
 			}
@@ -148,7 +148,7 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 				return(private$cached_values$clayton_design_candidates)
 			}
 
-			if (!private$include_covariates() || is.null(private$X) || ncol(private$X) == 0L){
+			if (!private$include_covariates() || ncol(private$get_X()) == 0L){
 				M = matrix(private$w, ncol = 1)
 				colnames(M) = "w"
 				private$cached_values$clayton_design_candidates = list(M)

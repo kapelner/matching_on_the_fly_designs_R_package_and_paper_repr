@@ -1727,6 +1727,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_kk_lin_wy_stats_cpp
+List compute_kk_lin_wy_stats_cpp(const NumericVector& y, const IntegerVector& w, const IntegerVector& m_vec);
+RcppExport SEXP _EDI_compute_kk_lin_wy_stats_cpp(SEXP ySEXP, SEXP wSEXP, SEXP m_vecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type m_vec(m_vecSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_kk_lin_wy_stats_cpp(y, w, m_vec));
+    return rcpp_result_gen;
+END_RCPP
+}
 // neg_loglik_nb_cpp
 double neg_loglik_nb_cpp(double theta, const Eigen::VectorXd& beta, const Eigen::MatrixXd& X, const Eigen::VectorXi& y);
 RcppExport SEXP _EDI_neg_loglik_nb_cpp(SEXP thetaSEXP, SEXP betaSEXP, SEXP XSEXP, SEXP ySEXP) {
@@ -2143,6 +2156,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ols_hc2_setup_cpp
+List ols_hc2_setup_cpp(const Eigen::MatrixXd& X_fit);
+RcppExport SEXP _EDI_ols_hc2_setup_cpp(SEXP X_fitSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_fit(X_fitSEXP);
+    rcpp_result_gen = Rcpp::wrap(ols_hc2_setup_cpp(X_fit));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ols_hc2_post_fit_precomputed_cpp
+List ols_hc2_post_fit_precomputed_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::MatrixXd& bread, const Eigen::VectorXd& hat, int j_treat);
+RcppExport SEXP _EDI_ols_hc2_post_fit_precomputed_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP breadSEXP, SEXP hatSEXP, SEXP j_treatSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_fit(X_fitSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type coef_hat(coef_hatSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type bread(breadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type hat(hatSEXP);
+    Rcpp::traits::input_parameter< int >::type j_treat(j_treatSEXP);
+    rcpp_result_gen = Rcpp::wrap(ols_hc2_post_fit_precomputed_cpp(X_fit, y, coef_hat, bread, hat, j_treat));
+    return rcpp_result_gen;
+END_RCPP
+}
 // ols_hc2_post_fit_cpp
 List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, int j_treat);
 RcppExport SEXP _EDI_ols_hc2_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP j_treatSEXP) {
@@ -2320,6 +2360,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_kk_wy_stats_cpp
+List compute_kk_wy_stats_cpp(const NumericVector& y, const IntegerVector& w, const IntegerVector& m_vec);
+RcppExport SEXP _EDI_compute_kk_wy_stats_cpp(SEXP ySEXP, SEXP wSEXP, SEXP m_vecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type m_vec(m_vecSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_kk_wy_stats_cpp(y, w, m_vec));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fill_i_b_with_matches_loop_cpp", (DL_FUNC) &_EDI_fill_i_b_with_matches_loop_cpp, 4},
@@ -2446,6 +2499,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_kk_compound_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_compound_distr_parallel_cpp, 4},
     {"_EDI_compute_kk_compound_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_compound_bootstrap_parallel_cpp, 4},
     {"_EDI_compute_kk_lin_match_data_cpp", (DL_FUNC) &_EDI_compute_kk_lin_match_data_cpp, 4},
+    {"_EDI_compute_kk_lin_wy_stats_cpp", (DL_FUNC) &_EDI_compute_kk_lin_wy_stats_cpp, 3},
     {"_EDI_neg_loglik_nb_cpp", (DL_FUNC) &_EDI_neg_loglik_nb_cpp, 4},
     {"_EDI_match_diffs_cpp", (DL_FUNC) &_EDI_match_diffs_cpp, 5},
     {"_EDI_mn_constrained_mle_pc_cpp", (DL_FUNC) &_EDI_mn_constrained_mle_pc_cpp, 5},
@@ -2476,6 +2530,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_randomization_loop_cpp", (DL_FUNC) &_EDI_randomization_loop_cpp, 5},
     {"_EDI_compute_ridit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_distr_parallel_cpp, 4},
     {"_EDI_compute_ridit_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_bootstrap_parallel_cpp, 5},
+    {"_EDI_ols_hc2_setup_cpp", (DL_FUNC) &_EDI_ols_hc2_setup_cpp, 1},
+    {"_EDI_ols_hc2_post_fit_precomputed_cpp", (DL_FUNC) &_EDI_ols_hc2_post_fit_precomputed_cpp, 6},
     {"_EDI_ols_hc2_post_fit_cpp", (DL_FUNC) &_EDI_ols_hc2_post_fit_cpp, 4},
     {"_EDI_glm_sandwich_post_fit_cpp", (DL_FUNC) &_EDI_glm_sandwich_post_fit_cpp, 6},
     {"_EDI_glm_cluster_sandwich_post_fit_cpp", (DL_FUNC) &_EDI_glm_cluster_sandwich_post_fit_cpp, 7},
@@ -2489,6 +2545,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_zhang_exact_binom_pval_cpp", (DL_FUNC) &_EDI_zhang_exact_binom_pval_cpp, 3},
     {"_EDI_zhang_exact_fisher_pval_cpp", (DL_FUNC) &_EDI_zhang_exact_fisher_pval_cpp, 5},
     {"_EDI_compute_zhang_match_data_cpp", (DL_FUNC) &_EDI_compute_zhang_match_data_cpp, 4},
+    {"_EDI_compute_kk_wy_stats_cpp", (DL_FUNC) &_EDI_compute_kk_wy_stats_cpp, 3},
     {NULL, NULL, 0}
 };
 

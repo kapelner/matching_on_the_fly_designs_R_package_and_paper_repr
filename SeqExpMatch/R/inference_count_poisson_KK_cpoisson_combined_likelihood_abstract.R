@@ -107,7 +107,7 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			p             = if (private$include_covariates()) ncol(private$X) else 0L
+			p             = if (private$include_covariates()) ncol(private$get_X()) else 0L
 			has_reservoir = nRT > 0 && nRC > 0
 
 			# ---- Pair data (conditional Poisson, zero-total pairs discarded) ----

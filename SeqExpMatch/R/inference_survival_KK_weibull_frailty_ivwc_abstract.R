@@ -166,7 +166,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		# High-speed bootstrap implementation using the coxph+survreg approximation.
 		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			dead = private$dead
-			X = if (private$include_covariates()) as.matrix(private$X) else NULL
+			X = if (private$include_covariates()) as.matrix(private$get_X()) else NULL
 			if (!is.null(X) && is.null(colnames(X))) colnames(X) = paste0("x", seq_len(ncol(X)))
 			cov_str = if (!is.null(X)) paste(colnames(X), collapse = " + ") else NULL
 
@@ -326,7 +326,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				# Multivariate: coxph with gamma frailty (optimised C implementation) for the
 				# PH treatment coefficient; survreg for Weibull shape rho; convert via
 				# alpha_AFT = -beta_PH / rho,  SE_AFT = SE_PH / rho  (delta method, rho fixed).
-				X_m = as.matrix(private$X[i_matched[i_valid], , drop = FALSE])
+				X_m = as.matrix(private$get_X()[i_matched[i_valid], , drop = FALSE])
 				colnames(X_m) = paste0("x", 1:ncol(X_m))
 				dat = cbind(dat, X_m)
 				cov_str = paste(colnames(X_m), collapse = " + ")

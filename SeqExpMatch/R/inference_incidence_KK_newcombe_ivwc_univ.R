@@ -85,11 +85,8 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 
 	private = list(
 		compute_basic_match_data = function(){
-			if (is.null(private$X)){
-				private$X = private$get_X()
-			}
 			# Use the optimized Zhang helper to get counts
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$X)
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$get_X())
 		},
 
 		pool_estimates_ivwc = function(est1, var1, est2, var2){

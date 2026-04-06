@@ -106,6 +106,18 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 					return(list(beta = NA_real_, ssq = NA_real_))
 				}
 
+				# Reduce any collinear columns while keeping the treatment coefficient.
+				# This mirrors the QR-based guard used by the continuous robust-regression
+				# KK estimator and prevents singular X from reaching chol()/lsfit().
+				qr_X = qr(x)
+				if (qr_X$rank < ncol(x)){
+					keep = qr_X$pivot[seq_len(qr_X$rank)]
+					if (!(coef_index %in% keep)) keep[qr_X$rank] = coef_index
+					keep = sort(unique(keep))
+					x = x[, keep, drop = FALSE]
+					coef_index = which(keep == coef_index)
+				}
+
 				fns = private$get_rfit_internal_fns()
 				scores = Rfit::wscores
 				x1 = as.matrix(x[, colnames(x) != "(Intercept)", drop = FALSE])

@@ -382,7 +382,7 @@ Design = R6::R6Class("Design",
 		},
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
 		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
-		resample_design = function(){
+		resample_assignment = function(){
 			n = private$n
 			i_b = sample(n, n, replace = TRUE)
 			private$w    = private$w[i_b]

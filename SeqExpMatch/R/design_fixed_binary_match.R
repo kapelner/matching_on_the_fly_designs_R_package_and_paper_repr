@@ -26,8 +26,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				prob_T = 0.5,
 				mahal_match = FALSE,
 				include_is_missing_as_a_new_feature = TRUE,
-				n = NULL,
-				
+				n = NULL,				
 				verbose = FALSE
 			) {
 			if (prob_T != 0.5){

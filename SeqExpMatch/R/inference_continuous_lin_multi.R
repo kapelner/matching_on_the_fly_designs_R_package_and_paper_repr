@@ -82,12 +82,32 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		},
 
 		build_lin_design_matrix = function(){
-			X = as.matrix(private$get_X())
-			p = ncol(X)
-			if (p == 0L){
+			Xc_info = private$get_centered_covariates()
+			if (is.null(Xc_info)){
 				X_lin = cbind(1, private$w)
 				colnames(X_lin) = c("(Intercept)", "treatment")
 				return(X_lin)
+			}
+
+			Xc = Xc_info$Xc
+			X_int = Xc * private$w
+			colnames(X_int) = paste0("treatment:", colnames(Xc))
+
+			X_lin = cbind(1, private$w, Xc, X_int)
+			colnames(X_lin)[1:2] = c("(Intercept)", "treatment")
+			X_lin
+		},
+
+		get_centered_covariates = function(){
+			if (!is.null(private$cached_values$lin_centered_covariates)) {
+				return(private$cached_values$lin_centered_covariates)
+			}
+
+			X = as.matrix(private$get_X())
+			p = ncol(X)
+			if (p == 0L){
+				private$cached_values$lin_centered_covariates = NULL
+				return(NULL)
 			}
 
 			if (is.null(colnames(X))){
@@ -97,13 +117,8 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			Xc = scale(X, center = TRUE, scale = FALSE)
 			Xc = as.matrix(Xc)
 			colnames(Xc) = colnames(X)
-
-			X_int = Xc * private$w
-			colnames(X_int) = paste0("treatment:", colnames(X))
-
-			X_lin = cbind(1, private$w, Xc, X_int)
-			colnames(X_lin)[1:2] = c("(Intercept)", "treatment")
-			X_lin
+			private$cached_values$lin_centered_covariates = list(Xc = Xc)
+			private$cached_values$lin_centered_covariates
 		},
 
 		assert_finite_se = function(){
@@ -113,10 +128,8 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		},
 
 		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (estimate_only && isTRUE(private$cached_values$lin_estimate_only_complete)) return(invisible(NULL))
+			if (!estimate_only && isTRUE(private$cached_values$lin_full_complete)) return(invisible(NULL))
 
 			X_full = private$build_lin_design_matrix()
 			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
@@ -125,10 +138,14 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				private$cached_values$beta_hat_T = NA_real_
-			if (estimate_only) return(invisible(NULL))
+				if (estimate_only) {
+					private$cached_values$lin_estimate_only_complete = TRUE
+					return(invisible(NULL))
+				}
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				private$cached_values$df = NA_real_
+				private$cached_values$lin_full_complete = TRUE
 				return(invisible(NULL))
 			}
 
@@ -136,9 +153,21 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			coef_hat = as.numeric(mod$coefficients)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				private$cached_values$df = NA_real_
+				if (estimate_only){
+					private$cached_values$lin_estimate_only_complete = TRUE
+				} else {
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$is_z = TRUE
+					private$cached_values$df = NA_real_
+					private$cached_values$lin_full_complete = TRUE
+				}
+				return(invisible(NULL))
+			}
+
+			beta_hat = coef_hat[j_treat]
+			private$cached_values$beta_hat_T = beta_hat
+			if (estimate_only){
+				private$cached_values$lin_estimate_only_complete = TRUE
 				return(invisible(NULL))
 			}
 
@@ -151,11 +180,11 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				private$cached_values$df = NA_real_
+				private$cached_values$lin_full_complete = TRUE
 				return(invisible(NULL))
 			}
 
 			coef_names = colnames(X_fit)
-			beta_hat = post_fit$beta_hat
 			vcov_hc2 = post_fit$vcov
 			ssq_hat = post_fit$ssq_hat
 			if (!is.finite(beta_hat) || !is.finite(ssq_hat) || ssq_hat < 0){
@@ -176,6 +205,7 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
 			private$cached_values$full_coefficients = coef_hat
 			private$cached_values$full_vcov = vcov_hc2
+			private$cached_values$lin_estimate_only_complete = TRUE
 
 			summary_table = cbind(
 				Value = coef_hat,
@@ -184,6 +214,7 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 				`Pr(>|z|)` = 2 * stats::pnorm(-abs(z_vals))
 			)
 			private$cached_values$summary_table = summary_table
+			private$cached_values$lin_full_complete = TRUE
 		}
 	)
 )

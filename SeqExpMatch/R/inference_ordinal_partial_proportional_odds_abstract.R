@@ -86,6 +86,56 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 				))
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+
+		#' @description
+		#' Benchmark the asymptotic p-value path with a timing breakdown.
+		#'
+		#' This is a diagnostic helper for performance investigation. It separates
+		#' the model fit, cache/SE materialization, and final p-value arithmetic.
+		#'
+		#' @param delta Null treatment effect to test.
+		#'
+		#' @return A named list with timing and result details.
+		benchmark_asymp_two_sided_pval_breakdown = function(delta = 0){
+			assertNumeric(delta)
+
+			t0 = proc.time()[["elapsed"]]
+			fit = private$fit_partial_proportional_odds()
+			fit_time = round(proc.time()[["elapsed"]] - t0, 6)
+
+			if (is.null(fit) || !is.finite(fit$beta)){
+				return(list(
+					fit_time = fit_time,
+					cache_time = NA_real_,
+					pval_math_time = NA_real_,
+					total_time = fit_time,
+					pval = NA_real_,
+					beta_hat_T = NA_real_,
+					s_beta_hat_T = NA_real_
+				))
+			}
+
+			t1 = proc.time()[["elapsed"]]
+			private$cached_values$beta_hat_T = fit$beta
+			private$cached_values$s_beta_hat_T = fit$se
+			private$cached_values$is_z = TRUE
+			private$cached_values$df = private$n - 1
+			cache_time = round(proc.time()[["elapsed"]] - t1, 6)
+
+			t2 = proc.time()[["elapsed"]]
+			pval = private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			pval_math_time = round(proc.time()[["elapsed"]] - t2, 6)
+
+			list(
+				fit_time = fit_time,
+				cache_time = cache_time,
+				pval_math_time = pval_math_time,
+				total_time = round(fit_time + cache_time + pval_math_time, 6),
+				pval = pval,
+				beta_hat_T = private$cached_values$beta_hat_T,
+				s_beta_hat_T = private$cached_values$s_beta_hat_T
+			)
 		}
 	),
 	private = list(

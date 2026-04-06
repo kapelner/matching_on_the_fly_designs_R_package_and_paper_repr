@@ -68,6 +68,10 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 	),
 
 	private = list(
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
 		build_design_matrix = function(){
 			Xmm = cbind(1, private$w)
 			colnames(Xmm) = c("(Intercept)", "treatment")
@@ -75,7 +79,7 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 		},
 
 		fit_count_model_with_var = function(Xmm, estimate_only = FALSE){
-			reduced = private$reduce_design_matrix_preserving_treatment(Xmm)
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(Xmm)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){

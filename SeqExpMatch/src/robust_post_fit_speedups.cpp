@@ -98,17 +98,11 @@ Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
 }  // namespace
 
 // [[Rcpp::export]]
-List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit,
-                          const Eigen::VectorXd& y,
-                          const Eigen::VectorXd& coef_hat,
-                          int j_treat) {
+List ols_hc2_setup_cpp(const Eigen::MatrixXd& X_fit) {
   const int n = X_fit.rows();
   const int p = X_fit.cols();
-  if (y.size() != n || coef_hat.size() != p) {
-    stop("dimension mismatch in ols_hc2_post_fit_cpp");
-  }
-  if (!all_finite_vec(coef_hat)) {
-    stop("non-finite coefficients");
+  if (!all_finite_mat(X_fit)) {
+    stop("non-finite design matrix");
   }
 
   const Eigen::MatrixXd XtX = X_fit.transpose() * X_fit;
@@ -121,15 +115,37 @@ List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     stop("failed to invert X'X");
   }
 
-  const Eigen::VectorXd resid = y - X_fit * coef_hat;
-  if (!all_finite_vec(resid)) {
-    stop("non-finite residuals");
-  }
-
   const Eigen::MatrixXd XB = X_fit * bread;
   Eigen::VectorXd hat(n);
   for (int i = 0; i < n; ++i) {
     hat[i] = XB.row(i).dot(X_fit.row(i));
+  }
+
+  return List::create(
+    _["bread"] = bread,
+    _["hat"] = hat
+  );
+}
+
+// [[Rcpp::export]]
+List ols_hc2_post_fit_precomputed_cpp(const Eigen::MatrixXd& X_fit,
+                                      const Eigen::VectorXd& y,
+                                      const Eigen::VectorXd& coef_hat,
+                                      const Eigen::MatrixXd& bread,
+                                      const Eigen::VectorXd& hat,
+                                      int j_treat) {
+  const int n = X_fit.rows();
+  const int p = X_fit.cols();
+  if (y.size() != n || coef_hat.size() != p || bread.rows() != p || bread.cols() != p || hat.size() != n) {
+    stop("dimension mismatch in ols_hc2_post_fit_precomputed_cpp");
+  }
+  if (!all_finite_vec(coef_hat) || !all_finite_mat(bread) || !all_finite_vec(hat)) {
+    stop("non-finite inputs");
+  }
+
+  const Eigen::VectorXd resid = y - X_fit * coef_hat;
+  if (!all_finite_vec(resid)) {
+    stop("non-finite residuals");
   }
 
   Eigen::VectorXd omega(n);
@@ -141,6 +157,22 @@ List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit,
   Eigen::MatrixXd vcov = bread * meat * bread;
   vcov = 0.5 * (vcov + vcov.transpose());
   return summarize_with_vcov(coef_hat, vcov, j_treat);
+}
+
+// [[Rcpp::export]]
+List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit,
+                          const Eigen::VectorXd& y,
+                          const Eigen::VectorXd& coef_hat,
+                          int j_treat) {
+  List setup = ols_hc2_setup_cpp(X_fit);
+  return ols_hc2_post_fit_precomputed_cpp(
+    X_fit,
+    y,
+    coef_hat,
+    as<Eigen::MatrixXd>(setup["bread"]),
+    as<Eigen::VectorXd>(setup["hat"]),
+    j_treat
+  );
 }
 
 // [[Rcpp::export]]

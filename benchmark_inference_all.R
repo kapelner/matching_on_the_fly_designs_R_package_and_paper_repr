@@ -227,6 +227,67 @@ bm_safe = function(label, expr, env = parent.frame(), num_cores_to_restore = NUL
     res
 }
 
+bm_safe_capture = function(label, expr, env = parent.frame(), num_cores_to_restore = NULL, force_mirai_to_restore = FALSE) {
+    cat(sprintf("%s\n", label))
+    flush.console()
+    t_start = proc.time()[["elapsed"]]
+    main_pid = Sys.getpid()
+
+    watchdog_script = sprintf(
+        "sleep %d && pkill -P %d -KILL 2>/dev/null; true",
+        MAX_BM_SECS, main_pid
+    )
+    watchdog_pid_str = system(
+        sprintf("bash -c '%s' </dev/null >/dev/null 2>&1 & echo $!", watchdog_script),
+        intern = TRUE
+    )
+    watchdog_pid = suppressWarnings(as.integer(watchdog_pid_str))
+
+    kill_watchdog = function() {
+        if (!is.na(watchdog_pid) && watchdog_pid > 0)
+            system(sprintf("kill %d 2>/dev/null", watchdog_pid), ignore.stdout = TRUE)
+    }
+
+    restore_parallel_state = function() {
+        if (is.null(num_cores_to_restore) || is.na(num_cores_to_restore) || num_cores_to_restore <= 1L) {
+            return(invisible(NULL))
+        }
+        try(unset_num_cores(), silent = TRUE)
+        try(set_num_cores(as.integer(num_cores_to_restore), force_mirai = force_mirai_to_restore), silent = TRUE)
+        invisible(NULL)
+    }
+
+    res = tryCatch({
+        setTimeLimit(elapsed = MAX_BM_SECS, transient = TRUE)
+        on.exit({ setTimeLimit(elapsed = Inf, transient = FALSE); kill_watchdog() }, add = TRUE)
+        value = eval(expr, envir = env)
+        setTimeLimit(elapsed = Inf, transient = FALSE)
+        kill_watchdog()
+        t_end = proc.time()[["elapsed"]]
+        duration = round(t_end - t_start, 3)
+        if (duration >= MAX_BM_SECS) {
+            restore_parallel_state()
+            cat(sprintf(" (TIMEOUT >%.1fs) ", duration))
+            return(list(value = value, elapsed = Inf))
+        }
+        cat(sprintf(" (%.3fs) ", duration))
+        list(value = value, elapsed = duration)
+    }, error = function(e) {
+        kill_watchdog()
+        t_elapsed = round(proc.time()[["elapsed"]] - t_start, 3)
+        restore_parallel_state()
+        if (t_elapsed >= MAX_BM_SECS - 1 ||
+            grepl("reached elapsed time limit", e$message, fixed = TRUE)) {
+            cat(sprintf(" (TIMEOUT >%.1fs) ", t_elapsed))
+            list(value = NA, elapsed = Inf)
+        } else {
+            cat(sprintf(" (SKIP: %s) ", e$message))
+            list(value = NA, elapsed = NA_real_)
+        }
+    })
+    res
+}
+
 for (response_type in names(categorized_classes)) {
     cat(sprintf("\nResponse type: %s\n", response_type))
     flush.console()
@@ -368,9 +429,29 @@ for (response_type in names(categorized_classes)) {
                 )
                 asymp_des_obj = prepare_cold_des_obj(response_type, current_design_class, asymp_seed_key)
                 inf_obj = tryCatch(inf_class$new(asymp_des_obj, verbose = FALSE), error = function(e) NULL)
+                asymp_fit_time = NA_real_
+                asymp_cache_time = NA_real_
+                asymp_pval_math_time = NA_real_
                 asymp_pval_time = if (!is.null(inf_obj)) {
-                    bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()),
-                            num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
+                    if (grepl("^InferenceOrdinal.*PartialProportionalOdds", inf_class_name)) {
+                        asymp_breakdown = bm_safe_capture(
+                            "asymp_pval",
+                            quote(inf_obj$benchmark_asymp_two_sided_pval_breakdown()),
+                            num_cores_to_restore = num_cores,
+                            force_mirai_to_restore = force_mirai
+                        )
+                        if (is.list(asymp_breakdown$value)) {
+                            asymp_fit_time = asymp_breakdown$value$fit_time
+                            asymp_cache_time = asymp_breakdown$value$cache_time
+                            asymp_pval_math_time = asymp_breakdown$value$pval_math_time
+                            asymp_breakdown$elapsed
+                        } else {
+                            asymp_breakdown$elapsed
+                        }
+                    } else {
+                        bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()),
+                                num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
+                    }
                 } else NA
                 asymp_des_obj = prepare_cold_des_obj(response_type, current_design_class, asymp_seed_key)
                 inf_obj = tryCatch(inf_class$new(asymp_des_obj, verbose = FALSE), error = function(e) NULL)
@@ -393,6 +474,9 @@ for (response_type in names(categorized_classes)) {
                     rand_custom_ci_time = custom_ci_time,
                     rand_ci_after_rand_time = ci_after_rand_time,
                     asymp_pval_time = asymp_pval_time,
+                    asymp_fit_time = asymp_fit_time,
+                    asymp_cache_time = asymp_cache_time,
+                    asymp_pval_math_time = asymp_pval_math_time,
                     asymp_ci_time = asymp_ci_time
                 )
 

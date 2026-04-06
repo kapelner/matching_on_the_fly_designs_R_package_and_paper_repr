@@ -28,6 +28,8 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-assert_all_responses_recorded}{\code{Design$assert_all_responses_recorded()}}
 \item \href{#method-Design-check_experiment_completed}{\code{Design$check_experiment_completed()}}
 \item \href{#method-Design-assert_even_allocation}{\code{Design$assert_even_allocation()}}
+\item \href{#method-Design-assert_blocking_design}{\code{Design$assert_blocking_design()}}
+\item \href{#method-Design-assert_equal_block_sizes}{\code{Design$assert_equal_block_sizes()}}
 \item \href{#method-Design-assert_fixed_sample}{\code{Design$assert_fixed_sample()}}
 \item \href{#method-Design-any_censoring}{\code{Design$any_censoring()}}
 \item \href{#method-Design-get_t}{\code{Design$get_t()}}
@@ -192,6 +194,29 @@ Checks if the experiment has a 50-50 allocation.
 \if{html}{\out{<div class="r">}}\preformatted{Design$assert_even_allocation()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-assert_blocking_design"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-assert_blocking_design}{}}}
+\subsection{Method \code{assert_blocking_design()}}{
+Checks whether this design is a blocking design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$assert_blocking_design()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-assert_equal_block_sizes"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-assert_equal_block_sizes}{}}}
+\subsection{Method \code{assert_equal_block_sizes()}}{
+Checks whether all blocks have the same number of subjects.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$assert_equal_block_sizes()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+`TRUE` invisibly if the block sizes are equal.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_fixed_sample"></a>}}

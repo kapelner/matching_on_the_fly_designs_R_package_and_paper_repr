@@ -50,12 +50,13 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 		#' Compute bootstrap two sided pval
 		#' @param delta Description for delta
 		#' @param B Description for B
+		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
 		#' @param na.rm Description for na.rm
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
+		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE){
 			if (is.null(delta)){
 				delta = private$default_null_value()
 			}
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm)
 		}
 	),
 

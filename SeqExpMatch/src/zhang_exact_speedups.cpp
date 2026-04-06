@@ -265,3 +265,90 @@ List compute_zhang_match_data_cpp(const IntegerVector& w,
     _["n00"] = n00
   );
 }
+
+// [[Rcpp::export]]
+List compute_kk_wy_stats_cpp(const NumericVector& y,
+                              const IntegerVector& w,
+                              const IntegerVector& m_vec) {
+  const int n = w.size();
+  int m = 0;
+  int n_reservoir = 0;
+
+  for (int i = 0; i < n; ++i) {
+    int match_id = m_vec[i];
+    if (match_id == NA_INTEGER) match_id = 0;
+    if (match_id <= 0) {
+      ++n_reservoir;
+    } else if (match_id > m) {
+      m = match_id;
+    }
+  }
+
+  NumericVector yTs_matched(m, NA_REAL);
+  NumericVector yCs_matched(m, NA_REAL);
+  NumericVector y_matched_diffs(m, NA_REAL);
+  std::vector<int> found_t(static_cast<std::size_t>(m), 0);
+  std::vector<int> found_c(static_cast<std::size_t>(m), 0);
+
+  NumericVector y_reservoir(n_reservoir);
+  IntegerVector w_reservoir(n_reservoir);
+  int nRT = 0, nRC = 0;
+  int n11 = 0, n10 = 0, n01 = 0, n00 = 0;
+  int reservoir_index = 0;
+
+  for (int i = 0; i < n; ++i) {
+    int match_id = m_vec[i];
+    if (match_id == NA_INTEGER) match_id = 0;
+    const int w_i = w[i];
+    const bool success = is_success(y[i]);
+
+    if (match_id <= 0) {
+      y_reservoir[reservoir_index] = y[i];
+      w_reservoir[reservoir_index] = w_i;
+      if (w_i == 1) {
+        ++nRT;
+        if (success) ++n11; else ++n10;
+      } else {
+        ++nRC;
+        if (success) ++n01; else ++n00;
+      }
+      ++reservoir_index;
+    } else {
+      const int pair_index = match_id - 1;
+      if (w_i == 1) {
+        yTs_matched[pair_index] = y[i];
+        found_t[static_cast<std::size_t>(pair_index)] = 1;
+      } else {
+        yCs_matched[pair_index] = y[i];
+        found_c[static_cast<std::size_t>(pair_index)] = 1;
+      }
+    }
+  }
+
+  int d_plus = 0, d_minus = 0;
+  for (int pair_index = 0; pair_index < m; ++pair_index) {
+    if (found_t[static_cast<std::size_t>(pair_index)] && found_c[static_cast<std::size_t>(pair_index)]) {
+      y_matched_diffs[pair_index] = yTs_matched[pair_index] - yCs_matched[pair_index];
+      const bool y_t_success = is_success(yTs_matched[pair_index]);
+      const bool y_c_success = is_success(yCs_matched[pair_index]);
+      if (y_t_success && !y_c_success) ++d_plus;
+      else if (!y_t_success && y_c_success) ++d_minus;
+    }
+  }
+
+  return List::create(
+    _["yTs_matched"]     = yTs_matched,
+    _["yCs_matched"]     = yCs_matched,
+    _["y_matched_diffs"] = y_matched_diffs,
+    _["y_reservoir"]     = y_reservoir,
+    _["w_reservoir"]     = w_reservoir,
+    _["nRT"]             = nRT,
+    _["nRC"]             = nRC,
+    _["d_plus"]          = d_plus,
+    _["d_minus"]         = d_minus,
+    _["n11"]             = n11,
+    _["n10"]             = n10,
+    _["n01"]             = n01,
+    _["n00"]             = n00
+  );
+}

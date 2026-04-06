@@ -37,6 +37,22 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		}
 	),
 	private = list(
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			private$create_design_backed_bootstrap_worker_state()
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+		},
+
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
 		fit_constrained_binomial = function(X_fit, j_treat){
@@ -76,7 +92,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
 			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 
-			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){

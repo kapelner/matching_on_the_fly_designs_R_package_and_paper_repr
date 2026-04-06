@@ -103,11 +103,9 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 
 	private = list(
 		compute_basic_match_data = function(){
-			if (is.null(private$X)){
-				private$X = private$get_X()
-			}
-			private$cached_values$KKstats = .compute_kk_lin_basic_match_data(
-				X = private$X,
+			private$cached_values$KKstats = .compute_kk_lin_basic_match_data_cached(
+				private_env = private,
+				X = private$get_X(),
 				n = private$n,
 				y = private$y,
 				w = private$w,

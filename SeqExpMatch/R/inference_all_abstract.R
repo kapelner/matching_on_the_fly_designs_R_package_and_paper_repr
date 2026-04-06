@@ -137,6 +137,8 @@ Inference = R6::R6Class("Inference",
 		dead = NULL,
 		y_temp = NULL,
 		X = NULL,
+		reduced_design_keep_cache = NULL,
+		fixed_covariate_keep_cache = NULL,
 			cached_values = list(),
 			num_cores_override = NULL,
 
@@ -343,24 +345,97 @@ Inference = R6::R6Class("Inference",
 		},
 
 		get_X = function(){
-			if (is.null(private$X)){
-				if (is.null(private$des_obj_priv_int$X)){
-					private$des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
-				}
-				X_all = private$des_obj_priv_int$compute_all_subject_data()$X_all
-				colnames(X_all) = colnames(private$des_obj_priv_int$X)
-				private$X = X_all
+			if (!is.null(private$X)) return(private$X)  # transient bootstrap override
+			if (is.null(private$des_obj_priv_int$X))
+				private$des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
+			private$des_obj_priv_int$X
+		},
+
+		reduce_treatment_only_design_fast = function(X_full){
+			if (is.null(dim(X_full)) || ncol(X_full) != 2L || nrow(X_full) == 0L) return(NULL)
+			X_mat = as.matrix(X_full)
+			intercept = as.numeric(X_mat[, 1L])
+			treatment = as.numeric(X_mat[, 2L])
+			if (any(!is.finite(intercept)) || any(!is.finite(treatment))) return(NULL)
+			if (any(intercept != intercept[1L])) return(NULL)
+			if (any(treatment != treatment[1L])) {
+				private$reduced_design_keep_cache = c(1L, 2L)
+				return(list(X = X_mat, keep = c(1L, 2L), j_treat = 2L))
 			}
-			private$X
+			list(X = NULL, keep = 1L, j_treat = NA_integer_)
+		},
+
+		try_cached_reduced_design_keep = function(X_full, keep = private$reduced_design_keep_cache){
+			if (is.null(keep) || !length(keep)) return(NULL)
+			keep = sort(unique(as.integer(keep)))
+			if (any(!is.finite(keep)) || any(keep < 1L) || any(keep > ncol(X_full)) || !(2L %in% keep)) {
+				return(NULL)
+			}
+
+			X_try = as.matrix(X_full[, keep, drop = FALSE])
+			if (ncol(X_try) == 2L) {
+				fast = private$reduce_treatment_only_design_fast(X_try)
+				if (!is.null(fast) && !is.null(fast$X)) {
+					return(list(X = X_try, keep = keep, j_treat = match(2L, keep)))
+				}
+				return(NULL)
+			}
+
+			if (qr(X_try)$rank != ncol(X_try)) return(NULL)
+			list(X = X_try, keep = keep, j_treat = match(2L, keep))
 		},
 
 		reduce_design_matrix_preserving_treatment = function(X_full){
+			fast = private$reduce_treatment_only_design_fast(X_full)
+			if (!is.null(fast)) return(fast)
+
+			cached = private$try_cached_reduced_design_keep(X_full)
+			if (!is.null(cached)) return(cached)
+
 			reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), c(1L, 2L))
 			keep = as.integer(reduced$keep)
 			if (!(2L %in% keep)) return(list(X = NULL, keep = keep, j_treat = NA_integer_))
+			private$reduced_design_keep_cache = keep
 
 			list(
 				X = reduced$X_reduced,
+				keep = keep,
+				j_treat = match(2L, keep)
+			)
+		},
+
+		reduce_design_matrix_preserving_treatment_fixed_covariates = function(X_full){
+			fast = private$reduce_treatment_only_design_fast(X_full)
+			if (!is.null(fast)) return(fast)
+			if (is.null(dim(X_full)) || ncol(X_full) <= 2L) return(private$reduce_design_matrix_preserving_treatment(X_full))
+
+			cached = private$try_cached_reduced_design_keep(X_full)
+			if (!is.null(cached)) return(cached)
+
+			other_cols = c(1L, seq.int(3L, ncol(X_full)))
+			keep_other = private$fixed_covariate_keep_cache
+			if (is.null(keep_other) || !length(keep_other) || any(keep_other < 1L) || any(keep_other > ncol(X_full)) || !(1L %in% keep_other)) {
+				X_other = as.matrix(X_full[, other_cols, drop = FALSE])
+				reduced_other = qr_reduce_preserve_cols_cpp(X_other, 1L)
+				keep_other = other_cols[as.integer(reduced_other$keep)]
+				private$fixed_covariate_keep_cache = keep_other
+			}
+
+			X_other_reduced = as.matrix(X_full[, keep_other, drop = FALSE])
+			treatment = as.numeric(X_full[, 2L])
+			if (any(!is.finite(treatment)) || any(!is.finite(X_other_reduced))) {
+				return(private$reduce_design_matrix_preserving_treatment(X_full))
+			}
+
+			X_trial = cbind(X_other_reduced, treatment)
+			if (qr(X_trial)$rank <= ncol(X_other_reduced)) {
+				return(list(X = NULL, keep = keep_other, j_treat = NA_integer_))
+			}
+
+			keep = sort(c(keep_other, 2L))
+			private$reduced_design_keep_cache = keep
+			list(
+				X = as.matrix(X_full[, keep, drop = FALSE]),
 				keep = keep,
 				j_treat = match(2L, keep)
 			)

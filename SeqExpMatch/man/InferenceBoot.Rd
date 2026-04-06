@@ -84,6 +84,7 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$compute_bootstrap_two_sided_pval(
   delta = 0,
   B = 501,
+  type = "symmetric",
   na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -94,6 +95,21 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
 \item{\code{delta}}{Null hypothesis value. Default 0.}
 
 \item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{type}}{Bootstrap p-value type. Supported values are
+\code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
+\code{"bootstrap-t"}, and \code{"bca"}.
+\code{"percentile"}: shifts the bootstrap distribution to be centred at
+\code{delta} and counts the two-tail proportion (Hall 1992).
+\code{"symmetric"}: uses \eqn{|T^* - \bar{T}^*| \ge |t_{\rm obs} - \delta|}
+for a symmetric one-sample test; recommended by Hall & Wilson (1991) when the
+null distribution may be skewed.
+\code{"studentized"} / \code{"bootstrap-t"}: pivots by the per-replicate
+standard error, giving O(n^{-1}) error versus O(n^{-1/2}) for the percentile
+method (Hall 1992; Davidson & MacKinnon 1999).
+\code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
+inversion using the jackknife acceleration and bias-correction constants;
+second-order accurate (Efron 1987; Efron & Tibshirani 1993).}
 
 \item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
 }
@@ -112,7 +128,7 @@ Computes a bootstrap-based confidence interval.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$compute_bootstrap_confidence_interval(
   alpha = 0.05,
   B = 501,
-  type = "percentile",
+  type = "bca",
   na.rm = TRUE,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}

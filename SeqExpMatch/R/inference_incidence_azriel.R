@@ -19,11 +19,11 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 			des_obj$assert_equal_block_sizes()
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$cached_values$is_z = TRUE
 		}
 	),
 
 	private = list(
-
 		get_standard_error = function(){
 			if (!is.null(private$cached_values$azriel_s_beta_hat_T)) {
 				return(private$cached_values$azriel_s_beta_hat_T)
@@ -34,10 +34,6 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 				private$des_obj_priv_int$n
 			)
 			private$cached_values$azriel_s_beta_hat_T
-		},
-
-		get_degrees_of_freedom = function(){
-			NA_real_
 		}
 	)
 )

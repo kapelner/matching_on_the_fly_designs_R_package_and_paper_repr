@@ -82,6 +82,22 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		tau = NULL,
 		fit_warm_keep = NULL,
 
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			private$create_design_backed_bootstrap_worker_state()
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+		},
+
 		build_design_matrix = function(){
 			X = cbind(1, private$w)
 			colnames(X) = c("(Intercept)", "treatment")
@@ -120,12 +136,9 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 				}
 			}
 
-			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
-			if (reuse_factorizations && !is.null(reduced$X) && is.finite(reduced$j_treat)) {
-				qr_X = qr(X_full)
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(2L %in% keep)) keep[qr_X$rank] = 2L
-				private$fit_warm_keep = sort(unique(keep))
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
+			if (reuse_factorizations && !is.null(reduced$keep) && length(reduced$keep) > 0L && is.finite(reduced$j_treat)) {
+				private$fit_warm_keep = reduced$keep
 			}
 			reduced
 		},

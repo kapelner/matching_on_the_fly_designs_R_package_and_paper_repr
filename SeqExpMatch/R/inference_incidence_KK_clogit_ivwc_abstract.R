@@ -127,7 +127,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			y_m       = private$y[i_matched]
 			w_m       = private$w[i_matched]
 			strata_m  = m_vec[i_matched]
-			X_m       = if (private$include_covariates()) as.data.frame(private$X[i_matched, , drop = FALSE]) else data.frame()
+			X_m       = if (private$include_covariates()) as.data.frame(private$get_X()[i_matched, , drop = FALSE]) else data.frame()
 
 			mod = clogit_helper(y_m, X_m, w_m, strata_m)
 			if (is.null(mod)) return(invisible(NULL))

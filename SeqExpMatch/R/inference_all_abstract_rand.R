@@ -242,7 +242,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				cache$rand_distr_cache = list()
 				return(cache)
 			}
-			always_keep = c("permutations_cache", "m_cache", "t0s_rand", "custom_stat_analysis")
+			always_keep = c("permutations_cache", "m_cache", "t0s_rand", "custom_stat_analysis", "lin_centered_covariates")
 			for (nm in unique(c(always_keep, preserve_cache_keys))) {
 				if (!is.null(prev_cache[[nm]])) cache[[nm]] = prev_cache[[nm]]
 			}
@@ -522,7 +522,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				thread_des_obj$.__enclos_env__$private$w = perm_data$w
 				if (!is.null(perm_data$m_vec)) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
 			} else {
-				thread_des_obj$.__enclos_env__$private$resample_design()
+				thread_des_obj$.__enclos_env__$private$resample_assignment()
 			}
 
 			private$sync_randomization_worker_state(thread_des_obj, thread_inf_obj)

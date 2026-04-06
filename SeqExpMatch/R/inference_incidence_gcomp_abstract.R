@@ -59,12 +59,13 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#' Computes a bootstrap two-sided p-value for the treatment effect.
 		#' @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
 		#' @param B Number of bootstrap samples.
+		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
 		#' @param na.rm Whether to remove non-finite bootstrap replicates.
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, na.rm = FALSE){
+		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE){
 			if (is.null(delta)){
 				delta = private$default_null_value()
 			}
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm)
 		}
 	),
 

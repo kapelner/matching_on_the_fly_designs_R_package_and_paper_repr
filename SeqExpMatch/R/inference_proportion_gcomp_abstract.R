@@ -76,7 +76,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE,
+		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
 			assertNumeric(delta, len = 1)
 			old_bootstrap_screening = private$bootstrap_screening_control
@@ -87,7 +88,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				min_group_n = as.integer(min_group_n)
 			)
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, na.rm = na.rm)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm)
 		},
 
 		#' @description
@@ -101,7 +102,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "percentile",
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "bca",
 			na.rm = TRUE, show_progress = TRUE, boundary_tol = 0.02, max_boundary_mass = 0.95,
 			sep_tol = 0.02, min_group_n = 5L){
 			old_bootstrap_screening = private$bootstrap_screening_control

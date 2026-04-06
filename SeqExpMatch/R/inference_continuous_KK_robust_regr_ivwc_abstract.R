@@ -14,16 +14,29 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
+		#' @param maxit			Maximum number of robust-regression iterations. If `NULL`, a
+		#'   data-adaptive default is chosen at fit time.
+		#' @param acc				Convergence tolerance for `MASS::rlm`. If `NULL`, a
+		#'   data-adaptive default is chosen at fit time.
+		#' @param start_with_ols	Whether to compute an OLS warm start and pass it to `MASS::rlm`
+		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
+		#'   uses its own LQS-based start. Default `TRUE`.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, method = "MM",  verbose = FALSE){
+		initialize = function(des_obj, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertChoice(method, c("M", "MM"))
+			if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
+			if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
+			assertFlag(start_with_ols)
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$rlm_method = method
+			private$rlm_maxit = maxit
+			private$rlm_acc = acc
+			private$rlm_start_with_ols = start_with_ols
 		},
 
 		#' @description
@@ -68,6 +81,9 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 
 	private = list(
 		rlm_method = NULL,
+		rlm_maxit = NULL,
+		rlm_acc = NULL,
+		rlm_start_with_ols = TRUE,
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_ivwc_matched_reduced_design", "kk_robust_ivwc_reservoir_reduced_design") else character()
@@ -93,6 +109,23 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			cached = list(X = X, j_treat = j_treat)
 			private$cached_values[[cache_key]] = cached
 			cached
+		},
+
+		resolve_rlm_control = function(X){
+			p = ncol(X)
+			maxit = private$rlm_maxit
+			if (is.null(maxit)) {
+				maxit = if (isTRUE(private$rlm_start_with_ols)) {
+					if (p <= 3L) 10L else if (p <= 10L) 15L else 20L
+				} else {
+					if (p <= 3L) 15L else if (p <= 10L) 20L else 25L
+				}
+			}
+			acc = private$rlm_acc
+			if (is.null(acc)) {
+				acc = if (isTRUE(private$rlm_start_with_ols)) 1e-4 else 1e-3
+			}
+			list(maxit = as.integer(maxit), acc = as.numeric(acc))
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -150,24 +183,51 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 
 		fit_rlm_with_treatment = function(X, y, j_treat){
 			if (nrow(X) <= ncol(X)) return(NULL)
+			ctrl = private$resolve_rlm_control(X)
 
-			run_rlm = function(method){
+			run_rlm = function(method, init = NULL){
 				tryCatch({
 					if (identical(method, "M")) {
-						MASS::rlm(x = X, y = y, method = "M", psi = MASS::psi.huber)
+						args = list(
+							x = X,
+							y = y,
+							method = "M",
+							psi = MASS::psi.huber,
+							maxit = ctrl$maxit,
+							acc = ctrl$acc
+						)
+						if (!is.null(init)) args$init = init
+						do.call(MASS::rlm, args)
 					} else {
-						MASS::rlm(x = X, y = y, method = method)
+						do.call(MASS::rlm, list(
+							x = X,
+							y = y,
+							method = method,
+							maxit = ctrl$maxit,
+							acc = ctrl$acc
+						))
 					}
 				}, error = function(e) e)
 			}
 
 			method_to_try = if (isTRUE(private$rlm_force_M)) "M" else private$rlm_method
-			mod = run_rlm(method_to_try)
+			start_coef = NULL
+			if (isTRUE(private$rlm_start_with_ols)) {
+				start_coef = tryCatch(as.numeric(stats::coef(stats::lm.fit(x = X, y = y))), error = function(e) NULL)
+				if (!is.null(start_coef) && (length(start_coef) != ncol(X) || any(!is.finite(start_coef)))) {
+					start_coef = NULL
+				}
+				if (!is.null(start_coef)) start_coef = list(coef = unname(start_coef))
+			}
+			if (identical(method_to_try, "M") && is.null(start_coef)) {
+				start_coef = rep(0, ncol(X))
+			}
+			mod = run_rlm(method_to_try, init = start_coef)
 			if (inherits(mod, "error") && identical(method_to_try, "MM")){
 				msg = if (length(mod$message) == 0L) "" else mod$message
 				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
 					private$rlm_force_M = TRUE
-					mod = run_rlm("M")
+					mod = run_rlm("M", init = start_coef)
 				}
 			}
 			if (inherits(mod, "error")) return(NULL)
@@ -176,7 +236,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if ((is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
-				mod = run_rlm("M")
+				mod = run_rlm("M", init = start_coef)
 				if (inherits(mod, "error") || is.null(mod)) return(NULL)
 				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			}
@@ -186,7 +246,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			se   = as.numeric(coef_table[j_treat, "Std. Error"])
 			if ((!is.finite(beta) || !is.finite(se) || se <= 0) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
-				mod = run_rlm("M")
+				mod = run_rlm("M", init = start_coef)
 				if (inherits(mod, "error") || is.null(mod)) return(NULL)
 				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 				if (is.null(coef_table) || nrow(coef_table) < j_treat) return(NULL)

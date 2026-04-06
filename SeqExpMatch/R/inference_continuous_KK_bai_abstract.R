@@ -58,27 +58,33 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	compute_treatment_estimate = function(estimate_only = FALSE){
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
-		nRT = private$cached_values$KKstats$nRT
-		nRC = private$cached_values$KKstats$nRC
-		m = private$cached_values$KKstats$m
-		#cat("DEBUG: convex_flag:", private$convex_flag, "nRT:", nRT, "nRC:", nRC, "m:", m, "\n")
+		KKstats = private$cached_values$KKstats
+		nRT = KKstats$nRT
+		nRC = KKstats$nRC
+		m = KKstats$m
+		reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
+		no_matches = !is.finite(m) || m <= 1
+		has_matched_est = is.finite(KKstats$d_bar)
+		has_reservoir_est = is.finite(KKstats$r_bar)
 
-		cond1 = is.null(private$convex_flag) || is.null(nRT) || is.null(nRC) || !private$convex_flag || nRT <= 1 || nRC <= 1
-
-		if (cond1){ #if we are not using the res in the test, only use the match pairs
-		private$cached_values$beta_hat_T = private$cached_values$KKstats$d_bar
-		} else {
-		cond2 = isTRUE(m == 0)
-		if (cond2){ #sometimes there's no matches
-			private$cached_values$beta_hat_T = private$cached_values$KKstats$r_bar
-		} else {
-			if (is.null(private$cached_values$s_beta_hat_T)){
-			private$shared()
+		private$cached_values$beta_hat_T =
+			if (reservoir_unusable && has_matched_est){
+				KKstats$d_bar
+			} else if (no_matches && has_reservoir_est){
+				KKstats$r_bar
+			} else if (has_matched_est && has_reservoir_est && isTRUE(private$convex_flag)){
+				if (is.null(private$cached_values$s_beta_hat_T)){
+					private$shared()
+				}
+				w_star_bai = KKstats$ssqR / (KKstats$ssqR + private$cached_values$bai_var_d_bar)
+				w_star_bai * KKstats$d_bar + (1 - w_star_bai) * KKstats$r_bar
+			} else if (has_matched_est){
+				KKstats$d_bar
+			} else if (has_reservoir_est){
+				KKstats$r_bar
+			} else {
+				NA_real_
 			}
-			w_star_bai = private$cached_values$KKstats$ssqR / (private$cached_values$KKstats$ssqR + private$cached_values$bai_var_d_bar)
-			private$cached_values$beta_hat_T = w_star_bai * private$cached_values$KKstats$d_bar + (1 - w_star_bai) * private$cached_values$KKstats$r_bar #proper weighting
-		}
-		}
 		private$cached_values$beta_hat_T
 	},
 
@@ -206,22 +212,32 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
-		m = private$cached_values$KKstats$m
-		nRT = private$cached_values$KKstats$nRT
-		nRC = private$cached_values$KKstats$nRC
-		if (isTRUE(m == 0)){
-		private$cached_values$s_beta_hat_T = ifelse(isTRUE(private$convex_flag), sqrt(private$cached_values$KKstats$ssqR), 0)
-		} else {
-	      private$cached_values$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
-	      private$cached_values$s_beta_hat_T = if (isTRUE(private$convex_flag) && isTRUE(nRT > 1) && isTRUE(nRC > 1)){
-	                                              sqrt(
-													private$cached_values$bai_var_d_bar * private$cached_values$KKstats$ssqR /
-	                                                  (private$cached_values$bai_var_d_bar + private$cached_values$KKstats$ssqR)
-	                                              ) # convex estimator
-	                                            } else {
-	                                              sqrt(private$cached_values$bai_var_d_bar) # just bai estimator
-	                                            }
-	  }
+		KKstats = private$cached_values$KKstats
+		m = KKstats$m
+		nRT = KKstats$nRT
+		nRC = KKstats$nRC
+		reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
+		no_matches = !is.finite(m) || m <= 1
+		ssqD = NA_real_
+		if (is.finite(m) && m > 0){
+			private$cached_values$bai_var_d_bar = private$compute_bai_variance_for_pairs() / m
+			ssqD = private$cached_values$bai_var_d_bar
+		}
+		ssqR = KKstats$ssqR
+		private$cached_values$s_beta_hat_T =
+			if (reservoir_unusable){
+				if (is.finite(ssqD) && ssqD > 0) sqrt(ssqD) else if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
+			} else if (no_matches){
+				if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else if (is.finite(ssqD) && ssqD > 0) sqrt(ssqD) else NA_real_
+			} else if (isTRUE(private$convex_flag) && is.finite(ssqD) && ssqD > 0 && is.finite(ssqR) && ssqR > 0){
+				sqrt(ssqR * ssqD / (ssqR + ssqD))
+			} else if (is.finite(ssqD) && ssqD > 0){
+				sqrt(ssqD)
+			} else if (is.finite(ssqR) && ssqR > 0){
+				sqrt(ssqR)
+			} else {
+				NA_real_
+			}
 	},
 	compute_bai_variance_for_pairs = function(){
 		pairs_df = data.frame(

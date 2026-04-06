@@ -170,7 +170,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			formula_str = "survival::Surv(y, dead) ~ w"
 
 			if (private$include_covariates()){
-				X_m = as.matrix(private$X[i_matched, , drop = FALSE])
+				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
 				colnames(X_m) = paste0("x", 1:ncol(X_m))
 				dat = cbind(dat, X_m)
 				formula_str = paste(formula_str, "+", paste(colnames(X_m), collapse = " + "))

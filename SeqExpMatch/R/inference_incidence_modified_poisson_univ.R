@@ -79,6 +79,41 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			cbind(1, private$w)
 		},
 
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+			worker$num_cores = 1L
+			worker_priv = worker$.__enclos_env__$private
+			X_fixed = private$get_X()
+			worker_priv$X = X_fixed
+			list(
+				worker = worker,
+				worker_priv = worker_priv,
+				base_w = as.numeric(private$w),
+				base_y = as.numeric(private$y),
+				base_dead = as.numeric(private$dead),
+				n = private$n
+			)
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			indices = as.integer(indices)
+			w_priv = worker_state$worker_priv
+			w_priv$w[] = worker_state$base_w[indices]
+			w_priv$y[] = worker_state$base_y[indices]
+			w_priv$dead[] = worker_state$base_dead[indices]
+			w_priv$y_temp = w_priv$y
+			w_priv$n = worker_state$n
+			w_priv$cached_values = list()
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+		},
+
 		get_covariate_names = function(){
 			X = private$get_X()
 			p = ncol(X)
@@ -184,7 +219,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			}
 			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 
-			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){

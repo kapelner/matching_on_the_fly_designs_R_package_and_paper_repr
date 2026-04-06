@@ -36,6 +36,10 @@ InferenceIncidUnivLogRegr = R6::R6Class("InferenceIncidUnivLogRegr",
 	),
 
 	private = list(
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			# Use the standard design matrix order: Intercept, Treatment, Covariates
 			# This ensures treatment is at index 2 for fast_logistic_regression_with_var_cpp

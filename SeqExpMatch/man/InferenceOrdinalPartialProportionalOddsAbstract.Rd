@@ -26,6 +26,7 @@ general R fitters.
 \item \href{#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_treatment_estimate}{\code{InferenceOrdinalPartialProportionalOddsAbstract$compute_treatment_estimate()}}
 \item \href{#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_confidence_interval}{\code{InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceOrdinalPartialProportionalOddsAbstract-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceOrdinalPartialProportionalOddsAbstract$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceOrdinalPartialProportionalOddsAbstract-benchmark_asymp_two_sided_pval_breakdown}{\code{InferenceOrdinalPartialProportionalOddsAbstract$benchmark_asymp_two_sided_pval_breakdown()}}
 \item \href{#method-InferenceOrdinalPartialProportionalOddsAbstract-clone}{\code{InferenceOrdinalPartialProportionalOddsAbstract$clone()}}
 }
 }
@@ -139,6 +140,31 @@ p-value.
 }
 \subsection{Returns}{
 A two-sided p-value.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsAbstract-benchmark_asymp_two_sided_pval_breakdown"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsAbstract-benchmark_asymp_two_sided_pval_breakdown}{}}}
+\subsection{Method \code{benchmark_asymp_two_sided_pval_breakdown()}}{
+Benchmark the asymptotic p-value path with a timing breakdown.
+
+This is a diagnostic helper for performance investigation. It separates
+the model fit, cache/SE materialization, and final p-value arithmetic.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsAbstract$benchmark_asymp_two_sided_pval_breakdown(
+  delta = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named list with timing and result details.
 }
 }
 \if{html}{\out{<hr>}}

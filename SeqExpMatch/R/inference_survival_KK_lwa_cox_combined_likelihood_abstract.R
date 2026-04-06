@@ -71,7 +71,7 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
 			if (private$include_covariates()){
-				X_full = cbind(X_full, as.matrix(private$X))
+				X_full = cbind(X_full, as.matrix(private$get_X()))
 				qr_full = qr(X_full)
 				r_full = qr_full$rank
 				if (r_full < ncol(X_full)){

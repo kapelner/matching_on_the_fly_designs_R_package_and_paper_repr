@@ -380,12 +380,48 @@ NULL
 	compute_zhang_match_data_cpp(w, m_vec, y, X)
 }
 
+# Cached variant: the X/m structural part (X_matched_diffs, X_matched_diffs_full,
+# X_reservoir, m) depends only on m_vec and X, never on y or w.  It is stored in
+# private_env$kk_xm_structural and reused as long as m_vec is unchanged, which covers
+# the common case of randomization inference (only y/w permuted, m_vec fixed).
+# On the first call (or when m_vec changes) the full C++ pass is run.
+.compute_kk_basic_match_data_cached = function(private_env, X, n, y, w, m_vec){
+	if (is.null(m_vec)) m_vec = rep(NA_integer_, n)
+	m_vec[is.na(m_vec)] = 0L
+
+	if (!is.null(private_env$kk_xm_structural) && identical(m_vec, private_env$kk_xm_m_vec)){
+		wy = compute_kk_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+		return(c(private_env$kk_xm_structural, wy))
+	}
+
+	full = compute_zhang_match_data_cpp(as.integer(w), as.integer(m_vec), as.numeric(y), as.matrix(X))
+	private_env$kk_xm_structural = full[c("m", "X_matched_diffs", "X_matched_diffs_full", "X_reservoir")]
+	private_env$kk_xm_m_vec = m_vec
+	full
+}
+
 .compute_kk_lin_basic_match_data = function(X, n, y, w, m_vec){
 	if (is.null(m_vec)){
 		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
 	compute_kk_lin_match_data_cpp(w, m_vec, y, X)
+}
+
+# Cached variant for the lin (means + diffs) C++ path.
+.compute_kk_lin_basic_match_data_cached = function(private_env, X, n, y, w, m_vec){
+	if (is.null(m_vec)) m_vec = rep(NA_integer_, n)
+	m_vec[is.na(m_vec)] = 0L
+
+	if (!is.null(private_env$kk_lin_xm_structural) && identical(m_vec, private_env$kk_lin_xm_m_vec)){
+		wy = compute_kk_lin_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+		return(c(private_env$kk_lin_xm_structural, wy))
+	}
+
+	full = compute_kk_lin_match_data_cpp(as.integer(w), as.integer(m_vec), as.numeric(y), as.matrix(X))
+	private_env$kk_lin_xm_structural = full[c("m", "X_matched_diffs_full", "X_matched_means_full", "X_reservoir")]
+	private_env$kk_lin_xm_m_vec = m_vec
+	full
 }
 
 .extract_se_from_rq_fit = function(fit, coef_name){

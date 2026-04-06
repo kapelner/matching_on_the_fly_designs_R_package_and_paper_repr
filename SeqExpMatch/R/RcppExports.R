@@ -618,6 +618,10 @@ compute_kk_lin_match_data_cpp <- function(w, m_vec, y, X) {
     .Call(`_EDI_compute_kk_lin_match_data_cpp`, w, m_vec, y, X)
 }
 
+compute_kk_lin_wy_stats_cpp <- function(y, w, m_vec) {
+    .Call(`_EDI_compute_kk_lin_wy_stats_cpp`, y, w, m_vec)
+}
+
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
     .Call(`_EDI_neg_loglik_nb_cpp`, theta, beta, X, y)
 }
@@ -814,6 +818,14 @@ compute_ridit_bootstrap_parallel_cpp <- function(y, w, indices_mat, reference, n
     .Call(`_EDI_compute_ridit_bootstrap_parallel_cpp`, y, w, indices_mat, reference, num_cores)
 }
 
+ols_hc2_setup_cpp <- function(X_fit) {
+    .Call(`_EDI_ols_hc2_setup_cpp`, X_fit)
+}
+
+ols_hc2_post_fit_precomputed_cpp <- function(X_fit, y, coef_hat, bread, hat, j_treat) {
+    .Call(`_EDI_ols_hc2_post_fit_precomputed_cpp`, X_fit, y, coef_hat, bread, hat, j_treat)
+}
+
 ols_hc2_post_fit_cpp <- function(X_fit, y, coef_hat, j_treat) {
     .Call(`_EDI_ols_hc2_post_fit_cpp`, X_fit, y, coef_hat, j_treat)
 }
@@ -878,5 +890,9 @@ zhang_exact_fisher_pval_cpp <- function(n11, n10, n01, n00, delta_0) {
 
 compute_zhang_match_data_cpp <- function(w, m_vec, y, X) {
     .Call(`_EDI_compute_zhang_match_data_cpp`, w, m_vec, y, X)
+}
+
+compute_kk_wy_stats_cpp <- function(y, w, m_vec) {
+    .Call(`_EDI_compute_kk_wy_stats_cpp`, y, w, m_vec)
 }
 

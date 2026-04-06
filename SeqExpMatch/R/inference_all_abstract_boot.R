@@ -40,7 +40,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			has_match_structure_local = private$has_match_structure
 
 			run_one_boot_iter = function(worker_des, worker_inf) {
-				worker_des$.__enclos_env__$private$resample_design()
+				worker_des$.__enclos_env__$private$resample_assignment()
 				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
 				if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
@@ -99,10 +99,19 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# wrongly choose parallel for small B values like r = 19.
 			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 			if (actual_cores > 1L) {
-				do_warmup_iter = function() {
-					w_des = des_template$duplicate()
-					w_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-					tryCatch(run_one_boot_iter(w_des, w_inf), error = function(e) NA_real_)
+				do_warmup_iter = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+					function() {
+						worker_state = private$create_bootstrap_worker_state()
+						indices = private$bootstrap_sample_indices(private$n)
+						private$load_bootstrap_sample_into_worker(worker_state, indices)
+						tryCatch(private$compute_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+					}
+				} else {
+					function() {
+						w_des = des_template$duplicate()
+						w_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+						tryCatch(run_one_boot_iter(w_des, w_inf), error = function(e) NA_real_)
+					}
 				}
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
@@ -114,18 +123,26 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					actual_cores = 1L
 			}
 
-			# Use private$par_lapply which handles both persistent fork clusters and other strategies.
-			boot_distr = unlist(private$par_lapply(1:B, function(idx) {
-				worker_des = des_template$duplicate()
-				worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-				tryCatch(run_one_boot_iter(worker_des, worker_inf), error = function(e) NA_real_)
-			}, n_cores = actual_cores, show_progress = show_progress,
-			export_list = list(
-				des_template = des_template,
-				inf_template = inf_template,
-				has_match_structure_local = has_match_structure_local,
-				run_one_boot_iter = run_one_boot_iter
-			)))
+			boot_distr = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+				private$compute_bootstrap_distribution_with_reused_workers(
+					B = B,
+					actual_cores = actual_cores,
+					show_progress = show_progress
+				)
+			} else {
+				# Use private$par_lapply which handles both persistent fork clusters and other strategies.
+				unlist(private$par_lapply(1:B, function(idx) {
+					worker_des = des_template$duplicate()
+					worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+					tryCatch(run_one_boot_iter(worker_des, worker_inf), error = function(e) NA_real_)
+				}, n_cores = actual_cores, show_progress = show_progress,
+				export_list = list(
+					des_template = des_template,
+					inf_template = inf_template,
+					has_match_structure_local = has_match_structure_local,
+					run_one_boot_iter = run_one_boot_iter
+				)))
+			}
 
 			if (!is.numeric(boot_distr)) boot_distr = as.numeric(boot_distr)
 
@@ -139,27 +156,80 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'
 		#' @param delta					Null hypothesis value. Default 0.
 		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param type					Bootstrap p-value type. Supported values are
+		#'   \code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
+		#'   \code{"bootstrap-t"}, and \code{"bca"}.
+		#'   \code{"percentile"}: shifts the bootstrap distribution to be centred at
+		#'   \code{delta} and counts the two-tail proportion (Hall 1992).
+		#'   \code{"symmetric"}: uses \eqn{|T^* - \bar{T}^*| \ge |t_{\rm obs} - \delta|}
+		#'   for a symmetric one-sample test; recommended by Hall & Wilson (1991) when the
+		#'   null distribution may be skewed.
+		#'   \code{"studentized"} / \code{"bootstrap-t"}: pivots by the per-replicate
+		#'   standard error, giving O(n^{-1}) error versus O(n^{-1/2}) for the percentile
+		#'   method (Hall 1992; Davidson & MacKinnon 1999).
+		#'   \code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
+		#'   inversion using the jackknife acceleration and bias-correction constants;
+		#'   second-order accurate (Efron 1987; Efron & Tibshirani 1993).
 		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, na.rm = FALSE){
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE){
 			assertNumeric(delta, len = 1)
 			assertCount(B, positive = TRUE)
 			assertFlag(na.rm)
-			boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
+			type = tolower(type)
+			assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
+
+			need_se = type %in% c("studentized", "bootstrap-t")
+			if (need_se) {
+				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(B = B, na.rm = isTRUE(na.rm))
+				boot_distr = boot_stats$theta
+			} else {
+				boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
+				boot_stats = NULL
+			}
+
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
 			else if (any(!is.finite(boot_distr))) return(NA_real_)
 			if (length(boot_distr) == 0L) return(NA_real_)
+
 			est = as.numeric(self$compute_treatment_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) return(NA_real_)
 			est = est[1]
-			# Shift bootstrap distribution to be centered at delta (null hypothesis)
-			boot_null = boot_distr - mean(boot_distr) + delta
-			n_bs = length(boot_null)
-			min(1, max(2 / n_bs, 2 * min(
-				sum(boot_null >= est) / n_bs,
-				sum(boot_null <= est) / n_bs
-			)))
+
+			if (type == "percentile") {
+				# Shift bootstrap distribution to be centred at delta (null hypothesis)
+				boot_null = boot_distr - mean(boot_distr) + delta
+				n_bs = length(boot_null)
+				min(1, max(2 / n_bs, 2 * min(
+					sum(boot_null >= est) / n_bs,
+					sum(boot_null <= est) / n_bs
+				)))
+			} else if (type == "symmetric") {
+				# Hall & Wilson (1991) symmetric test: pool both tails via absolute deviations.
+				# p = P(|T* - mean(T*)| >= |t_obs - delta|)
+				D_obs = abs(est - delta)
+				D_boot = abs(boot_distr - mean(boot_distr))
+				n_bs = length(D_boot)
+				min(1, max(1 / n_bs, mean(D_boot >= D_obs)))
+			} else if (type %in% c("studentized", "bootstrap-t")) {
+				# Studentized (bootstrap-t) p-value: pivot by standard error.
+				# t_obs = (est - delta) / se_hat
+				# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
+				# p = P(|t*_b| >= |t_obs|)
+				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
+				if (!is.finite(se_hat) || se_hat <= 0) return(NA_real_)
+				t_obs = abs(est - delta) / se_hat
+				se_boot = boot_stats$se
+				ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
+				t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
+				t_boot = t_boot[is.finite(t_boot)]
+				if (length(t_boot) == 0L) return(NA_real_)
+				min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
+			} else if (type == "bca") {
+				# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
+				private$pval_bca(boot_distr, est, delta)
+			}
 		},
 
 		#' @description
@@ -177,7 +247,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "percentile", na.rm = TRUE, show_progress = TRUE){
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "bca", na.rm = TRUE, show_progress = TRUE){
 			private$assert_design_supports_resampling("Bootstrap inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			type = tolower(type)
@@ -191,7 +261,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (length(est) == 0L || !is.finite(est[1])) stop("Bootstrap confidence interval returned NA bounds")
 			est = est[1]
 
-			boot_stats = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t", "bca", "prepivoted", "double-bootstrap", "calibrated", "smoothed")) {
+			# BCa only needs theta (not se), so route it through the parallel bootstrap path.
+			# studentized/symmetric-percentile-t need se per replicate → serial statistics path.
+			boot_stats = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t", "prepivoted", "double-bootstrap", "calibrated", "smoothed")) {
 				private$approximate_bootstrap_statistics_beta_hat_T(B = B, show_progress = show_progress, na.rm = na.rm, smooth = identical(type, "smoothed"))
 			} else {
 				list(theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress), se = NULL)
@@ -226,6 +298,100 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 	private = list(
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
+
+		supports_reusable_bootstrap_worker = function(){
+			FALSE
+		},
+
+		create_bootstrap_worker_state = function(){
+			NULL
+		},
+
+		create_design_backed_bootstrap_worker_state = function(){
+			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+			worker$num_cores = 1L
+			worker_priv = worker$.__enclos_env__$private
+			worker_des = if (!is.null(worker_priv$des_obj)) worker_priv$des_obj$duplicate(verbose = FALSE) else NULL
+			worker_des_priv = if (!is.null(worker_des)) worker_des$.__enclos_env__$private else NULL
+			if (!is.null(worker_des)) {
+				worker_priv$des_obj = worker_des
+				worker_priv$des_obj_priv_int = worker_des_priv
+			}
+			worker_priv$X = private$get_X()
+			list(
+				worker = worker,
+				worker_priv = worker_priv,
+				worker_des_priv = worker_des_priv,
+				base_w = if (!is.null(private$w)) as.numeric(private$w) else NULL,
+				base_y = if (!is.null(private$y)) as.numeric(private$y) else NULL,
+				base_dead = if (!is.null(private$dead)) as.numeric(private$dead) else NULL,
+				base_m = if (!is.null(private$m)) private$m else NULL,
+				n = private$n
+			)
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			stop("Reusable bootstrap workers are not implemented for this class.")
+		},
+
+		load_bootstrap_sample_into_design_backed_worker = function(worker_state, indices){
+			indices = as.integer(indices)
+			w_priv = worker_state$worker_priv
+			w_priv$w = if (!is.null(worker_state$base_w)) as.numeric(worker_state$base_w[indices]) else NULL
+			w_priv$y = if (!is.null(worker_state$base_y)) as.numeric(worker_state$base_y[indices]) else NULL
+			w_priv$dead = if (!is.null(worker_state$base_dead)) as.numeric(worker_state$base_dead[indices]) else NULL
+			w_priv$y_temp = w_priv$y
+			if (!is.null(worker_state$base_m)) w_priv$m = worker_state$base_m[indices]
+			w_priv$n = worker_state$n
+			w_priv$cached_values = list()
+
+			des_priv = worker_state$worker_des_priv
+			if (!is.null(des_priv)) {
+				des_priv$w = w_priv$w
+				des_priv$y = w_priv$y
+				des_priv$dead = w_priv$dead
+				if (!is.null(worker_state$base_m)) des_priv$m = w_priv$m
+			}
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			stop("Reusable bootstrap workers are not implemented for this class.")
+		},
+
+		compute_bootstrap_worker_estimate_via_compute_treatment_estimate = function(worker_state){
+			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+		},
+
+		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE){
+			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
+			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
+			chunks = split(seq_len(B), chunk_id)
+
+			run_chunk = function(idxs) {
+				worker_state = private$create_bootstrap_worker_state()
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) {
+					indices = private$bootstrap_sample_indices(private$n)
+					out[k] = tryCatch({
+						private$load_bootstrap_sample_into_worker(worker_state, indices)
+						private$compute_bootstrap_worker_estimate(worker_state)
+					}, error = function(e) NA_real_)
+				}
+				out
+			}
+
+			if (actual_cores <= 1L) {
+				return(as.numeric(run_chunk(seq_len(B))))
+			}
+
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_cores,
+				budget = 1L,
+				show_progress = show_progress
+			), use.names = FALSE))
+		},
 
 		bootstrap_sample_indices = function(n){
 			sample.int(n, n, replace = TRUE)
@@ -277,7 +443,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf_priv$w = sub_des_priv$w
 			sub_inf_priv$dead = sub_des_priv$dead
 			sub_inf_priv$n = length(indices)
-			sub_inf_priv$X = NULL
 			sub_inf_priv$cached_values = list()
 			sub_inf_priv$cached_values$rand_distr_cache = list()
 			sub_inf_priv$cached_values$permutations_cache = list()
@@ -326,12 +491,15 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		approximate_jackknife_distribution_beta_hat_T = function(){
 			n = private$des_obj$get_n()
 			if (n <= 1L) return(numeric(0))
-			jack = rep(NA_real_, n)
-			for (i in seq_len(n)) {
+			actual_cores = private$effective_parallel_cores("jackknife", self$num_cores)
+			jack = unlist(private$par_lapply(seq_len(n), function(i) {
 				idx = seq_len(n)[-i]
-				jack[i] = private$bootstrap_replication_stats(idx, smooth = FALSE)[["theta"]]
-			}
-			jack
+				tryCatch(
+					private$bootstrap_replication_stats(idx, smooth = FALSE)[["theta"]],
+					error = function(e) NA_real_
+				)
+			}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
+			as.numeric(jack)
 		},
 
 		ci_from_boot_distribution = function(boot_distr, alpha, type, est = NULL){
@@ -439,6 +607,32 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				fresh$compute_treatment_estimate(estimate_only = FALSE)
 				as.numeric(fresh$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
 			}, error = function(e) NA_real_)
+		},
+
+		# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
+		# Derives the bias-correction (z0) and acceleration (a) constants from the bootstrap
+		# distribution and jackknife estimates, then computes the BCa-adjusted CDF value at
+		# delta_0.  The two-sided p-value is  2 * min(Phi(adj_z), 1 - Phi(adj_z))  where
+		#   z_delta = Phi^{-1}(F_boot(delta_0)),   s = z_delta - z0,
+		#   adj_z   = s / (1 + a*s) - z0.
+		pval_bca = function(boot_distr, est, delta){
+			jack = private$approximate_jackknife_distribution_beta_hat_T()
+			jack = jack[is.finite(jack)]
+			if (length(jack) < 2L) stop("BCa p-value requires jackknife estimates.")
+			z0 = stats::qnorm(mean(boot_distr < est))
+			jack_bar = mean(jack)
+			num = sum((jack_bar - jack)^3)
+			den = 6 * (sum((jack_bar - jack)^2)^(3/2))
+			a = if (is.finite(den) && den > 0) num / den else 0
+			p_delta = mean(boot_distr < delta)
+			p_delta = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_delta))
+			z_delta = stats::qnorm(p_delta)
+			s = z_delta - z0
+			denom = 1 + a * s
+			if (!is.finite(denom) || abs(denom) < .Machine$double.eps) return(NA_real_)
+			adj_z = s / denom - z0
+			if (!is.finite(adj_z)) return(NA_real_)
+			min(1, 2 * min(stats::pnorm(adj_z), 1 - stats::pnorm(adj_z)))
 		}
 	)
 )

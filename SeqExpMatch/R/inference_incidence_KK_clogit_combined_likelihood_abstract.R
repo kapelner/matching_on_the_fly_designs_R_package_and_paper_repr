@@ -72,7 +72,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			p             = if (private$include_covariates()) ncol(private$X) else 0L
+			p             = if (private$include_covariates()) ncol(private$get_X()) else 0L
 			has_reservoir = nRT > 0 && nRC > 0
 
 			# ---- Build combined design matrix ------------------------------------
@@ -88,7 +88,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 				y_m      = private$y[i_matched]
 				w_m      = private$w[i_matched]
 				strata_m = m_vec[i_matched]
-				X_mat    = if (p > 0L) as.matrix(private$X[i_matched, , drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
+				X_mat    = if (p > 0L) as.matrix(private$get_X()[i_matched, , drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
 
 				if (has_reservoir){
 					y_r    = KKstats$y_reservoir

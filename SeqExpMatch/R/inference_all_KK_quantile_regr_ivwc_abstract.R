@@ -86,11 +86,9 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		m = NULL,
 
 		compute_basic_match_data = function(){
-			if (is.null(private$X)){
-				private$X = private$get_X()
-			}
-			private$cached_values$KKstats = .compute_kk_basic_match_data(
-				X = private$X,
+			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
+				private_env = private,
+				X = private$get_X(),
 				n = private$n,
 				y = private$y,
 				w = private$w,

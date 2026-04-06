@@ -310,11 +310,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		m = NULL,
 
 		compute_basic_match_data = function(){
-			if (is.null(private$X)){
-				private$X = private$get_X()
-			}
-			private$cached_values$KKstats = .compute_kk_basic_match_data(
-				X = private$X,
+			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
+				private_env = private,
+				X = private$get_X(),
 				n = private$n,
 				y = private$y,
 				w = private$w,
@@ -335,7 +333,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			private$cached_values$KKstats$X_matched_diffs_disc =
 				private$cached_values$KKstats$X_matched_diffs[i_m_disc, drop = FALSE]
 			i_conc = which(private$m %in% i_m_conc)
-			private$cached_values$KKstats$X_conc = private$X[i_conc, drop = FALSE]
+			private$cached_values$KKstats$X_conc = private$get_X()[i_conc, , drop = FALSE]
 			private$cached_values$KKstats$y_conc = private$y[i_conc]
 			private$cached_values$KKstats$w_conc = private$w[i_conc]
 		},

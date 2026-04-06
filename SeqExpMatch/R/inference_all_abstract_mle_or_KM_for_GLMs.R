@@ -20,6 +20,18 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 	private = list(
 		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
 
+		create_bootstrap_worker_state = function(){
+			private$create_design_backed_bootstrap_worker_state()
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+		},
+
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			private$cached_values$s_beta_hat_T

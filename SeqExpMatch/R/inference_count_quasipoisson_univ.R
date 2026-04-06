@@ -40,7 +40,7 @@ InferenceCountUnivQuasiPoissonRegr = R6::R6Class("InferenceCountUnivQuasiPoisson
 
 	private = list(
 		fit_count_model_with_var = function(Xmm, estimate_only = FALSE){
-			reduced = private$reduce_design_matrix_preserving_treatment(Xmm)
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(Xmm)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
