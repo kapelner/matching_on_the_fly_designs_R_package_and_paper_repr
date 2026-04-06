@@ -35,6 +35,15 @@ three build modes, run:
 bash scripts/benchmark_randomization_ci_build_modes.sh
 ```
 
+### Experimental findings
+The `scripts/benchmark_randomization_ci_ordinal_ppo.R`/`scripts/benchmark_randomization_ci_cases.R` experiments show the native-speed flags are beneficial for the heavier Eigen/OpenMP workloads but not universally faster:
+
+- **Ordinal PPO (`InferenceOrdinalMultiPartialProportionalOddsRegr`)** with `r=201` and `reps=3`: portable `≈19.2s`, native `≈16.6s`, native+LTO `≈16.7s`.
+- **KK compound continuous (`InferenceAllKKCompoundMeanDiff`)**: portable ≈13.4s, native ≈13.1s, native+LTO ≈13.8s.
+- **Proportion fractional logit & simple Poisson (`InferencePropMultiFractionalLogit`, `InferenceCountUnivPoissonRegr`)**: portable was slightly faster than both native and native+LTO on those lightweight cases.
+
+Bottom line: use `EDI_NATIVE_SPEED`/`EDI_NATIVE_LTO` to benchmark and tune the expensive ordinal/KK regressions locally, but keep the default portable flags for general development/distribution.
+
 To cite please use
 
 Kapelner, A., & Krieger, A. (2023). A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power. Biometrics. https://doi.org/10.1111/biom.13561

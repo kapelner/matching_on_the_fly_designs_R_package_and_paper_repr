@@ -8,6 +8,10 @@ label = Sys.getenv("SEQEXP_LABEL", unset = "portable")
 num_cores = as.integer(Sys.getenv("SEQEXP_NUM_CORES", unset = "3"))
 r = as.integer(Sys.getenv("SEQEXP_R", unset = "201"))
 reps = as.integer(Sys.getenv("SEQEXP_REPS", unset = "3"))
+force_mirai = identical(tolower(Sys.getenv("SEQEXP_FORCE_MIRAI", unset = "false")), "true")
+inference_class = Sys.getenv("SEQEXP_INFERENCE_CLASS", unset = "InferenceOrdinalMultiPartialProportionalOddsRegr")
+nonparallel = strsplit(Sys.getenv("SEQEXP_NONPARALLEL", unset = ""), ",", fixed = TRUE)[[1]]
+nonparallel = nonparallel[nonparallel != ""]
 
 .libPaths(c(lib_dir, .libPaths()))
 library(EDI)
@@ -41,18 +45,34 @@ make_des_obj = function(seed_key) {
     des_obj
 }
 
-set_num_cores(num_cores, force_mirai = FALSE)
+set_num_cores(num_cores, force_mirai = force_mirai)
 on.exit(unset_num_cores(), add = TRUE)
 
 timings = numeric(reps)
 cat(sprintf(
-    "Benchmark: %s | num_cores=%d | r=%d | reps=%d\n",
-    label, num_cores, r, reps
+    "Benchmark: %s | class=%s | num_cores=%d | force_mirai=%s | r=%d | reps=%d\n",
+    label, inference_class, num_cores, force_mirai, r, reps
 ))
 
 for (i in seq_len(reps)) {
     des_obj = make_des_obj(paste(label, i, num_cores, r, sep = "|"))
-    inf_obj = InferenceOrdinalMultiPartialProportionalOddsRegr$new(des_obj, verbose = FALSE)
+    inf_obj = switch(
+        inference_class,
+        InferenceOrdinalMultiPartialProportionalOddsRegr = InferenceOrdinalMultiPartialProportionalOddsRegr$new(
+            des_obj,
+            nonparallel = nonparallel,
+            verbose = FALSE
+        ),
+        InferenceOrdinalMultiOrderedProbitRegr = InferenceOrdinalMultiOrderedProbitRegr$new(
+            des_obj,
+            verbose = FALSE
+        ),
+        InferenceOrdinalMultiCumulProbitRegr = InferenceOrdinalMultiCumulProbitRegr$new(
+            des_obj,
+            verbose = FALSE
+        ),
+        stop("Unsupported inference class: ", inference_class)
+    )
     gc(FALSE)
     t0 = proc.time()[["elapsed"]]
     ci = inf_obj$compute_confidence_interval_rand(
