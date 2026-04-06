@@ -5,7 +5,7 @@ if (!requireNamespace("pkgload", quietly = TRUE)) {
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(survival))
 
-pkgload::load_all("SeqExpMatch")
+pkgload::load_all("EDI")
 # Set global number of cores for parallelization
 set_num_cores(5)
 
@@ -16,7 +16,7 @@ vbcat <- function(...) {
 	cat(...)
 	#}
 }
-vbcat("Package loaded from:", path.package("SeqExpMatch"), "\n")
+vbcat("Package loaded from:", path.package("EDI"), "\n")
 
 # Helpers to safely run inference methods and normalize confidence interval outputs
 safe_run_metric <- function(expr) {

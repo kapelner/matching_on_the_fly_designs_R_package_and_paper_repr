@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, dplyr, data.table, doFuture, future, doRNG, foreach, progressr) #doParallel
+pacman::p_load(EDI, dplyr, data.table, doFuture, future, doRNG, foreach, progressr) #doParallel
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 rm(list = ls())
 set.seed(1986)
@@ -160,7 +160,7 @@ start_time = Sys.time()
 with_progress({
 	prog = progressor(along = 1:nrow(params))
 
-	results = foreach(row = iter(params, by = "row"), .combine = rbind, .packages = c("SeqExpMatch", "data.table", "dplyr")) %dorng% {
+	results = foreach(row = iter(params, by = "row"), .combine = rbind, .packages = c("EDI", "data.table", "dplyr")) %dorng% {
 
 	i = row$i
 	data_set = row$data_set

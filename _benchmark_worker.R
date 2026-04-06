@@ -16,13 +16,13 @@ helper_path <- file.path(getwd(), "benchmark_inference_loops.R")
 source(helper_path)
 
 tryCatch({
-	library(SeqExpMatch)
+	library(EDI)
 }, error = function(e) {
-	stop("Failed to load SeqExpMatch library: ", e$message)
+	stop("Failed to load EDI library: ", e$message)
 })
 
 cat(sprintf("Running benchmark in library: %s\n", lib_path))
-cat(sprintf("Package Version: %s\n", packageVersion("SeqExpMatch")))
+cat(sprintf("Package Version: %s\n", packageVersion("EDI")))
 
 # --- Execution Loop Using Comprehensive Inference Suite ---
 res_list <- vector("list", n_iter)

@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, doSNOW, tcltk, future.callr, future.apply, progressr)
+pacman::p_load(EDI, data.table, stringr, dplyr, ggplot2, gridExtra, profvis, doSNOW, tcltk, future.callr, future.apply, progressr)
 
 betaToverall = 1
 prob_of_adding_responses = c(0.5, 1)

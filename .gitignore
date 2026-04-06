@@ -1,12 +1,12 @@
-SeqExpMatch/R/abstract_inference_KK_passthrough.R.backup
-SeqExpMatch/R/abstract_inference_KK_passthrough.R.backup2
+EDI/R/abstract_inference_KK_passthrough.R.backup
+EDI/R/abstract_inference_KK_passthrough.R.backup2
 simple_tests.log
 .mcp.json
 cpp_compile.txt
-SeqExpMatch/src/*.o
-SeqExpMatch/src/*.dll
-SeqExpMatch/src/*.so
-SeqExpMatch/src/symbols.rds
+EDI/src/*.o
+EDI/src/*.dll
+EDI/src/*.so
+EDI/src/symbols.rds
 Rlib/*
 
 # History files

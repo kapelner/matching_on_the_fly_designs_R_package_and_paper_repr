@@ -24,7 +24,7 @@ dir.create(lib_new, showWarnings = FALSE)
 
 # --- 1. Install CURRENT Version ---
 cat("\n>>> Installing CURRENT version to temporary library...\n")
-pkg_path <- file.path(wd, "SeqExpMatch")
+pkg_path <- file.path(wd, "EDI")
 install_cmd_new <- sprintf("R CMD INSTALL %s -l %s", shQuote(pkg_path), shQuote(lib_new))
 if (system(install_cmd_new) != 0) stop("Failed to install current version")
 
@@ -40,7 +40,7 @@ if (system(sprintf("git checkout %s", OLD_COMMIT)) != 0) stop("Failed to checkou
 setwd(old_wd)
 
 cat("\n>>> Patching OLD version for build...\n")
-pkg_path_old <- file.path(repo_dir, "SeqExpMatch")
+pkg_path_old <- file.path(repo_dir, "EDI")
 src_path_old <- file.path(pkg_path_old, "src")
 
 # Patch 0: DELETE ALL PRE-COMPILED BINARIES (Crucial fix for architecture mismatch)

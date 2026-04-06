@@ -1,6 +1,6 @@
 rm(list = ls())
 set.seed(1)
-library(SeqExpMatch)
+library(EDI)
 library(data.table)
 library(dplyr)
 library(mlbench)

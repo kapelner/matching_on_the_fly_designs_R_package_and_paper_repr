@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, dplyr)
+pacman::p_load(EDI, dplyr)
 
 n = 50
 p = 2

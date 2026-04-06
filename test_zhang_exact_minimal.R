@@ -1,4 +1,4 @@
-library(SeqExpMatch)
+library(EDI)
 library(data.table)
 
 # Minimal data for incidence

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-pkg_dir="$repo_root/SeqExpMatch"
+pkg_dir="$repo_root/EDI"
 r_bin="${R_BIN:-R}"
 
 cleanup_dirs=()
@@ -19,7 +19,7 @@ run_build() {
   shift
 
   local elapsed start end build_dir
-  build_dir="$(mktemp -d "${TMPDIR:-/tmp}/seqexpmatch-build.${label//[^A-Za-z0-9_-]/_}.XXXXXX")"
+  build_dir="$(mktemp -d "${TMPDIR:-/tmp}/edi-build.${label//[^A-Za-z0-9_-]/_}.XXXXXX")"
   cleanup_dirs+=("$build_dir")
 
   printf '\n== %s ==\n' "$label"

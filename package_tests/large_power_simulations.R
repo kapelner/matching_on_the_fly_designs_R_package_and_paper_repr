@@ -1,7 +1,7 @@
-#/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ SeqExpMatch/
+#/c/Program\ Files/R/R-devel/bin/R.exe CMD INSTALL -l ~/AppData/Local/R/win-library/4.5/ EDI/
 rm(list = ls())
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
-library(SeqExpMatch)
+library(EDI)
 # options(error=recover)
 # options(warn=2)
 set.seed(1)
@@ -109,7 +109,7 @@ res = foreach(
 	nsim = 1:nrow(exp_settings),
 	.inorder = FALSE,
 	.combine = rbind,
-	.packages = c("data.table", "SeqExpMatch", "qgam")
+	.packages = c("data.table", "EDI", "qgam")
 	# .errorhandling = "pass"
 	# .verbose = TRUE,
 	) %dopar% {

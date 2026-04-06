@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 .libPaths(c("Rlib", .libPaths()))
-library(SeqExpMatch)
+library(EDI)
 
 set.seed(1)
 max_n_dataset = 500

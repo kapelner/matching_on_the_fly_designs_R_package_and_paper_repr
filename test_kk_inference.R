@@ -1,5 +1,5 @@
 .libPaths(c("Rlib", .libPaths()))
-library(SeqExpMatch)
+library(EDI)
 
 set.seed(1)
 n <- 20

@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, dplyr, data.table)
+pacman::p_load(EDI, dplyr, data.table)
 rm(list = ls())
 options(error = recover)
 

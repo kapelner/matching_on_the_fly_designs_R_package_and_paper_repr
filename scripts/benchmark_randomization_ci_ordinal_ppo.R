@@ -1,16 +1,16 @@
 #!/usr/bin/env Rscript
 
-lib_dir = Sys.getenv("SEQEXP_LIB", unset = "")
+lib_dir = Sys.getenv("EDI_LIB", unset = "")
 if (identical(lib_dir, "")) {
-    stop("SEQEXP_LIB must point to the installed package library.")
+    stop("EDI_LIB must point to the installed package library.")
 }
-label = Sys.getenv("SEQEXP_LABEL", unset = "portable")
-num_cores = as.integer(Sys.getenv("SEQEXP_NUM_CORES", unset = "3"))
-r = as.integer(Sys.getenv("SEQEXP_R", unset = "201"))
-reps = as.integer(Sys.getenv("SEQEXP_REPS", unset = "3"))
-force_mirai = identical(tolower(Sys.getenv("SEQEXP_FORCE_MIRAI", unset = "false")), "true")
-inference_class = Sys.getenv("SEQEXP_INFERENCE_CLASS", unset = "InferenceOrdinalMultiPartialProportionalOddsRegr")
-nonparallel = strsplit(Sys.getenv("SEQEXP_NONPARALLEL", unset = ""), ",", fixed = TRUE)[[1]]
+label = Sys.getenv("EDI_LABEL", unset = "portable")
+num_cores = as.integer(Sys.getenv("EDI_NUM_CORES", unset = "3"))
+r = as.integer(Sys.getenv("EDI_R", unset = "201"))
+reps = as.integer(Sys.getenv("EDI_REPS", unset = "3"))
+force_mirai = identical(tolower(Sys.getenv("EDI_FORCE_MIRAI", unset = "false")), "true")
+inference_class = Sys.getenv("EDI_INFERENCE_CLASS", unset = "InferenceOrdinalMultiPartialProportionalOddsRegr")
+nonparallel = strsplit(Sys.getenv("EDI_NONPARALLEL", unset = ""), ",", fixed = TRUE)[[1]]
 nonparallel = nonparallel[nonparallel != ""]
 
 .libPaths(c(lib_dir, .libPaths()))

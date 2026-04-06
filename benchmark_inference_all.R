@@ -40,7 +40,7 @@ if (!benchmark_is_worker) {
 if (!requireNamespace("pkgload", quietly = TRUE)) {
     stop("The 'pkgload' package is required to benchmark the current EDI source tree.")
 }
-pkgload::load_all("SeqExpMatch", quiet = TRUE)
+pkgload::load_all("EDI", quiet = TRUE)
 library(EDI)
 
 # Load remaining packages
@@ -141,7 +141,7 @@ skip_benchmark_step = function(label, inference_class, response_type, operation,
     NA_real_
 }
 
-namespace_content = readLines("SeqExpMatch/NAMESPACE")
+namespace_content = readLines("EDI/NAMESPACE")
 inf_classes = grep("^export\\(Inference", namespace_content, value = TRUE)
 inf_classes = gsub("export\\(|\\)", "", inf_classes)
 

@@ -1,12 +1,12 @@
-# SeqExpMatch
+# EDI
 
-Code for the R package `SeqExpMatch` and the code to reproduce the simulations in the papers listed below. You can get started by cloning and running `R CMD INSTALL SeqExpMatch` from the root of this repo. Then try running the code in the folder `package_tests`.
+Code for the R package `EDI` and the code to reproduce the simulations in the papers listed below. You can get started by cloning and running `R CMD INSTALL EDI` from the root of this repo. Then try running the code in the folder `package_tests`.
 
 For a local performance build, you can opt into native compiler flags without
 changing the default portable build:
 
 ```sh
-EDI_NATIVE_SPEED=1 R CMD INSTALL SeqExpMatch
+EDI_NATIVE_SPEED=1 R CMD INSTALL EDI
 ```
 
 This enables `-O3 -march=native -mtune=native` when your compiler supports
@@ -16,8 +16,8 @@ portable one.
 To compare plain native vs native plus link-time optimization:
 
 ```sh
-EDI_NATIVE_SPEED=1 R CMD INSTALL SeqExpMatch
-EDI_NATIVE_SPEED=1 EDI_NATIVE_LTO=1 R CMD INSTALL SeqExpMatch
+EDI_NATIVE_SPEED=1 R CMD INSTALL EDI
+EDI_NATIVE_SPEED=1 EDI_NATIVE_LTO=1 R CMD INSTALL EDI
 ```
 
 `EDI_NATIVE_LTO=1` adds `-flto` on top of the native-speed flags.

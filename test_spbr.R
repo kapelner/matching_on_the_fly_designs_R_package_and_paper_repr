@@ -1,5 +1,5 @@
 .libPaths(c("local_R_lib", .libPaths()))
-library(SeqExpMatch)
+library(EDI)
 library(data.table)
 library(testthat)
 

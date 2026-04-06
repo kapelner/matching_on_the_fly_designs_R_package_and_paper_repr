@@ -47,7 +47,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 #     n_setting = 1 : nrow(exp_settings),
 #     .inorder = FALSE,
 #     .combine = rbind,
-#     .packages = 'SeqExpMatch',
+#     .packages = 'EDI',
 #     .options.snow = list(progress = progress)) %dopar% {
 
 	#get this run's settings

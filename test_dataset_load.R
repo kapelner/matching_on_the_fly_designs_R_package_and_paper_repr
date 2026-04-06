@@ -7,10 +7,10 @@ pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeli
 cat("Setting libpaths...\n")
 .libPaths(c("Rlib", .libPaths()))
 
-cat("Loading SeqExpMatch...\n")
-library(SeqExpMatch)
+cat("Loading EDI...\n")
+library(EDI)
 
-cat("After loading SeqExpMatch\n")
+cat("After loading EDI\n")
 cat("Setting seed and max_n_dataset...\n")
 set.seed(1)
 max_n_dataset = 500

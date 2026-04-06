@@ -16,11 +16,11 @@ if (dir.exists(lib_path)){
 	.libPaths(c(lib_path, .libPaths()))
 }
 
-cat("Step 4: Loading SeqExpMatch\n")
-library(SeqExpMatch)
+cat("Step 4: Loading EDI\n")
+library(EDI)
 
 cat("Step 5: Setting debug_mode\n")
-debug_mode = nzchar(Sys.getenv("SEQEXPMATCH_DEBUG"))
+debug_mode = nzchar(Sys.getenv("EDI_DEBUG"))
 if (debug_mode){
 	options(error = function(){
 	traceback(2)

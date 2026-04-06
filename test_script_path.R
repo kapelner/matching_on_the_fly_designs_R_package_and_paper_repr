@@ -26,7 +26,7 @@ if (length(grep_result) > 0) {
 	cat("This can happen when running interactively or with certain R execution modes\n")
 }
 
-cat("Now trying to load SeqExpMatch...\n")
+cat("Now trying to load EDI...\n")
 .libPaths(c("Rlib", .libPaths()))
-library(SeqExpMatch)
+library(EDI)
 cat("SUCCESS!\n")

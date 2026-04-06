@@ -1,4 +1,4 @@
-pacman::p_load(SeqExpMatch, dplyr, data.table, datasets)
+pacman::p_load(EDI, dplyr, data.table, datasets)
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 rm(list = ls())
 options(error = recover)

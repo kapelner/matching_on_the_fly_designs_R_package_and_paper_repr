@@ -8,10 +8,10 @@ pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeli
 cat("Step 3: Setting lib paths\n")
 .libPaths(c("Rlib", .libPaths()))
 
-cat("Step 4: Loading SeqExpMatch\n")
-library(SeqExpMatch)
+cat("Step 4: Loading EDI\n")
+library(EDI)
 
-cat("Step 5: After loading SeqExpMatch\n")
+cat("Step 5: After loading EDI\n")
 cat("Step 6: Setting seed\n")
 set.seed(1)
 
