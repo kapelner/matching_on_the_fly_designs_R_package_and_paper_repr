@@ -37,7 +37,6 @@ Inference = R6::R6Class("Inference",
 			
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
-			private$cached_values$permutations_cache = list()
 			private$cached_values$m_cache = list()
 			if (private$verbose){
 				cat(paste0(
@@ -75,7 +74,8 @@ Inference = R6::R6Class("Inference",
 		#' @description
 		#' Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
-		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork cluster. Default FALSE.
+		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork 
+		#'   cluster. Default FALSE.
 		#' @return 			A new \code{Inference} object with the same data
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			i = self$clone()
@@ -83,7 +83,6 @@ Inference = R6::R6Class("Inference",
 			i$.__enclos_env__$private$fork_cluster = NULL
 
 			i$.__enclos_env__$private$cached_values = list()
-			i$.__enclos_env__$private$cached_values$permutations_cache = private$cached_values$permutations_cache
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			i$.__enclos_env__$private$cached_values$t0s_rand = private$cached_values$t0s_rand
 

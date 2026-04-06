@@ -52,6 +52,9 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKRobustRegrCombinedLikelihood$new(
   des_obj,
   method = "MM",
+  maxit = NULL,
+  acc = NULL,
+  start_with_ols = TRUE,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -62,6 +65,16 @@ Initialize the inference object.
 \item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
 \item{\code{method}}{Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.}
+
+\item{\code{maxit}}{Maximum number of robust-regression iterations. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{acc}}{Convergence tolerance for `MASS::rlm`. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{start_with_ols}}{Whether to compute an OLS warm start and pass it to `MASS::rlm`
+when the fit method honors `init`. This affects the `M` path only; `MM`
+uses its own LQS-based start. Default `TRUE`.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

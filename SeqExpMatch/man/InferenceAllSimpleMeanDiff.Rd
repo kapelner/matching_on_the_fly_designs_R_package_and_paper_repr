@@ -110,7 +110,8 @@ interval is 1 - \code{alpha}. The default is 0.05.}
 
 \item{\code{show_progress}}{Show a text progress indicator.}
 
-\item{\code{ci_search_control}}{Optional randomization-CI search control list passed through to the base method.}
+\item{\code{ci_search_control}}{Optional randomization-CI search control list passed through 
+to the base method.}
 }
 \if{html}{\out{</div>}}
 }

@@ -76,14 +76,7 @@ Initialize
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
-  and response y is recorded within.
-  the sampling during randomization-based inference
-and bootstrap resampling. The default is 1 for serial computation. For simple
-estimators (e.g. mean difference
-and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
-complex models (e.g. GLMs),
-parallelization falls back to R's \code{parallel::mclapply} which incurs
-session-forking overhead.}
+and response y is recorded within.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed
 to the user. Default is \code{TRUE}}
@@ -110,6 +103,9 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \item{\code{B}}{Number of bootstrap samples. The default is 501.}
 
 \item{\code{show_progress}}{Description for show_progress}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+per-iteration diagnostics. Default \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

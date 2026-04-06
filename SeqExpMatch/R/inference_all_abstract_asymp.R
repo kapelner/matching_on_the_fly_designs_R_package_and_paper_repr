@@ -64,6 +64,22 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 	private = list(
 		get_standard_error = function() stop("Must be implemented by concrete class or shared helper."),
 		get_degrees_of_freedom = function() NA_real_,
+
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			private$create_design_backed_bootstrap_worker_state()
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+		},
 		
 		# Shared helpers for z/t tests
 		compute_z_or_t_ci_from_s_and_df = function(alpha){

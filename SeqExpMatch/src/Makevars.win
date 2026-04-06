@@ -17,3 +17,18 @@
 
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DNDEBUG -DEIGEN_NO_DEBUG
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -ltbb12 -fstack-protector
+
+# Optional local-only speed build.
+# Enable with: EDI_NATIVE_SPEED=1 R CMD INSTALL SeqExpMatch
+EDI_NATIVE_SPEED ?= 0
+ifeq ($(EDI_NATIVE_SPEED),1)
+PKG_CXXFLAGS += -O3 -march=native -mtune=native
+endif
+
+# Optional local-only link-time optimization.
+# Enable with: EDI_NATIVE_LTO=1 R CMD INSTALL SeqExpMatch
+EDI_NATIVE_LTO ?= 0
+ifeq ($(EDI_NATIVE_LTO),1)
+PKG_CXXFLAGS += -flto
+PKG_LIBS += -flto
+endif

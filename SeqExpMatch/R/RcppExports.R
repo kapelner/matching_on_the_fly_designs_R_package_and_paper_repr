@@ -113,6 +113,14 @@ bootstrap_m_indices_cpp <- function(m_vec, i_reservoir, n_reservoir, m, B) {
     .Call(`_EDI_bootstrap_m_indices_cpp`, m_vec, i_reservoir, n_reservoir, m, B)
 }
 
+draw_kk_bootstrap_sample_cpp <- function(i_reservoir, pair_rows, n_reservoir) {
+    .Call(`_EDI_draw_kk_bootstrap_sample_cpp`, i_reservoir, pair_rows, n_reservoir)
+}
+
+compute_bootstrap_kk_stats_cpp <- function(y, w, X, i_b, n_reservoir) {
+    .Call(`_EDI_compute_bootstrap_kk_stats_cpp`, y, w, X, i_b, n_reservoir)
+}
+
 match_stats_from_indices_cpp <- function(y, w, X, original_m_vec, i_b, m) {
     .Call(`_EDI_match_stats_from_indices_cpp`, y, w, X, original_m_vec, i_b, m)
 }
@@ -752,8 +760,8 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
 #'
 #' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 #'               Each row corresponds to a specific level of a specific covariate.
-#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
-#'                           the current subject belongs to.
+#' @param subject_levels_idx An integer vector of indices indicating which rows 
+#'                           of the counts matrix the current subject belongs to.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.
 #' @param prob_T Target probability for treatment (usually 0.5).
@@ -768,8 +776,8 @@ pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best,
 #'
 #' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 #'               Modified in place.
-#' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
-#'                           the current subject belongs to.
+#' @param subject_levels_idx An integer vector of indices indicating which rows 
+#'                           of the counts matrix the current subject belongs to.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.
 #' @param prob_T Target probability for treatment (usually 0.5).
@@ -782,7 +790,8 @@ pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weigh
 
 #' Pocock-Simon Minimization Redraw Assignments
 #'
-#' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.
+#' @param x_levels_matrix A matrix where each row is a subject and each column is the row 
+#'   index in counts for that covariate.
 #' @param num_levels_total Total number of levels across all covariates.
 #' @param weights A numeric vector of weights for each covariate.
 #' @param p_best The probability of assigning the treatment that minimizes the imbalance.

@@ -43,6 +43,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				worker_des$.__enclos_env__$private$resample_assignment()
 				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+				worker_inf$.__enclos_env__$private$y_temp = worker_des$.__enclos_env__$private$y
+				worker_inf$.__enclos_env__$private$dead = worker_des$.__enclos_env__$private$dead
 				if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
 					worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 					worker_inf$.__enclos_env__$private$compute_basic_match_data()
@@ -313,6 +315,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			worker_priv = worker$.__enclos_env__$private
 			worker_des = if (!is.null(worker_priv$des_obj)) worker_priv$des_obj$duplicate(verbose = FALSE) else NULL
 			worker_des_priv = if (!is.null(worker_des)) worker_des$.__enclos_env__$private else NULL
+			source_des_priv = private$des_obj_priv_int
 			if (!is.null(worker_des)) {
 				worker_priv$des_obj = worker_des
 				worker_priv$des_obj_priv_int = worker_des_priv
@@ -322,10 +325,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				worker = worker,
 				worker_priv = worker_priv,
 				worker_des_priv = worker_des_priv,
-				base_w = if (!is.null(private$w)) as.numeric(private$w) else NULL,
-				base_y = if (!is.null(private$y)) as.numeric(private$y) else NULL,
-				base_dead = if (!is.null(private$dead)) as.numeric(private$dead) else NULL,
-				base_m = if (!is.null(private$m)) private$m else NULL,
+				base_w = if (!is.null(source_des_priv$w)) as.numeric(source_des_priv$w) else NULL,
+				base_y = if (!is.null(source_des_priv$y)) source_des_priv$y else NULL,
+				base_dead = if (!is.null(source_des_priv$dead)) as.numeric(source_des_priv$dead) else NULL,
+				base_m = if (!is.null(source_des_priv$m)) source_des_priv$m else NULL,
 				n = private$n
 			)
 		},
@@ -445,7 +448,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf_priv$n = length(indices)
 			sub_inf_priv$cached_values = list()
 			sub_inf_priv$cached_values$rand_distr_cache = list()
-			sub_inf_priv$cached_values$permutations_cache = list()
 			sub_inf_priv$cached_values$m_cache = list()
 			if (!is.null(sub_des_priv$m)) sub_inf_priv$m = sub_des_priv$m
 			sub_inf

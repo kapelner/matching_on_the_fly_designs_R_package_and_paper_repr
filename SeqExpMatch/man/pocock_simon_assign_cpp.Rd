@@ -10,8 +10,8 @@ pocock_simon_assign_cpp(counts, subject_levels_idx, weights, p_best, prob_T)
 \item{counts}{A matrix of dimensions (sum of levels) x (number of treatments).
 Each row corresponds to a specific level of a specific covariate.}
 
-\item{subject_levels_idx}{An integer vector of indices indicating which rows of the counts matrix
-the current subject belongs to.}
+\item{subject_levels_idx}{An integer vector of indices indicating which rows 
+of the counts matrix the current subject belongs to.}
 
 \item{weights}{A numeric vector of weights for each covariate.}
 

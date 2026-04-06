@@ -64,7 +64,8 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#' @param	r		The number of randomization vectors. The default is 501.
 		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
 		#' @param	show_progress		Show a text progress indicator.
-		#' @param ci_search_control Optional randomization-CI search control list passed through to the base method.
+		#' @param ci_search_control Optional randomization-CI search control list passed through 
+		#'   to the base method.
 		#' @return	A 1 - alpha sized frequentist confidence interval
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {

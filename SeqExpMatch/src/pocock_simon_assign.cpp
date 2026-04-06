@@ -8,8 +8,8 @@ using namespace Rcpp;
 //'
 //' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 //'               Each row corresponds to a specific level of a specific covariate.
-//' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
-//'                           the current subject belongs to.
+//' @param subject_levels_idx An integer vector of indices indicating which rows 
+//'                           of the counts matrix the current subject belongs to.
 //' @param weights A numeric vector of weights for each covariate.
 //' @param p_best The probability of assigning the treatment that minimizes the imbalance.
 //' @param prob_T Target probability for treatment (usually 0.5).
@@ -71,8 +71,8 @@ int pocock_simon_assign_cpp(NumericMatrix counts, IntegerVector subject_levels_i
 //'
 //' @param counts A matrix of dimensions (sum of levels) x (number of treatments).
 //'               Modified in place.
-//' @param subject_levels_idx An integer vector of indices indicating which rows of the counts matrix
-//'                           the current subject belongs to.
+//' @param subject_levels_idx An integer vector of indices indicating which rows 
+//'                           of the counts matrix the current subject belongs to.
 //' @param weights A numeric vector of weights for each covariate.
 //' @param p_best The probability of assigning the treatment that minimizes the imbalance.
 //' @param prob_T Target probability for treatment (usually 0.5).
@@ -94,7 +94,8 @@ int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subje
 
 //' Pocock-Simon Minimization Redraw Assignments
 //'
-//' @param x_levels_matrix A matrix where each row is a subject and each column is the row index in counts for that covariate.
+//' @param x_levels_matrix A matrix where each row is a subject and each column is the row 
+//'   index in counts for that covariate.
 //' @param num_levels_total Total number of levels across all covariates.
 //' @param weights A numeric vector of weights for each covariate.
 //' @param p_best The probability of assigning the treatment that minimizes the imbalance.

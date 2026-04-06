@@ -123,7 +123,8 @@ Duplicate this inference object
 \describe{
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
 
-\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster. Default FALSE.}
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork 
+cluster. Default FALSE.}
 }
 \if{html}{\out{</div>}}
 }

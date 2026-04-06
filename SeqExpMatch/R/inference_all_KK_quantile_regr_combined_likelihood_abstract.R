@@ -81,6 +81,7 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
+				des_priv     = private$des_obj_priv_int,
 				X = private$get_X(),
 				n = private$n,
 				y = private$y,

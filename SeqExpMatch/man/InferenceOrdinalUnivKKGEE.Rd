@@ -90,17 +90,8 @@ with an ordinal response.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design) whose entire n subjects
-                          are assigned and whose ordinal response y is recorded.
-the sampling during randomization-based inference and
-bootstrap resampling.
-The default is 1 for serial computation. For simple
-estimators (e.g. mean difference and KK compound),
-parallelization is achieved with zero-overhead C++ OpenMP.
-For complex models (e.g. GLMs),
-parallelization falls back to R's
-\code{parallel::mclapply}, which incurs
-session-forking overhead.}
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
 
 \item{\code{verbose}}{Whether to print progress messages. Default is \code{FALSE}.}
 }

@@ -49,15 +49,6 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' effect. Pass a different value (e.g. \code{tau = 0.25} or
 		#'                                                         \code{tau = 0.75}) to target the
 		#' corresponding percentile of the treatment effect distribution.
-		#'   the sampling during randomization-based inference and
-		#'   bootstrap resampling.
-		#'   The default is 1 for serial computation. For simple
-		#'   estimators (e.g. mean difference and KK compound),
-		#'   parallelization is achieved with zero-overhead C++ OpenMP.
-		#'   For complex models (e.g. GLMs),
-		#'   parallelization falls back to R's
-		#'   \code{parallel::mclapply}, which incurs
-		#'   session-forking overhead.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
 		#' @examples

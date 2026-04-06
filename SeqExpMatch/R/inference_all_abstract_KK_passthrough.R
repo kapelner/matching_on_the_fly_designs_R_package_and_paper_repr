@@ -12,13 +12,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
-		#'   the sampling during randomization-based inference
-		#' and bootstrap resampling. The default is 1 for serial computation. For simple
-		#' estimators (e.g. mean difference
-		#' and KK compound), parallelization is achieved with zero-overhead C++ OpenMP. For
-		#' complex models (e.g. GLMs),
-		#' parallelization falls back to R's \code{parallel::mclapply} which incurs
-		#' session-forking overhead.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
 		initialize = function(des_obj,  verbose = FALSE){
@@ -59,6 +52,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' }
 		#'
 		#' @param show_progress Description for show_progress
+		#' @param debug         If \code{TRUE}, return a list with the distribution values and
+		#'   per-iteration diagnostics. Default \code{FALSE}.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE){
 				if (!private$has_match_structure){
 					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug)
@@ -91,6 +86,46 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					if (!is.null(fast_distr)) {
 						return(fast_distr)
 					}
+				}
+
+				kk_boot_context = private$create_kk_bootstrap_context(
+					y = y,
+					dead = dead,
+					w = w,
+					X = X,
+					m_vec = m_vec,
+					m = m,
+					i_reservoir = i_reservoir,
+					n_reservoir = n_reservoir
+				)
+
+				if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
+					if (isTRUE(debug)) {
+						return(private$compute_kk_bootstrap_debug_with_reused_worker(B, kk_boot_context))
+					}
+
+					actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
+					if (actual_cores > 1L) {
+						do_warmup_iter = function() {
+							worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
+							sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+							private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
+							tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+						}
+						system.time(do_warmup_iter())
+						t_boot_warmup = system.time(do_warmup_iter())[[3]]
+						fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
+						if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores)) {
+							actual_cores = 1L
+						}
+					}
+
+					return(private$compute_kk_bootstrap_distribution_with_reused_workers(
+						B = B,
+						kk_boot_context = kk_boot_context,
+						actual_cores = actual_cores,
+						show_progress = show_progress
+					))
 				}
 
 				if (isTRUE(debug)) {
@@ -309,9 +344,157 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 
 		m = NULL,
 
+		use_reusable_kk_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_kk_bootstrap_context = function(y, dead, w, X, m_vec, m, i_reservoir, n_reservoir){
+			pair_rows = matrix(integer(0), nrow = m, ncol = 2L)
+			if (m > 0L) {
+				for (pair_id in seq_len(m)) {
+					pair_rows[pair_id, ] = which(m_vec == pair_id)
+				}
+			}
+			X_mat = if (is.null(X)) {
+				matrix(numeric(0), nrow = length(y), ncol = 0L)
+			} else {
+				as.matrix(X)
+			}
+			list(
+				y = as.numeric(y),
+				dead = dead,
+				w = as.integer(w),
+				X = X_mat,
+				m_vec = m_vec,
+				m = as.integer(m),
+				i_reservoir = as.integer(i_reservoir),
+				n_reservoir = as.integer(n_reservoir),
+				pair_rows = pair_rows
+			)
+		},
+
+		draw_kk_bootstrap_sample = function(kk_boot_context){
+			draw_kk_bootstrap_sample_cpp(
+				i_reservoir = kk_boot_context$i_reservoir,
+				pair_rows = kk_boot_context$pair_rows,
+				n_reservoir = kk_boot_context$n_reservoir
+			)
+		},
+
+		create_kk_bootstrap_worker_state = function(kk_boot_context){
+			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+			worker$num_cores = 1L
+			worker_priv = worker$.__enclos_env__$private
+			list(
+				worker = worker,
+				worker_priv = worker_priv,
+				base_y = kk_boot_context$y,
+				base_dead = kk_boot_context$dead,
+				base_w = kk_boot_context$w,
+				base_X = kk_boot_context$X,
+				n_reservoir = kk_boot_context$n_reservoir,
+				has_res_stat = private$object_has_private_method(worker, "compute_reservoir_and_match_statistics")
+			)
+		},
+
+		load_kk_bootstrap_sample_into_worker = function(worker_state, sample_info){
+			worker_priv = worker_state$worker_priv
+			i_b = sample_info$i_b
+			worker_priv$y = worker_state$base_y[i_b]
+			worker_priv$y_temp = worker_priv$y
+			worker_priv$dead = worker_state$base_dead[i_b]
+			worker_priv$w = worker_state$base_w[i_b]
+			worker_priv$X = worker_state$base_X[i_b, , drop = FALSE]
+			worker_priv$cached_values = list(
+				KKstats = compute_bootstrap_kk_stats_cpp(
+					y = worker_state$base_y,
+					w = worker_state$base_w,
+					X = worker_state$base_X,
+					i_b = i_b,
+					n_reservoir = worker_state$n_reservoir
+				)
+			)
+			worker_priv$m = sample_info$m_vec_b
+			if (isTRUE(worker_state$has_res_stat)) {
+				worker_priv$compute_reservoir_and_match_statistics()
+			}
+		},
+
+		compute_kk_bootstrap_worker_estimate = function(worker_state){
+			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+		},
+
+		compute_kk_bootstrap_debug_with_reused_worker = function(B, kk_boot_context){
+			worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
+			debug_results = vector("list", B)
+			for (b in seq_len(B)) {
+				iter_warns = character(0)
+				iter_val = withCallingHandlers(
+					tryCatch({
+						sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
+						private$compute_kk_bootstrap_worker_estimate(worker_state)
+					}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+					warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+				)
+				debug_results[[b]] = list(
+					val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
+					errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+					warnings = iter_warns
+				)
+			}
+			values = sapply(debug_results, `[[`, "val")
+			errors_list = lapply(debug_results, `[[`, "errors")
+			warnings_list = lapply(debug_results, `[[`, "warnings")
+			num_errors_vec = lengths(errors_list)
+			num_warnings_vec = lengths(warnings_list)
+			list(
+				values = values,
+				errors = errors_list,
+				warnings = warnings_list,
+				num_errors = num_errors_vec,
+				num_warnings = num_warnings_vec,
+				prop_iterations_with_errors = mean(num_errors_vec > 0),
+				prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+				prop_illegal_values = mean(!is.finite(values))
+			)
+		},
+
+		compute_kk_bootstrap_distribution_with_reused_workers = function(B, kk_boot_context, actual_cores, show_progress = FALSE){
+			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
+			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
+			chunks = split(seq_len(B), chunk_id)
+
+			run_chunk = function(idxs) {
+				worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) {
+					sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+					out[k] = tryCatch({
+						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
+						private$compute_kk_bootstrap_worker_estimate(worker_state)
+					}, error = function(e) NA_real_)
+				}
+				out
+			}
+
+			if (actual_cores <= 1L) {
+				return(as.numeric(run_chunk(seq_len(B))))
+			}
+
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_cores,
+				budget = 1L,
+				show_progress = show_progress
+			), use.names = FALSE))
+		},
+
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
+				des_priv     = private$des_obj_priv_int,
 				X = private$get_X(),
 				n = private$n,
 				y = private$y,

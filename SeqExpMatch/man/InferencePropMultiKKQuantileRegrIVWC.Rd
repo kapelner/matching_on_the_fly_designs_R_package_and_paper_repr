@@ -120,10 +120,7 @@ are assigned and response y is recorded within.}
 scale, strictly between 0 and 1.
                           The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
                           Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
-                          different percentile of the treatment effect distribution.
-the sampling during randomization-based inference and
-bootstrap resampling.
-                          and bootstrap resampling. The default is 1 for serial computation.}
+                          different percentile of the treatment effect distribution.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{FALSE}.}

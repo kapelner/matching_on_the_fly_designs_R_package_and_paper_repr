@@ -270,6 +270,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// draw_kk_bootstrap_sample_cpp
+List draw_kk_bootstrap_sample_cpp(const IntegerVector& i_reservoir, const IntegerMatrix& pair_rows, int n_reservoir);
+RcppExport SEXP _EDI_draw_kk_bootstrap_sample_cpp(SEXP i_reservoirSEXP, SEXP pair_rowsSEXP, SEXP n_reservoirSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type i_reservoir(i_reservoirSEXP);
+    Rcpp::traits::input_parameter< const IntegerMatrix& >::type pair_rows(pair_rowsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_reservoir(n_reservoirSEXP);
+    rcpp_result_gen = Rcpp::wrap(draw_kk_bootstrap_sample_cpp(i_reservoir, pair_rows, n_reservoir));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_bootstrap_kk_stats_cpp
+List compute_bootstrap_kk_stats_cpp(const NumericVector& y, const IntegerVector& w, const NumericMatrix& X, const IntegerVector& i_b, int n_reservoir);
+RcppExport SEXP _EDI_compute_bootstrap_kk_stats_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP i_bSEXP, SEXP n_reservoirSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type i_b(i_bSEXP);
+    Rcpp::traits::input_parameter< int >::type n_reservoir(n_reservoirSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_bootstrap_kk_stats_cpp(y, w, X, i_b, n_reservoir));
+    return rcpp_result_gen;
+END_RCPP
+}
 // match_stats_from_indices_cpp
 List match_stats_from_indices_cpp(const NumericVector& y, const NumericVector& w, const NumericMatrix& X, const IntegerVector& original_m_vec, const IntegerVector& i_b, int m);
 RcppExport SEXP _EDI_match_stats_from_indices_cpp(SEXP ySEXP, SEXP wSEXP, SEXP XSEXP, SEXP original_m_vecSEXP, SEXP i_bSEXP, SEXP mSEXP) {
@@ -2393,6 +2421,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_bisection_ci_loop_cpp", (DL_FUNC) &_EDI_bisection_ci_loop_cpp, 8},
     {"_EDI_bootstrap_indices_cpp", (DL_FUNC) &_EDI_bootstrap_indices_cpp, 2},
     {"_EDI_bootstrap_m_indices_cpp", (DL_FUNC) &_EDI_bootstrap_m_indices_cpp, 5},
+    {"_EDI_draw_kk_bootstrap_sample_cpp", (DL_FUNC) &_EDI_draw_kk_bootstrap_sample_cpp, 3},
+    {"_EDI_compute_bootstrap_kk_stats_cpp", (DL_FUNC) &_EDI_compute_bootstrap_kk_stats_cpp, 5},
     {"_EDI_match_stats_from_indices_cpp", (DL_FUNC) &_EDI_match_stats_from_indices_cpp, 6},
     {"_EDI_collect_discordant_pairs_cpp", (DL_FUNC) &_EDI_collect_discordant_pairs_cpp, 4},
     {"_EDI_build_kk_combined_clogit_design_cpp", (DL_FUNC) &_EDI_build_kk_combined_clogit_design_cpp, 7},

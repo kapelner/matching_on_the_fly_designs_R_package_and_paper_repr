@@ -99,14 +99,17 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 		},
 
 		get_centered_covariates = function(){
-			if (!is.null(private$cached_values$lin_centered_covariates)) {
-				return(private$cached_values$lin_centered_covariates)
+			des_priv = private$des_obj_priv_int
+			# Design-level cache: NULL = not computed, list() = computed with p=0, list(Xc=...) = computed
+			if (!is.null(des_priv$lin_centered_covariates)) {
+				cached = des_priv$lin_centered_covariates
+				return(if (length(cached) == 0L) NULL else cached)
 			}
 
 			X = as.matrix(private$get_X())
 			p = ncol(X)
 			if (p == 0L){
-				private$cached_values$lin_centered_covariates = NULL
+				des_priv$lin_centered_covariates = list()  # sentinel: computed, no covariates
 				return(NULL)
 			}
 
@@ -117,8 +120,9 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			Xc = scale(X, center = TRUE, scale = FALSE)
 			Xc = as.matrix(Xc)
 			colnames(Xc) = colnames(X)
-			private$cached_values$lin_centered_covariates = list(Xc = Xc)
-			private$cached_values$lin_centered_covariates
+			result = list(Xc = Xc)
+			des_priv$lin_centered_covariates = result
+			result
 		},
 
 		assert_finite_se = function(){

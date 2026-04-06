@@ -242,7 +242,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				cache$rand_distr_cache = list()
 				return(cache)
 			}
-			always_keep = c("permutations_cache", "m_cache", "t0s_rand", "custom_stat_analysis", "lin_centered_covariates")
+			always_keep = c("m_cache", "t0s_rand", "custom_stat_analysis")
 			for (nm in unique(c(always_keep, preserve_cache_keys))) {
 				if (!is.null(prev_cache[[nm]])) cache[[nm]] = prev_cache[[nm]]
 			}
@@ -427,9 +427,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 		generate_permutations = function(r){
 			assertCount(r, positive = TRUE)
-			if (is.null(private$cached_values$permutations_cache)) {
-				private$cached_values$permutations_cache = list()
-			}
 
 			design_sig = private$stable_signature(list(
 				class = class(private$des_obj),
@@ -439,7 +436,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				strata_cols = private$des_obj_priv_int$strata_cols
 			))
 			cache_key = paste0(as.integer(r), "|", design_sig)
-			cached = private$cached_values$permutations_cache[[cache_key]]
+			cached = private$des_obj_priv_int$permutations_cache[[cache_key]]
 			if (!is.null(cached)) return(cached)
 
 			des_template = private$des_obj$duplicate()
@@ -453,7 +450,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				w_mat = w_mat,
 				m_mat = NULL
 			)
-			private$cached_values$permutations_cache[[cache_key]] = permutations
+			private$des_obj_priv_int$permutations_cache[[cache_key]] = permutations
 			permutations
 		},
 

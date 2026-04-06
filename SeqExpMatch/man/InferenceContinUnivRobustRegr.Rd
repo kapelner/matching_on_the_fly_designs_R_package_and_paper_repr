@@ -84,10 +84,7 @@ with a continuous response.
 whose continuous response y is recorded.}
 
 \item{\code{method}}{Robust-regression fitting method for \code{MASS::rlm}; one
-of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
-the sampling during randomization-based inference and
-bootstrap resampling.
-                          and bootstrap resampling.}
+of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed to
 the user. Default is \code{FALSE}.}

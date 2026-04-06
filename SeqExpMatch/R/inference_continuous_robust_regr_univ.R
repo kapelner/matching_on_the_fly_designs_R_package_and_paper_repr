@@ -25,9 +25,6 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#'   whose continuous response y is recorded.
 		#' @param method                  Robust-regression fitting method for \code{MASS::rlm}; one
 		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
-		#'   the sampling during randomization-based inference and
-		#'   bootstrap resampling.
-		#' 							and bootstrap resampling.
 		#' @param verbose                 A flag indicating whether messages should be displayed to
 		#'   the user. Default is \code{FALSE}.
 		#'
