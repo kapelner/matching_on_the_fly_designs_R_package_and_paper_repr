@@ -111,6 +111,7 @@ if (nrow(existing_results_dt) > 0L) {
 	}
 }
 results_dt = data.table(
+	timestamp = character(),
 	duration_time_sec = numeric(),
 	inference_class = character(),
 	dataset = character(),
@@ -184,6 +185,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 	results_dt <<- data.table::rbindlist(list(
 		results_dt,
 		data.table(
+			timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
 			rep = as.integer(rep_curr),
 			run_row_id = run_row_id,
 			duration_time_sec = round_duration_field(duration_time_sec),

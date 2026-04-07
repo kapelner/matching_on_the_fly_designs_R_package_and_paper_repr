@@ -43,6 +43,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			run_one_boot_iter = function(worker_des, worker_inf) {
 				worker_des$.__enclos_env__$private$resample_assignment()
+				worker_inf$.__enclos_env__$private$cached_values = list()
 				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
 				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
 				worker_inf$.__enclos_env__$private$y_temp = worker_des$.__enclos_env__$private$y

@@ -183,6 +183,17 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 
+			if (identical(transform_responses, "none")) {
+				transform_responses = switch(
+					private$des_obj_priv_int$response_type,
+					continuous = "none",
+					proportion = "logit",
+					count = "log",
+					survival = "log",
+					"none"
+				)
+			}
+
 			cache_key = private$build_randomization_distribution_cache_key(r, delta, transform_responses, permutations)
 
 			if (transform_responses == "none" && is.null(private[["custom_randomization_statistic_function"]]) && !is.null(private$cached_values$t0s_rand) && length(private$cached_values$t0s_rand) >= r) {
@@ -301,7 +312,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 						y_sim = w_priv$y_temp
 						if (delta != 0) {
 							resp_type = worker_des_priv$response_type
-							if (transform_responses == "log" && resp_type == "survival") {
+							if (transform_responses == "logit") {
+								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1]) + delta)
+							} else if (transform_responses == "log" && resp_type == "survival") {
 								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
 							} else if (transform_responses == "log" && resp_type == "count") {
 								y_sim[perm_data$w == 1] = as.integer(round(y_sim[perm_data$w == 1] * exp(delta)))
@@ -320,7 +333,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 						y_sim = w_priv$y_temp
 						if (delta != 0) {
 							resp_type = w_priv$des_obj_priv_int$response_type
-							if (transform_responses == "log" && resp_type == "survival") {
+							if (transform_responses == "logit") {
+								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1]) + delta)
+							} else if (transform_responses == "log" && resp_type == "survival") {
 								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
 							} else if (transform_responses == "log" && resp_type == "count") {
 								y_sim[perm_data$w == 1] = as.integer(round(y_sim[perm_data$w == 1] * exp(delta)))

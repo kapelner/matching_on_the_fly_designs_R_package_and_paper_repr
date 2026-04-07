@@ -49,7 +49,6 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			assertNumeric(private$y, any.missing = FALSE)
-			private$y = private$sanitize_beta_response(private$y)
 		}
 		),
 

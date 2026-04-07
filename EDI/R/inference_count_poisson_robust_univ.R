@@ -102,18 +102,55 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
-			bread = tryCatch(
-				solve(crossprod(X_fit, X_fit * mu_hat)),
+			bread = NULL
+			var_keep = seq_len(ncol(X_fit))
+			X_var = X_fit
+			cross_mat = tryCatch(
+				crossprod(X_fit, X_fit * mu_hat),
 				error = function(e) NULL
 			)
+			if (!is.null(cross_mat)) {
+				bread = tryCatch(solve(cross_mat), error = function(e) NULL)
+			}
+			if (is.null(bread)) {
+				sqrt_mu = sqrt(mu_hat)
+				X_weighted = X_fit * sqrt_mu
+				reduced_weighted = private$reduce_design_matrix_preserving_treatment(X_weighted)
+				keep_sub = as.integer(reduced_weighted$keep)
+				if (length(keep_sub) == 0L) {
+					return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				}
+				X_var_candidate = as.matrix(X_fit[, keep_sub, drop = FALSE])
+				cross_mat = tryCatch(
+					crossprod(X_var_candidate, X_var_candidate * mu_hat),
+					error = function(e) NULL
+				)
+				if (!is.null(cross_mat)) {
+					bread = tryCatch(solve(cross_mat), error = function(e) NULL)
+					if (!is.null(bread)) {
+						var_keep = keep_sub
+						X_var = X_var_candidate
+					}
+				}
+			}
 			if (is.null(bread)){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
 			}
 
 			resid = as.numeric(private$y) - mu_hat
-			meat = crossprod(X_fit, X_fit * (resid^2))
-			vcov_robust = bread %*% meat %*% bread
-			vcov_robust = (vcov_robust + t(vcov_robust)) / 2
+			meat = crossprod(X_var, X_var * (resid^2))
+			vcov_trim = bread %*% meat %*% bread
+			vcov_full = matrix(NA_real_, ncol(X_fit), ncol(X_fit))
+			if (length(var_keep) == ncol(X_fit)) {
+				vcov_full = vcov_trim
+			} else {
+				for (i in seq_along(var_keep)){
+					for (j in seq_along(var_keep)){
+						vcov_full[var_keep[i], var_keep[j]] = vcov_trim[i, j]
+					}
+				}
+			}
+			vcov_robust = (vcov_full + t(vcov_full)) / 2
 
 			ssq_b_2 = as.numeric(vcov_robust[j_treat, j_treat])
 			if (!is.finite(ssq_b_2) || ssq_b_2 < 0){

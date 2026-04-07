@@ -92,28 +92,46 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
 			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 
-			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
-			X_fit = reduced$X
-			j_treat = reduced$j_treat
-			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+			fit_candidate = function(X_cand){
+				reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_cand)
+				X_fit = reduced$X
+				j_treat = reduced$j_treat
+				if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)) return(NULL)
+				mod = tryCatch(private$fit_constrained_binomial(X_fit, j_treat), error = function(e) NULL)
+				if (is.null(mod) || !isTRUE(mod$converged) || !is.finite(mod$ssq_b_j)) return(NULL)
+				list(mod = mod, j_treat = j_treat, X_fit = X_fit)
+			}
+
+			result = fit_candidate(X_full)
+
+			if (is.null(result) && ncol(X_full) > 2L){
+				X_cov_orig = as.matrix(X_full[, -(1:2), drop = FALSE])
+				for (thresh in c(0.95, 0.90, 0.80, 0.70)){
+					X_cov_red = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
+					if (ncol(X_cov_red) == 0L) next
+					X_cand = cbind(X_full[, 1:2, drop = FALSE], X_cov_red)
+					private$fixed_covariate_keep_cache = NULL
+					private$reduced_design_keep_cache = NULL
+					result = fit_candidate(X_cand)
+					if (!is.null(result)) break
+				}
+				if (is.null(result)){
+					private$fixed_covariate_keep_cache = NULL
+					private$reduced_design_keep_cache = NULL
+					result = fit_candidate(X_full[, 1:2, drop = FALSE])
+				}
+			}
+
+			if (is.null(result)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			mod = tryCatch(
-				private$fit_constrained_binomial(X_fit, j_treat),
-				error = function(e) NULL
-			)
-			if (is.null(mod) || !isTRUE(mod$converged) || !is.finite(mod$ssq_b_j)){
-				private$set_failed_fit_cache()
-				return(invisible(NULL))
-			}
-
-			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat])
+			private$cached_values$beta_hat_T = as.numeric(result$mod$b[result$j_treat])
 			if (estimate_only) return(invisible(NULL))
-			private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+			private$cached_values$s_beta_hat_T = sqrt(as.numeric(result$mod$ssq_b_j))
 			private$cached_values$is_z = TRUE
-			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
+			private$cached_values$df = nrow(result$X_fit) - ncol(result$X_fit)
 		}
 	)
 )

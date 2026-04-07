@@ -45,6 +45,16 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
 			super$initialize(des_obj, verbose)
+		},
+
+		#' @description
+		#' Computes the treatment estimate.
+		#'
+		#' @return The log-rate treatment-effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_treatment_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = TRUE)
+			private$cached_values$beta_hat_T
 		}
 	),
 
@@ -74,8 +84,11 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 
 			coef_hat = as.numeric(mod$b)
 			ssq_b_2 = if (estimate_only) NA_real_ else as.numeric(mod$ssq_b_j)
-			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat)) || (!estimate_only && (!is.finite(ssq_b_2) || ssq_b_2 < 0))){
+			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+			}
+			if (!estimate_only && (!is.finite(ssq_b_2) || ssq_b_2 < 0)){
+				ssq_b_2 = NA_real_
 			}
 
 			b_full = rep(NA_real_, ncol(Xmm))

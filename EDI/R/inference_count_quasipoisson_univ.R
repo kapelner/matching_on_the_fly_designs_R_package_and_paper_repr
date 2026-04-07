@@ -47,7 +47,11 @@ InferenceCountUnivQuasiPoissonRegr = R6::R6Class("InferenceCountUnivQuasiPoisson
 			}
 
 			mod = tryCatch(
-				fast_quasipoisson_regression_with_var_cpp(X_fit, private$y, j = reduced$j_treat),
+				if (estimate_only) {
+					fast_poisson_regression_cpp(X_fit, private$y)
+				} else {
+					fast_quasipoisson_regression_with_var_cpp(X_fit, private$y, j = reduced$j_treat)
+				},
 				error = function(e) NULL
 			)
 			if (is.null(mod) || !isTRUE(mod$converged)){
@@ -55,9 +59,12 @@ InferenceCountUnivQuasiPoissonRegr = R6::R6Class("InferenceCountUnivQuasiPoisson
 			}
 
 			coef_hat = as.numeric(mod$b)
-			ssq_b_2 = as.numeric(mod$ssq_b_j)
-			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat)) || !is.finite(ssq_b_2) || ssq_b_2 < 0){
+			ssq_b_2 = if (estimate_only) NA_real_ else as.numeric(mod$ssq_b_j)
+			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+			}
+			if (!estimate_only && (!is.finite(ssq_b_2) || ssq_b_2 < 0)){
+				ssq_b_2 = NA_real_
 			}
 
 			b_full = rep(NA_real_, ncol(Xmm))

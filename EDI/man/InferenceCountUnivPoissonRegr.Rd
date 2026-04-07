@@ -46,6 +46,7 @@ infer
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceCountUnivPoissonRegr-new}{\code{InferenceCountUnivPoissonRegr$new()}}
+\item \href{#method-InferenceCountUnivPoissonRegr-compute_treatment_estimate}{\code{InferenceCountUnivPoissonRegr$compute_treatment_estimate()}}
 \item \href{#method-InferenceCountUnivPoissonRegr-clone}{\code{InferenceCountUnivPoissonRegr$clone()}}
 }
 }
@@ -64,7 +65,6 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -88,6 +88,26 @@ and response y is recorded within.}
 displayed to the user. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceCountUnivPoissonRegr-compute_treatment_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceCountUnivPoissonRegr-compute_treatment_estimate}{}}}
+\subsection{Method \code{compute_treatment_estimate()}}{
+Computes the treatment estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceCountUnivPoissonRegr$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The log-rate treatment-effect estimate.
 }
 }
 \if{html}{\out{<hr>}}

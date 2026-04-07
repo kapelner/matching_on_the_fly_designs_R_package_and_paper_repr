@@ -57,35 +57,19 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 		},
 
 		generate_mod = function(estimate_only = FALSE){
-			if (estimate_only) {
-				res = fast_stereotype_logit_cpp(
-					X = private$stereotype_design_matrix(),
-					y = as.numeric(private$y)
-				)
-				return(list(
-					b = c(NA, res$b[1]),
-					ssq_b_2 = NA_real_
-				))
-			}
-
-			res = fast_stereotype_logit_with_var_cpp(
-				X = private$stereotype_design_matrix(),
-				y = as.numeric(private$y)
-			)
-			if (isTRUE(res$converged) && is.finite(res$ssq_b_1)){
-				return(list(
-					b = c(NA, res$b[1]),
-					ssq_b_2 = res$ssq_b_1
-				))
+			X = private$stereotype_design_matrix()
+			y = as.numeric(private$y)
+			res = fast_stereotype_logit_with_var_cpp(X = X, y = y)
+			if (isTRUE(res$converged) && is.finite(res$b[1])){
+				if (estimate_only) return(list(b = c(NA, res$b[1]), ssq_b_2 = NA_real_))
+				if (is.finite(res$ssq_b_1) && res$ssq_b_1 > 0) return(list(b = c(NA, res$b[1]), ssq_b_2 = res$ssq_b_1))
 			}
 			fallback = private$stereotype_polr_fallback()
 			if (!is.null(fallback)){
+				if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
 				return(fallback)
 			}
-			list(
-				b = c(NA, res$b[1]),
-				ssq_b_2 = res$ssq_b_1
-			)
+			list(b = c(NA, res$b[1]), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_1)
 		},
 
 		profile_loglik = function(beta){
