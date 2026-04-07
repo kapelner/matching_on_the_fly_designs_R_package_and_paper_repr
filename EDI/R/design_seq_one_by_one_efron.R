@@ -70,6 +70,5 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 	),
 	private = list(
 		weighted_coin_prob = NULL
-
 	)
 )

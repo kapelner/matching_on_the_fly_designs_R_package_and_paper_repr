@@ -51,7 +51,5 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		draw_ws_according_to_design = function(r = 100){
 			generate_permutations_bernoulli_cpp(as.integer(private$t), as.integer(r), as.numeric(private$prob_T))$w_mat
 		}
-	),
-	private = list(
 	)
 )

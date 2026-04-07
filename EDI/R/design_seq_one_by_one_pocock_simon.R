@@ -100,9 +100,11 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 	),
 
 	private = list(
-
-		get_bootstrap_indices = function() {
-			sample_int_replace_cpp(private$t, private$t)
+		p_best = NULL,
+		weights = NULL,
+		counts = NULL,
+		draw_bootstrap_indices = function() {
+			list(i_b = sample_int_replace_cpp(private$t, private$t), m_vec_b = NULL)
 		}
 	)
 )

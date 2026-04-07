@@ -69,7 +69,5 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 			)$w_mat
 		}
 
-	),
-	private = list(
 	)
 )

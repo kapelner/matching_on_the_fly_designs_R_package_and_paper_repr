@@ -46,7 +46,5 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 			)$w_mat
 		}
 
-	),
-	private = list(
 	)
 )

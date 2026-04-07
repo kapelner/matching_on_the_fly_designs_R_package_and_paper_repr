@@ -104,8 +104,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				do_warmup_iter = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
-						indices = private$bootstrap_sample_indices(private$n)
-						private$load_bootstrap_sample_into_worker(worker_state, indices)
+						boot_draw = private$bootstrap_sample_indices(private$n)
+						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
 						tryCatch(private$compute_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 					}
 				} else {
@@ -374,9 +374,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					indices = private$bootstrap_sample_indices(private$n)
+					boot_draw = private$bootstrap_sample_indices(private$n)
 					out[k] = tryCatch({
-						private$load_bootstrap_sample_into_worker(worker_state, indices)
+						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
 						private$compute_bootstrap_worker_estimate(worker_state)
 					}, error = function(e) NA_real_)
 				}
@@ -397,11 +397,22 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		},
 
 		bootstrap_sample_indices = function(n){
-			sample.int(n, n, replace = TRUE)
+			if (!is.null(private$des_obj)){
+				return(private$des_obj$draw_bootstrap_indices())
+			}
+			list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL)
 		},
 
-		bootstrap_subset_inference = function(indices, smooth = FALSE){
-			indices = as.integer(indices)
+		bootstrap_subset_inference = function(boot_draw, smooth = FALSE){
+			# boot_draw is list(i_b, m_vec_b) from des_obj$draw_bootstrap_indices()
+			# For backward compatibility also accept a bare integer vector.
+			if (is.list(boot_draw)){
+				indices = as.integer(boot_draw$i_b)
+				m_vec_b = boot_draw$m_vec_b
+			} else {
+				indices = as.integer(boot_draw)
+				m_vec_b = NULL
+			}
 			if (length(indices) == 0L) return(NULL)
 
 			orig_des = private$des_obj
@@ -423,13 +434,20 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (!is.null(orig_des_priv$w)) sub_des_priv$w = as.numeric(orig_des_priv$w[indices])
 			if (!is.null(orig_des_priv$y)) sub_des_priv$y = as.numeric(orig_des_priv$y[indices])
 			if (!is.null(orig_des_priv$dead)) sub_des_priv$dead = as.numeric(orig_des_priv$dead[indices])
-			if (!is.null(orig_des_priv$m)) sub_des_priv$m = as.integer(orig_des_priv$m[indices])
+			# Use Design-provided m_vec_b (pair-aware) if available; otherwise subset original m
+			if (!is.null(orig_des_priv$m)) {
+				sub_des_priv$m = if (!is.null(m_vec_b)) as.integer(m_vec_b) else as.integer(orig_des_priv$m[indices])
+			}
 			if (!is.null(orig_des_priv$y_i_t_i)) sub_des_priv$y_i_t_i = orig_des_priv$y_i_t_i[indices]
 			sub_des_priv$all_subject_data_cache = list()
 			sub_des_priv$p_raw_t = if (!is.null(sub_des_priv$Xraw)) ncol(sub_des_priv$Xraw) else NULL
 			sub_des_priv$t = length(indices)
 			sub_des_priv$n = length(indices)
 			sub_des_priv$fixed_sample = TRUE
+			# Reset bootstrap structure cache — indices changed, pair structure no longer valid
+			sub_des_priv$kk_boot_pair_rows   = NULL
+			sub_des_priv$kk_boot_i_reservoir = NULL
+			sub_des_priv$kk_boot_n_reservoir  = NULL
 			if (smooth && !is.null(sub_des_priv$y) && private$des_obj_priv_int$response_type == "continuous") {
 				sd_y = stats::sd(as.numeric(sub_des_priv$y), na.rm = TRUE)
 				if (is.finite(sd_y) && sd_y > 0) {
@@ -453,8 +471,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf
 		},
 
-		bootstrap_replication_stats = function(indices, smooth = FALSE){
-			sub_inf = private$bootstrap_subset_inference(indices, smooth = smooth)
+		bootstrap_replication_stats = function(boot_draw, smooth = FALSE){
+			sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = smooth)
 			if (is.null(sub_inf)) return(c(theta = NA_real_, se = NA_real_))
 			tryCatch({
 				sub_inf$compute_treatment_estimate(estimate_only = FALSE)
@@ -477,7 +495,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			for (b in seq_len(B)) {
 				idx = private$bootstrap_sample_indices(n)
-				stats_mat[b, ] = private$bootstrap_replication_stats(idx, smooth = smooth)
+				stats_mat[b, ] = private$bootstrap_replication_stats(idx, smooth = smooth)  # idx is a boot_draw list
 				if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 			}
 			if (isTRUE(na.rm)) {
@@ -560,7 +578,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				a = alpha_grid[j]
 				covered = logical(n_outer)
 				for (b in seq_len(n_outer)) {
-					idx = private$bootstrap_sample_indices(private$des_obj$get_n())
+					idx = private$bootstrap_sample_indices(private$des_obj$get_n())  # returns boot_draw list
 					outer_inf = private$bootstrap_subset_inference(idx, smooth = identical(type, "smoothed"))
 					if (is.null(outer_inf)) next
 					inner_boot = outer_inf$approximate_bootstrap_distribution_beta_hat_T(B = n_inner, show_progress = FALSE, debug = FALSE)

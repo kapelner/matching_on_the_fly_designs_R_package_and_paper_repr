@@ -37,6 +37,21 @@ serialize_beta_T = function(value){
 	as.character(value)
 }
 
+round_result_field = function(value){
+	if (is.null(value) || is.na(value)) return(NA_character_)
+	if (value == "") return("")
+	num = suppressWarnings(as.numeric(value))
+	if (!is.finite(num)) return(value)
+	sprintf("%.3f", num)
+}
+
+round_duration_field = function(value){
+	if (is.null(value) || is.na(value)) return(NA_real_)
+	num = suppressWarnings(as.numeric(value))
+	if (!is.finite(num)) return(num)
+	round(num, 3)
+}
+
 build_result_key = function(rep_val, beta_val, dataset_val, response_val, design_val, inference_val, function_run_val){
 	paste(
 		as.integer(rep_val),
@@ -142,9 +157,9 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 	} else {
 		paste(as.character(result), collapse = " ")
 	}
-	result_1 = if (length(result_vec) >= 1) result_vec[1] else NA_character_
+	result_1 = if (length(result_vec) >= 1) round_result_field(result_vec[1]) else NA_character_
 	is_debug_distribution = grepl("_debug$", function_run)
-	result_2 = if ((grepl("confidence_interval", function_run, fixed = TRUE) || is_debug_distribution) && length(result_vec) >= 2) result_vec[2] else NA_character_
+	result_2 = if ((grepl("confidence_interval", function_run, fixed = TRUE) || is_debug_distribution) && length(result_vec) >= 2) round_result_field(result_vec[2]) else NA_character_
 	beta_T_in_confidence_interval = NA
 	if (grepl("confidence_interval", function_run, fixed = TRUE) && length(result) >= 2 && all(is.finite(result[1:2]))){
 		ci_lo = min(result[1:2])
@@ -157,7 +172,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 		data.table(
 			rep = as.integer(rep_curr),
 			run_row_id = run_row_id,
-			duration_time_sec = duration_time_sec,
+			duration_time_sec = round_duration_field(duration_time_sec),
 			beta_T = beta_T,
 			r = as.integer(r),
 			pval_epsilon = pval_epsilon,

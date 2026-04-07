@@ -376,6 +376,12 @@ Design = R6::R6Class("Design",
 		kk_cluster_id_m_vec  = NULL,
 		permutations_cache   = list(),
 		lin_centered_covariates = NULL,
+		kk_boot_pair_rows    = NULL,
+		kk_boot_i_reservoir  = NULL,
+		kk_boot_n_reservoir  = NULL,
+		draw_bootstrap_indices = function(){
+			list(i_b = sample.int(private$n, private$n, replace = TRUE), m_vec_b = NULL)
+		},
 		strata_cols = NULL,
 		prob_T = NULL,
 		response_type = NULL,

@@ -69,16 +69,19 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				dead = private$dead
 				w = private$w
 				X = private$get_X()
-				m_vec = private$m
-				if (is.null(m_vec)){
-					m_vec = rep(NA_integer_, n)
-				}
-				m_vec[is.na(m_vec)] = 0
-				m = private$cached_values$KKstats$m
 
-				# Identify reservoir and matched observations
-				i_reservoir = which(m_vec == 0)
-				n_reservoir = length(i_reservoir)
+				# Let Design initialise and own the bootstrap pair structure
+				des_priv = private$des_obj_priv_int
+				.init_kk_bootstrap_structure(des_priv)
+				n_reservoir = des_priv$kk_boot_n_reservoir
+				m            = nrow(des_priv$kk_boot_pair_rows)
+
+				# For the C++ fast-path we still need i_reservoir / m_vec in Inference scope
+				i_reservoir  = des_priv$kk_boot_i_reservoir
+				m_vec = private$m
+				if (is.null(m_vec)) m_vec = rep(0L, n)
+				m_vec = as.integer(m_vec)
+				m_vec[is.na(m_vec)] = 0L
 
 				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
 				if (!isTRUE(debug) && private$has_private_method("compute_fast_bootstrap_distr")) {
@@ -89,14 +92,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				}
 
 				kk_boot_context = private$create_kk_bootstrap_context(
-					y = y,
-					dead = dead,
-					w = w,
-					X = X,
-					m_vec = m_vec,
-					m = m,
-					i_reservoir = i_reservoir,
-					n_reservoir = n_reservoir
+					y = y, dead = dead, w = w, X = X,
+					m = m, n_reservoir = n_reservoir
 				)
 
 				if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
@@ -108,7 +105,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					if (actual_cores > 1L) {
 						do_warmup_iter = function() {
 							worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
-							sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+							sample_info = des_priv$draw_bootstrap_indices()
 							private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 							tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 						}
@@ -132,21 +129,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					debug_results = vector("list", B)
 					has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
 					for (b in seq_len(B)) {
-						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-						if (m > 0) {
-							pairs_to_include = sample(seq_len(m), m, replace = TRUE)
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-							for (new_pair_id in seq_len(m)) {
-								orig_pid = pairs_to_include[new_pair_id]
-								pair_idx = which(m_vec == orig_pid)
-								i_matched_b = c(i_matched_b, pair_idx)
-								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
-							}
-						} else {
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-						}
-						i_b = c(i_reservoir_b, i_matched_b)
-						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
+						boot_sample = des_priv$draw_bootstrap_indices()
+						i_b   = boot_sample$i_b
+						m_vec_b = boot_sample$m_vec_b
 						iter_warns = character(0)
 						iter_val = withCallingHandlers(
 							tryCatch({
@@ -197,21 +182,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 
 					has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
 					for (b in 1:B) {
-						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-						if (m > 0) {
-							pairs_to_include = sample(seq_len(m), m, replace = TRUE)
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-							for (new_pair_id in seq_len(m)) {
-								orig_pid = pairs_to_include[new_pair_id]
-								pair_idx = which(m_vec == orig_pid)
-								i_matched_b = c(i_matched_b, pair_idx)
-								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
-							}
-						} else {
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-						}
-						i_b = c(i_reservoir_b, i_matched_b)
-						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
+						boot_sample = des_priv$draw_bootstrap_indices()
+						i_b    = boot_sample$i_b
+						m_vec_b = boot_sample$m_vec_b
 						boot_inf_obj = self$duplicate()
 						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
 						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
@@ -231,23 +204,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					# Parallel bootstrap execution for KK designs
 					cores_to_use = self$num_cores
 
-					# Warm-up guard: run 1 iteration at 1 thread to estimate per-iteration cost.
-					# Fork overhead on large R sessions can be 0.1-1s; only parallelize if
-					# computation clearly outweighs that cost.
 					if (cores_to_use > 1L) {
-						i_res_w = sample(i_reservoir, n_reservoir, replace = TRUE)
-						if (m > 0) {
-							pairs_w = sample(1:m, m, replace = TRUE)
-							i_mat_w = integer(0); m_vm_w = integer(0)
-							for (np in 1:m) {
-								op = pairs_w[np]; pi = which(m_vec == op)
-								i_mat_w = c(i_mat_w, pi); m_vm_w = c(m_vm_w, np, np)
-							}
-						} else {
-							i_mat_w = integer(0); m_vm_w = integer(0)
-						}
-						i_b_w = c(i_res_w, i_mat_w)
-						m_vec_b_w = c(rep(0, n_reservoir), m_vm_w)
+						boot_sample_w = des_priv$draw_bootstrap_indices()
+						i_b_w   = boot_sample_w$i_b
+						m_vec_b_w = boot_sample_w$m_vec_b
 						t_warmup_kk = system.time({
 							boot_w = self$duplicate()
 							boot_w$.__enclos_env__$private$y = y[i_b_w]
@@ -269,54 +229,11 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					kk_template = self$duplicate()
 					has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
 
-					# Internal task for bootstrap execution
-					kk_task = function(b) {
-						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-						if (m > 0) {
-							pairs_to_include = sample(seq_len(m), m, replace = TRUE)
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-							for (new_pair_id in seq_len(m)) {
-								orig_pid = pairs_to_include[new_pair_id]
-								pair_idx = which(m_vec == orig_pid)
-								i_matched_b = c(i_matched_b, pair_idx)
-								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
-							}
-						} else {
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-						}
-						i_b = c(i_reservoir_b, i_matched_b)
-						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
-						boot_inf_obj = kk_template$duplicate()
-						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-						boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-						boot_inf_obj$.__enclos_env__$private$cached_values = list()
-						tryCatch({
-							boot_inf_obj$.__enclos_env__$private$m = m_vec_b
-							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-							if (has_res_stat) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
-						}, error = function(e) NA_real_)
-					}
-
 					# Use private$par_lapply which handles both persistent fork clusters and other strategies.
 					beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
-						i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-						if (m > 0) {
-							pairs_to_include = sample(1:m, m, replace = TRUE)
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-							for (new_pair_id in 1:m) {
-								orig_pid = pairs_to_include[new_pair_id]
-								pair_idx = which(m_vec == orig_pid)
-								i_matched_b = c(i_matched_b, pair_idx)
-								m_vec_b_matched = c(m_vec_b_matched, new_pair_id, new_pair_id)
-							}
-						} else {
-							i_matched_b = integer(0); m_vec_b_matched = integer(0)
-						}
-						i_b = c(i_reservoir_b, i_matched_b)
-						m_vec_b = c(rep(0L, n_reservoir), m_vec_b_matched)
+						boot_sample = des_priv$draw_bootstrap_indices()
+						i_b    = boot_sample$i_b
+						m_vec_b = boot_sample$m_vec_b
 						worker_inf = kk_template$duplicate()
 						worker_inf$.__enclos_env__$private$y = y[i_b]
 						worker_inf$.__enclos_env__$private$dead = dead[i_b]
@@ -331,7 +248,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						}, error = function(e) NA_real_)
 					}, n_cores = cores_to_use, show_progress = private$verbose,
 					export_list = list(
-						i_reservoir = i_reservoir, n_reservoir = n_reservoir, m = m, m_vec = m_vec,
+						des_priv = des_priv,
 						y = y, dead = dead, w = w, X = X, kk_template = kk_template,
 						has_res_stat = has_res_stat
 					)))
@@ -348,13 +265,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			TRUE
 		},
 
-		create_kk_bootstrap_context = function(y, dead, w, X, m_vec, m, i_reservoir, n_reservoir){
-			pair_rows = matrix(integer(0), nrow = m, ncol = 2L)
-			if (m > 0L) {
-				for (pair_id in seq_len(m)) {
-					pair_rows[pair_id, ] = which(m_vec == pair_id)
-				}
-			}
+		create_kk_bootstrap_context = function(y, dead, w, X, m, n_reservoir){
 			X_mat = if (is.null(X)) {
 				matrix(numeric(0), nrow = length(y), ncol = 0L)
 			} else {
@@ -365,19 +276,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				dead = dead,
 				w = as.integer(w),
 				X = X_mat,
-				m_vec = m_vec,
 				m = as.integer(m),
-				i_reservoir = as.integer(i_reservoir),
-				n_reservoir = as.integer(n_reservoir),
-				pair_rows = pair_rows
-			)
-		},
-
-		draw_kk_bootstrap_sample = function(kk_boot_context){
-			draw_kk_bootstrap_sample_cpp(
-				i_reservoir = kk_boot_context$i_reservoir,
-				pair_rows = kk_boot_context$pair_rows,
-				n_reservoir = kk_boot_context$n_reservoir
+				n_reservoir = as.integer(n_reservoir)
 			)
 		},
 
@@ -431,7 +331,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				iter_warns = character(0)
 				iter_val = withCallingHandlers(
 					tryCatch({
-						sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+						sample_info = private$des_obj_priv_int$draw_bootstrap_indices()
 						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 						private$compute_kk_bootstrap_worker_estimate(worker_state)
 					}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
@@ -464,12 +364,13 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
+			des_priv_rw = private$des_obj_priv_int
 
 			run_chunk = function(idxs) {
 				worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					sample_info = private$draw_kk_bootstrap_sample(kk_boot_context)
+					sample_info = des_priv_rw$draw_bootstrap_indices()
 					out[k] = tryCatch({
 						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 						private$compute_kk_bootstrap_worker_estimate(worker_state)

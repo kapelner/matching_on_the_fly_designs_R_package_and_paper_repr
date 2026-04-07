@@ -179,7 +179,5 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		print_current_subject_assignment = function(){
 			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
 		}
-	),
-
-	private = list()
+	)
 )

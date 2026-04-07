@@ -77,7 +77,5 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 				as.numeric(private$prob_T)
 			)$w_mat
 		}
-	),
-	private = list(
 	)
 )

@@ -79,6 +79,15 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		mahal_match = NULL,
 		bms = NULL,
 
+		draw_bootstrap_indices = function(){
+			private$ensure_bms_computed()
+			if (is.null(private$m)){
+				n = self$get_n()
+				return(list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL))
+			}
+			.draw_kk_bootstrap_indices(private)
+		},
+
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

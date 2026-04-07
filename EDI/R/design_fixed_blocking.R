@@ -14,6 +14,11 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
+		#' @param bootstrap_type How to bootstrap. \code{"within_blocks"} (default) resamples
+		#'   subjects within each stratum with replacement, keeping stratum sizes fixed.
+		#'   \code{"resample_blocks"} resamples the strata themselves with replacement, taking
+		#'   all subjects from each drawn stratum; appropriate when blocks are themselves a
+		#'   random sample from a population of blocks.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
 		#' @param verbose A flag for verbosity.
@@ -23,14 +28,16 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						strata_cols,
 						response_type,
 						prob_T = 0.5,
+						bootstrap_type = c("within_blocks", "resample_blocks"),
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
 						verbose = FALSE
 					) {
 			assertCharacter(strata_cols, min.len = 1)
+			bootstrap_type = match.arg(bootstrap_type)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
+			private$bootstrap_type = bootstrap_type
 			private$uses_covariates = TRUE
 		},
 
@@ -74,7 +81,30 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		}
 	),
 	private = list(
-		strata_cols = NULL
-		
+		strata_cols = NULL,
+		bootstrap_type = NULL,
+
+		get_strata_keys = function(){
+			n = private$t
+			vapply(1:n, function(i) {
+				vals = vapply(private$strata_cols, function(col) {
+					val = private$Xraw[i, ][[col]]
+					if (is.na(val)) "NA" else as.character(val)
+				}, character(1))
+				paste(vals, collapse = "|")
+			}, character(1))
+		},
+
+		draw_bootstrap_indices = function(){
+			strata_keys = private$get_strata_keys()
+			if (private$bootstrap_type == "within_blocks") {
+				list(i_b = stratified_bootstrap_indices_cpp(as.character(strata_keys)), m_vec_b = NULL)
+			} else {
+				unique_keys = unique(strata_keys)
+				sampled_keys = sample(unique_keys, length(unique_keys), replace = TRUE)
+				i_b = unlist(lapply(sampled_keys, function(key) which(strata_keys == key)), use.names = FALSE)
+				list(i_b = as.integer(i_b), m_vec_b = NULL)
+			}
+		}
 	)
 )

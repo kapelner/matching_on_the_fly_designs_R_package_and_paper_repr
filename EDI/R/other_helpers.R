@@ -482,6 +482,46 @@ NULL
 	full
 }
 
+# Computes and caches the structural bootstrap components (i_reservoir, pair_rows, n_reservoir)
+# for designs with a match vector (KK14, FixedBinaryMatch). Idempotent: no-op if already cached.
+.init_kk_bootstrap_structure = function(des_priv){
+	if (!is.null(des_priv$kk_boot_pair_rows)) return(invisible(NULL))
+	m_vec = des_priv$m
+	n = des_priv$n
+	if (is.null(m_vec)){
+		des_priv$kk_boot_i_reservoir  = seq_len(n)
+		des_priv$kk_boot_n_reservoir  = n
+		des_priv$kk_boot_pair_rows    = matrix(integer(0), nrow = 0L, ncol = 2L)
+		return(invisible(NULL))
+	}
+	m_vec_int = as.integer(m_vec)
+	m_vec_int[is.na(m_vec_int)] = 0L
+	i_reservoir = which(m_vec_int == 0L)
+	m_max = max(m_vec_int)
+	pair_rows = if (m_max > 0L) {
+		pr = matrix(integer(0), nrow = m_max, ncol = 2L)
+		for (pid in seq_len(m_max)) pr[pid, ] = which(m_vec_int == pid)
+		pr
+	} else {
+		matrix(integer(0), nrow = 0L, ncol = 2L)
+	}
+	des_priv$kk_boot_i_reservoir = i_reservoir
+	des_priv$kk_boot_n_reservoir = length(i_reservoir)
+	des_priv$kk_boot_pair_rows   = pair_rows
+	invisible(NULL)
+}
+
+# Draws a KK-aware bootstrap sample: resamples reservoir subjects iid and matched pairs as units.
+# Returns list(i_b, m_vec_b) compatible with bootstrap_subset_inference.
+.draw_kk_bootstrap_indices = function(des_priv){
+	.init_kk_bootstrap_structure(des_priv)
+	draw_kk_bootstrap_sample_cpp(
+		i_reservoir  = des_priv$kk_boot_i_reservoir,
+		pair_rows    = des_priv$kk_boot_pair_rows,
+		n_reservoir  = des_priv$kk_boot_n_reservoir
+	)
+}
+
 .extract_se_from_rq_fit = function(fit, coef_name){
 	is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
 

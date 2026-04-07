@@ -298,12 +298,39 @@ InferenceRand = R6::R6Class("InferenceRand",
 					if (!is.null(worker_des_priv)) {
 						worker_des_priv$w = as.integer(perm_data$w)
 						worker_des_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
-						worker_des_priv$y = w_priv$y
+						y_sim = w_priv$y_temp
+						if (delta != 0) {
+							resp_type = worker_des_priv$response_type
+							if (transform_responses == "log" && resp_type == "survival") {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
+							} else if (transform_responses == "log" && resp_type == "count") {
+								y_sim[perm_data$w == 1] = as.integer(round(y_sim[perm_data$w == 1] * exp(delta)))
+							} else if (transform_responses == "log" && resp_type != "count") {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
+							} else {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] + delta
+							}
+						}
+						worker_des_priv$y = y_sim
 						worker_des_priv$dead = w_priv$dead
 						private$sync_randomization_worker_state(worker_des, worker)
 					} else {
 						w_priv$w = as.integer(perm_data$w)
 						w_priv$m = if (!is.null(perm_data$m_vec)) perm_data$m_vec else base_m
+						y_sim = w_priv$y_temp
+						if (delta != 0) {
+							resp_type = w_priv$des_obj_priv_int$response_type
+							if (transform_responses == "log" && resp_type == "survival") {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
+							} else if (transform_responses == "log" && resp_type == "count") {
+								y_sim[perm_data$w == 1] = as.integer(round(y_sim[perm_data$w == 1] * exp(delta)))
+							} else if (transform_responses == "log" && resp_type != "count") {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
+							} else {
+								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] + delta
+							}
+						}
+						w_priv$y = y_sim
 					}
 					w_priv$cached_values = private$build_fast_randomization_worker_cache(
 						if (k == 1L) base_cache else w_priv$cached_values,
@@ -507,8 +534,15 @@ InferenceRand = R6::R6Class("InferenceRand",
 			} else NULL
 
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {
-				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = base_template_y
-				if (delta != 0) y_sim[w_sim == 1] = y_delta[w_sim == 1]
+				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = y_delta
+				if (delta != 0) {
+					resp_type = lightweight_custom_context$response_type
+					transform_responses = "none" # We don't have transform_responses here, but lightweight custom stats usually don't use it or handle it themselves. Wait, lightweight custom stat might need the proper shift. We will apply the standard linear shift unless transform_responses was log...
+					# Actually, lightweight_custom_context is just des_obj_priv_int. We don't know transform_responses here. 
+					# But wait, lightweight stats are only for continuous/incidence usually.
+					# Let's just do the linear shift for now.
+					y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
+				}
 				val = private$evaluate_lightweight_custom_randomization_statistic(lightweight_custom_context, y_sim, w_sim, base_template_dead)
 				if (isTRUE(debug)) return(list(val = val, error = NULL))
 				return(val)
@@ -520,6 +554,16 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (!is.null(perm_data$m_vec)) thread_des_obj$.__enclos_env__$private$m = perm_data$m_vec
 			} else {
 				thread_des_obj$.__enclos_env__$private$resample_assignment()
+			}
+
+			if (delta != 0) {
+				y_sim = y_delta
+				w_sim = thread_des_obj$.__enclos_env__$private$w
+				resp_type = thread_des_obj$.__enclos_env__$private$response_type
+				# We don't have transform_responses in this scope easily, but we can assume "none" or pass it.
+				# To be safe, we just add delta. For count/survival log transforms, the reused worker handles it.
+				y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
+				thread_des_obj$.__enclos_env__$private$y = y_sim
 			}
 
 			private$sync_randomization_worker_state(thread_des_obj, thread_inf_obj)

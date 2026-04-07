@@ -41,7 +41,5 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 				as.numeric(private$prob_T)
 			)$w_mat
 		}
-	),
-	private = list(
 	)
 )
