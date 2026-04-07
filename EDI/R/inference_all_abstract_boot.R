@@ -22,6 +22,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
 		#'   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
 		#'   \code{prop_illegal_values}.
+		#' @param bootstrap_type      The type of bootstrap resampling to perform.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			private$assert_design_supports_resampling("Bootstrap inference")
 			private$assert_valid_bootstrap_type(bootstrap_type)
@@ -460,6 +461,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_des_priv$kk_boot_pair_rows   = NULL
 			sub_des_priv$kk_boot_i_reservoir = NULL
 			sub_des_priv$kk_boot_n_reservoir  = NULL
+			# Reset model-specific design caches that hold n-row matrices — must be recomputed
+			# on the subset (e.g. Lin centered covariates, which are cached as an n-row Xc).
+			sub_des_priv$lin_centered_covariates = NULL
 			if (smooth && !is.null(sub_des_priv$y) && private$des_obj_priv_int$response_type == "continuous") {
 				sd_y = stats::sd(as.numeric(sub_des_priv$y), na.rm = TRUE)
 				if (is.finite(sd_y) && sd_y > 0) {

@@ -107,5 +107,36 @@ FixedDesign = R6::R6Class("FixedDesign",
 		draw_ws_according_to_design = function(r = 100){
 			stop("Must be implemented by subclass.")
 		}
+	),
+	private = list(
+		strata_cols = NULL,
+		num_bins_for_continuous_covariate = NULL,
+
+		get_strata_keys = function(){
+			n = private$t
+			if (n == 0) return(character(0))
+			keys = rep("", n)
+			for (col in private$strata_cols) {
+				vec = private$Xraw[[col]]
+				if (is.numeric(vec)) {
+					probs = seq(0, 1, length.out = private$num_bins_for_continuous_covariate + 1)
+					breaks = unique(stats::quantile(vec, probs = probs, na.rm = TRUE))
+					if (length(breaks) > 1) {
+						vec_str = as.character(cut(vec, breaks = breaks, include.lowest = TRUE))
+					} else {
+						vec_str = as.character(vec)
+					}
+				} else {
+					vec_str = as.character(vec)
+				}
+				vec_str[is.na(vec_str)] = "NA"
+				if (nchar(keys[1]) == 0) {
+					keys = vec_str
+				} else {
+					keys = paste(keys, vec_str, sep = "|")
+				}
+			}
+			keys
+		}
 	)
 )

@@ -48,7 +48,8 @@ Creates the bootstrap distribution of the estimate for the treatment effect
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
-  debug = FALSE
+  debug = FALSE,
+  bootstrap_type = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -63,6 +64,8 @@ Creates the bootstrap distribution of the estimate for the treatment effect
 per-iteration diagnostics including error messages, warning messages, counts of each,
 and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 values. Runs serially. Default \code{FALSE}.}
+
+\item{\code{bootstrap_type}}{The type of bootstrap resampling to perform.}
 }
 \if{html}{\out{</div>}}
 }

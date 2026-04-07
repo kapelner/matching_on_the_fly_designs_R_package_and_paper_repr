@@ -68,6 +68,7 @@ Initialize a fixed stratified blocking experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
+  num_bins_for_continuous_covariate = 2,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -85,6 +86,8 @@ Initialize a fixed stratified blocking experimental design
 \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
 \item{\code{n}}{The sample size.}
+
+\item{\code{num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
 
 \item{\code{verbose}}{A flag for verbosity.}
 }

@@ -17,6 +17,7 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#' @param prob_T	The probability of the treatment assignment for each cluster.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
+		#' @param num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
 		#' @param verbose	Flag for verbosity.
 		#'
 		#' @return 			A new `FixedDesignBlockedCluster` object
@@ -28,14 +29,16 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				
+				num_bins_for_continuous_covariate = 2,
 				verbose = FALSE
 			) {
 			assertCharacter(strata_cols, min.len = 1)
 			assertCharacter(cluster_col, len = 1)
+			assertCount(num_bins_for_continuous_covariate, positive = TRUE)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
 			private$cluster_col = cluster_col
+			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
 			private$uses_covariates = TRUE
 		},
 
@@ -49,13 +52,7 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			
-			strata_keys = vapply(1:private$t, function(i) {
-				vals = vapply(private$strata_cols, function(col) {
-					val = private$Xraw[i, ][[col]]
-					if (is.na(val)) "NA" else as.character(val)
-				}, character(1))
-				paste(vals, collapse = "|")
-			}, character(1))
+			strata_keys = private$get_strata_keys()
 			
 			cluster_ids = as.character(private$Xraw[[private$cluster_col]])
 			
@@ -71,18 +68,11 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 	),
 
 	private = list(
-		strata_cols = NULL,
 		cluster_col = NULL,
 
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			n = private$t
-			strata_keys = vapply(1:n, function(i) {
-				vals = vapply(private$strata_cols, function(col) {
-					val = private$Xraw[i, ][[col]]
-					if (is.na(val)) "NA" else as.character(val)
-				}, character(1))
-				paste(vals, collapse = "|")
-			}, character(1))
+			strata_keys = private$get_strata_keys()
 			cluster_ids = as.character(private$Xraw[1:n, ][[private$cluster_col]])
 
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {

@@ -93,7 +93,8 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \if{html}{\out{<div class="r">}}\preformatted{InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
-  debug = FALSE
+  debug = FALSE,
+  bootstrap_type = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -106,6 +107,8 @@ Creates the boostrap distribution of the estimate for the treatment effect
 
 \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics. Default \code{FALSE}.}
+
+\item{\code{bootstrap_type}}{The type of bootstrap resampling to perform.}
 }
 \if{html}{\out{</div>}}
 }

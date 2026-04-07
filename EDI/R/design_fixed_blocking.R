@@ -16,6 +16,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
+		#' @param num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
 		#' @param verbose A flag for verbosity.
 		#'
 		#' @return	A new `FixedDesignBlocking` object
@@ -25,11 +26,14 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
+						num_bins_for_continuous_covariate = 2,
 						verbose = FALSE
 					) {
 			assertCharacter(strata_cols, min.len = 1)
+			assertCount(num_bins_for_continuous_covariate, positive = TRUE)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
+			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
 			private$uses_covariates = TRUE
 		},
 
@@ -42,13 +46,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		draw_ws_according_to_design = function(r = 100){
 			self$assert_all_subjects_arrived()
 			
-			strata_keys = vapply(1:private$t, function(i) {
-				vals = vapply(private$strata_cols, function(col) {
-					val = private$Xraw[i, ][[col]]
-					if (is.na(val)) "NA" else as.character(val)
-				}, character(1))
-				paste(vals, collapse = "|")
-			}, character(1))
+			strata_keys = private$get_strata_keys()
 			
 			# Use randomizr::block_ra for canonical stratified blocking if available,
 			# or fallback to our C++ implementation.
@@ -73,19 +71,6 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		}
 	),
 	private = list(
-		strata_cols = NULL,
-
-		get_strata_keys = function(){
-			n = private$t
-			vapply(1:n, function(i) {
-				vals = vapply(private$strata_cols, function(col) {
-					val = private$Xraw[i, ][[col]]
-					if (is.na(val)) "NA" else as.character(val)
-				}, character(1))
-				paste(vals, collapse = "|")
-			}, character(1))
-		},
-
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			strata_keys = private$get_strata_keys()
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {

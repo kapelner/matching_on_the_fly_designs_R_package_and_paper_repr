@@ -54,6 +54,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @param show_progress Description for show_progress
 		#' @param debug         If \code{TRUE}, return a list with the distribution values and
 		#'   per-iteration diagnostics. Default \code{FALSE}.
+		#' @param bootstrap_type      The type of bootstrap resampling to perform.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 				private$assert_valid_bootstrap_type(bootstrap_type)
 				if (!private$has_match_structure){
