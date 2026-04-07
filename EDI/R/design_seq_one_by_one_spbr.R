@@ -87,6 +87,20 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 		block_size = NULL,
 		strata_states = NULL,
 
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
+			strata_keys = vapply(1:private$t, function(i) {
+				private$get_strata_key(private$Xraw[i, ])
+			}, character(1))
+			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
+				list(i_b = stratified_bootstrap_indices_cpp(as.character(unname(strata_keys))), m_vec_b = NULL)
+			} else {
+				unique_keys = unique(strata_keys)
+				sampled_keys = sample(unique_keys, length(unique_keys), replace = TRUE)
+				i_b = unlist(lapply(sampled_keys, function(key) which(strata_keys == key)), use.names = FALSE)
+				list(i_b = as.integer(i_b), m_vec_b = NULL)
+			}
+		},
+
 		get_strata_key = function(x_row) {
 			vals = vapply(private$strata_cols, function(col) {
 				val = x_row[[col]]

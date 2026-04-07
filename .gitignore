@@ -174,4 +174,10 @@ test.log
 benchmark_final.log
 benchmark_run.log
 .codex
+prove_it.R
+test_multi_robust.R
+test_multi_robust_cars.R
+test_multi_robust_cars_exact.R
+test_robust_cars.R
+
 

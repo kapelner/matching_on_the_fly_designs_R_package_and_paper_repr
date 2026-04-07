@@ -66,6 +66,18 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 		block_ids = NULL,
 		distance_matrix = NULL,
 
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
+			block_ids = as.character(private$get_or_compute_block_ids())
+			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
+				list(i_b = stratified_bootstrap_indices_cpp(block_ids), m_vec_b = NULL)
+			} else {
+				unique_blocks = unique(block_ids)
+				sampled_blocks = sample(unique_blocks, length(unique_blocks), replace = TRUE)
+				i_b = unlist(lapply(sampled_blocks, function(b) which(block_ids == b)), use.names = FALSE)
+				list(i_b = as.integer(i_b), m_vec_b = NULL)
+			}
+		},
+
 		assert_feasible_block_sizes = function(n){
 			if (private$K > n) {
 				stop(

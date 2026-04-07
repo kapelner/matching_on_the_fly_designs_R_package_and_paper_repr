@@ -116,7 +116,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		morrison = NULL,
 		p = NULL,
 
-		draw_bootstrap_indices = function(){
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			.draw_kk_bootstrap_indices(private)
 		},
 

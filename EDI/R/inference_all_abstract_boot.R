@@ -22,8 +22,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
 		#'   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
 		#'   \code{prop_illegal_values}.
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE){
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			private$assert_design_supports_resampling("Bootstrap inference")
+			private$assert_valid_bootstrap_type(bootstrap_type)
 			assertCount(B, positive = TRUE); assertFlag(debug)
 
 			# Check cache (skipped in debug mode to always get fresh diagnostic results)
@@ -104,7 +105,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				do_warmup_iter = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
-						boot_draw = private$bootstrap_sample_indices(private$n)
+						boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
 						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
 						tryCatch(private$compute_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 					}
@@ -129,7 +130,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				private$compute_bootstrap_distribution_with_reused_workers(
 					B = B,
 					actual_cores = actual_cores,
-					show_progress = show_progress
+					show_progress = show_progress,
+					bootstrap_type = bootstrap_type
 				)
 			} else {
 				# Use private$par_lapply which handles both persistent fork clusters and other strategies.
@@ -301,6 +303,16 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
 
+		assert_valid_bootstrap_type = function(bootstrap_type){
+			if (is.null(bootstrap_type)) return(invisible(NULL))
+			assertChoice(bootstrap_type, c("within_blocks", "resample_blocks"))
+			valid_blocking_classes = c("FixedDesignBlocking", "FixedDesignOptimalBlocks", "DesignSeqOneByOneSPBR", "FixedDesignBlockedCluster")
+			if (!any(vapply(valid_blocking_classes, function(cls) is(private$des_obj, cls), logical(1)))){
+				stop("bootstrap_type can only be set for blocking designs: ", paste(valid_blocking_classes, collapse = ", "))
+			}
+			invisible(NULL)
+		},
+
 		supports_reusable_bootstrap_worker = function(){
 			FALSE
 		},
@@ -365,7 +377,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
 		},
 
-		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE){
+		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE, bootstrap_type = NULL){
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
@@ -374,7 +386,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					boot_draw = private$bootstrap_sample_indices(private$n)
+					boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
 					out[k] = tryCatch({
 						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
 						private$compute_bootstrap_worker_estimate(worker_state)
@@ -396,9 +408,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			), use.names = FALSE))
 		},
 
-		bootstrap_sample_indices = function(n){
+		bootstrap_sample_indices = function(n, bootstrap_type = NULL){
 			if (!is.null(private$des_obj)){
-				return(private$des_obj$draw_bootstrap_indices())
+				return(private$des_obj_priv_int$draw_bootstrap_indices(bootstrap_type))
 			}
 			list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL)
 		},

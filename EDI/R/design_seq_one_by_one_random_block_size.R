@@ -95,7 +95,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		block_sizes = NULL,
 		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
 
-		draw_bootstrap_indices = function() {
+		draw_bootstrap_indices = function(bootstrap_type = NULL) {
 			i_b = if (private$uses_covariates) {
 				strata_keys = vapply(1:private$t, function(i) {
 					private$get_strata_key(private$Xraw[i, ])

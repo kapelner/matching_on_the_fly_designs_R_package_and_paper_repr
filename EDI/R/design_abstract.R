@@ -379,7 +379,7 @@ Design = R6::R6Class("Design",
 		kk_boot_pair_rows    = NULL,
 		kk_boot_i_reservoir  = NULL,
 		kk_boot_n_reservoir  = NULL,
-		draw_bootstrap_indices = function(){
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			list(i_b = sample.int(private$n, private$n, replace = TRUE), m_vec_b = NULL)
 		},
 		strata_cols = NULL,

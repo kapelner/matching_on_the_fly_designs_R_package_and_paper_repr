@@ -79,7 +79,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		mahal_match = NULL,
 		bms = NULL,
 
-		draw_bootstrap_indices = function(){
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			private$ensure_bms_computed()
 			if (is.null(private$m)){
 				n = self$get_n()

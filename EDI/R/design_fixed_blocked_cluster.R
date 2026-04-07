@@ -72,6 +72,35 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 
 	private = list(
 		strata_cols = NULL,
-		cluster_col = NULL
+		cluster_col = NULL,
+
+		draw_bootstrap_indices = function(bootstrap_type = NULL){
+			n = private$t
+			strata_keys = vapply(1:n, function(i) {
+				vals = vapply(private$strata_cols, function(col) {
+					val = private$Xraw[i, ][[col]]
+					if (is.na(val)) "NA" else as.character(val)
+				}, character(1))
+				paste(vals, collapse = "|")
+			}, character(1))
+			cluster_ids = as.character(private$Xraw[1:n, ][[private$cluster_col]])
+
+			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
+				# Resample clusters within each stratum
+				unique_strata = unique(strata_keys)
+				i_b = unlist(lapply(unique_strata, function(stratum) {
+					stratum_idx = which(strata_keys == stratum)
+					stratum_clusters = unique(cluster_ids[stratum_idx])
+					sampled_clusters = sample(stratum_clusters, length(stratum_clusters), replace = TRUE)
+					unlist(lapply(sampled_clusters, function(cl) which(cluster_ids == cl)), use.names = FALSE)
+				}), use.names = FALSE)
+			} else {
+				# Resample blocks (strata) themselves
+				unique_strata = unique(strata_keys)
+				sampled_strata = sample(unique_strata, length(unique_strata), replace = TRUE)
+				i_b = unlist(lapply(sampled_strata, function(stratum) which(strata_keys == stratum)), use.names = FALSE)
+			}
+			list(i_b = as.integer(i_b), m_vec_b = NULL)
+		}
 	)
 )
