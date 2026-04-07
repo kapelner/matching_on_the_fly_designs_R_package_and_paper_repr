@@ -90,7 +90,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 						tryCatch({
 							worker_des = if (!is.null(des_template)) setup$template$duplicate() else NULL
 							worker_inf = if (!is.null(inf_template)) self$duplicate(verbose = FALSE, make_fork_cluster = FALSE) else NULL
-							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE)
+							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE)
 						}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
@@ -122,7 +122,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				do_warmup_iter = function() {
 					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 					w_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
-					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				}
 				# Run warmup TWICE and use the second timing. The first call often pays
 				# cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
@@ -151,7 +151,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				suppressWarnings({
 					worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 					worker_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
-					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
 				})
 			}, n_cores = actual_rand_cores, show_progress = show_progress,
 			export_list = list(
@@ -487,21 +487,48 @@ InferenceRand = R6::R6Class("InferenceRand",
 			paste(as.integer(r), delta_key, transform_responses, perm_sig, sep = "|")
 		},
 
+		shift_randomization_responses = function(y, w, delta, transform_responses, response_type, inverse = FALSE){
+			if (delta == 0) return(y)
+			y_shifted = y
+			idx_treated = which(w == 1)
+			if (length(idx_treated) == 0L) return(y_shifted)
+
+			signed_delta = if (isTRUE(inverse)) -delta else delta
+			if (transform_responses == "logit") {
+				y_shifted[idx_treated] = inv_logit(logit(y_shifted[idx_treated]) + signed_delta)
+				return(y_shifted)
+			}
+			if (transform_responses == "log" && response_type == "survival") {
+				y_shifted[idx_treated] = y_shifted[idx_treated] * exp(signed_delta)
+				return(y_shifted)
+			}
+			if (transform_responses == "log" && response_type == "count") {
+				y_shifted[idx_treated] = as.integer(round(y_shifted[idx_treated] * exp(signed_delta)))
+				return(y_shifted)
+			}
+			if (transform_responses == "log" && response_type != "count") {
+				y_shifted[idx_treated] = y_shifted[idx_treated] * exp(signed_delta)
+				return(y_shifted)
+			}
+
+			y_shifted[idx_treated] = y_shifted[idx_treated] + signed_delta
+			y_shifted
+		},
+
 		setup_randomization_template_and_shifts = function(delta, transform_responses){
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
 			y_delta = template$.__enclos_env__$private$y
 			if (delta != 0){
 				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
-				
-				if (transform_responses == "log" && private$des_obj_priv_int$response_type == "survival") {
-					template$.__enclos_env__$private$y[private$w == 1] = template$.__enclos_env__$private$y[private$w == 1] / exp(delta)
-				} else if (transform_responses == "log" && private$des_obj_priv_int$response_type == "count") {
-					template$.__enclos_env__$private$y[private$w == 1] = as.integer(round(template$.__enclos_env__$private$y[private$w == 1] / exp(delta)))
-				} else {
-					template$.__enclos_env__$private$y[private$w == 1] = template$.__enclos_env__$private$y[private$w == 1] - delta
-					if (transform_responses == "log" && private$des_obj_priv_int$response_type != "count") template$.__enclos_env__$private$y = exp(template$.__enclos_env__$private$y)
-				}
+				template$.__enclos_env__$private$y = private$shift_randomization_responses(
+					y = template$.__enclos_env__$private$y,
+					w = private$w,
+					delta = delta,
+					transform_responses = transform_responses,
+					response_type = private$des_obj_priv_int$response_type,
+					inverse = TRUE
+				)
 				y_delta = template$.__enclos_env__$private$y
 			}
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
@@ -524,7 +551,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			invisible(NULL)
 		},
 
-		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE){
+		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, transform_responses, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (use_perms) {
 				if (!is.null(permutations$w_mat)) {
@@ -536,12 +563,13 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {
 				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = y_delta
 				if (delta != 0) {
-					resp_type = lightweight_custom_context$response_type
-					transform_responses = "none" # We don't have transform_responses here, but lightweight custom stats usually don't use it or handle it themselves. Wait, lightweight custom stat might need the proper shift. We will apply the standard linear shift unless transform_responses was log...
-					# Actually, lightweight_custom_context is just des_obj_priv_int. We don't know transform_responses here. 
-					# But wait, lightweight stats are only for continuous/incidence usually.
-					# Let's just do the linear shift for now.
-					y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
+					y_sim = private$shift_randomization_responses(
+						y = y_sim,
+						w = w_sim,
+						delta = delta,
+						transform_responses = transform_responses,
+						response_type = lightweight_custom_context$response_type
+					)
 				}
 				val = private$evaluate_lightweight_custom_randomization_statistic(lightweight_custom_context, y_sim, w_sim, base_template_dead)
 				if (isTRUE(debug)) return(list(val = val, error = NULL))
@@ -557,12 +585,13 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 
 			if (delta != 0) {
-				y_sim = y_delta
-				w_sim = thread_des_obj$.__enclos_env__$private$w
-				resp_type = thread_des_obj$.__enclos_env__$private$response_type
-				# We don't have transform_responses in this scope easily, but we can assume "none" or pass it.
-				# To be safe, we just add delta. For count/survival log transforms, the reused worker handles it.
-				y_sim[w_sim == 1] = y_sim[w_sim == 1] + delta
+				y_sim = private$shift_randomization_responses(
+					y = y_delta,
+					w = thread_des_obj$.__enclos_env__$private$w,
+					delta = delta,
+					transform_responses = transform_responses,
+					response_type = thread_des_obj$.__enclos_env__$private$response_type
+				)
 				thread_des_obj$.__enclos_env__$private$y = y_sim
 			}
 

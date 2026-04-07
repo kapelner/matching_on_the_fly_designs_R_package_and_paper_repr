@@ -44,37 +44,44 @@ InferenceSurvivalMultiDepCensTransformRegr = R6::R6Class("InferenceSurvivalMulti
 	),
 
 	private = list(
-		build_design_matrix = function(){
+		build_design_matrix_candidates = function(){
 			X_cov_orig = private$get_X()
-			if (ncol(X_cov_orig) == 0L){
+			if (is.null(X_cov_orig) || ncol(X_cov_orig) == 0L){
 				X = matrix(private$w, ncol = 1)
 				colnames(X) = "treatment"
-				return(X)
+				return(list(X))
 			}
 
 			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
-			best_X = NULL
+			candidates = list()
+			keys = character()
+			base_colnames = colnames(X_cov_orig)
+			if (is.null(base_colnames)) base_colnames = rep("x", ncol(X_cov_orig))
 			for (thresh in thresholds){
 				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
-				X = cbind(X_cov, treatment = private$w)
-				qr_X = qr(X)
-				if (qr_X$rank < ncol(X)){
-					keep = qr_X$pivot[seq_len(qr_X$rank)]
-					treat_col = which(colnames(X) == "treatment")
-					if (!(treat_col %in% keep)) keep = c(keep, treat_col)
-					keep = sort(unique(keep))
-					X = X[, keep, drop = FALSE]
-				}
-				if ("treatment" %in% colnames(X)){
-					best_X = X
-					break
+				X_full = cbind(treatment = private$w, X_cov)
+				reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), required_cols = 1L)
+				X_red = reduced$X_reduced
+				keep_idx = as.integer(reduced$keep)
+				if (length(keep_idx) == 0L) next
+				keep_idx0 = keep_idx
+				colnames(X_red) = colnames(X_full)[keep_idx0]
+				key = paste(colnames(X_red), collapse = "|")
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = X_red
+					keys = c(keys, key)
 				}
 			}
-			if (is.null(best_X)){
-				best_X = matrix(private$w, ncol = 1)
-				colnames(best_X) = "treatment"
+			if (length(candidates) == 0L){
+				X = matrix(private$w, ncol = 1)
+				colnames(X) = "treatment"
+				candidates[[1L]] = X
 			}
-			best_X
+			candidates
+		},
+
+		build_design_matrix = function(){
+			private$build_design_matrix_candidates()[[1L]]
 		}
 	)
-)
+	)
