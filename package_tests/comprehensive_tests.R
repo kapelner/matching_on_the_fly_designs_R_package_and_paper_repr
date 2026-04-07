@@ -9,6 +9,16 @@ source("package_tests/_dataset_load.R")
 args = commandArgs(trailingOnly = TRUE)
 Nrep      = if (length(args) >= 1) as.integer(args[1]) else 40L
 NUM_CORES = if (length(args) >= 2) as.integer(args[2]) else 2L
+ALL_RESPONSE_TYPES = c("continuous", "incidence", "proportion", "count", "survival", "ordinal")
+RESPONSE_TYPE_FILTER = if (length(args) >= 3) as.character(args[3]) else NA_character_
+if (!is.na(RESPONSE_TYPE_FILTER) && !(RESPONSE_TYPE_FILTER %in% ALL_RESPONSE_TYPES)) {
+	stop(
+		"Unsupported response_type filter: ",
+		RESPONSE_TYPE_FILTER,
+		". Supported values are: ",
+		paste(ALL_RESPONSE_TYPES, collapse = ", ")
+	)
+}
 set_num_cores(NUM_CORES)
 prob_censoring = 0.15
 r = 351
@@ -23,7 +33,11 @@ pending_response_header = NULL
 pending_design_header = NULL
 pending_banner = NULL
 
-results_file = paste0("package_tests/comprehensive_tests_results_nc_", NUM_CORES, ".csv")
+results_file = if (is.na(RESPONSE_TYPE_FILTER)) {
+	paste0("package_tests/comprehensive_tests_results_nc_", NUM_CORES, ".csv")
+} else {
+	paste0("package_tests/comprehensive_tests_results_nc_", NUM_CORES, "_", RESPONSE_TYPE_FILTER, ".csv")
+}
 existing_results_dt = if (file.exists(results_file)) data.table::fread(results_file) else data.table::data.table()
 run_row_id = if ("run_row_id" %in% colnames(existing_results_dt) && nrow(existing_results_dt) > 0L) {
 	as.integer(max(existing_results_dt$run_row_id, na.rm = TRUE))
@@ -1032,7 +1046,10 @@ for (rep_curr in 1:Nrep) {
 		pending_beta_header <<- paste0("  === beta_T = [", beta_T, "] ===")
 		for (dataset_name in names(datasets_and_response_models)){
 			pending_dataset_header <<- paste0("    === dataset: ", dataset_name, " ===")
-			for (response_type in c("continuous", "incidence", "proportion", "count", "survival", "ordinal")) {
+			for (response_type in ALL_RESPONSE_TYPES) {
+				if (!is.na(RESPONSE_TYPE_FILTER) && !identical(response_type, RESPONSE_TYPE_FILTER)) {
+					next
+				}
 				if (!(response_type %in% names(datasets_and_response_models[[dataset_name]]$y_original))) {
 					next
 				}

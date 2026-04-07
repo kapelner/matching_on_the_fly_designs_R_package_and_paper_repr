@@ -491,9 +491,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = smooth)
 			if (is.null(sub_inf)) return(c(theta = NA_real_, se = NA_real_))
 			tryCatch({
-				sub_inf$compute_treatment_estimate(estimate_only = FALSE)
-				theta = as.numeric(sub_inf$.__enclos_env__$private$cached_values$beta_hat_T)[1]
-				se = as.numeric(sub_inf$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
+				# Use the return value of compute_treatment_estimate() for theta.
+				# Reading cached_values$beta_hat_T is unreliable: some classes (e.g.
+				# GComp, KMDiff) return estimates directly without storing beta_hat_T.
+				theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = FALSE))[1L]
+				se = as.numeric(sub_inf$.__enclos_env__$private$cached_values$s_beta_hat_T)[1L]
 				if (!is.finite(theta)) theta = NA_real_
 				if (!is.finite(se)) se = NA_real_
 				c(theta = theta, se = se)

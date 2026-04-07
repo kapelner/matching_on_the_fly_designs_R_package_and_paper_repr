@@ -44,6 +44,15 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			if (nrow(x_new) != 1){
 				stop("You can only add one subject at a time.")
 			}
+			
+			if (private$t == 0 && !is.null(private$strata_cols)) {
+				for (col in private$strata_cols) {
+					if (is.numeric(x_new[[col]])) {
+						stop("Error: Continuous covariates are not allowed for stratification in sequential designs because stable binning cannot be determined on-the-fly. Please pre-discretize the numeric column(s) into factors/categories (e.g., using fixed clinical thresholds) before adding subjects to the experiment.")
+					}
+				}
+			}
+
 			j_with_NAs = is.na(unlist(x_new))
 			if (any(j_with_NAs) & private$t == 0){
 				x_new = x_new[which(!j_with_NAs)]

@@ -57,13 +57,19 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 			X
 		},
 
+		build_design_matrix_candidates = function(){
+			list(private$build_design_matrix())
+		},
+
 		generate_mod = function(estimate_only = FALSE){
-			mod = .fit_dep_cens_transform_model(
-				y = private$y,
-				dead = private$dead,
-				Xmm = private$build_design_matrix()
-			)
-			if (!is.null(mod)) return(mod)
+			for (Xmm in private$build_design_matrix_candidates()){
+				mod = .fit_dep_cens_transform_model(
+					y = private$y,
+					dead = private$dead,
+					Xmm = Xmm
+				)
+				if (!is.null(mod)) return(mod)
+			}
 			stop("Dependent-censoring transformation model failed to converge.")
 		}
 	)
