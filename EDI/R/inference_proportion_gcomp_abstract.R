@@ -118,8 +118,48 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			)
 		},
 
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			state = private$create_design_backed_bootstrap_worker_state()
+			state$base_X_full = private$build_named_design_matrix()
+			state$screening = private$bootstrap_screening_control
+			state$sample_usable = FALSE
+			state$current_X_full = NULL
+			state$current_y = NULL
+			state
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+			indices = as.integer(indices)
+			w_b = worker_state$worker_priv$w
+			y_b = worker_state$worker_priv$y
+			ctrl = worker_state$screening
+			worker_state$current_X_full = worker_state$base_X_full[indices, , drop = FALSE]
+			worker_state$current_y = y_b
+			worker_state$sample_usable = private$bootstrap_sample_is_usable(
+				w_b, y_b,
+				boundary_tol = ctrl$boundary_tol,
+				max_boundary_mass = ctrl$max_boundary_mass,
+				sep_tol = ctrl$sep_tol,
+				min_group_n = ctrl$min_group_n
+			)
+			invisible(NULL)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			if (!isTRUE(worker_state$sample_usable)) return(NA_real_)
+			worker_state$worker_priv$bootstrap_effect_from_sample(
+				worker_state$current_X_full,
+				worker_state$current_y
+			)
+		},
+
 		#' @description
-		#' Abbreviated bootstrap sampler that reuses the reduced column layout.
+		#' Abbreviated bootstrap sampler that reuses a bootstrap worker.
 		#' @param B Description for B
 		#' @param show_progress Description for show_progress
 		#' @param max_resample_attempts Description for max_resample_attempts
@@ -136,45 +176,35 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			assertNumber(sep_tol, lower = 0)
 			assertCount(min_group_n, positive = TRUE)
 			private$shared(estimate_only = TRUE)
-			cols = private$gcomp_design_colnames
-			if (is.null(cols)){
-				return(super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug))
+			old_bootstrap_screening = private$bootstrap_screening_control
+			private$bootstrap_screening_control = list(
+				boundary_tol = boundary_tol,
+				max_boundary_mass = max_boundary_mass,
+				sep_tol = sep_tol,
+				min_group_n = as.integer(min_group_n)
+			)
+			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
+
+			draw_one = function(worker_state){
+				attempt = 1L
+				repeat {
+					boot_draw = private$bootstrap_sample_indices(private$n)
+					private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+					if (isTRUE(worker_state$sample_usable)) {
+						return(private$compute_bootstrap_worker_estimate(worker_state))
+					}
+					attempt = attempt + 1L
+					if (attempt > max_resample_attempts) return(NA_real_)
+				}
 			}
 
-			X_full = private$build_named_design_matrix()
-			n = nrow(X_full)
-			y = private$y
-			w = private$w
-
-			#' @description
-			#' Draw sample
-			#' @param ... Other arguments passed to the method.
-				draw_sample = function(...){
-					attempt = 1
-					repeat {
-						i_b = sample_int_replace_cpp(n, n)
-						w_b = w[i_b]
-						y_b = y[i_b]
-						if (private$bootstrap_sample_is_usable(
-							w_b, y_b,
-							boundary_tol = boundary_tol,
-							max_boundary_mass = max_boundary_mass,
-							sep_tol = sep_tol,
-							min_group_n = min_group_n
-						)) break
-						attempt = attempt + 1
-						if (attempt > max_resample_attempts) return(NA_real_)
-					}
-					X_b = X_full[i_b, , drop = FALSE]
-					private$bootstrap_effect_from_sample(X_b, y_b)
-				}
-
 			if (isTRUE(debug)) {
+				worker_state = private$create_bootstrap_worker_state()
 				debug_results = vector("list", B)
 				for (b in seq_len(B)) {
 					iter_warns = character(0)
 					iter_val = withCallingHandlers(
-						tryCatch(draw_sample(), error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+						tryCatch(draw_one(worker_state), error = function(e) list(val = NA_real_, error = conditionMessage(e))),
 						warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
 					)
 					debug_results[[b]] = list(
@@ -198,13 +228,27 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					prop_iterations_with_warnings = mean(num_warnings_vec > 0),
 					prop_illegal_values = mean(!is.finite(values))
 				))
-			} else if (self$num_cores == 1){
-				vapply(seq_len(B), function(b) draw_sample(), numeric(1))
-			} else {
-				unlist(private$par_lapply(seq_len(B), function(b) draw_sample(), 
-				n_cores = min(2L, self$num_cores),
-					export_list = list(draw_sample = draw_sample, n = n, y = y, w = w, X_full = X_full, sample_int_replace_cpp = EDI:::sample_int_replace_cpp)))
 			}
+
+			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
+			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
+			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
+			chunks = split(seq_len(B), chunk_id)
+			run_chunk = function(idxs){
+				worker_state = private$create_bootstrap_worker_state()
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) out[k] = draw_one(worker_state)
+				out
+			}
+			if (actual_cores <= 1L) {
+				return(as.numeric(run_chunk(seq_len(B))))
+			}
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_cores,
+				show_progress = show_progress
+			)))
 		}
 	),
 
@@ -649,7 +693,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 
 			fit = private$fit_fractional_logit_with_sandwich(X_full, estimate_only = estimate_only)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
-			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
+			if (private$harden && (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
 				fit = private$fit_fractional_logit_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)
 				effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			}

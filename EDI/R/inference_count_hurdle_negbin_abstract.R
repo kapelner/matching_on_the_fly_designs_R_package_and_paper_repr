@@ -88,7 +88,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			}
 
 			fit = private$try_hurdle_negbin_fit(X_fit, j_treat)
-			if (is.null(fit) && ncol(X_fit) > 2L){
+			if (private$harden && is.null(fit) && ncol(X_fit) > 2L){
 				X_treat_only = X_fit[, 1:2, drop = FALSE]
 				fit = private$try_hurdle_negbin_fit(X_treat_only, 2L)
 				reduced = list(X = X_treat_only, keep = 1:2, j_treat = 2L)

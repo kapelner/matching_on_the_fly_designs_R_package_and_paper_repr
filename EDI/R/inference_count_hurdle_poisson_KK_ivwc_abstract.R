@@ -64,7 +64,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' @description
 		#' Overridden to avoid the heavy summary() call during randomization iterations.
 		#' Extracts the fixed-effect coefficient for "w" directly from the fit.
-		compute_treatment_estimate_during_randomization_inference = function(){
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			Xmm = private$build_model_matrix()
 			m_vec = private$m
 			if (is.null(m_vec)){
@@ -88,7 +88,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			beta_r = NA_real_
 			ssq_r = NA_real_
 			if (length(reservoir_idx) > 1L && length(unique(private$w[reservoir_idx])) > 1L){
-				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx) # Already uses fast C++ which includes var, but we can't easily skip it
+				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx, estimate_only = estimate_only)
 				beta_r = res_r$beta_hat
 				ssq_r = res_r$ssq_hat
 			}
@@ -107,7 +107,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 	),
 
 	private = list(
-		# ... (other methods)
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
 
 		build_model_matrix = function(){
 			if (private$include_covariates()){
@@ -138,9 +140,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			reservoir_idx = which(m_vec <= 0L)
 
 			if (length(matched_idx) > 0L){
-				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = TRUE)
+				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = !estimate_only)
 				private$cached_values$beta_T_matched = res_m$beta_hat
-				private$cached_values$ssq_beta_T_matched = res_m$se^2
+				if (!estimate_only) private$cached_values$ssq_beta_T_matched = res_m$se^2
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
@@ -149,9 +151,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 			if (length(reservoir_idx) > 1L &&
 				length(unique(private$w[reservoir_idx])) > 1L){
-				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx)
+				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx, estimate_only = estimate_only)
 				private$cached_values$beta_T_reservoir = res_r$beta_hat
-				private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat
+				if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
@@ -250,7 +252,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			list(beta_hat = beta_hat, se = se_val)
 		},
 
-		fit_poisson_for_reservoir = function(Xmm, reservoir_idx){
+		fit_poisson_for_reservoir = function(Xmm, reservoir_idx, estimate_only = FALSE){
 			X_res = Xmm[reservoir_idx, , drop = FALSE]
 			reduced = private$reduce_design_matrix_preserving_treatment(X_res)
 			X_fit = reduced$X
@@ -258,13 +260,20 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 			}
 
-			mod = tryCatch(
-				fast_poisson_regression_with_var_cpp(X_fit, private$y[reservoir_idx], j = reduced$j_treat),
-				error = function(e) NULL
-			)
+			mod = tryCatch({
+				if (estimate_only) {
+					fast_poisson_regression_cpp(X_fit, private$y[reservoir_idx])
+				} else {
+					fast_poisson_regression_with_var_cpp(X_fit, private$y[reservoir_idx], j = reduced$j_treat)
+				}
+			}, error = function(e) NULL)
 			if (is.null(mod) || !isTRUE(mod$converged)) return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 
 			beta_hat = as.numeric(mod$b[reduced$j_treat])
+			if (estimate_only) {
+				if (!is.finite(beta_hat)) return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
+				return(list(beta_hat = beta_hat, ssq_hat = 1))
+			}
 			ssq_hat = as.numeric(mod$ssq_b_j)
 			if (!is.finite(beta_hat) || !is.finite(ssq_hat) || ssq_hat <= 0) return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 

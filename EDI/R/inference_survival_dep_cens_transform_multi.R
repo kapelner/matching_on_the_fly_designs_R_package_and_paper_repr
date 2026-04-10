@@ -52,6 +52,11 @@ InferenceSurvivalMultiDepCensTransformRegr = R6::R6Class("InferenceSurvivalMulti
 				return(list(X))
 			}
 
+			if (!private$harden) {
+				X_full = cbind(treatment = private$w, X_cov_orig)
+				return(list(X_full))
+			}
+
 			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
 			candidates = list()
 			keys = character()

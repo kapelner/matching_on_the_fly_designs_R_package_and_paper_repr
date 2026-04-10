@@ -61,6 +61,9 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),

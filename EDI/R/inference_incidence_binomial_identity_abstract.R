@@ -104,7 +104,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 
 			result = fit_candidate(X_full)
 
-			if (is.null(result) && ncol(X_full) > 2L){
+			if (private$harden && is.null(result) && ncol(X_full) > 2L){
 				X_cov_orig = as.matrix(X_full[, -(1:2), drop = FALSE])
 				for (thresh in c(0.95, 0.90, 0.80, 0.70)){
 					X_cov_red = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M

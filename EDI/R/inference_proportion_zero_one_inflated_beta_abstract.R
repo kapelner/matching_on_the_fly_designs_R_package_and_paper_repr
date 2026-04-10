@@ -76,6 +76,11 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 				return(list(M))
 			}
 
+			if (!private$harden) {
+				M = cbind(treatment = private$w, X_cov_orig)
+				return(list(M))
+			}
+
 			thresholds = c(Inf, 0.95, 0.90, 0.80, 0.70)
 			candidates = list()
 			keys = character()

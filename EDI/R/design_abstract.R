@@ -18,6 +18,22 @@ Design = R6::R6Class("Design",
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size (if fixed).
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates when building the
+		#'   model matrix for inference. One of:
+		#'   \describe{
+		#'     \item{\code{"impute"} (default)}{Missing values are filled in using random-forest
+		#'       imputation (\code{missRanger}, falling back to \code{missForest} on failure).
+		#'       The response vector is included as an auxiliary predictor when available.
+		#'       This preserves all covariates and all subjects but introduces imputed values
+		#'       that influence inference.}
+		#'     \item{\code{"drop_column"}}{Any covariate column that contains at least one
+		#'       missing value is dropped entirely from the model matrix before inference.
+		#'       No values are invented; the remaining complete columns are used as-is.
+		#'       This is conservative but transparent.}
+		#'     \item{\code{"error"}}{An error is thrown as soon as any missing value is
+		#'       detected in the covariate matrix. Use this when you want to guarantee that
+		#'       inference runs on exactly the data you supplied, with no silent modification.}
+		#'   }
 		#'
 		#' @return 			A new `Design` object
 		initialize = function(
@@ -25,13 +41,15 @@ Design = R6::R6Class("Design",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = FALSE,
 				n = NULL,
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute"
 			) {
 			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
 			assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			assertFlag(include_is_missing_as_a_new_feature)
 			assertFlag(verbose)
 			assertCount(n, null.ok = TRUE)
+			assertChoice(missingness_method, c("impute", "drop_column", "error"))
 
 			if (is.null(n)){
 				private$fixed_sample = FALSE
@@ -44,6 +62,7 @@ Design = R6::R6Class("Design",
 			private$prob_T = prob_T
 			private$response_type = response_type
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
+			private$missingness_method = missingness_method
 
 			# Ensure budget is respected among openmp and other packages
 
@@ -336,6 +355,14 @@ Design = R6::R6Class("Design",
 			private$response_type
 		},
 
+		#' @description Get the missingness method
+		#'
+		#' @return 			The missingness handling method: \code{"impute"}, \code{"drop_column"},
+		#'   or \code{"error"}.
+		get_missingness_method = function(){
+			private$missingness_method
+		},
+
 		#' @description
 		#' Duplicate this design object
 		#'
@@ -387,6 +414,7 @@ Design = R6::R6Class("Design",
 		response_type = NULL,
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
+		missingness_method = "impute",
 		verbose = NULL,
 		design_is_supported_blocking = function(des_obj){
 			is(des_obj, "DesignSeqOneByOneKK14") ||
@@ -414,40 +442,52 @@ Design = R6::R6Class("Design",
 
 			column_has_missingness = columns_have_missingness_cpp(private$Xraw)
 			if (any(column_has_missingness)){
-				#deal with include_is_missing_as_a_new_feature here
-				if (private$include_is_missing_as_a_new_feature){
-					missing_cols_idx = which(column_has_missingness)
-					if (length(missing_cols_idx) > 0){
-						# Use C++ function to create missingness indicators efficiently
-						missingness_indicators = create_missingness_indicators_cpp(private$Ximp, missing_cols_idx)
+				if (private$missingness_method == "error"){
+					missing_names = names(private$Xraw)[column_has_missingness]
+					stop("Missing values detected in covariate(s): ",
+						paste(missing_names, collapse = ", "),
+						". Set missingness_method = \"impute\" or \"drop_column\" to handle missing data automatically.")
+				} else if (private$missingness_method == "drop_column"){
+					cols_to_keep = which(!column_has_missingness)
+					private$Ximp = private$Ximp[, ..cols_to_keep]
+				} else {
+					# "impute": random-forest imputation (missRanger with missForest fallback)
 
-						# Add the new columns to Ximp
-						for (col_name in names(missingness_indicators)) {
-							private$Ximp[[col_name]] = missingness_indicators[[col_name]]
+					#deal with include_is_missing_as_a_new_feature here
+					if (private$include_is_missing_as_a_new_feature){
+						missing_cols_idx = which(column_has_missingness)
+						if (length(missing_cols_idx) > 0){
+							# Use C++ function to create missingness indicators efficiently
+							missingness_indicators = create_missingness_indicators_cpp(private$Ximp, missing_cols_idx)
+
+							# Add the new columns to Ximp
+							for (col_name in names(missingness_indicators)) {
+								private$Ximp[[col_name]] = missingness_indicators[[col_name]]
+							}
 						}
 					}
+
+					#we need to convert characters into factor for the imputation to work
+					col_types = get_column_types_cpp(private$Ximp)
+					idx_cols_to_convert_to_factor = which(col_types == "character")
+					private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
+
+					#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
+					private$Ximp = tryCatch({
+											if (any(!is.na(private$y))){
+												suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE, num.threads = self$num_cores)[, 1 : ncol(private$Ximp)])
+											} else {
+												suppressWarnings(missRanger(private$Ximp, verbose = FALSE, num.threads = self$num_cores))
+											}
+										}, error = function(e){
+											if (any(!is.na(private$y))){
+												suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), num.threads = self$num_cores)$ximp[, 1 : ncol(private$Ximp)])
+											} else {
+												suppressWarnings(missForest(private$Ximp, num.threads = self$num_cores)$ximp)
+											}
+										}
+									)
 				}
-
-				#we need to convert characters into factor for the imputation to work
-				col_types = get_column_types_cpp(private$Ximp)
-				idx_cols_to_convert_to_factor = which(col_types == "character")
-				private$Ximp[, (idx_cols_to_convert_to_factor) := lapply(.SD, as.factor), .SDcols = idx_cols_to_convert_to_factor]
-
-				#now do the imputation here by using missRanger (fast but fragile) and if that fails, use missForest (slow but more robust)
-				private$Ximp = tryCatch({
-										if (any(!is.na(private$y))){
-											suppressWarnings(missRanger(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), verbose = FALSE, num.threads = self$num_cores)[, 1 : ncol(private$Ximp)])
-										} else {
-											suppressWarnings(missRanger(private$Ximp, verbose = FALSE, num.threads = self$num_cores))
-										}
-									}, error = function(e){
-										if (any(!is.na(private$y))){
-											suppressWarnings(missForest(cbind(private$Ximp, private$y[1 : nrow(private$Ximp)]), num.threads = self$num_cores)$ximp[, 1 : ncol(private$Ximp)])
-										} else {
-											suppressWarnings(missForest(private$Ximp, num.threads = self$num_cores)$ximp)
-										}
-									}
-								)
 			}
 
 			analysis_col_names = names(private$Ximp)[!startsWith(names(private$Ximp), ".assignment_only_")]

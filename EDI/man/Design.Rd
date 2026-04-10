@@ -43,6 +43,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
+\item \href{#method-Design-get_missingness_method}{\code{Design$get_missingness_method()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
 \item \href{#method-Design-clone}{\code{Design$clone()}}
 }
@@ -58,7 +59,8 @@ Initialize an experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = FALSE,
   n = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  missingness_method = "impute"
 )}\if{html}{\out{</div>}}
 }
 
@@ -75,6 +77,23 @@ Initialize an experimental design
 \item{\code{n}}{The sample size (if fixed).}
 
 \item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates when building the
+model matrix for inference. One of:
+\describe{
+  \item{\code{"impute"} (default)}{Missing values are filled in using random-forest
+    imputation (\code{missRanger}, falling back to \code{missForest} on failure).
+    The response vector is included as an auxiliary predictor when available.
+    This preserves all covariates and all subjects but introduces imputed values
+    that influence inference.}
+  \item{\code{"drop_column"}}{Any covariate column that contains at least one
+    missing value is dropped entirely from the model matrix before inference.
+    No values are invented; the remaining complete columns are used as-is.
+    This is conservative but transparent.}
+  \item{\code{"error"}}{An error is thrown as soon as any missing value is
+    detected in the covariate matrix. Use this when you want to guarantee that
+    inference runs on exactly the data you supplied, with no silent modification.}
+}}
 }
 \if{html}{\out{</div>}}
 }
@@ -382,6 +401,20 @@ Get response type
 
 \subsection{Returns}{
 The specified response type.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_missingness_method"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_missingness_method}{}}}
+\subsection{Method \code{get_missingness_method()}}{
+Get the missingness method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_missingness_method()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The missingness handling method: \code{"impute"}, \code{"drop_column"},
+  or \code{"error"}.
 }
 }
 \if{html}{\out{<hr>}}

@@ -34,7 +34,7 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		#' Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared_combined_hurdle()
+			private$shared_combined_hurdle(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -66,6 +66,10 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
+
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()."),
 
 		predictors_df = function(){
@@ -180,13 +184,14 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			)
 		},
 
-		shared_combined_hurdle = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		shared_combined_hurdle = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			model_data = private$build_model_data()
 			if (is.null(model_data)){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
@@ -194,22 +199,25 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			mod = private$fit_hurdle_model(model_data)
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
-			if (is.null(coef_table) || !("w" %in% rownames(coef_table))){
+			cond_fixef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_fixef) || !("w" %in% names(cond_fixef)) || !is.finite(cond_fixef[["w"]])){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			private$cached_values$beta_hat_T = as.numeric(coef_table["w", "Estimate"])
-			se = as.numeric(coef_table["w", "Std. Error"])
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			private$cached_values$beta_hat_T = as.numeric(cond_fixef[["w"]])
+			if (!estimate_only) {
+				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
+				se = if (!is.null(coef_table) && ("w" %in% rownames(coef_table))) as.numeric(coef_table["w", "Std. Error"]) else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			}
 			private$cached_values$is_z = TRUE
 		}
 	)

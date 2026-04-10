@@ -77,6 +77,9 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
 
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(

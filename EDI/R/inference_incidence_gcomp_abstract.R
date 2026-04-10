@@ -398,7 +398,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 
 			fit = private$fit_logistic_with_sandwich(X_full, estimate_only = estimate_only)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
-			if ((is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
+			if (private$harden && (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
 				fit = private$fit_logistic_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)
 				effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			}

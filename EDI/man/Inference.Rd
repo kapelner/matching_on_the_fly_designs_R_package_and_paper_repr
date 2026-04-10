@@ -41,7 +41,7 @@ Defaults to the global budget unless overridden on the object.}
 \subsection{Method \code{new()}}{
 Initialize an estimation and test object after the design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Inference$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Inference$new(des_obj, verbose = FALSE, harden = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -51,6 +51,16 @@ Initialize an estimation and test object after the design is completed.
 assigned and response y is recorded within.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures (default \code{TRUE}). When
+\code{TRUE}, the inference methods employ defensive strategies including QR-based
+rank reduction of the design matrix, progressive correlation-threshold dropping,
+and fallback fits (e.g.\ robust survival regression, treatment-only models) to
+avoid crashes on ill-conditioned data. When \code{FALSE}, the vanilla algorithm
+runs on the full design matrix as supplied; any rank deficiency or convergence
+failure will surface as an error rather than being silently worked around. Set to
+\code{FALSE} when you want to verify that the raw model converges without
+intervention.}
 }
 \if{html}{\out{</div>}}
 }

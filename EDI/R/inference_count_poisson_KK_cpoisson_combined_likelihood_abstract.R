@@ -71,6 +71,9 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
@@ -88,33 +91,54 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			invisible(FALSE)
 		},
 
-		reduce_combined_covariates = function(X_diff_v, X_r_v, w_r_v){
-			cached_keep = private$cached_values$combined_cov_keep
-			p = ncol(X_r_v)
-			if (is.null(p) || p == 0L) return(integer(0))
+			reduce_combined_covariates = function(X_diff_v, X_r_v, w_r_v){
+				cached_keep = private$cached_values$combined_cov_keep
+				p = ncol(X_r_v)
+				if (is.null(p) || p == 0L) return(integer(0))
 
 			build_combined = function(){
 				nd = nrow(X_diff_v)
-				nR = nrow(X_r_v)
+				nR = length(w_r_v)
 				X_pairs = cbind(
 					matrix(0, nrow = nd, ncol = 2L),
 					X_diff_v
 				)
-				X_res = cbind(1, w_r_v, X_r_v)
+				if (nR == 0L){
+					X_res = matrix(0, nrow = 0L, ncol = ncol(X_pairs))
+				} else {
+					X_res = cbind(rep(1, nR), w_r_v, X_r_v)
+				}
+				if (ncol(X_pairs) != ncol(X_res)) {
+					max_cols = max(ncol(X_pairs), ncol(X_res))
+					if (ncol(X_pairs) < max_cols) {
+						X_pairs = cbind(X_pairs, matrix(0, nrow = nd, ncol = max_cols - ncol(X_pairs)))
+					}
+					if (ncol(X_res) < max_cols) {
+						X_res = cbind(X_res, matrix(0, nrow = nR, ncol = max_cols - ncol(X_res)))
+					}
+				}
 				rbind(X_pairs, X_res)
 			}
 
 			X_full = build_combined()
 			required = 2L
 
-			if (!is.null(cached_keep) && length(cached_keep) > 0L){
-				keep_full = sort(unique(c(required, cached_keep + 2L)))
-				X_try = X_full[, keep_full, drop = FALSE]
-				qr_try = qr(X_try)
-				if (qr_try$rank == ncol(X_try) && (2L %in% keep_full)){
-					return(sort(unique(cached_keep)))
+				if (!is.null(cached_keep) && length(cached_keep) > 0L){
+					valid_cached = cached_keep[cached_keep >= 1L & cached_keep <= p]
+					if (length(valid_cached) > 0L){
+						keep_full = sort(unique(c(required, valid_cached + 2L)))
+						keep_full = keep_full[keep_full <= ncol(X_full)]
+						if (length(keep_full) > 0L){
+							X_try = X_full[, keep_full, drop = FALSE]
+							qr_try = qr(X_try)
+							if (qr_try$rank == ncol(X_try) && (2L %in% keep_full)){
+								private$cached_values$combined_cov_keep = sort(unique(valid_cached))
+								return(private$cached_values$combined_cov_keep)
+							}
+						}
+					}
+					private$cached_values$combined_cov_keep = NULL
 				}
-			}
 
 			qr_full = qr(X_full)
 			r_full = qr_full$rank

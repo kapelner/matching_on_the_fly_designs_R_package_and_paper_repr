@@ -15,10 +15,21 @@ Inference = R6::R6Class("Inference",
 		#' @param des_obj         A completed \code{Design} object whose entire n subjects are
 		#'   assigned and response y is recorded within.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, verbose = FALSE){
+		#' @param harden  Whether to apply robustness measures (default \code{TRUE}). When
+		#'   \code{TRUE}, the inference methods employ defensive strategies including QR-based
+		#'   rank reduction of the design matrix, progressive correlation-threshold dropping,
+		#'   and fallback fits (e.g.\ robust survival regression, treatment-only models) to
+		#'   avoid crashes on ill-conditioned data. When \code{FALSE}, the vanilla algorithm
+		#'   runs on the full design matrix as supplied; any rank deficiency or convergence
+		#'   failure will surface as an error rather than being silently worked around. Set to
+		#'   \code{FALSE} when you want to verify that the raw model converges without
+		#'   intervention.
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE){
 			assertClass(des_obj, "Design")
 
 			assertFlag(verbose)
+			assertFlag(harden)
+			private$harden = harden
 			des_obj$assert_all_responses_recorded()
 
 			private$cached_values = list()
@@ -119,6 +130,7 @@ Inference = R6::R6Class("Inference",
 		finalize = function(){
 			# We no longer own the cluster, it is global.
 		},
+		harden = TRUE,
 		des_obj = NULL,		des_obj_priv_int = NULL,
 		m = NULL,
 		is_KK = NULL,
@@ -385,6 +397,11 @@ Inference = R6::R6Class("Inference",
 		},
 
 		reduce_design_matrix_preserving_treatment = function(X_full){
+			if (!private$harden) {
+				X_mat = as.matrix(X_full)
+				return(list(X = X_mat, keep = seq_len(ncol(X_mat)), j_treat = 2L))
+			}
+
 			fast = private$reduce_treatment_only_design_fast(X_full)
 			if (!is.null(fast)) return(fast)
 
@@ -404,6 +421,11 @@ Inference = R6::R6Class("Inference",
 		},
 
 		reduce_design_matrix_preserving_treatment_fixed_covariates = function(X_full){
+			if (!private$harden) {
+				X_mat = as.matrix(X_full)
+				return(list(X = X_mat, keep = seq_len(ncol(X_mat)), j_treat = 2L))
+			}
+
 			fast = private$reduce_treatment_only_design_fast(X_full)
 			if (!is.null(fast)) return(fast)
 			if (is.null(dim(X_full)) || ncol(X_full) <= 2L) return(private$reduce_design_matrix_preserving_treatment(X_full))

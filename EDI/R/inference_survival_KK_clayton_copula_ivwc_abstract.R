@@ -185,6 +185,11 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
 			}
 
+			if (!private$harden) {
+				private$filtered_cov_cache = list(X_cov_orig)
+				return(private$filtered_cov_cache)
+			}
+
 			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
 			candidates = list()
 			keys = character()

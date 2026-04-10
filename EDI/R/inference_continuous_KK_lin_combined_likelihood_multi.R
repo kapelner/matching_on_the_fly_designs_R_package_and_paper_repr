@@ -63,7 +63,7 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 		#' @return The estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$fit_combined()
+			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -96,6 +96,10 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 	),
 
 	private = list(
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		},
+
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_lin_basic_match_data_cached(
 				private_env = private,
@@ -134,8 +138,9 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 			sort(unique(keep))
 		},
 
-		fit_combined = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		fit_combined = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			KKstats = private$cached_values$KKstats
 			if (is.null(KKstats)){
@@ -214,7 +219,12 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 			coef_hat = as.numeric(mod$coefficients)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+			if (estimate_only){
+				private$cached_values$beta_hat_T = as.numeric(coef_hat[j_fit])
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}

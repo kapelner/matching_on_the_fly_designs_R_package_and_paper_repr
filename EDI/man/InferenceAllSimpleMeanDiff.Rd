@@ -60,6 +60,8 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 </ul>
 </details>
 }}

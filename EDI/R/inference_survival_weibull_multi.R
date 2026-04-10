@@ -46,6 +46,21 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 		generate_mod = function(estimate_only = FALSE){
 			# Multivariate: covariates + treatment (mirrors InferenceSurvivalMultiCoxPHRegr)
 			X_cov_orig = private$get_X()
+
+			if (ncol(X_cov_orig) > 0) {
+				full_X_matrix = cbind(X_cov_orig, private$w)
+				colnames(full_X_matrix) = c(colnames(X_cov_orig), "treatment")
+			} else {
+				full_X_matrix = matrix(private$w, ncol = 1)
+				colnames(full_X_matrix) = "treatment"
+			}
+
+			if (!private$harden) {
+				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix, estimate_only = estimate_only), error = function(e) NULL)
+				if (!is.null(mod)) return(mod)
+				stop("Weibull regression failed to converge.")
+			}
+
 			# Try fast C++ path with progressively lower correlation thresholds.
 			# The robust survreg fallback (slow: up to 50 random restarts) is invoked at most
 			# ONCE after all fast paths are exhausted, so bootstrap iterations stay fast.

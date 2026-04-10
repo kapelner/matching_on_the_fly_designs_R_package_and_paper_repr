@@ -21,6 +21,8 @@ Abstract class for asymptotic inference.
 \item \href{#method-InferenceAsymp-compute_asymp_confidence_interval}{\code{InferenceAsymp$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceAsymp-compute_treatment_estimate}{\code{InferenceAsymp$compute_treatment_estimate()}}
+\item \href{#method-InferenceAsymp-get_mod}{\code{InferenceAsymp$get_mod()}}
+\item \href{#method-InferenceAsymp-get_summary}{\code{InferenceAsymp$get_summary()}}
 \item \href{#method-InferenceAsymp-clone}{\code{InferenceAsymp$clone()}}
 }
 }
@@ -100,6 +102,31 @@ Abstract method to compute the treatment estimate.
 \subsection{Returns}{
 A scalar treatment estimate.
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_mod"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_mod}{}}}
+\subsection{Method \code{get_mod()}}{
+Returns the model object from the last call that produced the treatment
+estimate and SE. Calls \code{compute_treatment_estimate()} first if needed.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_mod()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The cached model object (type depends on the concrete class).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_summary"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_summary}{}}}
+\subsection{Method \code{get_summary()}}{
+Prints a summary of the model from the last call that produced the
+treatment estimate and SE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_summary()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-clone"></a>}}

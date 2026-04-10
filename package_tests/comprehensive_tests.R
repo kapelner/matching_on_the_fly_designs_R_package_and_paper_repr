@@ -2,7 +2,7 @@ rm(list = ls())
 set.seed(1)
 devtools::load_all("EDI")
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
-max_n_dataset = 150
+max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
 source("package_tests/_dataset_load.R")
 # options(error = recover)
 # options(warn=2)

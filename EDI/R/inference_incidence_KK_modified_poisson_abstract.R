@@ -143,7 +143,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			}
 
 			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
-			if (is.null(fit) && ncol(X_full) > 2L){
+			if (private$harden && is.null(fit) && ncol(X_full) > 2L){
 				reduced = private$reduce_design_matrix_preserving_treatment(X_full[, 1:2, drop = FALSE])
 				X_fit = reduced$X
 				j_treat = reduced$j_treat
