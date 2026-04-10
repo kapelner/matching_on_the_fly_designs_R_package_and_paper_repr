@@ -131,8 +131,11 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		},
 
 		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T))
-				return(invisible(NULL))
+			se = private$cached_values$s_beta_hat_T
+			if (!is.finite(se) || se <= 0){
+				stop("GLMM inference produced a non-finite standard error.")
+			}
+			invisible(NULL)
 		},
 
 		fit_glmm = function(se = TRUE){

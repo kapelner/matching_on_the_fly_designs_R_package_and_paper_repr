@@ -428,7 +428,7 @@ Inference = R6::R6Class("Inference",
 
 			X_trial = cbind(X_other_reduced, treatment)
 			if (qr(X_trial)$rank <= ncol(X_other_reduced)) {
-				return(list(X = NULL, keep = keep_other, j_treat = NA_integer_))
+				return(private$reduce_design_matrix_preserving_treatment(X_full))
 			}
 
 			keep = sort(c(keep_other, 2L))

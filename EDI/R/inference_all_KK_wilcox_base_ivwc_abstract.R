@@ -23,7 +23,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 	),
 	private = list(
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			# Optimization: w_mat and m_mat are already pre-computed matrices
@@ -51,7 +51,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			}
 
 			y_sim = as.numeric(y)
-			
+
 			# Map transform_responses to transform_code
 			t_code = 0L # none
 			if (transform_responses == "log") {
@@ -61,19 +61,19 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			} else if (transform_responses == "log1p") {
 				t_code = 3L
 			}
-			
+
 			res = compute_kk_wilcox_distr_parallel_cpp(
 				y_sim,
 				w_mat,
 				m_mat,
 				as.numeric(delta),
 				t_code,
+				as.numeric(zero_one_logit_clamp),
 				is_fixed_matching,
 				private$n_cpp_threads(nsim)
 			)
 			return(res)
 		},
-
 		# Override the per-permutation statistic to avoid the O(n^2) conf.int = TRUE cost.
 		# Uses standardized Wilcoxon W statistics (conf.int = FALSE, O(n log n)) as the
 		# rank test statistic; monotone with the HL / rank-regression estimate under the null.

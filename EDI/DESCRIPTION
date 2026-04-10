@@ -54,7 +54,7 @@ Suggests:
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 Collate:
     'RcppExports.R'
-    'global_cluster.R'
+    'globals.R'
     'EDI.R'
     'other_helpers.R'
     'glm_fit_helpers.R'

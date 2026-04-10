@@ -225,8 +225,8 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
 #' @param is_fixed_matching Logical flag for fixed matching designs.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of KK Wilcoxon statistics.
-compute_kk_wilcox_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores) {
-    .Call(`_EDI_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores)
+compute_kk_wilcox_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores) {
+    .Call(`_EDI_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, m_mat, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
 }
 
 fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
@@ -458,8 +458,8 @@ compute_wilcox_hl_bootstrap_parallel_cpp <- function(y, w, indices_mat, num_core
     .Call(`_EDI_compute_wilcox_hl_bootstrap_parallel_cpp`, y, w, indices_mat, num_cores)
 }
 
-compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, num_cores) {
-    .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, num_cores)
+compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, zero_one_logit_clamp, num_cores) {
+    .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, zero_one_logit_clamp, num_cores)
 }
 
 compute_wilcox_kk_ivwc_bootstrap_parallel_cpp <- function(y, w, m_vec, indices_mat, m_mat, num_cores) {

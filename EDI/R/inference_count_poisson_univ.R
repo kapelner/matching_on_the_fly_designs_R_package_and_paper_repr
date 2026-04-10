@@ -45,16 +45,6 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "count")
 			super$initialize(des_obj, verbose)
-		},
-
-		#' @description
-		#' Computes the treatment estimate.
-		#'
-		#' @return The log-rate treatment-effect estimate.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = TRUE)
-			private$cached_values$beta_hat_T
 		}
 	),
 
@@ -103,7 +93,7 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 			private$fit_poisson_with_var(Xmm, estimate_only = estimate_only)
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			w_mat = permutations$w_mat
 			if (is.null(w_mat)) return(NULL)

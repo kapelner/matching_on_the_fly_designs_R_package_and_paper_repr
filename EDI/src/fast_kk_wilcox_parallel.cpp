@@ -14,24 +14,32 @@ using namespace Rcpp;
 
 namespace {
 
-inline double logit_cpp(double p) {
-    if (p <= 0.0) return -745.0; // Approx log(.Machine$double.eps)
-    if (p >= 1.0) return 745.0;
-    return std::log(p / (1.0 - p));
+inline double logit_cpp(double x, double clamp) {
+    if (x < clamp) x = clamp;
+    if (x > 1.0 - clamp) x = 1.0 - clamp;
+    return std::log(x / (1.0 - x));
 }
 
-inline double inv_logit_cpp(double x) {
-    if (x < -700) return 0.0;
-    if (x > 700) return 1.0;
-    return 1.0 / (1.0 + std::exp(-x));
+inline double inv_logit_cpp(double x, double clamp) {
+    double p;
+    if (x >= 0.0) {
+        const double z = std::exp(-x);
+        p = 1.0 / (1.0 + z);
+    } else {
+        const double z = std::exp(x);
+        p = z / (1.0 + z);
+    }
+    if (p < clamp) p = clamp;
+    if (p > 1.0 - clamp) p = 1.0 - clamp;
+    return p;
 }
 
-inline double apply_shift(double y_val, double delta, int transform_code) {
+inline double apply_shift(double y_val, double delta, int transform_code, double zero_one_logit_clamp) {
     if (transform_code == 1) { // log
         return y_val * std::exp(delta);
     }
     if (transform_code == 2) { // logit
-        return inv_logit_cpp(logit_cpp(y_val) + delta);
+        return inv_logit_cpp(logit_cpp(y_val, zero_one_logit_clamp) + delta, zero_one_logit_clamp);
     }
     if (transform_code == 3) { // log1p
         return (y_val + 1.0) * std::exp(delta) - 1.0;
@@ -58,6 +66,7 @@ NumericVector compute_kk_wilcox_distr_parallel_cpp(
     const IntegerMatrix& m_mat,
     double delta,
     int transform_code,
+    double zero_one_logit_clamp,
     bool is_fixed_matching,
     int num_cores) {
 
@@ -74,7 +83,7 @@ NumericVector compute_kk_wilcox_distr_parallel_cpp(
   std::vector<double> y_shifted(n);
   if (delta != 0.0) {
       for (int i = 0; i < n; ++i) {
-          if (std::isfinite(y_ptr[i])) y_shifted[i] = apply_shift(y_ptr[i], delta, transform_code);
+          if (std::isfinite(y_ptr[i])) y_shifted[i] = apply_shift(y_ptr[i], delta, transform_code, zero_one_logit_clamp);
           else y_shifted[i] = NA_REAL;
       }
   }

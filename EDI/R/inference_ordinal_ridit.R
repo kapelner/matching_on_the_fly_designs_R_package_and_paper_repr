@@ -119,7 +119,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			private$cached_values$is_z         = TRUE
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0 || transform_responses != "none") return(NULL)
 

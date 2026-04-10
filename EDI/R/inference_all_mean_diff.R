@@ -132,7 +132,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			return(res)
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			# Optimization: w_mat is already pre-computed in generate_permutations

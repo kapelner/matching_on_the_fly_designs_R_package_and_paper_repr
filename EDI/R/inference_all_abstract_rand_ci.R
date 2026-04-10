@@ -17,8 +17,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#' @param permutations Optional pre-generated assignment draws.
 		#' @param type Optional incidence-specific exact randomization type.
 		#' @param args_for_type Optional arguments keyed by \code{type}.
+		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		#' @return A two-sided p-value.
-		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL){
+		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL, zero_one_logit_clamp = .Machine$double.eps){
+			# message("In InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand")
+			# message("Class: ", class(self)[1])
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
 			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
@@ -39,7 +42,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				transform_responses = transform_responses,
 				na.rm = na.rm,
 				show_progress = show_progress,
-				permutations = permutations
+				permutations = permutations,
+				zero_one_logit_clamp = zero_one_logit_clamp
 			)
 		},
 

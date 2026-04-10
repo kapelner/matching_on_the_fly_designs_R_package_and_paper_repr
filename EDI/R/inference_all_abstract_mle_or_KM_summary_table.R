@@ -74,6 +74,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			if (!estimate_only && !is.null(private$cached_values$summary_table)) return(invisible(NULL))
 
 			model_output = private$generate_mod(estimate_only = estimate_only) # Implemented by child classes (Weibull, NegBin)
+			private$cached_mod = model_output
 
 			if (is.null(model_output$coefficients) || (!estimate_only && is.null(model_output$vcov))){
 				stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")

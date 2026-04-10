@@ -4,10 +4,12 @@
 \alias{inv_logit}
 \title{Inverse Logit Function}
 \usage{
-inv_logit(x)
+inv_logit(x, zero_one_logit_clamp = .Machine$double.eps)
 }
 \arguments{
 \item{x}{Any real number}
+
+\item{zero_one_logit_clamp}{The clamping amount}
 }
 \value{
 Its corresponding inverse logit value between 0 and 1 non inclusive

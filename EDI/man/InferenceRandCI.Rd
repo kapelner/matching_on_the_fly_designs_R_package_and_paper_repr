@@ -50,7 +50,8 @@ Compute a randomization-based two-sided p-value for the treatment effect.
   show_progress = TRUE,
   permutations = NULL,
   type = NULL,
-  args_for_type = NULL
+  args_for_type = NULL,
+  zero_one_logit_clamp = .Machine$double.eps
 )}\if{html}{\out{</div>}}
 }
 
@@ -72,6 +73,8 @@ Compute a randomization-based two-sided p-value for the treatment effect.
 \item{\code{type}}{Optional incidence-specific exact randomization type.}
 
 \item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
 }
 \if{html}{\out{</div>}}
 }

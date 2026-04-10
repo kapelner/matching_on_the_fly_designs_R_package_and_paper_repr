@@ -207,6 +207,11 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			)
 		},
 
+		fit_univariate_modified_poisson = function(estimate_only = FALSE){
+			X_uni = cbind("(Intercept)" = 1, treatment = as.numeric(private$w))
+			private$fit_modified_poisson(X_uni, 2L, estimate_only = estimate_only)
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -222,22 +227,50 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
-			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+			if (is.null(X_fit) || !is.finite(j_treat)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
-			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
+			fit = NULL
+			fallback_to_univariate = FALSE
+			if (nrow(X_fit) > ncol(X_fit)){
+				fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
+			}
 			if (is.null(fit)){
-				private$set_failed_fit_cache()
-				return(invisible(NULL))
+				fallback_fit = private$fit_univariate_modified_poisson(estimate_only = estimate_only)
+				if (is.null(fallback_fit)){
+					private$set_failed_fit_cache()
+					return(invisible(NULL))
+				}
+				fit = fallback_fit
+				fallback_to_univariate = TRUE
 			}
 
 			private$cached_values$beta_hat_T = fit$beta_hat
 			if (estimate_only) return(invisible(NULL))
+
+			local_df = if (fallback_to_univariate) {
+				nrow(cbind("(Intercept)" = 1, treatment = as.numeric(private$w))) - 2L
+			} else {
+				nrow(X_fit) - ncol(X_fit)
+			}
+			if (!is.finite(fit$se) || fit$se <= 0){
+				if (!fallback_to_univariate){
+					fallback_fit = private$fit_univariate_modified_poisson(estimate_only = FALSE)
+					if (is.null(fallback_fit) || !is.finite(fallback_fit$se) || fallback_fit$se <= 0){
+						private$set_failed_fit_cache()
+						return(invisible(NULL))
+					}
+					fit = fallback_fit
+					fallback_to_univariate = TRUE
+				}
+				local_df = nrow(cbind("(Intercept)" = 1, treatment = as.numeric(private$w))) - 2L
+			}
+
 			private$cached_values$s_beta_hat_T = fit$se
 			private$cached_values$is_z = TRUE
-			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
+			private$cached_values$df = local_df
 			private$cached_values$full_coefficients = fit$coefficients
 			private$cached_values$full_vcov = fit$vcov
 			private$cached_values$summary_table = fit$summary_table

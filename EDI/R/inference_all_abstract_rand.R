@@ -39,15 +39,16 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#'   iteration), \code{num_errors}, \code{num_warnings},
 		#'   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
 		#'   \code{prop_illegal_values}.
-		approximate_randomization_distribution_beta_hat_T = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL, debug = FALSE){
+		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
+		approximate_randomization_distribution_beta_hat_T = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
 
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
-			setup = private$setup_randomization_template_and_shifts(delta, transform_responses)
+			setup = private$setup_randomization_template_and_shifts(delta, transform_responses, zero_one_logit_clamp)
 
 			if (!isTRUE(debug) && !is.null(permutations) && private$has_private_method("compute_fast_randomization_distr")) {
-				fast_distr = private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses)
+				fast_distr = private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses, zero_one_logit_clamp)
 				if (!is.null(fast_distr)) return(fast_distr)
 			}
 
@@ -90,7 +91,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 						tryCatch({
 							worker_des = if (!is.null(des_template)) setup$template$duplicate() else NULL
 							worker_inf = if (!is.null(inf_template)) self$duplicate(verbose = FALSE, make_fork_cluster = FALSE) else NULL
-							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE)
+							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE, zero_one_logit_clamp = zero_one_logit_clamp)
 						}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
@@ -122,7 +123,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				do_warmup_iter = function() {
 					w_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 					w_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
-					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					private$run_randomization_iteration(w_des, w_inf, if(use_perms) 1L else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, zero_one_logit_clamp = zero_one_logit_clamp)
 				}
 				# Run warmup TWICE and use the second timing. The first call often pays
 				# cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
@@ -151,7 +152,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				suppressWarnings({
 					worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
 					worker_inf = if (!is.null(inf_template)) inf_template$duplicate(make_fork_cluster = FALSE) else NULL
-					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context)
+					private$run_randomization_iteration(worker_des, worker_inf, if(use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, zero_one_logit_clamp = zero_one_logit_clamp)
 				})
 			}, n_cores = actual_rand_cores, show_progress = show_progress,
 			export_list = list(
@@ -161,7 +162,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 				delta = delta,
 				setup = setup,
 				custom_stat_analysis = custom_stat_analysis,
-				use_perms = use_perms
+				use_perms = use_perms,
+				zero_one_logit_clamp = zero_one_logit_clamp
 			)))
 
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
@@ -176,8 +178,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#' @param na.rm 				Remove NAs.
 		#' @param show_progress		Show progress.
 		#' @param permutations		Pre-computed permutations.
+		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		#' @return 	Randomization p-value.
-		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL){
+		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, zero_one_logit_clamp = .Machine$double.eps){
 			private$assert_design_supports_resampling("Randomization inference")
 			assertLogical(na.rm)
 			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
@@ -218,7 +221,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 				transform_responses = transform_responses,
 				show_progress = show_progress,
 				permutations = permutations,
-				cache_key = cache_key
+				cache_key = cache_key,
+				zero_one_logit_clamp = zero_one_logit_clamp
 			)
 			if (!is.null(mc_pval)) return(mc_pval)
 
@@ -228,7 +232,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 				transform_responses = transform_responses,
 				show_progress = show_progress,
 				permutations = permutations,
-				cache_key = cache_key
+				cache_key = cache_key,
+				zero_one_logit_clamp = zero_one_logit_clamp
 			)
 
 			private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
@@ -261,7 +266,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			cache
 		},
 
-		compute_fast_randomization_distr_via_reused_worker = function(y, permutations, delta, transform_responses, preserve_cache_keys = character()){
+		compute_fast_randomization_distr_via_reused_worker = function(y, permutations, delta, transform_responses, preserve_cache_keys = character(), zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (is.null(permutations)) return(NULL)
 
@@ -313,7 +318,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 						if (delta != 0) {
 							resp_type = worker_des_priv$response_type
 							if (transform_responses == "logit") {
-								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1]) + delta)
+								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1], zero_one_logit_clamp) + delta, zero_one_logit_clamp)
 							} else if (transform_responses == "log" && resp_type == "survival") {
 								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
 							} else if (transform_responses == "log" && resp_type == "count") {
@@ -334,7 +339,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 						if (delta != 0) {
 							resp_type = w_priv$des_obj_priv_int$response_type
 							if (transform_responses == "logit") {
-								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1]) + delta)
+								y_sim[perm_data$w == 1] = inv_logit(logit(y_sim[perm_data$w == 1], zero_one_logit_clamp) + delta, zero_one_logit_clamp)
 							} else if (transform_responses == "log" && resp_type == "survival") {
 								y_sim[perm_data$w == 1] = y_sim[perm_data$w == 1] * exp(delta)
 							} else if (transform_responses == "log" && resp_type == "count") {
@@ -413,7 +418,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 		},
 
-		get_randomization_distribution_prefix = function(r, delta, transform_responses, show_progress, permutations, cache_key, batch_size = NULL){
+		get_randomization_distribution_prefix = function(r, delta, transform_responses, show_progress, permutations, cache_key, batch_size = NULL, zero_one_logit_clamp = .Machine$double.eps){
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
 			cached = if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] else NULL
 			if (length(cached) > 0L && !any(is.finite(cached))) {
@@ -429,7 +434,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 					delta = delta,
 					transform_responses = transform_responses,
 					show_progress = isTRUE(show_progress) && target >= r && have == 0L,
-					permutations = private$subset_permutations(permutations, idx)
+					permutations = private$subset_permutations(permutations, idx),
+					zero_one_logit_clamp = zero_one_logit_clamp
 				)
 				cached = c(cached, new_t0s)
 				if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] = cached
@@ -437,7 +443,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			cached[seq_len(target)]
 		},
 
-		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key){
+		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key, zero_one_logit_clamp = .Machine$double.eps){
 			mc_control = private$randomization_mc_control
 			if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
 			batch_size = min(as.integer(r), as.integer(mc_control$mc_batch_size))
@@ -453,7 +459,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 					show_progress = FALSE,
 					permutations = permutations,
 					cache_key = cache_key,
-					batch_size = batch_size
+					batch_size = batch_size,
+					zero_one_logit_clamp = zero_one_logit_clamp
 				)
 				n_valid = sum(is.finite(t0s))
 				p_hat = private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
@@ -502,7 +509,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			paste(as.integer(r), delta_key, transform_responses, perm_sig, sep = "|")
 		},
 
-		shift_randomization_responses = function(y, w, delta, transform_responses, response_type, inverse = FALSE){
+		shift_randomization_responses = function(y, w, delta, transform_responses, response_type, inverse = FALSE, zero_one_logit_clamp = .Machine$double.eps){
 			if (delta == 0) return(y)
 			y_shifted = y
 			idx_treated = which(w == 1)
@@ -510,7 +517,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 			signed_delta = if (isTRUE(inverse)) -delta else delta
 			if (transform_responses == "logit") {
-				y_shifted[idx_treated] = inv_logit(logit(y_shifted[idx_treated]) + signed_delta)
+				y_shifted[idx_treated] = inv_logit(logit(y_shifted[idx_treated], zero_one_logit_clamp) + signed_delta, zero_one_logit_clamp)
 				return(y_shifted)
 			}
 			if (transform_responses == "log" && response_type == "survival") {
@@ -530,7 +537,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			y_shifted
 		},
 
-		setup_randomization_template_and_shifts = function(delta, transform_responses){
+		setup_randomization_template_and_shifts = function(delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
 			y_delta = template$.__enclos_env__$private$y
@@ -542,7 +549,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 					delta = delta,
 					transform_responses = transform_responses,
 					response_type = private$des_obj_priv_int$response_type,
-					inverse = TRUE
+					inverse = TRUE,
+					zero_one_logit_clamp = zero_one_logit_clamp
 				)
 				y_delta = template$.__enclos_env__$private$y
 			}
@@ -566,7 +574,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			invisible(NULL)
 		},
 
-		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, transform_responses, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE){
+		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, transform_responses, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (use_perms) {
 				if (!is.null(permutations$w_mat)) {
@@ -583,7 +591,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 						w = w_sim,
 						delta = delta,
 						transform_responses = transform_responses,
-						response_type = lightweight_custom_context$response_type
+						response_type = lightweight_custom_context$response_type,
+						inverse = FALSE,
+						zero_one_logit_clamp = zero_one_logit_clamp
 					)
 				}
 				val = private$evaluate_lightweight_custom_randomization_statistic(lightweight_custom_context, y_sim, w_sim, base_template_dead)
@@ -605,7 +615,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 					w = thread_des_obj$.__enclos_env__$private$w,
 					delta = delta,
 					transform_responses = transform_responses,
-					response_type = thread_des_obj$.__enclos_env__$private$response_type
+					response_type = thread_des_obj$.__enclos_env__$private$response_type,
+					inverse = FALSE,
+					zero_one_logit_clamp = zero_one_logit_clamp
 				)
 				thread_des_obj$.__enclos_env__$private$y = y_sim
 			}

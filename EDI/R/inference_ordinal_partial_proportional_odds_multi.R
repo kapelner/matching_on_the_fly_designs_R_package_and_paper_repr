@@ -60,6 +60,8 @@ InferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 		}
 	)
 )
+
+#' @export
 InferenceOrdinalPartialProportionalOdds = R6::R6Class(
 	"InferenceOrdinalPartialProportionalOdds",
 	lock_objects = FALSE,

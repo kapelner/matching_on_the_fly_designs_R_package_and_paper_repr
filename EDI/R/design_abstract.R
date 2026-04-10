@@ -450,14 +450,21 @@ Design = R6::R6Class("Design",
 								)
 			}
 
+			analysis_col_names = names(private$Ximp)[!startsWith(names(private$Ximp), ".assignment_only_")]
+			Ximp_for_model = if (length(analysis_col_names)) {
+				private$Ximp[, ..analysis_col_names]
+			} else {
+				private$Ximp[, .SD, .SDcols = integer(0)]
+			}
+
 			#now let's drop any columns that don't have any variation
-			num_unique_values_per_column = count_unique_values_cpp(private$Ximp)
-			private$Ximp = private$Ximp[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
+			num_unique_values_per_column = count_unique_values_cpp(Ximp_for_model)
+			Ximp_for_model = Ximp_for_model[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 
 			#for nonblank data frames...
-			if (ncol(private$Ximp) > 0){
+			if (ncol(Ximp_for_model) > 0){
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				private$X = model.matrix(~ ., data = private$Ximp)[, -1, drop = FALSE]
+				private$X = model.matrix(~ ., data = Ximp_for_model)[, -1, drop = FALSE]
 				# Ensure it is a numeric matrix (not character)
 				if (is.character(private$X)){
 					stop("model.matrix returned a character matrix - this should not happen.")

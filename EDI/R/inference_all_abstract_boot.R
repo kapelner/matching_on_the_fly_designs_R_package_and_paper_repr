@@ -57,22 +57,43 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			if (isTRUE(debug)) {
 				debug_results = vector("list", B)
-				for (idx in seq_len(B)) {
-					iter_warns = character(0)
-					iter_errs = character(0)
-					iter_val = withCallingHandlers(
-						tryCatch({
-							worker_des = des_template$duplicate()
-							worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-							run_one_boot_iter(worker_des, worker_inf)
-						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
-						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
-					)
-					debug_results[[idx]] = list(
-						val = as.numeric(iter_val)[1L],
-						errors = iter_errs,
-						warnings = iter_warns
-					)
+				if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+					worker_state = private$create_bootstrap_worker_state()
+					for (idx in seq_len(B)) {
+						iter_warns = character(0)
+						iter_errs = character(0)
+						iter_val = withCallingHandlers(
+							tryCatch({
+								boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+								private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+								private$compute_bootstrap_worker_estimate(worker_state)
+							}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
+							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+						)
+						debug_results[[idx]] = list(
+							val = as.numeric(iter_val)[1L],
+							errors = iter_errs,
+							warnings = iter_warns
+						)
+					}
+				} else {
+					for (idx in seq_len(B)) {
+						iter_warns = character(0)
+						iter_errs = character(0)
+						iter_val = withCallingHandlers(
+							tryCatch({
+								worker_des = des_template$duplicate()
+								worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+								run_one_boot_iter(worker_des, worker_inf)
+							}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
+							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+						)
+						debug_results[[idx]] = list(
+							val = as.numeric(iter_val)[1L],
+							errors = iter_errs,
+							warnings = iter_warns
+						)
+					}
 				}
 				values = sapply(debug_results, `[[`, "val")
 				errors_list = lapply(debug_results, `[[`, "errors")
@@ -179,11 +200,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE){
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE){
 			assertNumeric(delta, len = 1)
 			assertCount(B, positive = TRUE)
 			assertFlag(na.rm)
-			type = tolower(type)
+			type = tolower(private$get_bootstrap_type(type))
 			assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
 
 			need_se = type %in% c("studentized", "bootstrap-t")
@@ -253,10 +274,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "bca", na.rm = TRUE, show_progress = TRUE){
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE){
 			private$assert_design_supports_resampling("Bootstrap inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			type = tolower(type)
+			type = tolower(private$get_bootstrap_type(type))
 			assertChoice(type, c(
 				"percentile", "basic", "studentized", "bootstrap-t",
 				"symmetric-percentile-t", "bca", "prepivoted",
@@ -313,6 +334,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				stop("bootstrap_type can only be set for blocking designs: ", paste(valid_blocking_classes, collapse = ", "))
 			}
 			invisible(NULL)
+		},
+
+		get_bootstrap_type = function(type) {
+			if (!is.null(type)) return(type)
+			edi_bootstrap_dispatch_policy(class(self), object = self)
 		},
 
 		supports_reusable_bootstrap_worker = function(){
@@ -533,10 +559,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			actual_cores = private$effective_parallel_cores("jackknife", self$num_cores)
 			jack = unlist(private$par_lapply(seq_len(n), function(i) {
 				idx = seq_len(n)[-i]
-				tryCatch(
-					private$bootstrap_replication_stats(idx, smooth = FALSE)[["theta"]],
-					error = function(e) NA_real_
-				)
+				sub_inf = private$bootstrap_subset_inference(idx, smooth = FALSE)
+				if (is.null(sub_inf)) return(NA_real_)
+				tryCatch({
+					theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = TRUE))[1L]
+					if (is.finite(theta)) theta else NA_real_
+				}, error = function(e) NA_real_)
 			}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
 			as.numeric(jack)
 		},

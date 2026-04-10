@@ -53,8 +53,8 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 		),
 
 	private = list(
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
 		sanitize_beta_response = function(y){

@@ -315,16 +315,20 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 				est = private$cached_values$rd
 				se = private$cached_values$se_rd
 				if (!is.finite(est) || !is.finite(se) || se <= 0){
-					stop("KK g-computation RD: could not compute a finite delta-method standard error.")
+					return(c(NA_real_, NA_real_))
 				}
 				ci = est + c(-1, 1) * z * se
 			} else {
 				log_rr = private$cached_values$log_rr
 				se_log_rr = private$cached_values$se_log_rr
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
-					stop("KK g-computation RR: could not compute a finite delta-method standard error.")
+					return(c(NA_real_, NA_real_))
 				}
-				ci = exp(log_rr + c(-1, 1) * z * se_log_rr)
+				ci_log = log_rr + c(-1, 1) * z * se_log_rr
+				if (!all(is.finite(ci_log))){
+					return(c(NA_real_, NA_real_))
+				}
+				ci = exp(pmin(ci_log, log(.Machine$double.xmax)))
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -342,7 +346,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 				est = private$cached_values$rd
 				se = private$cached_values$se_rd
 				if (!is.finite(est) || !is.finite(se) || se <= 0){
-					stop("KK g-computation RD: could not compute a finite delta-method standard error.")
+					return(NA_real_)
 				}
 				z_stat = (est - delta) / se
 			} else {
@@ -352,7 +356,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 					stop("For RR inference, delta must be strictly positive.")
 				}
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
-					stop("KK g-computation RR: could not compute a finite delta-method standard error.")
+					return(NA_real_)
 				}
 				z_stat = (log_rr - log(delta)) / se_log_rr
 			}

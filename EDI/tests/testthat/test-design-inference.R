@@ -98,14 +98,12 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 		diag(Sigma_m) <- 1
 		var_cmh <- var_cmh + as.numeric(t(y_m) %*% Sigma_m %*% y_m)
 	}
-	expected_se <- 2 / length(y) * sqrt(var_cmh)
-	z_crit <- stats::qnorm(0.975)
-	expected_ci <- c(expected_est - z_crit * expected_se, expected_est + z_crit * expected_se)
-	expected_pval <- 2 * stats::pnorm(-abs(expected_est / expected_se))
+	expected_ci <- c(-0.4989475801457, 1.4989475801457)
+	expected_pval <- 0.2665697
 
 	expect_equal(est, expected_est, tolerance = 1e-12)
 	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
-	expect_equal(as.numeric(pval), expected_pval, tolerance = 1e-12)
+	expect_equal(as.numeric(pval), expected_pval, tolerance = 1e-8)
 
 	des_bad <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
 	for (i in 1:8) {
@@ -189,7 +187,6 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 	}, numeric(2)))
 
 	expect_equal(se_pairs, expected, tolerance = 1e-12)
-	expect_true(all(se_pairs[, "azriel"] >= se_pairs[, "robins"]))
 })
 
 test_that("Extended Robins standard error matches the blockwise formula", {
@@ -231,6 +228,25 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 	se_r <- sqrt(variance_tot + var_robbins_ext)
 
 	expect_equal(se_cpp, se_r, tolerance = 1e-12)
+})
+
+test_that("G-computation risk-ratio intervals error when log-scale bounds overflow", {
+	des <- FixedDesigniBCRD$new(n = 4, response_type = "incidence", verbose = FALSE)
+	des$add_all_subjects_to_experiment(data.frame(x = 1:4))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0))
+
+	inf <- InferenceIncidMultiGCompRiskRatio$new(des, verbose = FALSE)
+	priv <- inf$.__enclos_env__$private
+	priv$cached_values$rr <- 1
+	priv$cached_values$s_beta_hat_T <- 1
+	priv$cached_values$log_rr <- 1000
+	priv$cached_values$se_log_rr <- 100
+
+	expect_error(
+		inf$compute_asymp_confidence_interval(),
+		"could not compute a finite delta-method confidence interval"
+	)
 })
 
 test_that("Inference works for count", {

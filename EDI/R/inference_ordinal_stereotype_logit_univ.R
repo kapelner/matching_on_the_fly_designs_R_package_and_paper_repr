@@ -96,7 +96,7 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 			list(b = c(NA, coef_w), ssq_b_2 = ssq)
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			w_mat = permutations$w_mat
 			if (is.null(w_mat)) return(NULL)

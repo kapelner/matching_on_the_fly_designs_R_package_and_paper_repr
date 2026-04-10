@@ -81,6 +81,131 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			}
 		},
 
+		set_failed_combined_cache = function(){
+			private$cached_values$beta_hat_T = NA_real_
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$is_z = TRUE
+			invisible(FALSE)
+		},
+
+		reduce_combined_covariates = function(X_diff_v, X_r_v, w_r_v){
+			cached_keep = private$cached_values$combined_cov_keep
+			p = ncol(X_r_v)
+			if (is.null(p) || p == 0L) return(integer(0))
+
+			build_combined = function(){
+				nd = nrow(X_diff_v)
+				nR = nrow(X_r_v)
+				X_pairs = cbind(
+					matrix(0, nrow = nd, ncol = 2L),
+					X_diff_v
+				)
+				X_res = cbind(1, w_r_v, X_r_v)
+				rbind(X_pairs, X_res)
+			}
+
+			X_full = build_combined()
+			required = 2L
+
+			if (!is.null(cached_keep) && length(cached_keep) > 0L){
+				keep_full = sort(unique(c(required, cached_keep + 2L)))
+				X_try = X_full[, keep_full, drop = FALSE]
+				qr_try = qr(X_try)
+				if (qr_try$rank == ncol(X_try) && (2L %in% keep_full)){
+					return(sort(unique(cached_keep)))
+				}
+			}
+
+			qr_full = qr(X_full)
+			r_full = qr_full$rank
+			if (r_full <= 2L){
+				private$cached_values$combined_cov_keep = integer(0)
+				return(integer(0))
+			}
+			keep_full = qr_full$pivot[seq_len(r_full)]
+			if (!(required %in% keep_full)) keep_full[r_full] = required
+			keep_full = sort(unique(keep_full))
+			keep_cov = keep_full[keep_full > 2L] - 2L
+			keep_cov = keep_cov[keep_cov >= 1L & keep_cov <= p]
+			private$cached_values$combined_cov_keep = keep_cov
+			keep_cov
+		},
+
+		try_combined_fit = function(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v){
+			mod = tryCatch(
+				fast_cpoisson_combined_with_var_cpp(
+					yT_v = as.numeric(yT_v),
+					n_k_v = as.numeric(n_k_v),
+					X_diff_v = as.matrix(X_diff_v),
+					y_r = as.numeric(y_r_v),
+					w_r = as.numeric(w_r_v),
+					X_r = as.matrix(X_r_v)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
+
+			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
+			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+			private$cached_values$is_z = TRUE
+			TRUE
+		},
+
+		try_pairs_only = function(estimate_only, yT_v, n_k_v, X_diff_v){
+			if (length(yT_v) == 0L) return(FALSE)
+			y_prop = yT_v / n_k_v
+			Xmm = if (ncol(X_diff_v) > 0L) cbind(1, X_diff_v) else matrix(1, nrow = length(yT_v), ncol = 1L)
+			mod = tryCatch({
+				res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
+				if (estimate_only) {
+					list(b = res$b, ssq_b_j = NA_real_)
+				} else {
+					vcov = solve(res$XtWX)
+					list(b = res$b, ssq_b_j = vcov[1, 1])
+				}
+			}, error = function(e) NULL)
+			if (is.null(mod) || !is.finite(mod$b[1])) return(FALSE)
+			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
+
+			private$cached_values$beta_hat_T = as.numeric(mod$b[1])
+			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+			private$cached_values$is_z = TRUE
+			TRUE
+		},
+
+		try_reservoir_only = function(estimate_only, y_r_v, w_r_v, X_r_v){
+			if (length(y_r_v) == 0L) return(FALSE)
+			X_full = if (ncol(X_r_v) > 0L) cbind(1, w_r_v, X_r_v) else cbind(1, w_r_v)
+			j_treat = 2L
+			if (ncol(X_full) > 2L){
+				qr_full = qr(X_full)
+				r_full = qr_full$rank
+				if (r_full < ncol(X_full)){
+					keep = qr_full$pivot[seq_len(r_full)]
+					if (!(2L %in% keep)) keep[r_full] = 2L
+					keep = sort(unique(keep))
+					X_full = X_full[, keep, drop = FALSE]
+					j_treat = which(keep == 2L)
+					if (length(j_treat) != 1L) return(FALSE)
+				}
+			}
+			mod = tryCatch({
+				if (estimate_only) {
+					list(b = fast_poisson_regression_cpp(X_full, as.numeric(y_r_v))$b, ssq_b_j = NA_real_)
+				} else {
+					fast_poisson_regression_with_var_cpp(X_full, as.numeric(y_r_v), j = j_treat)
+				}
+			}, error = function(e) NULL)
+			if (is.null(mod) || !is.finite(mod$b[j_treat])) return(FALSE)
+			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
+
+			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat])
+			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+			private$cached_values$is_z = TRUE
+			TRUE
+		},
+
 		# Maximize L_cond_Poisson(pairs) + L_Poisson(reservoir) jointly.
 		#
 		# Pair contribution (conditional Poisson = weighted binomial logistic):
@@ -101,6 +226,7 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
+				private$cached_values$combined_cov_keep = NULL
 			}
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
@@ -139,143 +265,46 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 			}
 
 			if (!has_pairs && !has_reservoir){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$set_failed_combined_cache()
 				return(invisible(NULL))
 			}
 
-			# ---- Case 1: pairs + reservoir — joint BFGS optimization --------
+			if (has_pairs && has_reservoir && p > 0L){
+				keep_cov = private$reduce_combined_covariates(X_diff_v, X_r_v, w_r_v)
+				if (length(keep_cov) > 0L){
+					X_diff_v = X_diff_v[, keep_cov, drop = FALSE]
+					X_r_v    = X_r_v[, keep_cov, drop = FALSE]
+				} else {
+					X_diff_v = matrix(nrow = length(yT_v), ncol = 0L)
+					X_r_v    = matrix(nrow = length(y_r_v), ncol = 0L)
+				}
+			}
+
 			if (has_pairs && has_reservoir){
-				if (p > 0L) {
-					# Use the full-width pair differences from the shared C++ preprocessing
-					# rather than reconstructing them in R.
-					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
-					X_diff_v = as.matrix(Xd_full[valid, , drop = FALSE])
-
-					if (!estimate_only) {
-						# QR-reduce the combined design to full rank while preserving the
-						# intercept and treatment columns required by the C++ parameterization.
-						X_rank = rbind(
-							cbind(0, 1, X_diff_v),
-							cbind(1, w_r_v, X_r_v)
-						)
-						keep = 1:2
-						rank_keep = qr(X_rank[, keep, drop = FALSE])$rank
-						if (rank_keep < length(keep)) {
-							private$cached_values$beta_hat_T   = NA_real_
-							private$cached_values$s_beta_hat_T = NA_real_
-							private$cached_values$is_z         = TRUE
-							return(invisible(NULL))
-						}
-						for (j in 3:ncol(X_rank)) {
-							trial_keep = c(keep, j)
-							trial_rank = qr(X_rank[, trial_keep, drop = FALSE])$rank
-							if (trial_rank > rank_keep) {
-								keep = trial_keep
-								rank_keep = trial_rank
-							}
-						}
-						keep_cov = keep[keep > 2L] - 2L
-						X_diff_v = if (length(keep_cov) > 0L) {
-							X_diff_v[, keep_cov, drop = FALSE]
-						} else {
-							matrix(nrow = nrow(X_diff_v), ncol = 0L)
-						}
-						X_r_v = if (length(keep_cov) > 0L) {
-							X_r_v[, keep_cov, drop = FALSE]
-						} else {
-							matrix(nrow = nrow(X_r_v), ncol = 0L)
-						}
+				if (!private$try_combined_fit(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v)){
+					if (private$verbose) message(class(self)[1], ": combined CP/Poisson fit failed; falling back to simpler components.")
+					fallback_success = FALSE
+					if (has_pairs){
+						fallback_success = private$try_pairs_only(estimate_only, yT_v, n_k_v, X_diff_v)
+					}
+					if (!fallback_success && has_reservoir){
+						fallback_success = private$try_reservoir_only(estimate_only, y_r_v, w_r_v, X_r_v)
+					}
+					if (!fallback_success){
+						private$set_failed_combined_cache()
 					}
 				}
+				return(invisible(NULL))
+			}
 
-				# Combined: Newton's method in C++
-				# params layout: [beta_0, beta_T, beta_xs]; beta_T is at 1-based index 2
-				mod = tryCatch(
-					if (estimate_only) {
-						fast_cpoisson_combined_cpp(
-							as.double(yT_v), as.double(n_k_v), X_diff_v,
-							as.double(y_r_v), as.double(w_r_v), X_r_v
-						)
-					} else {
-						fast_cpoisson_combined_with_var_cpp(
-							as.double(yT_v), as.double(n_k_v), X_diff_v,
-							as.double(y_r_v), as.double(w_r_v), X_r_v
-						)
-					},
-					error = function(e) NULL
-				)
-				if (is.null(mod) || !mod$converged){
-					private$cached_values$beta_hat_T   = NA_real_
-					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z         = TRUE
-					return(invisible(NULL))
+			if (has_pairs){
+				if (!private$try_pairs_only(estimate_only, yT_v, n_k_v, X_diff_v)){
+					private$set_failed_combined_cache()
 				}
-				private$cached_values$beta_hat_T   = as.numeric(mod$b[2L])
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
-				private$cached_values$is_z         = TRUE
-
-			# ---- Case 2: pairs only — weighted logistic (C++) -------------------
-			} else if (has_pairs){
-				y_prop = yT_v / n_k_v
-				Xmm    = if (p > 0L) cbind(1, X_diff_v) else matrix(1, nrow = length(yT_v), ncol = 1)
-				mod = tryCatch({
-					if (estimate_only) {
-						res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
-						list(b = res$b, ssq_b_1 = NA_real_)
-					} else {
-						res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
-						# Compute vcov from Fisher information matrix XtWX
-						vcov = solve(res$XtWX)
-						list(b = res$b, ssq_b_1 = vcov[1, 1])
-					}
-				}, error = function(e) NULL)
-				if (is.null(mod)){
-					private$cached_values$beta_hat_T   = NA_real_
-					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z         = TRUE
-					return(invisible(NULL))
+			} else if (has_reservoir){
+				if (!private$try_reservoir_only(estimate_only, y_r_v, w_r_v, X_r_v)){
+					private$set_failed_combined_cache()
 				}
-				private$cached_values$beta_hat_T   = as.numeric(mod$b[1L])
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_1))
-				private$cached_values$is_z         = TRUE
-
-			# ---- Case 3: reservoir only — Poisson regression (C++) --------------
-			} else {
-				j_beta_T = 2L
-				X_full   = if (p > 0L) cbind(1, w_r_v, X_r_v) else cbind(1, w_r_v)
-				
-				if (!estimate_only) {
-					qr_X = qr(X_full)
-					if (qr_X$rank < ncol(X_full)){
-						keep     = qr_X$pivot[seq_len(qr_X$rank)]
-						if (!(j_beta_T %in% keep)) keep[qr_X$rank] = j_beta_T
-						keep     = sort(keep)
-						X_full   = X_full[, keep, drop = FALSE]
-						j_beta_T = which(keep == j_beta_T)
-					}
-				}
-				
-				mod = tryCatch({
-					if (estimate_only) {
-						res = fast_poisson_regression_cpp(X = X_full, y = y_r_v)
-						list(b = res$b, ssq_b_j = NA_real_)
-					} else {
-						res = fast_poisson_regression_cpp(X = X_full, y = y_r_v)
-						vcov = solve(res$XtWX)
-						list(b = res$b, ssq_b_j = vcov[j_beta_T, j_beta_T])
-					}
-				}, error = function(e) NULL)
-				if (is.null(mod)){
-					private$cached_values$beta_hat_T   = NA_real_
-					if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z         = TRUE
-					return(invisible(NULL))
-				}
-				private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-				private$cached_values$is_z         = TRUE
 			}
 
 			invisible(NULL)

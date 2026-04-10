@@ -179,5 +179,14 @@ test_multi_robust.R
 test_multi_robust_cars.R
 test_multi_robust_cars_exact.R
 test_robust_cars.R
+test_gcomp_rr.R
+test_gcomp_rr_cars.R
+test_gcomp_rr_comprehensive.R
+package_tests/.~lock*
+scripts/diagnose_modified_poisson_bootstrap.R
+test_fail.R
+test_fail_multi.R
+
+
 
 

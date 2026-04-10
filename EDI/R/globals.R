@@ -129,6 +129,38 @@ get_parallel_dispatch_policy = function() {
 
 edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
 
+#' Get the default bootstrap dispatch policy
+#'
+#' Returns EDI's built-in policy for choosing a default bootstrap type. Each
+#' inference class can override the standard \code{"bca"} default via a regular
+#' expression pattern.
+#'
+#' @return A named list describing the default bootstrap type configuration.
+#' @export
+get_bootstrap_dispatch_policy = function() {
+  list(
+    default_type = "bca",
+    inference_class_overrides = c(
+      "^InferenceContinMultLin$" = "percentile",
+      "^InferenceIncid(Univ|Multi)GCompRisk(Diff|Ratio)$" = "percentile",
+      "^InferenceIncid(Univ|Multi)KKGCompRisk(Diff|Ratio)$" = "percentile",
+      "^InferenceProp(Uni|Multi)GCompMeanDiff$" = "percentile",
+      "^InferenceSurvival(Uni|Multi)DepCensTransformRegr$" = "percentile",
+      "^InferencePropMultiKKQuantileRegrCombinedLikelihood$" = "percentile",
+      "^InferenceSurvivalMultiDepCensTransformRegr$" = "percentile",
+      "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile"
+    ),
+    design_class_overrides = list(
+      FixedDesignBlockedCluster = c(
+        "^InferenceContinMultiRobustRegr$" = "percentile",
+        "^InferenceContinMultLin$" = "percentile",
+        "^InferenceContinMultOLS$" = "percentile"
+      )
+    )
+  )
+}
+
+edi_env$bootstrap_dispatch_policy_config = get_bootstrap_dispatch_policy()
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an
@@ -257,6 +289,40 @@ edi_parallel_dispatch_policy = function(inference_class, response_type, operatio
     response_type = response_type,
     operation = operation
   )
+}
+
+edi_bootstrap_dispatch_policy = function(inference_class, object = NULL) {
+  config = edi_env$bootstrap_dispatch_policy_config
+  inference_class = as.character(inference_class[[1]])
+  overrides = config$inference_class_overrides
+  design_overrides = config$design_class_overrides
+  default_type = config$default_type
+  if (is.null(default_type)) default_type = "bca"
+  if (!is.null(object) && !is.null(design_overrides) && length(design_overrides) > 0L) {
+    des_obj = tryCatch(object$.__enclos_env__$private$des_obj, error = function(e) NULL)
+    if (!is.null(des_obj)) {
+      for (design_class in names(design_overrides)) {
+        if (is(des_obj, design_class)) {
+          design_map = design_overrides[[design_class]]
+          for (pattern in names(design_map)) {
+            if (is.na(pattern) || pattern == "") next
+            if (grepl(pattern, inference_class, perl = TRUE)) {
+              return(tolower(design_map[[pattern]]))
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!is.null(overrides) && length(overrides) > 0L) {
+    for (pattern in names(overrides)) {
+      if (is.na(pattern) || pattern == "") next
+      if (grepl(pattern, inference_class, perl = TRUE)) {
+        return(tolower(overrides[[pattern]]))
+      }
+    }
+  }
+  tolower(default_type)
 }
 
 # Internal helper

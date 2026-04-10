@@ -161,7 +161,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 			return(res)
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			# Optimization: w_mat is already pre-computed in generate_permutations
@@ -182,6 +182,7 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 			colnames(full_X_matrix) <- c("(Intercept)", "treatment", colnames(private$get_X()))
 
 			mod = fast_ols_with_var_cpp(full_X_matrix, private$y)
+			private$cached_mod = mod
 			private$cached_values$beta_hat_T = mod$b[2]
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)

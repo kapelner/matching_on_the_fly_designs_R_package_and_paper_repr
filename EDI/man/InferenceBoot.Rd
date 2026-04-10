@@ -87,7 +87,7 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$compute_bootstrap_two_sided_pval(
   delta = 0,
   B = 501,
-  type = "symmetric",
+  type = NULL,
   na.rm = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -131,7 +131,7 @@ Computes a bootstrap-based confidence interval.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBoot$compute_bootstrap_confidence_interval(
   alpha = 0.05,
   B = 501,
-  type = "bca",
+  type = NULL,
   na.rm = TRUE,
   show_progress = TRUE
 )}\if{html}{\out{</div>}}

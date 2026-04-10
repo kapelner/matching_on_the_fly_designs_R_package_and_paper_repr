@@ -102,7 +102,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = "bca",
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL,
 			na.rm = TRUE, show_progress = TRUE, boundary_tol = 0.02, max_boundary_mass = 0.95,
 			sep_tol = 0.02, min_group_n = 5L){
 			old_bootstrap_screening = private$bootstrap_screening_control

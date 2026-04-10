@@ -44,6 +44,9 @@ The `scripts/benchmark_randomization_ci_ordinal_ppo.R`/`scripts/benchmark_random
 
 Bottom line: use `EDI_NATIVE_SPEED`/`EDI_NATIVE_LTO` to benchmark and tune the expensive ordinal/KK regressions locally, but keep the default portable flags for general development/distribution.
 
+### Bootstrap diagnostics for modified Poisson incidence inference
+Trimmed versions of the `cars`/`FixedCluster` workload (e.g., `scripts/diagnose_modified_poisson_bootstrap.R`) used to hit `Bootstrap confidence interval returned NA bounds` because the reduced design matrix had as many covariates as rows. The inference object now falls back to the univariate modified Poisson fit whenever the multivariate design is underdetermined, so the bootstrap diagnostics script now reports 25/25 finite replicates and `prop_illegal_values = 0.000` while still sharing the same treatment estimate. Run that script to reproduce the failure mode and confirm the fallback path locally.
+
 To cite please use
 
 Kapelner, A., & Krieger, A. (2023). A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power. Biometrics. https://doi.org/10.1111/biom.13561

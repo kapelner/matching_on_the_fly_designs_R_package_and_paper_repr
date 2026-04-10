@@ -109,8 +109,8 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 	private = list(
 		fit_warm_rho = NULL,
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses)
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 		fit_group_id_signature = NULL,
 		fit_group_id_cached = NULL,

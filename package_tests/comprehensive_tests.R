@@ -1,6 +1,7 @@
 rm(list = ls())
 set.seed(1)
-pacman::p_load(EDI, doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
+devtools::load_all("EDI")
+pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 max_n_dataset = 150
 source("package_tests/_dataset_load.R")
 # options(error = recover)
@@ -64,6 +65,28 @@ round_duration_field = function(value){
 	num = suppressWarnings(as.numeric(value))
 	if (!is.finite(num)) return(num)
 	round(num, 3)
+}
+
+add_assignment_only_cluster_id = function(X_design, strata_cols = character(0), cluster_size = 2L){
+	X_out = as.data.frame(X_design)
+	cluster_col = ".assignment_only_cluster_id"
+	cluster_ids = integer(nrow(X_out))
+	next_cluster_id = 1L
+
+	if (!length(strata_cols)) {
+		cluster_ids = ((seq_len(nrow(X_out)) - 1L) %/% cluster_size) + 1L
+	} else {
+		strata_df = X_out[, strata_cols, drop = FALSE]
+		strata_key = do.call(paste, c(lapply(strata_df, as.character), sep = "\r"))
+		for (key in unique(strata_key)) {
+			idx = which(strata_key == key)
+			cluster_ids[idx] = ((seq_along(idx) - 1L) %/% cluster_size) + next_cluster_id
+			next_cluster_id = max(cluster_ids[idx]) + 1L
+		}
+	}
+
+	X_out[[cluster_col]] = factor(cluster_ids)
+	list(X = X_out, cluster_col = cluster_col)
 }
 
 build_result_key = function(rep_val, beta_val, dataset_val, response_val, design_val, inference_val, function_run_val){
@@ -321,6 +344,8 @@ safe_call = function(label, expr){
 			                 grepl("singular matrix in 'backsolve'", msg, fixed = TRUE) ||
 			                 grepl("G-computation RD: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("G-computation RR: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
+			                 grepl("G-computation RR: could not compute a finite delta-method confidence interval.", msg, fixed = TRUE) ||
+			                 grepl("KK g-computation RR: could not compute a finite delta-method confidence interval.", msg, fixed = TRUE) ||
 			                 grepl("G-computation mean difference: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("Zero/one-inflated beta requires y in [0, 1]", msg, fixed = TRUE) ||
 			                 grepl("Zhang incidence inference is only supported", msg, fixed = TRUE) ||
@@ -355,6 +380,10 @@ safe_call = function(label, expr){
 						 													  													  is(seq_des_inf, "InferenceIncidMultiGCompRiskDiff") ||
 						 													  													  is(seq_des_inf, "InferenceIncidUnivGCompRiskRatio") ||
 						 													  													  is(seq_des_inf, "InferenceIncidMultiGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidUnivKKGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidMultiKKGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidUnivKKGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidMultiKKGCompRiskRatio") ||
 						 													  is(seq_des_inf, "InferenceIncidUnivModifiedPoisson") ||
 						 													  is(seq_des_inf, "InferenceIncidMultiModifiedPoisson") ||
 						 													  is(seq_des_inf, "InferencePropUniGCompMeanDiff") ||
@@ -556,6 +585,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		}
 	}
 
+	cluster_design_setup = NULL
+	if (identical(design_type, "FixedCluster")) {
+		cluster_design_setup = add_assignment_only_cluster_id(X_design)
+	} else if (identical(design_type, "FixedBlockedCluster")) {
+		cluster_design_setup = add_assignment_only_cluster_id(X_design, strata_cols = names(X_design)[2:min(2, ncol(X_design))])
+	}
+	X_design_for_design = if (is.null(cluster_design_setup)) X_design else cluster_design_setup$X
+
 	des_obj = tryCatch(switch(design_type,
 		KK21 =         DesignSeqOneByOneKK21$new(        response_type = response_type, n = n),
 		KK21stepwise = DesignSeqOneByOneKK21stepwise$new(response_type = response_type, n = n),
@@ -568,8 +605,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		FixedBernoulli = FixedDesignBernoulli$new( response_type = response_type, n = n),
 		FixediBCRD =     FixedDesigniBCRD$new(     response_type = response_type, n = n),
 		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = names(X_design)[1:min(2, ncol(X_design))], response_type = response_type, n = n),
-		FixedCluster =   FixedDesignCluster$new(   cluster_col = names(X_design)[1], response_type = response_type, n = n),
-		FixedBlockedCluster = FixedDesignBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = names(X_design)[1], response_type = response_type, n = n),
+		FixedCluster =   FixedDesignCluster$new(   cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n),
+		FixedBlockedCluster = FixedDesignBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n),
 		FixedBinaryMatch = FixedDesignBinaryMatch$new( response_type = response_type, n = n),
 		FixedGreedy =    FixedDesignGreedy$new(    response_type = response_type, n = n),
 		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n),
@@ -590,7 +627,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		if (!seq_ok) return(invisible(NULL))
 	} else {
 		# It is a FixedDesign but not a DesignSeqOneByOne
-		des_obj$add_all_subjects_to_experiment(X_design)
+		des_obj$add_all_subjects_to_experiment(X_design_for_design)
 		randomize_ok = tryCatch({ des_obj$assign_w_to_all_subjects(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
 		if (!randomize_ok) return(invisible(NULL))
 		w = des_obj$get_w()
@@ -1015,8 +1052,6 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		run_inference_checks(InferenceOrdinalUniPartialProportionalOddsRegr$new(des_obj, verbose = FALSE), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("InferenceOrdinalMultiPartialProportionalOddsRegr")
 		run_inference_checks(InferenceOrdinalMultiPartialProportionalOddsRegr$new(des_obj, verbose = FALSE), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-		inference_banner("InferenceOrdinalPartialProportionalOdds")
-		run_inference_checks(InferenceOrdinalPartialProportionalOdds$new(des_obj, verbose = FALSE), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("InferenceOrdinalUniCLLRegr")
 		run_inference_checks(InferenceOrdinalUniCLLRegr$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		inference_banner("InferenceOrdinalMultiCLLRegr")

@@ -24,12 +24,13 @@ assert_optimal_blocks_libraries_installed = function(caller) {
 #' Calculates the logit i.e., log(p / (1 - p))
 #'
 #' @param	p		The value between 0 and 1 non inclusive
+#' @param	zero_one_logit_clamp	The clamping amount for exact 0 and 1 values
 #' @return	Its corresponding logit value as a real number
 #' @examples
 #' logit(0.25)
 #' @export
-logit = function(p){
-	p = pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, p))
+logit = function(p, zero_one_logit_clamp = .Machine$double.eps){
+	p = pmax(zero_one_logit_clamp, pmin(1 - zero_one_logit_clamp, p))
 	log(p / (1 - p))
 }
 
@@ -38,13 +39,14 @@ logit = function(p){
 #' Computes the inverse logit of a real number or vector.
 #'
 #' @param    x               Any real number
+#' @param	 zero_one_logit_clamp	The clamping amount
 #' @return   Its corresponding inverse logit value between 0 and 1 non inclusive
 #' @export
 #' @examples
 #' inv_logit(c(-1, 0, 1))
-inv_logit = function(x){
+inv_logit = function(x, zero_one_logit_clamp = .Machine$double.eps){
 	p = 1 / (1 + exp(-x))
-	pmax(.Machine$double.eps, pmin(1 - .Machine$double.eps, p))
+	pmax(zero_one_logit_clamp, pmin(1 - zero_one_logit_clamp, p))
 }
 
 
@@ -650,7 +652,7 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_dep_cens_transform_model = function(y, dead, Xmm){
+.fit_dep_cens_transform_model = function(y, dead, Xmm, estimate_only = FALSE){
 	y = pmax(as.numeric(y), .Machine$double.xmin)
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
@@ -725,7 +727,7 @@ NULL
 				par = start_par,
 				fn = neg_loglik,
 				method = "BFGS",
-				hessian = TRUE,
+				hessian = !isTRUE(estimate_only),
 				control = list(maxit = 2000, reltol = 1e-9)
 			),
 			error = function(e) NULL
@@ -734,6 +736,15 @@ NULL
 		if (is.null(best) || fit$value < best$value) best = fit
 	}
 	if (is.null(best)) return(NULL)
+
+	if (isTRUE(estimate_only)) {
+		coefficients = best$par
+		event_names = colnames(Xfull)
+		cens_names = paste0("censoring_", event_names)
+		param_names = c(event_names, cens_names, "log_scale_event", "log_scale_censoring", "atanh_rho")
+		names(coefficients) = param_names
+		return(list(coefficients = coefficients, vcov = NULL))
+	}
 
 	hess = best$hessian
 	vcov_full = tryCatch(solve(hess), error = function(e) NULL)

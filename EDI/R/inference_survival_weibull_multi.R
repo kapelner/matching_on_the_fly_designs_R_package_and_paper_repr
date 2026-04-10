@@ -81,6 +81,35 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 					return(list(coefficients = full_coefficients, vcov = full_vcov))
 				}
 			}
+			# Progressive QR-ordered column dropping: remove covariates one at a time in
+			# reverse QR-pivot order (most redundant first), keeping treatment, down to
+			# treatment-only.
+			X_cov_last = full_X_matrix_last[, seq_len(ncol(full_X_matrix_last) - 1L), drop = FALSE]
+			if (ncol(X_cov_last) > 0L) {
+				keep_js = qr(X_cov_last)$pivot  # most important first
+				while (length(keep_js) > 0L) {
+					keep_js = keep_js[-length(keep_js)]  # drop most redundant
+					if (length(keep_js) > 0L) {
+						X_try = cbind(X_cov_last[, keep_js, drop = FALSE], private$w)
+						colnames(X_try) = c(colnames(X_cov_last)[keep_js], "treatment")
+					} else {
+						X_try = matrix(private$w, ncol = 1L)
+						colnames(X_try) = "treatment"
+					}
+					mod = tryCatch(private$weibull_generate_mod_from_X(X_try, estimate_only = estimate_only), error = function(e) NULL)
+					if (!is.null(mod)) return(mod)
+					surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), X_try)
+					if (!is.null(surv_mod)) {
+						full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
+						if (estimate_only) return(list(coefficients = full_coefficients, vcov = NULL))
+						full_vcov = surv_mod$var
+						if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
+							colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
+							return(list(coefficients = full_coefficients, vcov = full_vcov))
+						}
+					}
+				}
+			}
 			stop("Weibull regression failed to converge even after progressive correlation dropping and robust retries.")
 		}
 	)

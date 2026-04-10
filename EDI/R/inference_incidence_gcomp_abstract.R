@@ -344,7 +344,11 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
 					return(c(NA_real_, NA_real_))
 				}
-				ci = exp(log_rr + c(-1, 1) * z * se_log_rr)
+				ci_log = log_rr + c(-1, 1) * z * se_log_rr
+				if (!all(is.finite(ci_log))){
+					return(c(NA_real_, NA_real_))
+				}
+				ci = exp(pmin(ci_log, log(.Machine$double.xmax)))
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")

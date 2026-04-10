@@ -36,26 +36,46 @@ InferenceOrdinalUniCauchitRegr = R6::R6Class("InferenceOrdinalUniCauchitRegr",
 	),
 
 	private = list(
+		cauchit_polr_fallback = function(){
+			if (!requireNamespace("MASS", quietly = TRUE)) return(NULL)
+			y_fac = factor(private$y, levels = sort(unique(private$y)))
+			if (length(levels(y_fac)) < 2) return(NULL)
+			dat = data.frame(y = y_fac, w = private$w)
+			mod = tryCatch(
+				MASS::polr(y ~ w, data = dat, method = "cauchit", Hess = TRUE),
+				error = function(e) NULL
+			)
+			if (is.null(mod) || !"w" %in% names(stats::coef(mod))) return(NULL)
+			coef_w = as.numeric(stats::coef(mod)["w"])
+			var_w = tryCatch(vcov(mod)["w", "w"], error = function(e) NA_real_)
+			ssq = if (is.finite(var_w) && var_w > 0) var_w else NA_real_
+			list(b = c(NA, coef_w), ssq_b_2 = ssq)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = matrix(private$w, ncol = 1)
 			colnames(Xmm) = c("treatment")
-			
-			if (estimate_only) {
-				res = fast_ordinal_cauchit_regression_cpp(X = Xmm, y = as.numeric(private$y))
-				return(list(
-					b = c(NA, res$b[1]),
-					ssq_b_2 = NA_real_
-				))
-			}
 
 			res = fast_ordinal_cauchit_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
-			list(
-				b = c(NA, res$b[1]),
-				ssq_b_2 = res$ssq_b_2
-			)
+			b1 = tryCatch(res$b[1], error = function(e) NA_real_)
+			if (is.finite(b1)){
+				if (estimate_only) return(list(b = c(NA, b1), ssq_b_2 = NA_real_))
+				if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, b1), ssq_b_2 = res$ssq_b_2))
+			}
+			fallback = private$cauchit_polr_fallback()
+			if (!is.null(fallback)){
+				if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
+				return(fallback)
+			}
+			list(b = c(NA, b1), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2)
 		}
 	)
 )
+#' Multivariate Cumulative Cauchit Inference for Ordinal Responses
+#'
+#' Multivariate cumulative cauchit model inference for ordinal responses.
+#'
+#' @export
 InferenceOrdinalMultiCauchitRegr = R6::R6Class("InferenceOrdinalMultiCauchitRegr",
 	lock_objects = FALSE,
 	inherit = InferenceOrdinalUniCauchitRegr,
@@ -77,25 +97,19 @@ InferenceOrdinalMultiCauchitRegr = R6::R6Class("InferenceOrdinalMultiCauchitRegr
 		},
 
 		generate_mod = function(estimate_only = FALSE){
-			if (estimate_only) {
-				res = fast_ordinal_cauchit_regression_cpp(
-					X = private$cauchit_design_matrix(),
-					y = as.numeric(private$y)
-				)
-				return(list(
-					b = c(NA, res$b),
-					ssq_b_2 = NA_real_
-				))
+			Xmm = private$cauchit_design_matrix()
+			res = fast_ordinal_cauchit_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
+			b1 = tryCatch(res$b[1], error = function(e) NA_real_)
+			if (is.finite(b1)){
+				if (estimate_only) return(list(b = c(NA, res$b), ssq_b_2 = NA_real_))
+				if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, res$b), ssq_b_2 = res$ssq_b_2))
 			}
-
-			res = fast_ordinal_cauchit_regression_with_var_cpp(
-				X = private$cauchit_design_matrix(),
-				y = as.numeric(private$y)
-			)
-			list(
-				b = c(NA, res$b),
-				ssq_b_2 = res$ssq_b_2
-			)
+			fallback = private$cauchit_polr_fallback()
+			if (!is.null(fallback)){
+				if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
+				return(fallback)
+			}
+			list(b = c(NA, res$b), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2)
 		}
 	)
 )

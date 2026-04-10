@@ -32,17 +32,24 @@ double median_in_place(std::vector<double>& values) {
     return 0.5 * (lower + upper);
 }
 
-inline double logit_cpp(double x) {
+inline double logit_cpp(double x, double clamp) {
+    if (x < clamp) x = clamp;
+    if (x > 1.0 - clamp) x = 1.0 - clamp;
     return std::log(x / (1.0 - x));
 }
 
-inline double inv_logit_cpp(double x) {
+inline double inv_logit_cpp(double x, double clamp) {
+    double p;
     if (x >= 0.0) {
         const double z = std::exp(-x);
-        return 1.0 / (1.0 + z);
+        p = 1.0 / (1.0 + z);
+    } else {
+        const double z = std::exp(x);
+        p = z / (1.0 + z);
     }
-    const double z = std::exp(x);
-    return z / (1.0 + z);
+    if (p < clamp) p = clamp;
+    if (p > 1.0 - clamp) p = 1.0 - clamp;
+    return p;
 }
 
 double hl_from_groups(const std::vector<double>& y_t, const std::vector<double>& y_c) {
@@ -112,12 +119,12 @@ double estimate_hl_ssq_signed_rank(const std::vector<double>& pair_diffs) {
     return var_walsh / pair_diffs.size();
 }
 
-double apply_shift(double y_val, double delta, int transform_code) {
+double apply_shift(double y_val, double delta, int transform_code, double zero_one_logit_clamp) {
     if (transform_code == 1) {
         return y_val * std::exp(delta);
     }
     if (transform_code == 2) {
-        return inv_logit_cpp(logit_cpp(y_val) + delta);
+        return inv_logit_cpp(logit_cpp(y_val, zero_one_logit_clamp) + delta, zero_one_logit_clamp);
     }
     if (transform_code == 3) {
         return (y_val + 1.0) * std::exp(delta) - 1.0;
@@ -203,6 +210,7 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
     const IntegerMatrix& w_mat,
     double delta,
     int transform_code,
+    double zero_one_logit_clamp,
     int num_cores) {
 
     const int n = y.size();
@@ -216,7 +224,7 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
     std::vector<double> y_shifted(n);
     if (delta != 0.0) {
         for (int i = 0; i < n; ++i) {
-            if (std::isfinite(y_ptr[i])) y_shifted[i] = apply_shift(y_ptr[i], delta, transform_code);
+            if (std::isfinite(y_ptr[i])) y_shifted[i] = apply_shift(y_ptr[i], delta, transform_code, zero_one_logit_clamp);
             else y_shifted[i] = NA_REAL;
         }
     }

@@ -4,10 +4,12 @@
 \alias{logit}
 \title{Logit}
 \usage{
-logit(p)
+logit(p, zero_one_logit_clamp = .Machine$double.eps)
 }
 \arguments{
 \item{p}{The value between 0 and 1 non inclusive}
+
+\item{zero_one_logit_clamp}{The clamping amount for exact 0 and 1 values}
 }
 \value{
 Its corresponding logit value as a real number

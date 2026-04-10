@@ -66,7 +66,8 @@ Computes the randomization distribution of the treatment effect estimate under t
   transform_responses = "none",
   show_progress = TRUE,
   permutations = NULL,
-  debug = FALSE
+  debug = FALSE,
+  zero_one_logit_clamp = .Machine$double.eps
 )}\if{html}{\out{</div>}}
 }
 
@@ -87,6 +88,8 @@ Computes the randomization distribution of the treatment effect estimate under t
 per-iteration diagnostics including error messages, warning messages, counts of each,
 and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 values. Runs serially. Default \code{FALSE}.}
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
 }
 \if{html}{\out{</div>}}
 }
@@ -111,7 +114,8 @@ Computes a randomization-based p-value.
   transform_responses = "none",
   na.rm = TRUE,
   show_progress = TRUE,
-  permutations = NULL
+  permutations = NULL,
+  zero_one_logit_clamp = .Machine$double.eps
 )}\if{html}{\out{</div>}}
 }
 
@@ -129,6 +133,8 @@ Computes a randomization-based p-value.
 \item{\code{show_progress}}{Show progress.}
 
 \item{\code{permutations}}{Pre-computed permutations.}
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
 }
 \if{html}{\out{</div>}}
 }

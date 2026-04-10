@@ -59,9 +59,42 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#' @return 	A scalar treatment estimate.
 		compute_treatment_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
+		},
+
+		#' @description
+		#' Returns the model object from the last call that produced the treatment
+		#' estimate and SE. Calls \code{compute_treatment_estimate()} first if needed.
+		#'
+		#' @return The cached model object (type depends on the concrete class).
+		get_mod = function(){
+			if (is.null(private$cached_mod)) self$compute_treatment_estimate()
+			private$cached_mod
+		},
+
+		#' @description
+		#' Prints a summary of the model from the last call that produced the
+		#' treatment estimate and SE.
+		get_summary = function(){
+			mod = self$get_mod()
+			if (is.null(mod)) {
+				cat("No model available (call compute_treatment_estimate() first).\n")
+				return(invisible(NULL))
+			}
+			if (identical(class(mod), "list")) {
+				if (!is.null(private$cached_values$summary_table)) {
+					print(private$cached_values$summary_table)
+				} else {
+					print(mod)
+				}
+			} else {
+				print(summary(mod))
+			}
+			invisible(NULL)
 		}
 	),
+
 	private = list(
+		cached_mod = NULL,
 		get_standard_error = function() stop("Must be implemented by concrete class or shared helper."),
 		get_degrees_of_freedom = function() NA_real_,
 

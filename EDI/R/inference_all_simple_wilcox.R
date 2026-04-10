@@ -133,7 +133,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			)
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses) {
+		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 
 			# Optimization: w_mat is already pre-computed in generate_permutations
@@ -141,7 +141,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			nsim = ncol(w_mat)
 
 			y_sim = as.numeric(y)
-			
+
 			# Map transform_responses to transform_code
 			t_code = 0L # none
 			if (transform_responses == "log") {
@@ -151,11 +151,10 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			} else if (transform_responses == "log1p") {
 				t_code = 3L
 			}
-			
-			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, private$n_cpp_threads(nsim))
+
+			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, as.numeric(zero_one_logit_clamp), private$n_cpp_threads(nsim))
 			return(res)
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE, ...){
 			if (is.null(private$custom_randomization_statistic_function)) {
 				private$hl_point_estimate(private$y, private$w)

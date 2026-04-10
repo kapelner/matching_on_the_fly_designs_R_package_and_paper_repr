@@ -51,6 +51,22 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 	),
 
 	private = list(
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			private$create_design_backed_bootstrap_worker_state()
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+		},
+
 		build_design_matrix = function(){
 			X = matrix(private$w, ncol = 1)
 			colnames(X) = "treatment"
@@ -66,7 +82,8 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 				mod = .fit_dep_cens_transform_model(
 					y = private$y,
 					dead = private$dead,
-					Xmm = Xmm
+					Xmm = Xmm,
+					estimate_only = estimate_only
 				)
 				if (!is.null(mod)) return(mod)
 			}

@@ -121,6 +121,7 @@ List compute_bootstrap_kk_stats_cpp(
 	NumericVector yCs_matched(m, NA_REAL);
 	NumericVector y_matched_diffs(m, NA_REAL);
 	NumericMatrix X_matched_diffs_full(m, p);
+	NumericMatrix X_matched_means_full(m, p);
 	std::vector<int> found_t(static_cast<std::size_t>(m), 0);
 	std::vector<int> found_c(static_cast<std::size_t>(m), 0);
 
@@ -178,12 +179,14 @@ List compute_bootstrap_kk_stats_cpp(
 				found_t[static_cast<std::size_t>(pair_idx)] = 1;
 				for (int j = 0; j < p; ++j) {
 					X_matched_diffs_full(pair_idx, j) += X(src_idx, j);
+					X_matched_means_full(pair_idx, j) += X(src_idx, j) / 2.0;
 				}
 			} else {
 				yCs_matched[pair_idx] = y_i;
 				found_c[static_cast<std::size_t>(pair_idx)] = 1;
 				for (int j = 0; j < p; ++j) {
 					X_matched_diffs_full(pair_idx, j) -= X(src_idx, j);
+					X_matched_means_full(pair_idx, j) += X(src_idx, j) / 2.0;
 				}
 			}
 		}
@@ -230,6 +233,7 @@ List compute_bootstrap_kk_stats_cpp(
 	return List::create(
 		_["X_matched_diffs"] = X_matched_diffs,
 		_["X_matched_diffs_full"] = X_matched_diffs_full,
+		_["X_matched_means_full"] = X_matched_means_full,
 		_["yTs_matched"] = yTs_matched,
 		_["yCs_matched"] = yCs_matched,
 		_["y_matched_diffs"] = y_matched_diffs,

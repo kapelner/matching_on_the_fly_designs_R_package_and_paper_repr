@@ -10,6 +10,7 @@ compute_kk_wilcox_distr_parallel_cpp(
   m_mat,
   delta,
   transform_code,
+  zero_one_logit_clamp,
   is_fixed_matching,
   num_cores
 )

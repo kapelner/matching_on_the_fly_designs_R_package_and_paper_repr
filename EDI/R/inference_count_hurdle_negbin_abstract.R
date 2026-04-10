@@ -59,11 +59,21 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			data.frame(w = private$w)
 		},
 
+		try_hurdle_negbin_fit = function(X_f, j_t){
+			mod = tryCatch(
+				fast_hurdle_negbin_with_var_cpp(X_f, private$y, j = j_t),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NULL)
+			b = as.numeric(mod$b)
+			ssq = as.numeric(mod$ssq_b_j)
+			if (length(b) != ncol(X_f) || any(!is.finite(b)) || !is.finite(ssq) || ssq < 0) return(NULL)
+			list(mod = mod, b = b, ssq = ssq, j = j_t, X = X_f)
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
 			colnames(X_full)[1:2] = c("(Intercept)", "treatment")
@@ -72,26 +82,18 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				private$cached_values$beta_hat_T = NA_real_
-			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			mod = tryCatch(
-				fast_hurdle_negbin_with_var_cpp(X_fit, private$y, j = j_treat),
-				error = function(e) NULL
-			)
-			if (is.null(mod)){
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+			fit = private$try_hurdle_negbin_fit(X_fit, j_treat)
+			if (is.null(fit) && ncol(X_fit) > 2L){
+				X_treat_only = X_fit[, 1:2, drop = FALSE]
+				fit = private$try_hurdle_negbin_fit(X_treat_only, 2L)
+				reduced = list(X = X_treat_only, keep = 1:2, j_treat = 2L)
 			}
-
-			coef_hat = as.numeric(mod$b)
-			ssq_b_2 = as.numeric(mod$ssq_b_j)
-			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat)) || !is.finite(ssq_b_2) || ssq_b_2 < 0){
+			if (is.null(fit)){
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
@@ -99,15 +101,15 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			}
 
 			b_full = rep(NA_real_, ncol(X_full))
-			b_full[reduced$keep] = coef_hat
+			b_full[reduced$keep] = fit$b
 			names(b_full) = colnames(X_full)
 
-			private$cached_values$beta_hat_T = coef_hat[j_treat]
-			private$cached_values$s_beta_hat_T = sqrt(ssq_b_2)
+			private$cached_values$beta_hat_T = fit$b[fit$j]
+			private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
 			private$cached_values$is_z = TRUE
 			private$cached_values$full_coefficients = b_full
-			private$cached_values$theta_hat = as.numeric(mod$theta_hat)
-			private$cached_values$hurdle_coefficients = mod$hurdle_b
+			private$cached_values$theta_hat = as.numeric(fit$mod$theta_hat)
+			private$cached_values$hurdle_coefficients = fit$mod$hurdle_b
 		},
 
 		assert_finite_se = function(){

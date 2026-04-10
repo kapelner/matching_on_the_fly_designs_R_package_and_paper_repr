@@ -577,8 +577,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // compute_kk_wilcox_distr_parallel_cpp
-NumericVector compute_kk_wilcox_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, const IntegerMatrix& m_mat, double delta, int transform_code, bool is_fixed_matching, int num_cores);
-RcppExport SEXP _EDI_compute_kk_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP is_fixed_matchingSEXP, SEXP num_coresSEXP) {
+NumericVector compute_kk_wilcox_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, const IntegerMatrix& m_mat, double delta, int transform_code, double zero_one_logit_clamp, bool is_fixed_matching, int num_cores);
+RcppExport SEXP _EDI_compute_kk_wilcox_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP m_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP zero_one_logit_clampSEXP, SEXP is_fixed_matchingSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -587,9 +587,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type m_mat(m_matSEXP);
     Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< int >::type transform_code(transform_codeSEXP);
+    Rcpp::traits::input_parameter< double >::type zero_one_logit_clamp(zero_one_logit_clampSEXP);
     Rcpp::traits::input_parameter< bool >::type is_fixed_matching(is_fixed_matchingSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_kk_wilcox_distr_parallel_cpp(y, w_mat, m_mat, delta, transform_code, is_fixed_matching, num_cores));
+    rcpp_result_gen = Rcpp::wrap(compute_kk_wilcox_distr_parallel_cpp(y, w_mat, m_mat, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1191,8 +1192,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // compute_wilcox_hl_distr_parallel_cpp
-NumericVector compute_wilcox_hl_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, double delta, int transform_code, int num_cores);
-RcppExport SEXP _EDI_compute_wilcox_hl_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP num_coresSEXP) {
+NumericVector compute_wilcox_hl_distr_parallel_cpp(const NumericVector& y, const IntegerMatrix& w_mat, double delta, int transform_code, double zero_one_logit_clamp, int num_cores);
+RcppExport SEXP _EDI_compute_wilcox_hl_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP deltaSEXP, SEXP transform_codeSEXP, SEXP zero_one_logit_clampSEXP, SEXP num_coresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1200,8 +1201,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerMatrix& >::type w_mat(w_matSEXP);
     Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< int >::type transform_code(transform_codeSEXP);
+    Rcpp::traits::input_parameter< double >::type zero_one_logit_clamp(zero_one_logit_clampSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_wilcox_hl_distr_parallel_cpp(y, w_mat, delta, transform_code, num_cores));
+    rcpp_result_gen = Rcpp::wrap(compute_wilcox_hl_distr_parallel_cpp(y, w_mat, delta, transform_code, zero_one_logit_clamp, num_cores));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2442,7 +2444,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
     {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 5},
     {"_EDI_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_EDI_exact_jonckheere_terpstra_pval_cpp, 2},
-    {"_EDI_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_wilcox_distr_parallel_cpp, 7},
+    {"_EDI_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_wilcox_distr_parallel_cpp, 8},
     {"_EDI_fast_log_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_cpp, 4},
     {"_EDI_fast_log_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_with_var_cpp, 5},
     {"_EDI_fast_identity_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_cpp, 4},
@@ -2487,7 +2489,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
     {"_EDI_wilcox_hl_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_point_estimate_cpp, 2},
     {"_EDI_compute_wilcox_hl_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_bootstrap_parallel_cpp, 4},
-    {"_EDI_compute_wilcox_hl_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_distr_parallel_cpp, 5},
+    {"_EDI_compute_wilcox_hl_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_distr_parallel_cpp, 6},
     {"_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp, 6},
     {"_EDI_compute_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_parallel_cpp, 4},
     {"_EDI_compute_wilcox_distr_from_list_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_from_list_parallel_cpp, 4},
