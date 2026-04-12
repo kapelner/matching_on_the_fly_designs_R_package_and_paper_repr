@@ -365,6 +365,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				worker = worker,
 				worker_priv = worker_priv,
 				worker_des_priv = worker_des_priv,
+				base_Xraw = if (!is.null(source_des_priv$Xraw)) source_des_priv$Xraw else NULL,
+				base_Ximp = if (!is.null(source_des_priv$Ximp)) source_des_priv$Ximp else NULL,
+				base_X = if (!is.null(private$X)) private$X else private$get_X(),
 				base_w = if (!is.null(source_des_priv$w)) as.numeric(source_des_priv$w) else NULL,
 				base_y = if (!is.null(source_des_priv$y)) source_des_priv$y else NULL,
 				base_dead = if (!is.null(source_des_priv$dead)) as.numeric(source_des_priv$dead) else NULL,
@@ -379,21 +382,39 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 		load_bootstrap_sample_into_design_backed_worker = function(worker_state, indices){
 			indices = as.integer(indices)
+			use_resampled_covariates =
+				length(indices) != worker_state$n ||
+				is(worker_state$worker_priv$des_obj, "FixedDesignBlockedCluster")
 			w_priv = worker_state$worker_priv
+			w_priv$X = if (use_resampled_covariates && !is.null(worker_state$base_X)) {
+				worker_state$base_X[indices, , drop = FALSE]
+			} else {
+				worker_state$base_X
+			}
 			w_priv$w = if (!is.null(worker_state$base_w)) as.numeric(worker_state$base_w[indices]) else NULL
 			w_priv$y = if (!is.null(worker_state$base_y)) as.numeric(worker_state$base_y[indices]) else NULL
 			w_priv$dead = if (!is.null(worker_state$base_dead)) as.numeric(worker_state$base_dead[indices]) else NULL
 			w_priv$y_temp = w_priv$y
 			if (!is.null(worker_state$base_m)) w_priv$m = worker_state$base_m[indices]
-			w_priv$n = worker_state$n
+			w_priv$n = if (use_resampled_covariates) length(indices) else worker_state$n
 			w_priv$cached_values = list()
+			w_priv$reduced_design_keep_cache = NULL
+			w_priv$fixed_covariate_keep_cache = NULL
+			w_priv$cached_mod = NULL
 
 			des_priv = worker_state$worker_des_priv
 			if (!is.null(des_priv)) {
+				if (use_resampled_covariates) {
+					des_priv$X = w_priv$X
+					des_priv$t = length(indices)
+					des_priv$n = length(indices)
+				}
 				des_priv$w = w_priv$w
 				des_priv$y = w_priv$y
 				des_priv$dead = w_priv$dead
 				if (!is.null(worker_state$base_m)) des_priv$m = w_priv$m
+				des_priv$all_subject_data_cache = list()
+				if (use_resampled_covariates) des_priv$lin_centered_covariates = NULL
 			}
 		},
 
@@ -502,6 +523,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf_priv = sub_inf$.__enclos_env__$private
 			sub_inf_priv$des_obj = sub_des
 			sub_inf_priv$des_obj_priv_int = sub_des_priv
+			sub_inf_priv$X = if (!is.null(private$X)) subset_field(private$X) else NULL
 			sub_inf_priv$y = sub_des_priv$y
 			sub_inf_priv$y_temp = sub_des_priv$y
 			sub_inf_priv$w = sub_des_priv$w
@@ -510,6 +532,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf_priv$cached_values = list()
 			sub_inf_priv$cached_values$rand_distr_cache = list()
 			sub_inf_priv$cached_values$m_cache = list()
+			sub_inf_priv$reduced_design_keep_cache = NULL
+			sub_inf_priv$fixed_covariate_keep_cache = NULL
+			sub_inf_priv$cached_mod = NULL
 			if (!is.null(sub_des_priv$m)) sub_inf_priv$m = sub_des_priv$m
 			sub_inf
 		},

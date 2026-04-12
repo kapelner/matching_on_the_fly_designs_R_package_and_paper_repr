@@ -22,6 +22,34 @@ make_fixed_design <- function(response_type, X, y_fun, dead_fun = NULL){
 	des
 }
 
+make_fixed_blocked_cluster_design <- function(X, y_fun, cluster_size = 2L){
+	X_design = as.data.frame(X)
+	strata_col = "block"
+	cluster_col = ".assignment_only_cluster_id"
+	cluster_ids = integer(nrow(X_design))
+	next_cluster_id = 1L
+
+	for (block in unique(X_design[[strata_col]])) {
+		idx = which(X_design[[strata_col]] == block)
+		cluster_ids[idx] = ((seq_along(idx) - 1L) %/% cluster_size) + next_cluster_id
+		next_cluster_id = max(cluster_ids[idx]) + 1L
+	}
+
+	X_design[[cluster_col]] = factor(cluster_ids)
+	des = FixedDesignBlockedCluster$new(
+		n = nrow(X_design),
+		strata_cols = strata_col,
+		cluster_col = cluster_col,
+		response_type = "continuous",
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(X_design)
+	des$assign_w_to_all_subjects()
+	w = des$get_w()
+	des$add_all_subject_responses(y_fun(w, X_design))
+	des
+}
+
 test_that("incidence and ordinal g-computation reusable workers match generic bootstrap", {
 	SlowInferenceIncidUnivGCompRiskDiff = R6::R6Class(
 		"SlowInferenceIncidUnivGCompRiskDiff",
@@ -224,6 +252,51 @@ test_that("continuous lin, count negbin, and classical incidence estimators matc
 		SlowInferenceIncidUnivMiettinenNurminenRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 214
 	)
+})
+
+test_that("continuous blocked-cluster bootstrap keeps multivariate workers finite", {
+	set.seed(20260417)
+	block = rep(c("a", "b", "c"), each = 5L)
+	X = data.frame(
+		block = factor(block),
+		x1 = rnorm(length(block)),
+		x2 = rnorm(length(block)),
+		x3 = rnorm(length(block))
+	)
+	des = make_fixed_blocked_cluster_design(
+		X,
+		y_fun = function(w, X_design){
+			0.6 * w + 0.4 * X_design$x1 - 0.25 * X_design$x2 + stats::rnorm(nrow(X_design), sd = 0.5)
+		}
+	)
+
+	inf_ols = InferenceContinMultOLS$new(des, verbose = FALSE)
+	inf_lin = InferenceContinMultLin$new(des, verbose = FALSE)
+	inf_robust = InferenceContinMultiRobustRegr$new(des, method = "M", verbose = FALSE)
+
+	set.seed(215)
+	dbg_ols = inf_ols$approximate_bootstrap_distribution_beta_hat_T(B = 25L, show_progress = FALSE, debug = TRUE)
+	set.seed(216)
+	dbg_lin = inf_lin$approximate_bootstrap_distribution_beta_hat_T(B = 25L, show_progress = FALSE, debug = TRUE)
+	set.seed(217)
+	dbg_robust = inf_robust$approximate_bootstrap_distribution_beta_hat_T(B = 25L, show_progress = FALSE, debug = TRUE)
+
+	expect_equal(sum(is.finite(dbg_ols$values)), 25L)
+	expect_equal(sum(is.finite(dbg_lin$values)), 25L)
+	expect_equal(sum(is.finite(dbg_robust$values)), 25L)
+	expect_false(any(grepl("incompatible dimensions|number of rows of result", unlist(dbg_ols$errors))))
+	expect_false(any(grepl("incompatible dimensions|number of rows of result", unlist(dbg_lin$errors))))
+	expect_false(any(grepl("incompatible dimensions|number of rows of result", unlist(dbg_robust$errors))))
+
+	set.seed(218)
+	ci_ols = inf_ols$compute_bootstrap_confidence_interval(B = 51L, show_progress = FALSE)
+	set.seed(219)
+	ci_lin = inf_lin$compute_bootstrap_confidence_interval(B = 51L, show_progress = FALSE)
+	set.seed(220)
+	ci_robust = inf_robust$compute_bootstrap_confidence_interval(B = 51L, show_progress = FALSE)
+	expect_true(all(is.finite(ci_ols)))
+	expect_true(all(is.finite(ci_lin)))
+	expect_true(all(is.finite(ci_robust)))
 })
 
 test_that("MLE and proportion families picked up through InferenceAsymp match generic bootstrap", {
@@ -434,6 +507,26 @@ test_that("zero-augmented count reusable workers match generic bootstrap", {
 		inherit = InferenceCountMultiZeroInflatedPoissonRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
+	SlowInferenceCountUnivZeroInflatedNegBinRegr = R6::R6Class(
+		"SlowInferenceCountUnivZeroInflatedNegBinRegr",
+		inherit = InferenceCountUnivZeroInflatedNegBinRegr,
+		private = list(supports_reusable_bootstrap_worker = function() FALSE)
+	)
+	SlowInferenceCountMultiZeroInflatedNegBinRegr = R6::R6Class(
+		"SlowInferenceCountMultiZeroInflatedNegBinRegr",
+		inherit = InferenceCountMultiZeroInflatedNegBinRegr,
+		private = list(supports_reusable_bootstrap_worker = function() FALSE)
+	)
+	SlowInferenceCountUnivHurdlePoissonRegr = R6::R6Class(
+		"SlowInferenceCountUnivHurdlePoissonRegr",
+		inherit = InferenceCountUnivHurdlePoissonRegr,
+		private = list(supports_reusable_bootstrap_worker = function() FALSE)
+	)
+	SlowInferenceCountMultiHurdlePoissonRegr = R6::R6Class(
+		"SlowInferenceCountMultiHurdlePoissonRegr",
+		inherit = InferenceCountMultiHurdlePoissonRegr,
+		private = list(supports_reusable_bootstrap_worker = function() FALSE)
+	)
 
 	set.seed(20260419)
 	n = 36L
@@ -458,6 +551,30 @@ test_that("zero-augmented count reusable workers match generic bootstrap", {
 		InferenceCountMultiZeroInflatedPoissonRegr$new(des, verbose = FALSE),
 		SlowInferenceCountMultiZeroInflatedPoissonRegr$new(des, verbose = FALSE),
 		seed = 230,
+		tolerance = 1e-8
+	)
+	compare_bootstrap_fast_slow_asymp(
+		InferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		SlowInferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		seed = 231,
+		tolerance = 1e-8
+	)
+	compare_bootstrap_fast_slow_asymp(
+		InferenceCountMultiZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		SlowInferenceCountMultiZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		seed = 232,
+		tolerance = 1e-8
+	)
+	compare_bootstrap_fast_slow_asymp(
+		InferenceCountUnivHurdlePoissonRegr$new(des, verbose = FALSE),
+		SlowInferenceCountUnivHurdlePoissonRegr$new(des, verbose = FALSE),
+		seed = 233,
+		tolerance = 1e-8
+	)
+	compare_bootstrap_fast_slow_asymp(
+		InferenceCountMultiHurdlePoissonRegr$new(des, verbose = FALSE),
+		SlowInferenceCountMultiHurdlePoissonRegr$new(des, verbose = FALSE),
+		seed = 234,
 		tolerance = 1e-8
 	)
 })

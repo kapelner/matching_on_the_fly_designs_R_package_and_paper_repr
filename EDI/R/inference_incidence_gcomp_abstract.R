@@ -24,10 +24,17 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#' Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, verbose = FALSE){
+		#' @param prob_clip_eps Probability clamp applied to fitted values before computing
+		#'   the sandwich covariance. Predicted probabilities (mu) are clipped to
+		#'   \code{[prob_clip_eps, 1 - prob_clip_eps]} so that the IWLS weight
+		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
+		#'   Default \code{.Machine$double.eps} (essentially no clamping).
+		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
 			assertResponseType(des_obj$get_response_type(), "incidence")
+			assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$prob_clip_eps = prob_clip_eps
 		},
 
 		#' @description
@@ -70,6 +77,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 	),
 
 	private = list(
+		prob_clip_eps = .Machine$double.eps,
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
 		get_estimand_type = function() stop(class(self)[1], " must implement get_estimand_type()."),
@@ -167,7 +175,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				}
 
 				mu_hat = inv_logit(X_fit %*% coef_hat)
-				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
+				mu_hat = pmin(pmax(as.numeric(mu_hat), private$prob_clip_eps), 1 - private$prob_clip_eps)
 				W = mu_hat * (1 - mu_hat)
 				if (any(!is.finite(W)) || any(W <= 0)){
 					if (ncol(X_curr) <= 2L) return(NULL)

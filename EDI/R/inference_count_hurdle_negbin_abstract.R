@@ -59,15 +59,20 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			data.frame(w = private$w)
 		},
 
-		try_hurdle_negbin_fit = function(X_f, j_t){
+		try_hurdle_negbin_fit = function(X_f, j_t, estimate_only = FALSE){
 			mod = tryCatch(
-				fast_hurdle_negbin_with_var_cpp(X_f, private$y, j = j_t),
+				if (estimate_only) {
+					fast_hurdle_negbin_cpp(X_f, private$y)
+				} else {
+					fast_hurdle_negbin_with_var_cpp(X_f, private$y, j = j_t)
+				},
 				error = function(e) NULL
 			)
 			if (is.null(mod)) return(NULL)
 			b = as.numeric(mod$b)
-			ssq = as.numeric(mod$ssq_b_j)
-			if (length(b) != ncol(X_f) || any(!is.finite(b)) || !is.finite(ssq) || ssq < 0) return(NULL)
+			ssq = if (estimate_only) NA_real_ else as.numeric(mod$ssq_b_j)
+			if (length(b) != ncol(X_f) || any(!is.finite(b))) return(NULL)
+			if (!estimate_only && (!is.finite(ssq) || ssq < 0)) return(NULL)
 			list(mod = mod, b = b, ssq = ssq, j = j_t, X = X_f)
 		},
 
@@ -87,10 +92,10 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 				return(invisible(NULL))
 			}
 
-			fit = private$try_hurdle_negbin_fit(X_fit, j_treat)
+			fit = private$try_hurdle_negbin_fit(X_fit, j_treat, estimate_only = estimate_only)
 			if (private$harden && is.null(fit) && ncol(X_fit) > 2L){
 				X_treat_only = X_fit[, 1:2, drop = FALSE]
-				fit = private$try_hurdle_negbin_fit(X_treat_only, 2L)
+				fit = private$try_hurdle_negbin_fit(X_treat_only, 2L, estimate_only = estimate_only)
 				reduced = list(X = X_treat_only, keep = 1:2, j_treat = 2L)
 			}
 			if (is.null(fit)){
@@ -105,7 +110,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			names(b_full) = colnames(X_full)
 
 			private$cached_values$beta_hat_T = fit$b[fit$j]
-			private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
+			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
 			private$cached_values$is_z = TRUE
 			private$cached_values$full_coefficients = b_full
 			private$cached_values$theta_hat = as.numeric(fit$mod$theta_hat)

@@ -549,6 +549,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_hurdle_negbin_cpp
+List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int maxit, double tol);
+RcppExport SEXP _EDI_fast_hurdle_negbin_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xmm(XmmSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_hurdle_negbin_cpp(Xmm, y, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_hurdle_negbin_with_var_cpp
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j, int maxit, double tol);
 RcppExport SEXP _EDI_fast_hurdle_negbin_with_var_cpp(SEXP XmmSEXP, SEXP ySEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -2442,6 +2456,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 4},
     {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 2},
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
+    {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 4},
     {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 5},
     {"_EDI_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_EDI_exact_jonckheere_terpstra_pval_cpp, 2},
     {"_EDI_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_wilcox_distr_parallel_cpp, 8},

@@ -1,3 +1,4 @@
+#libreoffice --calc /home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/package_tests/calc_external_links/comprehensive_tests_results_nc_1_links.fods
 rm(list = ls())
 set.seed(1)
 devtools::load_all("EDI")
@@ -134,20 +135,20 @@ if (nrow(existing_results_dt) > 0L) {
 	}
 }
 results_dt = data.table(
+	rep = integer(),
+	beta_T = numeric(),
+	dataset = character(),
+	response_type = character(),
+	design = character(),
+	inference_class = character(),
+	function_run = character(),
 	timestamp = character(),
 	duration_time_sec = numeric(),
-	inference_class = character(),
-	dataset = character(),
-	design = character(),
-	response_type = character(),
-	function_run = character(),
 	result_1 = character(),
 	result_2 = character(),
 	beta_T_in_confidence_interval = logical(),
 	error_message = character(),
-	rep = integer(),
 	run_row_id = integer(),
-	beta_T = numeric(),
 	r = integer(),
 	pval_epsilon = numeric(),
 	prob_censoring = numeric(),
@@ -208,29 +209,29 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 	results_dt <<- data.table::rbindlist(list(
 		results_dt,
 		data.table(
-			timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
 			rep = as.integer(rep_curr),
-			run_row_id = run_row_id,
-			duration_time_sec = round_duration_field(duration_time_sec),
 			beta_T = beta_T,
+			dataset = dataset_name,
+			response_type = response_type,
+			design = design_type,
+			inference_class = inference_class,
+			function_run = function_run,
+			timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
+			duration_time_sec = round_duration_field(duration_time_sec),
+			result_1 = result_1,
+			result_2 = result_2,
+			beta_T_in_confidence_interval = beta_T_in_confidence_interval,
+			error_message = ifelse(is.null(error_message), NA_character_, as.character(error_message)),
+			run_row_id = run_row_id,
 			r = as.integer(r),
 			pval_epsilon = pval_epsilon,
 			prob_censoring = prob_censoring,
 			sd_noise = SD_NOISE,
 			num_cores = as.integer(NUM_CORES),
-			inference_class = inference_class,
-			dataset = dataset_name,
 			dataset_n_rows = as.integer(dataset_n_rows),
 			dataset_n_cols = as.integer(dataset_n_cols),
-			design = design_type,
-			response_type = response_type,
-			function_run = function_run,
-			result_1 = result_1,
-			result_2 = result_2,
-			beta_T_in_confidence_interval = beta_T_in_confidence_interval,
 			result = result_str,
-			status = status,
-			error_message = ifelse(is.null(error_message), NA_character_, as.character(error_message))
+			status = status
 		)
 	), use.names = TRUE)
 	if (identical(status, "ok")) {

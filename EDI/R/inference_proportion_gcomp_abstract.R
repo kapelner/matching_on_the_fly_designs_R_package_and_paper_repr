@@ -25,10 +25,51 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param prob_clip_eps Primary probability clamp applied to fitted values during
+		#'   model-based variance computation. Predicted probabilities are clipped to
+		#'   \code{[prob_clip_eps, 1 - prob_clip_eps]} before computing IWLS weights.
+		#'   Must be in \code{[0, 0.5)}. Default \code{1e-6}.
+		#' @param prob_clip_strong_eps Stronger clamp used as a fallback when the primary
+		#'   variance strategy fails. Predicted probabilities and gradients are clipped to
+		#'   \code{[prob_clip_strong_eps, 1 - prob_clip_strong_eps]}. Must be in
+		#'   \code{[0, 0.5)} and should be \eqn{\ge} \code{prob_clip_eps}. Default \code{1e-4}.
+		#' @param variance_fallback_methods Ordered character vector of variance strategies to
+		#'   attempt in sequence. Each name corresponds to a (gradient, covariance-matrix) pair;
+		#'   the first strategy that yields a finite, positive variance is used. Allowed values
+		#'   (in their default order) are:
+		#'   \describe{
+		#'     \item{\code{"robust"}}{Analytic delta-method gradient with the sandwich (HC) covariance.}
+		#'     \item{\code{"stabilized_robust"}}{Same gradient; covariance projected to the nearest PSD matrix.}
+		#'     \item{\code{"model_based"}}{Same gradient; Fisher-information covariance (clipped at \code{prob_clip_eps}).}
+		#'     \item{\code{"stabilized_robust_fd"}}{Finite-difference gradient; stabilized sandwich covariance.}
+		#'     \item{\code{"model_based_fd"}}{Finite-difference gradient; model-based covariance.}
+		#'     \item{\code{"stabilized_robust_strong_clip"}}{Strong-clipped analytic gradient; stabilized sandwich covariance.}
+		#'     \item{\code{"model_based_strong_clip"}}{Strong-clipped analytic gradient; model-based covariance (strong-clipped).}
+		#'     \item{\code{"model_based_fd_strong_clip"}}{Strong-clipped finite-difference gradient; model-based covariance (strong-clipped).}
+		#'   }
+		#'   Pass a shorter vector or a single string to restrict which strategies are tried.
+		#'   An empty vector always returns \code{NA} variance.
+		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
+			variance_fallback_methods = c(
+				"robust", "stabilized_robust", "model_based",
+				"stabilized_robust_fd", "model_based_fd",
+				"stabilized_robust_strong_clip", "model_based_strong_clip",
+				"model_based_fd_strong_clip"
+			)){
 			assertResponseType(des_obj$get_response_type(), "proportion")
+			assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
+			assertNumber(prob_clip_strong_eps, lower = 0, upper = 0.5)
+			assertSubset(variance_fallback_methods, choices = c(
+				"robust", "stabilized_robust", "model_based",
+				"stabilized_robust_fd", "model_based_fd",
+				"stabilized_robust_strong_clip", "model_based_strong_clip",
+				"model_based_fd_strong_clip"
+			))
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$prob_clip_eps = prob_clip_eps
+			private$prob_clip_strong_eps = prob_clip_strong_eps
+			private$variance_fallback_methods = variance_fallback_methods
 		},
 
 		#' @description
@@ -255,7 +296,15 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 	private = list(
 		gcomp_design_colnames = NULL,
 		gcomp_design_j_treat = NULL,
-			bootstrap_screening_control = NULL,
+		bootstrap_screening_control = NULL,
+		prob_clip_eps = 1e-6,
+		prob_clip_strong_eps = 1e-4,
+		variance_fallback_methods = c(
+			"robust", "stabilized_robust", "model_based",
+			"stabilized_robust_fd", "model_based_fd",
+			"stabilized_robust_strong_clip", "model_based_strong_clip",
+			"model_based_fd_strong_clip"
+		),
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 		build_named_design_matrix = function(){
 			X_full = private$build_design_matrix()
@@ -492,46 +541,74 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				grad0 = as.numeric(crossprod(components$X0, components$mean0_i * (1 - components$mean0_i))) / nrow(components$X0)
 				grad_md = grad1 - grad0
 
-				var_md = private$variance_from_gradient(grad_md, vcov_robust)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_robust, method = "robust"))
+				strong_clip = private$prob_clip_strong_eps
 
-				vcov_stable = private$stabilize_covariance_matrix(vcov_robust)
-				var_md = private$variance_from_gradient(grad_md, vcov_stable)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust"))
+				# Lazily initialised intermediates — computed only when first needed.
+				vcov_stable     = NULL
+				vcov_model      = NULL
+				vcov_model_clip = NULL
+				grad_fd         = NULL
+				grad_md_clip    = NULL
+				grad_fd_clip    = NULL
 
-				vcov_model = private$model_based_covariance_matrix(X_fit, coef_hat)
-				var_md = private$variance_from_gradient(grad_md, vcov_model)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model, method = "model_based"))
+				for (method in private$variance_fallback_methods) {
+					# Ensure each required intermediate exists before it is used.
+					if (method %in% c("stabilized_robust", "stabilized_robust_fd", "stabilized_robust_strong_clip") && is.null(vcov_stable))
+						vcov_stable = private$stabilize_covariance_matrix(vcov_robust)
 
-				grad_fd = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat)
-				var_md = private$variance_from_gradient(grad_fd, vcov_stable)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust_fd"))
+					if (method %in% c("model_based", "model_based_fd") && is.null(vcov_model))
+						vcov_model = private$model_based_covariance_matrix(X_fit, coef_hat,
+							clip_lower = private$prob_clip_eps, clip_upper = 1 - private$prob_clip_eps)
 
-				var_md = private$variance_from_gradient(grad_fd, vcov_model)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model, method = "model_based_fd"))
+					if (method %in% c("model_based_strong_clip", "model_based_fd_strong_clip") && is.null(vcov_model_clip))
+						vcov_model_clip = private$model_based_covariance_matrix(X_fit, coef_hat,
+							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
 
-				strong_clip = 1e-4
-				components_clipped = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
-				grad1_clip = as.numeric(crossprod(components_clipped$X1, components_clipped$mean1_i * (1 - components_clipped$mean1_i))) / nrow(components_clipped$X1)
-				grad0_clip = as.numeric(crossprod(components_clipped$X0, components_clipped$mean0_i * (1 - components_clipped$mean0_i))) / nrow(components_clipped$X0)
-				grad_md_clip = grad1_clip - grad0_clip
+					if (method %in% c("stabilized_robust_fd", "model_based_fd") && is.null(grad_fd))
+						grad_fd = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat)
 
-				var_md = private$variance_from_gradient(grad_md_clip, vcov_stable)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_stable, method = "stabilized_robust_strong_clip"))
+					if (method %in% c("stabilized_robust_strong_clip", "model_based_strong_clip") && is.null(grad_md_clip)) {
+						comps_clip = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat,
+							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
+						g1c = as.numeric(crossprod(comps_clip$X1, comps_clip$mean1_i * (1 - comps_clip$mean1_i))) / nrow(comps_clip$X1)
+						g0c = as.numeric(crossprod(comps_clip$X0, comps_clip$mean0_i * (1 - comps_clip$mean0_i))) / nrow(comps_clip$X0)
+						grad_md_clip = g1c - g0c
+					}
 
-				vcov_model_clip = private$model_based_covariance_matrix(X_fit, coef_hat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
-				var_md = private$variance_from_gradient(grad_md_clip, vcov_model_clip)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model_clip, method = "model_based_strong_clip"))
+					if (method == "model_based_fd_strong_clip" && is.null(grad_fd_clip))
+						grad_fd_clip = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat,
+							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
 
-				grad_fd_clip = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat, clip_lower = strong_clip, clip_upper = 1 - strong_clip)
-				var_md = private$variance_from_gradient(grad_fd_clip, vcov_model_clip)
-				if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_model_clip, method = "model_based_fd_strong_clip"))
+					grad = switch(method,
+						robust               = ,
+						stabilized_robust    = ,
+						model_based          = grad_md,
+						stabilized_robust_fd = ,
+						model_based_fd       = grad_fd,
+						stabilized_robust_strong_clip = ,
+						model_based_strong_clip       = grad_md_clip,
+						model_based_fd_strong_clip    = grad_fd_clip
+					)
+					vcov_use = switch(method,
+						robust                        = vcov_robust,
+						stabilized_robust             = ,
+						stabilized_robust_fd          = ,
+						stabilized_robust_strong_clip = vcov_stable,
+						model_based                   = ,
+						model_based_fd                = vcov_model,
+						model_based_strong_clip       = ,
+						model_based_fd_strong_clip    = vcov_model_clip
+					)
 
-				list(
-					var_md = NA_real_,
-					vcov = if (!is.null(vcov_model_clip)) vcov_model_clip else if (!is.null(vcov_stable)) vcov_stable else vcov_model,
-					method = "failed"
-				)
+					if (is.null(grad) || is.null(vcov_use)) next
+					var_md = private$variance_from_gradient(grad, vcov_use)
+					if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_use, method = method))
+				}
+
+				fallback_vcov = if (!is.null(vcov_model_clip)) vcov_model_clip else
+				                if (!is.null(vcov_stable))     vcov_stable     else
+				                if (!is.null(vcov_model))      vcov_model      else vcov_robust
+				list(var_md = NA_real_, vcov = fallback_vcov, method = "failed")
 			},
 
 		compute_standardized_effects_r = function(fit){

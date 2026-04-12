@@ -145,17 +145,20 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				return(invisible(NULL))
 			}
 
-			coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
-			if (is.null(coef_table) || !("w" %in% rownames(coef_table))){
+			cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_coef) || !("w" %in% names(cond_coef))){
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			private$cached_values$beta_hat_T = as.numeric(coef_table["w", "Estimate"])
-			se = as.numeric(coef_table["w", "Std. Error"])
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			private$cached_values$beta_hat_T = as.numeric(cond_coef["w"])
+			if (!estimate_only) {
+				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
+				se = if (!is.null(coef_table) && ("w" %in% rownames(coef_table))) as.numeric(coef_table["w", "Std. Error"]) else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			}
 			private$cached_values$is_z = TRUE
 		},
 

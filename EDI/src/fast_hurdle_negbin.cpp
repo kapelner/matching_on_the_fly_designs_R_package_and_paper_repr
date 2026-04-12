@@ -101,25 +101,20 @@ public:
 }
 
 // [[Rcpp::export]]
-List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
-									 const Eigen::VectorXd& y,
-									 int j = 2,
-									 int maxit = 1000,
-									 double tol = 1e-8) {
+List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
+						   const Eigen::VectorXd& y,
+						   int maxit = 1000,
+						   double tol = 1e-8) {
 	const int n = Xmm.rows();
 	const int p = Xmm.cols();
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p, NA_REAL);
-	double hurdle_ssq_b_j = NA_REAL;
-	double hurdle_ssq_b_2 = NA_REAL;
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
         ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind);
 		hurdle_b = hurdle_res.b;
-		hurdle_ssq_b_j = compute_diagonal_inverse_entry(hurdle_res.XtWX, j);
-		if (p >= 2) hurdle_ssq_b_2 = compute_diagonal_inverse_entry(hurdle_res.XtWX, 2);
 		hurdle_converged = hurdle_res.converged;
 	}
 
@@ -131,13 +126,9 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	if (static_cast<int>(pos_rows.size()) <= p) {
 		return List::create(
 			Named("b") = NumericVector(p, NA_REAL),
-			Named("ssq_b_j") = NA_REAL,
-			Named("ssq_b_2") = NA_REAL,
 			Named("theta_hat") = NA_REAL,
 			Named("converged") = false,
 			Named("hurdle_b") = hurdle_b,
-			Named("hurdle_ssq_b_j") = hurdle_ssq_b_j,
-			Named("hurdle_ssq_b_2") = hurdle_ssq_b_2,
 			Named("hurdle_converged") = hurdle_converged
 		);
 	}
@@ -170,23 +161,74 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 
 	VectorXd beta = params.head(p);
 	double theta_hat = std::exp(params[p]);
-	MatrixXd H = fun.hessian(params);
-	double ssq_b_j = NA_REAL;
-	double ssq_b_2 = NA_REAL;
-	if (H.allFinite()) {
-		ssq_b_j = compute_diagonal_inverse_entry(H, j);
-		if (p >= 2) ssq_b_2 = compute_diagonal_inverse_entry(H, 2);
-	}
 
 	return List::create(
 		Named("b") = beta,
-		Named("ssq_b_j") = ssq_b_j,
-		Named("ssq_b_2") = ssq_b_2,
 		Named("theta_hat") = theta_hat,
 		Named("converged") = converged,
 		Named("hurdle_b") = hurdle_b,
-		Named("hurdle_ssq_b_j") = hurdle_ssq_b_j,
-		Named("hurdle_ssq_b_2") = hurdle_ssq_b_2,
 		Named("hurdle_converged") = hurdle_converged
 	);
+}
+
+// [[Rcpp::export]]
+List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
+									 const Eigen::VectorXd& y,
+									 int j = 2,
+									 int maxit = 1000,
+									 double tol = 1e-8) {
+	List fit = fast_hurdle_negbin_cpp(Xmm, y, maxit, tol);
+	SEXP b_sexp = fit["b"];
+	NumericVector b_nv(b_sexp);
+	const int p = b_nv.size();
+
+	double hurdle_ssq_b_j = NA_REAL;
+	double hurdle_ssq_b_2 = NA_REAL;
+	if (fit.containsElementNamed("hurdle_b")) {
+		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
+		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
+			ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind);
+			hurdle_ssq_b_j = compute_diagonal_inverse_entry(hurdle_res.XtWX, j);
+			if (p >= 2) hurdle_ssq_b_2 = compute_diagonal_inverse_entry(hurdle_res.XtWX, 2);
+		}
+	}
+
+	double ssq_b_j = NA_REAL;
+	double ssq_b_2 = NA_REAL;
+	if (p > 0 && fit.containsElementNamed("theta_hat")) {
+		SEXP theta_sexp = fit["theta_hat"];
+		double theta_hat = as<double>(theta_sexp);
+		if (R_finite(theta_hat) && p >= j) {
+			std::vector<int> pos_rows;
+			for (int i = 0; i < Xmm.rows(); ++i) {
+				if (y[i] > 0.0) pos_rows.push_back(i);
+			}
+			if (static_cast<int>(pos_rows.size()) > p) {
+				MatrixXd X_pos(pos_rows.size(), p);
+				VectorXi y_pos(pos_rows.size());
+				for (size_t k = 0; k < pos_rows.size(); ++k) {
+					const int i = pos_rows[k];
+					X_pos.row(k) = Xmm.row(i);
+					y_pos[k] = static_cast<int>(y[i]);
+				}
+
+				VectorXd params(p + 1);
+				for (int col = 0; col < p; ++col) params[col] = b_nv[col];
+				params[p] = std::log(theta_hat);
+
+				TruncatedNegBinCount fun(X_pos, y_pos);
+				MatrixXd H = fun.hessian(params);
+				if (H.allFinite()) {
+					ssq_b_j = compute_diagonal_inverse_entry(H, j);
+					if (p >= 2) ssq_b_2 = compute_diagonal_inverse_entry(H, 2);
+				}
+			}
+		}
+	}
+
+	fit["ssq_b_j"] = ssq_b_j;
+	fit["ssq_b_2"] = ssq_b_2;
+	fit["hurdle_ssq_b_j"] = hurdle_ssq_b_j;
+	fit["hurdle_ssq_b_2"] = hurdle_ssq_b_2;
+	return fit;
 }

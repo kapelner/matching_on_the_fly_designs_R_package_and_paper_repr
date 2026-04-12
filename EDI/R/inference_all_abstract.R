@@ -352,7 +352,18 @@ Inference = R6::R6Class("Inference",
 			}
 			colnames(X_cov) = cov_names
 
-			cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			# Drop covariate columns that are linearly dependent on earlier columns.
+			# This handles e.g. FixedDesignBlockedCluster where cluster dummies are
+			# collinear with the treatment column (all cluster members share the same w).
+			res = drop_linearly_dependent_cols(X_full)
+			if (length(res$js) < ncol(X_full)) {
+				# Guarantee intercept (col 1) and treatment (col 2) are always retained.
+				kept_js = sort(union(c(1L, 2L), res$js))
+				X_full[, kept_js, drop = FALSE]
+			} else {
+				X_full
+			}
 		},
 
 		get_X = function(){

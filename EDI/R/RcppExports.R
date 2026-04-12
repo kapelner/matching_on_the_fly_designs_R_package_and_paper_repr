@@ -207,6 +207,10 @@ fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r,
     .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol)
 }
 
+fast_hurdle_negbin_cpp <- function(Xmm, y, maxit = 1000L, tol = 1e-8) {
+    .Call(`_EDI_fast_hurdle_negbin_cpp`, Xmm, y, maxit, tol)
+}
+
 fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8) {
     .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol)
 }

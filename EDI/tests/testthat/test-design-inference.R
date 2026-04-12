@@ -279,6 +279,10 @@ test_that("Inference works for count", {
 	inf_hurdle_nb <- InferenceCountUnivHurdleNegBinRegr$new(des, verbose = FALSE)
 	est_hurdle_nb <- inf_hurdle_nb$compute_treatment_estimate()
 	expect_true(is.numeric(est_hurdle_nb))
+
+	est_hurdle_nb_fast <- inf_hurdle_nb$compute_treatment_estimate(estimate_only = TRUE)
+	expect_true(is.numeric(est_hurdle_nb_fast))
+	expect_equal(est_hurdle_nb_fast, est_hurdle_nb, tolerance = 1e-8)
 })
 
 test_that("KK count combined-likelihood multi inference handles full-width covariates", {
