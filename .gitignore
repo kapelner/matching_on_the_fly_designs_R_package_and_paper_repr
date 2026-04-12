@@ -186,6 +186,7 @@ package_tests/.~lock*
 scripts/diagnose_modified_poisson_bootstrap.R
 test_fail.R
 test_fail_multi.R
+package_tests/calc_external_links_uno/sources/*
 
 
 
