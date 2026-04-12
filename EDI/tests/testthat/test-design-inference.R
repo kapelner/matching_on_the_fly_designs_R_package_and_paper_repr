@@ -281,6 +281,37 @@ test_that("Inference works for count", {
 	expect_true(is.numeric(est_hurdle_nb))
 })
 
+test_that("KK count combined-likelihood multi inference handles full-width covariates", {
+	skip_if_not_installed("MASS")
+	skip_if_not_installed("dplyr")
+
+	set.seed(1)
+	cars_subset <- MASS::Cars93 |>
+		stats::na.omit() |>
+		dplyr::slice_sample(n = 48, replace = TRUE) |>
+		dplyr::select(-Make, -Model)
+	X <- model.matrix(Price ~ 0 + ., data = cars_subset)
+	X <- apply(X, 2, scale)
+	X <- X / ncol(X)
+	X <- as.data.frame(X)
+	X <- dplyr::select(X, dplyr::where(~ !any(is.na(.))))
+	y <- round(cars_subset$Price - min(cars_subset$Price))
+
+	des <- DesignSeqOneByOneKK14$new(n = nrow(X), response_type = "count", verbose = FALSE)
+	for (i in seq_len(nrow(X))) {
+		w_i <- des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
+		y_i <- round(y[i] * exp(rnorm(1, mean = 0, sd = 0.1) * w_i))
+		des$add_one_subject_response(i, y_i, 1)
+	}
+
+	inf <- InferenceCountPoissonMultiKKCPoissonCombinedLikelihood$new(des, verbose = FALSE)
+	est <- inf$compute_treatment_estimate()
+
+	expect_true(is.numeric(est))
+	expect_length(est, 1L)
+	expect_true(is.finite(est))
+})
+
 test_that("Inference works for proportion", {
 	n <- 10
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "proportion", verbose = FALSE)
