@@ -75,8 +75,9 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 					verbose                = private$verbose
 				)
 				res = GreedyExperimentalDesign::resultsRerandomizationSearch(search_obj, include_assignments = TRUE, form = "one_zero")
+				# resultsRerandomizationSearch returns r x n; transpose to n x r
 				w_mat = private$validate_allocation_matrix(
-					res$ending_indicTs,
+					t(res$ending_indicTs),
 					n = n,
 					r = r,
 					require_balanced = TRUE

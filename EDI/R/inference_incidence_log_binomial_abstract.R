@@ -86,11 +86,13 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			X_full = private$build_design_matrix()
-			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
-			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
-
+			if (is.null(dim(X_full))){
+				X_full = matrix(X_full, ncol = 2L)
+			}
+			if (is.null(colnames(X_full))) {
+				colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			}
 			fit_candidate = function(X_cand){
 				reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_cand)
 				X_fit = reduced$X

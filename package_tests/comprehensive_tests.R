@@ -594,6 +594,19 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	}
 	X_design_for_design = if (is.null(cluster_design_setup)) X_design else cluster_design_setup$X
 
+	# For sequential designs that use stratification, we MUST discretize continuous strata
+	# because the DesignSeqOneByOne base class explicitly disallows numeric strata.
+	X_design_sequential_strata = X_design
+	strata_cols_to_use = names(X_design)[1:min(2, ncol(X_design))]
+	if (design_type %in% c("SPBR", "PocockSimon", "RandomBlockSize")) {
+		for (col in strata_cols_to_use) {
+			if (is.numeric(X_design_sequential_strata[[col]])) {
+				med = stats::median(X_design_sequential_strata[[col]], na.rm = TRUE)
+				X_design_sequential_strata[[col]] = factor(ifelse(X_design_sequential_strata[[col]] <= med, "low", "high"))
+			}
+		}
+	}
+
 	des_obj = tryCatch(switch(design_type,
 		KK21 =         DesignSeqOneByOneKK21$new(        response_type = response_type, n = n),
 		KK21stepwise = DesignSeqOneByOneKK21stepwise$new(response_type = response_type, n = n),
@@ -602,16 +615,21 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		Efron =        DesignSeqOneByOneEfron$new(       response_type = response_type, n = n),
 		Atkinson =     DesignSeqOneByOneAtkinson$new(    response_type = response_type, n = n),
 		iBCRD =        DesignSeqOneByOneiBCRD$new(       response_type = response_type, n = n),
-		SPBR =         DesignSeqOneByOneSPBR$new(        strata_cols = names(X_design)[1:min(2, ncol(X_design))], block_size = 4, response_type = response_type, n = n),
+		Urn =          DesignSeqOneByOneUrn$new(         response_type = response_type, n = n),
+		RandomBlockSize = DesignSeqOneByOneRandomBlockSize$new( strata_cols = strata_cols_to_use, response_type = response_type, n = n),
+		SPBR =         DesignSeqOneByOneSPBR$new(        strata_cols = strata_cols_to_use, block_size = 4, response_type = response_type, n = n),
+		PocockSimon =  DesignSeqOneByOnePocockSimon$new( strata_cols = strata_cols_to_use, response_type = response_type, n = n),
 		FixedBernoulli = FixedDesignBernoulli$new( response_type = response_type, n = n),
 		FixediBCRD =     FixedDesigniBCRD$new(     response_type = response_type, n = n),
-		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = names(X_design)[1:min(2, ncol(X_design))], response_type = response_type, n = n),
+		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = strata_cols_to_use, response_type = response_type, n = n),
 		FixedCluster =   FixedDesignCluster$new(   cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n),
 		FixedBlockedCluster = FixedDesignBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n),
 		FixedBinaryMatch = FixedDesignBinaryMatch$new( response_type = response_type, n = n),
 		FixedGreedy =    FixedDesignGreedy$new(    response_type = response_type, n = n),
 		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n),
 		FixedMatchingGreedy = FixedDesignMatchingGreedyPairSwitching$new( response_type = response_type, n = n),
+		FixedDOptimal =  FixedDesignDOptimal$new(  response_type = response_type, n = n),
+		FixedAOptimal =  FixedDesignAOptimal$new(  response_type = response_type, n = n),
 		stop("Unsupported design_type: ", design_type)
 	), error = function(e){ message("    Skipping design (creation error): ", e$message); NULL })
 	if (is.null(des_obj)) return(invisible(NULL))
@@ -619,7 +637,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 	if (inherits(des_obj, "DesignSeqOneByOne")){
 		seq_ok = tryCatch({
 			for (t in 1 : n){
-				w_t = des_obj$add_one_subject_to_experiment_and_assign(X_design[t, , drop = FALSE])
+				w_t = des_obj$add_one_subject_to_experiment_and_assign(X_design_sequential_strata[t, , drop = FALSE])
 				y_t = apply_treatment_effect_and_noise(y[t], w_t, response_type)
 				des_obj$add_one_subject_response(t, y_t, dead[t])
 			}
@@ -1092,7 +1110,7 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				pending_response_header <<- paste0("      === response_type: ", response_type, " ===")
-				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedCluster", "FixedBlockedCluster", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy")) {
+				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "PocockSimon", "Urn", "RandomBlockSize", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedCluster", "FixedBlockedCluster", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy", "FixedDOptimal", "FixedAOptimal")) {
 					pending_design_header <<- paste0("        === design: ", design_type, " ===")
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 				}

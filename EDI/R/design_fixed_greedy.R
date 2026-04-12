@@ -70,6 +70,8 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				verbose    = private$verbose
 			)
 			w_mat = GreedyExperimentalDesign::resultsGreedySearch(search_obj, max_vectors = r, form = "one_zero")$ending_indicTs
+			# resultsGreedySearch returns r x n; transpose to n x r
+			w_mat = t(w_mat)
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),

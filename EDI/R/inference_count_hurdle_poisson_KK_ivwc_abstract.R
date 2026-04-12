@@ -107,6 +107,18 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 	),
 
 	private = list(
+		compute_basic_match_data = function(){
+			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
+				private_env = private,
+				des_priv     = private$des_obj_priv_int,
+				X = private$get_X(),
+				n = private$n,
+				y = private$y,
+				w = private$w,
+				m_vec = private$m
+			)
+		},
+
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
@@ -126,7 +138,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			Xmm = private$build_model_matrix()
 			m_vec = private$m
@@ -142,7 +154,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			if (length(matched_idx) > 0L){
 				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = !estimate_only)
 				private$cached_values$beta_T_matched = res_m$beta_hat
-				if (!estimate_only) private$cached_values$ssq_beta_T_matched = res_m$se^2
+				if (!estimate_only) private$cached_values$ssq_beta_T_matched = res_m$se^2 else private$cached_values$ssq_beta_T_matched = 1.0
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
@@ -153,7 +165,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				length(unique(private$w[reservoir_idx])) > 1L){
 				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx, estimate_only = estimate_only)
 				private$cached_values$beta_T_reservoir = res_r$beta_hat
-				if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat
+				if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat else private$cached_values$ssq_beta_T_reservoir = 1.0
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
@@ -167,15 +179,18 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T = beta_m
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T = beta_r
+			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 			private$cached_values$is_z = TRUE
+			invisible(NULL)
 		},
 
 		build_glmm_formula = function(dat){

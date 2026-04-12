@@ -374,7 +374,9 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 			if (is.null(dim(X_full))){
 				X_full = matrix(X_full, ncol = 2L)
 			}
-			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			if (is.null(colnames(X_full))) {
+				colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			}
 
 			fit = private$fit_logistic_with_sandwich(X_full, estimate_only = estimate_only)
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL

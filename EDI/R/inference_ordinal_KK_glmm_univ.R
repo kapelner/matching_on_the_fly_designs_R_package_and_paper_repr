@@ -44,6 +44,8 @@ InferenceOrdinalUnivKKGLMM = R6::R6Class("InferenceOrdinalUnivKKGLMM",
 
 	),
 	private = list(
-		clmm_link = function() "logit"
+		clmm_link = function() "logit",
+		# Univariate: only treatment enters as a fixed effect.
+		clmm_predictors_df = function() data.frame(w = private$w)
 	)
 )

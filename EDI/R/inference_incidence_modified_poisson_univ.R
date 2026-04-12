@@ -222,7 +222,9 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			if (is.null(dim(X_full))){
 				X_full = matrix(X_full, ncol = 2L)
 			}
-			colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			if (is.null(colnames(X_full))) {
+				colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			}
 
 			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
 			X_fit = reduced$X

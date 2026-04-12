@@ -311,11 +311,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			if (is.null(dim(X_full))){
 				X_full = matrix(X_full, ncol = 2L)
 			}
-			colnames(X_full) = c(
-				"(Intercept)",
-				"treatment",
-				if (ncol(X_full) > 2L) private$get_covariate_names() else NULL
-			)
+			if (is.null(colnames(X_full))) {
+				colnames(X_full) = c(
+					"(Intercept)",
+					"treatment",
+					if (ncol(X_full) > 2L) private$get_covariate_names() else NULL
+				)
+			}
 			X_full
 		},
 

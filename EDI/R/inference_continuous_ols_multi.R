@@ -179,7 +179,9 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 #			private$cached_values$summary_table =
 #				stats::coef(summary(lm(private$des_obj_priv_int$y ~ ., data = cbind(data.frame(w = private$des_obj_priv_int$w), private$get_X()))))
 			full_X_matrix = private$create_design_matrix()
-			colnames(full_X_matrix) <- c("(Intercept)", "treatment", colnames(private$get_X()))
+			if (is.null(colnames(full_X_matrix))) {
+				colnames(full_X_matrix) <- c("(Intercept)", "treatment", colnames(private$get_X()))
+			}
 
 			mod = fast_ols_with_var_cpp(full_X_matrix, private$y)
 			private$cached_mod = mod

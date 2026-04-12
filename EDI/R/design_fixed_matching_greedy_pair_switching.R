@@ -148,7 +148,8 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			} else {
 				stop("resultsBinaryMatchThenGreedySearch returned an unsupported result type.")
 			}
-			w_mat
+			# resultsBinaryMatchThenGreedySearch returns r x n; transpose to n x r
+			t(w_mat)
 		}
 	)
 )
