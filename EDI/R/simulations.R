@@ -25,16 +25,14 @@
 #' Simulation Framework for Experimental Designs and Inference Methods
 #'
 #' @description
-#' An R6 class that benchmarks experimental designs and inference methods via
-#' Monte Carlo simulation.  For each replication it generates synthetic
-#' covariate and response data, runs every requested \code{(design, inference)}
-#' combination, and collects point estimates, confidence intervals, and
-#' p-values.  After \code{Nrep} replications the aggregated metrics—MSE,
-#' coverage, and power—are available through \code{$summarize()}.
+#' An R6 class for benchmarking experimental designs and inference methods by
+#' Monte Carlo simulation. Each replication generates synthetic covariates and
+#' responses, runs every requested \code{(design, inference)} pair, and records
+#' point estimates, confidence intervals, and p-values. Aggregated metrics are
+#' available from \code{$summarize()}.
 #'
 #' @details
-#' \strong{Data generation}\cr
-#' Covariates are drawn i.i.d. \eqn{\text{Uniform}(0,1)}.
+#' Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
 #' \itemize{
 #'   \item \code{data_type = "linear"}: the base continuous signal is
 #'     \eqn{y = X\beta} where \eqn{\beta} is evenly spaced from 1 to \eqn{-1}.
@@ -47,7 +45,6 @@
 #' count/survival, etc.).  Treatment effects are applied per-subject: additive
 #' on the linear/logit/ordinal scale, log-multiplicative for count and survival.
 #'
-#' \strong{Inference methods run}\cr
 #' For each \code{(design, inference)} pair the framework runs whichever of the
 #' following are supported by the inference class:
 #' \itemize{
@@ -63,7 +60,7 @@
 #' Incompatible \code{(design, inference)} pairs (e.g.\ a KK-specific inference
 #' class with a non-KK design) are silently skipped via \code{tryCatch}.
 #'
-#' \strong{Reported metrics} (from \code{$summarize()})\cr
+#' Reported summary metrics include:
 #' \itemize{
 #'   \item \strong{MSE}: \eqn{\overline{(\hat\beta_T - \beta_T)^2}} over reps
 #'     with a finite point estimate.
@@ -88,19 +85,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \code{"proportion"}, \code{"count"}, \code{"survival"},
     #'   \code{"ordinal"}.
     #'
-    #' @param design_classes List of R6 class generators (e.g.\
+    #' @param design_classes List of R6 class generators, for example
     #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}).  Each
     #'   generator must be constructable with only \code{response_type} and
     #'   \code{n} (plus any extra params supplied via \code{design_params}).
-    #'   \code{NULL} (default) uses all 16 standard designs: the five non-KK
-    #'   sequential designs (\code{Bernoulli}, \code{iBCRD}, \code{Efron},
-    #'   \code{Atkinson}, \code{Urn}), the two KK sequential designs
-    #'   (\code{KK21}, \code{KK14}), and nine fixed designs (\code{Bernoulli},
-    #'   \code{iBCRD}, \code{BinaryMatch}, \code{Greedy},
-    #'   \code{MatchingGreedyPairSwitching}, \code{Rerandomization},
-    #'   \code{DOptimal}, \code{AOptimal}, \code{OptimalBlocks}).
+    #'   \code{NULL} (default) uses the package's standard design set.
+    #'   Designs requiring \code{strata_cols}, \code{cluster_col}, or
+    #'   \code{factors} have sensible defaults auto-injected (first covariate
+    #'   column; second for \code{cluster_col}; \code{list(treatment=2)} for
+    #'   \code{factors}) when not supplied via \code{design_params}.
     #'
-    #' @param inference_classes List of R6 class generators (e.g.\
+    #' @param inference_classes List of R6 class generators, for example
     #'   \code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}).
     #'   \code{NULL} (default) selects a curated set for the given
     #'   \code{response_type}: several universal classes that work with any
@@ -148,7 +143,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   randomisation-based CIs (\code{compute_confidence_interval_rand}).
     #'   Default \code{0.02}.
     #'
-    #' @param sd_noise Numeric \eqn{> 0}.  Standard deviation of i.i.d.\
+    #' @param sd_noise Numeric \eqn{> 0}. Standard deviation of independent
     #'   Gaussian noise added to each subject's outcome.  Default \code{1}.
     #'
     #' @param prob_censoring Numeric in \eqn{[0,1]}.  Per-subject independent
@@ -195,23 +190,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   The special key \code{all_inference} provides arguments that apply to
     #'   \emph{every} inference class and \emph{every} inference method call.
     #'   These are routed automatically based on argument name:
-    #'   \describe{
-    #'     \item{Constructor args (to \code{$new()})}{\code{harden},
-    #'       \code{max_resample_attempts} — filtered per class.}
-    #'     \item{Asymptotic p-value}{\code{delta} — null treatment effect
-    #'       (default \code{0}).}
-    #'     \item{Bootstrap CI and p-value}{\code{na.rm} — drop \code{NA}
-    #'       replicates (framework default \code{TRUE}); \code{type} — bootstrap
-    #'       variant (\code{"perc"}, \code{"bca"}, …).}
-    #'     \item{Randomisation p-value}{\code{delta}; \code{na.rm};
-    #'       \code{transform_responses} — \code{"none"} | \code{"logit"} |
-    #'       \code{"log"}; \code{permutations} — pre-computed permutation matrix;
-    #'       \code{zero_one_logit_clamp}.}
-    #'     \item{Randomisation CI}{\code{ci_search_control} — list controlling
-    #'       the bisection search strategy.}
-    #'     \item{Randomisation p-value and CI}{\code{type};
-    #'       \code{args_for_type} — e.g.\
-    #'       \code{list(Zhang = list(combination_method = "Fisher"))}.}
+    #'   Routed argument groups are:
+    #'   \itemize{
+    #'     \item constructor arguments such as \code{harden} and
+    #'       \code{max_resample_attempts}
+    #'     \item asymptotic p-value arguments such as \code{delta}
+    #'     \item bootstrap arguments such as \code{na.rm} and \code{type}
+    #'     \item randomization p-value arguments such as \code{delta},
+    #'       \code{transform_responses}, and \code{permutations}
+    #'     \item randomization CI arguments such as \code{ci_search_control}
+    #'     \item shared randomization arguments such as \code{args_for_type}
     #'   }
     #'   Class-specific entries take precedence over \code{all_inference} for
     #'   constructor arguments.  Example:
@@ -225,18 +213,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'
     #' @param inf_types Character vector controlling which inference outputs are
     #'   computed and recorded.  \code{NULL} (default) runs all eight types.
-    #'   Valid elements:
-    #'   \describe{
-    #'     \item{\code{"asymp_ci"}}{Asymptotic (Wald) confidence interval.}
-    #'     \item{\code{"asymp_pval"}}{Asymptotic two-sided p-value.}
-    #'     \item{\code{"exact_ci"}}{Exact confidence interval
-    #'       (\code{InferenceExact} subclasses only; others warned and skipped).}
-    #'     \item{\code{"exact_pval"}}{Exact two-sided p-value (same caveat).}
-    #'     \item{\code{"boot_ci"}}{Bootstrap percentile confidence interval.}
-    #'     \item{\code{"boot_pval"}}{Bootstrap two-sided p-value.}
-    #'     \item{\code{"rand_ci"}}{Randomisation-based confidence interval.}
-    #'     \item{\code{"rand_pval"}}{Randomisation two-sided p-value.}
-    #'   }
+    #'   Valid elements are \code{"asymp_ci"}, \code{"asymp_pval"},
+    #'   \code{"exact_ci"}, \code{"exact_pval"}, \code{"boot_ci"},
+    #'   \code{"boot_pval"}, \code{"rand_ci"}, and \code{"rand_pval"}.
     #'   When no \code{*_ci} type is requested, \code{coverage} is omitted from
     #'   \code{$summarize()}.  When no \code{*_pval} type is requested,
     #'   \code{power} is omitted.
@@ -776,6 +755,21 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     # Instantiate design and run the full experiment (assign + observe all n).
     .build_design = function(design_gen, X, y_base, design_extra) {
       n       = private$n
+
+      # Auto-inject required args that depend on the covariate matrix when the
+      # user has not already supplied them via design_params.
+      init_fn = private$.get_r6_init_fn(design_gen)
+      if (!is.null(init_fn)) {
+        fn_formals = names(formals(init_fn))
+        x_names    = names(X)
+        if ("strata_cols" %in% fn_formals && !"strata_cols" %in% names(design_extra))
+          design_extra$strata_cols = x_names[1L]
+        if ("cluster_col" %in% fn_formals && !"cluster_col" %in% names(design_extra))
+          design_extra$cluster_col = x_names[min(2L, length(x_names))]
+        if ("factors"     %in% fn_formals && !"factors"     %in% names(design_extra))
+          design_extra$factors = list(treatment = 2L)
+      }
+
       des_obj = do.call(design_gen$new, c(
         list(response_type = private$response_type, n = n),
         design_extra
@@ -821,22 +815,32 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
     .default_design_classes = function() {
       list(
+        # ── Sequential one-by-one ──────────────────────────────────────────────
         DesignSeqOneByOneBernoulli,
         DesignSeqOneByOneiBCRD,
         DesignSeqOneByOneEfron,
         DesignSeqOneByOneAtkinson,
         DesignSeqOneByOneUrn,
+        DesignSeqOneByOneRandomBlockSize,   # strata_cols auto-injected if absent
+        DesignSeqOneByOneSPBR,              # strata_cols auto-injected if absent
+        DesignSeqOneByOnePocockSimon,       # strata_cols auto-injected if absent
         DesignSeqOneByOneKK21,
+        DesignSeqOneByOneKK21stepwise,
         DesignSeqOneByOneKK14,
+        # ── Fixed ──────────────────────────────────────────────────────────────
         FixedDesignBernoulli,
         FixedDesigniBCRD,
         FixedDesignBinaryMatch,
+        FixedDesignBlocking,                # strata_cols auto-injected if absent
         FixedDesignGreedy,
         FixedDesignMatchingGreedyPairSwitching,
         FixedDesignRerandomization,
+        FixedDesignOptimalBlocks,
+        FixedDesignCluster,                 # cluster_col auto-injected if absent
+        FixedDesignBlockedCluster,          # strata_cols + cluster_col auto-injected if absent
         FixedDesignDOptimal,
         FixedDesignAOptimal,
-        FixedDesignOptimalBlocks
+        FixedDesignFactorial                # factors auto-injected if absent
       )
     },
 

@@ -50,7 +50,7 @@ design_classes = list(
 # Only asymptotic (Azriel / Robins) and exact (ExactBinomial) types needed.
 # Warnings about InferenceIncidAzriel / InferenceIncidExtendedRobins not
 # inheriting InferenceExact are expected and suppressed below.
-inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval")
+inf_types = c("exact_ci", "exact_pval")
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 all_results = list()
@@ -59,7 +59,7 @@ for (betaT in betaTs) {
   for (n in ns) {
     for (p in ps) {
       for (data_type in data_types) {
-
+        
         # Friedman nonlinear function needs at least 5 covariates
         if (data_type == "nonlinear" && p < 5L) next
 
