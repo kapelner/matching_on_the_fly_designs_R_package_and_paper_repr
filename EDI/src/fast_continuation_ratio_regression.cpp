@@ -67,6 +67,7 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
     
     // Fit logistic regression on augmented data using IRWLS
     VectorXd beta = VectorXd::Zero(p_aug);
+    bool converged = false;
     
     for (int iter = 0; iter < maxit; ++iter) {
         VectorXd eta = X_aug * beta;
@@ -88,7 +89,10 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
         VectorXd step = lu.solve(grad);
         beta += step;
         
-        if (step.norm() < tol) break;
+        if (step.norm() < tol) {
+            converged = true;
+            break;
+        }
     }
     
     return List::create(
@@ -96,7 +100,8 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
         Named("alpha") = beta.head(n_alpha),
         Named("beta_full") = beta,
         Named("X_aug") = X_aug,
-        Named("z") = z
+        Named("z") = z,
+        Named("converged") = converged
     );
 }
 
@@ -104,10 +109,11 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
 List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
     List res = fast_continuation_ratio_regression_cpp(X, y);
     if (!res.containsElementNamed("beta_full")) {
-         return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
+         return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL, Named("converged") = false);
     }
     VectorXd beta_full = res["beta_full"];
     MatrixXd X_aug = res["X_aug"];
+    bool converged = res["converged"];
     
     VectorXd eta = X_aug * beta_full;
     VectorXd mu = eta.unaryExpr([](double x) { 
@@ -132,6 +138,7 @@ List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, c
     
     return List::create(
         Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_j
+        Named("ssq_b_2") = ssq_b_j,
+        Named("converged") = converged
     );
 }

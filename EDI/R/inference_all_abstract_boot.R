@@ -101,18 +101,40 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				debug_results = if (actual_debug_cores <= 1L) {
 					run_debug_chunk(seq_len(B))
 				} else {
-					do.call(c, private$par_lapply(
+					# par_lapply flattens its internal chunking, so if run_debug_chunk returns a list,
+					# par_lapply returns a list of lists.
+					res_raw = private$par_lapply(
 						chunks,
 						run_debug_chunk,
 						n_cores = actual_debug_cores,
 						budget = 1L,
 						show_progress = show_progress
-					))
+					)
+					# Flatten chunks into a single list of results
+					unlist(res_raw, recursive = FALSE, use.names = FALSE)
 				}
 
-				values = sapply(debug_results, `[[`, "val")
-				errors_list = lapply(debug_results, `[[`, "errors")
-				warnings_list = lapply(debug_results, `[[`, "warnings")
+				# Harden debug_results: remove any NULLs or non-list results that might 
+				# have come from worker crashes in par_lapply/mclapply.
+				debug_results_surviving = Filter(function(x) is.list(x) && !is.null(x$val), debug_results)
+				if (length(debug_results_surviving) < length(debug_results)) {
+					warning("Some bootstrap iterations (", length(debug_results) - length(debug_results_surviving), ") were lost due to worker crashes or invalid results.")
+				}
+				debug_results = debug_results_surviving
+				
+				if (length(debug_results) == 0L) {
+					stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+				}
+
+				values = vapply(debug_results, function(x) {
+					if (is.list(x) && !is.null(x[["val"]])) as.numeric(x[["val"]])[1L] else NA_real_
+				}, numeric(1))
+				errors_list = lapply(debug_results, function(x) {
+					if (is.list(x) && !is.null(x[["errors"]])) x[["errors"]] else character(0)
+				})
+				warnings_list = lapply(debug_results, function(x) {
+					if (is.list(x) && !is.null(x[["warnings"]])) x[["warnings"]] else character(0)
+				})
 				num_errors_vec = lengths(errors_list)
 				num_warnings_vec = lengths(warnings_list)
 				# Populate the normal cache so subsequent non-debug calls can reuse the values

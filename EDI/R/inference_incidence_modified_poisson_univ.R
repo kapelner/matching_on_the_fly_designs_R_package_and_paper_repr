@@ -75,6 +75,8 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
+
 		build_design_matrix = function(){
 			cbind(1, private$w)
 		},
@@ -140,6 +142,12 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			private$cached_values$summary_table = NULL
 		},
 
+		coefficients_are_usable = function(coef_hat){
+			length(coef_hat) > 0L &&
+				all(is.finite(coef_hat)) &&
+				max(abs(coef_hat), na.rm = TRUE) <= private$max_abs_reasonable_coef
+		},
+
 		fit_modified_poisson = function(X_fit, j_treat, estimate_only = FALSE){
 			mod = tryCatch(
 				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
@@ -150,7 +158,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 			}
 
 			coef_hat = as.numeric(mod$b)
-			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
+			if (length(coef_hat) != ncol(X_fit) || !private$coefficients_are_usable(coef_hat)){
 				return(NULL)
 			}
 

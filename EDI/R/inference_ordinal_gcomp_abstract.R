@@ -36,7 +36,13 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			private$shared()
-			private$ensure_md_se()
+			if (!private$has_finite_md_se()){
+				warning(
+					"Ordinal G-computation: falling back to bootstrap because ",
+					"delta-method standard error is unavailable."
+				)
+				return(self$compute_bootstrap_confidence_interval(alpha = alpha, na.rm = TRUE))
+			}
 			z_val = stats::qnorm(1 - alpha / 2)
 			ci = private$cached_values$md + c(-1, 1) * z_val * private$cached_values$se_md
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -49,7 +55,13 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
 			assertNumeric(delta)
 			private$shared()
-			private$ensure_md_se()
+			if (!private$has_finite_md_se()){
+				warning(
+					"Ordinal G-computation: falling back to bootstrap because ",
+					"delta-method standard error is unavailable."
+				)
+				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
+			}
 			z_val = (private$cached_values$md - delta) / private$cached_values$se_md
 			2 * stats::pnorm(-abs(z_val))
 		}
@@ -149,12 +161,9 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 			)
 		},
 
-		ensure_md_se = function(){
+		has_finite_md_se = function(){
 			se = private$cached_values$se_md
-			if (!(is.finite(se) && se > 0)){
-				stop("Ordinal G-computation: could not compute a finite delta-method standard error.")
-			}
-			invisible(NULL)
+			is.finite(se) && se > 0
 		}
 	)
 )

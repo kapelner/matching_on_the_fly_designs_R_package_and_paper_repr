@@ -67,7 +67,8 @@ InferencePropUniBetaRegr = R6::R6Class("InferencePropUniBetaRegr",
 
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
-			colnames(Xmm) = c("(Intercept)", "treatment")
+			full_names = c("(Intercept)", "treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			y_beta = private$sanitize_beta_response(private$y)
 			
 			if (estimate_only) {

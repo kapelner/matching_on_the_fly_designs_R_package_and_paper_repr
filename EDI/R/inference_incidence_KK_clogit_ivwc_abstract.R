@@ -55,9 +55,17 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		component_is_usable = function(beta, ssq){
+			!is.null(beta) && is.finite(beta) &&
+				abs(beta) <= private$max_abs_reasonable_coef &&
+				!is.null(ssq) && is.finite(ssq) && ssq > 0 &&
+				sqrt(ssq) <= private$max_abs_reasonable_coef
+		},
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -81,8 +89,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
-			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
-			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+			m_ok     = private$component_is_usable(beta_m, ssq_m)
 
 			# --- Reservoir: logistic regression ---
 			if (nRT > 0 && nRC > 0){
@@ -90,8 +97,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
-			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
-			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
+			r_ok     = private$component_is_usable(beta_r, ssq_r)
 
 			# --- Variance-weighted combination (mirrors InferenceContinMultOLSKK) ---
 			if (m_ok && r_ok){
@@ -106,6 +112,17 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				private$cached_values$beta_hat_T   = beta_r
 				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
+				private$cached_values$beta_hat_T   = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
+			if (is.finite(private$cached_values$beta_hat_T) &&
+			    abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
+				private$cached_values$beta_hat_T   = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
+			if (!estimate_only &&
+			    is.finite(private$cached_values$s_beta_hat_T) &&
+			    private$cached_values$s_beta_hat_T > private$max_abs_reasonable_coef){
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}

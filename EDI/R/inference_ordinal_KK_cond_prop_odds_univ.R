@@ -145,8 +145,14 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 			mod = clogit_helper(y_stack, data.frame(), w_stack, strata_stack)
 			
 			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (private$harden && m > 0){
+					# If matching is so good there's no discordance, estimate is 0
+					private$cached_values$beta_hat_T   = 0
+					private$cached_values$s_beta_hat_T = NA_real_
+				} else {
+					private$cached_values$beta_hat_T   = NA_real_
+					private$cached_values$s_beta_hat_T = NA_real_
+				}
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}

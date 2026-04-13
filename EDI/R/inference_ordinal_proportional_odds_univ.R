@@ -53,7 +53,8 @@ InferenceOrdinalUniPropOddsRegr = R6::R6Class("InferenceOrdinalUniPropOddsRegr",
 			# We use fast_ordinal_regression_with_var_cpp
 			# Xmm should NOT include intercept as fast_ordinal_regression_cpp handles intercepts (alphas)
 			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = c("treatment")
+			full_names = c("treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			
 			if (estimate_only) {
 				res = fast_ordinal_regression_cpp(X = Xmm, y = as.numeric(private$y))

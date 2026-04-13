@@ -86,6 +86,8 @@ InferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class(
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
+
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL)) 
@@ -98,60 +100,99 @@ InferenceOrdinalUnivKKCondPropOddsCombinedRegr = R6::R6Class(
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
-			# Define strata
-			# Matched pairs get their m_vec as stratum ID
-			# Reservoir subjects (m_vec == 0) each get a unique ID
-			strata_ids = m_vec
-			reservoir_idx = which(strata_ids == 0L)
-			if (length(reservoir_idx) > 0L){
-				strata_ids[reservoir_idx] = max(strata_ids) + seq_along(reservoir_idx)
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
 			}
+			KKstats = private$cached_values$KKstats
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+
+			# --- Matched pairs: conditional logit ---
+			private$clogit_for_matched_pairs()
+			beta_m   = private$cached_values$beta_T_matched
+			ssq_m    = private$cached_values$ssq_beta_T_matched
+			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
+			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+
+			# --- Reservoir: proportional odds ---
+			private$ord_for_reservoir()
+			beta_r   = private$cached_values$beta_T_reservoir
+			ssq_r    = private$cached_values$ssq_beta_T_reservoir
+			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
+			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
+
+			# --- Variance-weighted combination ---
+			if (m_ok && r_ok){
+				w_star = ssq_r / (ssq_r + ssq_m)
+				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
+			if (estimate_only) return(invisible(NULL))
+				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
+			} else if (m_ok){
+				private$cached_values$beta_hat_T   = beta_m
+				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+			} else if (r_ok){
+				private$cached_values$beta_hat_T   = beta_r
+				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+			} else {
+				private$cached_values$beta_hat_T   = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
+			private$cached_values$is_z = TRUE
+		},
+
+		clogit_for_matched_pairs = function(){
+			m_vec = private$m
+			m = max(m_vec, na.rm = TRUE)
+			if (m == 0) return(invisible(NULL))
 
 			y_ord = as.integer(factor(private$y, ordered = TRUE))
 			K = max(y_ord)
-			if (K < 2L){
-				private$cached_values$beta_hat_T   = NA_real_
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
-				return(invisible(NULL))
-			}
+			if (K < 2L) return(invisible(NULL))
 
 			n_thresholds = K - 1L
-			n = private$n
-			num_strata = max(strata_ids)
+			matched_idx = which(m_vec > 0)
+			y_m = y_ord[matched_idx]
+			w_m = private$w[matched_idx]
+			strata_m = m_vec[matched_idx]
+			n_m = length(matched_idx)
 
-			y_stack = integer(n * n_thresholds)
-			w_stack = integer(n * n_thresholds)
-			strata_stack = integer(n * n_thresholds)
+			y_stack = integer(n_m * n_thresholds)
+			w_stack = integer(n_m * n_thresholds)
+			strata_stack = integer(n_m * n_thresholds)
 
 			for (k in seq_len(n_thresholds)){
-				idx = ((k - 1L) * n + 1L):(k * n)
-				y_stack[idx] = as.integer(y_ord > k)
-				w_stack[idx] = private$w
-				# Each threshold gets its own set of strata to maintain independence 
-				# across thresholds if we were doing simple pooling, but for 
-				# conditional logistic, we treat (pair, threshold) as the stratum.
-				strata_stack[idx] = strata_ids + (k - 1L) * num_strata
+				idx = ((k - 1L) * n_m + 1L):(k * n_m)
+				y_stack[idx] = as.integer(y_m > k)
+				w_stack[idx] = w_m
+				strata_stack[idx] = strata_m + (k - 1L) * m
 			}
 
-			# Fit conditional logistic regression on the stacked data
 			mod = clogit_helper(y_stack, data.frame(), w_stack, strata_stack)
-			
-			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
-				return(invisible(NULL))
-			}
+			if (is.null(mod)) return(invisible(NULL))
 
-			private$cached_values$beta_hat_T   = as.numeric(mod$b[1])
-			private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-			private$cached_values$is_z         = TRUE
+			beta = as.numeric(mod$b[1])
+			ssq  = as.numeric(mod$ssq_b_j)
+			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
+		},
+
+		ord_for_reservoir = function(){
+			y_r    = private$cached_values$KKstats$y_reservoir
+			w_r    = private$cached_values$KKstats$w_reservoir
+			if (length(y_r) < 2 || length(unique(y_r)) < 2 || length(unique(w_r)) < 2) return(invisible(NULL))
+
+			Xmm = matrix(w_r, ncol = 1)
+			mod = tryCatch(
+				fast_ordinal_regression_with_var_cpp(X = Xmm, y = as.numeric(y_r)),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(invisible(NULL))
+
+			beta = as.numeric(mod$b[1])
+			ssq  = as.numeric(mod$ssq_b_2)
+			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
 		}
 	)
 )

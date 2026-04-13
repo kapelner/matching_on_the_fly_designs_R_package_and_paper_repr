@@ -62,6 +62,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the coefficient for "w" directly from the fit.
@@ -95,9 +96,16 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			NA_integer_
 		},
 
+		gee_coefficients_are_usable = function(beta){
+			length(beta) > 0L &&
+				all(is.finite(beta)) &&
+				max(abs(beta), na.rm = TRUE) <= private$max_abs_reasonable_coef
+		},
+
 		extract_gee_treatment_estimate = function(mod){
 			if (is.null(mod)) return(NA_real_)
 			beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+			if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(NA_real_)
 			j_treat = private$gee_treatment_index(beta)
 			if (!is.finite(j_treat) || is.na(j_treat) || j_treat < 1L || j_treat > length(beta)) return(NA_real_)
 			as.numeric(beta[[j_treat]])
@@ -219,18 +227,21 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			needs_fallback = is.null(mod)
 			if (!needs_fallback) {
 				beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+				needs_fallback = is.null(beta) || !private$gee_coefficients_are_usable(beta)
 				beta_hat = private$extract_gee_treatment_estimate(mod)
-				needs_fallback = !is.finite(beta_hat)
+				needs_fallback = needs_fallback || !is.finite(beta_hat)
 				if (!estimate_only && !needs_fallback) {
 					j_treat = private$gee_treatment_index(beta)
 					coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 					se_hat = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
-					needs_fallback = !is.finite(se_hat) || se_hat <= 0
+					needs_fallback = !is.finite(se_hat) || se_hat <= 0 || se_hat > private$max_abs_reasonable_coef
 				}
 			}
 			if (needs_fallback && private$gee_has_reservoir()) {
 				mod_fb = private$fit_gee(std_err = std_err, include_reservoir = FALSE)
-				if (!is.null(mod_fb)) return(mod_fb)
+				beta_fb = if (!is.null(mod_fb)) tryCatch(stats::coef(mod_fb), error = function(e) NULL) else NULL
+				if (!is.null(mod_fb) && !is.null(beta_fb) && private$gee_coefficients_are_usable(beta_fb)) return(mod_fb)
+				return(NULL)
 			}
 			mod
 		}

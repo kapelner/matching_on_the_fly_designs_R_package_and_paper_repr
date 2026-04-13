@@ -101,6 +101,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 						warnings = iter_warns
 					)
 				}
+				debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
+				if (length(debug_results) == 0L) {
+					stop("All randomization iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+				}
 				values = sapply(debug_results, `[[`, "val")
 				errors_list = lapply(debug_results, `[[`, "errors")
 				warnings_list = lapply(debug_results, `[[`, "warnings")

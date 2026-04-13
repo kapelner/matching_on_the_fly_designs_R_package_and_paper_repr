@@ -65,7 +65,8 @@ InferenceCountUnivRobustPoissonRegr = R6::R6Class("InferenceCountUnivRobustPoiss
 
 		build_design_matrix = function(){
 			Xmm = cbind(1, private$w)
-			colnames(Xmm) = c("(Intercept)", "treatment")
+			full_names = c("(Intercept)", "treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			Xmm
 		},
 

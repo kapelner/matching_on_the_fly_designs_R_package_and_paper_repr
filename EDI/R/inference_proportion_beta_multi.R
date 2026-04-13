@@ -43,7 +43,8 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = private$create_design_matrix()
 			# create_design_matrix is [Intercept, Treatment, Covariates]
-			colnames(Xmm) = c("(Intercept)", "treatment", if(ncol(Xmm) > 2) paste0("x", 1:(ncol(Xmm)-2)) else NULL)
+			full_names = c("(Intercept)", "treatment", if(ncol(Xmm) > 2) paste0("x", 1:(ncol(Xmm)-2)) else NULL)
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			y_beta = private$sanitize_beta_response(private$y)
 
 			if (estimate_only) {

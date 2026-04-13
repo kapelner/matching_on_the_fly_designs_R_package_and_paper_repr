@@ -54,7 +54,8 @@ InferenceOrdinalUniCLLRegr = R6::R6Class("InferenceOrdinalUniCLLRegr",
 			# Cumulative CLL model cloglog(P(Y <= k)) = alpha_k + beta * w
 			# We use fast_ordinal_cloglog_regression_with_var_cpp
 			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = c("treatment")
+			full_names = c("treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			
 			if (estimate_only) {
 				res = fast_ordinal_cloglog_regression_cpp(X = Xmm, y = as.numeric(private$y))

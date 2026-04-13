@@ -94,7 +94,8 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 					keep = sort(unique(keep))
 					M = M[, keep, drop = FALSE]
 				}
-				colnames(M)[1] = "treatment"
+				full_names = c("treatment", colnames(X_cov))
+				colnames(M) = full_names[seq_len(ncol(M))]
 				key = paste(colnames(M), collapse = "|")
 				if (!(key %in% keys)){
 					candidates[[length(candidates) + 1L]] = M

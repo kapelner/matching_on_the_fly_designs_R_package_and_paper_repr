@@ -89,7 +89,8 @@ InferenceCountUnivPoissonRegr = R6::R6Class("InferenceCountUnivPoissonRegr",
 
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = cbind(1, private$w)
-			colnames(Xmm) = c("(Intercept)", "treatment")
+			full_names = c("(Intercept)", "treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			private$fit_poisson_with_var(Xmm, estimate_only = estimate_only)
 		},
 

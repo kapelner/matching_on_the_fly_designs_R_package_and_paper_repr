@@ -123,8 +123,13 @@ InferenceOrdinalUnivKKCondContRatioRegr = R6::R6Class(
 			mod = clogit_helper(expanded$y, data.frame(), expanded$w, expanded$strata)
 			
 			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (private$harden && length(unique(expanded$strata)) > 0){
+					private$cached_values$beta_hat_T   = 0
+					private$cached_values$s_beta_hat_T = NA_real_
+				} else {
+					private$cached_values$beta_hat_T   = NA_real_
+					private$cached_values$s_beta_hat_T = NA_real_
+				}
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}

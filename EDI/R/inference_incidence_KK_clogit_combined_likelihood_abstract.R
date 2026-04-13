@@ -43,6 +43,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
@@ -143,8 +144,14 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 					fast_logistic_regression_with_var(X_comb, y_comb, j = j_beta_T)
 				},
 				error = function(e) NULL
-			)
+				)
 			if (is.null(mod) || !is.finite(mod$b[j_beta_T])){
+				private$cached_values$beta_hat_T   = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z         = TRUE
+				return(invisible(NULL))
+			}
+			if (max(abs(mod$b), na.rm = TRUE) > private$max_abs_reasonable_coef){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
@@ -152,7 +159,13 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 			}
 
 			private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
-			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(mod$ssq_b_j)
+			if (!estimate_only) {
+				se = sqrt(mod$ssq_b_j)
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se <= private$max_abs_reasonable_coef) se else NA_real_
+				if (!is.finite(private$cached_values$s_beta_hat_T)){
+					private$cached_values$beta_hat_T = NA_real_
+				}
+			}
 			private$cached_values$is_z         = TRUE
 			invisible(NULL)
 		}

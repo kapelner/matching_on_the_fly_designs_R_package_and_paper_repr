@@ -240,7 +240,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 				),
 				error = function(e) NULL
 			)
-			if (is.null(res) || length(res$b) < 1 || !is.finite(res$b[1])){
+			if (is.null(res) || length(res$b) < 1 || !is.finite(res$b[1]) || (isTRUE(private$harden) && !is.null(res$converged) && !res$converged)){
 				return(NULL)
 			}
 

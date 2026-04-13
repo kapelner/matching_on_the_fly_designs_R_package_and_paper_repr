@@ -78,6 +78,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 
 	private = list(
 		prob_clip_eps = .Machine$double.eps,
+		max_abs_reasonable_coef = 1e4,
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
 		get_estimand_type = function() stop(class(self)[1], " must implement get_estimand_type()."),
@@ -136,6 +137,12 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
 		},
 
+		coefficients_are_usable = function(coef_hat){
+			length(coef_hat) > 0L &&
+				all(is.finite(coef_hat)) &&
+				max(abs(coef_hat), na.rm = TRUE) <= private$max_abs_reasonable_coef
+		},
+
 		fit_logistic_with_sandwich = function(X_full, estimate_only = FALSE){
 			X_curr = X_full
 
@@ -156,7 +163,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				}
 
 				coef_hat = as.numeric(mod$b)
-				converged = all(is.finite(coef_hat))
+				converged = private$coefficients_are_usable(coef_hat)
 				if (!converged){
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)

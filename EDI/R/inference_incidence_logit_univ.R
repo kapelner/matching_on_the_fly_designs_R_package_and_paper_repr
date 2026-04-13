@@ -35,7 +35,8 @@ InferenceIncidUnivLogRegr = R6::R6Class("InferenceIncidUnivLogRegr",
 			# Use the standard design matrix order: Intercept, Treatment, Covariates
 			# This ensures treatment is at index 2 for fast_logistic_regression_with_var_cpp
 			Xmm = cbind(1, private$w)
-			colnames(Xmm) = c("(Intercept)", "treatment")
+			full_names = c("(Intercept)", "treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 
 			if (estimate_only) {
 				res = fast_logistic_regression_cpp(Xmm, private$y)

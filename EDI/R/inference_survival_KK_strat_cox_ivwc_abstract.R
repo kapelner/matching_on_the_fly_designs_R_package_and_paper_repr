@@ -124,6 +124,9 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 		},
 
 		strat_cox_for_matched_pairs = function(){
+			private$cached_values$beta_T_matched = NULL
+			private$cached_values$ssq_beta_T_matched = NULL
+
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -166,17 +169,28 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 
 			mod = tryCatch(
 				survival::coxph(as.formula(formula_str), data = dat),
-				error = function(e) NULL
+				error = function(e) NULL,
+				warning = function(w) {
+					if (grepl("converge|infinite", w$message)) return(NULL)
+					invokeRestart("muffleWarning")
+				}
 			)
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = as.numeric(coef(mod)["w"])
 			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
-			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
+			
+			# If estimate is clearly degenerate, treat as failure
+			if (!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20) return(invisible(NULL))
+
+			private$cached_values$beta_T_matched     = beta
+			private$cached_values$ssq_beta_T_matched = se^2
 		},
 
 		cox_for_reservoir = function(){
+			private$cached_values$beta_T_reservoir = NULL
+			private$cached_values$ssq_beta_T_reservoir = NULL
+
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			m_vec_safe = private$m
@@ -208,23 +222,42 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 
 			mod = tryCatch(
 				survival::coxph(as.formula(formula_str), data = dat),
-				error = function(e) NULL
+				error = function(e) NULL,
+				warning = function(w) {
+					if (grepl("converge|infinite", w$message)) return(NULL)
+					invokeRestart("muffleWarning")
+				}
 			)
 
-			# Fallback if multivariate failed
-			if (is.null(mod) && private$include_covariates()){
-				mod = tryCatch(
-					survival::coxph(survival::Surv(y, dead) ~ w, data = data.frame(y = y_r, dead = dead_r, w = w_r)),
-					error = function(e) NULL
-				)
+			# Fallback if multivariate failed or was degenerate
+			if (private$include_covariates()){
+				is_degenerate = is.null(mod) || {
+					beta = as.numeric(coef(mod)["w"])
+					se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
+					!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20
+				}
+				
+				if (is_degenerate){
+					mod = tryCatch(
+						survival::coxph(survival::Surv(y, dead) ~ w, data = data.frame(y = y_r, dead = dead_r, w = w_r)),
+						error = function(e) NULL,
+						warning = function(w) {
+							if (grepl("converge|infinite", w$message)) return(NULL)
+							invokeRestart("muffleWarning")
+						}
+					)
+				}
 			}
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = as.numeric(coef(mod)["w"])
 			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
-			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
+			
+			if (!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20) return(invisible(NULL))
+
+			private$cached_values$beta_T_reservoir     = beta
+			private$cached_values$ssq_beta_T_reservoir = se^2
 		}
 	)
 )

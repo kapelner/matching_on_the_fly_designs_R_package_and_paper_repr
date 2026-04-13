@@ -543,7 +543,9 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			# For ordinal, we'll just use a simple shift and re-cut if needed, 
 			# but here y_t is already the ordinal level.
 			# Let's just do a simple shift and round.
-			return(as.integer(max(1, round(y_t + bt + eps))))
+			# We use a larger noise multiplier (5x) to ensure some subjects jump categories,
+			# otherwise with SD_NOISE=0.1, matched pairs are almost always concordant.
+			return(as.integer(max(1, round(y_t + bt + 5 * eps))))
 		}
 		stop("Unsupported response_type: ", response_type)
 	}

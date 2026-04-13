@@ -45,7 +45,8 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 	private = list(
 		adjacent_category_design_matrix = function(){
 			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = "treatment"
+			full_names = "treatment"
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			Xmm
 		},
 

@@ -51,7 +51,8 @@ InferenceOrdinalMultiCumulProbitRegr = R6::R6Class("InferenceOrdinalMultiCumulPr
 						)
 						return(list(
 							b = c(NA, res$b),
-							ssq_b_2 = NA_real_
+							ssq_b_2 = NA_real_,
+							converged = res$converged
 						))
 					}
 
@@ -61,11 +62,13 @@ InferenceOrdinalMultiCumulProbitRegr = R6::R6Class("InferenceOrdinalMultiCumulPr
 					)
 					list(
 						b = c(NA, res$b),
-						ssq_b_2 = res$ssq_b_2
+						ssq_b_2 = res$ssq_b_2,
+						converged = res$converged
 					)
 				},
 				fit_ok = function(mod, X_fit, keep){
 					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (!is.null(mod$converged) && !mod$converged) return(FALSE)
 					if (estimate_only) return(TRUE)
 					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}

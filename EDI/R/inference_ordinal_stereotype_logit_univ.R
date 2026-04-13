@@ -52,7 +52,8 @@ InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereot
 	private = list(
 		stereotype_design_matrix = function(){
 			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = "treatment"
+			full_names = "treatment"
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			Xmm
 		},
 

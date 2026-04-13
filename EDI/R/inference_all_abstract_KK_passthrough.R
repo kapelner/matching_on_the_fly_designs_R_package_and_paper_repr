@@ -157,6 +157,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							warnings = iter_warns
 						)
 					}
+					debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
+					if (length(debug_results) == 0L) {
+						stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+					}
 					values = sapply(debug_results, `[[`, "val")
 					errors_list = lapply(debug_results, `[[`, "errors")
 					warnings_list = lapply(debug_results, `[[`, "warnings")
@@ -345,6 +349,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
 					warnings = iter_warns
 				)
+			}
+			debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
+			if (length(debug_results) == 0L) {
+				stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
 			}
 			values = sapply(debug_results, `[[`, "val")
 			errors_list = lapply(debug_results, `[[`, "errors")

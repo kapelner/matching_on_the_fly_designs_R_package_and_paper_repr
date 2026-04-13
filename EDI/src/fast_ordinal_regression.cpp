@@ -125,6 +125,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     // Initialize beta
     params.tail(p).setZero();
 
+    bool converged = false;
     double h = 1e-4;
     for (int iter = 0; iter < maxit; ++iter) {
         VectorXd grad(n_params);
@@ -134,7 +135,10 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
             grad[i] = (model.neg_log_likelihood(p_plus) - model.neg_log_likelihood(p_minus)) / (2.0 * h);
         }
 
-        if (grad.norm() < tol) break;
+        if (grad.norm() < tol) {
+            converged = true;
+            break;
+        }
 
         MatrixXd H = model.hessian(params);
         FullPivLU<MatrixXd> lu(H);
@@ -145,22 +149,31 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         // Simple line search
         double alpha_step = 1.0;
         double current_nll = model.neg_log_likelihood(params);
+        bool accepted = false;
         while (alpha_step > 1e-4) {
             VectorXd next_params = params - alpha_step * step;
             if (model.neg_log_likelihood(next_params) < current_nll) {
                 params = next_params;
+                accepted = true;
                 break;
             }
             alpha_step *= 0.5;
         }
-        if (alpha_step <= 1e-4) break;
+        if (!accepted) {
+            break;
+        }
+        if ((alpha_step * step).norm() < tol) {
+            converged = true;
+            break;
+        }
     }
 
     return List::create(
         Named("b") = params.tail(p),
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
-        Named("params") = params
+        Named("params") = params,
+        Named("converged") = converged
     );
 }
 
@@ -168,6 +181,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
     List res = fast_ordinal_regression_cpp(X, y);
     VectorXd params = res["params"];
+    bool converged = res["converged"];
     OrdinalRegression model(X, y);
     MatrixXd H = model.hessian(params);
     
@@ -175,7 +189,8 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     List output = List::create(
         Named("b") = res["b"],
         Named("alpha") = res["alpha"],
-        Named("params") = params
+        Named("params") = params,
+        Named("converged") = converged
     );
     if (!lu.isInvertible()) {
         output["ssq_b_2"] = NA_REAL;

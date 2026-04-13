@@ -51,7 +51,8 @@ InferenceOrdinalUniCumulProbitRegr = R6::R6Class("InferenceOrdinalUniCumulProbit
 	private = list(
 		cumulative_probit_design_matrix = function(){
 			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = c("treatment")
+			full_names = c("treatment")
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			Xmm
 		},
 

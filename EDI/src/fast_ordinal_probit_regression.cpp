@@ -111,6 +111,7 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::V
     }
     params.tail(p).setZero();
 
+    bool converged = false;
     const double h = 1e-4;
     for (int iter = 0; iter < maxit; ++iter) {
         VectorXd grad(n_params);
@@ -121,6 +122,7 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::V
         }
 
         if (grad.norm() < tol) {
+            converged = true;
             break;
         }
 
@@ -133,15 +135,21 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::V
         VectorXd step = lu.solve(grad);
         double alpha_step = 1.0;
         const double current_nll = model.neg_log_likelihood(params);
+        bool accepted = false;
         while (alpha_step > 1e-4) {
             VectorXd next_params = params - alpha_step * step;
             if (model.neg_log_likelihood(next_params) < current_nll) {
                 params = next_params;
+                accepted = true;
                 break;
             }
             alpha_step *= 0.5;
         }
-        if (alpha_step <= 1e-4) {
+        if (!accepted) {
+            break;
+        }
+        if ((alpha_step * step).norm() < tol) {
+            converged = true;
             break;
         }
     }
@@ -150,7 +158,8 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::V
         Named("b") = params.tail(p),
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
-        Named("params") = params
+        Named("params") = params,
+        Named("converged") = converged
     );
 }
 
@@ -158,6 +167,7 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::V
 List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y) {
     List res = fast_ordinal_probit_regression_cpp(X, y);
     VectorXd params = res["params"];
+    bool converged = res["converged"];
     OrdinalProbitRegression model(X, y);
     MatrixXd H = model.hessian(params);
     MatrixXd cov_mat;
@@ -178,6 +188,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const
 
     return List::create(
         Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_2
+        Named("ssq_b_2") = ssq_b_2,
+        Named("converged") = converged
     );
 }

@@ -40,7 +40,8 @@ InferenceCountMultiPoissonRegr = R6::R6Class("InferenceCountMultiPoissonRegr",
 	private = list(
 		generate_mod = function(estimate_only = FALSE){
 			Xmm = private$create_design_matrix()
-			colnames(Xmm) = c("(Intercept)", "treatment", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
+			full_names = c("(Intercept)", "treatment", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			private$fit_poisson_with_var(Xmm, estimate_only = estimate_only)
 		}
 	)

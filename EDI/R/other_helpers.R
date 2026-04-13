@@ -668,8 +668,8 @@ NULL
 	if (sum(dead) == 0L || sum(1L - dead) == 0L) return(NULL)
 
 	if (is.null(colnames(Xmm))){
-		colnames(Xmm) = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		if (ncol(Xmm) >= 1L) colnames(Xmm)[1] = "treatment"
+		full_names = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
+		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 	}
 
 	Xfull = cbind("(Intercept)" = 1, Xmm)
@@ -835,8 +835,8 @@ NULL
 	if (sum(y > 0 & y < 1) == 0L) return(NULL)
 
 	if (is.null(colnames(Xmm))){
-		colnames(Xmm) = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		if (ncol(Xmm) >= 1L) colnames(Xmm)[1] = "treatment"
+		full_names = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
+		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 	}
 
 	Xfull = cbind("(Intercept)" = 1, Xmm)
@@ -938,8 +938,8 @@ NULL
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
 	if (is.null(colnames(Xmm))){
-		colnames(Xmm) = c("w", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		if (ncol(Xmm) >= 1L) colnames(Xmm)[1] = "w"
+		full_names = c("w", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
+		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 	}
 	if (length(y) != nrow(Xmm) || length(dead) != nrow(Xmm) || length(pair_id) != nrow(Xmm)){
 		stop("Clayton copula fit inputs must have matching row counts.")

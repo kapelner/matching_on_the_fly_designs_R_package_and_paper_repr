@@ -41,7 +41,8 @@ InferenceCountMultiQuasiPoissonRegr = R6::R6Class("InferenceCountMultiQuasiPoiss
 	private = list(
 		build_design_matrix = function(){
 			Xmm = private$create_design_matrix()
-			colnames(Xmm) = c("(Intercept)", "treatment", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
+			full_names = c("(Intercept)", "treatment", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
+			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
 			Xmm
 		}
 	)

@@ -112,6 +112,7 @@ List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::
     // Initialize beta
     params.tail(p).setZero();
 
+    bool converged = false;
     double h = 1e-4;
     for (int iter = 0; iter < maxit; ++iter) {
         VectorXd grad(n_params);
@@ -121,7 +122,10 @@ List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::
             grad[i] = (model.neg_log_likelihood(p_plus) - model.neg_log_likelihood(p_minus)) / (2.0 * h);
         }
 
-        if (grad.norm() < tol) break;
+        if (grad.norm() < tol) {
+            converged = true;
+            break;
+        }
 
         MatrixXd H = model.hessian(params);
         FullPivLU<MatrixXd> lu(H);
@@ -132,22 +136,31 @@ List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::
         // Simple line search
         double alpha_step = 1.0;
         double current_nll = model.neg_log_likelihood(params);
+        bool accepted = false;
         while (alpha_step > 1e-4) {
             VectorXd next_params = params - alpha_step * step;
             if (model.neg_log_likelihood(next_params) < current_nll) {
                 params = next_params;
+                accepted = true;
                 break;
             }
             alpha_step *= 0.5;
         }
-        if (alpha_step <= 1e-4) break;
+        if (!accepted) {
+            break;
+        }
+        if ((alpha_step * step).norm() < tol) {
+            converged = true;
+            break;
+        }
     }
 
     return List::create(
         Named("b") = params.tail(p),
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
-        Named("params") = params
+        Named("params") = params,
+        Named("converged") = converged
     );
 }
 
@@ -157,12 +170,13 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, cons
     if (res.size() == 0) return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
     
     VectorXd params = res["params"];
+    bool converged = res["converged"];
     OrdinalCauchitRegression model(X, y);
     MatrixXd H = model.hessian(params);
     
     FullPivLU<MatrixXd> lu(H);
     if (!lu.isInvertible()) {
-        return List::create(Named("b") = res["b"], Named("ssq_b_2") = NA_REAL);
+        return List::create(Named("b") = res["b"], Named("ssq_b_2") = NA_REAL, Named("converged") = converged);
     }
     
     MatrixXd cov_mat = lu.inverse();
@@ -173,6 +187,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, cons
 
     return List::create(
         Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_2
+        Named("ssq_b_2") = ssq_b_2,
+        Named("converged") = converged
     );
 }
