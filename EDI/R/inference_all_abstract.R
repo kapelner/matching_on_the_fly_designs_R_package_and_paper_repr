@@ -352,18 +352,23 @@ Inference = R6::R6Class("Inference",
 			}
 			colnames(X_cov) = cov_names
 
-			X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
-			# Drop covariate columns that are linearly dependent on earlier columns.
-			# This handles e.g. FixedDesignBlockedCluster where cluster dummies are
-			# collinear with the treatment column (all cluster members share the same w).
-			res = drop_linearly_dependent_cols(X_full)
-			if (length(res$js) < ncol(X_full)) {
-				# Guarantee intercept (col 1) and treatment (col 2) are always retained.
-				kept_js = sort(union(c(1L, 2L), res$js))
-				X_full[, kept_js, drop = FALSE]
-			} else {
-				X_full
+			if (isTRUE(private$harden)){
+				# Drop highly correlated covariates first to improve condition number.
+				# We only do this for covariates, keeping intercept and treatment safe.
+				X_cov = drop_highly_correlated_cols(X_cov, threshold = 0.999)$M
 			}
+
+			X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			
+			if (isTRUE(private$harden)){
+				# Drop covariate columns that are linearly dependent on earlier columns.
+				# This handles e.g. FixedDesignBlockedCluster where cluster dummies are
+				# collinear with the treatment column (all cluster members share the same w).
+				# pivoted QR naturally prefers columns at the front (intercept, treatment).
+				res = drop_linearly_dependent_cols(X_full)
+				X_full = res$M
+			}
+			X_full
 		},
 
 		get_X = function(){
@@ -475,6 +480,67 @@ Inference = R6::R6Class("Inference",
 
 		reduce_design_matrix_preserving_treatment_matrix = function(X_full){
 			private$reduce_design_matrix_preserving_treatment(X_full)$X
+		},
+
+		fit_with_hardened_qr_column_dropping = function(X_full, fit_fun, fit_ok, required_cols = 1L){
+			X_mat = as.matrix(X_full)
+			if (is.null(dim(X_mat))){
+				X_mat = matrix(X_mat, ncol = 1L)
+			}
+			if (!ncol(X_mat)){
+				return(list(
+					fit = tryCatch(fit_fun(X_mat), error = function(e) NULL),
+					X = X_mat,
+					keep = integer()
+				))
+			}
+
+			required_cols = sort(unique(as.integer(required_cols)))
+			required_cols = required_cols[
+				is.finite(required_cols) &
+				required_cols >= 1L &
+				required_cols <= ncol(X_mat)
+			]
+
+			attempt_fit = function(keep){
+				X_try = X_mat[, keep, drop = FALSE]
+				colnames(X_try) = colnames(X_mat)[keep]
+				list(
+					fit = tryCatch(fit_fun(X_try), error = function(e) NULL),
+					X = X_try,
+					keep = keep
+				)
+			}
+
+			if (!private$harden || ncol(X_mat) <= length(required_cols)){
+				return(attempt_fit(seq_len(ncol(X_mat))))
+			}
+
+			qr_X = qr(X_mat)
+			keep = sort(unique(c(required_cols, qr_X$pivot[seq_len(qr_X$rank)])))
+			if (!length(keep)) keep = seq_len(ncol(X_mat))
+			removable = rev(setdiff(qr_X$pivot[qr_X$pivot %in% keep], required_cols))
+
+			best_attempt = attempt_fit(keep)
+			if (isTRUE(fit_ok(best_attempt$fit, best_attempt$X, best_attempt$keep))){
+				return(best_attempt)
+			}
+
+			if (!length(removable)){
+				return(best_attempt)
+			}
+
+			for (k in seq_along(removable)){
+				keep_try = sort(setdiff(keep, removable[seq_len(k)]))
+				if (!all(required_cols %in% keep_try)) next
+				attempt = attempt_fit(keep_try)
+				best_attempt = attempt
+				if (isTRUE(fit_ok(attempt$fit, attempt$X, attempt$keep))){
+					return(attempt)
+				}
+			}
+
+			best_attempt
 		}
 	)
 )

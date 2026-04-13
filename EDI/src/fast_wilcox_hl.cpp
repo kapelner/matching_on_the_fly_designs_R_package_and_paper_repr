@@ -204,6 +204,15 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
     return wrap(results_vec);
 }
 
+//' Fast Wilcoxon HL Statistic for Multiple Permutations
+//'
+//' @param y Numeric response vector.
+//' @param w_mat Integer matrix of permuted treatment assignments (n x r).
+//' @param delta Null treatment effect shift.
+//' @param transform_code Integer code for response transformation.
+//' @param zero_one_logit_clamp Clamp value for logit transformation.
+//' @param num_cores Number of OpenMP threads.
+//' @return Numeric vector of HL statistics.
 // [[Rcpp::export]]
 NumericVector compute_wilcox_hl_distr_parallel_cpp(
     const NumericVector& y,

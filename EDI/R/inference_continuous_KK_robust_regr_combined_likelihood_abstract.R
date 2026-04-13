@@ -40,9 +40,11 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 
 		#' @description
 		#' Returns the combined robust-regression estimate of the treatment effect.
-		#' @param estimate_only If TRUE, skip variance component calculations.
+		#' @param estimate_only If TRUE, skip variance component calculations and use
+		#'   the faster \code{"M"} robust estimator regardless of the \code{method}
+		#'   argument passed at construction time.
 		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$fit_combined()
+			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -133,7 +135,8 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			}
 		},
 
-		fit_rlm = function(X, y, j_treat){
+		# estimate_only = TRUE forces "M" (fast, no LQS phase) and skips summary().
+		fit_rlm = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
 			ctrl = private$resolve_rlm_control(X)
 
@@ -162,7 +165,8 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 				}, error = function(e) e)
 			}
 
-			method_to_try = if (isTRUE(private$rlm_force_M)) "M" else private$rlm_method
+			# When only the point estimate is needed, skip the expensive MM/LQS phase.
+			method_to_try = if (estimate_only || isTRUE(private$rlm_force_M)) "M" else private$rlm_method
 			start_coef = NULL
 			if (isTRUE(private$rlm_start_with_ols)) {
 				start_coef = tryCatch(as.numeric(stats::coef(stats::lm.fit(x = X, y = y))), error = function(e) NULL)
@@ -177,7 +181,7 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 				start_coef = rep(0, ncol(X))
 			}
 			mod = run_rlm(method_to_try, init = start_coef)
-			if (inherits(mod, "error") && identical(method_to_try, "MM")){
+			if (!estimate_only && inherits(mod, "error") && identical(method_to_try, "MM")){
 				msg = if (length(mod$message) == 0L) "" else mod$message
 				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
 					private$rlm_force_M = TRUE
@@ -186,6 +190,15 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			}
 			if (inherits(mod, "error")) return(NULL)
 			if (is.null(mod)) return(NULL)
+
+			# Fast path: extract coefficient directly without calling summary().
+			if (estimate_only) {
+				coef_vec = tryCatch(as.numeric(stats::coef(mod)), error = function(e) NULL)
+				if (is.null(coef_vec) || length(coef_vec) < j_treat) return(NULL)
+				beta = coef_vec[j_treat]
+				if (!is.finite(beta)) return(NULL)
+				return(list(beta = beta, se = NA_real_, mod = NULL))
+			}
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if ((is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
@@ -211,8 +224,9 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			list(beta = beta, se = se, mod = mod)
 		},
 
-		fit_combined = function(){
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+		fit_combined = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			KKstats = private$cached_values$KKstats
 			if (is.null(KKstats)){
@@ -251,7 +265,7 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 				j_treat = 2L
 			} else {
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
@@ -264,19 +278,23 @@ InferenceAbstractKKRobustRegrCombinedLikelihood = R6::R6Class("InferenceAbstract
 			X_comb = reduced$X
 			j_treat = reduced$j_treat
 
-			fit = private$fit_rlm(X_comb, y_comb, j_treat)
+			fit = private$fit_rlm(X_comb, y_comb, j_treat, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T   = fit$beta
-			private$cached_values$s_beta_hat_T = fit$se
 			private$cached_values$is_z         = TRUE
-			private$cached_values$full_coefficients = stats::coef(fit$mod)
-			private$cached_values$full_vcov = tryCatch(stats::vcov(fit$mod), error = function(e) NULL)
+			if (!estimate_only) {
+				private$cached_values$s_beta_hat_T = fit$se
+				if (!is.null(fit$mod)) {
+					private$cached_values$full_coefficients = stats::coef(fit$mod)
+					private$cached_values$full_vcov = tryCatch(stats::vcov(fit$mod), error = function(e) NULL)
+				}
+			}
 			invisible(NULL)
 		}
 	)

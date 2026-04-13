@@ -40,16 +40,36 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#'   \describe{
 		#'     \item{\code{"robust"}}{Analytic delta-method gradient with the sandwich (HC) covariance.}
 		#'     \item{\code{"stabilized_robust"}}{Same gradient; covariance projected to the nearest PSD matrix.}
-		#'     \item{\code{"model_based"}}{Same gradient; Fisher-information covariance (clipped at \code{prob_clip_eps}).}
-		#'     \item{\code{"stabilized_robust_fd"}}{Finite-difference gradient; stabilized sandwich covariance.}
-		#'     \item{\code{"model_based_fd"}}{Finite-difference gradient; model-based covariance.}
+		#'     \item{\code{"model_based"}}{Same gradient; Fisher-information (IWLS) covariance.
+		#'       Fitted probabilities are first clipped to \code{[prob_clip_eps, 1 - prob_clip_eps]},
+		#'       then the binomial variance weight \eqn{w_i = \hat\mu_i(1-\hat\mu_i)} is further
+		#'       capped at \code{0.25}. The cap is the global maximum of \eqn{p(1-p)}, attained at
+		#'       \eqn{p = 0.5}; it prevents a near-boundary fitted probability that slips through the
+		#'       clip from inflating the information matrix, which is mathematically correct because no
+		#'       Bernoulli variance can exceed 0.25.}
+		#'     \item{\code{"stabilized_robust_fd"}}{Finite-difference (central-difference) gradient;
+		#'       stabilized sandwich covariance. The step size for coefficient \eqn{j} is
+		#'       \eqn{h_j = \varepsilon^{1/3}(|\hat\beta_j| + 1)}, where
+		#'       \eqn{\varepsilon = } \code{.Machine$double.eps}. The cube-root of machine epsilon
+		#'       is the theoretically optimal step that balances truncation error
+		#'       (\eqn{O(h^2)} for central differences) against floating-point cancellation
+		#'       (\eqn{O(\varepsilon / h)}), giving a total error of \eqn{O(\varepsilon^{2/3})}.}
+		#'     \item{\code{"model_based_fd"}}{Finite-difference gradient (same step rule as
+		#'       \code{"stabilized_robust_fd"}); model-based covariance with the 0.25 weight cap.}
 		#'     \item{\code{"stabilized_robust_strong_clip"}}{Strong-clipped analytic gradient; stabilized sandwich covariance.}
-		#'     \item{\code{"model_based_strong_clip"}}{Strong-clipped analytic gradient; model-based covariance (strong-clipped).}
-		#'     \item{\code{"model_based_fd_strong_clip"}}{Strong-clipped finite-difference gradient; model-based covariance (strong-clipped).}
+		#'     \item{\code{"model_based_strong_clip"}}{Strong-clipped analytic gradient; model-based covariance (strong-clipped) with the 0.25 weight cap.}
+		#'     \item{\code{"model_based_fd_strong_clip"}}{Strong-clipped finite-difference gradient (same step rule); model-based covariance (strong-clipped) with the 0.25 weight cap.}
 		#'   }
 		#'   Pass a shorter vector or a single string to restrict which strategies are tried.
 		#'   An empty vector always returns \code{NA} variance.
+		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
+		#'   may be redrawn when the drawn sample fails validity screening (e.g. near-perfect
+		#'   separation, too few observations per arm, excessive boundary mass). If all attempts
+		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+		#'   Can be overridden per-call in \code{approximate_bootstrap_distribution_beta_hat_T}.
+		#'   Must be a positive integer. Default \code{50L}.
 		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
+			max_resample_attempts = 50L,
 			variance_fallback_methods = c(
 				"robust", "stabilized_robust", "model_based",
 				"stabilized_robust_fd", "model_based_fd",
@@ -65,11 +85,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				"stabilized_robust_strong_clip", "model_based_strong_clip",
 				"model_based_fd_strong_clip"
 			))
+			assertCount(max_resample_attempts, positive = TRUE)
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 			private$prob_clip_eps = prob_clip_eps
 			private$prob_clip_strong_eps = prob_clip_strong_eps
 			private$variance_fallback_methods = variance_fallback_methods
+			private$max_resample_attempts = max_resample_attempts
 		},
 
 		#' @description
@@ -159,58 +181,21 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			)
 		},
 
-		supports_reusable_bootstrap_worker = function(){
-			TRUE
-		},
-
-		create_bootstrap_worker_state = function(){
-			state = private$create_design_backed_bootstrap_worker_state()
-			state$base_X_full = private$build_named_design_matrix()
-			state$screening = private$bootstrap_screening_control
-			state$sample_usable = FALSE
-			state$current_X_full = NULL
-			state$current_y = NULL
-			state
-		},
-
-		load_bootstrap_sample_into_worker = function(worker_state, indices){
-			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
-			indices = as.integer(indices)
-			w_b = worker_state$worker_priv$w
-			y_b = worker_state$worker_priv$y
-			ctrl = worker_state$screening
-			worker_state$current_X_full = worker_state$base_X_full[indices, , drop = FALSE]
-			worker_state$current_y = y_b
-			worker_state$sample_usable = private$bootstrap_sample_is_usable(
-				w_b, y_b,
-				boundary_tol = ctrl$boundary_tol,
-				max_boundary_mass = ctrl$max_boundary_mass,
-				sep_tol = ctrl$sep_tol,
-				min_group_n = ctrl$min_group_n
-			)
-			invisible(NULL)
-		},
-
-		compute_bootstrap_worker_estimate = function(worker_state){
-			if (!isTRUE(worker_state$sample_usable)) return(NA_real_)
-			worker_state$worker_priv$bootstrap_effect_from_sample(
-				worker_state$current_X_full,
-				worker_state$current_y
-			)
-		},
-
 		#' @description
 		#' Abbreviated bootstrap sampler that reuses a bootstrap worker.
 		#' @param B Description for B
 		#' @param show_progress Description for show_progress
-		#' @param max_resample_attempts Description for max_resample_attempts
+		#' @param max_resample_attempts Maximum redraw attempts per bootstrap replicate before
+		#'   the replicate is recorded as \code{NA}. \code{NULL} (default) uses the value set
+		#'   at construction time.
 		#' @param boundary_tol Resample screening threshold for boundary mass near 0/1.
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = 50,
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = NULL,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L, debug = FALSE){
 			assertCount(B, positive = TRUE)
+			if (is.null(max_resample_attempts)) max_resample_attempts = private$max_resample_attempts
 			assertCount(max_resample_attempts, positive = TRUE)
 			assertNumber(boundary_tol, lower = 0, upper = 0.5)
 			assertNumber(max_boundary_mass, lower = 0, upper = 1)
@@ -230,9 +215,12 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				attempt = 1L
 				repeat {
 					boot_draw = private$bootstrap_sample_indices(private$n)
-					private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
-					if (isTRUE(worker_state$sample_usable)) {
-						return(private$compute_bootstrap_worker_estimate(worker_state))
+					load_res = private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+					if (isTRUE(load_res$sample_usable)) {
+						return(worker_state$worker_priv$bootstrap_effect_from_sample(
+							load_res$X_full,
+							load_res$y
+						))
 					}
 					attempt = attempt + 1L
 					if (attempt > max_resample_attempts) return(NA_real_)
@@ -297,6 +285,55 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		gcomp_design_colnames = NULL,
 		gcomp_design_j_treat = NULL,
 		bootstrap_screening_control = NULL,
+
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+
+		create_bootstrap_worker_state = function(){
+			state = private$create_design_backed_bootstrap_worker_state()
+			state$base_X_full = private$build_named_design_matrix()
+			state$screening = private$bootstrap_screening_control
+			state$runtime = new.env(parent = emptyenv())
+			state$runtime$sample_usable = FALSE
+			state$runtime$current_X_full = NULL
+			state$runtime$current_y = NULL
+			state
+		},
+
+		load_bootstrap_sample_into_worker = function(worker_state, indices){
+			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
+			indices = as.integer(indices)
+			w_b = worker_state$worker_priv$w
+			y_b = worker_state$worker_priv$y
+			ctrl = worker_state$screening
+			X_full_b = worker_state$base_X_full[indices, , drop = FALSE]
+			usable = if (!is.null(ctrl)) {
+				private$bootstrap_sample_is_usable(
+					w_b, y_b,
+					boundary_tol = ctrl$boundary_tol,
+					max_boundary_mass = ctrl$max_boundary_mass,
+					sep_tol = ctrl$sep_tol,
+					min_group_n = ctrl$min_group_n
+				)
+			} else {
+				private$bootstrap_sample_is_usable(w_b, y_b)
+			}
+			# Also update runtime env for compute_bootstrap_worker_estimate (base-class path)
+			worker_state$runtime$current_X_full = X_full_b
+			worker_state$runtime$current_y = y_b
+			worker_state$runtime$sample_usable = usable
+			list(sample_usable = usable, X_full = X_full_b, y = y_b)
+		},
+
+		compute_bootstrap_worker_estimate = function(worker_state){
+			if (!isTRUE(worker_state$runtime$sample_usable)) return(NA_real_)
+			worker_state$worker_priv$bootstrap_effect_from_sample(
+				worker_state$runtime$current_X_full,
+				worker_state$runtime$current_y
+			)
+		},
+		max_resample_attempts = 50L,
 		prob_clip_eps = 1e-6,
 		prob_clip_strong_eps = 1e-4,
 		variance_fallback_methods = c(

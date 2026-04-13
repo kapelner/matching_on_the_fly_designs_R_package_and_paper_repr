@@ -28,9 +28,10 @@ InferenceOrdinalUniCauchitRegr = R6::R6Class("InferenceOrdinalUniCauchitRegr",
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects are assigned and
 		#'   response y is recorded within.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param harden Whether to apply robustness measures.
+		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose, harden)
 			assertNoCensoring(private$any_censoring)
 		}
 	),
@@ -83,33 +84,32 @@ InferenceOrdinalMultiCauchitRegr = R6::R6Class("InferenceOrdinalMultiCauchitRegr
 	),
 
 	private = list(
-		cauchit_design_matrix = function(){
-			X_full = cbind(private$w, private$get_X())
-			qr_X = qr(X_full)
-			if (qr_X$rank < ncol(X_full)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(1L %in% keep)) keep[qr_X$rank] = 1L
-				keep = sort(keep)
-				X_full = X_full[, keep, drop = FALSE]
-			}
-			colnames(X_full)[1] = "treatment"
-			X_full
-		},
-
 		generate_mod = function(estimate_only = FALSE){
-			Xmm = private$cauchit_design_matrix()
-			res = fast_ordinal_cauchit_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
-			b1 = tryCatch(res$b[1], error = function(e) NA_real_)
-			if (is.finite(b1)){
-				if (estimate_only) return(list(b = c(NA, res$b), ssq_b_2 = NA_real_))
-				if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, res$b), ssq_b_2 = res$ssq_b_2))
-			}
-			fallback = private$cauchit_polr_fallback()
-			if (!is.null(fallback)){
-				if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
-				return(fallback)
-			}
-			list(b = c(NA, res$b), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2)
+			X_full = cbind(treatment = private$w, private$get_X())
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					res = fast_ordinal_cauchit_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
+					b1 = tryCatch(res$b[1], error = function(e) NA_real_)
+					if (is.finite(b1)){
+						if (estimate_only) return(list(b = c(NA, res$b), ssq_b_2 = NA_real_))
+						if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, res$b), ssq_b_2 = res$ssq_b_2))
+					}
+					fallback = private$cauchit_polr_fallback()
+					if (!is.null(fallback)){
+						if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
+						return(fallback)
+					}
+					list(b = c(NA, res$b), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
+				}
+			)
+			attempt$fit
 		}
 	)
 )

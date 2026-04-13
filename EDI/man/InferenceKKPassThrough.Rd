@@ -71,7 +71,7 @@ beta_hat_T_bs
 \subsection{Method \code{new()}}{
 Initialize
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceKKPassThrough$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceKKPassThrough$new(des_obj, verbose = FALSE, harden = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -82,6 +82,8 @@ and response y is recorded within.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed
 to the user. Default is \code{TRUE}}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
 }
 \if{html}{\out{</div>}}
 }

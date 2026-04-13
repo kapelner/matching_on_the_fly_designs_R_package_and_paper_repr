@@ -31,6 +31,20 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	inherit = InferenceAsymp,
 	public = list(
 
+		#' @description
+		#' Initialize a simple mean-difference inference object.
+		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects are assigned
+		#'   and response y is recorded within.
+		#' @param verbose Whether to print progress messages. Default \code{FALSE}.
+		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
+		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
+		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+		#'   Must be a positive integer. Default \code{50L}.
+		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
+			assertCount(max_resample_attempts, positive = TRUE)
+			super$initialize(des_obj, verbose)
+			private$max_resample_attempts = max_resample_attempts
+		},
 
 		#' @description
 		#' Computes the appropriate estimate for mean difference
@@ -76,6 +90,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	),
 
 	private = list(
+		max_resample_attempts = 50L,
 		get_standard_error = function(){
 			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
 			private$cached_values$s_beta_hat_T
@@ -91,13 +106,13 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
 
-			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
-			max_resample_attempts = args[[1]]
-			n = args[[2]]
-			y = args[[3]]
-			dead = args[[4]]
-			w = args[[5]]
+			max_resample_attempts = private$max_resample_attempts
+			n = args[[1]]
+			y = args[[2]]
+			dead = args[[3]]
+			w = args[[4]]
 
 			y_mat = matrix(NA_real_, nrow = n, ncol = B)
 			w_mat = matrix(NA_integer_, nrow = n, ncol = B)

@@ -1,7 +1,8 @@
 #' Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
 #'
-#' A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
-#' designs with continuous responses. The estimator combines:
+#' A variance-weighted compound quantile regression estimator for KK
+#' matching-on-the-fly designs with continuous responses. The estimator
+#' combines:
 #' \enumerate{
 #'   \item Quantile regression on within-pair differences (matched pairs)
 #'   \item Quantile regression on reservoir subjects (treatment vs control)

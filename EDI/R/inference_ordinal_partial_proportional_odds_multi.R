@@ -6,8 +6,8 @@
 #' effects. When all covariates are parallel, the fit uses the package's fast
 #' Rcpp proportional-odds solver.
 #'
-#' @param des_obj A completed \code{DesignSeqOneByOne} object whose response type is
-#'   \code{"ordinal"}.
+#' @param des_obj A completed \code{DesignSeqOneByOne} object whose response
+#'   type is \code{"ordinal"}.
 #' @param nonparallel Character vector of covariate names from \code{des_obj$
 #'   get_X()} that should vary by threshold. Treatment is always kept parallel.
 #' @param verbose Whether to print progress messages.
@@ -44,15 +44,7 @@ InferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 			if (ncol(X_raw) == 0){
 				return(matrix(0, nrow = private$n, ncol = 0))
 			}
-			X_full = cbind(treatment = private$w, as.matrix(X_raw))
-			qr_X = qr(X_full)
-			if (qr_X$rank < ncol(X_full)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(1L %in% keep)) keep[qr_X$rank] = 1L
-				keep = sort(unique(keep))
-				X_full = X_full[, keep, drop = FALSE]
-			}
-			X_cov = X_full[, setdiff(colnames(X_full), "treatment"), drop = FALSE]
+			X_cov = as.matrix(X_raw)
 			if (ncol(X_cov) == 0){
 				return(matrix(0, nrow = private$n, ncol = 0))
 			}
@@ -61,6 +53,10 @@ InferenceOrdinalMultiPartialProportionalOddsRegr = R6::R6Class(
 	)
 )
 
+#' Partial Proportional-Odds Inference for Ordinal Responses
+#'
+#' Alias for \code{InferenceOrdinalMultiPartialProportionalOddsRegr}.
+#'
 #' @export
 InferenceOrdinalPartialProportionalOdds = R6::R6Class(
 	"InferenceOrdinalPartialProportionalOdds",

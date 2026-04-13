@@ -56,6 +56,7 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 //' @param m_mat Integer matrix of match indicators (n x r).
 //' @param delta Null treatment effect shift.
 //' @param transform_code Integer code for response transformation.
+//' @param zero_one_logit_clamp Clamp value for logit transformation.
 //' @param is_fixed_matching Logical flag for fixed matching designs.
 //' @param num_cores Number of OpenMP threads.
 //' @return Numeric vector of KK Wilcoxon statistics.

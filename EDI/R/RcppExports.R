@@ -226,6 +226,7 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
 #' @param m_mat Integer matrix of match indicators (n x r).
 #' @param delta Null treatment effect shift.
 #' @param transform_code Integer code for response transformation.
+#' @param zero_one_logit_clamp Clamp value for logit transformation.
 #' @param is_fixed_matching Logical flag for fixed matching designs.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of KK Wilcoxon statistics.
@@ -265,7 +266,7 @@ fast_logrank_stats_cpp <- function(time, dead, w) {
     .Call(`_EDI_fast_logrank_stats_cpp`, time, dead, w)
 }
 
-matrix_rank_cpp <- function(A, tol = 1e-12) {
+matrix_rank_cpp <- function(A, tol = 1e-7) {
     .Call(`_EDI_matrix_rank_cpp`, A, tol)
 }
 
@@ -462,6 +463,15 @@ compute_wilcox_hl_bootstrap_parallel_cpp <- function(y, w, indices_mat, num_core
     .Call(`_EDI_compute_wilcox_hl_bootstrap_parallel_cpp`, y, w, indices_mat, num_cores)
 }
 
+#' Fast Wilcoxon HL Statistic for Multiple Permutations
+#'
+#' @param y Numeric response vector.
+#' @param w_mat Integer matrix of permuted treatment assignments (n x r).
+#' @param delta Null treatment effect shift.
+#' @param transform_code Integer code for response transformation.
+#' @param zero_one_logit_clamp Clamp value for logit transformation.
+#' @param num_cores Number of OpenMP threads.
+#' @return Numeric vector of HL statistics.
 compute_wilcox_hl_distr_parallel_cpp <- function(y, w_mat, delta, transform_code, zero_one_logit_clamp, num_cores) {
     .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, y, w_mat, delta, transform_code, zero_one_logit_clamp, num_cores)
 }

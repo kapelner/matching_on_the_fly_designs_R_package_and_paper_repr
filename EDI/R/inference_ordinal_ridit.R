@@ -35,11 +35,17 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#' @param reference The group to use as the "Identified Distribution" (reference).
 		#'   Must be one of "control", "treatment", or "pooled". Default is "control".
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, reference = "control",  verbose = FALSE){
+		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
+		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
+		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+		#'   Must be a positive integer. Default \code{50L}.
+		initialize = function(des_obj, reference = "control", verbose = FALSE, max_resample_attempts = 50L){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			assertChoice(reference, c("control", "treatment", "pooled"))
+			assertCount(max_resample_attempts, positive = TRUE)
 			super$initialize(des_obj, verbose)
 			private$reference = reference
+			private$max_resample_attempts = max_resample_attempts
 			assertNoCensoring(private$any_censoring)
 		},
 
@@ -90,6 +96,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 
 	private = list(
 		reference = NULL,
+		max_resample_attempts = 50L,
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -136,13 +143,13 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
 
-			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
-			max_resample_attempts = args[[1]]
-			n = args[[2]]
-			y = args[[3]]
-			dead = args[[4]]
-			w = args[[5]]
+			max_resample_attempts = private$max_resample_attempts
+			n = args[[1]]
+			y = args[[2]]
+			dead = args[[3]]
+			w = args[[4]]
 
 			# Generate bootstrap indices
 			indices_mat = matrix(NA_integer_, nrow = n, ncol = B)

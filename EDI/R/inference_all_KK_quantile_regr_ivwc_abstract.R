@@ -15,9 +15,12 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
-		#' @param tau                             The quantile level for regression, strictly
-		#'   between 0 and 1. The default \code{tau = 0.5}
-		#' estimates the median treatment effect.
+		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
+		#'   \code{tau = 0.5} estimates the median treatment effect. Values of exactly 0 or 1
+		#'   are excluded because quantile regression is undefined at the boundary (the check
+		#'   function \eqn{\rho_\tau(u) = u(\tau - \mathbf{1}_{u < 0})} degenerates there);
+		#'   the bound is enforced as \code{(.Machine$double.eps, 1 - .Machine$double.eps)},
+		#'   i.e. the smallest representable positive number away from 0 and 1.
 		#' @param transform_y_fn  A function applied to y values before quantile regression.
 		#'   Subclasses pass
 		#' \code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.

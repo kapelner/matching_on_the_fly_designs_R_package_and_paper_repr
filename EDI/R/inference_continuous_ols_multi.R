@@ -20,10 +20,16 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#'   are assigned and response y is recorded within.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
+		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
+		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+		#'   Must be a positive integer. Default \code{50L}.
+		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
 			assertResponseType(des_obj$get_response_type(), "continuous")
+			assertCount(max_resample_attempts, positive = TRUE)
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$max_resample_attempts = max_resample_attempts
 		},
 
 		#' @description
@@ -121,18 +127,19 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 	),
 
 	private = list(
+		max_resample_attempts = 50L,
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
 
-			# Simple (non-KK) bootstrap: args = (max_resample_attempts, n, y, dead, w)
+			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
-			max_resample_attempts = args[[1]]
-			n = args[[2]]
-			y = args[[3]]
-			dead = args[[4]]
-			w = args[[5]]
+			max_resample_attempts = private$max_resample_attempts
+			n = args[[1]]
+			y = args[[2]]
+			dead = args[[3]]
+			w = args[[4]]
 
 			indices_mat = matrix(0L, nrow = n, ncol = B)
 			for (b in 1:B) {

@@ -97,7 +97,9 @@ Returns the combined robust-regression estimate of the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations and use
+the faster \code{"M"} robust estimator regardless of the \code{method}
+argument passed at construction time.}
 }
 \if{html}{\out{</div>}}
 }

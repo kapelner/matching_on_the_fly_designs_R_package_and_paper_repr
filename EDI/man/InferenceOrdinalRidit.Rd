@@ -71,7 +71,12 @@ infer
 \subsection{Method \code{new()}}{
 Initialize a Ridit analysis inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$new(des_obj, reference = "control", verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$new(
+  des_obj,
+  reference = "control",
+  verbose = FALSE,
+  max_resample_attempts = 50L
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -84,6 +89,11 @@ response y is recorded within.}
 Must be one of "control", "treatment", or "pooled". Default is "control".}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
 }
 \if{html}{\out{</div>}}
 }

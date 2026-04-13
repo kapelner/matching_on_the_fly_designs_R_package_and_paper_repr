@@ -132,8 +132,6 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
@@ -144,14 +142,14 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			nRC = KKstats$nRC
 
 			if (m > 0){
-				private$robust_for_matched_pairs()
+				private$robust_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m  = private$cached_values$ssq_beta_T_matched
 			m_ok   = !is.null(beta_m) && is.finite(beta_m) && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0
 
 			if (nRT > 0 && nRC > 0){
-				private$robust_for_reservoir()
+				private$robust_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r  = private$cached_values$ssq_beta_T_reservoir
@@ -160,17 +158,16 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T   = beta_m
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T   = beta_r
-				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
 				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 			}
 			private$cached_values$is_z = TRUE
 		},
@@ -181,7 +178,8 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			}
 		},
 
-		fit_rlm_with_treatment = function(X, y, j_treat){
+		# estimate_only = TRUE forces "M" (fast, no LQS phase) for the point estimate.
+		fit_rlm_with_treatment = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
 			ctrl = private$resolve_rlm_control(X)
 
@@ -210,7 +208,8 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 				}, error = function(e) e)
 			}
 
-			method_to_try = if (isTRUE(private$rlm_force_M)) "M" else private$rlm_method
+			# When only the point estimate is needed, skip the expensive MM/LQS phase.
+			method_to_try = if (estimate_only || isTRUE(private$rlm_force_M)) "M" else private$rlm_method
 			start_coef = NULL
 			if (isTRUE(private$rlm_start_with_ols)) {
 				start_coef = tryCatch(as.numeric(stats::coef(stats::lm.fit(x = X, y = y))), error = function(e) NULL)
@@ -223,7 +222,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 				start_coef = rep(0, ncol(X))
 			}
 			mod = run_rlm(method_to_try, init = start_coef)
-			if (inherits(mod, "error") && identical(method_to_try, "MM")){
+			if (!estimate_only && inherits(mod, "error") && identical(method_to_try, "MM")){
 				msg = if (length(mod$message) == 0L) "" else mod$message
 				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
 					private$rlm_force_M = TRUE
@@ -234,7 +233,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			if (is.null(mod)) return(NULL)
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
-			if ((is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
+			if (!estimate_only && (is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
 				mod = run_rlm("M", init = start_coef)
 				if (inherits(mod, "error") || is.null(mod)) return(NULL)
@@ -244,7 +243,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 
 			beta = as.numeric(coef_table[j_treat, "Value"])
 			se   = as.numeric(coef_table[j_treat, "Std. Error"])
-			if ((!is.finite(beta) || !is.finite(se) || se <= 0) && identical(method_to_try, "MM")){
+			if (!estimate_only && (!is.finite(beta) || !is.finite(se) || se <= 0) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
 				mod = run_rlm("M", init = start_coef)
 				if (inherits(mod, "error") || is.null(mod)) return(NULL)
@@ -258,7 +257,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			list(beta = beta, ssq = se^2)
 		},
 
-		robust_for_matched_pairs = function(){
+		robust_for_matched_pairs = function(estimate_only = FALSE){
 			yd = private$cached_values$KKstats$y_matched_diffs
 			m  = length(yd)
 			if (private$include_covariates()){
@@ -274,7 +273,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 				X = matrix(1, nrow = m, ncol = 1L)
 			}
 
-			fit = private$fit_rlm_with_treatment(X, yd, 1L)
+			fit = private$fit_rlm_with_treatment(X, yd, 1L, estimate_only = estimate_only)
 			if (is.null(fit)) {
 				private$cached_values$beta_T_matched     = if (m >= 1) mean(yd) else NA_real_
 				private$cached_values$ssq_beta_T_matched = if (m >= 2) var(yd) / m else NA_real_
@@ -284,7 +283,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			}
 		},
 
-		robust_for_reservoir = function(){
+		robust_for_reservoir = function(estimate_only = FALSE){
 			y_r = private$cached_values$KKstats$y_reservoir
 			w_r = private$cached_values$KKstats$w_reservoir
 			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
@@ -303,7 +302,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 				X_full = cbind(1, w_r)
 			}
 
-			fit = private$fit_rlm_with_treatment(X_full, y_r, j_treat)
+			fit = private$fit_rlm_with_treatment(X_full, y_r, j_treat, estimate_only = estimate_only)
 			if (is.null(fit)) {
 				private$cached_values$beta_T_reservoir     = NA_real_
 				private$cached_values$ssq_beta_T_reservoir = NA_real_

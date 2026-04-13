@@ -358,6 +358,7 @@ safe_call = function(label, expr){
 						 					 grepl("Bootstrap confidence interval returned NA bounds", msg, fixed = TRUE) ||
 						 					 grepl("Bootstrap confidence interval returned non-finite bounds", msg, fixed = TRUE) ||
 						 					 						 grepl("Weibull regression failed to converge", msg, fixed = TRUE) ||
+				 grepl("Negative binomial regression failed to converge", msg, fixed = TRUE) ||
 						 					 						 grepl("Invalid output detected", msg, fixed = TRUE) ||
 						 					 						 grepl("missing value where TRUE/FALSE needed", msg, fixed = TRUE) ||
 						 					 						 ((grepl("NA/NaN/Inf", msg, fixed = TRUE) || grepl("non-finite standard error", msg, fixed = TRUE) || grepl("could not compute a finite standard error", msg, fixed = TRUE)) &&

@@ -46,7 +46,7 @@ Abstract class for ordinal CLMM-based Inference in KK designs
 \subsection{Method \code{new()}}{
 Initialize
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKOrdinalCLMM$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKOrdinalCLMM$new(des_obj, verbose = FALSE, harden = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -55,6 +55,8 @@ Initialize
 \item{\code{des_obj}}{A completed \code{Design} object.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
 }
 \if{html}{\out{</div>}}
 }

@@ -81,8 +81,26 @@ InferenceOrdinalMultiKKCondAdjCatLogitRegr = R6::R6Class(
 			}
 			X_stack = do.call(rbind, X_stack_list)
 			
-			# Fit conditional logistic regression
-			mod = clogit_helper(expanded$y, as.data.frame(X_stack), expanded$w, expanded$strata)
+			X_full = cbind(treatment = expanded$w, X_stack)
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					clogit_helper(
+						expanded$y,
+						as.data.frame(X_fit[, -1, drop = FALSE]),
+						X_fit[, 1],
+						expanded$strata
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) &&
+						is.finite(mod$b[1]) &&
+						is.finite(mod$ssq_b_j) &&
+						mod$ssq_b_j > 0
+				}
+			)
+			mod = attempt$fit
 			
 			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
 				private$cached_values$beta_hat_T   = NA_real_

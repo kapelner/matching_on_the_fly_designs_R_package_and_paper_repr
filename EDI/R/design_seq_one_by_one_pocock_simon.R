@@ -103,8 +103,53 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 		p_best = NULL,
 		weights = NULL,
 		counts = NULL,
+		num_levels_total = NULL,
+		strata_level_rows = NULL,
 		draw_bootstrap_indices = function(bootstrap_type = NULL) {
 			list(i_b = sample_int_replace_cpp(private$t, private$t), m_vec_b = NULL)
+		},
+
+		ensure_factor_metadata = function(){
+			if (is.null(private$strata_level_rows)) private$strata_level_rows = vector("list", length(private$strata_cols))
+			if (length(private$strata_level_rows) != length(private$strata_cols)) {
+				private$strata_level_rows = vector("list", length(private$strata_cols))
+			}
+			names(private$strata_level_rows) = private$strata_cols
+
+			next_row = 1L
+			for (col in private$strata_cols) {
+				row_map = private$strata_level_rows[[col]]
+				if (is.null(row_map)) row_map = integer(0)
+				col_vals = private$Xraw[[col]]
+				col_keys = ifelse(is.na(col_vals), "NA", as.character(col_vals))
+				new_levels = setdiff(unique(col_keys), names(row_map))
+				if (length(new_levels) > 0L) {
+					new_rows = seq.int(next_row, length.out = length(new_levels))
+					names(new_rows) = new_levels
+					row_map = c(row_map, new_rows)
+				}
+				private$strata_level_rows[[col]] = row_map
+				if (length(row_map) > 0L) next_row = max(unname(row_map)) + 1L
+			}
+
+			private$num_levels_total = max(0L, next_row - 1L)
+			if (!is.null(private$counts) && nrow(private$counts) < private$num_levels_total) {
+				expanded = matrix(0, nrow = private$num_levels_total, ncol = 2L)
+				expanded[seq_len(nrow(private$counts)), ] = private$counts
+				private$counts = expanded
+			}
+		},
+
+		get_subject_levels_idx = function(x_row){
+			private$ensure_factor_metadata()
+			vapply(private$strata_cols, function(col) {
+				key = if (is.na(x_row[[col]])) "NA" else as.character(x_row[[col]])
+				row_idx = private$strata_level_rows[[col]][[key]]
+				if (is.null(row_idx) || !is.finite(row_idx)) {
+					stop("Unknown strata level encountered for Pocock-Simon column ", col, ": ", key)
+				}
+				as.integer(row_idx)
+			}, integer(1))
 		}
 	)
 )

@@ -57,7 +57,8 @@ Initialize the internal PPO base object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsAbstract$new(
   des_obj,
   nonparallel = character(0),
-  verbose = FALSE
+  verbose = FALSE,
+  harden = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -70,6 +71,8 @@ response.}
 \item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
 }
 \if{html}{\out{</div>}}
 }

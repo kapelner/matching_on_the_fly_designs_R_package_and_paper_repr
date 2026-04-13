@@ -111,7 +111,11 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 Initialize a sequential experimental design estimation and test object
 after the sequential design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLS$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLS$new(
+  des_obj,
+  verbose = FALSE,
+  max_resample_attempts = 50L
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -122,6 +126,11 @@ are assigned and response y is recorded within.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
 }
 \if{html}{\out{</div>}}
 }

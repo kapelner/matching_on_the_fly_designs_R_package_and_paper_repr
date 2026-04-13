@@ -118,7 +118,19 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 			}
 		},
 
+		reduced_design_keep_cache = NULL,
+
 		reduce_design_matrix_preserving_required = function(X_full, required){
+			cached_keep = private$reduced_design_keep_cache
+			if (!is.null(cached_keep) && length(cached_keep) > 0L &&
+				all(required %in% cached_keep) &&
+				max(cached_keep) <= ncol(X_full)){
+				X_try = X_full[, cached_keep, drop = FALSE]
+				if (qr(X_try)$rank == length(cached_keep)){
+					return(cached_keep)
+				}
+			}
+
 			qr_X = qr(X_full)
 			target_rank = qr_X$rank
 			candidate_order = c(required, setdiff(qr_X$pivot, required))
@@ -135,7 +147,9 @@ InferenceContinMultiKKLinCombinedLikelihood = R6::R6Class("InferenceContinMultiK
 				}
 			}
 
-			sort(unique(keep))
+			keep = sort(unique(keep))
+			private$reduced_design_keep_cache = keep
+			keep
 		},
 
 		fit_combined = function(estimate_only = FALSE){

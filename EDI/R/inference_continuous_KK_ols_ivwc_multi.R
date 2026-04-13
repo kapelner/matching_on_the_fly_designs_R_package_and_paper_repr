@@ -17,11 +17,40 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj,  verbose = FALSE){
+		#'   displayed to the user. Default is \code{FALSE}.
+		#' @param ols_sanity_kappa_max Numeric scalar. Maximum acceptable condition number for the
+		#'   OLS design matrix (computed via \code{kappa(..., exact = FALSE)}). When the condition
+		#'   number exceeds this threshold the design matrix is considered near-singular and the
+		#'   estimator falls back to the simple mean-difference formula without fitting OLS at all.
+		#'   Default: \code{1e6}.
+		#' @param ols_sanity_var_max_factor Numeric scalar \eqn{\geq 1}. The OLS variance estimate
+		#'   must be strictly less than \code{ols_sanity_var_max_factor} times the simple
+		#'   (variance-of-mean-difference) variance. Values larger than this indicate a near-singular
+		#'   \eqn{X^\top X} whose inverse is inflated. Default: \code{10}.
+		#' @param ols_sanity_var_min_factor Numeric scalar in \eqn{(0, 1)}. The OLS variance estimate
+		#'   must be strictly greater than \code{ols_sanity_var_min_factor} times the simple variance.
+		#'   Values smaller than this indicate \eqn{R^2 \approx 1}, meaning OLS has absorbed the
+		#'   treatment effect into a covariate and the estimate is degenerate. Default: \code{1e-6}.
+		#' @param ols_sanity_se_max_factor Numeric scalar \eqn{\geq 0}. The OLS point estimate must
+		#'   lie within \code{ols_sanity_se_max_factor} simple standard errors of the simple
+		#'   mean-difference estimate. Larger deviations suggest the treatment column is confounded
+		#'   with a near-collinear covariate. Default: \code{5}.
+		initialize = function(des_obj, verbose = FALSE,
+				ols_sanity_kappa_max    = 1e6,
+				ols_sanity_var_max_factor = 10,
+				ols_sanity_var_min_factor = 1e-6,
+				ols_sanity_se_max_factor  = 5){
 			assertResponseType(des_obj$get_response_type(), "continuous")
+			assertNumber(ols_sanity_kappa_max,      lower = 1)
+			assertNumber(ols_sanity_var_max_factor, lower = 1)
+			assertNumber(ols_sanity_var_min_factor, lower = 0, upper = 1)
+			assertNumber(ols_sanity_se_max_factor,  lower = 0)
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
+			private$ols_sanity_kappa_max      = ols_sanity_kappa_max
+			private$ols_sanity_var_max_factor = ols_sanity_var_max_factor
+			private$ols_sanity_var_min_factor = ols_sanity_var_min_factor
+			private$ols_sanity_se_max_factor  = ols_sanity_se_max_factor
 		},
 
 		#' @description
@@ -147,6 +176,11 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	),
 
 	private = list(
+		ols_sanity_kappa_max      = 1e6,
+		ols_sanity_var_max_factor = 10,
+		ols_sanity_var_min_factor = 1e-6,
+		ols_sanity_se_max_factor  = 5,
+
 		shared_for_inference = function(){
 			if (is.null(private$cached_values[["beta_hat_T"]])){
 				self$compute_treatment_estimate()
@@ -237,7 +271,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 			# effective rank, making X'X ill-conditioned even after QR rank reduction.
 			# LDLT on a near-singular X'X returns extreme but finite coefficients.
 			# Fall back to simple mean difference when the design matrix is ill-conditioned.
-			if (kappa(design_mat, exact = FALSE) > 1e6) {
+			if (kappa(design_mat, exact = FALSE) > private$ols_sanity_kappa_max) {
 				private$cached_values$beta_T_matched     = if (m >= 1) mean(yd) else NA_real_
 				private$cached_values$ssq_beta_T_matched = if (m >= 2) var(yd) / m else NA_real_
 				return(invisible(NULL))
@@ -247,18 +281,18 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 			fallback_ssq = if (m >= 2) var(yd) / m else NA_real_
 			mod = fast_ols_with_var_cpp(design_mat, yd, j = 1) #the only time you need the intercept's ssq
 			# Guard against failure modes in ill-conditioned/degenerate bootstrap samples:
-			# (1) OLS variance inflated (>10x simple variance): near-singular X'X.
-			# (2) OLS estimate far from simple mean diff (>5 simple SEs): treatment confounded
-			#     with a near-perfect covariate predictor, giving extreme estimate.
-			# (3) OLS variance near-zero (<1e-6 of simple variance): R^2 approx 1, which
-			#     means OLS has absorbed treatment into a covariate, inflating the coefficient.
+			# (1) OLS variance inflated (>ols_sanity_var_max_factor x simple variance): near-singular X'X.
+			# (2) OLS estimate far from simple mean diff (>ols_sanity_se_max_factor SEs): treatment
+			#     confounded with a near-perfect covariate predictor, giving extreme estimate.
+			# (3) OLS variance near-zero (<ols_sanity_var_min_factor of simple variance): R^2 approx 1,
+			#     which means OLS has absorbed treatment into a covariate, inflating the coefficient.
 			#     Near-zero ssq_b_j also makes w_star -> 0 in the compound formula,
 			#     giving all weight to the (degenerate) reservoir OLS estimate.
 			se_simple = if (!is.na(fallback_ssq) && fallback_ssq > 0) sqrt(fallback_ssq) else NA_real_
 			ols_ok = is.finite(mod$ssq_b_j) &&
-			         (is.na(fallback_ssq) || (mod$ssq_b_j < 10 * fallback_ssq &&
-			                                   mod$ssq_b_j > 1e-6 * fallback_ssq)) &&
-			         (is.na(se_simple)    || abs(mod$b[1] - beta_simple) <= 5 * se_simple)
+			         (is.na(fallback_ssq) || (mod$ssq_b_j < private$ols_sanity_var_max_factor * fallback_ssq &&
+			                                   mod$ssq_b_j > private$ols_sanity_var_min_factor * fallback_ssq)) &&
+			         (is.na(se_simple)    || abs(mod$b[1] - beta_simple) <= private$ols_sanity_se_max_factor * se_simple)
 			if (ols_ok) {
 				private$cached_values$beta_T_matched     = mod$b[1]
 				private$cached_values$ssq_beta_T_matched = mod$ssq_b_j
@@ -297,7 +331,7 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 			# effective rank, making X'X ill-conditioned even after QR rank reduction.
 			# LDLT on a near-singular X'X returns extreme but finite coefficients.
 			# Fall back to simple mean difference when the design matrix is ill-conditioned.
-			if (kappa(X_full, exact = FALSE) > 1e6) {
+			if (kappa(X_full, exact = FALSE) > private$ols_sanity_kappa_max) {
 				y_rT = y_r[w_r == 1]; y_rC = y_r[w_r == 0]
 				nRT_local = length(y_rT); nRC_local = length(y_rC)
 				private$cached_values$beta_T_reservoir = mean(y_rT) - mean(y_rC)
@@ -313,18 +347,18 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 
 			mod = fast_ols_with_var_cpp(X_full, y_r, j = j_treat)
 			# Guard against failure modes in ill-conditioned/degenerate bootstrap samples:
-			# (1) OLS variance inflated (>10x simple variance): near-singular X'X.
-			# (2) OLS estimate far from simple mean diff (>5 simple SEs): treatment confounded
-			#     with a near-perfect covariate predictor, giving extreme estimate.
-			# (3) OLS variance near-zero (<1e-6 of simple variance): R^2 approx 1, which
-			#     means OLS has absorbed treatment into a covariate, inflating the coefficient.
+			# (1) OLS variance inflated (>ols_sanity_var_max_factor x simple variance): near-singular X'X.
+			# (2) OLS estimate far from simple mean diff (>ols_sanity_se_max_factor SEs): treatment
+			#     confounded with a near-perfect covariate predictor, giving extreme estimate.
+			# (3) OLS variance near-zero (<ols_sanity_var_min_factor of simple variance): R^2 approx 1,
+			#     which means OLS has absorbed treatment into a covariate, inflating the coefficient.
 			#     Near-zero ssq_b_j also makes w_star -> 0 in the compound formula,
 			#     giving all weight to the (degenerate) reservoir OLS estimate.
 			se_simple = if (!is.na(fallback_ssq) && fallback_ssq > 0) sqrt(fallback_ssq) else NA_real_
 			ols_ok = is.finite(mod$ssq_b_j) &&
-			         (is.na(fallback_ssq) || (mod$ssq_b_j < 10 * fallback_ssq &&
-			                                   mod$ssq_b_j > 1e-6 * fallback_ssq)) &&
-			         (is.na(se_simple)    || abs(mod$b[j_treat] - beta_simple) <= 5 * se_simple)
+			         (is.na(fallback_ssq) || (mod$ssq_b_j < private$ols_sanity_var_max_factor * fallback_ssq &&
+			                                   mod$ssq_b_j > private$ols_sanity_var_min_factor * fallback_ssq)) &&
+			         (is.na(se_simple)    || abs(mod$b[j_treat] - beta_simple) <= private$ols_sanity_se_max_factor * se_simple)
 			if (ols_ok) {
 				private$cached_values$beta_T_reservoir     = mod$b[j_treat]
 				private$cached_values$ssq_beta_T_reservoir = mod$ssq_b_j

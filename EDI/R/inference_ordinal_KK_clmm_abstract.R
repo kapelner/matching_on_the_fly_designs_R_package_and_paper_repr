@@ -10,12 +10,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param harden Whether to apply robustness measures.
+		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose, harden)
 			assertNoCensoring(private$any_censoring)
 			if (!requireNamespace("ordinal", quietly = TRUE)){
 				stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
@@ -60,6 +61,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 		clmm_predictors_df = function(){
 			full_X = private$create_design_matrix()
+			private$clmm_predictors_df_from_design(full_X)
+		},
+
+		clmm_predictors_df_from_design = function(full_X){
 			X_model = full_X[, -1, drop = FALSE]
 			colnames(X_model)[1] = "w"
 			as.data.frame(X_model)
@@ -70,14 +75,32 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			mod = private$fit_clmm()
-			summ = if (!is.null(mod)) tryCatch(summary(mod), error = function(e) NULL) else NULL
-			se = if (!is.null(summ)) as.numeric(summ$coefficients["w", "Std. Error"]) else NA_real_
-			if (is.null(mod) || !is.finite(se) || se <= 0){
-				mod = private$fit_clm_fallback()
-				summ = if (!is.null(mod)) tryCatch(summary(mod), error = function(e) NULL) else NULL
-				se = if (!is.null(summ)) as.numeric(summ$coefficients["w", "Std. Error"]) else NA_real_
-			}
+			full_X = private$create_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = full_X,
+				required_cols = c(1L, 2L),
+				fit_fun = function(X_fit){
+					mod = private$fit_clmm(X_fit)
+					summ = if (!is.null(mod)) tryCatch(summary(mod), error = function(e) NULL) else NULL
+					se = if (!is.null(summ)) as.numeric(summ$coefficients["w", "Std. Error"]) else NA_real_
+					if (is.null(mod) || (!estimate_only && (!is.finite(se) || se <= 0))){
+						mod = private$fit_clm_fallback(X_fit)
+						summ = if (!is.null(mod)) tryCatch(summary(mod), error = function(e) NULL) else NULL
+						se = if (!is.null(summ)) as.numeric(summ$coefficients["w", "Std. Error"]) else NA_real_
+					}
+					list(mod = mod, summ = summ, se = se)
+				},
+				fit_ok = function(fit, X_fit, keep){
+					if (is.null(fit) || is.null(fit$mod)) return(FALSE)
+					beta = tryCatch(as.numeric(stats::coef(fit$mod)["w"]), error = function(e) NA_real_)
+					if (!is.finite(beta)) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(fit$se) && fit$se > 0
+				}
+			)
+			mod = attempt$fit$mod
+			summ = attempt$fit$summ
+			se = attempt$fit$se
 			if (is.null(mod) || is.null(summ)){
 				private$cached_values$beta_hat_T   = NA_real_
 			if (estimate_only) return(invisible(NULL))
@@ -96,7 +119,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				return(invisible(NULL))
 		},
 
-		fit_clmm = function(){
+		fit_clmm = function(full_X = private$create_design_matrix()){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -108,7 +131,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
-				private$clmm_predictors_df(),
+				private$clmm_predictors_df_from_design(full_X),
 				group_id = factor(group_id)
 			)
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
@@ -126,14 +149,14 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}, error = function(e) NULL)
 		},
 
-		fit_clm_fallback = function(){
+		fit_clm_fallback = function(full_X = private$create_design_matrix()){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
-				private$clmm_predictors_df()
+				private$clmm_predictors_df_from_design(full_X)
 			)
 			fixed_terms = setdiff(colnames(dat), "y")
 			clm_formula = stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))

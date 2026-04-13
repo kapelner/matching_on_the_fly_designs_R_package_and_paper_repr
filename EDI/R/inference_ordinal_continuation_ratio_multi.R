@@ -28,39 +28,39 @@ InferenceOrdinalMultiContRatioRegr = R6::R6Class(
 	),
 
 	private = list(
-		contin_ratio_design_matrix = function(){
-			X_full = cbind(private$w, private$get_X())
-			qr_X = qr(X_full)
-			if (qr_X$rank < ncol(X_full)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(1L %in% keep)) keep[qr_X$rank] = 1L
-				keep = sort(keep)
-				X_full = X_full[, keep, drop = FALSE]
-			}
-			colnames(X_full)[1] = "treatment"
-			X_full
-		},
-
 		generate_mod = function(estimate_only = FALSE){
-			if (estimate_only) {
-				res = fast_continuation_ratio_regression_cpp(
-					X = private$contin_ratio_design_matrix(),
-					y = as.numeric(private$y)
-				)
-				return(list(
-					b = c(NA, res$b), # Match the [2] indexing in shared()
-					ssq_b_2 = NA_real_
-				))
-			}
+			X_full = cbind(treatment = private$w, private$get_X())
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					if (estimate_only) {
+						res = fast_continuation_ratio_regression_cpp(
+							X = X_fit,
+							y = as.numeric(private$y)
+						)
+						return(list(
+							b = c(NA, res$b),
+							ssq_b_2 = NA_real_
+						))
+					}
 
-			res = fast_continuation_ratio_regression_with_var_cpp(
-				X = private$contin_ratio_design_matrix(),
-				y = as.numeric(private$y)
+					res = fast_continuation_ratio_regression_with_var_cpp(
+						X = X_fit,
+						y = as.numeric(private$y)
+					)
+					list(
+						b = c(NA, res$b),
+						ssq_b_2 = res$ssq_b_2
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
+				}
 			)
-			list(
-				b = c(NA, res$b), # Match the [2] indexing in shared()
-				ssq_b_2 = res$ssq_b_2
-			)
+			attempt$fit
 		}
 	)
 )

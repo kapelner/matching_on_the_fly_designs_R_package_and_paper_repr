@@ -56,45 +56,60 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 
 			if (isTRUE(debug)) {
-				debug_results = vector("list", B)
-				if (isTRUE(private$supports_reusable_bootstrap_worker())) {
-					worker_state = private$create_bootstrap_worker_state()
-					for (idx in seq_len(B)) {
-						iter_warns = character(0)
-						iter_errs = character(0)
-						iter_val = withCallingHandlers(
-							tryCatch({
+				run_debug_boot_iter = function(worker_des = NULL, worker_inf = NULL, worker_state = NULL) {
+					iter_warns = character(0)
+					iter_errs = character(0)
+					iter_val = withCallingHandlers(
+						tryCatch({
+							if (!is.null(worker_state)) {
 								boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
 								private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
 								private$compute_bootstrap_worker_estimate(worker_state)
-							}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
-							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
-						)
-						debug_results[[idx]] = list(
-							val = as.numeric(iter_val)[1L],
-							errors = iter_errs,
-							warnings = iter_warns
-						)
+							} else {
+								run_one_boot_iter(worker_des, worker_inf)
+							}
+						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
+						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+					)
+					list(
+						val = as.numeric(iter_val)[1L],
+						errors = iter_errs,
+						warnings = iter_warns
+					)
+				}
+
+				actual_debug_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
+				chunk_n = max(1L, min(as.integer(actual_debug_cores), as.integer(B)))
+				chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
+				chunks = split(seq_len(B), chunk_id)
+
+				run_debug_chunk = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+					function(idxs) {
+						worker_state = private$create_bootstrap_worker_state()
+						lapply(idxs, function(idx) run_debug_boot_iter(worker_state = worker_state))
 					}
 				} else {
-					for (idx in seq_len(B)) {
-						iter_warns = character(0)
-						iter_errs = character(0)
-						iter_val = withCallingHandlers(
-							tryCatch({
-								worker_des = des_template$duplicate()
-								worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-								run_one_boot_iter(worker_des, worker_inf)
-							}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
-							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
-						)
-						debug_results[[idx]] = list(
-							val = as.numeric(iter_val)[1L],
-							errors = iter_errs,
-							warnings = iter_warns
-						)
+					function(idxs) {
+						lapply(idxs, function(idx) {
+							worker_des = des_template$duplicate()
+							worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+							run_debug_boot_iter(worker_des = worker_des, worker_inf = worker_inf)
+						})
 					}
 				}
+
+				debug_results = if (actual_debug_cores <= 1L) {
+					run_debug_chunk(seq_len(B))
+				} else {
+					do.call(c, private$par_lapply(
+						chunks,
+						run_debug_chunk,
+						n_cores = actual_debug_cores,
+						budget = 1L,
+						show_progress = show_progress
+					))
+				}
+
 				values = sapply(debug_results, `[[`, "val")
 				errors_list = lapply(debug_results, `[[`, "errors")
 				warnings_list = lapply(debug_results, `[[`, "warnings")
@@ -192,7 +207,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   for a symmetric one-sample test; recommended by Hall & Wilson (1991) when the
 		#'   null distribution may be skewed.
 		#'   \code{"studentized"} / \code{"bootstrap-t"}: pivots by the per-replicate
-		#'   standard error, giving O(n^{-1}) error versus O(n^{-1/2}) for the percentile
+		#'   standard error, giving O(n^\{-1\}) error versus O(n^\{-1/2\}) for the percentile
 		#'   method (Hall 1992; Davidson & MacKinnon 1999).
 		#'   \code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
 		#'   inversion using the jackknife acceleration and bias-correction constants;
@@ -629,7 +644,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			jack = private$approximate_jackknife_distribution_beta_hat_T()
 			jack = jack[is.finite(jack)]
 			if (length(jack) < 2L) stop("BCa interval requires jackknife estimates.")
-			z0 = stats::qnorm(mean(boot_distr < est))
+			p_less = mean(boot_distr < est)
+			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
+			z0 = stats::qnorm(p_less)
 			jack_bar = mean(jack)
 			num = sum((jack_bar - jack)^3)
 			den = 6 * (sum((jack_bar - jack)^2)^(3/2))
@@ -711,7 +728,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			jack = private$approximate_jackknife_distribution_beta_hat_T()
 			jack = jack[is.finite(jack)]
 			if (length(jack) < 2L) stop("BCa p-value requires jackknife estimates.")
-			z0 = stats::qnorm(mean(boot_distr < est))
+			p_less = mean(boot_distr < est)
+			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
+			z0 = stats::qnorm(p_less)
 			jack_bar = mean(jack)
 			num = sum((jack_bar - jack)^3)
 			den = 6 * (sum((jack_bar - jack)^2)^(3/2))

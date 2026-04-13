@@ -24,8 +24,11 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		#' with a continuous response.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a continuous response.
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
-		#'   \code{tau = 0.5}
-		#'   estimates the median treatment effect.
+		#'   \code{tau = 0.5} estimates the median treatment effect. Values of exactly 0 or 1
+		#'   are excluded because quantile regression is undefined at the boundary (the check
+		#'   function \eqn{\rho_\tau(u) = u(\tau - \mathbf{1}_{u < 0})} degenerates there);
+		#'   the bound is enforced as \code{(.Machine$double.eps, 1 - .Machine$double.eps)},
+		#'   i.e. the smallest representable positive number away from 0 and 1.
 		#' @param verbose Whether to print progress messages.
 		#'
 		#' @examples

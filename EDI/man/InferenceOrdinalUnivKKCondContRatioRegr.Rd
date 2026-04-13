@@ -69,7 +69,11 @@ infer
 \subsection{Method \code{new()}}{
 Initialize a univariate conditional continuation-ratio inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKCondContRatioRegr$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalUnivKKCondContRatioRegr$new(
+  des_obj,
+  verbose = FALSE,
+  harden = TRUE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -78,6 +82,8 @@ Initialize a univariate conditional continuation-ratio inference object.
 \item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
 
 \item{\code{num_cores}}{Number of CPU cores.}
 }

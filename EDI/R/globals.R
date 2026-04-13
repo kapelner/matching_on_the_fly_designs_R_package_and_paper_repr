@@ -146,6 +146,7 @@ get_bootstrap_dispatch_policy = function() {
       "^InferenceIncid(Univ|Multi)KKGCompRisk(Diff|Ratio)$" = "percentile",
       "^InferenceProp(Uni|Multi)GCompMeanDiff$" = "percentile",
       "^InferenceSurvival(Uni|Multi)DepCensTransformRegr$" = "percentile",
+      "^InferenceSurvival(Univ|Multi)KKRankRegrIVWC$" = "percentile",
       "^InferencePropMultiKKQuantileRegrCombinedLikelihood$" = "percentile",
       "^InferenceSurvivalMultiDepCensTransformRegr$" = "percentile",
       "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile"

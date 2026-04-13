@@ -17,12 +17,14 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'   response.
 		#' @param nonparallel Covariate names that may vary across thresholds.
 		#' @param verbose Whether to print progress messages.
+		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,
 				nonparallel = character(0),
 				
-				verbose = FALSE){
+				verbose = FALSE,
+				harden = TRUE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose, harden)
 			assertNoCensoring(private$any_censoring)
 			assertCharacter(nonparallel, null.ok = TRUE)
 			private$nonparallel = unique(nonparallel)
@@ -174,6 +176,26 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 
 		fit_partial_proportional_odds = function(){
 			X_cov = private$ppo_covariate_matrix()
+			X_full = cbind(treatment = private$w, X_cov)
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					X_cov_fit = X_fit[, -1, drop = FALSE]
+					private$fit_partial_proportional_odds_from_covariates(X_cov_fit)
+				},
+				fit_ok = function(fit, X_fit, keep){
+					private$ppo_fit_is_usable(fit)
+				}
+			)
+			attempt$fit
+		},
+
+		ppo_fit_is_usable = function(fit){
+			!is.null(fit) && is.finite(fit$beta)
+		},
+
+		fit_partial_proportional_odds_from_covariates = function(X_cov){
 			covar_names = colnames(X_cov)
 			if (is.null(covar_names)) covar_names = character(0)
 			nonparallel_covars = intersect(private$nonparallel, covar_names)

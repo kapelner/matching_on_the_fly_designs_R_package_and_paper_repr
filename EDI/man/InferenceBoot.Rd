@@ -108,7 +108,7 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
 for a symmetric one-sample test; recommended by Hall & Wilson (1991) when the
 null distribution may be skewed.
 \code{"studentized"} / \code{"bootstrap-t"}: pivots by the per-replicate
-standard error, giving O(n^{-1}) error versus O(n^{-1/2}) for the percentile
+standard error, giving O(n^\{-1\}) error versus O(n^\{-1/2\}) for the percentile
 method (Hall 1992; Davidson & MacKinnon 1999).
 \code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
 inversion using the jackknife acceleration and bias-correction constants;

@@ -54,10 +54,16 @@ drop_linearly_dependent_cols = function(M){
 	M = as.matrix(M)
 	js = seq_len(ncol(M))
 	if (ncol(M) > 0){
-		rank = matrix_rank_cpp(M)
+		# Use a standard tolerance for rank detection
+		tol = 1e-7
+		rank = matrix_rank_cpp(M, tol = tol)
 		if (rank != ncol(M)){
-			qrX = qr(M)
-			js = qrX$pivot[seq_len(qrX$rank)]
+			# Use the same tolerance for R's qr() to be consistent
+			qrX = qr(M, tol = tol)
+			# QR pivot contains indices of columns in order of their 'independence'
+			# but we should trust our matrix_rank_cpp's rank estimate.
+			actual_rank = min(rank, qrX$rank)
+			js = qrX$pivot[seq_len(actual_rank)]
 			M = M[, js, drop = FALSE]
 		}
 	}

@@ -60,7 +60,15 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 	),
 	private = list(
 		gee_response_type = function() "ordinal",
-		
+
+		# Override: ordinal response requires ordLORgee, not geeglm.
+		# Clear the estimate cache so shared() re-runs with the current (permuted) w.
+		compute_treatment_estimate_during_randomization_inference = function(){
+			private$cached_values$beta_hat_T = NULL
+			private$shared(estimate_only = TRUE)
+			private$cached_values$beta_hat_T
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

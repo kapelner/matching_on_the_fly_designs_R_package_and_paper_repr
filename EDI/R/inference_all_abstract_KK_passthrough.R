@@ -14,8 +14,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   and response y is recorded within.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
-		initialize = function(des_obj,  verbose = FALSE){
-			super$initialize(des_obj, verbose)
+		#' @param harden Whether to apply robustness measures.
+		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
+			super$initialize(des_obj, verbose, harden)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
 					if (is(des_obj, "FixedDesignBinaryMatch")){

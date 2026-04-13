@@ -40,6 +40,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceAllSimpleMeanDiff-new}{\code{InferenceAllSimpleMeanDiff$new()}}
 \item \href{#method-InferenceAllSimpleMeanDiff-compute_treatment_estimate}{\code{InferenceAllSimpleMeanDiff$compute_treatment_estimate()}}
 \item \href{#method-InferenceAllSimpleMeanDiff-compute_confidence_interval_rand}{\code{InferenceAllSimpleMeanDiff$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceAllSimpleMeanDiff-clone}{\code{InferenceAllSimpleMeanDiff$clone()}}
@@ -51,7 +52,6 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
@@ -65,6 +65,35 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a simple mean-difference inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$new(
+  des_obj,
+  verbose = FALSE,
+  max_resample_attempts = 50L
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{verbose}}{Whether to print progress messages. Default \code{FALSE}.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-compute_treatment_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-compute_treatment_estimate}{}}}

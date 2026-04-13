@@ -82,7 +82,11 @@ infer
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$new(
+  des_obj,
+  verbose = FALSE,
+  max_resample_attempts = 50L
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -91,6 +95,11 @@ Initialize the inference object.
 \item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object.}
 
 \item{\code{verbose}}{Whether to print progress messages. Default \code{FALSE}.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
 }
 \if{html}{\out{</div>}}
 }

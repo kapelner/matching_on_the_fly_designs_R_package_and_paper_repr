@@ -109,7 +109,14 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 Initialize a sequential experimental design estimation and test object
 after the sequential design is completed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLSKKIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinMultOLSKKIVWC$new(
+  des_obj,
+  verbose = FALSE,
+  ols_sanity_kappa_max = 1e+06,
+  ols_sanity_var_max_factor = 10,
+  ols_sanity_var_min_factor = 1e-06,
+  ols_sanity_se_max_factor = 5
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -119,7 +126,28 @@ after the sequential design is completed.
 and response y is recorded within.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
+displayed to the user. Default is \code{FALSE}.}
+
+\item{\code{ols_sanity_kappa_max}}{Numeric scalar. Maximum acceptable condition number for the
+OLS design matrix (computed via \code{kappa(..., exact = FALSE)}). When the condition
+number exceeds this threshold the design matrix is considered near-singular and the
+estimator falls back to the simple mean-difference formula without fitting OLS at all.
+Default: \code{1e6}.}
+
+\item{\code{ols_sanity_var_max_factor}}{Numeric scalar \eqn{\geq 1}. The OLS variance estimate
+must be strictly less than \code{ols_sanity_var_max_factor} times the simple
+(variance-of-mean-difference) variance. Values larger than this indicate a near-singular
+\eqn{X^\top X} whose inverse is inflated. Default: \code{10}.}
+
+\item{\code{ols_sanity_var_min_factor}}{Numeric scalar in \eqn{(0, 1)}. The OLS variance estimate
+must be strictly greater than \code{ols_sanity_var_min_factor} times the simple variance.
+Values smaller than this indicate \eqn{R^2 \approx 1}, meaning OLS has absorbed the
+treatment effect into a covariate and the estimate is degenerate. Default: \code{1e-6}.}
+
+\item{\code{ols_sanity_se_max_factor}}{Numeric scalar \eqn{\geq 0}. The OLS point estimate must
+lie within \code{ols_sanity_se_max_factor} simple standard errors of the simple
+mean-difference estimate. Larger deviations suggest the treatment column is confounded
+with a near-collinear covariate. Default: \code{5}.}
 }
 \if{html}{\out{</div>}}
 }

@@ -40,11 +40,12 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 		#' after the sequential design is completed.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
-		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{TRUE}.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param verbose                 A flag indicating whether messages should be displayed
+		#'   to the user. Default is \code{TRUE}.
+		#' @param harden Whether to apply robustness measures.
+		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose, harden)
 			assertNoCensoring(private$any_censoring)
 		}
 		),

@@ -400,3 +400,158 @@ test_that("Inference works for incidence KK Newcombe IVWC", {
 	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
 	expect_true(is.numeric(pval))
 })
+
+test_that("ordinal hardening drops QR-ranked covariates only when enabled", {
+	build_cars93_ordinal_design <- function(design_ctor) {
+		dat <- stats::na.omit(MASS::Cars93)
+		y_num <- dat$Price
+		qs <- stats::quantile(y_num, probs = c(0.25, 0.5, 0.75))
+		y_ord <- as.integer(cut(y_num, breaks = c(-Inf, qs, Inf), labels = FALSE))
+		x_dat <- subset(dat, select = -Price)
+		for (j in seq_len(ncol(x_dat))) {
+			if (is.numeric(x_dat[[j]])) {
+				x_dat[[j]] <- ifelse(
+					x_dat[[j]] <= stats::median(x_dat[[j]], na.rm = TRUE),
+					"low",
+					"high"
+				)
+			}
+		}
+
+		des <- design_ctor(n = nrow(x_dat), response_type = "ordinal", verbose = FALSE)
+		for (i in seq_len(nrow(x_dat))) {
+			des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+		}
+		add_all_subject_responses_seq(des, y_ord)
+		des
+	}
+
+	kk_des <- build_cars93_ordinal_design(DesignSeqOneByOneKK14$new)
+
+	adj_hardened <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
+	adj_raw <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
+	expect_true(is.finite(adj_hardened$compute_treatment_estimate()))
+	expect_true(is.finite(adj_hardened$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_true(all(is.finite(adj_hardened$compute_asymp_confidence_interval())))
+	expect_false(is.finite(adj_raw$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_false(all(is.finite(adj_raw$compute_asymp_confidence_interval())))
+
+	kk_adj_hardened <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
+	kk_adj_raw <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
+	expect_true(is.finite(kk_adj_hardened$compute_treatment_estimate()))
+	expect_true(is.finite(kk_adj_hardened$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_true(all(is.finite(kk_adj_hardened$compute_asymp_confidence_interval())))
+	expect_false(is.finite(kk_adj_raw$compute_treatment_estimate()))
+	expect_false(is.finite(kk_adj_raw$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_false(all(is.finite(kk_adj_raw$compute_asymp_confidence_interval())))
+})
+
+test_that("bootstrap debug preserves per-iteration records for sequential count designs", {
+	dat <- stats::na.omit(MASS::Cars93)
+	x_dat <- as.data.frame(subset(dat, select = -Price))
+	y_count <- as.integer(round(dat$Price))
+
+	strata_cols_to_use <- names(x_dat)[1:min(2, ncol(x_dat))]
+	x_spbr <- x_dat
+	for (col in strata_cols_to_use) {
+		if (is.numeric(x_spbr[[col]])) {
+			med <- stats::median(x_spbr[[col]], na.rm = TRUE)
+			x_spbr[[col]] <- factor(ifelse(x_spbr[[col]] <= med, "low", "high"))
+		}
+	}
+
+	des_spbr <- DesignSeqOneByOneSPBR$new(
+		strata_cols = strata_cols_to_use,
+		block_size = 4,
+		response_type = "count",
+		n = nrow(x_spbr)
+	)
+	for (i in seq_len(nrow(x_spbr))) {
+		des_spbr$add_one_subject_to_experiment_and_assign(x_spbr[i, , drop = FALSE])
+	}
+	add_all_subject_responses_seq(des_spbr, y_count)
+
+	inf_spbr <- InferenceAllSimpleMeanDiff$new(des_spbr, verbose = FALSE)
+	debug_spbr <- inf_spbr$approximate_bootstrap_distribution_beta_hat_T(
+		B = 12,
+		show_progress = FALSE,
+		debug = TRUE
+	)
+	expect_length(debug_spbr$values, 12)
+	expect_length(debug_spbr$errors, 12)
+	expect_length(debug_spbr$warnings, 12)
+	expect_true(all(vapply(debug_spbr$errors, is.character, logical(1))))
+	expect_true(all(vapply(debug_spbr$warnings, is.character, logical(1))))
+
+	des_kk21 <- DesignSeqOneByOneKK21$new(response_type = "count", n = nrow(x_dat))
+	for (i in seq_len(nrow(x_dat))) {
+		des_kk21$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+	}
+	add_all_subject_responses_seq(des_kk21, y_count)
+
+	inf_kk21 <- InferenceCountUnivNegBinRegr$new(des_kk21, verbose = FALSE)
+	debug_kk21 <- inf_kk21$approximate_bootstrap_distribution_beta_hat_T(
+		B = 8,
+		show_progress = FALSE,
+		debug = TRUE
+	)
+	expect_length(debug_kk21$values, 8)
+	expect_length(debug_kk21$errors, 8)
+	expect_length(debug_kk21$warnings, 8)
+})
+
+test_that("proportion g-computation bootstrap worker keeps mutable screening state", {
+	dat <- stats::na.omit(MASS::Cars93)
+	x_dat <- as.data.frame(subset(dat, select = -Price))
+	y_prop <- pmin(0.99, pmax(0.01, dat$Price / max(dat$Price)))
+
+	strata_cols_to_use <- names(x_dat)[1:min(2, ncol(x_dat))]
+	x_pocock <- x_dat
+	for (col in strata_cols_to_use) {
+		if (is.numeric(x_pocock[[col]])) {
+			med <- stats::median(x_pocock[[col]], na.rm = TRUE)
+			x_pocock[[col]] <- factor(ifelse(x_pocock[[col]] <= med, "low", "high"))
+		}
+	}
+
+	des_pocock <- DesignSeqOneByOnePocockSimon$new(
+		strata_cols = strata_cols_to_use,
+		response_type = "proportion",
+		n = nrow(x_pocock)
+	)
+	for (i in seq_len(nrow(x_pocock))) {
+		des_pocock$add_one_subject_to_experiment_and_assign(x_pocock[i, , drop = FALSE])
+	}
+	add_all_subject_responses_seq(des_pocock, y_prop)
+
+	inf_pocock <- InferencePropUniGCompMeanDiff$new(des_pocock, verbose = FALSE)
+	debug_pocock <- inf_pocock$approximate_bootstrap_distribution_beta_hat_T(
+		B = 20,
+		show_progress = FALSE,
+		debug = TRUE
+	)
+	expect_lt(debug_pocock$prop_illegal_values, 1)
+	expect_true(any(is.finite(debug_pocock$values)))
+	expect_true(all(is.finite(inf_pocock$compute_bootstrap_confidence_interval(B = 20, show_progress = FALSE))))
+	expect_true(is.finite(inf_pocock$compute_bootstrap_two_sided_pval(B = 20)))
+
+	des_urn <- DesignSeqOneByOneUrn$new(
+		response_type = "proportion",
+		n = nrow(x_dat)
+	)
+	for (i in seq_len(nrow(x_dat))) {
+		des_urn$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+	}
+	add_all_subject_responses_seq(des_urn, y_prop)
+
+	inf_urn <- InferencePropMultiGCompMeanDiff$new(des_urn, verbose = FALSE)
+	debug_urn <- inf_urn$approximate_bootstrap_distribution_beta_hat_T(
+		B = 12,
+		show_progress = FALSE,
+		debug = TRUE
+	)
+	expect_lt(debug_urn$prop_illegal_values, 1)
+	expect_true(any(is.finite(debug_urn$values)))
+	expect_true(all(is.finite(inf_urn$compute_bootstrap_confidence_interval(B = 12, show_progress = FALSE))))
+	expect_true(is.finite(inf_urn$compute_bootstrap_two_sided_pval(B = 12)))
+})

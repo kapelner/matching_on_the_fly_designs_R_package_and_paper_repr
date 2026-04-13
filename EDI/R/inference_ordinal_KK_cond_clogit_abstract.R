@@ -1,6 +1,6 @@
-ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj,  verbose = FALSE){
+ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj,  verbose = FALSE, harden = TRUE){
 	assertResponseType(des_obj$get_response_type(), "ordinal")
-	super_obj$initialize(des_obj, verbose = verbose)
+	super_obj$initialize(des_obj, verbose = verbose, harden = harden)
 	assertNoCensoring(private_env$any_censoring)
 }
 
@@ -94,8 +94,26 @@ ordinal_cond_clogit_shared_multi = function(private_env, expand_fun, trials_fun)
 		}
 	}
 	X_stack = do.call(rbind, X_stack_list)
-
-	mod = clogit_helper(expanded$y, as.data.frame(X_stack), expanded$w, expanded$strata)
+	X_full = cbind(treatment = expanded$w, X_stack)
+	attempt = private_env$fit_with_hardened_qr_column_dropping(
+		X_full = X_full,
+		required_cols = 1L,
+		fit_fun = function(X_fit){
+			clogit_helper(
+				expanded$y,
+				as.data.frame(X_fit[, -1, drop = FALSE]),
+				X_fit[, 1],
+				expanded$strata
+			)
+		},
+		fit_ok = function(mod, X_fit, keep){
+			!is.null(mod) &&
+				is.finite(mod$b[1]) &&
+				is.finite(mod$ssq_b_j) &&
+				mod$ssq_b_j > 0
+		}
+	)
+	mod = attempt$fit
 	if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
 		private_env$cached_values$beta_hat_T   = NA_real_
 		private_env$cached_values$s_beta_hat_T = NA_real_

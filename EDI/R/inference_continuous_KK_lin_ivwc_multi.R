@@ -171,7 +171,19 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 			is.finite(m) && m <= 1
 		},
 
+		reduced_design_keep_cache = NULL,
+
 		reduce_design_matrix_preserving_required = function(X_full, required){
+			cached_keep = private$reduced_design_keep_cache
+			if (!is.null(cached_keep) && length(cached_keep) > 0L &&
+				all(required %in% cached_keep) &&
+				max(cached_keep) <= ncol(X_full)){
+				X_try = X_full[, cached_keep, drop = FALSE]
+				if (qr(X_try)$rank == length(cached_keep)){
+					return(cached_keep)
+				}
+			}
+
 			qr_X = qr(X_full)
 			target_rank = qr_X$rank
 			candidate_order = c(required, setdiff(qr_X$pivot, required))
@@ -188,7 +200,9 @@ InferenceContinMultiKKLinIVWC = R6::R6Class("InferenceContinMultiKKLinIVWC",
 				}
 			}
 
-			sort(unique(keep))
+			keep = sort(unique(keep))
+			private$reduced_design_keep_cache = keep
+			keep
 		},
 
 		fit_hc2_ols = function(X_full, y, required, j_target){

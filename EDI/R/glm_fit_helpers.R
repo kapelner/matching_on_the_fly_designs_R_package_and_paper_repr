@@ -664,10 +664,26 @@ fast_coxph_regression = function(Xmm, y, dead){
 #' fast_negbin_regression(Xmm, y)
 #' @export
 fast_negbin_regression <- function(Xmm, y) {
-	list(b = as.numeric(fast_neg_bin_cpp(
-		X = as.matrix(Xmm),
-		y = as.integer(y)
-	)$b))
+	X_full = as.matrix(Xmm)
+	res = tryCatch(fast_neg_bin_cpp(X = X_full, y = as.integer(y)), error = function(e) NULL)
+	if (!is.null(res)) return(list(b = as.numeric(res$b)))
+	# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
+	# drop covariates one at a time in reverse QR-pivot order (most redundant first)
+	if (ncol(X_full) > 2L) {
+		X_cov = X_full[, -(1:2), drop = FALSE]
+		keep_js = qr(X_cov)$pivot
+		while (length(keep_js) > 0L) {
+			keep_js = keep_js[-length(keep_js)]
+			X_try = if (length(keep_js) > 0L) {
+				cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
+			} else {
+				X_full[, 1:2, drop = FALSE]
+			}
+			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y)), error = function(e) NULL)
+			if (!is.null(res)) return(list(b = as.numeric(res$b)))
+		}
+	}
+	stop("Negative binomial regression failed to converge: L-BFGS line search failed after dropping all covariates")
 }
 
 #' Fast Negative Binomial Regression with Variance Calculation (R Wrapper)
@@ -698,11 +714,28 @@ fast_negbin_regression <- function(Xmm, y) {
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression_with_var(Xmm, y)
 fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
-	Xmm = as.matrix(Xmm)
-	res = fast_neg_bin_with_var_cpp(
-		X = Xmm,
-		y = as.integer(y)
-	)
+	X_full = as.matrix(Xmm)
+	X_curr = X_full
+	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y)), error = function(e) NULL)
+	if (is.null(res)) {
+		# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
+		# drop covariates one at a time in reverse QR-pivot order (most redundant first)
+		if (ncol(X_full) > 2L) {
+			X_cov = X_full[, -(1:2), drop = FALSE]
+			keep_js = qr(X_cov)$pivot
+			while (length(keep_js) > 0L && is.null(res)) {
+				keep_js = keep_js[-length(keep_js)]
+				X_curr = if (length(keep_js) > 0L) {
+					cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
+				} else {
+					X_full[, 1:2, drop = FALSE]
+				}
+				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y)), error = function(e) NULL)
+			}
+		}
+		if (is.null(res))
+			stop("Negative binomial regression failed to converge: L-BFGS line search failed after dropping all covariates")
+	}
 	
 	# Extract vcov from the Fisher information matrix (Hessian of -logLik)
 	# The Hessian returned by C++ is for [beta, log_theta]
@@ -711,8 +744,8 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 	
 	list(
 		b = as.numeric(res$b),
-		ssq_b_j = if (j <= ncol(Xmm)) as.numeric(vcov[j, j]) else NA_real_,
-		ssq_b_2 = if (ncol(Xmm) >= 2) as.numeric(vcov[2, 2]) else NA_real_
+		ssq_b_j = if (j <= ncol(X_curr)) as.numeric(vcov[j, j]) else NA_real_,
+		ssq_b_2 = if (ncol(X_curr) >= 2) as.numeric(vcov[2, 2]) else NA_real_
 	)
 }
 

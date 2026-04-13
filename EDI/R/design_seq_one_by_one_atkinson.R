@@ -27,6 +27,7 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 						verbose = FALSE
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			private$uses_covariates = TRUE
 		},
 
 		#' @description
