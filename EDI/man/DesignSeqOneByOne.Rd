@@ -57,6 +57,7 @@ one experimental design.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>EDI::Design$overwrite_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
 </ul>
 </details>
 }}

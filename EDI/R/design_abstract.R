@@ -306,16 +306,15 @@ Design = R6::R6Class("Design",
 			block_ids = private$m
 			strata_cols = private$strata_cols
 			Xraw = private$Xraw
+			if (is.null(block_ids) && is(self, "FixedDesignOptimalBlocks")) {
+				block_ids = private$get_or_compute_block_ids()
+			}
 			if (is.null(block_ids) && !is.null(strata_cols) && length(strata_cols) > 0L &&
 					nrow(Xraw) == length(private$y)) {
-				strata_keys = vapply(seq_len(nrow(Xraw)), function(i) {
-					vals = vapply(strata_cols, function(col) {
-						val = Xraw[i, ][[col]]
-						if (is.na(val)) "NA" else as.character(val)
-					}, character(1))
-					paste(vals, collapse = "|")
-				}, character(1))
-				block_ids = match(strata_keys, unique(strata_keys))
+				strata_keys = private$get_strata_keys()
+				if (length(strata_keys) == length(private$y)) {
+					block_ids = match(strata_keys, unique(strata_keys))
+				}
 			}
 			if (is.null(block_ids)) {
 				stop("Block identifiers are undefined for this design.")
@@ -325,6 +324,67 @@ Design = R6::R6Class("Design",
 				stop("Block identifiers are improperly sized for this design.")
 			}
 			block_ids
+		},
+
+		#' @description
+		#' Summarize the covariates within blocks.
+		#'
+		#' @param block_ids A vector of block identifiers to summarize. If NULL, defaults to all blocks.
+		#'
+		#' @return A list of data.tables, one for each block.
+		summarize_blocks = function(block_ids = NULL) {
+			self$assert_blocking_design()
+			all_block_ids = self$get_block_ids()
+			if (is.null(block_ids)) {
+				block_ids = sort(unique(all_block_ids))
+			}
+			
+			Xraw = self$get_X_raw()
+			res = list()
+			
+			for (bid in block_ids) {
+				idx = which(all_block_ids == bid)
+				if (length(idx) == 0) {
+					warning(paste("Block ID", bid, "not found in the design."))
+					next
+				}
+				X_block = Xraw[idx, ]
+				
+				# Summary for each column
+				col_summaries = list()
+				for (col_name in names(X_block)) {
+					col_data = X_block[[col_name]]
+					if (is.numeric(col_data)) {
+						col_summaries[[col_name]] = data.table::data.table(
+							variable = col_name,
+							level = NA_character_,
+							mean_or_pct = mean(col_data, na.rm = TRUE),
+							sd = stats::sd(col_data, na.rm = TRUE)
+						)
+					} else {
+						# Categorical (factor or character)
+						counts = table(col_data, useNA = "no")
+						pcts = prop.table(counts) * 100
+						if (length(pcts) == 0) {
+							col_summaries[[col_name]] = data.table::data.table(
+								variable = col_name,
+								level = "N/A",
+								mean_or_pct = NA_real_,
+								sd = NA_real_
+							)
+						} else {
+							col_summaries[[col_name]] = data.table::data.table(
+								variable = col_name,
+								level = names(pcts),
+								mean_or_pct = as.numeric(pcts),
+								sd = NA_real_
+							)
+						}
+					}
+				}
+				res[[as.character(bid)]] = data.table::rbindlist(col_summaries)
+			}
+			res
 		},
 
 		#' @description Get n, the sample size
@@ -418,7 +478,10 @@ Design = R6::R6Class("Design",
 		verbose = NULL,
 		design_is_supported_blocking = function(des_obj){
 			is(des_obj, "DesignSeqOneByOneKK14") ||
+				is(des_obj, "FixedDesigniBCRD") ||
+				is(des_obj, "FixedDesignBinaryMatch") ||
 				is(des_obj, "FixedDesignBlocking") ||
+				is(des_obj, "FixedDesignOptimalBlocks") ||
 				is(des_obj, "DesignSeqOneByOneSPBR") ||
 				is(des_obj, "DesignSeqOneByOneRandomBlockSize")
 		},

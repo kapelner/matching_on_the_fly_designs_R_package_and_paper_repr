@@ -11,29 +11,42 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' Initialize a fixed stratified blocking experimental design
 		#'
 		#' @param strata_cols A character vector of column names to use for stratification.
+		#'   If `NULL` (the default), all available covariate columns are used.
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
 		#' @param	prob_T	Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
 		#' @param num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
+		#' @param B_preferred The desired number of blocks. Columns from `strata_cols`
+		#'   are added greedily in order, each column being included only if it does not push
+		#'   the total number of unique blocks beyond this target. For categorical covariates
+		#'   their natural levels are used; for continuous covariates
+		#'   `num_bins_for_continuous_covariate` quantile bins are used. Earlier columns
+		#'   are always preferred over later ones. The default is `floor(sqrt(n))` when `n`
+		#'   is known at construction time, or is resolved to `floor(sqrt(n))` when subjects
+		#'   are added. Set to `NULL` to disable the target and use all `strata_cols` columns
+		#'   unconditionally (the original behaviour).
 		#' @param verbose A flag for verbosity.
 		#'
 		#' @return	A new `FixedDesignBlocking` object
 		initialize = function(
-						strata_cols,
+						strata_cols = NULL,
 						response_type,
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						num_bins_for_continuous_covariate = 2,
+						B_preferred = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
 						verbose = FALSE
 					) {
-			assertCharacter(strata_cols, min.len = 1)
+			if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
 			assertCount(num_bins_for_continuous_covariate, positive = TRUE)
+			if (!is.null(B_preferred) && !is.na(B_preferred)) assertCount(B_preferred, positive = TRUE)
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
 			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
+			private$B_preferred = B_preferred
 			private$uses_covariates = TRUE
 		},
 

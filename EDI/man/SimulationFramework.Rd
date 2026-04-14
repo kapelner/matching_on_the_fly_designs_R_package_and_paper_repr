@@ -54,6 +54,8 @@ Reported summary metrics include:
 \itemize{
 \item \href{#method-SimulationFramework-new}{\code{SimulationFramework$new()}}
 \item \href{#method-SimulationFramework-run}{\code{SimulationFramework$run()}}
+\item \href{#method-SimulationFramework-get_designs}{\code{SimulationFramework$get_designs()}}
+\item \href{#method-SimulationFramework-get_inferences}{\code{SimulationFramework$get_inferences()}}
 \item \href{#method-SimulationFramework-get_results}{\code{SimulationFramework$get_results()}}
 \item \href{#method-SimulationFramework-summarize}{\code{SimulationFramework$summarize()}}
 \item \href{#method-SimulationFramework-print}{\code{SimulationFramework$print()}}
@@ -82,8 +84,8 @@ Create a new \code{SimulationFramework}.
   sd_noise = 1,
   prob_censoring = 0.2,
   verbose = FALSE,
-  design_params = list(),
-  inference_params = list(),
+  design_params = NULL,
+  inference_params = NULL,
   inf_types = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -165,43 +167,38 @@ censoring probability; applied only when
 replication and for every \code{(design, inference)} pair that is
 skipped due to an error.  Default \code{FALSE}.}
 
-\item{\code{design_params}}{Named list of lists.  Each name must exactly match a
-design class name present in \code{design_classes}, and the
-corresponding value is a named list of additional constructor arguments
-passed to that design's \code{$new()} call.  Design classes whose names
-are absent receive no extra arguments.  Example:
-\preformatted{design_params = list(
-  DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
-  DesignSeqOneByOneKK14 = list(lambda = 0.3, morrison = TRUE),
-  DesignSeqOneByOneUrn  = list(alpha = 2, beta = 2)
+\item{\code{design_params}}{\code{NULL} (default) or a list of lists of the same
+  length as \code{design_classes}.  Each element is a named list of
+  additional constructor arguments passed to the corresponding design's
+  \code{$new()} call (matched positionally).  Use an empty \code{list()}
+  for a design that needs no extra arguments.  Example:
+  \preformatted{design_classes = list(DesignSeqOneByOneKK21,
+                        DesignSeqOneByOneUrn)
+design_params  = list(
+  list(lambda = 0.5, t_0_pct = 0.1),   # for KK21
+  list(alpha  = 2,   beta    = 2)        # for Urn
 )}
-Commonly useful design constructor parameters:
-\describe{
-  \item{\code{lambda}}{Matching-weight decay for
-    \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-  \item{\code{t_0_pct}}{Burn-in fraction for
-    \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-  \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
-  \item{\code{alpha}, \code{beta}}{Shape parameters for
-    \code{DesignSeqOneByOneUrn}.}
-  \item{\code{num_bins_for_continuous_covariate}}{Bin count for
-    \code{FixedDesignBlocking}.}
-}}
+  Commonly useful design constructor parameters:
+  \describe{
+    \item{\code{lambda}}{Matching-weight decay for
+      \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+    \item{\code{t_0_pct}}{Burn-in fraction for
+      \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+    \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
+    \item{\code{alpha}, \code{beta}}{Shape parameters for
+      \code{DesignSeqOneByOneUrn}.}
+    \item{\code{num_bins_for_continuous_covariate}}{Bin count for
+      \code{FixedDesignBlocking}.}
+  }}
 
-\item{\code{inference_params}}{Named list of lists.  Controls constructor
-  arguments and inference method call arguments for specific inference
-  classes, as well as a universal fallback entry.
+\item{\code{inference_params}}{\code{NULL} (default) or a list of lists of the
+  same length as \code{inference_classes}.  Each element is a named list
+  of arguments for the corresponding inference class (matched
+  positionally).  Use an empty \code{list()} for a class that needs no
+  extra arguments.
 
-  Each non-\code{all_inference} name must exactly match an inference
-  class name present in \code{inference_classes}.  The corresponding
-  value is a named list of constructor arguments passed \emph{only} to
-  that class's \code{$new()} call, after filtering to args actually
-  present in its \code{initialize()} signature.
-
-  The special key \code{all_inference} provides arguments that apply to
-  \emph{every} inference class and \emph{every} inference method call.
-  These are routed automatically based on argument name:
-  Routed argument groups are:
+  Arguments are routed automatically to the appropriate call site based
+  on argument name (see \code{.INF_ARG_ROUTES}):
   \itemize{
     \item constructor arguments such as \code{harden} and
       \code{max_resample_attempts}
@@ -212,15 +209,17 @@ Commonly useful design constructor parameters:
     \item randomization CI arguments such as \code{ci_search_control}
     \item shared randomization arguments such as \code{args_for_type}
   }
-  Class-specific entries take precedence over \code{all_inference} for
-  constructor arguments.  Example:
-  \preformatted{inference_params = list(
-    all_inference          = list(delta = 0, na.rm = TRUE,
-                                  harden = TRUE),
-    InferenceContinMultOLS = list(harden = FALSE)
-  )}
-  Here every class gets \code{harden = TRUE} from \code{all_inference},
-  except \code{InferenceContinMultOLS} which uses \code{harden = FALSE}.}
+  Example:
+  \preformatted{inference_classes = list(InferenceContinMultOLS,
+                           InferenceContinMultOLSKKIVWC)
+inference_params = lapply(
+  list(
+    list(harden = FALSE), 
+    list()
+  ),
+  append, 
+  list(delta = 0)
+)}}
 
 \item{\code{inf_types}}{Character vector controlling which inference outputs are
 computed and recorded.  \code{NULL} (default) runs all eight types.
@@ -238,33 +237,79 @@ When no \code{*_ci} type is requested, \code{coverage} is omitted from
 \if{html}{\out{<a id="method-SimulationFramework-run"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-run}{}}}
 \subsection{Method \code{run()}}{
+Execute the simulation replications.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$run()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The \code{SimulationFramework} object itself (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SimulationFramework-get_designs"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-get_designs}{}}}
+\subsection{Method \code{get_designs()}}{
+Return the design objects from the last simulation replication.
+Throws an error if \code{$run()} has not been called yet.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_designs()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A named list of instantiated design objects, one per configured
+  design class, from the final replication.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SimulationFramework-get_inferences"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-get_inferences}{}}}
+\subsection{Method \code{get_inferences()}}{
+Return the inference objects from the last simulation replication.
+Throws an error if \code{$run()} has not been called yet.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_inferences()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A named list of lists of instantiated inference objects from the
+  final replication, indexed first by design class name and then by
+  inference class name.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-get_results"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-get_results}{}}}
 \subsection{Method \code{get_results()}}{
+Get the raw results of the simulation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_results()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A \code{data.table} containing one row per (replication, design,
+  inference class, inference method).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-summarize"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-summarize}{}}}
 \subsection{Method \code{summarize()}}{
+Aggregate and summarize simulation results.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$summarize()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A \code{data.table} with aggregated metrics (MSE, coverage,
+  power) grouped by design, inference class, and inference method.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-print"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-print}{}}}
 \subsection{Method \code{print()}}{
+Print a summary of the \code{SimulationFramework} configuration and status.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$print()}\if{html}{\out{</div>}}
 }

@@ -85,17 +85,23 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 
 		extract_term_se = function(mod, term_name = "w"){
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
-			if (is.null(coef_table) || is.null(dim(coef_table))){
+			if (is.null(coef_table)){
 				return(NA_real_)
 			}
-			if (is.null(rownames(coef_table)) || !(term_name %in% rownames(coef_table))){
+			# aftsrr returns a list of matrices, aftgee returns a matrix
+			tab = if (is.list(coef_table)) coef_table[[1]] else coef_table
+			
+			if (is.null(tab) || is.null(dim(tab))){
 				return(NA_real_)
 			}
-			se_col = intersect(colnames(coef_table), c("StdErr", "Std.Err", "Std.err", "Std.Error"))[1]
+			if (is.null(rownames(tab)) || !(term_name %in% rownames(tab))){
+				return(NA_real_)
+			}
+			se_col = intersect(colnames(tab), c("StdErr", "Std.Err", "Std.err", "Std.Error"))[1]
 			if (is.na(se_col) || length(se_col) == 0L){
 				return(NA_real_)
 			}
-			as.numeric(coef_table[term_name, se_col])
+			as.numeric(tab[term_name, se_col])
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -109,18 +115,18 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			# --- Matched pairs: aftgee with clustering ---
+			# --- Matched pairs: aftsrr with clustering ---
 			if (m > 0){
-				private$aftgee_for_matched_pairs()
+				private$aftsrr_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
 
-			# --- Reservoir: aftgee (independent) ---
+			# --- Reservoir: aftsrr (independent) ---
 			if (nRT > 0 && nRC > 0){
-				private$aftgee_for_reservoir()
+				private$aftsrr_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
@@ -152,7 +158,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 		},
 
-		aftgee_for_matched_pairs = function(){
+		aftsrr_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -163,7 +169,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			w_m       = private$w[i_matched]
 			strata_m  = m_vec[i_matched]
 
-			# Filter strata that have no events (aftgee needs at least some events)
+			# Filter strata that have no events (aftsrr needs at least some events)
 			if (sum(dead_m) < 2) return(invisible(NULL))
 
 			dat = data.frame(y = y_m, dead = dead_m, w = w_m, id = strata_m)
@@ -171,26 +177,38 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 
 			if (private$include_covariates()){
 				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
-				colnames(X_m) = paste0("x", 1:ncol(X_m))
-				dat = cbind(dat, X_m)
-				formula_str = paste(formula_str, "+", paste(colnames(X_m), collapse = " + "))
+				X_full = cbind(w = w_m, X_m)
+				qr_full = qr(X_full)
+				r_full  = qr_full$rank
+				if (r_full < ncol(X_full)){
+					keep = qr_full$pivot[seq_len(r_full)]
+					if (!(1L %in% keep)) keep[r_full] = 1L # ensure treatment is kept
+					keep    = sort(keep)
+					X_full  = X_full[, keep, drop = FALSE]
+				}
+				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
+				if (ncol(X_covs) > 0){
+					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
+					dat = cbind(dat[, c("y", "dead", "w", "id")], X_covs)
+					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
+				}
 			}
 
 			mod = tryCatch({
-				# Use Gehan-type rank estimator (default)
-				suppressMessages(aftgee::aftgee(as.formula(formula_str), id = id, data = dat, corstr = "exchangeable"))
+				se_method = if (estimate_only) "NULL" else "ISMB"
+				suppressMessages(aftgee::aftsrr(as.formula(formula_str), id = id, data = dat, se = se_method, B = 0))
 			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = private$extract_term_estimate(mod, "w")
-			se   = private$extract_term_se(mod, "w")
+			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
 
 			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(se) && se > 0) se^2 else NA_real_
 		},
 
-		aftgee_for_reservoir = function(){
+		aftsrr_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			dead_r = private$dead[private$m == 0]
@@ -202,23 +220,35 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			formula_str = "survival::Surv(y, dead) ~ w"
 
 			if (private$include_covariates()){
-				X_covs = as.data.frame(X_r)
-				colnames(X_covs) = paste0("x", 1:ncol(X_covs))
-				dat = cbind(dat, X_covs)
-				formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
+				X_full = cbind(w = w_r, X_r)
+				qr_full = qr(X_full)
+				r_full  = qr_full$rank
+				if (r_full < ncol(X_full)){
+					keep = qr_full$pivot[seq_len(r_full)]
+					if (!(1L %in% keep)) keep[r_full] = 1L # ensure treatment is kept
+					keep    = sort(keep)
+					X_full  = X_full[, keep, drop = FALSE]
+				}
+				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
+				if (ncol(X_covs) > 0){
+					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
+					dat = cbind(dat[, c("y", "dead", "w")], X_covs)
+					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
+				}
 			}
 
 			mod = tryCatch({
-				suppressMessages(aftgee::aftgee(as.formula(formula_str), data = dat))
+				se_method = if (estimate_only) "NULL" else "ISMB"
+				suppressMessages(aftgee::aftsrr(as.formula(formula_str), data = dat, se = se_method, B = 0))
 			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = private$extract_term_estimate(mod, "w")
-			se   = private$extract_term_se(mod, "w")
+			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
 
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0) se^2 else NA_real_
 		}
 	)
 )

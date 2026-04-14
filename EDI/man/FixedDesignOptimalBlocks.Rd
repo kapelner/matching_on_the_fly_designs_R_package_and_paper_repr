@@ -10,9 +10,10 @@ An Optimal-Blocks Fixed Design
 }
 \details{
 An R6 Class encapsulating the data and functionality for a fixed experimental
-design that first partitions subjects into \code{K} covariate-homogeneous blocks
+design that first partitions subjects into \code{B} covariate-homogeneous blocks
 by solving a balanced clustering problem with \pkg{ompr} and glpk, then randomizes
-treatment within those blocks.
+treatment within those blocks. When \code{B} is omitted and \code{n} is known
+at initialization, the default is \code{floor(sqrt(n))}, truncated below at 1.
 }
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignOptimalBlocks}
@@ -51,6 +52,7 @@ treatment within those blocks.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subjects_to_experiment"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subjects_to_experiment'><code>EDI::FixedDesign$add_all_subjects_to_experiment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="assign_w_to_all_subjects"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-assign_w_to_all_subjects'><code>EDI::FixedDesign$assign_w_to_all_subjects()</code></a></span></li>
@@ -66,7 +68,8 @@ treatment within those blocks.
 Initialize a fixed optimal-blocks design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignOptimalBlocks$new(
-  K,
+  B = NULL,
+  method = "greedy",
   dist = "euclidean",
   response_type,
   prob_T = 0.5,
@@ -79,10 +82,26 @@ Initialize a fixed optimal-blocks design.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{K}}{Number of blocks to form.}
+\item{\code{B}}{Number of blocks to form. If omitted and \code{n} is supplied,
+defaults to \code{floor(sqrt(n))}, with a minimum of 1.}
 
-\item{\code{dist}}{Distance specification, either a function or one of
-\code{"euclidean"}, \code{"sum_abs_diff"}, or \code{"mahal"}.}
+\item{\code{method}}{Algorithm used to partition subjects into blocks.
+\describe{
+  \item{\code{"greedy"} (default)}{Greedy nearest-neighbour matching
+    via \code{blockTools::block}.  Requires the \pkg{blockTools}
+    package.  Fast even for large \eqn{n}.}
+  \item{\code{"K-way"}}{Balanced k-means anticlustering via
+    \code{anticlust::balanced_clustering}.  Requires the
+    \pkg{anticlust} package.  Produces well-spread blocks.}
+  \item{\code{"ompr"}}{Exact mixed-integer programme solved with
+    GLPK via \pkg{ompr}.  Globally optimal but scales as
+    \eqn{O(n^2 B)} in variables and is only practical for small
+    \eqn{n}.}
+}}
+
+\item{\code{dist}}{Distance specification used only when \code{method = "ompr"}.
+Either a function or one of \code{"euclidean"}, \code{"sum_abs_diff"},
+or \code{"mahal"}.}
 
 \item{\code{response_type}}{The response type for the design.}
 

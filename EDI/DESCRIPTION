@@ -30,6 +30,8 @@ Imports:
     pbmcapply,
     randomizr
 Suggests:
+    anticlust,
+    blockTools,
     dplyr,
     mirai,
     aftgee,
@@ -107,6 +109,7 @@ Collate:
     'inference_all_KK_wilcox_regr_ivwc_multi.R'
     'inference_all_KK_wilcox_regr_ivwc_univ.R'
     'inference_all_mean_diff.R'
+    'inference_incidence_wald.R'
     'inference_incidence_simple_prop_diff_pooled.R'
     'inference_incidence_azriel.R'
     'inference_incidence_extended_robins.R'

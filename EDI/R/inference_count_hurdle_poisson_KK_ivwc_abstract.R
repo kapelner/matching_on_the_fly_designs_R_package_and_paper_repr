@@ -59,11 +59,13 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			} else {
 				stop("Testing non-zero delta is not yet implemented for this class.")
 			}
-		},
+		}
+	),
 
-		#' @description
-		#' Overridden to avoid the heavy summary() call during randomization iterations.
-		#' Extracts the fixed-effect coefficient for "w" directly from the fit.
+	private = list(
+
+		# Overridden to avoid the heavy summary() call during randomization iterations.
+		# Extracts the fixed-effect coefficient for "w" directly from the fit.
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			Xmm = private$build_model_matrix()
 			m_vec = private$m
@@ -103,10 +105,8 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				return(beta_r)
 			}
 			NA_real_
-		}
-	),
+		},
 
-	private = list(
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,

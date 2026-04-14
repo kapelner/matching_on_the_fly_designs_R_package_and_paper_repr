@@ -210,7 +210,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		},
 
 		# Fast approximation using semi-parametric coxph with frailty + univariate survreg for rho
-		fit_fast_approx = function(dat, cov_str = NULL){
+		fit_fast_approx = function(dat, cov_str = NULL, estimate_only = FALSE){
 			cox_formula = if (is.null(cov_str)){
 				survival::Surv(time, event) ~ w + survival::frailty(cluster, distribution = "gamma")
 			} else {
@@ -221,10 +221,19 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			cox_mod = tryCatch(survival::coxph(cox_formula, data = dat), error = function(e) NULL)
 			if (is.null(cox_mod)) return(NULL)
 
-			cox_coef = tryCatch(summary(cox_mod)$coefficients, error = function(e) NULL)
-			if (is.null(cox_coef) || !("w" %in% rownames(cox_coef))) return(NULL)
-			beta_ph = cox_coef["w", "coef"]
-			se_ph   = cox_coef["w", "se(coef)"]
+			cox_coef = if (isTRUE(estimate_only)) {
+				# Use coef() directly to avoid heavy summary()
+				c = stats::coef(cox_mod)
+				if (!("w" %in% names(c))) return(NULL)
+				list(beta = c["w"], se = NA_real_)
+			} else {
+				sum_mod = tryCatch(summary(cox_mod)$coefficients, error = function(e) NULL)
+				if (is.null(sum_mod) || !("w" %in% rownames(sum_mod))) return(NULL)
+				list(beta = sum_mod["w", "coef"], se = sum_mod["w", "se(coef)"])
+			}
+			
+			beta_ph = cox_coef$beta
+			se_ph   = cox_coef$se
 
 			survreg_formula = if (is.null(cov_str)){
 				survival::Surv(time, event) ~ w
@@ -236,7 +245,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (is.null(survreg_mod)) return(NULL)
 
 			rho = 1 / survreg_mod$scale
-			list(beta_aft = -beta_ph / rho, ssq_aft = (se_ph / rho)^2)
+			list(beta_aft = -beta_ph / rho, ssq_aft = if (isTRUE(estimate_only)) NA_real_ else (se_ph / rho)^2)
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -257,16 +266,16 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 
 			# --- Matched pairs: Weibull Frailty ---
 			if (m > 0){
-				private$weibull_frailty_for_matched_pairs()
+				private$weibull_frailty_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
-			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+			           (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
 
 			# --- Reservoir: Standard Weibull (AFT) ---
 			if (nRT > 0 && nRC > 0){
-				private$weibull_for_reservoir()
+				private$weibull_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
@@ -298,7 +307,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			}
 		},
 
-		weibull_frailty_for_matched_pairs = function(){
+		weibull_frailty_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -331,7 +340,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				dat = cbind(dat, X_m)
 				cov_str = paste(colnames(X_m), collapse = " + ")
 
-				res = private$fit_fast_approx(dat, cov_str)
+				res = private$fit_fast_approx(dat, cov_str, estimate_only = estimate_only)
 				if (is.null(res)) return(invisible(NULL))
 				alpha_aft     = res$beta_aft
 				ssq_alpha_aft = res$ssq_aft
@@ -352,16 +361,16 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				# parfm returns PH coefficients; convert to AFT: alpha_AFT = -beta_PH / rho.
 				rho           = as.numeric(mod["rho", "ESTIMATE"])
 				beta_ph       = as.numeric(mod["w",   "ESTIMATE"])
-				se_ph         = as.numeric(mod["w",   "SE"])
+				se_ph         = if (isTRUE(estimate_only)) NA_real_ else as.numeric(mod["w",   "SE"])
 				alpha_aft     = -beta_ph / rho
-				ssq_alpha_aft = (se_ph / rho)^2
+				ssq_alpha_aft = if (isTRUE(estimate_only)) NA_real_ else (se_ph / rho)^2
 			}
 
 			private$cached_values$beta_T_matched     = if (is.finite(alpha_aft)) alpha_aft else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq_alpha_aft) && ssq_alpha_aft > 0) ssq_alpha_aft else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(ssq_alpha_aft) && ssq_alpha_aft > 0) ssq_alpha_aft else NA_real_
 		},
 
-		weibull_for_reservoir = function(){
+		weibull_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			m_vec_safe = private$m
@@ -394,10 +403,10 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (is.null(mod)) return(invisible(NULL))
 
 			alpha_aft = as.numeric(mod$coefficients["w"])
-			ssq_alpha_aft = if (is.matrix(mod$vcov) && "w" %in% colnames(mod$vcov)) mod$vcov["w", "w"] else NA_real_
+			ssq_alpha_aft = if (!estimate_only && is.matrix(mod$vcov) && "w" %in% colnames(mod$vcov)) mod$vcov["w", "w"] else NA_real_
 
 			private$cached_values$beta_T_reservoir     = if (is.finite(alpha_aft)) alpha_aft else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq_alpha_aft) && ssq_alpha_aft > 0) ssq_alpha_aft else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(ssq_alpha_aft) && ssq_alpha_aft > 0) ssq_alpha_aft else NA_real_
 		}
 	)
 )

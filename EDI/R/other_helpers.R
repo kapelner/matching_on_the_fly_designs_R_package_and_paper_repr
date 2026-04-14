@@ -19,6 +19,16 @@ assert_optimal_blocks_libraries_installed = function(caller) {
 	}
 }
 
+assert_blocktools_installed = function(caller) {
+	if (!requireNamespace("blockTools", quietly = TRUE))
+		stop("Package 'blockTools' is required for ", caller, ".")
+}
+
+assert_anticlust_installed = function(caller) {
+	if (!requireNamespace("anticlust", quietly = TRUE))
+		stop("Package 'anticlust' is required for ", caller, ".")
+}
+
 #' Logit
 #'
 #' Calculates the logit i.e., log(p / (1 - p))
@@ -607,17 +617,17 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_standard_weibull_aft_from_matrix = function(y, dead, Xmm){
+.fit_standard_weibull_aft_from_matrix = function(y, dead, Xmm, estimate_only = FALSE){
 	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
 	mod_fast = tryCatch(fast_weibull_regression(y, dead, Xmm), error = function(e) NULL)
 	if (!is.null(mod_fast) &&
 	    !is.null(mod_fast$coefficients) &&
-	    !is.null(mod_fast$vcov) &&
+	    (isTRUE(estimate_only) || !is.null(mod_fast$vcov)) &&
 	    "w" %in% names(mod_fast$coefficients) &&
-	    "w" %in% rownames(mod_fast$vcov)){
+	    (isTRUE(estimate_only) || "w" %in% rownames(mod_fast$vcov))){
 		beta = as.numeric(mod_fast$coefficients["w"])
-		ssq = as.numeric(mod_fast$vcov["w", "w"])
-		if (is.finite(beta) && is.finite(ssq) && ssq > 0){
+		ssq = if (isTRUE(estimate_only)) NA_real_ else as.numeric(mod_fast$vcov["w", "w"])
+		if (is.finite(beta) && (isTRUE(estimate_only) || (is.finite(ssq) && ssq > 0))){
 			return(list(beta = beta, ssq = ssq))
 		}
 	}
@@ -721,11 +731,16 @@ NULL
 		-sum(loglik)
 	}
 
-	starts = list(
-		c(base_start, 0),
-		c(base_start, atanh(0.25)),
-		c(base_start, atanh(-0.25))
-	)
+	starts = if (isTRUE(estimate_only)) {
+		# For bootstrap iterations, use only one start (no correlation) for speed.
+		list(c(base_start, 0))
+	} else {
+		list(
+			c(base_start, 0),
+			c(base_start, atanh(0.25)),
+			c(base_start, atanh(-0.25))
+		)
+	}
 	best = NULL
 	for (start_par in starts){
 		fit = tryCatch(
@@ -734,7 +749,11 @@ NULL
 				fn = neg_loglik,
 				method = "BFGS",
 				hessian = !isTRUE(estimate_only),
-				control = list(maxit = 2000, reltol = 1e-9)
+				control = list(
+					maxit = 2000, 
+					# Tight tolerance for main estimate, looser for bootstrap iterations
+					reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9
+				)
 			),
 			error = function(e) NULL
 		)
@@ -933,7 +952,7 @@ NULL
 	)
 }
 
-.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL){
+.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE){
 	y = as.numeric(y)
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
@@ -1037,7 +1056,7 @@ NULL
 				par = start_par,
 				fn = neg_loglik,
 				method = "BFGS",
-				hessian = TRUE,
+				hessian = !isTRUE(estimate_only),
 				control = control_list
 			),
 			error = function(e) NULL
@@ -1051,6 +1070,17 @@ NULL
 
 	beta_hat = best$par[seq_len(num_beta)]
 	names(beta_hat) = colnames(Xfull)
+	
+	if (isTRUE(estimate_only)){
+		return(list(
+			beta = as.numeric(beta_hat["w"]),
+			ssq = NA_real_,
+			theta = exp(best$par[num_beta + 2L]),
+			log_sigma = best$par[num_beta + 1L],
+			best_par = best$par
+		))
+	}
+
 	hess = best$hessian
 	vcov_full = tryCatch(solve(hess), error = function(e) NULL)
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){

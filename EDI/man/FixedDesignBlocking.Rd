@@ -49,6 +49,7 @@ blocking experimental design.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subjects_to_experiment"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subjects_to_experiment'><code>EDI::FixedDesign$add_all_subjects_to_experiment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="assign_w_to_all_subjects"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-assign_w_to_all_subjects'><code>EDI::FixedDesign$assign_w_to_all_subjects()</code></a></span></li>
@@ -64,12 +65,13 @@ blocking experimental design.
 Initialize a fixed stratified blocking experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignBlocking$new(
-  strata_cols,
+  strata_cols = NULL,
   response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
   num_bins_for_continuous_covariate = 2,
+  B_preferred = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -77,7 +79,8 @@ Initialize a fixed stratified blocking experimental design
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
+\item{\code{strata_cols}}{A character vector of column names to use for stratification.
+If `NULL` (the default), all available covariate columns are used.}
 
 \item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
 "ordinal".}
@@ -89,6 +92,16 @@ Initialize a fixed stratified blocking experimental design
 \item{\code{n}}{The sample size.}
 
 \item{\code{num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
+
+\item{\code{B_preferred}}{The desired number of blocks. Columns from `strata_cols`
+are added greedily in order, each column being included only if it does not push
+the total number of unique blocks beyond this target. For categorical covariates
+their natural levels are used; for continuous covariates
+`num_bins_for_continuous_covariate` quantile bins are used. Earlier columns
+are always preferred over later ones. The default is `floor(sqrt(n))` when `n`
+is known at construction time, or is resolved to `floor(sqrt(n))` when subjects
+are added. Set to `NULL` to disable the target and use all `strata_cols` columns
+unconditionally (the original behaviour).}
 
 \item{\code{verbose}}{A flag for verbosity.}
 }

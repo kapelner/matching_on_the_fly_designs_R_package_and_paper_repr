@@ -73,12 +73,12 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
-		},
+		}
+	),
 
-		#' @description
-		#' Overridden to use the best design matrix and starting parameters from the initial fit
-		#' to speed up randomization-based inference.
-		compute_treatment_estimate_during_randomization_inference = function(){
+	private = list(
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
 			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
 				private$shared()
@@ -86,7 +86,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 
 			# If we still don't have enough (e.g., initial fit failed), fall back to standard
 			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
-				return(self$compute_treatment_estimate())
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
 			}
 
 			if (is.null(private$cached_values$KKstats)){
@@ -117,11 +117,14 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 					Xmm = Xmm,
 					pair_id = m_vec[i_matched],
 					include_singletons = FALSE,
-					starts = list(private$best_par_matched)
+					starts = list(private$best_par_matched),
+					estimate_only = estimate_only
 				)
-				if (!is.null(fit_m) && is.finite(fit_m$beta) && is.finite(fit_m$ssq) && fit_m$ssq > 0){
+				if (!is.null(fit_m) && is.finite(fit_m$beta)){
 					beta_m = fit_m$beta
-					ssq_m = fit_m$ssq
+					if (!estimate_only && !is.null(fit_m$ssq) && is.finite(fit_m$ssq) && fit_m$ssq > 0){
+						ssq_m = fit_m$ssq
+					}
 				}
 			}
 
@@ -140,19 +143,37 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				fit_r = .fit_standard_weibull_aft_from_matrix(
 					y = private$y[i_reservoir],
 					dead = private$dead[i_reservoir],
-					Xmm = Xmm
+					Xmm = Xmm,
+					estimate_only = estimate_only
 				)
-				if (!is.null(fit_r) && is.finite(fit_r$beta) && is.finite(fit_r$ssq) && fit_r$ssq > 0){
+				if (!is.null(fit_r) && is.finite(fit_r$beta)){
 					beta_r = fit_r$beta
-					ssq_r = fit_r$ssq
+					if (!estimate_only && !is.null(fit_r$ssq) && is.finite(fit_r$ssq) && fit_r$ssq > 0){
+						ssq_r = fit_r$ssq
+					}
 				}
 			}
 
 			# Inverse-variance weighted pooling
-			m_ok = is.finite(beta_m) && is.finite(ssq_m)
-			r_ok = is.finite(beta_r) && is.finite(ssq_r)
+			m_ok = is.finite(beta_m) && (!estimate_only && is.finite(ssq_m) || estimate_only)
+			r_ok = is.finite(beta_r) && (!estimate_only && is.finite(ssq_r) || estimate_only)
 
 			if (m_ok && r_ok){
+				if (estimate_only) {
+					# If we don't have variances for weights, we could use a heuristic 
+					# or just use equal weights. But since this is during randomization
+					# where we usually want the point estimate, and the variances 
+					# from the ORIGINAL data might be better weights than nothing.
+					# However, private$best_par_matched and best_par_reservoir are available.
+					# Let's use the original variances for weighting if they exist.
+					ssq_m_orig = private$cached_values$ssq_beta_T_matched
+					ssq_r_orig = private$cached_values$ssq_beta_T_reservoir
+					if (is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
+						w_star = ssq_r_orig / (ssq_r_orig + ssq_m_orig)
+						return(w_star * beta_m + (1 - w_star) * beta_r)
+					}
+					return(0.5 * beta_m + 0.5 * beta_r)
+				}
 				w_star = ssq_r / (ssq_r + ssq_m)
 				return(w_star * beta_m + (1 - w_star) * beta_r)
 			} else if (m_ok){
@@ -161,10 +182,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				return(beta_r)
 			}
 			NA_real_
-		}
-	),
-
-	private = list(
+		},
 
 		filtered_cov_cache = NULL,
 		best_Xmm_colnames_matched = NULL,
@@ -259,15 +277,15 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			nRC = KKstats$nRC
 
 			if (m > 0){
-				private$clayton_copula_for_matched_pairs()
+				private$clayton_copula_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
 			m_ok = !is.null(beta_m) && is.finite(beta_m) &&
-			       !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0
+			       (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
 
 			if (nRT > 0 && nRC > 0){
-				private$weibull_for_reservoir()
+				private$weibull_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
@@ -298,7 +316,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			}
 		},
 
-		clayton_copula_for_matched_pairs = function(){
+		clayton_copula_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -312,9 +330,10 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 					dead = private$dead[i_matched],
 					Xmm = Xcand[i_matched, , drop = FALSE],
 					pair_id = m_vec[i_matched],
-					include_singletons = FALSE
+					include_singletons = FALSE,
+					estimate_only = estimate_only
 				)
-				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
+				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_T_matched = fit$beta
 					private$cached_values$ssq_beta_T_matched = fit$ssq
 					private$cached_values$theta_matched = fit$theta
@@ -325,7 +344,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			}
 		},
 
-		weibull_for_reservoir = function(){
+		weibull_for_reservoir = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -337,9 +356,10 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				fit = .fit_standard_weibull_aft_from_matrix(
 					y = private$y[i_reservoir],
 					dead = private$dead[i_reservoir],
-					Xmm = Xcand[i_reservoir, , drop = FALSE]
+					Xmm = Xcand[i_reservoir, , drop = FALSE],
+					estimate_only = estimate_only
 				)
-				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
+				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_T_reservoir = fit$beta
 					private$cached_values$ssq_beta_T_reservoir = fit$ssq
 					private$best_Xmm_colnames_reservoir = colnames(Xcand)

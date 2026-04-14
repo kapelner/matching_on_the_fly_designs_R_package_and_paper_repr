@@ -7,17 +7,15 @@
 #   devtools::load_all("EDI")
 #   source("simulations.R")
 #
+#   design_cls = list(DesignSeqOneByOneKK21, DesignSeqOneByOneUrn)
+#   inf_cls    = list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)
 #   sim = SimulationFramework$new(
-#     response_type = "continuous",
+#     response_type    = "continuous",
+#     design_classes   = design_cls,
+#     inference_classes = inf_cls,
 #     n = 100, p = 5, data_type = "linear", Nrep = 50, betaT = 1,
-#     design_params = list(
-#       DesignSeqOneByOneKK21 = list(lambda = 0.5),
-#       DesignSeqOneByOneUrn  = list(alpha = 2, beta = 2)
-#     ),
-#     inference_params = list(
-#       all_inference          = list(delta = 0, na.rm = TRUE),
-#       InferenceContinMultOLS = list(harden = FALSE)
-#     )
+#     design_params    = list(list(lambda = 0.5), list(alpha = 2, beta = 2)),
+#     inference_params = list(list(harden = FALSE), list())
 #   )
 #   sim$run()
 #   sim$summarize()
@@ -154,16 +152,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   replication and for every \code{(design, inference)} pair that is
     #'   skipped due to an error.  Default \code{FALSE}.
     #'
-    #' @param design_params Named list of lists.  Each name must exactly match a
-    #'   design class name present in \code{design_classes}, and the
-    #'   corresponding value is a named list of additional constructor arguments
-    #'   passed to that design's \code{$new()} call.  Design classes whose names
-    #'   are absent receive no extra arguments.  Example:
-    #'   \preformatted{design_params = list(
-    #'     DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
-    #'     DesignSeqOneByOneKK14 = list(lambda = 0.3, morrison = TRUE),
-    #'     DesignSeqOneByOneUrn  = list(alpha = 2, beta = 2)
-    #'   )}
+    #' @param design_params \code{NULL} (default) or a list of lists of the same
+    #'   length as \code{design_classes}.  Each element is a named list of
+    #'   additional constructor arguments passed to the corresponding design's
+    #'   \code{$new()} call (matched positionally).  Use an empty \code{list()}
+    #'   for a design that needs no extra arguments.  Example:
+    #'   \preformatted{design_classes = list(DesignSeqOneByOneKK21,
+    #'                         DesignSeqOneByOneUrn)
+    #' design_params  = list(
+    #'   list(lambda = 0.5, t_0_pct = 0.1),   # for KK21
+    #'   list(alpha  = 2,   beta    = 2)        # for Urn
+    #' )}
     #'   Commonly useful design constructor parameters:
     #'   \describe{
     #'     \item{\code{lambda}}{Matching-weight decay for
@@ -177,20 +176,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'       \code{FixedDesignBlocking}.}
     #'   }
     #'
-    #' @param inference_params Named list of lists.  Controls constructor
-    #'   arguments and inference method call arguments for specific inference
-    #'   classes, as well as a universal fallback entry.
+    #' @param inference_params \code{NULL} (default) or a list of lists of the
+    #'   same length as \code{inference_classes}.  Each element is a named list
+    #'   of arguments for the corresponding inference class (matched
+    #'   positionally).  Use an empty \code{list()} for a class that needs no
+    #'   extra arguments.
     #'
-    #'   Each non-\code{all_inference} name must exactly match an inference
-    #'   class name present in \code{inference_classes}.  The corresponding
-    #'   value is a named list of constructor arguments passed \emph{only} to
-    #'   that class's \code{$new()} call, after filtering to args actually
-    #'   present in its \code{initialize()} signature.
-    #'
-    #'   The special key \code{all_inference} provides arguments that apply to
-    #'   \emph{every} inference class and \emph{every} inference method call.
-    #'   These are routed automatically based on argument name:
-    #'   Routed argument groups are:
+    #'   Arguments are routed automatically to the appropriate call site based
+    #'   on argument name (see \code{.INF_ARG_ROUTES}):
     #'   \itemize{
     #'     \item constructor arguments such as \code{harden} and
     #'       \code{max_resample_attempts}
@@ -201,15 +194,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'     \item randomization CI arguments such as \code{ci_search_control}
     #'     \item shared randomization arguments such as \code{args_for_type}
     #'   }
-    #'   Class-specific entries take precedence over \code{all_inference} for
-    #'   constructor arguments.  Example:
-    #'   \preformatted{inference_params = list(
-    #'     all_inference          = list(delta = 0, na.rm = TRUE,
-    #'                                   harden = TRUE),
-    #'     InferenceContinMultOLS = list(harden = FALSE)
-    #'   )}
-    #'   Here every class gets \code{harden = TRUE} from \code{all_inference},
-    #'   except \code{InferenceContinMultOLS} which uses \code{harden = FALSE}.
+    #'   Example:
+    #'   \preformatted{inference_classes = list(InferenceContinMultOLS,
+    #'                            InferenceContinMultOLSKKIVWC)
+    #' inference_params = lapply(
+    #'   list(
+    #'     list(harden = FALSE), 
+    #'     list()
+    #'   ),
+    #'   append, 
+    #'   list(delta = 0)
+    #' )}
     #'
     #' @param inf_types Character vector controlling which inference outputs are
     #'   computed and recorded.  \code{NULL} (default) runs all eight types.
@@ -235,8 +230,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       sd_noise          = 1,
       prob_censoring    = 0.2,
       verbose           = FALSE,
-      design_params     = list(),
-      inference_params  = list(),
+      design_params     = NULL,
+      inference_params  = NULL,
       inf_types         = NULL
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
@@ -247,10 +242,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         stop("data_type must be 'linear' or 'nonlinear'")
       if (data_type == "nonlinear" && p < 5L)
         stop("nonlinear Friedman function requires p >= 5")
-      if (!is.list(design_params))
-        stop("design_params must be a named list")
-      if (!is.list(inference_params))
-        stop("inference_params must be a named list")
 
       valid_inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval",
                           "boot_ci",  "boot_pval",  "rand_ci",  "rand_pval")
@@ -277,8 +268,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$sd_noise         = sd_noise
       private$prob_censoring   = prob_censoring
       private$verbose          = verbose
-      private$design_params    = design_params
-      private$inference_params = inference_params
       private$inf_types        = inf_types
 
       private$want_asymp_ci   = "asymp_ci"   %in% inf_types
@@ -302,13 +291,46 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         inference_classes
       }
 
+      n_des = length(private$design_classes)
+      n_inf = length(private$inference_classes)
+
+      if (!is.null(design_params)) {
+        if (!is.list(design_params) || length(design_params) != n_des)
+          stop("design_params must be a list of lists of length ", n_des,
+               " (one per design class)")
+        for (i in seq_len(n_des))
+          if (!is.list(design_params[[i]]))
+            stop("design_params[[", i, "]] must be a named list")
+      }
+
+      if (!is.null(inference_params)) {
+        if (!is.list(inference_params) || length(inference_params) != n_inf)
+          stop("inference_params must be a list of lists of length ", n_inf,
+               " (one per inference class)")
+        for (i in seq_len(n_inf))
+          if (!is.list(inference_params[[i]]))
+            stop("inference_params[[", i, "]] must be a named list")
+      }
+
+      private$design_params    = design_params
+      private$inference_params = inference_params
+      private$design_labels    = private$.compute_design_labels()
+
       private$raw_results = list()
       private$has_run     = FALSE
     },
 
     # ── run() ─────────────────────────────────────────────────────────────────
+    #' @description
+    #' Execute the simulation replications.
+    #'
+    #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {
-      private$raw_results       = list()
+      private$raw_results          = list()
+      private$last_designs         = list()
+      private$last_inferences      = list()
+      private$valid_combos         = list()
+      private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
 
       n_des = length(private$design_classes)
@@ -331,10 +353,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         X      = rep_data$X
         y_base = rep_data$y_base
 
-        for (design_gen in private$design_classes) {
-          design_name  = design_gen$classname
-          design_extra = private$design_params[[design_name]]
-          if (is.null(design_extra)) design_extra = list()
+        for (di in seq_along(private$design_classes)) {
+          design_gen   = private$design_classes[[di]]
+          design_name  = private$design_labels[[di]]
+          design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
 
           des_obj = tryCatch(
             private$.build_design(design_gen, X, y_base, design_extra),
@@ -344,20 +366,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               NULL
             }
           )
+          private$last_designs[[design_name]] = des_obj
           if (is.null(des_obj)) next
 
-          for (inf_gen in private$inference_classes) {
+          for (ii in seq_along(private$inference_classes)) {
+            inf_gen  = private$inference_classes[[ii]]
             inf_name = inf_gen$classname
 
-            # Merge all_inference (lower priority) with class-specific (higher)
-            all_p   = private$inference_params[["all_inference"]]
-            if (is.null(all_p)) all_p = list()
-            class_p = private$inference_params[[inf_name]]
-            if (is.null(class_p)) class_p = list()
-            merged  = modifyList(all_p, class_p)
-
-            # Route merged params to their call-site destinations
-            routed = private$.route_inference_args(merged)
+            # Route per-class params to their call-site destinations
+            class_p = if (!is.null(private$inference_params)) private$inference_params[[ii]] else list()
+            routed  = private$.route_inference_args(class_p)
 
             inf_obj = tryCatch({
               inf_extra = private$.filter_by_formals(inf_gen, routed$inf_init)
@@ -369,6 +387,25 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               NULL
             })
             if (is.null(inf_obj)) next
+            private$last_inferences[[design_name]][[inf_name]] = inf_obj
+
+            # Track valid (design, inference, method) combos — once per unique pair
+            combo_key = paste0(design_name, "|||", inf_name)
+            if (!combo_key %in% private$seen_combo_keys) {
+              private$seen_combo_keys = c(private$seen_combo_keys, combo_key)
+              valid_methods = character(0L)
+              if (is(inf_obj, "InferenceAsymp") && (private$want_asymp_ci || private$want_asymp_pval))
+                valid_methods = c(valid_methods, "asymp")
+              if (is(inf_obj, "InferenceExact") && (private$want_exact_ci || private$want_exact_pval))
+                valid_methods = c(valid_methods, "exact")
+              if (is(inf_obj, "InferenceBoot") && (private$want_boot_ci || private$want_boot_pval))
+                valid_methods = c(valid_methods, "boot")
+              if (is(inf_obj, "InferenceRand") && (private$want_rand_ci || private$want_rand_pval))
+                valid_methods = c(valid_methods, "rand")
+              for (m in valid_methods)
+                private$valid_combos[[length(private$valid_combos) + 1L]] =
+                  list(design = design_name, inference = inf_name, method = m)
+            }
 
             # Point estimate (shared across inference methods)
             est = tryCatch({
@@ -487,8 +524,37 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(self)
     },
 
+    # ── get_designs() ─────────────────────────────────────────────────────────
+    #' @description
+    #' Return the design objects from the last simulation replication.
+    #' Throws an error if \code{$run()} has not been called yet.
+    #'
+    #' @return A named list of instantiated design objects, one per configured
+    #'   design class, from the final replication.
+    get_designs = function() {
+      if (!private$has_run) stop("Call $run() first.")
+      private$last_designs
+    },
+
+    # ── get_inferences() ──────────────────────────────────────────────────────
+    #' @description
+    #' Return the inference objects from the last simulation replication.
+    #' Throws an error if \code{$run()} has not been called yet.
+    #'
+    #' @return A named list of lists of instantiated inference objects from the
+    #'   final replication, indexed first by design class name and then by
+    #'   inference class name.
+    get_inferences = function() {
+      if (!private$has_run) stop("Call $run() first.")
+      private$last_inferences
+    },
+
     # ── get_results() ─────────────────────────────────────────────────────────
-    # Returns a data.table with one row per (rep, design, inference, method).
+    #' @description
+    #' Get the raw results of the simulation.
+    #'
+    #' @return A \code{data.table} containing one row per (replication, design,
+    #'   inference class, inference method).
     get_results = function() {
       if (!private$has_run) stop("Call $run() first.")
       if (length(private$raw_results) == 0L)
@@ -501,42 +567,74 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     },
 
     # ── summarize() ───────────────────────────────────────────────────────────
-    # Returns a data.table with MSE, and conditionally coverage / power,
-    # per (design, inference, method).
+    #' @description
+    #' Aggregate and summarize simulation results.
+    #'
+    #' @return A \code{data.table} with aggregated metrics (MSE, coverage,
+    #'   power) grouped by design, inference class, and inference method.
     summarize = function() {
       if (!private$has_run) stop("Call $run() first.")
-      dt = self$get_results()
-      if (nrow(dt) == 0L) { message("No results."); return(invisible(NULL)) }
 
+      # ── Reference grid of all valid (design, inference, method) combos ────────
+      if (length(private$valid_combos) == 0L) {
+        message("No results."); return(invisible(NULL))
+      }
+      ref_grid = data.table::rbindlist(lapply(private$valid_combos, as.list))
+
+      # ── Per-class params strings ───────────────────────────────────────────────
+      inf_names = vapply(private$inference_classes, function(g) g$classname, "")
+      design_params_map = stats::setNames(
+        lapply(seq_along(private$design_classes), function(di)
+          private$.params_to_str(if (!is.null(private$design_params)) private$design_params[[di]] else NULL)),
+        private$design_labels)
+      inf_params_map = stats::setNames(
+        lapply(seq_along(private$inference_classes), function(ii)
+          private$.params_to_str(if (!is.null(private$inference_params)) private$inference_params[[ii]] else NULL)),
+        inf_names)
+
+      ref_grid[, design_params    := unlist(design_params_map[design])]
+      ref_grid[, inference_params := unlist(inf_params_map[inference])]
+
+      # ── Aggregate raw results ─────────────────────────────────────────────────
+      dt         = self$get_results()
       betaT      = private$betaT
       alpha      = private$alpha
       report_cov = any(grepl("_ci$",   private$inf_types))
       report_pow = any(grepl("_pval$", private$inf_types))
 
-      result = dt[, {
-        est_ok = estimate[is.finite(estimate)]
-        ci_ok  = .SD[is.finite(ci_lo) & is.finite(ci_hi)]
-        pv_ok  = pval[is.finite(pval)]
-        row = list(
-          MSE   = if (length(est_ok)) round(mean((est_ok - betaT)^2), 5L) else NA_real_,
-          n_est = length(est_ok)
-        )
-        if (report_cov) {
-          row$coverage = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= betaT & betaT <= ci_ok$ci_hi), 3L) else NA_real_
-          row$n_cov    = nrow(ci_ok)
-        }
-        if (report_pow) {
-          row$power = if (length(pv_ok)) round(mean(pv_ok < alpha), 3L) else NA_real_
-          row$n_pow = length(pv_ok)
-        }
-        row
-      }, by = .(design, inference, method),
-         .SDcols = c("estimate", "ci_lo", "ci_hi", "pval")]
+      if (nrow(dt) > 0L) {
+        agg = dt[, {
+          est_ok = estimate[is.finite(estimate)]
+          ci_ok  = .SD[is.finite(ci_lo) & is.finite(ci_hi)]
+          pv_ok  = pval[is.finite(pval)]
+          row = list(
+            MSE   = if (length(est_ok)) round(mean((est_ok - betaT)^2), 5L) else NA_real_,
+            n_est = length(est_ok)
+          )
+          if (report_cov) {
+            row$coverage = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= betaT & betaT <= ci_ok$ci_hi), 3L) else NA_real_
+            row$n_cov    = nrow(ci_ok)
+          }
+          if (report_pow) {
+            row$power = if (length(pv_ok)) round(mean(pv_ok < alpha), 3L) else NA_real_
+            row$n_pow = length(pv_ok)
+          }
+          row
+        }, by = .(design, inference, method),
+           .SDcols = c("estimate", "ci_lo", "ci_hi", "pval")]
+      } else {
+        agg = data.table::data.table(design = character(), inference = character(),
+                                     method = character())
+      }
 
+      # ── Right-join: every valid combo appears, NA for those with no data ──────
+      result = agg[ref_grid, on = .(design, inference, method)]
       result[order(design, inference, method)]
     },
 
     # ── print() ───────────────────────────────────────────────────────────────
+    #' @description
+    #' Print a summary of the \code{SimulationFramework} configuration and status.
     print = function() {
       cat("SimulationFramework\n")
       cat("  response_type :", private$response_type, "\n")
@@ -546,10 +644,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cat("  alpha / B_boot / r_rand :",
           private$alpha, "/", private$B_boot, "/", private$r_rand, "\n")
       cat("  inf_types     :", paste(private$inf_types, collapse = ", "), "\n")
-      if (length(private$design_params))
-        cat("  design_params :", paste(names(private$design_params), collapse = ", "), "\n")
-      if (length(private$inference_params))
-        cat("  inference_params:", paste(names(private$inference_params), collapse = ", "), "\n")
+      if (!is.null(private$design_params))
+        cat("  design_params : (positional list of length", length(private$design_params), ")\n")
+      if (!is.null(private$inference_params))
+        cat("  inference_params: (positional list of length", length(private$inference_params), ")\n")
       design_names = vapply(private$design_classes,  function(g) g$classname, "")
       inf_names    = vapply(private$inference_classes, function(g) g$classname, "")
       cat("  Designs (", length(design_names), "):",
@@ -599,9 +697,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     want_rand_pval   = NULL,
     design_classes   = NULL,
     inference_classes = NULL,
+    design_labels    = NULL,
     raw_results      = NULL,
     has_run          = FALSE,
     exact_warned_classes = NULL,
+    last_designs     = NULL,
+    last_inferences  = NULL,
+    valid_combos     = NULL,
+    seen_combo_keys  = NULL,
 
     # ── Inference arg routing ─────────────────────────────────────────────────
     #
@@ -678,6 +781,31 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       fn_formals = names(formals(init_fn))
       if ("..." %in% fn_formals) return(args)
       args[names(args) %in% fn_formals]
+    },
+
+    # Serialize a named params list to "k=v, ..." string.
+    .params_to_str = function(p) {
+      if (is.null(p) || length(p) == 0L) return("")
+      kv = mapply(function(k, v) paste0(k, "=", paste(deparse(v), collapse = "")),
+                  names(p), p, SIMPLIFY = TRUE)
+      paste(kv, collapse = ", ")
+    },
+
+    # Build unique per-instance design labels: "ClassName (params)" with
+    # " [k]" suffix when two instances would otherwise share the same label.
+    .compute_design_labels = function() {
+      labels = vapply(seq_along(private$design_classes), function(di) {
+        cls = private$design_classes[[di]]$classname
+        ps  = private$.params_to_str(
+          if (!is.null(private$design_params)) private$design_params[[di]] else NULL)
+        if (nchar(ps) > 0L) paste0(cls, " (", ps, ")") else cls
+      }, "")
+      # Append [k] for any group of labels that are still identical
+      for (lbl in unique(labels[duplicated(labels)])) {
+        idx = which(labels == lbl)
+        for (k in seq_along(idx)) labels[idx[k]] = paste0(lbl, " [", k, "]")
+      }
+      labels
     },
 
     # ── Data generation ───────────────────────────────────────────────────────

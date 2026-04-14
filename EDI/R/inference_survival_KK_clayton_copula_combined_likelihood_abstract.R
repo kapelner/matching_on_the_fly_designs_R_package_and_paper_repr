@@ -73,9 +73,7 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 		best_Xmm_colnames = NULL,
 		best_par = NULL,
 
-		# Overridden to use the best design matrix and starting parameters from the initial fit
-		# to speed up randomization-based inference.
-		compute_treatment_estimate_during_randomization_inference = function(){
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
 			if (is.null(private$best_Xmm_colnames)){
 				private$shared()
@@ -83,7 +81,7 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 
 			# If we still don't have it (e.g., initial fit failed), fall back to standard
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate())
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix columns as the original fit
@@ -104,7 +102,8 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 				Xmm = Xmm,
 				pair_id = m_vec,
 				include_singletons = TRUE,
-				starts = list(private$best_par)
+				starts = list(private$best_par),
+				estimate_only = estimate_only
 			)
 
 			if (!is.null(fit) && is.finite(fit$beta)){
@@ -207,9 +206,10 @@ InferenceAbstractKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceAbstr
 					dead = private$dead,
 					Xmm = Xcand,
 					pair_id = m_vec,
-					include_singletons = TRUE
+					include_singletons = TRUE,
+					estimate_only = estimate_only
 				)
-				if (!is.null(fit) && is.finite(fit$beta) && is.finite(fit$ssq) && fit$ssq > 0){
+				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_hat_T = fit$beta
 			if (estimate_only) return(invisible(NULL))
 					private$cached_values$s_beta_hat_T = sqrt(fit$ssq)

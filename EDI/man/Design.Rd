@@ -39,6 +39,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
 \item \href{#method-Design-get_block_ids}{\code{Design$get_block_ids()}}
+\item \href{#method-Design-summarize_blocks}{\code{Design$summarize_blocks()}}
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
@@ -349,6 +350,26 @@ If the design is a block design, get block identifiers (otherwise halts)
 
 \subsection{Returns}{
 An integer vector of block identifiers.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-summarize_blocks"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-summarize_blocks}{}}}
+\subsection{Method \code{summarize_blocks()}}{
+Summarize the covariates within blocks.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$summarize_blocks(block_ids = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{block_ids}}{A vector of block identifiers to summarize. If NULL, defaults to all blocks.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of data.tables, one for each block.
 }
 }
 \if{html}{\out{<hr>}}

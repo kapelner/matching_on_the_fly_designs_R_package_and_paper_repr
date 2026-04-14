@@ -62,8 +62,18 @@ InferenceSurvivalMultiDepCensTransformRegr = R6::R6Class("InferenceSurvivalMulti
 			keys = character()
 			base_colnames = colnames(X_cov_orig)
 			if (is.null(base_colnames)) base_colnames = rep("x", ncol(X_cov_orig))
+
+			# This model has 2*(p+1) + 3 parameters. To keep optimization feasible, 
+			# we cap p such that parameters < n / 4 (approx).
+			max_allowed_p = max(1L, floor((private$n - 5) / 4))
+
 			for (thresh in thresholds){
 				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+				
+				# If we still have too many columns, we must drop more based on correlation
+				# but here we just skip this threshold if it's over the cap.
+				if (ncol(X_cov) > max_allowed_p) next
+
 				X_full = cbind(treatment = private$w, X_cov)
 				reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), required_cols = 1L)
 				X_red = reduced$X_reduced

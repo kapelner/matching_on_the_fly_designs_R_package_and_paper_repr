@@ -35,7 +35,6 @@ regression coefficients by direct likelihood maximization.
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-duplicate}{\code{InferenceAbstractKKClaytonCopulaIVWC$duplicate()}}
-\item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate_during_randomization_inference()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-clone}{\code{InferenceAbstractKKClaytonCopulaIVWC$clone()}}
 }
 }
@@ -155,19 +154,6 @@ Duplicates the object while preserving caches.
 }
 \if{html}{\out{</div>}}
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate_during_randomization_inference}{}}}
-\subsection{Method \code{compute_treatment_estimate_during_randomization_inference()}}{
-Overridden to use the best design matrix and starting parameters from the initial fit
-to speed up randomization-based inference.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate_during_randomization_inference(
-  
-)}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-clone"></a>}}

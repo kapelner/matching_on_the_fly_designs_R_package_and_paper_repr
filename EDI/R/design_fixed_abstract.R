@@ -111,30 +111,49 @@ FixedDesign = R6::R6Class("FixedDesign",
 	private = list(
 		strata_cols = NULL,
 		num_bins_for_continuous_covariate = NULL,
+		B_preferred = NULL,
 
 		get_strata_keys = function(){
 			n = private$t
 			if (n == 0) return(character(0))
-			keys = rep("", n)
-			for (col in private$strata_cols) {
+			strata_cols = if (is.null(private$strata_cols)) names(private$Xraw) else private$strata_cols
+
+			col_to_str = function(col) {
 				vec = private$Xraw[[col]]
 				if (is.numeric(vec)) {
 					probs = seq(0, 1, length.out = private$num_bins_for_continuous_covariate + 1)
 					breaks = unique(stats::quantile(vec, probs = probs, na.rm = TRUE))
-					if (length(breaks) > 1) {
-						vec_str = as.character(cut(vec, breaks = breaks, include.lowest = TRUE))
-					} else {
-						vec_str = as.character(vec)
+					s = if (length(breaks) > 1) as.character(cut(vec, breaks = breaks, include.lowest = TRUE)) else as.character(vec)
+				} else {
+					s = as.character(vec)
+				}
+				s[is.na(s)] = "NA"
+				s
+			}
+
+			append_key = function(keys, col_str) {
+				if (all(nchar(keys) == 0L)) col_str else paste(keys, col_str, sep = "|")
+			}
+
+			keys = rep("", n)
+
+			if (!is.null(private$B_preferred)) {
+				target = if (is.na(private$B_preferred)) floor(sqrt(n)) else as.integer(private$B_preferred)
+				for (col in strata_cols) {
+					new_keys = append_key(keys, col_to_str(col))
+					if (length(unique(new_keys)) <= target) {
+						keys = new_keys
 					}
-				} else {
-					vec_str = as.character(vec)
 				}
-				vec_str[is.na(vec_str)] = "NA"
-				if (nchar(keys[1]) == 0) {
-					keys = vec_str
-				} else {
-					keys = paste(keys, vec_str, sep = "|")
+			} else {
+				for (col in strata_cols) {
+					keys = append_key(keys, col_to_str(col))
 				}
+			}
+
+			num_blocks = length(unique(keys))
+			if (num_blocks > n) {
+				stop("Number of blocks (", num_blocks, ") exceeds sample size (", n, "). Reduce the number of strata columns or use fewer bins.")
 			}
 			keys
 		}
