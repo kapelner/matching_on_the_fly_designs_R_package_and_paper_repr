@@ -38,7 +38,7 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	des$overwrite_all_subject_assignments(c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
 	des$add_all_subject_responses(c(1, 1, 0, 1, 0, 0, 1, 0, 0, 0))
 
-	inf <- InferenceIncidenceSimplePropDiffPooled$new(des, verbose = FALSE)
+	inf <- InferenceAllSimpleMeanDiffPooledVar$new(des, verbose = FALSE)
 	est <- inf$compute_treatment_estimate()
 	ci <- inf$compute_asymp_confidence_interval(alpha = 0.05)
 	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
@@ -61,12 +61,19 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
 	expect_equal(pval, expected_pval, tolerance = 1e-12)
 
-	des_bad <- DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous", verbose = FALSE)
-	for (i in 1:6) {
-		des_bad$add_one_subject_to_experiment_and_assign(data.frame(x = i))
+	# Test with continuous
+	des_cont <- DesignSeqOneByOneBernoulli$new(n = 10, response_type = "continuous", verbose = FALSE)
+	set.seed(1)
+	for (i in 1:10) {
+		des_cont$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	add_all_subject_responses_seq(des_bad, rnorm(6))
-	expect_error(InferenceIncidenceSimplePropDiffPooled$new(des_bad, verbose = FALSE), "incidence")
+	y_cont = rnorm(10)
+	add_all_subject_responses_seq(des_cont, y_cont)
+	
+	inf_cont <- InferenceAllSimpleMeanDiffPooledVar$new(des_cont, verbose = FALSE)
+	est_cont <- inf_cont$compute_treatment_estimate()
+	expect_true(is.numeric(est_cont))
+	expect_true(is.finite(inf_cont$compute_asymp_two_sided_pval_for_treatment_effect()))
 })
 
 test_that("Azriel inference is gated to blocked incidence designs", {

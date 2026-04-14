@@ -63,7 +63,7 @@ design_params = list(
 
 # ── Fixed: inference classes ───────────────────────────────────────
 inference_classes = list(
-  InferenceAllSimpleMeanDiff,
+  InferenceIncidenceWald,
   InferenceIncidAzriel,
   InferenceIncidExtendedRobins,
   InferenceIncidenceExactBinomial
@@ -89,7 +89,6 @@ for (betaT in betaTs) {
           "\n── betaT=%g  n=%d  p=%d  data_type=%s ───────────────────",
           betaT, n, p, data_type))
 
-     
         sim = suppressWarnings(
           SimulationFramework$new(
             response_type     = "incidence",
