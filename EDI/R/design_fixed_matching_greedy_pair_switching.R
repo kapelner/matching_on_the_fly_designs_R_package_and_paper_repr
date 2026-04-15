@@ -83,7 +83,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 
 			w_mat = GreedyExperimentalDesign::resultsBinaryMatchThenGreedySearch(
 				search_obj,
-				max_vectors = r,
+				num_vectors = r,
 				form = "one_zero"
 			)
 

@@ -1,8 +1,9 @@
 #' Paired Sign Test Inference for KK Designs with Ordinal Response
 #'
-#' Fits a paired sign test for ordinal responses under a KK matching-on-the-fly design.
-#' For matched pairs, it considers the sign of the within-pair differences.
-#' Reservoir subjects are not included in this simple paired test.
+#' Fits a paired sign test for ordinal responses under a KK matching-on-the-fly
+#' design that stores ordinary matched pairs. For matched pairs, it considers the
+#' sign of the within-pair differences. Reservoir subjects are not included in this
+#' simple paired test.
 #'
 #' @export
 #' @examples
@@ -11,7 +12,7 @@
 #'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
 #'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 #' )
-#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal",
+#' seq_des <- DesignSeqOneByOneKK21$new(n = nrow(x_dat), response_type = "ordinal",
 #' verbose = FALSE)
 #' for (i in seq_len(nrow(x_dat))) {
 #'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
@@ -28,13 +29,12 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param	num_cores			Number of CPU cores.
+		#' @param	des_obj		A completed KK matching-on-the-fly design object.
 		#' @param	verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "ordinal")
 			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
+				stop(class(self)[1], " requires a KK matching-on-the-fly design with matched pairs.")
 			}
 			super$initialize(des_obj, verbose)
 		},

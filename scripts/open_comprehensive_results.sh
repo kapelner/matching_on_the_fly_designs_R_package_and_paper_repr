@@ -11,29 +11,20 @@ if [ -z "$FILES" ]; then
     exit 1
 fi
 
-TEMP_DIR=$(mktemp -d)
-echo "Preparing sorted files in $TEMP_DIR..."
+echo "Sorting CSV files in-place by error_message (errors first)..."
 
 for FILE in $FILES; do
-    BASENAME=$(basename "$FILE")
-    SORTED_FILE="$TEMP_DIR/$BASENAME"
-    
-    # Use R to sort by error_message (NA values last)
-    # We use a simple R command to maintain CSV integrity
+    # Use R to sort by error_message (NA values last) in-place
     Rscript -e "
         library(data.table)
         dt = fread('$FILE')
         if ('error_message' %in% names(dt)) {
             # Sort with errors first (non-NA first)
             setorder(dt, -error_message, na.last = TRUE)
+            fwrite(dt, '$FILE')
         }
-        fwrite(dt, '$SORTED_FILE')
     "
 done
 
-echo "Opening sorted files in LibreOffice Calc..."
-libreoffice --calc "$TEMP_DIR"/*.csv &
-
-# Optional: cleanup temp dir after a delay or on exit
-# (but we want the files to stay until LibreOffice reads them)
-(sleep 60 && rm -rf "$TEMP_DIR") &
+echo "Opening files in LibreOffice Calc..."
+libreoffice --calc --nolockcheck -o package_tests/comprehensive_tests_results_nc_*.csv &

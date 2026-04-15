@@ -9,9 +9,10 @@ Paired Sign Test Inference for KK Designs with Ordinal Response
 Paired Sign Test Inference for KK Designs with Ordinal Response
 }
 \details{
-Fits a paired sign test for ordinal responses under a KK matching-on-the-fly design.
-For matched pairs, it considers the sign of the within-pair differences.
-Reservoir subjects are not included in this simple paired test.
+Fits a paired sign test for ordinal responses under a KK matching-on-the-fly
+design that stores ordinary matched pairs. For matched pairs, it considers the
+sign of the within-pair differences. Reservoir subjects are not included in this
+simple paired test.
 }
 \examples{
 set.seed(1)
@@ -19,7 +20,7 @@ x_dat <- data.frame(
   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
 )
-seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "ordinal",
+seq_des <- DesignSeqOneByOneKK21$new(n = nrow(x_dat), response_type = "ordinal",
 verbose = FALSE)
 for (i in seq_len(nrow(x_dat))) {
   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
@@ -73,11 +74,9 @@ Initialize the inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+\item{\code{des_obj}}{A completed KK matching-on-the-fly design object.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{num_cores}}{Number of CPU cores.}
 }
 \if{html}{\out{</div>}}
 }

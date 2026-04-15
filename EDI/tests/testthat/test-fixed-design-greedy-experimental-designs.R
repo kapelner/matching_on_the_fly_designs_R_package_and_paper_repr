@@ -11,7 +11,6 @@ test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected",
 		FixedDesignBinaryMatch$new(
 			response_type = "continuous",
 			n = 8,
-			num_cores = 1,
 			verbose = FALSE
 		),
 		FixedDesignRerandomization$new(
@@ -19,7 +18,6 @@ test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected",
 			n = 8,
 			obj_val_cutoff = 100,
 			objective = "abs_sum_diff",
-			num_cores = 1,
 			verbose = FALSE
 		),
 		FixedDesignMatchingGreedyPairSwitching$new(
@@ -27,10 +25,12 @@ test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected",
 			n = 8,
 			objective = "abs_sum_diff",
 			max_designs = 4,
-			num_cores = 1,
 			verbose = FALSE
 		)
 	)
+
+	set_num_cores(1)
+	on.exit(unset_num_cores())
 
 	for (des in designs) {
 		des$add_all_subjects_to_experiment(X)
@@ -56,7 +56,6 @@ test_that("GreedyExperimentalDesign-backed fixed designs honor multicore randomi
 		FixedDesignBinaryMatch$new(
 			response_type = "continuous",
 			n = 8,
-			num_cores = 2,
 			verbose = FALSE
 		),
 		FixedDesignRerandomization$new(
@@ -64,7 +63,6 @@ test_that("GreedyExperimentalDesign-backed fixed designs honor multicore randomi
 			n = 8,
 			obj_val_cutoff = 100,
 			objective = "abs_sum_diff",
-			num_cores = 2,
 			verbose = FALSE
 		),
 		FixedDesignMatchingGreedyPairSwitching$new(
@@ -72,10 +70,12 @@ test_that("GreedyExperimentalDesign-backed fixed designs honor multicore randomi
 			n = 8,
 			objective = "abs_sum_diff",
 			max_designs = 4,
-			num_cores = 2,
 			verbose = FALSE
 		)
 	)
+
+	set_num_cores(2)
+	on.exit(unset_num_cores())
 
 	for (des in designs) {
 		des$add_all_subjects_to_experiment(X)

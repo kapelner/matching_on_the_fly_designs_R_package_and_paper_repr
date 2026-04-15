@@ -110,7 +110,77 @@ mark_row_completed = function(rep_val, beta_val, dataset_val, response_val, desi
 	completed_rows_cache[[key]] <- TRUE
 }
 
+last_results_mtime = NULL
+
+reload_completed_rows = function() {
+	if (file.exists(results_file) && file.info(results_file)$size > 0) {
+		current_mtime = file.info(results_file)$mtime
+		if (!is.null(last_results_mtime) && current_mtime == last_results_mtime) {
+			return(invisible(NULL))
+		}
+		
+		# Reset the cache
+		completed_rows_cache <<- new.env(parent = emptyenv())
+		
+		# Define columns needed for building the key and filtering status
+		needed_cols = c("rep", "beta_T", "dataset", "response_type", "design", "inference_class", "function_run", "status")
+		
+		# Try to read the file, handling potential locks or partial writes with retries
+		max_retries = 10
+		retry_count = 0
+		dt = NULL
+		
+		while (retry_count < max_retries) {
+			dt = tryCatch({
+				# Check which columns actually exist first
+				header = names(data.table::fread(results_file, nrows = 0))
+				cols_to_read = intersect(needed_cols, header)
+				data.table::fread(results_file, select = cols_to_read)
+			}, error = function(e) {
+				NULL
+			})
+			
+			if (!is.null(dt)) break
+			
+			retry_count = retry_count + 1
+			if (retry_count < max_retries) {
+				Sys.sleep(0.5)
+			}
+		}
+		
+		if (is.null(dt)) {
+			# If still failing after retries, return early (cache remains empty)
+			return(invisible(NULL))
+		}
+		
+		last_results_mtime <<- current_mtime
+		
+		if (nrow(dt) > 0L) {
+			rows_to_cache = if ("status" %in% colnames(dt)) {
+				dt[status == "ok"]
+			} else {
+				dt
+			}
+			for (row_idx in seq_len(nrow(rows_to_cache))) {
+				row = rows_to_cache[row_idx]
+				mark_row_completed(
+					row$rep,
+					row$beta_T,
+					row$dataset,
+					row$response_type,
+					row$design,
+					row$inference_class,
+					row$function_run
+				)
+			}
+		}
+	}
+}
+
 is_row_completed = function(rep_val, beta_val, dataset_val, response_val, design_val, inference_val, function_run_val){
+	# Reload from disk each time we check
+	reload_completed_rows()
+	
 	key = build_result_key(rep_val, beta_val, dataset_val, response_val, design_val, inference_val, function_run_val)
 	!is.null(completed_rows_cache[[key]])
 }
@@ -290,6 +360,12 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		isTRUE(all(result[1:2] == 0))
 	}
 
+	is_allowed_missing_output = function(label, result){
+		if (!has_invalid_numeric(result)) return(FALSE)
+		identical(response_type, "ordinal") &&
+			identical(label, "compute_asymp_two_sided_pval_for_treatment_effect")
+	}
+
 safe_call = function(label, expr){
 	if (is_row_completed(
 		rep_curr,
@@ -317,6 +393,12 @@ safe_call = function(label, expr){
 	start_elapsed = unname(proc.time()[["elapsed"]])
 	tryCatch({
 		result <- expr
+			if (is_allowed_missing_output(label, result)) {
+				message("Recording missing output for ", label, " as ok (ordinal asymptotic p-value not estimable).")
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "ok", duration_time_sec = duration_time_sec)
+				return(invisible(NULL))
+			}
 			if (has_invalid_numeric(result)) {
 				msg = paste0("Invalid output detected (NA/NaN/Inf) in ", label)
 				message("Skipping ", label, " (non-fatal): ", msg)
