@@ -14,6 +14,10 @@
 #' Fitting a single logistic regression on the stacked dataset maximises the
 #' combined log-likelihood L = L_cond(pairs) + L_marg(reservoir).
 #'
+#' Under \code{harden = TRUE}, the combined fit preserves the treatment column and
+#' retries reduced covariate sets after QR-based rank reduction. Extreme finite
+#' coefficients / standard errors are rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKClogitCombinedLikelihood",
 	lock_objects = FALSE,
@@ -44,6 +48,17 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
+
+		fit_combined_logistic_candidate = function(X_comb, y_comb, j_beta_T, estimate_only = FALSE){
+			tryCatch(
+				if (estimate_only) {
+					fast_logistic_regression(X_comb, y_comb)
+				} else {
+					fast_logistic_regression_with_var(X_comb, y_comb, j = j_beta_T)
+				},
+				error = function(e) NULL
+			)
+		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
@@ -126,26 +141,30 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 				return(invisible(NULL))
 			}
 
-			# ---- QR-reduce to full rank, preserving beta_T column ---------------
-			qr_X = qr(X_comb)
-			if (qr_X$rank < ncol(X_comb)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(j_beta_T %in% keep)) keep[qr_X$rank] = j_beta_T
-				keep     = sort(keep)
-				X_comb   = X_comb[, keep, drop = FALSE]
-				j_beta_T = which(keep == j_beta_T)
-			}
+			colnames(X_comb) = paste0("x", seq_len(ncol(X_comb)))
+			colnames(X_comb)[j_beta_T] = "beta_T"
 
-			# ---- Fit combined logistic ------------------------------------------
-			mod = tryCatch(
-				if (estimate_only) {
-					fast_logistic_regression(X_comb, y_comb)
-				} else {
-					fast_logistic_regression_with_var(X_comb, y_comb, j = j_beta_T)
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_comb,
+				required_cols = j_beta_T,
+				fit_fun = function(X_fit){
+					j_beta_fit = match("beta_T", colnames(X_fit))
+					private$fit_combined_logistic_candidate(X_fit, y_comb, j_beta_fit, estimate_only = estimate_only)
 				},
-				error = function(e) NULL
-				)
-			if (is.null(mod) || !is.finite(mod$b[j_beta_T])){
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod)) return(FALSE)
+					j_beta_fit = match("beta_T", colnames(X_fit))
+					if (!is.finite(j_beta_fit) || is.na(j_beta_fit)) return(FALSE)
+					beta = suppressWarnings(as.numeric(mod$b[j_beta_fit]))
+					if (!is.finite(beta) || abs(beta) > private$max_abs_reasonable_coef) return(FALSE)
+					if (estimate_only) return(TRUE)
+					ssq = suppressWarnings(as.numeric(mod$ssq_b_j))
+					is.finite(ssq) && ssq > 0 && sqrt(ssq) <= private$max_abs_reasonable_coef
+				}
+			)
+			mod = attempt$fit
+			j_beta_T = if (!is.null(attempt$X)) match("beta_T", colnames(attempt$X)) else NA_integer_
+			if (is.null(mod) || !is.finite(j_beta_T) || is.na(j_beta_T) || !is.finite(mod$b[j_beta_T])){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z         = TRUE

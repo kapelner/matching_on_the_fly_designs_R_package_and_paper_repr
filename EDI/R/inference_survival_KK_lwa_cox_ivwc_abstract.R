@@ -7,6 +7,11 @@
 #' two estimates (both log-hazard ratios) are combined via a variance-weighted linear
 #' combination.
 #'
+#' Under \code{harden = TRUE}, multivariate component fits preserve the treatment
+#' column and retry reduced covariate sets after QR-based rank reduction and
+#' correlation-based pruning. Extreme finite coefficients / standard errors are
+#' rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 	lock_objects = FALSE,
@@ -61,6 +66,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
@@ -119,71 +125,91 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 			}
 		},
 
-		build_design_matrix = function(w, X){
-			X_full = matrix(w, ncol = 1)
-			colnames(X_full) = "w"
-			if (private$include_covariates()){
-				X_full = cbind(X_full, as.matrix(X))
-				qr_full = qr(X_full)
-				r_full = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L
-					keep = sort(keep)
-					X_full = X_full[, keep, drop = FALSE]
+		cox_design_candidates = function(w, X){
+			X_full = cbind(w = w, as.matrix(X))
+			if (!private$harden || ncol(X_full) <= 1L){
+				return(list(X_full))
+			}
+
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit) X_fit,
+				fit_ok = function(mod, X_fit, keep) TRUE
+			)
+			candidates = list(attempt$X)
+			keys = paste(colnames(candidates[[1L]]), collapse = "|")
+
+			thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			X_cov_orig = X_full[, -1, drop = FALSE]
+			for (thresh in thresholds){
+				X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
+				X_try = cbind(w = w, X_cov)
+				attempt_try = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_try,
+					required_cols = 1L,
+					fit_fun = function(X_fit) X_fit,
+					fit_ok = function(mod, X_fit, keep) TRUE
+				)
+				key = paste(colnames(attempt_try$X), collapse = "|")
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = attempt_try$X
+					keys = c(keys, key)
 				}
 			}
-			X_full
+			candidates
 		},
 
 		fit_cox_model = function(y, dead, w, X, cluster = NULL, robust = FALSE){
 			if (length(y) == 0L || sum(dead) == 0L) return(NULL)
+			for (X_full in private$cox_design_candidates(w, X)){
+				dat = data.frame(y = y, dead = dead, w = X_full[, "w"])
+				formula_str = "survival::Surv(y, dead) ~ w"
 
-			X_full = private$build_design_matrix(w, X)
-			dat = data.frame(y = y, dead = dead, w = X_full[, "w"])
-			formula_str = "survival::Surv(y, dead) ~ w"
-
-			X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-			if (ncol(X_covs) > 0){
-				colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-				dat = cbind(dat, X_covs)
-				formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-			}
-
-			if (!is.null(cluster)){
-				dat$cluster = factor(cluster)
-				formula_str = paste(formula_str, "+ cluster(cluster)")
-			}
-
-			mod = tryCatch(
-				suppressWarnings(survival::coxph(as.formula(formula_str), data = dat, robust = robust)),
-				error = function(e) NULL
-			)
-
-			if (is.null(mod) && ncol(X_covs) > 0){
-				fallback_formula = "survival::Surv(y, dead) ~ w"
-				if (!is.null(cluster)){
-					fallback_formula = paste(fallback_formula, "+ cluster(cluster)")
+				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
+				if (ncol(X_covs) > 0){
+					colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+					dat = cbind(dat, X_covs)
+					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
 				}
+
+				if (!is.null(cluster)){
+					dat$cluster = factor(cluster)
+					formula_str = paste(formula_str, "+ cluster(cluster)")
+				}
+
 				mod = tryCatch(
-					suppressWarnings(survival::coxph(as.formula(fallback_formula), data = dat, robust = robust)),
+					suppressWarnings(survival::coxph(as.formula(formula_str), data = dat, robust = robust)),
 					error = function(e) NULL
 				)
+
+				if (is.null(mod) && ncol(X_covs) > 0){
+					fallback_formula = "survival::Surv(y, dead) ~ w"
+					if (!is.null(cluster)){
+						fallback_formula = paste(fallback_formula, "+ cluster(cluster)")
+					}
+					mod = tryCatch(
+						suppressWarnings(survival::coxph(as.formula(fallback_formula), data = dat, robust = robust)),
+						error = function(e) NULL
+					)
+				}
+
+				if (is.null(mod)) next
+
+				coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
+				vcv   = tryCatch(stats::vcov(mod), error = function(e) NULL)
+				if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))){
+					next
+				}
+
+				beta = as.numeric(coefs["w"])
+				se   = sqrt(as.numeric(vcv["w", "w"]))
+				if (!is.finite(beta) || abs(beta) > private$max_abs_reasonable_coef ||
+				    !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef) next
+
+				return(list(beta = beta, ssq = se^2))
 			}
-
-			if (is.null(mod)) return(NULL)
-
-			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-			vcv   = tryCatch(stats::vcov(mod), error = function(e) NULL)
-			if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))){
-				return(NULL)
-			}
-
-			beta = as.numeric(coefs["w"])
-			se   = sqrt(as.numeric(vcv["w", "w"]))
-			if (!is.finite(beta) || !is.finite(se) || se <= 0) return(NULL)
-
-			list(beta = beta, ssq = se^2)
+			NULL
 		},
 
 		lwa_cox_for_matched_pairs = function(){

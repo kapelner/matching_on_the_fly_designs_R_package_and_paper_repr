@@ -5,6 +5,10 @@
 #' are assigned to a single shared "reservoir" stratum. The treatment effect beta_T
 #' and covariate slopes beta_xs are shared across all strata.
 #'
+#' Under \code{harden = TRUE}, the multivariate fit preserves the treatment column
+#' and retries reduced covariate sets after QR-based rank reduction. Extreme finite
+#' coefficients / standard errors are rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKStratCoxCombinedLikelihood",
 	lock_objects = FALSE,
@@ -53,6 +57,7 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
@@ -65,16 +70,8 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			if (private$include_covariates()){
+			if (private$include_covariates() && ncol(private$get_X()) > 0L){
 				X_full = cbind(X_full, as.matrix(private$get_X()))
-				qr_full = qr(X_full)
-				r_full = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L
-					keep = sort(keep)
-					X_full = X_full[, keep, drop = FALSE]
-				}
 			}
 			X_full
 		},
@@ -102,22 +99,36 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 			}
 
 			X_full = private$build_design_matrix()
-			dat = data.frame(y = private$y, dead = private$dead, w = X_full[, "w"], strata = factor(strata_id))
-			formula_str = "survival::Surv(y, dead) ~ w"
-
-			X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-			if (ncol(X_covs) > 0){
-				colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-				dat = cbind(dat, X_covs)
-				formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-			}
-			formula_str = paste(formula_str, "+ strata(strata)")
-
-			mod = tryCatch(
-				suppressWarnings(survival::coxph(as.formula(formula_str), data = dat)),
-				error = function(e) NULL
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					dat = data.frame(y = private$y, dead = private$dead, w = X_fit[, "w"], strata = factor(strata_id))
+					formula_str = "survival::Surv(y, dead) ~ w"
+					X_covs = X_fit[, colnames(X_fit) != "w", drop = FALSE]
+					if (ncol(X_covs) > 0){
+						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+						dat = cbind(dat, X_covs)
+						formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
+					}
+					formula_str = paste(formula_str, "+ strata(strata)")
+					tryCatch(
+						suppressWarnings(survival::coxph(as.formula(formula_str), data = dat)),
+						error = function(e) NULL
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod)) return(FALSE)
+					coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
+					vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
+					if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))) return(FALSE)
+					beta = suppressWarnings(as.numeric(coefs["w"]))
+					se = suppressWarnings(sqrt(as.numeric(vcv["w", "w"])))
+					is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
+						is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
+				}
 			)
-
+			mod = attempt$fit
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
@@ -142,7 +153,7 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 					private$cached_values$s_beta_hat_T = NA_real_
 				} else {
 					se = sqrt(as.numeric(vcv["w", "w"]))
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
 				}
 			}
 			private$cached_values$is_z = TRUE

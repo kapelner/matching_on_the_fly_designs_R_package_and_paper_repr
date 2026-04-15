@@ -1,5 +1,10 @@
 #' Abstract class for Conditional Logistic Compound Inference
 #'
+#' Under \code{harden = TRUE}, the matched-pair clogit and reservoir logistic
+#' components preserve the treatment column and retry reduced covariate sets after
+#' QR-based rank reduction. Extreme finite coefficients / standard errors are
+#' rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
@@ -65,6 +70,12 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				abs(beta) <= private$max_abs_reasonable_coef &&
 				!is.null(ssq) && is.finite(ssq) && ssq > 0 &&
 				sqrt(ssq) <= private$max_abs_reasonable_coef
+		},
+
+		cache_failed_component = function(which_component){
+			private$cached_values[[paste0("beta_T_", which_component)]] = NA_real_
+			private$cached_values[[paste0("ssq_beta_T_", which_component)]] = NA_real_
+			invisible(NULL)
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -144,15 +155,51 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			y_m       = private$y[i_matched]
 			w_m       = private$w[i_matched]
 			strata_m  = m_vec[i_matched]
-			X_m       = if (private$include_covariates()) as.data.frame(private$get_X()[i_matched, , drop = FALSE]) else data.frame()
+			if (!private$include_covariates()){
+				mod = clogit_helper(y_m, data.frame(), w_m, strata_m)
+				if (is.null(mod)) {
+					private$cache_failed_component("matched")
+					return(invisible(NULL))
+				}
+				beta = as.numeric(mod$b[1])
+				ssq  = as.numeric(mod$ssq_b_j)
+				private$cached_values$beta_T_matched     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
+				private$cached_values$ssq_beta_T_matched = if (is.finite(ssq) && ssq > 0 && sqrt(ssq) <= private$max_abs_reasonable_coef) ssq else NA_real_
+				return(invisible(NULL))
+			}
 
-			mod = clogit_helper(y_m, X_m, w_m, strata_m)
-			if (is.null(mod)) return(invisible(NULL))
+			X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
+			X_full = cbind(w = w_m, X_m)
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					clogit_helper(
+						y_m,
+						as.data.frame(X_fit[, -1, drop = FALSE]),
+						X_fit[, 1],
+						strata_m
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) &&
+						is.finite(mod$b[1]) &&
+						abs(as.numeric(mod$b[1])) <= private$max_abs_reasonable_coef &&
+						is.finite(mod$ssq_b_j) &&
+						mod$ssq_b_j > 0 &&
+						sqrt(as.numeric(mod$ssq_b_j)) <= private$max_abs_reasonable_coef
+				}
+			)
+			mod = attempt$fit
+			if (is.null(mod)) {
+				private$cache_failed_component("matched")
+				return(invisible(NULL))
+			}
 
 			beta = as.numeric(mod$b[1])
 			ssq  = as.numeric(mod$ssq_b_j)
-			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
+			private$cached_values$beta_T_matched     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (is.finite(ssq) && ssq > 0 && sqrt(ssq) <= private$max_abs_reasonable_coef) ssq else NA_real_
 		},
 
 		logistic_for_reservoir = function(){
@@ -162,40 +209,46 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			j_treat = 2L
 
 			if (private$include_covariates()){
-				X_full = cbind(1, w_r, X_r)
-				# QR-reduce to full rank while always preserving the treatment column,
-				# mirroring the approach used in ols_for_reservoir().
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(2L %in% keep)) keep[r_full] = 2L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
-					j_treat = which(keep == 2L)
-				}
+				X_full = cbind(Intercept = 1, w = w_r, X_r)
+				attempt = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_full,
+					required_cols = c(1L, 2L),
+					fit_fun = function(X_fit){
+						j_treat_fit = match("w", colnames(X_fit))
+						fast_logistic_regression_with_var(X_fit, y_r, j = j_treat_fit)
+					},
+					fit_ok = function(mod, X_fit, keep){
+						if (is.null(mod)) return(FALSE)
+						j_treat_fit = match("w", colnames(X_fit))
+						if (!is.finite(j_treat_fit) || is.na(j_treat_fit)) return(FALSE)
+						beta = suppressWarnings(as.numeric(mod$b[j_treat_fit]))
+						ssq = suppressWarnings(as.numeric(mod$ssq_b_j))
+						is.finite(beta) &&
+							abs(beta) <= private$max_abs_reasonable_coef &&
+							is.finite(ssq) &&
+							ssq > 0 &&
+							sqrt(ssq) <= private$max_abs_reasonable_coef
+					}
+				)
+				mod = attempt$fit
+				j_treat = if (!is.null(attempt$X)) match("w", colnames(attempt$X)) else NA_integer_
 			} else {
-				X_full = cbind(1, w_r)
-			}
-
-			mod = tryCatch(
-				fast_logistic_regression_with_var(X_full, y_r, j = j_treat),
-				error = function(e) NULL
-			)
-			# Fallback: if the covariates model failed, retry with just intercept + treatment
-			if (is.null(mod) && private$include_covariates()){
+				X_full = cbind(Intercept = 1, w = w_r)
 				mod = tryCatch(
-					fast_logistic_regression_with_var(cbind(1, w_r), y_r, j = 2L),
+					fast_logistic_regression_with_var(X_full, y_r, j = 2L),
 					error = function(e) NULL
 				)
 				j_treat = 2L
 			}
-			if (is.null(mod)) return(invisible(NULL))
+			if (is.null(mod) || !is.finite(j_treat) || is.na(j_treat)) {
+				private$cache_failed_component("reservoir")
+				return(invisible(NULL))
+			}
 
 			beta = as.numeric(mod$b[j_treat])
 			ssq  = as.numeric(mod$ssq_b_j)
-			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq) && ssq > 0) ssq else NA_real_
+			private$cached_values$beta_T_reservoir     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (is.finite(ssq) && ssq > 0 && sqrt(ssq) <= private$max_abs_reasonable_coef) ssq else NA_real_
 		}
 	)
 )

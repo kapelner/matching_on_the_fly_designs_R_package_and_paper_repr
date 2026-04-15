@@ -8,7 +8,11 @@
 #' linear combination.
 #'
 #' @details
-#' This class requires the \pkg{aftgee} package.
+#' This class requires the \pkg{aftgee} package. Under \code{harden = TRUE},
+#' multivariate component fits preserve the treatment column and retry reduced
+#' covariate sets after QR-based rank reduction and correlation-based pruning.
+#' Extreme finite coefficients / standard errors are rejected and treated as
+#' non-estimable.
 #'
 #' @keywords internal
 InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurvivalRankRegrIVWC",
@@ -71,9 +75,45 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		aft_design_candidates = function(w, X){
+			X_full = cbind(w = w, as.matrix(X))
+			if (!private$harden || ncol(X_full) <= 1L){
+				return(list(X_full))
+			}
+
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit) X_fit,
+				fit_ok = function(mod, X_fit, keep) TRUE
+			)
+			candidates = list(attempt$X)
+			keys = paste(colnames(candidates[[1L]]), collapse = "|")
+
+			thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			X_cov_orig = X_full[, -1, drop = FALSE]
+			for (thresh in thresholds){
+				X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
+				X_try = cbind(w = w, X_cov)
+				attempt_try = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_try,
+					required_cols = 1L,
+					fit_fun = function(X_fit) X_fit,
+					fit_ok = function(mod, X_fit, keep) TRUE
+				)
+				key = paste(colnames(attempt_try$X), collapse = "|")
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = attempt_try$X
+					keys = c(keys, key)
+				}
+			}
+			candidates
+		},
 
 		extract_term_estimate = function(mod, term_name = "w"){
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
@@ -175,37 +215,44 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			dat = data.frame(y = y_m, dead = dead_m, w = w_m, id = strata_m)
 			formula_str = "survival::Surv(y, dead) ~ w"
 
+			mod = NULL
 			if (private$include_covariates()){
 				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
-				X_full = cbind(w = w_m, X_m)
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L # ensure treatment is kept
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
+				for (X_candidate in private$aft_design_candidates(w_m, X_m)){
+					dat_try = dat
+					formula_try = formula_str
+					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
+					if (ncol(X_covs) > 0){
+						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+						dat_try = cbind(dat_try[, c("y", "dead", "w", "id")], X_covs)
+						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
+					}
+					se_method = if (estimate_only) "NULL" else "ISMB"
+					mod_try = tryCatch({
+						suppressMessages(aftgee::aftsrr(as.formula(formula_try), id = id, data = dat_try, se = se_method, B = 0))
+					}, error = function(e) NULL)
+					beta_try = private$extract_term_estimate(mod_try, "w")
+					se_try = if (estimate_only) 1 else private$extract_term_se(mod_try, "w")
+					if (is.finite(beta_try) && abs(beta_try) <= private$max_abs_reasonable_coef &&
+					    (estimate_only || (is.finite(se_try) && se_try > 0 && se_try <= private$max_abs_reasonable_coef))){
+						mod = mod_try
+						break
+					}
 				}
-				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-				if (ncol(X_covs) > 0){
-					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
-					dat = cbind(dat[, c("y", "dead", "w", "id")], X_covs)
-					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-				}
+			} else {
+				mod = tryCatch({
+					se_method = if (estimate_only) "NULL" else "ISMB"
+					suppressMessages(aftgee::aftsrr(as.formula(formula_str), id = id, data = dat, se = se_method, B = 0))
+				}, error = function(e) NULL)
 			}
-
-			mod = tryCatch({
-				se_method = if (estimate_only) "NULL" else "ISMB"
-				suppressMessages(aftgee::aftsrr(as.formula(formula_str), id = id, data = dat, se = se_method, B = 0))
-			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = private$extract_term_estimate(mod, "w")
 			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
 
-			private$cached_values$beta_T_matched     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$beta_T_matched     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
+			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		},
 
 		aftsrr_for_reservoir = function(estimate_only = FALSE){
@@ -219,36 +266,43 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)
 			formula_str = "survival::Surv(y, dead) ~ w"
 
+			mod = NULL
 			if (private$include_covariates()){
-				X_full = cbind(w = w_r, X_r)
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L # ensure treatment is kept
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
+				for (X_candidate in private$aft_design_candidates(w_r, X_r)){
+					dat_try = dat
+					formula_try = formula_str
+					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
+					if (ncol(X_covs) > 0){
+						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+						dat_try = cbind(dat_try[, c("y", "dead", "w")], X_covs)
+						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
+					}
+					se_method = if (estimate_only) "NULL" else "ISMB"
+					mod_try = tryCatch({
+						suppressMessages(aftgee::aftsrr(as.formula(formula_try), data = dat_try, se = se_method, B = 0))
+					}, error = function(e) NULL)
+					beta_try = private$extract_term_estimate(mod_try, "w")
+					se_try = if (estimate_only) 1 else private$extract_term_se(mod_try, "w")
+					if (is.finite(beta_try) && abs(beta_try) <= private$max_abs_reasonable_coef &&
+					    (estimate_only || (is.finite(se_try) && se_try > 0 && se_try <= private$max_abs_reasonable_coef))){
+						mod = mod_try
+						break
+					}
 				}
-				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-				if (ncol(X_covs) > 0){
-					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
-					dat = cbind(dat[, c("y", "dead", "w")], X_covs)
-					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-				}
+			} else {
+				mod = tryCatch({
+					se_method = if (estimate_only) "NULL" else "ISMB"
+					suppressMessages(aftgee::aftsrr(as.formula(formula_str), data = dat, se = se_method, B = 0))
+				}, error = function(e) NULL)
 			}
-
-			mod = tryCatch({
-				se_method = if (estimate_only) "NULL" else "ISMB"
-				suppressMessages(aftgee::aftsrr(as.formula(formula_str), data = dat, se = se_method, B = 0))
-			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = private$extract_term_estimate(mod, "w")
 			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
 
-			private$cached_values$beta_T_reservoir     = if (is.finite(beta)) beta else NA_real_
-			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0) se^2 else NA_real_
+			private$cached_values$beta_T_reservoir     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
+			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		}
 	)
 )

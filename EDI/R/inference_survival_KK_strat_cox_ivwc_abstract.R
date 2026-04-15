@@ -6,6 +6,11 @@
 #' regression. The two estimates (both log-hazard ratios) are combined via a
 #' variance-weighted linear combination.
 #'
+#' Under \code{harden = TRUE}, multivariate fits preserve the treatment column and
+#' progressively retry reduced covariate sets after QR-based rank reduction and
+#' correlation-based pruning. Extreme finite coefficients / standard errors are
+#' rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 	lock_objects = FALSE,
@@ -60,9 +65,53 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 	),
 
 	private = list(
+		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+
+		cox_design_candidates = function(w, X){
+			X_full = cbind(w = w, as.matrix(X))
+			if (!private$harden || ncol(X_full) <= 1L){
+				return(list(X_full))
+			}
+
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit) X_fit,
+				fit_ok = function(mod, X_fit, keep) TRUE
+			)
+			candidates = list(attempt$X)
+			keys = paste(colnames(candidates[[1L]]), collapse = "|")
+
+			thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			X_cov_orig = X_full[, -1, drop = FALSE]
+			for (thresh in thresholds){
+				X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
+				X_try = cbind(w = w, X_cov)
+				attempt_try = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_try,
+					required_cols = 1L,
+					fit_fun = function(X_fit) X_fit,
+					fit_ok = function(mod, X_fit, keep) TRUE
+				)
+				key = paste(colnames(attempt_try$X), collapse = "|")
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = attempt_try$X
+					keys = c(keys, key)
+				}
+			}
+			candidates
+		},
+
+		cox_fit_is_usable = function(mod){
+			if (is.null(mod)) return(FALSE)
+			beta = tryCatch(as.numeric(coef(mod)["w"]), error = function(e) NA_real_)
+			se = tryCatch(sqrt(as.numeric(vcov(mod)["w", "w"])), error = function(e) NA_real_)
+			is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
+				is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
+		},
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -146,42 +195,48 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			dat = data.frame(y = y_m[i_valid], dead = dead_m[i_valid], w = w_m[i_valid], strata = strata_m[i_valid])
 			formula_str = "survival::Surv(y, dead) ~ w + strata(strata)"
 
+			mod = NULL
 			if (private$include_covariates()){
 				X_m = as.matrix(private$get_X()[i_matched[i_valid], , drop = FALSE])
-				# QR-reduce to full rank while always preserving the treatment column
-				X_full = cbind(w = dat$w, X_m)
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
+				for (X_candidate in private$cox_design_candidates(dat$w, X_m)){
+					dat_try = dat
+					formula_try = formula_str
+					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
+					if (ncol(X_covs) > 0){
+						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+						dat_try = cbind(dat_try, X_covs)
+						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
+					}
+					mod_try = tryCatch(
+						survival::coxph(as.formula(formula_try), data = dat_try),
+						error = function(e) NULL,
+						warning = function(w) {
+							if (grepl("converge|infinite", w$message)) return(NULL)
+							invokeRestart("muffleWarning")
+						}
+					)
+					if (private$cox_fit_is_usable(mod_try)){
+						mod = mod_try
+						break
+					}
 				}
-				# Remove 'w' from X_full as it's already in the formula
-				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-				if (ncol(X_covs) > 0){
-					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
-					dat = cbind(dat, X_covs)
-					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-				}
+			} else {
+				mod = tryCatch(
+					survival::coxph(as.formula(formula_str), data = dat),
+					error = function(e) NULL,
+					warning = function(w) {
+						if (grepl("converge|infinite", w$message)) return(NULL)
+						invokeRestart("muffleWarning")
+					}
+				)
 			}
-
-			mod = tryCatch(
-				survival::coxph(as.formula(formula_str), data = dat),
-				error = function(e) NULL,
-				warning = function(w) {
-					if (grepl("converge|infinite", w$message)) return(NULL)
-					invokeRestart("muffleWarning")
-				}
-			)
 			if (is.null(mod)) return(invisible(NULL))
 
 			beta = as.numeric(coef(mod)["w"])
 			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
 			
 			# If estimate is clearly degenerate, treat as failure
-			if (!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20) return(invisible(NULL))
+			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
 
 			private$cached_values$beta_T_matched     = beta
 			private$cached_values$ssq_beta_T_matched = se^2
@@ -202,51 +257,40 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)
 			formula_str = "survival::Surv(y, dead) ~ w"
 
+			mod = NULL
 			if (private$include_covariates()){
-				X_full = cbind(w = dat$w, X_r)
-				qr_full = qr(X_full)
-				r_full  = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L
-					keep    = sort(keep)
-					X_full  = X_full[, keep, drop = FALSE]
-				}
-				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-				if (ncol(X_covs) > 0){
-					colnames(X_covs) = paste0("x", 1:ncol(X_covs))
-					dat = cbind(dat, X_covs)
-					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-				}
-			}
-
-			mod = tryCatch(
-				survival::coxph(as.formula(formula_str), data = dat),
-				error = function(e) NULL,
-				warning = function(w) {
-					if (grepl("converge|infinite", w$message)) return(NULL)
-					invokeRestart("muffleWarning")
-				}
-			)
-
-			# Fallback if multivariate failed or was degenerate
-			if (private$include_covariates()){
-				is_degenerate = is.null(mod) || {
-					beta = as.numeric(coef(mod)["w"])
-					se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
-					!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20
-				}
-				
-				if (is_degenerate){
-					mod = tryCatch(
-						survival::coxph(survival::Surv(y, dead) ~ w, data = data.frame(y = y_r, dead = dead_r, w = w_r)),
+				for (X_candidate in private$cox_design_candidates(dat$w, X_r)){
+					dat_try = dat
+					formula_try = formula_str
+					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
+					if (ncol(X_covs) > 0){
+						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+						dat_try = cbind(dat_try, X_covs)
+						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
+					}
+					mod_try = tryCatch(
+						survival::coxph(as.formula(formula_try), data = dat_try),
 						error = function(e) NULL,
 						warning = function(w) {
 							if (grepl("converge|infinite", w$message)) return(NULL)
 							invokeRestart("muffleWarning")
 						}
 					)
+					if (private$cox_fit_is_usable(mod_try)){
+						mod = mod_try
+						break
+					}
 				}
+			}
+			if (is.null(mod)){
+				mod = tryCatch(
+					survival::coxph(survival::Surv(y, dead) ~ w, data = data.frame(y = y_r, dead = dead_r, w = w_r)),
+					error = function(e) NULL,
+					warning = function(w) {
+						if (grepl("converge|infinite", w$message)) return(NULL)
+						invokeRestart("muffleWarning")
+					}
+				)
 			}
 
 			if (is.null(mod)) return(invisible(NULL))
@@ -254,7 +298,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			beta = as.numeric(coef(mod)["w"])
 			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
 			
-			if (!is.finite(beta) || !is.finite(se) || se <= 0 || abs(beta) > 20) return(invisible(NULL))
+			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
 
 			private$cached_values$beta_T_reservoir     = beta
 			private$cached_values$ssq_beta_T_reservoir = se^2

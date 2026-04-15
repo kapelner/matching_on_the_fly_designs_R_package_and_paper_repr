@@ -1,5 +1,10 @@
 #' Abstract class for GEE-based Inference
 #'
+#' Under \code{harden = TRUE}, multivariate GEE fits preserve the treatment column
+#' and retry reduced covariate sets after QR-based rank reduction and
+#' correlation-based pruning. Extreme finite coefficients / standard errors are
+#' rejected and treated as non-estimable.
+#'
 #' @keywords internal
 InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 	lock_objects = FALSE,
@@ -88,6 +93,48 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			as.data.frame(X_model)
 		},
 
+		gee_predictors_df_candidates = function(){
+			predictors_df = private$gee_predictors_df()
+			if (!private$harden || is.null(predictors_df) || ncol(predictors_df) <= 1L){
+				return(list(predictors_df))
+			}
+
+			X_full = as.matrix(predictors_df)
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit) X_fit,
+				fit_ok = function(mod, X_fit, keep) TRUE
+			)
+			candidates = list(as.data.frame(attempt$X, check.names = FALSE))
+			keys = paste(colnames(candidates[[1L]]), collapse = "|")
+
+			other_idx = setdiff(seq_len(ncol(X_full)), 1L)
+			if (length(other_idx) > 0L){
+				thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+				for (thresh in thresholds){
+					X_cov = drop_highly_correlated_cols(X_full[, other_idx, drop = FALSE], threshold = thresh)$M
+					X_try = cbind(w = X_full[, 1], X_cov)
+					attempt_try = private$fit_with_hardened_qr_column_dropping(
+						X_full = X_try,
+						required_cols = 1L,
+						fit_fun = function(X_fit) X_fit,
+						fit_ok = function(mod, X_fit, keep) TRUE
+					)
+					key = paste(colnames(attempt_try$X), collapse = "|")
+					if (!(key %in% keys)){
+						candidates[[length(candidates) + 1L]] = as.data.frame(attempt_try$X, check.names = FALSE)
+						keys = c(keys, key)
+					}
+				}
+			}
+
+			if (!("w" %in% unlist(lapply(candidates, colnames), use.names = FALSE))){
+				candidates[[length(candidates) + 1L]] = data.frame(w = predictors_df$w)
+			}
+			candidates
+		},
+
 		gee_treatment_index = function(beta){
 			if (is.null(beta) || !length(beta)) return(NA_integer_)
 			beta_names = names(beta)
@@ -174,7 +221,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			any(m_vec == 0L)
 		},
 
-		build_gee_fit_data = function(include_reservoir = TRUE){
+		build_gee_fit_data = function(include_reservoir = TRUE, predictors_df = NULL){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -190,7 +237,8 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 				group_id[reservoir_idx] = max_group + seq_along(reservoir_idx)
 			}
 
-			pred_df = private$gee_predictors_df()
+			pred_df = predictors_df
+			if (is.null(pred_df)) pred_df = private$gee_predictors_df()
 			if (!is.data.frame(pred_df)) pred_df = as.data.frame(pred_df)
 			dat = data.frame(y = private$y[keep], pred_df[keep, , drop = FALSE], group_id = group_id)
 			dat = dat[order(dat$group_id), , drop = FALSE]
@@ -216,34 +264,35 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			}, error = function(e) NULL)
 		},
 
-		fit_gee = function(std_err = TRUE, include_reservoir = TRUE){
-			fit_data = private$build_gee_fit_data(include_reservoir = include_reservoir)
+		fit_gee = function(std_err = TRUE, include_reservoir = TRUE, predictors_df = NULL){
+			fit_data = private$build_gee_fit_data(include_reservoir = include_reservoir, predictors_df = predictors_df)
 			if (is.null(fit_data)) return(NULL)
 			private$fit_gee_on_data(fit_data$dat, fit_data$id_sorted, std_err = std_err)
 		},
 
 		fit_gee_with_fallback = function(std_err = TRUE, estimate_only = FALSE){
-			mod = private$fit_gee(std_err = std_err, include_reservoir = TRUE)
-			needs_fallback = is.null(mod)
-			if (!needs_fallback) {
+			gee_fit_ok = function(mod){
+				if (is.null(mod)) return(FALSE)
 				beta = tryCatch(stats::coef(mod), error = function(e) NULL)
-				needs_fallback = is.null(beta) || !private$gee_coefficients_are_usable(beta)
+				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
 				beta_hat = private$extract_gee_treatment_estimate(mod)
-				needs_fallback = needs_fallback || !is.finite(beta_hat)
-				if (!estimate_only && !needs_fallback) {
-					j_treat = private$gee_treatment_index(beta)
-					coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
-					se_hat = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
-					needs_fallback = !is.finite(se_hat) || se_hat <= 0 || se_hat > private$max_abs_reasonable_coef
+				if (!is.finite(beta_hat)) return(FALSE)
+				if (estimate_only) return(TRUE)
+				j_treat = private$gee_treatment_index(beta)
+				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+				se_hat = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
+				is.finite(se_hat) && se_hat > 0 && se_hat <= private$max_abs_reasonable_coef
+			}
+
+			for (predictors_df in private$gee_predictors_df_candidates()) {
+				mod = private$fit_gee(std_err = std_err, include_reservoir = TRUE, predictors_df = predictors_df)
+				if (gee_fit_ok(mod)) return(mod)
+				if (private$gee_has_reservoir()) {
+					mod_fb = private$fit_gee(std_err = std_err, include_reservoir = FALSE, predictors_df = predictors_df)
+					if (gee_fit_ok(mod_fb)) return(mod_fb)
 				}
 			}
-			if (needs_fallback && private$gee_has_reservoir()) {
-				mod_fb = private$fit_gee(std_err = std_err, include_reservoir = FALSE)
-				beta_fb = if (!is.null(mod_fb)) tryCatch(stats::coef(mod_fb), error = function(e) NULL) else NULL
-				if (!is.null(mod_fb) && !is.null(beta_fb) && private$gee_coefficients_are_usable(beta_fb)) return(mod_fb)
-				return(NULL)
-			}
-			mod
+			NULL
 		}
 	)
 )
