@@ -13,7 +13,7 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 		#' @param des_obj A completed design object.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidAzriel} object.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "incidence")
 			des_obj$assert_even_allocation()
 			des_obj$assert_equal_block_sizes()

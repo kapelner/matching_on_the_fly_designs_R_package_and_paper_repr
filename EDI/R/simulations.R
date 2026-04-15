@@ -353,6 +353,24 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         X      = rep_data$X
         y_base = rep_data$y_base
 
+        # Per-replication true estimand for InferenceAllSimpleMeanDiff.
+        # The DGP applies betaT on a scale that may differ from the mean-difference
+        # scale that InferenceAllSimpleMeanDiff estimates, so we derive the correct
+        # comparison target analytically from y_base for each response type.
+        #
+        #   incidence : logit-shift  -> E[plogis(qlogis(p_b)+betaT) - p_b]
+        #   count     : log-mult.    -> mean(y_base)*exp(sd^2/2)*(exp(betaT)-1)
+        #   survival  : log-mult.    -> same as count, then scaled by (1-pc/2)
+        #                              to account for uniform censoring of observed times
+        #   otherwise : additive DGP -> betaT
+        true_mean_diff_ate = switch(private$response_type,
+          incidence = mean(stats::plogis(stats::qlogis(y_base) + private$betaT) - y_base),
+          count     = mean(y_base) * exp(private$sd_noise^2 / 2) * (exp(private$betaT) - 1),
+          survival  = mean(y_base) * exp(private$sd_noise^2 / 2) * (exp(private$betaT) - 1) *
+                        (1 - private$prob_censoring / 2),
+          private$betaT   # continuous, proportion, ordinal: additive DGP
+        )
+
         for (di in seq_along(private$design_classes)) {
           design_gen   = private$design_classes[[di]]
           design_name  = private$design_labels[[di]]
@@ -388,6 +406,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             })
             if (is.null(inf_obj)) next
             private$last_inferences[[design_name]][[inf_name]] = inf_obj
+
+            # True estimand on the scale this inference class estimates.
+            # InferenceAllSimpleMeanDiff targets the mean-difference ATE, whose
+            # true value must be derived analytically for non-additive DGPs
+            # (incidence, count, survival).  All other classes target betaT directly.
+            te = if (is(inf_obj, "InferenceAllSimpleMeanDiff"))
+                   true_mean_diff_ate
+                 else
+                   private$betaT
 
             # Track valid (design, inference, method) combos — once per unique pair
             combo_key = paste0(design_name, "|||", inf_name)
@@ -429,7 +456,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                   error = function(e) c(NA_real_, NA_real_)
                 )
               } else c(NA_real_, NA_real_)
-              private$.record(rep, design_name, inf_name, "asymp", est, ci_a, pval_a)
+              private$.record(rep, design_name, inf_name, "asymp", est, ci_a, pval_a, te)
             }
 
             # ── Exact ─────────────────────────────────────────────────────────
@@ -455,7 +482,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                     error = function(e) c(NA_real_, NA_real_)
                   )
                 } else c(NA_real_, NA_real_)
-                private$.record(rep, design_name, inf_name, "exact", est, ci_e, pval_e)
+                private$.record(rep, design_name, inf_name, "exact", est, ci_e, pval_e, te)
               }
             }
 
@@ -481,7 +508,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                   error = function(e) c(NA_real_, NA_real_)
                 )
               } else c(NA_real_, NA_real_)
-              private$.record(rep, design_name, inf_name, "boot", est, ci_b, pval_b)
+              private$.record(rep, design_name, inf_name, "boot", est, ci_b, pval_b, te)
             }
 
             # ── Randomisation ─────────────────────────────────────────────────
@@ -514,7 +541,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               } else {
                 c(NA_real_, NA_real_)
               }
-              private$.record(rep, design_name, inf_name, "rand", est, ci_r, pval_r)
+              private$.record(rep, design_name, inf_name, "rand", est, ci_r, pval_r, te)
             }
           }
         }
@@ -597,22 +624,21 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
       # ── Aggregate raw results ─────────────────────────────────────────────────
       dt         = self$get_results()
-      betaT      = private$betaT
       alpha      = private$alpha
       report_cov = any(grepl("_ci$",   private$inf_types))
       report_pow = any(grepl("_pval$", private$inf_types))
 
       if (nrow(dt) > 0L) {
         agg = dt[, {
-          est_ok = estimate[is.finite(estimate)]
+          est_ok = .SD[is.finite(estimate)]
           ci_ok  = .SD[is.finite(ci_lo) & is.finite(ci_hi)]
           pv_ok  = pval[is.finite(pval)]
           row = list(
-            MSE   = if (length(est_ok)) round(mean((est_ok - betaT)^2), 5L) else NA_real_,
-            n_est = length(est_ok)
+            MSE   = if (nrow(est_ok)) round(mean((est_ok$estimate - est_ok$true_estimand)^2), 5L) else NA_real_,
+            n_est = nrow(est_ok)
           )
           if (report_cov) {
-            row$coverage = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= betaT & betaT <= ci_ok$ci_hi), 3L) else NA_real_
+            row$coverage = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= ci_ok$true_estimand & ci_ok$true_estimand <= ci_ok$ci_hi), 3L) else NA_real_
             row$n_cov    = nrow(ci_ok)
           }
           if (report_pow) {
@@ -621,7 +647,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }
           row
         }, by = .(design, inference, method),
-           .SDcols = c("estimate", "ci_lo", "ci_hi", "pval")]
+           .SDcols = c("estimate", "ci_lo", "ci_hi", "pval", "true_estimand")]
       } else {
         agg = data.table::data.table(design = character(), inference = character(),
                                      method = character())
@@ -923,19 +949,20 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     },
 
     # Append one data.table row to raw_results.
-    .record = function(rep, design, inf_name, method, est, ci, pval) {
+    .record = function(rep, design, inf_name, method, est, ci, pval, true_estimand) {
       ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
       if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
       private$raw_results[[length(private$raw_results) + 1L]] = data.table::data.table(
-        rep       = as.integer(rep),
-        design    = design,
-        inference = inf_name,
-        method    = method,
-        estimate  = if (is.null(est) || !is.finite(est)) NA_real_ else est,
-        ci_lo     = ci2[1L],
-        ci_hi     = ci2[2L],
-        pval      = if (is.null(pval) || length(pval) == 0L || !is.finite(pval[1L]))
-                      NA_real_ else as.numeric(pval[1L])
+        rep           = as.integer(rep),
+        design        = design,
+        inference     = inf_name,
+        method        = method,
+        estimate      = if (is.null(est) || !is.finite(est)) NA_real_ else est,
+        ci_lo         = ci2[1L],
+        ci_hi         = ci2[2L],
+        pval          = if (is.null(pval) || length(pval) == 0L || !is.finite(pval[1L]))
+                          NA_real_ else as.numeric(pval[1L]),
+        true_estimand = as.numeric(true_estimand)
       )
     },
 

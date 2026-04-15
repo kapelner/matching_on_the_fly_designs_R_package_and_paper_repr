@@ -23,12 +23,13 @@
 #   source("simulations/azriel_exact_sims.R")
 
 library(EDI)
+library(data.table)
 
 # ── Tunable parameters ────────────────────────────────────────────────────────
-Nrep       = 500L   # Monte Carlo replications per cell
+Nrep       = 1000L   # Monte Carlo replications per cell
 betaTs     = c(1, 0) # 0 → size / type-I error;  1 → power / coverage
 alpha      = 0.05
-ns         = c(128L, 256L)
+ns         = c(64L, 128L, 256L)
 ps         = c(1L, 2L, 5L, 10L)
 data_types = c("linear", "nonlinear")
 out_file   = "simulations/azriel_exact_sims_results.csv"
@@ -140,3 +141,5 @@ print(results_dt, nrows = 200)
 
 fwrite(results_dt, out_file)
 message(sprintf("\nSaved to %s", out_file))
+
+as.data.frame(results_dt[, .(avg_power = mean(power)) , by = c("design", "inference", "n", "p")])

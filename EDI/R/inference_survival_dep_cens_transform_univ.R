@@ -87,7 +87,19 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 				)
 				if (!is.null(mod)) return(mod)
 			}
-			stop("Dependent-censoring transformation model failed to converge.")
+			warning("Dependent-censoring transformation model failed to converge; returning NA.")
+			private$failed_dep_cens_transform_mod()
+		},
+
+		failed_dep_cens_transform_mod = function(){
+			coef_names = "treatment"
+			coef = stats::setNames(NA_real_, coef_names)
+			vcov_mat = matrix(NA_real_, nrow = 1L, ncol = 1L,
+				dimnames = list(coef_names, coef_names))
+			list(
+				coefficients = coef,
+				vcov = vcov_mat
+			)
 		}
 	)
 )
