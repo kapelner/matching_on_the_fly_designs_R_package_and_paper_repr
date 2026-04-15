@@ -16,7 +16,7 @@ echo "Sorting CSV files in-place by error_message (errors first)..."
 for FILE in $FILES; do
     # Use R to sort by error_message (NA values last) in-place
     Rscript -e "
-        library(data.table)
+        suppressPackageStartupMessages(library(data.table))
         dt = fread('$FILE')
         if ('error_message' %in% names(dt)) {
             # Sort with errors first (non-NA first)
