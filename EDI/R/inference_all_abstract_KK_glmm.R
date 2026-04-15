@@ -109,6 +109,43 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			as.data.frame(X_model)
 		},
 
+		glmm_predictors_df_candidates = function(){
+			predictors_df = private$glmm_predictors_df()
+			if (!private$harden || is.null(predictors_df) || ncol(predictors_df) <= 1L){
+				return(list(predictors_df))
+			}
+
+			X_cov_orig = as.matrix(predictors_df[, setdiff(colnames(predictors_df), "w"), drop = FALSE])
+			if (ncol(X_cov_orig) == 0L){
+				return(list(data.frame(w = predictors_df$w)))
+			}
+
+			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
+			candidates = list()
+			keys = character()
+
+			for (thresh in thresholds){
+				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
+				X_full = cbind(w = predictors_df$w, X_cov)
+				reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), required_cols = 1L)
+				X_red = reduced$X_reduced
+				keep_idx = as.integer(reduced$keep)
+				if (length(keep_idx) == 0L) next
+				colnames(X_red) = colnames(X_full)[keep_idx]
+				candidate_df = as.data.frame(X_red, check.names = FALSE)
+				key = paste(colnames(candidate_df), collapse = "|")
+				if (!(key %in% keys)){
+					candidates[[length(candidates) + 1L]] = candidate_df
+					keys = c(keys, key)
+				}
+			}
+
+			if (!("w" %in% keys)){
+				candidates[[length(candidates) + 1L]] = data.frame(w = predictors_df$w)
+			}
+			candidates
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -148,27 +185,42 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
-
-			dat = data.frame(y = private$y, private$glmm_predictors_df(), group_id = factor(group_id))
-			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
-			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
-
-			# Respect the core budget provided by the user. If we are in an outer 
-			# parallel loop (e.g. mclapply), self$num_cores will be 1L.
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
-			tryCatch({
-				utils::capture.output(mod <- suppressMessages(suppressWarnings(
-					glmmTMB::glmmTMB(
-						glmm_formula,
-						family  = private$glmm_family(),
-						data    = dat,
-						control = glmm_control,
-						se      = se
-					)
-				)))
-				mod
-			}, error = function(e) NULL)
+			fit_one_candidate = function(predictors_df){
+				dat = data.frame(y = private$y, predictors_df, group_id = factor(group_id))
+				fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
+				glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
+				tryCatch({
+					utils::capture.output(mod <- suppressMessages(suppressWarnings(
+						glmmTMB::glmmTMB(
+							glmm_formula,
+							family  = private$glmm_family(),
+							data    = dat,
+							control = glmm_control,
+							se      = se
+						)
+					)))
+					mod
+				}, error = function(e) NULL)
+			}
+
+			is_usable_fit = function(mod){
+				if (is.null(mod)) return(FALSE)
+				beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+				if (is.null(beta) || !("w" %in% names(beta)) || !is.finite(beta["w"])) return(FALSE)
+				if (!se) return(TRUE)
+				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
+				if (is.null(coef_table) || !("w" %in% rownames(coef_table)) || !("Std. Error" %in% colnames(coef_table))) return(FALSE)
+				se_w = suppressWarnings(as.numeric(coef_table["w", "Std. Error"]))
+				is.finite(se_w) && se_w > 0
+			}
+
+			for (predictors_df in private$glmm_predictors_df_candidates()){
+				mod = fit_one_candidate(predictors_df)
+				if (is_usable_fit(mod)) return(mod)
+			}
+			NULL
 		}
 	)
 )
