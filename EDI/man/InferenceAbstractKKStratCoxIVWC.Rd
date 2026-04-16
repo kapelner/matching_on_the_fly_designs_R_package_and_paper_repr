@@ -14,6 +14,11 @@ survival responses. For matched pairs, it uses stratified Cox proportional hazar
 regression (each pair is a stratum). For reservoir subjects, it uses standard Cox
 regression. The two estimates (both log-hazard ratios) are combined via a
 variance-weighted linear combination.
+
+Under \code{harden = TRUE}, multivariate fits preserve the treatment column and
+progressively retry reduced covariate sets after QR-based rank reduction and
+correlation-based pruning. Extreme finite coefficients / standard errors are
+rejected and treated as non-estimable.
 }
 \keyword{internal}
 \section{Super classes}{
@@ -35,6 +40,9 @@ variance-weighted linear combination.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>

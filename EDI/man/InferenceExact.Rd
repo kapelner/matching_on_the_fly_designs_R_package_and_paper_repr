@@ -20,11 +20,14 @@ Thin interface for exact inference methods.
 }
 }
 \if{html}{\out{
-<details open><summary>Inherited methods</summary>
+<details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 </ul>
 </details>
 }}

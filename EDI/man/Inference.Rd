@@ -31,6 +31,9 @@ Defaults to the global budget unless overridden on the object.}
 \item \href{#method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-Inference-compute_exact_confidence_interval}{\code{Inference$compute_exact_confidence_interval()}}
 \item \href{#method-Inference-compute_treatment_estimate}{\code{Inference$compute_treatment_estimate()}}
+\item \href{#method-Inference-is_nonestimable}{\code{Inference$is_nonestimable()}}
+\item \href{#method-Inference-get_nonestimable_reason}{\code{Inference$get_nonestimable_reason()}}
+\item \href{#method-Inference-get_nonestimable_stage}{\code{Inference$get_nonestimable_stage()}}
 \item \href{#method-Inference-duplicate}{\code{Inference$duplicate()}}
 \item \href{#method-Inference-clone}{\code{Inference$clone()}}
 }
@@ -117,6 +120,53 @@ Computes the treatment estimate.
 }
 \subsection{Returns}{
 A numeric treatment estimate.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-is_nonestimable"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-is_nonestimable}{}}}
+\subsection{Method \code{is_nonestimable()}}{
+Returns whether the most recent inference attempt explicitly marked the
+result as non-estimable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$is_nonestimable(type = c("any", "estimate", "se"))}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{type}}{Which stage to query: \code{"any"}, \code{"estimate"}, or \code{"se"}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A logical scalar.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-get_nonestimable_reason"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-get_nonestimable_reason}{}}}
+\subsection{Method \code{get_nonestimable_reason()}}{
+Returns the reason recorded for the most recent explicit non-estimability.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$get_nonestimable_reason()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A character scalar or \code{NULL}.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-get_nonestimable_stage"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-get_nonestimable_stage}{}}}
+\subsection{Method \code{get_nonestimable_stage()}}{
+Returns the stage recorded for the most recent explicit non-estimability.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$get_nonestimable_stage()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A character scalar or \code{NULL}.
 }
 }
 \if{html}{\out{<hr>}}

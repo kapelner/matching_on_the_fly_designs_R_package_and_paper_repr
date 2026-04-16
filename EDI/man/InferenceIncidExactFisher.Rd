@@ -20,9 +20,12 @@ Exact Fisher Incidence Inference
 }
 }
 \if{html}{\out{
-<details open><summary>Inherited methods</summary>
+<details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 </ul>

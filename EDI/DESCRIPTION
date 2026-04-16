@@ -2,8 +2,6 @@ Package: EDI
 Type: Package
 Title: Experimental Design and Inference
 Version: 1.0.0
-Author: Adam Kapelner [aut, cre, cph]
-Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
 Authors@R: c(person(given = "Adam",
                   family = "Kapelner",
                   role = c("aut", "cre", "cph"),

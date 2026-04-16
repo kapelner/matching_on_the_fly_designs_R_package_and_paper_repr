@@ -31,7 +31,10 @@ Abstract class for bootstrap-based inference.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_treatment_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_treatment_estimate'><code>EDI::Inference$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
@@ -88,7 +91,8 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
   delta = 0,
   B = 501,
   type = NULL,
-  na.rm = FALSE
+  na.rm = FALSE,
+  min_number_usable_samples = 50L
 )}\if{html}{\out{</div>}}
 }
 
@@ -115,6 +119,9 @@ inversion using the jackknife acceleration and bias-correction constants;
 second-order accurate (Efron 1987; Efron & Tibshirani 1993).}
 
 \item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -133,7 +140,8 @@ Computes a bootstrap-based confidence interval.
   B = 501,
   type = NULL,
   na.rm = TRUE,
-  show_progress = TRUE
+  show_progress = TRUE,
+  min_number_usable_samples = 50L
 )}\if{html}{\out{</div>}}
 }
 
@@ -154,6 +162,9 @@ Computes a bootstrap-based confidence interval.
 Default TRUE. Non-finite replicates are always removed internally.}
 
 \item{\code{show_progress}}{Show progress bar.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
 }
 \if{html}{\out{</div>}}
 }
