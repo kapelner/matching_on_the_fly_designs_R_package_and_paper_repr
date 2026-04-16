@@ -26,7 +26,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 				private$y = .sanitize_proportion_response(private$y, interior = FALSE)
 			}
 			assertNoCensoring(private$any_censoring)
-			if (!requireNamespace("geepack", quietly = TRUE)){
+			if (!check_package_installed("geepack")){
 				stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
 			}
 		},

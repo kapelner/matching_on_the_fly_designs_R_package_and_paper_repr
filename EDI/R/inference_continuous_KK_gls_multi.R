@@ -56,7 +56,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
 
-			if (!requireNamespace("nlme", quietly = TRUE)) {
+			if (!check_package_installed("nlme")) {
 				stop("Package 'nlme' is required for InferenceContinMultGLS. Please install it.")
 			}
 		},

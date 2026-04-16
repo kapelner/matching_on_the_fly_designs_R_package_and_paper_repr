@@ -57,8 +57,8 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 
 			# Use GED for the balanced even-n case
 			use_ged = private$prob_T == 0.5 && n %% 2 == 0 &&
-					  requireNamespace("GreedyExperimentalDesign", quietly = TRUE) &&
-					  requireNamespace("rJava", quietly = TRUE)
+					  check_package_installed("GreedyExperimentalDesign") &&
+					  check_package_installed("rJava")
 
 			if (use_ged){
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()

@@ -25,7 +25,7 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			}
 			super$initialize(des_obj, verbose)
 			assertNoCensoring(private$any_censoring)
-			if (!requireNamespace("glmmTMB", quietly = TRUE)){
+			if (!check_package_installed("glmmTMB")){
 				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
 			}
 		},

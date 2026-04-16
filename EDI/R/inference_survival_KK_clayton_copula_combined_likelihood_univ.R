@@ -36,6 +36,15 @@ InferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood = R6::R6Class("InferenceS
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaCombinedLikelihood,
 	public = list(
+		#' @description
+		#' Initialize the Inference object.
+		#'
+		#' @param des_obj The design object.
+		#' @param verbose If TRUE, print additional information.
+		initialize = function(des_obj, verbose = FALSE) {
+			assertResponseType(des_obj$get_response_type(), "survival")
+			super$initialize(des_obj, verbose)
+		}
 
 
 

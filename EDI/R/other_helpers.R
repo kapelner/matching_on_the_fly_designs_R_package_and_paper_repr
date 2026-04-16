@@ -1,3 +1,21 @@
+# Package installation cache
+package_cache = new.env(parent = emptyenv())
+
+#' Check if a package is installed and cache the result
+#'
+#' @param package_name Character scalar. The name of the package.
+#' @return Logical scalar. TRUE if installed, FALSE otherwise.
+#' @keywords internal
+#' @export
+check_package_installed = function(package_name) {
+	if (!exists(package_name, envir = package_cache, inherits = FALSE)) {
+		# We use the real requireNamespace here once
+		res = requireNamespace(package_name, quietly = TRUE)
+		assign(package_name, res, envir = package_cache)
+	}
+	get(package_name, envir = package_cache)
+}
+
 # Helper for parallel progress bars
 print_progress = function(pb, i, total) {
 	if (!is.null(pb)) {
@@ -6,26 +24,26 @@ print_progress = function(pb, i, total) {
 }
 
 assert_greedy_experimental_design_installed = function(caller) {
-	if (!requireNamespace("GreedyExperimentalDesign", quietly = TRUE)) {
+	if (!check_package_installed("GreedyExperimentalDesign")) {
 		stop("Package 'GreedyExperimentalDesign' is required for ", caller, ".")
 	}
 }
 
 assert_optimal_blocks_libraries_installed = function(caller) {
 	required_pkgs = c("ompr", "ompr.roi", "ROI.plugin.glpk", "randomizr")
-	missing_pkgs = required_pkgs[!vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+	missing_pkgs = required_pkgs[!vapply(required_pkgs, check_package_installed, logical(1))]
 	if (length(missing_pkgs) > 0L) {
 		stop("Packages ", paste(missing_pkgs, collapse = ", "), " are required for ", caller, ".")
 	}
 }
 
 assert_blocktools_installed = function(caller) {
-	if (!requireNamespace("blockTools", quietly = TRUE))
+	if (!check_package_installed("blockTools"))
 		stop("Package 'blockTools' is required for ", caller, ".")
 }
 
 assert_anticlust_installed = function(caller) {
-	if (!requireNamespace("anticlust", quietly = TRUE))
+	if (!check_package_installed("anticlust"))
 		stop("Package 'anticlust' is required for ", caller, ".")
 }
 

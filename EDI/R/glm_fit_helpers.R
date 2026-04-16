@@ -514,7 +514,7 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi)$coefficients)
 	}, error = function(e) {
 	warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
-	if (!requireNamespace("betareg", quietly = TRUE)) {
+	if (!check_package_installed("betareg")) {
 		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
 		return(list(b = fast_ols_cpp(Xmm, logit(y))$b))
 	}
@@ -576,7 +576,7 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
-	if (!requireNamespace("betareg", quietly = TRUE)) {
+	if (!check_package_installed("betareg")) {
 		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
 		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
 		return(list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
@@ -624,7 +624,7 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #'
 #' @export
 #' @examples
-#' if (requireNamespace("glmnet", quietly = TRUE)) {
+#' if (check_package_installed("glmnet")) {
 #'   Xmm <- matrix(c(-1, 0,
 #'                   0, 1,
 #'                   1, 0,
@@ -636,7 +636,7 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #'   fast_coxph_regression(Xmm, y, dead)
 #' }
 fast_coxph_regression = function(Xmm, y, dead){
-	if (!requireNamespace("glmnet", quietly = TRUE)) {
+	if (!check_package_installed("glmnet")) {
 		stop("Package 'glmnet' is required for fast_coxph_regression. Please install it.")
 	}
 	mod = glmnet::glmnet(Xmm, survival::Surv(y, dead), family = "cox", lambda = 0)

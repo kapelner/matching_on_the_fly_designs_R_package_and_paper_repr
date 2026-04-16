@@ -30,7 +30,7 @@ and is not installed automatically with \pkg{EDI}.
 Install \pkg{glmnet} before calling this function.
 }
 \examples{
-if (requireNamespace("glmnet", quietly = TRUE)) {
+if (check_package_installed("glmnet")) {
   Xmm <- matrix(c(-1, 0,
                   0, 1,
                   1, 0,

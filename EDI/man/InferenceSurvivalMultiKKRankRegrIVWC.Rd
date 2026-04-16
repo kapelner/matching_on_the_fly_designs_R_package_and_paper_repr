@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalMultiKKRankRegrIVWC}
 \title{Multivariate Survival Rank-based Regression (AFT) Compound Inference for KK Designs}
 \description{
+Multivariate Survival Rank-based Regression (AFT) Compound Inference for KK Designs
+
+Multivariate Survival Rank-based Regression (AFT) Compound Inference for KK Designs
+}
+\details{
 Fits a robust compound estimator for KK matching-on-the-fly designs with survival
 responses using rank-based estimating equations with the treatment indicator and
 all recorded covariates. For matched pairs, it uses a rank-based AFT model with
@@ -46,6 +51,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalMultiKKRankRegrIVWC-new}{\code{InferenceSurvivalMultiKKRankRegrIVWC$new()}}
 \item \href{#method-InferenceSurvivalMultiKKRankRegrIVWC-clone}{\code{InferenceSurvivalMultiKKRankRegrIVWC$clone()}}
 }
 }
@@ -70,10 +76,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKSurvivalRankRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKSurvivalRankRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKSurvivalRankRegrIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKSurvivalRankRegrIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKSurvivalRankRegrIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKSurvivalRankRegrIVWC$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKSurvivalRankRegrIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html#method-InferenceAbstractKKSurvivalRankRegrIVWC-initialize'><code>EDI::InferenceAbstractKKSurvivalRankRegrIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalMultiKKRankRegrIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKRankRegrIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiKKRankRegrIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalMultiKKRankRegrIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKRankRegrIVWC-clone}{}}}

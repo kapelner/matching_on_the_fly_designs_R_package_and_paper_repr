@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalUnivKKLWACoxIVWC}
 \title{Univariate LWA-style Marginal Cox Compound Inference for KK Designs}
 \description{
+Univariate LWA-style Marginal Cox Compound Inference for KK Designs
+
+Univariate LWA-style Marginal Cox Compound Inference for KK Designs
+}
+\details{
 Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 using only the treatment indicator. For matched pairs, it uses a marginal Cox
 proportional hazards model with Lee-Wei-Amato style cluster-robust variance. For
@@ -45,6 +50,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKLWACoxIVWC-new}{\code{InferenceSurvivalUnivKKLWACoxIVWC$new()}}
 \item \href{#method-InferenceSurvivalUnivKKLWACoxIVWC-clone}{\code{InferenceSurvivalUnivKKLWACoxIVWC$clone()}}
 }
 }
@@ -69,10 +75,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKLWACoxIVWC.html#method-InferenceAbstractKKLWACoxIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKLWACoxIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKLWACoxIVWC.html#method-InferenceAbstractKKLWACoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKLWACoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKLWACoxIVWC.html#method-InferenceAbstractKKLWACoxIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKLWACoxIVWC$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKLWACoxIVWC.html#method-InferenceAbstractKKLWACoxIVWC-initialize'><code>EDI::InferenceAbstractKKLWACoxIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKLWACoxIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKLWACoxIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKLWACoxIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKLWACoxIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKLWACoxIVWC-clone}{}}}

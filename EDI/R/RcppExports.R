@@ -53,6 +53,10 @@ beta_aic_cpp <- function(y, mu, phi, wt) {
     .Call(`_EDI_beta_aic_cpp`, y, mu, phi, wt)
 }
 
+draw_binary_match_assignments_cpp <- function(indices_pairs, n, r, num_cores) {
+    .Call(`_EDI_draw_binary_match_assignments_cpp`, indices_pairs, n, r, num_cores)
+}
+
 #' Sequential computation of both CI bounds (called from R-level parallelism)
 #'
 #' This function is kept for backwards compatibility but the outer parallelism
@@ -871,6 +875,10 @@ sample_mode_cpp <- function(data) {
 
 compute_simple_mean_diff_parallel_cpp <- function(y, w_mat, delta, num_cores) {
     .Call(`_EDI_compute_simple_mean_diff_parallel_cpp`, y, w_mat, delta, num_cores)
+}
+
+apply_treatment_and_noise_cpp <- function(y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels) {
+    .Call(`_EDI_apply_treatment_and_noise_cpp`, y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels)
 }
 
 spbr_redraw_w_cpp <- function(strata_keys_sexp, block_size_sexp, prob_T_sexp) {

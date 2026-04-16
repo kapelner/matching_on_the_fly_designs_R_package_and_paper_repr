@@ -69,7 +69,7 @@ Initialize a fixed optimal-blocks design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FixedDesignOptimalBlocks$new(
   B = NULL,
-  method = "greedy",
+  method = "K-way",
   dist = "euclidean",
   response_type,
   prob_T = 0.5,
@@ -87,12 +87,15 @@ defaults to \code{floor(sqrt(n))}, with a minimum of 1.}
 
 \item{\code{method}}{Algorithm used to partition subjects into blocks.
 \describe{
-  \item{\code{"greedy"} (default)}{Greedy nearest-neighbour matching
+  \item{\code{"K-way"} (default)}{Balanced k-means anticlustering via
+    \code{anticlust::balanced_clustering}.  Requires the
+    \pkg{anticlust} package.  Produces well-spread blocks and is
+    significantly faster than \code{"greedy"} (e.g., ~10x faster
+    for \eqn{n=200, p=10, B=10}) while achieving a better
+    within-block distance objective (e.g., ~4\% lower).}
+  \item{\code{"greedy"}}{Greedy nearest-neighbour matching
     via \code{blockTools::block}.  Requires the \pkg{blockTools}
     package.  Fast even for large \eqn{n}.}
-  \item{\code{"K-way"}}{Balanced k-means anticlustering via
-    \code{anticlust::balanced_clustering}.  Requires the
-    \pkg{anticlust} package.  Produces well-spread blocks.}
   \item{\code{"ompr"}}{Exact mixed-integer programme solved with
     GLPK via \pkg{ompr}.  Globally optimal but scales as
     \eqn{O(n^2 B)} in variables and is only practical for small

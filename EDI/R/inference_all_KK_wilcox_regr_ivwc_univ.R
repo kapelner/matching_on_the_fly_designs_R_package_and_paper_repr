@@ -29,7 +29,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 			if (private$any_censoring){
 				stop(class(self)[1], " does not support censored survival data.")
 			}
-			if (!requireNamespace("Rfit", quietly = TRUE)) {
+			if (!check_package_installed("Rfit")) {
 				stop("Package 'Rfit' is required for ", class(self)[1], ". Please install it.")
 			}
 		},

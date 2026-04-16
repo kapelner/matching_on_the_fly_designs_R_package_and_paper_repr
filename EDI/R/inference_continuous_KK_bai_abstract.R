@@ -25,7 +25,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#'
 	initialize = function(des_obj, verbose = TRUE, convex_flag = FALSE){
-		if (!requireNamespace("nbpMatching", quietly = TRUE)) {
+		if (!check_package_installed("nbpMatching")) {
 		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
 		}
 		super$initialize(des_obj, verbose)

@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalUnivKKStratCoxCombinedLikelihood}
 \title{Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs}
 \description{
+Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs
+
+Univariate Stratified Cox Combined-Likelihood Compound Inference for KK Designs
+}
+\details{
 Fits the combined stratified Cox partial likelihood (matched pairs + reservoir)
 using only the treatment indicator.
 }
@@ -41,6 +46,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-new}{\code{InferenceSurvivalUnivKKStratCoxCombinedLikelihood$new()}}
 \item \href{#method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-clone}{\code{InferenceSurvivalUnivKKStratCoxCombinedLikelihood$clone()}}
 }
 }
@@ -65,10 +71,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxCombinedLikelihood" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKStratCoxCombinedLikelihood.html#method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKStratCoxCombinedLikelihood$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKStratCoxCombinedLikelihood.html#method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKStratCoxCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxCombinedLikelihood" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKStratCoxCombinedLikelihood.html#method-InferenceAbstractKKStratCoxCombinedLikelihood-compute_treatment_estimate'><code>EDI::InferenceAbstractKKStratCoxCombinedLikelihood$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxCombinedLikelihood" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKStratCoxCombinedLikelihood.html#method-InferenceAbstractKKStratCoxCombinedLikelihood-initialize'><code>EDI::InferenceAbstractKKStratCoxCombinedLikelihood$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKStratCoxCombinedLikelihood$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKStratCoxCombinedLikelihood-clone}{}}}

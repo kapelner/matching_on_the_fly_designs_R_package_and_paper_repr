@@ -11,6 +11,10 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
+		initialize = function(des_obj, verbose = FALSE) {
+			assertResponseType(des_obj$get_response_type(), "survival")
+			super$initialize(des_obj, verbose)
+		},
 
 
 		#' @description

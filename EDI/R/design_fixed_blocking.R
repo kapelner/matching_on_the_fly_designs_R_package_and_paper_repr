@@ -63,7 +63,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 			
 			# Use randomizr::block_ra for canonical stratified blocking if available,
 			# or fallback to our C++ implementation.
-			if (requireNamespace("randomizr", quietly = TRUE)) {
+			if (check_package_installed("randomizr")) {
 				w_mat = replicate(r, as.numeric(as.character(randomizr::block_ra(blocks = strata_keys, prob = private$prob_T))))
 				storage.mode(w_mat) = "numeric"
 				return(w_mat)

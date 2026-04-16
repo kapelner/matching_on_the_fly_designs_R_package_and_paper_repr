@@ -47,7 +47,6 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			assertCount(r, positive = TRUE)
-			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			self$assert_all_subjects_arrived()
 			private$ensure_bms_computed()
 			n = self$get_n()
@@ -56,21 +55,13 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
 
-			# Cap at the total number of unique balanced allocations for small n
-			max_designs_cap = if (n/2 < 30) floor(2^(n/2)) else r
-			max_designs = min(r, max_designs_cap)
-
-			search_obj = GreedyExperimentalDesign::initBinaryMatchExperimentalDesignSearchObject(
-				private$bms,
-				max_designs = max_designs,
-				wait       = TRUE,
-				start      = TRUE,
-				num_cores  = self$num_cores,
-				verbose    = private$verbose
+			# Use the in-house Rcpp search instead of GreedyExperimentalDesign Java search
+			w_mat = draw_binary_match_assignments_cpp(
+				private$bms$indicies_pairs,
+				as.integer(n),
+				as.integer(r),
+				as.integer(self$num_cores)
 			)
-			w_mat = GreedyExperimentalDesign::resultsBinaryMatchSearch(search_obj, form = "one_zero")
-			# resultsBinaryMatchSearch returns num_designs x n, we need n x num_designs
-			w_mat = t(w_mat)
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),

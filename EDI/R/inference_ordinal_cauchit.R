@@ -38,7 +38,7 @@ InferenceOrdinalUniCauchitRegr = R6::R6Class("InferenceOrdinalUniCauchitRegr",
 
 	private = list(
 		cauchit_polr_fallback = function(){
-			if (!requireNamespace("MASS", quietly = TRUE)) return(NULL)
+			if (!check_package_installed("MASS")) return(NULL)
 			y_fac = factor(private$y, levels = sort(unique(private$y)))
 			if (length(levels(y_fac)) < 2) return(NULL)
 			dat = data.frame(y = y_fac, w = private$w)

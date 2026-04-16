@@ -4,7 +4,13 @@ NULL
 
 .onLoad = function(libname, pkgname) {
 	if (is.null(getOption("datatable.quiet"))) {
-	options(datatable.quiet = TRUE)
+		options(datatable.quiet = TRUE)
+	}
+	
+	# Set Java heap size for rJava-based dependencies (like GreedyExperimentalDesign)
+	# This must be set before the JVM is initialized.
+	if (is.null(getOption("java.parameters"))) {
+		options(java.parameters = "-Xmx10g")
 	}
 }
 

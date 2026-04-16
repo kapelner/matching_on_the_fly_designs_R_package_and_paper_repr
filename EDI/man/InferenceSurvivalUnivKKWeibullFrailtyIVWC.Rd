@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalUnivKKWeibullFrailtyIVWC}
 \title{Univariate Weibull Frailty Compound Inference for KK Designs}
 \description{
+Univariate Weibull Frailty Compound Inference for KK Designs
+
+Univariate Weibull Frailty Compound Inference for KK Designs
+}
+\details{
 Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 using only the treatment indicator. For matched pairs, it uses a Weibull shared
 frailty model. For reservoir subjects, it uses a standard Weibull regression.
@@ -46,6 +51,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$new()}}
 \item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone}{\code{InferenceSurvivalUnivKKWeibullFrailtyIVWC$clone()}}
 }
 }
@@ -70,10 +76,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-initialize'><code>EDI::InferenceAbstractKKWeibullFrailtyIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyIVWC-clone}{}}}

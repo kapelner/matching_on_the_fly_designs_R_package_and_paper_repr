@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood}
 \title{Univariate Weibull Frailty Combined-Likelihood Inference for KK Designs}
 \description{
+Univariate Weibull Frailty Combined-Likelihood Inference for KK Designs
+
+Univariate Weibull Frailty Combined-Likelihood Inference for KK Designs
+}
+\details{
 Fits a single joint parametric Weibull gamma-frailty model (matched pairs +
 reservoir as singletons) using only the treatment indicator.
 }
@@ -41,6 +46,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-new}{\code{InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood$new()}}
 \item \href{#method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-clone}{\code{InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood$clone()}}
 }
 }
@@ -65,10 +71,31 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyCombinedLikelihood" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyCombinedLikelihood.html#method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyCombinedLikelihood.html#method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyCombinedLikelihood" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyCombinedLikelihood.html#method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-compute_treatment_estimate'><code>EDI::InferenceAbstractKKWeibullFrailtyCombinedLikelihood$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyCombinedLikelihood" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyCombinedLikelihood.html#method-InferenceAbstractKKWeibullFrailtyCombinedLikelihood-initialize'><code>EDI::InferenceAbstractKKWeibullFrailtyCombinedLikelihood$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood$new(
+  des_obj,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood-clone}{}}}

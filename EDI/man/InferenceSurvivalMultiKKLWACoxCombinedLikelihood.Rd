@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalMultiKKLWACoxCombinedLikelihood}
 \title{Multivariate LWA-style Marginal Cox Combined-Likelihood Inference for KK Designs}
 \description{
+Multivariate LWA-style Marginal Cox Combined-Likelihood Inference for KK Designs
+
+Multivariate LWA-style Marginal Cox Combined-Likelihood Inference for KK Designs
+}
+\details{
 Fits a single joint marginal Cox model on all KK design data using the treatment
 indicator and all recorded covariates, with Lee-Wei-Amato style cluster-robust
 variance. Matched subjects share their pair ID as a cluster and reservoir subjects
@@ -43,6 +48,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-new}{\code{InferenceSurvivalMultiKKLWACoxCombinedLikelihood$new()}}
 \item \href{#method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-clone}{\code{InferenceSurvivalMultiKKLWACoxCombinedLikelihood$clone()}}
 }
 }
@@ -67,10 +73,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxCombinedLikelihood" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKLWACoxCombinedLikelihood.html#method-InferenceAbstractKKLWACoxCombinedLikelihood-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKLWACoxCombinedLikelihood$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKLWACoxCombinedLikelihood.html#method-InferenceAbstractKKLWACoxCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKLWACoxCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxCombinedLikelihood" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKLWACoxCombinedLikelihood.html#method-InferenceAbstractKKLWACoxCombinedLikelihood-compute_treatment_estimate'><code>EDI::InferenceAbstractKKLWACoxCombinedLikelihood$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLWACoxCombinedLikelihood" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKLWACoxCombinedLikelihood.html#method-InferenceAbstractKKLWACoxCombinedLikelihood-initialize'><code>EDI::InferenceAbstractKKLWACoxCombinedLikelihood$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiKKLWACoxCombinedLikelihood$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKLWACoxCombinedLikelihood-clone}{}}}

@@ -34,7 +34,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 			}
 			super$initialize(des_obj, verbose)
-			if (!requireNamespace("aftgee", quietly = TRUE)) {
+			if (!check_package_installed("aftgee")) {
 				stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
 			}
 		},

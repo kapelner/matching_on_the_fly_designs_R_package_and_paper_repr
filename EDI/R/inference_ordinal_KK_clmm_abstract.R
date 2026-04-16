@@ -18,7 +18,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			super$initialize(des_obj, verbose, harden)
 			assertNoCensoring(private$any_censoring)
-			if (!requireNamespace("ordinal", quietly = TRUE)){
+			if (!check_package_installed("ordinal")){
 				stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
 			}
 		},

@@ -46,7 +46,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			if (!requireNamespace("parfm", quietly = TRUE)) {
+			if (!check_package_installed("parfm")) {
 				stop("Package 'parfm' is required for ", class(self)[1], ". Please install it.")
 			}
 			assertResponseType(des_obj$get_response_type(), "survival")

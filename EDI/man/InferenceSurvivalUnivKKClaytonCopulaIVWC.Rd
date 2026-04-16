@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalUnivKKClaytonCopulaIVWC}
 \title{Univariate Clayton Copula Compound Inference for KK Designs}
 \description{
+Univariate Clayton Copula Compound Inference for KK Designs
+
+Univariate Clayton Copula Compound Inference for KK Designs
+}
+\details{
 Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 using only the treatment indicator. For matched pairs, it uses a Clayton copula with
 Weibull AFT margins. For reservoir subjects, it uses a standard Weibull AFT regression.
@@ -45,6 +50,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$new()}}
 \item \href{#method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone}{\code{InferenceSurvivalUnivKKClaytonCopulaIVWC$clone()}}
 }
 }
@@ -69,10 +75,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-duplicate'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-initialize'><code>EDI::InferenceAbstractKKClaytonCopulaIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKClaytonCopulaIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKClaytonCopulaIVWC-clone}{}}}

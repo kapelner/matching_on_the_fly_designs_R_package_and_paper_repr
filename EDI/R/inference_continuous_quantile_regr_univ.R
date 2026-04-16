@@ -45,7 +45,7 @@ InferenceContinUnivQuantileRegr = R6::R6Class("InferenceContinUnivQuantileRegr",
 		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
 			assertResponseType(des_obj$get_response_type(), "continuous")
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			if (!requireNamespace("quantreg", quietly = TRUE)) {
+			if (!check_package_installed("quantreg")) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			super$initialize(des_obj, verbose)

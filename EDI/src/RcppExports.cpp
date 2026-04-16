@@ -186,6 +186,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// draw_binary_match_assignments_cpp
+NumericMatrix draw_binary_match_assignments_cpp(IntegerMatrix indices_pairs, int n, int r, int num_cores);
+RcppExport SEXP _EDI_draw_binary_match_assignments_cpp(SEXP indices_pairsSEXP, SEXP nSEXP, SEXP rSEXP, SEXP num_coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type indices_pairs(indices_pairsSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
+    Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(draw_binary_match_assignments_cpp(indices_pairs, n, r, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
 // bisection_ci_parallel_cpp
 NumericVector bisection_ci_parallel_cpp(Function pval_fn, int r, double l_lower, double u_lower, double l_upper, double u_upper, double pval_th, double tol, std::string transform_responses, int num_cores);
 RcppExport SEXP _EDI_bisection_ci_parallel_cpp(SEXP pval_fnSEXP, SEXP rSEXP, SEXP l_lowerSEXP, SEXP u_lowerSEXP, SEXP l_upperSEXP, SEXP u_upperSEXP, SEXP pval_thSEXP, SEXP tolSEXP, SEXP transform_responsesSEXP, SEXP num_coresSEXP) {
@@ -2313,6 +2327,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// apply_treatment_and_noise_cpp
+List apply_treatment_and_noise_cpp(const NumericVector& y_base, const IntegerVector& w, const std::string& response_type, double betaT, double sd_noise, double prob_censoring, int n_ordinal_levels);
+RcppExport SEXP _EDI_apply_treatment_and_noise_cpp(SEXP y_baseSEXP, SEXP wSEXP, SEXP response_typeSEXP, SEXP betaTSEXP, SEXP sd_noiseSEXP, SEXP prob_censoringSEXP, SEXP n_ordinal_levelsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type y_base(y_baseSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type response_type(response_typeSEXP);
+    Rcpp::traits::input_parameter< double >::type betaT(betaTSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_noise(sd_noiseSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_censoring(prob_censoringSEXP);
+    Rcpp::traits::input_parameter< int >::type n_ordinal_levels(n_ordinal_levelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(apply_treatment_and_noise_cpp(y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels));
+    return rcpp_result_gen;
+END_RCPP
+}
 // spbr_redraw_w_cpp
 NumericVector spbr_redraw_w_cpp(SEXP strata_keys_sexp, SEXP block_size_sexp, SEXP prob_T_sexp);
 RcppExport SEXP _EDI_spbr_redraw_w_cpp(SEXP strata_keys_sexpSEXP, SEXP block_size_sexpSEXP, SEXP prob_T_sexpSEXP) {
@@ -2432,6 +2463,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_beta_loglik_cpp", (DL_FUNC) &_EDI_beta_loglik_cpp, 4},
     {"_EDI_beta_dev_resids_cpp", (DL_FUNC) &_EDI_beta_dev_resids_cpp, 4},
     {"_EDI_beta_aic_cpp", (DL_FUNC) &_EDI_beta_aic_cpp, 4},
+    {"_EDI_draw_binary_match_assignments_cpp", (DL_FUNC) &_EDI_draw_binary_match_assignments_cpp, 4},
     {"_EDI_bisection_ci_parallel_cpp", (DL_FUNC) &_EDI_bisection_ci_parallel_cpp, 10},
     {"_EDI_bisection_ci_single_bound_cpp", (DL_FUNC) &_EDI_bisection_ci_single_bound_cpp, 9},
     {"_EDI_bisection_ci_loop_cpp", (DL_FUNC) &_EDI_bisection_ci_loop_cpp, 8},
@@ -2585,6 +2617,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
     {"_EDI_sample_mode_cpp", (DL_FUNC) &_EDI_sample_mode_cpp, 1},
     {"_EDI_compute_simple_mean_diff_parallel_cpp", (DL_FUNC) &_EDI_compute_simple_mean_diff_parallel_cpp, 4},
+    {"_EDI_apply_treatment_and_noise_cpp", (DL_FUNC) &_EDI_apply_treatment_and_noise_cpp, 7},
     {"_EDI_spbr_redraw_w_cpp", (DL_FUNC) &_EDI_spbr_redraw_w_cpp, 3},
     {"_EDI_stratified_bootstrap_indices_cpp", (DL_FUNC) &_EDI_stratified_bootstrap_indices_cpp, 1},
     {"_EDI_compute_survival_strata_ids_cpp", (DL_FUNC) &_EDI_compute_survival_strata_ids_cpp, 4},

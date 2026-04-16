@@ -5,6 +5,11 @@
 \alias{InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood}
 \title{Multivariate Clayton Copula Combined-Likelihood Inference for KK Designs}
 \description{
+Multivariate Clayton Copula Combined-Likelihood Inference for KK Designs
+
+Multivariate Clayton Copula Combined-Likelihood Inference for KK Designs
+}
+\details{
 Fits a joint copula-based likelihood for KK matching-on-the-fly designs with survival
 responses using the treatment indicator and all recorded covariates. Matched pairs are
 modeled with a Clayton copula and Weibull AFT margins; reservoir subjects contribute
@@ -44,6 +49,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-new}{\code{InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood$new()}}
 \item \href{#method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-clone}{\code{InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood$clone()}}
 }
 }
@@ -68,10 +74,31 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaCombinedLikelihood" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaCombinedLikelihood.html#method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaCombinedLikelihood" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaCombinedLikelihood.html#method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-compute_treatment_estimate'><code>EDI::InferenceAbstractKKClaytonCopulaCombinedLikelihood$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaCombinedLikelihood" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaCombinedLikelihood.html#method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-duplicate'><code>EDI::InferenceAbstractKKClaytonCopulaCombinedLikelihood$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaCombinedLikelihood" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaCombinedLikelihood.html#method-InferenceAbstractKKClaytonCopulaCombinedLikelihood-initialize'><code>EDI::InferenceAbstractKKClaytonCopulaCombinedLikelihood$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood$new(
+  des_obj,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood-clone}{}}}

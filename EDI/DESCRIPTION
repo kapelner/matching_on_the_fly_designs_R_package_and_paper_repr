@@ -308,6 +308,7 @@ Collate:
     'inference_survival_strat_cox_univ.R'
     'inference_survival_weibull_multi.R'
     'inference_survival_weibull_univ.R'
+    'inference_suite.R'
     'simulations.R'
     'zzz.R'
 RoxygenNote: 7.3.3

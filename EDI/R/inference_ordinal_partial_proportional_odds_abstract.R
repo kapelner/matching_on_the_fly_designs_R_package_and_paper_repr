@@ -276,7 +276,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		},
 
 		fit_vgam = function(dat, parallel_covars, nonparallel_covars){
-			if (!requireNamespace("VGAM", quietly = TRUE)) return(NULL)
+			if (!check_package_installed("VGAM")) return(NULL)
 
 			all_terms = unique(c("treatment", parallel_covars, nonparallel_covars))
 			par_terms = unique(c("treatment", parallel_covars))
@@ -306,7 +306,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		},
 
 		fit_clm = function(dat, parallel_covars, nonparallel_covars){
-			if (!requireNamespace("ordinal", quietly = TRUE)) return(NULL)
+			if (!check_package_installed("ordinal")) return(NULL)
 
 			main_terms = unique(c("treatment", parallel_covars))
 			nominal_form = if (length(nonparallel_covars) == 0) {

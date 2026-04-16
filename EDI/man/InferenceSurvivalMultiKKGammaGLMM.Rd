@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalMultiKKGammaGLMM}
 \title{Multivariate GLMM Inference for KK Designs with Survival Response (no censoring)}
 \description{
+Multivariate GLMM Inference for KK Designs with Survival Response (no censoring)
+
+Multivariate GLMM Inference for KK Designs with Survival Response (no censoring)
+}
+\details{
 Fits a Generalized Linear Mixed Model (GLMM) using the \pkg{glmmTMB} fitter for uncensored
 survival (time-to-event) responses under a KK matching-on-the-fly design using the
 treatment indicator and all recorded covariates as fixed-effect predictors. A
@@ -13,8 +18,8 @@ intercept \code{(1 | group_id)}, which accounts for within-pair correlation.
 Reservoir subjects each receive a unique singleton group. The treatment estimate is
 the conditional log ratio of mean survival times (log-MTR); inference uses the Wald
 Z-statistic from the GLMM fixed-effects table.
-}
-\details{
+
+
 Censored observations are not supported; an error is raised at initialization if
 any censoring is detected. This class requires the \pkg{glmmTMB} package, which is
 listed under \code{Suggests} and is not installed automatically with
@@ -27,6 +32,7 @@ before using this class.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalMultiKKGammaGLMM-new}{\code{InferenceSurvivalMultiKKGammaGLMM$new()}}
 \item \href{#method-InferenceSurvivalMultiKKGammaGLMM-clone}{\code{InferenceSurvivalMultiKKGammaGLMM$clone()}}
 }
 }
@@ -51,10 +57,28 @@ before using this class.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_confidence_interval_rand'><code>EDI::InferenceAbstractKKGLMM$compute_confidence_interval_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_treatment_estimate'><code>EDI::InferenceAbstractKKGLMM$compute_treatment_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGLMM" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKGLMM.html#method-InferenceAbstractKKGLMM-initialize'><code>EDI::InferenceAbstractKKGLMM$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalMultiKKGammaGLMM-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKGammaGLMM-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiKKGammaGLMM$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalMultiKKGammaGLMM-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiKKGammaGLMM-clone}{}}}

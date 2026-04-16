@@ -119,7 +119,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 			if (length(levels(y_fac)) < 2) return(NULL)
 			dat = data.frame(y = y_fac, w = private$w)
 
-			if (requireNamespace("VGAM", quietly = TRUE)){
+			if (check_package_installed("VGAM")){
 				mod_vgam = tryCatch(
 					VGAM::vglm(y ~ w, family = VGAM::cumulative(parallel = TRUE, link = "probit"), data = dat, trace = FALSE),
 					error = function(e) NULL
@@ -152,7 +152,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 		},
 
 		stereotype_logistic_fallback = function(){
-			if (!requireNamespace("MASS", quietly = TRUE)) return(NULL)
+			if (!check_package_installed("MASS")) return(NULL)
 			y_fac = factor(private$y, levels = sort(unique(private$y)))
 			if (length(levels(y_fac)) < 2) return(NULL)
 			dat = data.frame(y = y_fac, w = private$w)

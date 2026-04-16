@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalMultiWeibullRegr}
 \title{Simple Mean Difference Inference based on Maximum Likelihood}
 \description{
+Simple Mean Difference Inference based on Maximum Likelihood
+
+Simple Mean Difference Inference based on Maximum Likelihood
+}
+\details{
 The methods that support confidence intervals and testing for the mean difference
 in all response types (except Weibull with censoring)
 sequential experimental design estimation and test object
@@ -44,6 +49,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalMultiWeibullRegr-new}{\code{InferenceSurvivalMultiWeibullRegr$new()}}
 \item \href{#method-InferenceSurvivalMultiWeibullRegr-clone}{\code{InferenceSurvivalMultiWeibullRegr$clone()}}
 }
 }
@@ -65,13 +71,31 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="initialize"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-initialize'><code>EDI::InferenceKKPassThrough$initialize()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_asymp_confidence_interval'><code>EDI::InferenceMLEorKMSummaryTable$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceMLEorKMSummaryTable$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_treatment_estimate'><code>EDI::InferenceMLEorKMSummaryTable$compute_treatment_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalMultiWeibullRegr-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiWeibullRegr-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalMultiWeibullRegr$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalMultiWeibullRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalMultiWeibullRegr-clone}{}}}

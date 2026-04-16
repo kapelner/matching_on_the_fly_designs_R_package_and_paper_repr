@@ -54,8 +54,8 @@ Reported summary metrics include:
 \itemize{
 \item \href{#method-SimulationFramework-new}{\code{SimulationFramework$new()}}
 \item \href{#method-SimulationFramework-run}{\code{SimulationFramework$run()}}
-\item \href{#method-SimulationFramework-get_designs}{\code{SimulationFramework$get_designs()}}
-\item \href{#method-SimulationFramework-get_inferences}{\code{SimulationFramework$get_inferences()}}
+\item \href{#method-SimulationFramework-get_all_intermediate_data}{\code{SimulationFramework$get_all_intermediate_data()}}
+\item \href{#method-SimulationFramework-clear_all_intermediate_data_and_gc}{\code{SimulationFramework$clear_all_intermediate_data_and_gc()}}
 \item \href{#method-SimulationFramework-get_results}{\code{SimulationFramework$get_results()}}
 \item \href{#method-SimulationFramework-summarize}{\code{SimulationFramework$summarize()}}
 \item \href{#method-SimulationFramework-print}{\code{SimulationFramework$print()}}
@@ -82,8 +82,14 @@ Create a new \code{SimulationFramework}.
   r_rand = 201L,
   pval_epsilon = 0.02,
   sd_noise = 1,
+  n_ordinal_levels = 4L,
+  norm_sq_beta_vec = 1,
+  X_mat = NULL,
+  cov_draw_method = stats::runif,
+  cov_draw_method_args = list(min = -1, max = +1),
   prob_censoring = 0.2,
   verbose = FALSE,
+  keep_all_intermediate_data = FALSE,
   design_params = NULL,
   inference_params = NULL,
   inf_types = NULL
@@ -159,6 +165,26 @@ Default \code{0.02}.}
 \item{\code{sd_noise}}{Numeric \eqn{> 0}. Standard deviation of independent
 Gaussian noise added to each subject's outcome.  Default \code{1}.}
 
+\item{\code{n_ordinal_levels}}{Positive integer. Number of ordinal categories when
+\code{response_type = "ordinal"}. Default \code{4}.}
+
+\item{\code{norm_sq_beta_vec}}{Positive numeric scalar. The desired squared
+Euclidean norm of the latent linear coefficient vector \eqn{\beta}.
+The generated vector is scaled to match this norm. Default \code{1}.}
+
+\item{\code{X_mat}}{Numeric matrix of dimensions \code{n x p}, or \code{NULL} (default).
+If provided, these fixed covariates are used for every replication.
+In this case, \code{cov_draw_method} must be \code{NULL}.}
+
+\item{\code{cov_draw_method}}{A function used to draw \code{n * p} i.i.d. covariate
+values for every replication. The function must accept the total number
+of values as its first argument, followed by arguments in
+\code{cov_draw_method_args}.  Default \code{stats::runif}.
+Must be \code{NULL} when \code{X_mat} is supplied.}
+
+\item{\code{cov_draw_method_args}}{Named list of additional arguments forwarded to
+\code{cov_draw_method} beyond the sample-size first argument.}
+
 \item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
 censoring probability; applied only when
 \code{response_type = "survival"}.  Default \code{0.2}.}
@@ -166,6 +192,12 @@ censoring probability; applied only when
 \item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
 replication and for every \code{(design, inference)} pair that is
 skipped due to an error.  Default \code{FALSE}.}
+
+\item{\code{keep_all_intermediate_data}}{Logical. If \code{TRUE}, the framework
+saves the instantiated design and inference objects for every replication.
+These can be retrieved after the run using \code{$get_all_intermediate_data()}.
+Warning: this can consume a lot of memory for many replications.
+Default \code{FALSE}.}
 
 \item{\code{design_params}}{\code{NULL} (default) or a list of lists of the same
   length as \code{design_classes}.  Each element is a named list of
@@ -247,34 +279,43 @@ The \code{SimulationFramework} object itself (invisibly).
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-get_designs"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-get_designs}{}}}
-\subsection{Method \code{get_designs()}}{
-Return the design objects from the last simulation replication.
+\if{html}{\out{<a id="method-SimulationFramework-get_all_intermediate_data"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-get_all_intermediate_data}{}}}
+\subsection{Method \code{get_all_intermediate_data()}}{
+Return all intermediate data saved during \code{$run()}, or \code{NULL}
+if \code{keep_all_intermediate_data} was \code{FALSE} (the default).
 Throws an error if \code{$run()} has not been called yet.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_designs()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_all_intermediate_data()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-A named list of instantiated design objects, one per configured
-  design class, from the final replication.
+A list of length \code{Nrep}.  Each element is a named list with
+  three entries:
+  \describe{
+    \item{\code{y_base}}{Numeric vector of base responses for that replication.}
+    \item{\code{designs}}{Named list of instantiated design objects, one per
+      configured design class.}
+    \item{\code{inferences}}{Named list of lists of instantiated inference
+      objects, indexed first by design class name then by inference class name.}
+  }
+  Returns \code{NULL} when \code{keep_all_intermediate_data = FALSE}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-get_inferences"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-get_inferences}{}}}
-\subsection{Method \code{get_inferences()}}{
-Return the inference objects from the last simulation replication.
-Throws an error if \code{$run()} has not been called yet.
+\if{html}{\out{<a id="method-SimulationFramework-clear_all_intermediate_data_and_gc"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-clear_all_intermediate_data_and_gc}{}}}
+\subsection{Method \code{clear_all_intermediate_data_and_gc()}}{
+Release all stored intermediate data and invoke the garbage collector.
+Useful after inspecting intermediate results to free memory before
+further processing.  Sets the internal store to \code{NULL} and calls
+\code{gc()}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_inferences()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$clear_all_intermediate_data_and_gc()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-A named list of lists of instantiated inference objects from the
-  final replication, indexed first by design class name and then by
-  inference class name.
+The \code{SimulationFramework} object itself (invisibly).
 }
 }
 \if{html}{\out{<hr>}}

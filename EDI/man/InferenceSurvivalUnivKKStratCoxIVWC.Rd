@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalUnivKKStratCoxIVWC}
 \title{Univariate Stratified Cox / Standard Cox Compound Inference for KK Designs}
 \description{
+Univariate Stratified Cox / Standard Cox Compound Inference for KK Designs
+
+Univariate Stratified Cox / Standard Cox Compound Inference for KK Designs
+}
+\details{
 Fits a compound estimator for KK matching-on-the-fly designs with survival responses
 using only the treatment indicator. For matched pairs, it uses stratified Cox
 proportional hazards regression (each pair is a stratum). For reservoir subjects, it
@@ -45,6 +50,7 @@ infer
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKStratCoxIVWC-new}{\code{InferenceSurvivalUnivKKStratCoxIVWC$new()}}
 \item \href{#method-InferenceSurvivalUnivKKStratCoxIVWC-clone}{\code{InferenceSurvivalUnivKKStratCoxIVWC$clone()}}
 }
 }
@@ -69,10 +75,28 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKStratCoxIVWC.html#method-InferenceAbstractKKStratCoxIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKStratCoxIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxIVWC" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKStratCoxIVWC.html#method-InferenceAbstractKKStratCoxIVWC-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKStratCoxIVWC$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxIVWC" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKStratCoxIVWC.html#method-InferenceAbstractKKStratCoxIVWC-compute_treatment_estimate'><code>EDI::InferenceAbstractKKStratCoxIVWC$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKStratCoxIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKStratCoxIVWC.html#method-InferenceAbstractKKStratCoxIVWC-initialize'><code>EDI::InferenceAbstractKKStratCoxIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKStratCoxIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKStratCoxIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKStratCoxIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKStratCoxIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKStratCoxIVWC-clone}{}}}

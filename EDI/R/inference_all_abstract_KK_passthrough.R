@@ -16,6 +16,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   to the user. Default is \code{TRUE}
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
+			if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")) {
+				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
+			}
 			super$initialize(des_obj, verbose, harden)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first

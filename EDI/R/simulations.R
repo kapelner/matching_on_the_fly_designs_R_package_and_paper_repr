@@ -20,6 +20,120 @@
 #   sim$run()
 #   sim$summarize()
 
+#' Generate Synthetic Simulation Covariates and Continuous Response
+#'
+#' @description
+#' A helper function to generate synthetic covariates and a latent continuous response
+#' identical to the logic used within \code{SimulationFramework}.  Covariates may be
+#' supplied directly via \code{X_mat} or drawn randomly via \code{cov_draw_method};
+#' exactly one of the two must be non-\code{NULL}.
+#'
+#' @param n Integer. Sample size (number of rows).
+#' @param p Integer. Number of covariates (number of columns).
+#' @param data_type Character scalar. Either \code{"linear"} (latent response is a
+#'   weighted linear combination of covariates) or \code{"nonlinear"} (Friedman 1991
+#'   function applied to the first five covariates; requires \code{p >= 5}).
+#' @param norm_sq_beta_vec Positive numeric scalar. The desired squared Euclidean norm
+#'   of the coefficient vector, i.e. \code{sum(beta^2)}.  The coefficient vector (or
+#'   the overall Friedman scale) is rescaled so that this quantity equals
+#'   \code{norm_sq_beta_vec}.  Default \code{1}.
+#' @param X_mat Numeric matrix of dimensions \code{n x p}, or \code{NULL} (default).
+#'   When supplied, this matrix is used directly as the covariate matrix and
+#'   \code{cov_draw_method} must be \code{NULL}.
+#' @param cov_draw_method A function used to draw \code{n * p} i.i.d. covariate
+#'   values, or \code{NULL}.  The function must accept the number of draws as its
+#'   first positional argument followed by any named arguments in
+#'   \code{cov_draw_method_args}.  Default \code{stats::runif}.
+#'   Must be \code{NULL} when \code{X_mat} is supplied.
+#' @param cov_draw_method_args Named list of additional arguments forwarded to
+#'   \code{cov_draw_method} beyond the sample-size first argument.
+#'   Default \code{list(min = -1, max = +1)}.
+#'
+#' @return A list with two elements: \code{X} (a data frame of covariates) and
+#'   \code{y_cont} (a numeric vector of the latent continuous response).
+#'
+#' @export
+generate_covariate_dataset = function(n, p,
+                                      data_type            = c("linear", "nonlinear"),
+                                      norm_sq_beta_vec     = 1,
+                                      X_mat                = NULL,
+                                      cov_draw_method      = stats::runif,
+                                      cov_draw_method_args = list(min = -1, max = +1)) {
+  data_type = match.arg(data_type)
+
+  user_supplied_X   = !is.null(X_mat)
+  user_supplied_cov = !is.null(cov_draw_method)
+  if (user_supplied_X && user_supplied_cov) {
+    stop("generate_covariate_dataset: supply exactly one of 'X_mat' or 'cov_draw_method', not both.")
+  }
+  if (!user_supplied_X && !user_supplied_cov) {
+    stop("generate_covariate_dataset: one of 'X_mat' or 'cov_draw_method' must be non-NULL.")
+  }
+
+  if (user_supplied_X) {
+    X_mat = as.matrix(X_mat)
+  } else {
+    X_mat = matrix(do.call(cov_draw_method, c(list(n * p), cov_draw_method_args)), nrow = n, ncol = p)
+  }
+  colnames(X_mat) = paste0("x", seq_len(p))
+  X = as.data.frame(X_mat)
+
+  if (data_type == "linear") {
+    beta_x = seq(1, -1, length.out = p)
+    beta_x = beta_x * sqrt(norm_sq_beta_vec / sum(beta_x^2))
+    y_cont = as.numeric(X_mat %*% beta_x)
+  } else {
+    if (p < 5L) stop("Friedman nonlinear data_type requires p >= 5.")
+    # Friedman (1991) function — first five covariates, x in [-1,1]
+    beta_friedman = c(10, 20, 10, 5)
+    scale_factor  = sqrt(norm_sq_beta_vec / sum(beta_friedman^2))
+    y_cont = scale_factor * (
+      10 * sin(pi * X_mat[, 1L] * X_mat[, 2L]) +
+      20 * (X_mat[, 3L] - 0.5)^2 +
+      10 *  X_mat[, 4L] +
+       5 *  X_mat[, 5L]
+    )
+  }
+
+  list(X = X, y_cont = y_cont)
+}
+
+#' Transform Continuous Signal to Response Type Scale
+#'
+#' @description
+#' A helper function to transform a latent continuous signal to the scale
+#' appropriate for a given \code{response_type}, identical to the logic used
+#' within \code{SimulationFramework}.
+#'
+#' @param y_cont Numeric vector. The latent continuous response signal.
+#' @param response_type Character scalar. One of \code{"continuous"}, \code{"incidence"},
+#'   \code{"proportion"}, \code{"count"}, \code{"survival"}, \code{"ordinal"}.
+#' @param n_ordinal_levels Positive integer. Number of ordinal categories when
+#'   \code{response_type = "ordinal"}.  The continuous signal is cut into this many
+#'   equal-frequency bins.  Default \code{4L}.  Ignored for all other response types.
+#'
+#' @return A numeric vector of base responses on the appropriate scale.
+#'
+#' @export
+transform_cont_y_based_on_response_type = function(y_cont, response_type, n_ordinal_levels = 4L) {
+  y_sh = as.numeric(scale(y_cont))
+  switch(response_type,
+    continuous = y_sh,
+    incidence  = stats::plogis(y_sh),
+    proportion = {
+      y_tmp = y_cont - min(y_cont) + 1e-6
+      y_tmp / (max(y_tmp) + 1e-6)
+    },
+    count      = pmax(1L, round(y_cont - min(y_cont) + 1)),
+    survival   = pmax(0.1, y_sh - min(y_sh) + 0.1),
+    ordinal    = as.integer(cut(
+      y_cont,
+      breaks = unique(quantile(y_cont, probs = seq(0, 1, length.out = n_ordinal_levels + 1L))),
+      include.lowest = TRUE)),
+    stop("Unknown response_type: ", response_type)
+  )
+}
+
 #' Simulation Framework for Experimental Designs and Inference Methods
 #'
 #' @description
@@ -144,6 +258,26 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param sd_noise Numeric \eqn{> 0}. Standard deviation of independent
     #'   Gaussian noise added to each subject's outcome.  Default \code{1}.
     #'
+    #' @param n_ordinal_levels Positive integer. Number of ordinal categories when
+    #'   \code{response_type = "ordinal"}. Default \code{4}.
+    #'
+    #' @param norm_sq_beta_vec Positive numeric scalar. The desired squared
+    #'   Euclidean norm of the latent linear coefficient vector \eqn{\beta}.
+    #'   The generated vector is scaled to match this norm. Default \code{1}.
+    #'
+    #' @param X_mat Numeric matrix of dimensions \code{n x p}, or \code{NULL} (default).
+    #'   If provided, these fixed covariates are used for every replication.
+    #'   In this case, \code{cov_draw_method} must be \code{NULL}.
+    #'
+    #' @param cov_draw_method A function used to draw \code{n * p} i.i.d. covariate
+    #'   values for every replication. The function must accept the total number
+    #'   of values as its first argument, followed by arguments in
+    #'   \code{cov_draw_method_args}.  Default \code{stats::runif}.
+    #'   Must be \code{NULL} when \code{X_mat} is supplied.
+    #'
+    #' @param cov_draw_method_args Named list of additional arguments forwarded to
+    #'   \code{cov_draw_method} beyond the sample-size first argument.
+    #'
     #' @param prob_censoring Numeric in \eqn{[0,1]}.  Per-subject independent
     #'   censoring probability; applied only when
     #'   \code{response_type = "survival"}.  Default \code{0.2}.
@@ -151,6 +285,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param verbose Logical.  If \code{TRUE}, prints a message for every
     #'   replication and for every \code{(design, inference)} pair that is
     #'   skipped due to an error.  Default \code{FALSE}.
+    #'
+    #' @param keep_all_intermediate_data Logical. If \code{TRUE}, the framework
+    #'   saves the instantiated design and inference objects for every replication.
+    #'   These can be retrieved after the run using \code{$get_all_intermediate_data()}.
+    #'   Warning: this can consume a lot of memory for many replications.
+    #'   Default \code{FALSE}.
     #'
     #' @param design_params \code{NULL} (default) or a list of lists of the same
     #'   length as \code{design_classes}.  Each element is a named list of
@@ -227,12 +367,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       B_boot            = 201L,
       r_rand            = 201L,
       pval_epsilon      = 0.02,
-      sd_noise          = 1,
-      prob_censoring    = 0.2,
-      verbose           = FALSE,
-      design_params     = NULL,
-      inference_params  = NULL,
-      inf_types         = NULL
+      sd_noise              = 1,
+      n_ordinal_levels      = 4L,
+      norm_sq_beta_vec      = 1,
+      X_mat                 = NULL,
+      cov_draw_method       = stats::runif,
+      cov_draw_method_args  = list(min = -1, max = +1),
+      prob_censoring        = 0.2,
+      verbose                    = FALSE,
+      keep_all_intermediate_data = FALSE,
+      design_params              = NULL,
+      inference_params           = NULL,
+      inf_types                  = NULL
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
@@ -265,9 +411,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$B_boot           = as.integer(B_boot)
       private$r_rand           = as.integer(r_rand)
       private$pval_epsilon     = pval_epsilon
-      private$sd_noise         = sd_noise
-      private$prob_censoring   = prob_censoring
-      private$verbose          = verbose
+      private$sd_noise             = sd_noise
+      private$n_ordinal_levels     = as.integer(n_ordinal_levels)
+      private$norm_sq_beta_vec     = norm_sq_beta_vec
+      private$X_mat                = X_mat
+      private$cov_draw_method      = cov_draw_method
+      private$cov_draw_method_args = cov_draw_method_args
+      private$prob_censoring       = prob_censoring
+      private$verbose                    = verbose
+      private$keep_all_intermediate_data = keep_all_intermediate_data
       private$inf_types        = inf_types
 
       private$want_asymp_ci   = "asymp_ci"   %in% inf_types
@@ -326,10 +478,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'
     #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {
-      private$raw_results          = list()
-      private$last_designs         = list()
-      private$last_inferences      = list()
-      private$valid_combos         = list()
+      private$raw_results           = list()
+      private$all_intermediate_data = vector("list", private$Nrep)
+      private$valid_combos          = list()
       private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
 
@@ -384,7 +535,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               NULL
             }
           )
-          private$last_designs[[design_name]] = des_obj
+          if (private$keep_all_intermediate_data) {
+            private$all_intermediate_data[[rep]]$y_base                    = y_base
+            private$all_intermediate_data[[rep]]$designs[[design_name]]    = des_obj
+          }
           if (is.null(des_obj)) next
 
           for (ii in seq_along(private$inference_classes)) {
@@ -405,7 +559,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               NULL
             })
             if (is.null(inf_obj)) next
-            private$last_inferences[[design_name]][[inf_name]] = inf_obj
+            if (private$keep_all_intermediate_data)
+              private$all_intermediate_data[[rep]]$inferences[[design_name]][[inf_name]] = inf_obj
 
             # True estimand on the scale this inference class estimates.
             # InferenceAllSimpleMeanDiff targets the mean-difference ATE, whose
@@ -551,29 +706,40 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(self)
     },
 
-    # ── get_designs() ─────────────────────────────────────────────────────────
+    # ── get_all_intermediate_data() ───────────────────────────────────────────
     #' @description
-    #' Return the design objects from the last simulation replication.
+    #' Return all intermediate data saved during \code{$run()}, or \code{NULL}
+    #' if \code{keep_all_intermediate_data} was \code{FALSE} (the default).
     #' Throws an error if \code{$run()} has not been called yet.
     #'
-    #' @return A named list of instantiated design objects, one per configured
-    #'   design class, from the final replication.
-    get_designs = function() {
+    #' @return A list of length \code{Nrep}.  Each element is a named list with
+    #'   three entries:
+    #'   \describe{
+    #'     \item{\code{y_base}}{Numeric vector of base responses for that replication.}
+    #'     \item{\code{designs}}{Named list of instantiated design objects, one per
+    #'       configured design class.}
+    #'     \item{\code{inferences}}{Named list of lists of instantiated inference
+    #'       objects, indexed first by design class name then by inference class name.}
+    #'   }
+    #'   Returns \code{NULL} when \code{keep_all_intermediate_data = FALSE}.
+    get_all_intermediate_data = function() {
       if (!private$has_run) stop("Call $run() first.")
-      private$last_designs
+      if (!private$keep_all_intermediate_data) return(NULL)
+      private$all_intermediate_data
     },
 
-    # ── get_inferences() ──────────────────────────────────────────────────────
+    # ── clear_all_intermediate_data_and_gc() ─────────────────────────────────
     #' @description
-    #' Return the inference objects from the last simulation replication.
-    #' Throws an error if \code{$run()} has not been called yet.
+    #' Release all stored intermediate data and invoke the garbage collector.
+    #' Useful after inspecting intermediate results to free memory before
+    #' further processing.  Sets the internal store to \code{NULL} and calls
+    #' \code{gc()}.
     #'
-    #' @return A named list of lists of instantiated inference objects from the
-    #'   final replication, indexed first by design class name and then by
-    #'   inference class name.
-    get_inferences = function() {
-      if (!private$has_run) stop("Call $run() first.")
-      private$last_inferences
+    #' @return The \code{SimulationFramework} object itself (invisibly).
+    clear_all_intermediate_data_and_gc = function() {
+      private$all_intermediate_data = NULL
+      gc()
+      invisible(self)
     },
 
     # ── get_results() ─────────────────────────────────────────────────────────
@@ -638,8 +804,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             n_est = nrow(est_ok)
           )
           if (report_cov) {
-            row$coverage = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= ci_ok$true_estimand & ci_ok$true_estimand <= ci_ok$ci_hi), 3L) else NA_real_
-            row$n_cov    = nrow(ci_ok)
+            row$coverage  = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= ci_ok$true_estimand & ci_ok$true_estimand <= ci_ok$ci_hi), 3L) else NA_real_
+            row$n_cov     = nrow(ci_ok)
+            row$ci_length = if (nrow(ci_ok)) round(mean(ci_ok$ci_hi - ci_ok$ci_lo), 5L) else NA_real_
           }
           if (report_pow) {
             row$power = if (length(pv_ok)) round(mean(pv_ok < alpha), 3L) else NA_real_
@@ -707,8 +874,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     B_boot           = NULL,
     r_rand           = NULL,
     pval_epsilon     = NULL,
-    sd_noise         = NULL,
-    prob_censoring   = NULL,
+    sd_noise             = NULL,
+    n_ordinal_levels     = NULL,
+    norm_sq_beta_vec     = NULL,
+    X_mat                = NULL,
+    cov_draw_method      = NULL,
+    cov_draw_method_args = NULL,
+    prob_censoring       = NULL,
     verbose          = NULL,
     design_params    = NULL,
     inference_params = NULL,
@@ -724,12 +896,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     design_classes   = NULL,
     inference_classes = NULL,
     design_labels    = NULL,
-    raw_results      = NULL,
-    has_run          = FALSE,
-    exact_warned_classes = NULL,
-    last_designs     = NULL,
-    last_inferences  = NULL,
-    valid_combos     = NULL,
+    raw_results               = NULL,
+    all_intermediate_data     = NULL,
+    keep_all_intermediate_data = FALSE,
+    has_run                   = FALSE,
+    exact_warned_classes      = NULL,
+    valid_combos              = NULL,
     seen_combo_keys  = NULL,
 
     # ── Inference arg routing ─────────────────────────────────────────────────
@@ -837,73 +1009,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     # ── Data generation ───────────────────────────────────────────────────────
 
     .generate_data = function() {
-      n = private$n; p = private$p
-      X_mat = matrix(stats::runif(n * p), nrow = n, ncol = p)
-      colnames(X_mat) = paste0("x", seq_len(p))
-      X = as.data.frame(X_mat)
-
-      if (private$data_type == "linear") {
-        beta_x = seq(1, -1, length.out = p)
-        y_cont = as.numeric(X_mat %*% beta_x)
-      } else {
-        # Friedman (1991) function — first five covariates, x in [0,1]
-        y_cont = 10 * sin(pi * X_mat[, 1L] * X_mat[, 2L]) +
-                 20 * (X_mat[, 3L] - 0.5)^2 +
-                 10 *  X_mat[, 4L] +
-                  5 *  X_mat[, 5L]
-      }
-
-      list(X = X, y_base = private$.y_cont_to_response(y_cont))
-    },
-
-    # Transform continuous signal to the appropriate response-type scale.
-    .y_cont_to_response = function(y_cont) {
-      rt  = private$response_type
-      y_s = as.numeric(scale(y_cont))
-      switch(rt,
-        continuous = y_s,
-        incidence  = stats::plogis(y_s),
-        proportion = { y_sh = y_cont - min(y_cont) + 1e-6
-                       y_sh / (max(y_sh) + 1e-6) },
-        count      = pmax(1L, round(y_cont - min(y_cont) + 1)),
-        survival   = pmax(0.1, y_s - min(y_s) + 0.1),
-        ordinal    = as.integer(cut(
-          y_cont,
-          breaks = unique(quantile(y_cont, probs = seq(0, 1, length.out = 5))),
-          include.lowest = TRUE)),
-        stop("Unknown response_type: ", rt)
+      data = generate_covariate_dataset(
+        n                    = private$n,
+        p                    = private$p,
+        data_type            = private$data_type,
+        norm_sq_beta_vec     = private$norm_sq_beta_vec,
+        X_mat                = private$X_mat,
+        cov_draw_method      = private$cov_draw_method,
+        cov_draw_method_args = private$cov_draw_method_args
       )
-    },
-
-    # Apply treatment effect + noise to one subject; return list(y, dead).
-    .apply_one = function(y_base_i, w_i) {
-      rt  = private$response_type
-      bt  = if (w_i == 1L) private$betaT else 0
-      eps = stats::rnorm(1L, 0, private$sd_noise)
-      y = switch(rt,
-        continuous = y_base_i + bt + eps,
-        incidence  = {
-          p_b = if (is.finite(y_base_i) && y_base_i >= 0 && y_base_i <= 1)
-                  y_base_i else stats::plogis(y_base_i)
-          p_b = pmin(0.95, pmax(0.05, p_b))
-          as.numeric(stats::rbinom(1L, 1L,
-            stats::plogis(stats::qlogis(p_b) + bt + eps)))
-        },
-        proportion = pmin(1 - 1e-9, pmax(1e-9, y_base_i + bt + eps)),
-        count = {
-          lam = pmax(.Machine$double.eps, y_base_i * exp(bt + eps))
-          as.numeric(stats::rpois(1L, lambda = lam))
-        },
-        survival = pmax(.Machine$double.eps, y_base_i * exp(bt + eps)),
-        ordinal  = as.integer(max(1L, round(y_base_i + bt + eps))),
-        stop("Unknown response_type: ", rt)
+      data$y_base = transform_cont_y_based_on_response_type(
+        y_cont           = data$y_cont,
+        response_type    = private$response_type,
+        n_ordinal_levels = private$n_ordinal_levels
       )
-      dead = 1L
-      if (rt == "survival" && stats::runif(1L) < private$prob_censoring) {
-        y    = stats::runif(1L, 0, y)
-        dead = 0L
-      }
-      list(y = y, dead = dead)
+      data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
+      data
     },
 
     # Instantiate design and run the full experiment (assign + observe all n).
@@ -930,34 +1051,46 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       ))
 
       if (inherits(des_obj, "DesignSeqOneByOne")) {
+        # Sequential: assignment depends on prior responses so w is obtained
+        # one subject at a time.  Call Rcpp with length-1 vectors per subject.
         for (t in seq_len(n)) {
           w_t = des_obj$add_one_subject_to_experiment_and_assign(
             X[t, , drop = FALSE])
-          out = private$.apply_one(y_base[t], w_t)
+          out = apply_treatment_and_noise_cpp(
+            y_base[t], w_t,
+            private$response_type, private$betaT,
+            private$sd_noise, private$prob_censoring,
+            private$n_ordinal_levels)
           des_obj$add_one_subject_response(t, out$y, out$dead)
         }
       } else {
+        # Fixed: all assignments known upfront — vectorize across all n subjects.
         des_obj$add_all_subjects_to_experiment(X)
         des_obj$assign_w_to_all_subjects()
-        w = des_obj$get_w()
+        w   = des_obj$get_w()
+        out = apply_treatment_and_noise_cpp(
+          y_base, w,
+          private$response_type, private$betaT,
+          private$sd_noise, private$prob_censoring,
+          private$n_ordinal_levels)
         for (t in seq_len(n)) {
-          out = private$.apply_one(y_base[t], w[t])
-          des_obj$add_one_subject_response(t, out$y, out$dead)
+          des_obj$add_one_subject_response(t, out$y[t], out$dead[t])
         }
       }
       des_obj
     },
 
-    # Append one data.table row to raw_results.
+    # Append one row to raw_results as a plain list (no data.table allocation).
+    # rbindlist() in get_results() converts the whole list at once.
     .record = function(rep, design, inf_name, method, est, ci, pval, true_estimand) {
       ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
       if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
-      private$raw_results[[length(private$raw_results) + 1L]] = data.table::data.table(
+      private$raw_results[[length(private$raw_results) + 1L]] = list(
         rep           = as.integer(rep),
         design        = design,
         inference     = inf_name,
         method        = method,
-        estimate      = if (is.null(est) || !is.finite(est)) NA_real_ else est,
+        estimate      = if (is.null(est) || !is.finite(est)) NA_real_ else as.numeric(est),
         ci_lo         = ci2[1L],
         ci_hi         = ci2[2L],
         pval          = if (is.null(pval) || length(pval) == 0L || !is.finite(pval[1L]))

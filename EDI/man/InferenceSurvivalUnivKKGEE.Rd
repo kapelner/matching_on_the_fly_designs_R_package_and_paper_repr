@@ -4,6 +4,11 @@
 \alias{InferenceSurvivalUnivKKGEE}
 \title{Univariate GEE Inference for KK Designs with Survival Response (no censoring)}
 \description{
+Univariate GEE Inference for KK Designs with Survival Response (no censoring)
+
+Univariate GEE Inference for KK Designs with Survival Response (no censoring)
+}
+\details{
 Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 for uncensored survival (time-to-event) responses under a KK matching-on-the-fly
 design using only the treatment indicator as a predictor (intercept + treatment).
@@ -13,8 +18,8 @@ regardless of Gamma misspecification. Matched pairs are treated as clusters (wit
 exchangeable correlation); reservoir subjects each form their own singleton cluster.
 The treatment estimate is the log ratio of mean survival times (log-MTR); inference
 uses Wald Z-statistics based on the robust SE.
-}
-\details{
+
+
 Censored observations are not supported; an error is raised at initialization if
 any censoring is detected. This class requires the \pkg{geepack} package, which is
 listed under \code{Suggests} and is not installed automatically with
@@ -27,6 +32,7 @@ before using this class.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalUnivKKGEE-new}{\code{InferenceSurvivalUnivKKGEE$new()}}
 \item \href{#method-InferenceSurvivalUnivKKGEE-clone}{\code{InferenceSurvivalUnivKKGEE$clone()}}
 }
 }
@@ -51,10 +57,28 @@ before using this class.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKGEE$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAbstractKKGEE$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-compute_treatment_estimate'><code>EDI::InferenceAbstractKKGEE$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKGEE" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKGEE.html#method-InferenceAbstractKKGEE-initialize'><code>EDI::InferenceAbstractKKGEE$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the Inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalUnivKKGEE$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalUnivKKGEE-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalUnivKKGEE-clone}{}}}

@@ -290,7 +290,7 @@ Inference = R6::R6Class("Inference",
 							grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
 							edi_env$global_fork_cluster = NULL
 							try(parallel::stopCluster(global_cl), silent = TRUE)
-							if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)) {
+							if (isTRUE(show_progress) && check_package_installed("pbmcapply")) {
 								return(flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
 							}
 							return(flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
@@ -310,7 +310,7 @@ Inference = R6::R6Class("Inference",
 					}
 					RUN_CHUNK(X)
 				} else {
-					if (isTRUE(show_progress) && requireNamespace("pbmcapply", quietly = TRUE)){
+					if (isTRUE(show_progress) && check_package_installed("pbmcapply")){
 						flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
 					} else {
 						flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores))

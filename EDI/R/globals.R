@@ -47,7 +47,7 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
   }
   
   if (force_mirai || .Platform$OS.type != "unix") {
-    if (!requireNamespace("mirai", quietly = TRUE)) {
+    if (!check_package_installed("mirai")) {
       stop("The 'mirai' package is required for parallelization on this system or when force_mirai = TRUE. Please install it.")
     }
     edi_env$mirai_has_been_used = TRUE
@@ -87,7 +87,7 @@ unset_num_cores = function() {
   
   # Handle mirai cluster
   if (!is.null(edi_env$global_mirai_num_cores)) {
-    if (requireNamespace("mirai", quietly = TRUE)) {
+    if (check_package_installed("mirai")) {
       tryCatch(mirai::daemons(0), error = function(e) invisible(NULL)) # Stop daemons
     }
     edi_env$global_mirai_num_cores = NULL
@@ -358,10 +358,10 @@ set_package_threads = function(num_cores) {
   }
 
   # R packages with global thread setters
-	  if (requireNamespace("data.table", quietly = TRUE)) {
+	  if (check_package_installed("data.table")) {
 	    data.table::setDTthreads(num_cores)
 	  }
-	  if (requireNamespace("fixest", quietly = TRUE)) {
+	  if (check_package_installed("fixest")) {
 	    suppressWarnings(try(fixest::setFixest_nthreads(num_cores), silent = TRUE))
 	  }
 

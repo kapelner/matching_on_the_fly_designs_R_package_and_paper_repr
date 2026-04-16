@@ -34,7 +34,7 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		#' @return A new inference object.
 		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			if (!requireNamespace("quantreg", quietly = TRUE)) {
+			if (!check_package_installed("quantreg")) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			private$tau = tau

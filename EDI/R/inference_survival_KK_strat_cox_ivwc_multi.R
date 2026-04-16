@@ -39,6 +39,15 @@ InferenceSurvivalMultiKKStratCoxIVWC = R6::R6Class("InferenceSurvivalMultiKKStra
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKStratCoxIVWC,
 	public = list(
+		#' @description
+		#' Initialize the Inference object.
+		#'
+		#' @param des_obj The design object.
+		#' @param verbose If TRUE, print additional information.
+		initialize = function(des_obj, verbose = FALSE) {
+			assertResponseType(des_obj$get_response_type(), "survival")
+			super$initialize(des_obj, verbose)
+		}
 
 
 

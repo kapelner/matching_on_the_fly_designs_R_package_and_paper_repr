@@ -360,7 +360,11 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	))
 	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
-	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff")
+	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is_any_inference_class(c(
+		"InferenceSurvivalMultiKKRankRegrIVWC",
+		"InferenceSurvivalMultiKKClaytonCopulaIVWC",
+		"InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood"
+	))
 	skip_ci_rand   = is_any_inference_class(c(
 		"InferenceContinMultKKQuantileRegrIVWC",
 		"InferencePropMultiKKQuantileRegrIVWC",
@@ -373,7 +377,16 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceCountMultiNegBinRegr",
 		"InferenceCountMultiZeroInflatedNegBinRegr",
 		"InferencePropMultiZeroOneInflatedBetaRegr",
-		"InferencePropMultiFractionalLogit"
+		"InferencePropMultiFractionalLogit",
+		"InferenceCountMultiHurdlePoissonRegr",
+		"InferenceCountMultiZeroInflatedPoissonRegr",
+		"InferenceCountUnivHurdlePoissonRegr",
+		"InferenceCountUnivZeroInflatedPoissonRegr",
+		"InferenceCountUnivZeroInflatedNegBinRegr",
+		"InferenceCountMultiKKHurdlePoissonIVWC",
+		"InferenceCountMultiKKHurdlePoissonCombinedLikelihood",
+		"InferenceCountUnivKKHurdlePoissonIVWC",
+		"InferenceCountUnivKKHurdlePoissonCombinedLikelihood"
 	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
 	skip_ci_rand_custom = FALSE
 	

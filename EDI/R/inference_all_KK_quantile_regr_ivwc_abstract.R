@@ -28,7 +28,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#'   Default is \code{FALSE}.
 		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			if (!requireNamespace("quantreg", quietly = TRUE)) {
+			if (!check_package_installed("quantreg")) {
 				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 			}
 			private$tau = tau
@@ -100,6 +100,51 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			)
 		},
 
+		matrix_with_n_rows = function(X, n_rows){
+			if (is.null(X)) return(matrix(numeric(0), nrow = n_rows, ncol = 0))
+			if (!is.null(dim(X))) return(as.matrix(X))
+			if (length(X) == 0L) return(matrix(numeric(0), nrow = n_rows, ncol = 0))
+			matrix(X, nrow = n_rows)
+		},
+
+		reduce_full_rank_matrix = function(X, n_rows){
+			X_orig = private$matrix_with_n_rows(X, n_rows)
+			if (ncol(X_orig) == 0L) return(list(X = X_orig, keep = integer(0)))
+
+			reduced = qr_reduce_full_rank_cpp(X_orig)
+			keep = as.integer(reduced$keep)
+			if (length(keep) > 0L && all(is.finite(keep)) && all(keep >= 1L) && all(keep <= ncol(X_orig))){
+				X_red = X_orig[, keep, drop = FALSE]
+				return(list(X = X_red, keep = keep))
+			}
+
+			X_red = private$matrix_with_n_rows(reduced$X_reduced, nrow(X_orig))
+			list(X = X_red, keep = seq_len(ncol(X_red)))
+		},
+
+		reduce_preserve_cols_matrix = function(X, required_cols){
+			X_orig = as.matrix(X)
+			if (ncol(X_orig) == 0L) return(list(X = X_orig, keep = integer(0)))
+
+			reduced = qr_reduce_preserve_cols_cpp(X_orig, required_cols)
+			keep = as.integer(reduced$keep)
+			if (length(keep) > 0L && all(is.finite(keep)) && all(keep >= 1L) && all(keep <= ncol(X_orig))){
+				X_red = X_orig[, keep, drop = FALSE]
+				return(list(X = X_red, keep = keep))
+			}
+
+			X_red = private$matrix_with_n_rows(reduced$X_reduced, nrow(X_orig))
+			list(X = X_red, keep = seq_len(ncol(X_red)))
+		},
+
+		set_colnames_safely = function(X, names_vec){
+			if (length(names_vec) != ncol(X)) {
+				names_vec = paste0("x", seq_len(ncol(X)))
+			}
+			colnames(X) = names_vec
+			X
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -161,7 +206,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 
 			# QR-reduce Xd to full rank (same logic as OLS compound)
 			if (ncol(Xd) > 0){
-				Xd = qr_reduce_full_rank_cpp(Xd)$X_reduced
+				Xd = private$reduce_full_rank_matrix(Xd, m)$X
 			}
 			p_kept = ncol(Xd)
 
@@ -184,7 +229,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 
 			# Main path: rq on differences with reduced covariates
 			p = ncol(Xd)
-			colnames(Xd) = paste0("xd", seq_len(p))
+			Xd = private$set_colnames_safely(Xd, paste0("xd", seq_len(p)))
 			dat = as.data.frame(Xd)
 			dat$yd__ = yd
 			fit = tryCatch(
@@ -212,14 +257,15 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			# Build full design matrix and QR-reduce, always preserving treatment column
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
-			reduced = qr_reduce_preserve_cols_cpp(X_full, j_treat)
-			X_full  = reduced$X_reduced
+			reduced = private$reduce_preserve_cols_matrix(X_full, j_treat)
+			X_full  = reduced$X
 			j_treat = match(2L, reduced$keep)
+			if (!is.finite(j_treat)) return(list(beta = NA_real_, ssq = NA_real_))
 
 			p = ncol(X_full)
 			cn = paste0("xr", seq_len(p))
 			cn[j_treat] = "trt__"
-			colnames(X_full) = cn
+			X_full = private$set_colnames_safely(X_full, cn)
 
 			dat = as.data.frame(X_full)
 			dat$yr__ = y_r
@@ -275,7 +321,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			m      = length(yd_adj)
 
 			if (ncol(Xd) > 0){
-				Xd = qr_reduce_full_rank_cpp(Xd)$X_reduced
+				Xd = private$reduce_full_rank_matrix(Xd, m)$X
 			}
 
 			T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
@@ -306,13 +352,14 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
-			reduced = qr_reduce_preserve_cols_cpp(X_full, j_treat)
-			X_full  = reduced$X_reduced
+			reduced = private$reduce_preserve_cols_matrix(X_full, j_treat)
+			X_full  = reduced$X
 			j_treat = match(2L, reduced$keep)
+			if (!is.finite(j_treat)) return(NA_real_)
 			p  = ncol(X_full)
 			cn = paste0("xr", seq_len(p))
 			cn[j_treat] = "trt__"
-			colnames(X_full) = cn
+			X_full = private$set_colnames_safely(X_full, cn)
 
 			y_adj_obs = ty - delta_0 * w_r
 			T_obs = private$qr_trt_coef_reservoir(y_adj_obs, X_full, tau)
@@ -340,7 +387,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				if (is.null(fit)) return(NA_real_)
 				return(unname(coef(fit)[1L]))
 			}
-			colnames(Xd) = paste0("xd", seq_len(p))
+			Xd = private$set_colnames_safely(Xd, paste0("xd", seq_len(p)))
 			dat = as.data.frame(Xd)
 			dat$yd__ = yd
 			fit = tryCatch(

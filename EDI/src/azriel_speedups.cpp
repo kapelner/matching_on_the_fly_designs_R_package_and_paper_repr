@@ -5,16 +5,6 @@
 
 using namespace Rcpp;
 
-namespace {
-
-struct BlockAccumulator {
-  int n = 0;
-  double sum = 0.0;
-  double sum_sq = 0.0;
-};
-
-}  // namespace
-
 // [[Rcpp::export]]
 double compute_azriel_block_se_cpp(const NumericVector& y,
                                    const IntegerVector& m_vec,
@@ -26,28 +16,40 @@ double compute_azriel_block_se_cpp(const NumericVector& y,
     return NA_REAL;
   }
 
-  std::unordered_map<int, BlockAccumulator> blocks;
-  blocks.reserve(static_cast<std::size_t>(y.size()));
+  // y is binary (0/1), so y[i]^2 == y[i] and sum_sq == sum; store integer sum only.
+  std::unordered_map<int, int> block_sums;
+  block_sums.reserve(static_cast<std::size_t>(y.size()));
 
+  int n_included = 0;
   for (int i = 0; i < y.size(); ++i) {
     const int match_id = m_vec[i];
     if (match_id == NA_INTEGER || match_id <= 0 || !R_finite(y[i])) {
       continue;
     }
-    BlockAccumulator& block = blocks[match_id];
-    block.n += 1;
-    block.sum += y[i];
-    block.sum_sq += y[i] * y[i];
+    block_sums[match_id] += static_cast<int>(y[i]);
+    ++n_included;
   }
 
+  const int B = static_cast<int>(block_sums.size());
+  if (B <= 0) {
+    return NA_REAL;
+  }
+
+  // Equal block sizes guaranteed by assert_equal_block_sizes on the R side.
+  // Derive block size once and cast to double once.
+  const int    n_b   = n_included / B;
+  if (n_b <= 1) {
+    return NA_REAL;
+  }
+  const double n_b_d = static_cast<double>(n_b);
+  const double denom = n_b_d - 1.0;
+
   double var_cmh = 0.0;
-  for (const auto& entry : blocks) {
-    const BlockAccumulator& block = entry.second;
-    if (block.n <= 1) {
-      return NA_REAL;
-    }
-    const double ss = block.sum_sq - (block.sum * block.sum) / static_cast<double>(block.n);
-    var_cmh += (static_cast<double>(block.n) / (block.n - 1.0)) * ss;
+  for (const auto& entry : block_sums) {
+    const double s = static_cast<double>(entry.second);
+    // ss  = sum_sq - sum^2/n_b = s - s^2/n_b = s*(n_b - s)/n_b
+    // contribution = (n_b/(n_b-1)) * ss = s*(n_b - s)/(n_b - 1)
+    var_cmh += s * (n_b_d - s) / denom;
   }
 
   return (2.0 / static_cast<double>(n_total)) * std::sqrt(var_cmh);
