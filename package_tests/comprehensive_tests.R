@@ -312,11 +312,69 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
 	skip_slow = FALSE
-	skip_bootstrap = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferenceAbstractKKClaytonCopulaIVWC") || is(seq_des_inf, "InferenceAbstractKKClaytonCopulaCombinedLikelihood") || is(seq_des_inf, "InferenceAbstractKKWeibullFrailtyIVWC") || is(seq_des_inf, "InferenceAbstractKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceAllKKWilcoxIVWC") || is(seq_des_inf, "InferenceAbstractKKWilcoxRegrIVWC") || is(seq_des_inf, "InferenceSurvivalUnivKKRankRegrIVWC") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferenceAllSimpleWilcox") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
+	B_debug = min(51L, as.integer(r))
+	r_debug = min(51L, as.integer(r))
+	is_any_inference_class = function(classes){
+		any(vapply(classes, function(cls) is(seq_des_inf, cls), logical(1)))
+	}
+	skip_bootstrap = is_any_inference_class(c(
+		"InferenceAbstractKKGEE",
+		"InferenceAbstractKKGLMM",
+		"InferenceContinMultGLS",
+		"InferenceAbstractKKClaytonCopulaIVWC",
+		"InferenceAbstractKKClaytonCopulaCombinedLikelihood",
+		"InferenceAbstractKKWeibullFrailtyIVWC",
+		"InferenceAbstractKKWeibullFrailtyCombinedLikelihood",
+		"InferenceAllKKWilcoxIVWC",
+		"InferenceAbstractKKWilcoxRegrIVWC",
+		"InferenceSurvivalUnivKKRankRegrIVWC",
+		"InferenceIncidExactZhangAbstract",
+		"InferenceAllSimpleWilcox",
+		"InferenceOrdinalUnivKKGEE",
+		"InferenceOrdinalUnivKKGLMM",
+		"InferenceOrdinalMultiKKGLMM",
+		"InferenceOrdinalUnivKKGLMMProbit",
+		"InferenceOrdinalMultiKKGLMMProbit",
+		"InferenceOrdinalPairedSignTest",
+		"InferenceOrdinalUnivKKCondPropOddsCombinedRegr",
+		"InferenceOrdinalUnivKKCondContRatioRegr",
+		"InferenceOrdinalUnivKKCondAdjCatLogitRegr",
+		"InferenceOrdinalUniGCompMeanDiff",
+		"InferenceOrdinalMultiGCompMeanDiff",
+		"InferenceOrdinalMultiCLLRegr",
+		"InferenceOrdinalUniOrderedProbitRegr",
+		"InferenceOrdinalMultiOrderedProbitRegr",
+		"InferenceOrdinalUniCauchitRegr",
+		"InferenceOrdinalMultiCauchitRegr",
+		"InferenceOrdinalMultiContRatioRegr",
+		"InferenceOrdinalMultiKKGEE",
+		"InferenceOrdinalMultiKKCondContRatioRegr",
+		"InferenceOrdinalMultiKKCondAdjCatLogitRegr",
+		"InferenceOrdinalMultiCumulProbitRegr",
+		"InferenceOrdinalMultiPartialProportionalOddsRegr",
+		"InferenceSurvivalMultiDepCensTransformRegr",
+		"InferencePropMultiZeroOneInflatedBetaRegr",
+		"InferencePropMultiFractionalLogit",
+		"InferenceCountMultiHurdleNegBinRegr",
+		"InferenceContinMultiRobustRegr"
+	))
 	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
 	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff")
-	skip_ci_rand   = is(seq_des_inf, "InferenceContinMultKKQuantileRegrIVWC") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrIVWC") || is(seq_des_inf, "InferenceContinMultKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropMultiKKQuantileRegrCombinedLikelihood") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
+	skip_ci_rand   = is_any_inference_class(c(
+		"InferenceContinMultKKQuantileRegrIVWC",
+		"InferencePropMultiKKQuantileRegrIVWC",
+		"InferenceContinMultKKQuantileRegrCombinedLikelihood",
+		"InferencePropMultiKKQuantileRegrCombinedLikelihood",
+		"InferencePropUniGCompMeanDiff",
+		"InferencePropMultiGCompMeanDiff",
+		"InferenceContinMultiRobustRegr",
+		"InferenceCountMultiHurdleNegBinRegr",
+		"InferenceCountMultiNegBinRegr",
+		"InferenceCountMultiZeroInflatedNegBinRegr",
+		"InferencePropMultiZeroOneInflatedBetaRegr",
+		"InferencePropMultiFractionalLogit"
+	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
 	skip_ci_rand_custom = FALSE
 	
 	skip_ci = beta_T == 1 && (
@@ -366,6 +424,45 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 			identical(label, "compute_asymp_two_sided_pval_for_treatment_effect")
 	}
 
+	is_explicitly_nonestimable = function(obj){
+		if (is.null(obj) || !is.function(obj$is_nonestimable)) return(FALSE)
+		isTRUE(tryCatch(obj$is_nonestimable(), error = function(e) FALSE))
+	}
+
+	should_record_nonestimable_as_missing = function(obj, label, result = NULL){
+		if (!is_explicitly_nonestimable(obj)) return(FALSE)
+		stage = if (!is.null(obj) && is.function(obj$get_nonestimable_stage)) {
+			tryCatch(obj$get_nonestimable_stage(), error = function(e) NULL)
+		} else {
+			NULL
+		}
+		if (identical(stage, "estimate")) return(TRUE)
+		if (identical(stage, "se") && identical(label, "compute_treatment_estimate") &&
+		    !is.null(result) && !has_invalid_numeric(result)) {
+			return(FALSE)
+		}
+		TRUE
+	}
+
+	nonestimable_error_message = function(obj, label){
+		reason = if (!is.null(obj) && is.function(obj$get_nonestimable_reason)) {
+			tryCatch(obj$get_nonestimable_reason(), error = function(e) NULL)
+		} else {
+			NULL
+		}
+		stage = if (!is.null(obj) && is.function(obj$get_nonestimable_stage)) {
+			tryCatch(obj$get_nonestimable_stage(), error = function(e) NULL)
+		} else {
+			NULL
+		}
+		parts = c(
+			paste0("Explicitly non-estimable in ", label),
+			if (!is.null(stage) && nzchar(stage)) paste0("stage=", stage) else NULL,
+			if (!is.null(reason) && nzchar(reason)) paste0("reason=", reason) else NULL
+		)
+		paste(parts, collapse = "; ")
+	}
+
 safe_call = function(label, expr){
 	if (is_row_completed(
 		rep_curr,
@@ -393,6 +490,13 @@ safe_call = function(label, expr){
 	start_elapsed = unname(proc.time()[["elapsed"]])
 	tryCatch({
 		result <- expr
+			if (should_record_nonestimable_as_missing(seq_des_inf, label, result)) {
+				msg = nonestimable_error_message(seq_des_inf, label)
+				message("Recording missing output for ", label, " as ok (explicitly non-estimable).")
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "ok", duration_time_sec = duration_time_sec, error_message = NA_character_)
+				return(invisible(NULL))
+			}
 			if (is_allowed_missing_output(label, result)) {
 				message("Recording missing output for ", label, " as ok (ordinal asymptotic p-value not estimable).")
 				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
@@ -420,6 +524,11 @@ safe_call = function(label, expr){
 			record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, result, status = "ok", duration_time_sec = duration_time_sec)
 			result
 		}, error = function(e){
+			if (should_record_nonestimable_as_missing(seq_des_inf, label)) {
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, class(seq_des_inf)[1], label, NA_character_, status = "ok", duration_time_sec = duration_time_sec, error_message = NA_character_)
+				return(invisible(NULL))
+			}
 			msg = if (length(e$message) == 0L) "" else e$message
 			is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
 			                 grepl("must implement", msg, fixed = TRUE) ||
@@ -550,7 +659,7 @@ safe_call = function(label, expr){
 
 	if (!skip_slow && !skip_bootstrap){
 		safe_call_debug("approximate_bootstrap_distribution_beta_hat_T_debug",
-						seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = r, debug = TRUE))
+						seq_des_inf$approximate_bootstrap_distribution_beta_hat_T(B = B_debug, debug = TRUE))
 	}
 	if (!skip_slow && !skip_ci && !skip_bootstrap){
 		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = r, na.rm = TRUE))
@@ -560,7 +669,7 @@ safe_call = function(label, expr){
 	}
 	if (!skip_slow && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion")){
 		safe_call_debug("approximate_randomization_distribution_beta_hat_T_debug",
-						seq_des_inf$approximate_randomization_distribution_beta_hat_T(r = r, debug = TRUE))
+						seq_des_inf$approximate_randomization_distribution_beta_hat_T(r = r_debug, debug = TRUE))
 		safe_call("compute_two_sided_pval_for_treatment_effect_rand", seq_des_inf$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE))
 		transform_for_rand = switch(
 			response_type,

@@ -86,9 +86,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
+				private$cache_nonestimable_estimate("hurdle_negbin_design_unusable")
 				return(invisible(NULL))
 			}
 
@@ -99,9 +97,7 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 				reduced = list(X = X_treat_only, keep = 1:2, j_treat = 2L)
 			}
 			if (is.null(fit)){
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
+				private$cache_nonestimable_estimate("hurdle_negbin_fit_unavailable")
 				return(invisible(NULL))
 			}
 

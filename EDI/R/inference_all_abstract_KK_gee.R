@@ -186,27 +186,43 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
 
 			if (estimate_only){
 				mod = private$fit_gee_with_fallback(std_err = FALSE, estimate_only = TRUE)
 				private$cached_values$beta_hat_T = private$extract_gee_treatment_estimate(mod)
+				if (!is.finite(private$cached_values$beta_hat_T)){
+					private$cache_nonestimable_estimate("kk_gee_estimate_unavailable")
+					return(invisible(NULL))
+				}
+				private$clear_nonestimable_state()
 				return(invisible(NULL))
 			}
 
 			mod = private$fit_gee_with_fallback(std_err = TRUE, estimate_only = FALSE)
 			if (is.null(mod)){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("kk_gee_fit_failed")
+				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			beta = tryCatch(stats::coef(mod), error = function(e) NULL)
 			j_treat = private$gee_treatment_index(beta)
 			private$cached_values$beta_hat_T = if (is.finite(j_treat) && !is.na(j_treat) && j_treat >= 1L && j_treat <= length(beta)) as.numeric(beta[[j_treat]]) else NA_real_
+			if (!is.finite(private$cached_values$beta_hat_T)){
+				private$cache_nonestimable_estimate("kk_gee_estimate_unavailable")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			private$cached_values$s_beta_hat_T = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
+			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
+				private$cache_nonestimable_se("kk_gee_standard_error_unavailable")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+			private$clear_nonestimable_state()
 			private$cached_values$is_z = TRUE
 		},
 

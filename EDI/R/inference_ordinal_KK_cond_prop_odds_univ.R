@@ -105,19 +105,14 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 			m_vec = private$m
 			m = max(m_vec, na.rm = TRUE)
 			if (m == 0){
-				private$cached_values$beta_hat_T   = NA_real_
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("ordinal_cond_prop_odds_no_matched_pairs")
 				return(invisible(NULL))
 			}
 
 			y_ord = as.integer(factor(private$y, ordered = TRUE))
 			K = max(y_ord)
 			if (K < 2L){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("ordinal_cond_prop_odds_too_few_categories")
 				return(invisible(NULL))
 			}
 
@@ -148,12 +143,10 @@ InferenceOrdinalUnivKKCondPropOddsRegr = R6::R6Class(
 				if (private$harden && m > 0){
 					# If matching is so good there's no discordance, estimate is 0
 					private$cached_values$beta_hat_T   = 0
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_se("ordinal_cond_prop_odds_standard_error_unavailable")
 				} else {
-					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_estimate("ordinal_cond_prop_odds_fit_unavailable")
 				}
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 

@@ -14,3 +14,11 @@ Returns EDI's built-in policy for choosing a default bootstrap type. Each
 inference class can override the standard \code{"bca"} default via a regular
 expression pattern.
 }
+\details{
+The built-in overrides are empirical. Inference classes with repeated
+bootstrap failures in the comprehensive test suite, especially classes whose
+bootstrap-standard-error or related higher-order bootstrap paths are
+numerically fragile, are dispatched to \code{"percentile"} by default. This
+keeps the default bootstrap path estimate-only, faster, and less prone to
+NA/NaN/Inf failures.
+}

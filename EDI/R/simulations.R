@@ -970,18 +970,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
     .default_design_classes = function() {
       list(
-        # ── Sequential one-by-one ──────────────────────────────────────────────
-        DesignSeqOneByOneBernoulli,
-        DesignSeqOneByOneiBCRD,
-        DesignSeqOneByOneEfron,
-        DesignSeqOneByOneAtkinson,
-        DesignSeqOneByOneUrn,
-        DesignSeqOneByOneRandomBlockSize,   # strata_cols auto-injected if absent
-        DesignSeqOneByOneSPBR,              # strata_cols auto-injected if absent
-        DesignSeqOneByOnePocockSimon,       # strata_cols auto-injected if absent
-        DesignSeqOneByOneKK21,
-        DesignSeqOneByOneKK21stepwise,
-        DesignSeqOneByOneKK14,
         # ── Fixed ──────────────────────────────────────────────────────────────
         FixedDesignBernoulli,
         FixedDesigniBCRD,
@@ -995,13 +983,26 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         FixedDesignBlockedCluster,          # strata_cols + cluster_col auto-injected if absent
         FixedDesignDOptimal,
         FixedDesignAOptimal,
-        FixedDesignFactorial                # factors auto-injected if absent
+        FixedDesignFactorial,               # factors auto-injected if absent
+
+        # ── Sequential one-by-one ──────────────────────────────────────────────
+        DesignSeqOneByOneBernoulli,
+        DesignSeqOneByOneiBCRD,
+        DesignSeqOneByOneEfron,
+        DesignSeqOneByOneAtkinson,
+        DesignSeqOneByOneUrn,
+        DesignSeqOneByOneRandomBlockSize,   # strata_cols auto-injected if absent
+        DesignSeqOneByOneSPBR,              # strata_cols auto-injected if absent
+        DesignSeqOneByOnePocockSimon,       # strata_cols auto-injected if absent
+        DesignSeqOneByOneKK21,
+        DesignSeqOneByOneKK21stepwise,
+        DesignSeqOneByOneKK14
       )
     },
 
     .default_inference_classes = function() {
       rt   = private$response_type
-      univ = if (rt != "survival") list(InferenceAllSimpleMeanDiff) else list()
+      univ = if (!(rt == "survival" && private$prob_censoring > 0)) list(InferenceAllSimpleMeanDiff) else list()
 
       type_specific = switch(rt,
         continuous = list(

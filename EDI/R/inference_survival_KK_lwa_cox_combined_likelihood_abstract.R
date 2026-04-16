@@ -84,6 +84,7 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -100,8 +101,7 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 			}
 
 			if (sum(private$dead) == 0L){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_lwa_cox_combined_no_events")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
@@ -145,32 +145,43 @@ InferenceAbstractKKLWACoxCombinedLikelihood = R6::R6Class("InferenceAbstractKKLW
 			)
 			mod = attempt$fit
 			if (is.null(mod)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_lwa_cox_combined_fit_failed")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
 			if (is.null(coefs) || !("w" %in% names(coefs))){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_lwa_cox_combined_treatment_missing")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			beta = as.numeric(coefs["w"])
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+			if (!is.finite(private$cached_values$beta_hat_T) || abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
+				private$cache_nonestimable_estimate("kk_lwa_cox_combined_extreme_estimate")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
 			
 			if (!estimate_only) {
 				vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
 				if (is.null(vcv) || !("w" %in% rownames(vcv))){
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_se("kk_lwa_cox_combined_standard_error_unavailable")
+					private$cached_values$is_z = TRUE
+					return(invisible(NULL))
 				} else {
 					se = sqrt(as.numeric(vcv["w", "w"]))
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
+					if (!is.finite(private$cached_values$s_beta_hat_T)){
+						private$cache_nonestimable_se("kk_lwa_cox_combined_standard_error_unavailable")
+						private$cached_values$is_z = TRUE
+						return(invisible(NULL))
+					}
 				}
 			}
+			private$clear_nonestimable_state()
 			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		}

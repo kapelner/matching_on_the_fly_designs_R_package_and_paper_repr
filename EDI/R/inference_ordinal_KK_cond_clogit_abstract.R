@@ -40,9 +40,7 @@ ordinal_cond_clogit_shared_univ = function(private_env, expand_fun){
 
 	setup = ordinal_cond_clogit_compute_setup(private_env)
 	if (setup$K < 2L){
-		private_env$cached_values$beta_hat_T   = NA_real_
-		private_env$cached_values$s_beta_hat_T = NA_real_
-		private_env$cached_values$is_z         = TRUE
+		private_env$cache_nonestimable_estimate("ordinal_cond_clogit_too_few_categories")
 		return(invisible(NULL))
 	}
 
@@ -55,9 +53,7 @@ ordinal_cond_clogit_shared_univ = function(private_env, expand_fun){
 
 	mod = clogit_helper(expanded$y, data.frame(), expanded$w, expanded$strata)
 	if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
-		private_env$cached_values$beta_hat_T   = NA_real_
-		private_env$cached_values$s_beta_hat_T = NA_real_
-		private_env$cached_values$is_z         = TRUE
+		private_env$cache_nonestimable_estimate("ordinal_cond_clogit_fit_unavailable")
 		return(invisible(NULL))
 	}
 
@@ -72,9 +68,7 @@ ordinal_cond_clogit_shared_multi = function(private_env, expand_fun, trials_fun)
 
 	setup = ordinal_cond_clogit_compute_setup(private_env)
 	if (setup$K < 2L){
-		private_env$cached_values$beta_hat_T   = NA_real_
-		private_env$cached_values$s_beta_hat_T = NA_real_
-		private_env$cached_values$is_z         = TRUE
+		private_env$cache_nonestimable_estimate("ordinal_cond_clogit_too_few_categories")
 		return(invisible(NULL))
 	}
 
@@ -115,9 +109,7 @@ ordinal_cond_clogit_shared_multi = function(private_env, expand_fun, trials_fun)
 	)
 	mod = attempt$fit
 	if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
-		private_env$cached_values$beta_hat_T   = NA_real_
-		private_env$cached_values$s_beta_hat_T = NA_real_
-		private_env$cached_values$is_z         = TRUE
+		private_env$cache_nonestimable_estimate("ordinal_cond_clogit_fit_unavailable")
 		return(invisible(NULL))
 	}
 

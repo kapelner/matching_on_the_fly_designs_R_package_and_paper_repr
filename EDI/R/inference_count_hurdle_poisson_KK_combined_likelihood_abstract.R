@@ -190,25 +190,19 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 
 			model_data = private$build_model_data()
 			if (is.null(model_data)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_no_model_data")
 				return(invisible(NULL))
 			}
 
 			mod = private$fit_hurdle_model(model_data)
 			if (is.null(mod)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_fit_unavailable")
 				return(invisible(NULL))
 			}
 
 			cond_fixef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
 			if (is.null(cond_fixef) || !("w" %in% names(cond_fixef)) || !is.finite(cond_fixef[["w"]])){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_treatment_missing")
 				return(invisible(NULL))
 			}
 

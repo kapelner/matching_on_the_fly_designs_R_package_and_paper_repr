@@ -220,6 +220,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'
 		#' @param delta					Null hypothesis value. Default 0.
 		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
+		#'   required after filtering. Default 50. Must be smaller than \code{B}.
 		#' @param type					Bootstrap p-value type. Supported values are
 		#'   \code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, and \code{"bca"}.
@@ -237,16 +239,23 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE){
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 50L){
 			assertNumeric(delta, len = 1)
 			assertCount(B, positive = TRUE)
+			assertCount(min_number_usable_samples, positive = TRUE)
+			if (as.integer(B) <= as.integer(min_number_usable_samples)) {
+				stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+			}
 			assertFlag(na.rm)
 			type = tolower(private$get_bootstrap_type(type))
 			assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
 
-			need_se = type %in% c("studentized", "bootstrap-t")
-			if (need_se) {
-				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(B = B, na.rm = isTRUE(na.rm))
+			if (type %in% c("studentized", "bootstrap-t")) {
+				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(
+					B = B,
+					na.rm = isTRUE(na.rm),
+					require_se = TRUE
+				)
 				boot_distr = boot_stats$theta
 			} else {
 				boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
@@ -255,10 +264,17 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
 			else if (any(!is.finite(boot_distr))) return(NA_real_)
+			if (length(boot_distr) < as.integer(min_number_usable_samples)) {
+				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_too_few_finite_estimates")
+				return(NA_real_)
+			}
 			if (length(boot_distr) == 0L) return(NA_real_)
 
 			est = as.numeric(self$compute_treatment_estimate())
-			if (length(est) == 0L || !is.finite(est[1])) return(NA_real_)
+			if (length(est) == 0L || !is.finite(est[1])) {
+				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_original_estimate_unavailable")
+				return(NA_real_)
+			}
 			est = est[1]
 
 			if (type == "percentile") {
@@ -282,17 +298,37 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
 				# p = P(|t*_b| >= |t_obs|)
 				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
-				if (!is.finite(se_hat) || se_hat <= 0) return(NA_real_)
+				if (!is.finite(se_hat) || se_hat <= 0) {
+					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
+					return(NA_real_)
+				}
 				t_obs = abs(est - delta) / se_hat
 				se_boot = boot_stats$se
 				ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
 				t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
 				t_boot = t_boot[is.finite(t_boot)]
-				if (length(t_boot) == 0L) return(NA_real_)
+				if (length(t_boot) < as.integer(min_number_usable_samples)) {
+					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
+					return(NA_real_)
+				}
 				min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
 			} else if (type == "bca") {
 				# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
-				private$pval_bca(boot_distr, est, delta)
+				pval = tryCatch(
+					private$pval_bca(boot_distr, est, delta),
+					error = function(e) {
+						if (isTRUE(private$harden)) {
+							private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+							return(NA_real_)
+						}
+						stop(e)
+					}
+				)
+				if (!is.finite(pval) && isTRUE(private$harden)) {
+					private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+					return(NA_real_)
+				}
+				pval
 			}
 		},
 
@@ -301,6 +337,8 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'
 		#' @param alpha					The confidence level 1 - \code{alpha}. Default 0.05.
 		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
+		#'   required after filtering. Default 50. Must be smaller than \code{B}.
 		#' @param type					Bootstrap CI type. Supported values are
 		#'   \code{"percentile"}, \code{"basic"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
@@ -311,9 +349,14 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE){
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 50L){
 			private$assert_design_supports_resampling("Bootstrap inference")
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			assertCount(B, positive = TRUE)
+			assertCount(min_number_usable_samples, positive = TRUE)
+			if (as.integer(B) <= as.integer(min_number_usable_samples)) {
+				stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+			}
 			type = tolower(private$get_bootstrap_type(type))
 			assertChoice(type, c(
 				"percentile", "basic", "studentized", "bootstrap-t",
@@ -322,37 +365,80 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			))
 
 			est = as.numeric(self$compute_treatment_estimate(estimate_only = FALSE))
-			if (length(est) == 0L || !is.finite(est[1])) stop("Bootstrap confidence interval returned NA bounds")
+			if (length(est) == 0L || !is.finite(est[1])) {
+				if (isTRUE(private$harden)) {
+					return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
+				}
+				stop("Bootstrap confidence interval returned NA bounds")
+			}
 			est = est[1]
 
 			# BCa only needs theta (not se), so route it through the parallel bootstrap path.
 			# studentized/symmetric-percentile-t need se per replicate → serial statistics path.
 			boot_stats = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t", "prepivoted", "double-bootstrap", "calibrated", "smoothed")) {
-				private$approximate_bootstrap_statistics_beta_hat_T(B = B, show_progress = show_progress, na.rm = na.rm, smooth = identical(type, "smoothed"))
+				private$approximate_bootstrap_statistics_beta_hat_T(
+					B = B,
+					show_progress = show_progress,
+					na.rm = na.rm,
+					smooth = identical(type, "smoothed"),
+					require_se = type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")
+				)
 			} else {
 				list(theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress), se = NULL)
 			}
 
 			boot_distr = boot_stats$theta
 			boot_distr = boot_distr[is.finite(boot_distr)]
-			if (length(boot_distr) < max(10L, B / 2)) stop("Bootstrap confidence interval returned NA bounds")
+			if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
+				se_boot = boot_stats$se
+				ok = is.finite(boot_stats$theta) & is.finite(se_boot) & se_boot > 0
+				if (sum(ok) < as.integer(min_number_usable_samples)) {
+					if (isTRUE(private$harden)) {
+						return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_standard_errors", stage = "se"))
+					}
+					stop("Bootstrap confidence interval returned NA bounds")
+				}
+			} else if (length(boot_distr) < as.integer(min_number_usable_samples)) {
+				if (isTRUE(private$harden)) {
+					return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_estimates", stage = "estimate"))
+				}
+				stop("Bootstrap confidence interval returned NA bounds")
+			}
 
-			if (type == "percentile") {
-				ci = private$ci_from_boot_distribution(boot_distr, alpha, "percentile")
-			} else if (type == "basic") {
-				ci = private$ci_from_boot_distribution(boot_distr, alpha, "basic", est = est)
-			} else if (type %in% c("studentized", "bootstrap-t")) {
-				ci = private$ci_studentized(boot_stats, alpha, est)
-			} else if (type == "symmetric-percentile-t") {
-				ci = private$ci_symmetric_studentized(boot_stats, alpha, est)
-			} else if (type == "bca") {
-				ci = private$ci_bca(boot_distr, alpha, est)
-			} else if (type %in% c("prepivoted", "double-bootstrap", "calibrated")) {
-				ci = private$ci_calibrated_bootstrap(alpha, B, type, est, show_progress = show_progress, na.rm = na.rm)
-			} else if (type == "smoothed") {
-				ci = private$ci_smoothed_bootstrap(alpha, B, est, show_progress = show_progress, na.rm = na.rm)
-			} else {
-				stop("Unsupported bootstrap CI type: ", type)
+			ci = tryCatch({
+				if (type == "percentile") {
+					private$ci_from_boot_distribution(boot_distr, alpha, "percentile")
+				} else if (type == "basic") {
+					private$ci_from_boot_distribution(boot_distr, alpha, "basic", est = est)
+				} else if (type %in% c("studentized", "bootstrap-t")) {
+					private$ci_studentized(boot_stats, alpha, est)
+				} else if (type == "symmetric-percentile-t") {
+					private$ci_symmetric_studentized(boot_stats, alpha, est)
+				} else if (type == "bca") {
+					private$ci_bca(boot_distr, alpha, est)
+				} else if (type %in% c("prepivoted", "double-bootstrap", "calibrated")) {
+					private$ci_calibrated_bootstrap(alpha, B, type, est, show_progress = show_progress, na.rm = na.rm)
+				} else if (type == "smoothed") {
+					private$ci_smoothed_bootstrap(alpha, B, est, show_progress = show_progress, na.rm = na.rm)
+				} else {
+					stop("Unsupported bootstrap CI type: ", type)
+				}
+			}, error = function(e) {
+				if (isTRUE(private$harden)) {
+					stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
+					reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
+					return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
+				}
+				stop(e)
+			})
+
+			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
+				if (isTRUE(private$harden)) {
+					stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
+					reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
+					return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
+				}
+				stop("Bootstrap confidence interval returned NA bounds")
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -376,6 +462,15 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		get_bootstrap_type = function(type) {
 			if (!is.null(type)) return(type)
 			edi_bootstrap_dispatch_policy(class(self), object = self)
+		},
+
+		missing_bootstrap_ci = function(alpha, reason, stage = c("estimate", "se")){
+			stage = match.arg(stage)
+			if (identical(stage, "se")) private$cache_nonestimable_se(reason)
+			else private$cache_nonestimable_estimate(reason)
+			ci = c(NA_real_, NA_real_)
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
 		},
 
 		supports_reusable_bootstrap_worker = function(){
@@ -460,7 +555,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		},
 
 		compute_bootstrap_worker_estimate_via_compute_treatment_estimate = function(worker_state){
-			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+			theta = as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+			if (is.function(worker_state$worker$is_nonestimable) &&
+			    isTRUE(worker_state$worker$is_nonestimable("estimate"))){
+				return(NA_real_)
+			}
+			theta
 		},
 
 		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE, bootstrap_type = NULL){
@@ -576,23 +676,38 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf
 		},
 
-		bootstrap_replication_stats = function(boot_draw, smooth = FALSE){
+		bootstrap_replication_stats = function(boot_draw, smooth = FALSE, require_se = FALSE){
 			sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = smooth)
 			if (is.null(sub_inf)) return(c(theta = NA_real_, se = NA_real_))
 			tryCatch({
 				# Use the return value of compute_treatment_estimate() for theta.
 				# Reading cached_values$beta_hat_T is unreliable: some classes (e.g.
 				# GComp, KMDiff) return estimates directly without storing beta_hat_T.
-				theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = FALSE))[1L]
-				se = as.numeric(sub_inf$.__enclos_env__$private$cached_values$s_beta_hat_T)[1L]
+				theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = !isTRUE(require_se)))[1L]
+				se = if (isTRUE(require_se)) as.numeric(sub_inf$.__enclos_env__$private$cached_values$s_beta_hat_T)[1L] else NA_real_
+				if (is.function(sub_inf$is_nonestimable) && isTRUE(sub_inf$is_nonestimable("estimate"))) {
+					return(c(theta = NA_real_, se = NA_real_))
+				}
 				if (!is.finite(theta)) theta = NA_real_
-				if (!is.finite(se)) se = NA_real_
+				if (isTRUE(require_se) && is.function(sub_inf$is_nonestimable) && isTRUE(sub_inf$is_nonestimable("se"))) {
+					se = NA_real_
+				}
+				if (isTRUE(require_se) && !is.finite(se)) se = NA_real_
 				c(theta = theta, se = se)
 			}, error = function(e) c(theta = NA_real_, se = NA_real_))
 		},
 
-		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE){
+		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE, require_se = FALSE){
 			assertCount(B, positive = TRUE)
+			assertFlag(require_se)
+			if (!isTRUE(require_se) && !isTRUE(smooth)) {
+				theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress)
+				if (isTRUE(na.rm)) theta = theta[is.finite(theta)]
+				if (length(theta) == 0L) {
+					return(list(theta = numeric(0), se = numeric(0)))
+				}
+				return(list(theta = theta, se = rep(NA_real_, length(theta))))
+			}
 			n = private$des_obj$get_n()
 			stats_mat = matrix(NA_real_, nrow = B, ncol = 2L)
 			pb = NULL
@@ -602,11 +717,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			for (b in seq_len(B)) {
 				idx = private$bootstrap_sample_indices(n)
-				stats_mat[b, ] = private$bootstrap_replication_stats(idx, smooth = smooth)  # idx is a boot_draw list
+				stats_mat[b, ] = private$bootstrap_replication_stats(idx, smooth = smooth, require_se = require_se)  # idx is a boot_draw list
 				if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 			}
 			if (isTRUE(na.rm)) {
-				ok = is.finite(stats_mat[, 1L]) & is.finite(stats_mat[, 2L])
+				ok = is.finite(stats_mat[, 1L])
+				if (isTRUE(require_se)) ok = ok & is.finite(stats_mat[, 2L]) & stats_mat[, 2L] > 0
 				stats_mat = stats_mat[ok, , drop = FALSE]
 			}
 			if (nrow(stats_mat) == 0L) {

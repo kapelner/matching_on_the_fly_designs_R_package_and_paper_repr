@@ -153,9 +153,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			mod = private$fit_glmm(se = TRUE)
 			if (is.null(mod)){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("kk_glmm_fit_unavailable")
 				return(invisible(NULL))
 			}
 			coef_table = summary(mod)$coefficients$cond

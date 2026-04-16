@@ -75,6 +75,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -113,9 +114,24 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 				private$cached_values$beta_hat_T   = beta_r
 				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_lwa_cox_ivwc_no_usable_component")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
 			}
+			if (is.finite(private$cached_values$beta_hat_T) &&
+			    abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
+				private$cache_nonestimable_estimate("kk_lwa_cox_ivwc_extreme_estimate")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+			if (!estimate_only &&
+			    (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0 ||
+			     private$cached_values$s_beta_hat_T > private$max_abs_reasonable_coef)){
+				private$cache_nonestimable_se("kk_lwa_cox_ivwc_standard_error_unavailable")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+			private$clear_nonestimable_state()
 			private$cached_values$is_z = TRUE
 		},
 

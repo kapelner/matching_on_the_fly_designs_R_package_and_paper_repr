@@ -88,13 +88,10 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 					# If all pairs are tied, the most natural estimate is 0 (p_hat = 0.5)
 					# but we have no variance information.
 					private$cached_values$beta_hat_T = 0
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_se("ordinal_paired_sign_test_no_discordant_pairs")
 				} else {
-					private$cached_values$beta_hat_T = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_estimate("ordinal_paired_sign_test_no_discordant_pairs")
 				}
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 			

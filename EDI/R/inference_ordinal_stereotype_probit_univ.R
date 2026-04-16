@@ -105,11 +105,7 @@ InferenceOrdinalUniStereotypeProbitRegr = R6::R6Class("InferenceOrdinalUniStereo
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			fit = private$stereotype_probit_fit()
 			if (is.null(fit)){
-				private$cached_values$beta_hat_T = NA_real_
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				private$cached_values$df = NA_real_
+				private$cache_nonestimable_estimate("ordinal_stereotype_probit_fit_unavailable")
 				return(invisible(NULL))
 			}
 			private$cached_values$beta_hat_T = fit$beta

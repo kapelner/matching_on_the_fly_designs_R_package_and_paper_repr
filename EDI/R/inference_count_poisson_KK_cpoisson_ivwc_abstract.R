@@ -119,8 +119,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 				private$cached_values$beta_hat_T   = beta_r
 				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_cpoisson_ivwc_no_usable_component")
 			}
 			private$cached_values$is_z = TRUE
 		},

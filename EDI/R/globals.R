@@ -135,6 +135,14 @@ edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
 #' inference class can override the standard \code{"bca"} default via a regular
 #' expression pattern.
 #'
+#' @details
+#' The built-in overrides are empirical. Inference classes with repeated
+#' bootstrap failures in the comprehensive test suite, especially classes whose
+#' bootstrap-standard-error or related higher-order bootstrap paths are
+#' numerically fragile, are dispatched to \code{"percentile"} by default. This
+#' keeps the default bootstrap path estimate-only, faster, and less prone to
+#' NA/NaN/Inf failures.
+#'
 #' @return A named list describing the default bootstrap type configuration.
 #' @export
 get_bootstrap_dispatch_policy = function() {
@@ -147,9 +155,22 @@ get_bootstrap_dispatch_policy = function() {
       "^InferenceProp(Uni|Multi)GCompMeanDiff$" = "percentile",
       "^InferenceSurvival(Uni|Multi)DepCensTransformRegr$" = "percentile",
       "^InferenceSurvival(Univ|Multi)KKRankRegrIVWC$" = "percentile",
+      "^InferenceIncidMultiKKClogitIVWC$" = "percentile",
+      "^InferenceIncidMultiKKClogitCombinedLikelihood$" = "percentile",
+      "^InferenceOrdinalUnivKKCondPropOddsRegr$" = "percentile",
+      "^InferenceOrdinalMultiAdjCatLogitRegr$" = "percentile",
+      "^InferenceSurvival(Univ|Multi)KKStratCoxCombinedLikelihood$" = "percentile",
+      "^InferenceCountMultiPoissonRegr$" = "percentile",
+      "^InferenceCountMultiQuasiPoissonRegr$" = "percentile",
       "^InferencePropMultiKKQuantileRegrCombinedLikelihood$" = "percentile",
       "^InferenceSurvivalMultiDepCensTransformRegr$" = "percentile",
-      "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile"
+      "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile",
+      "^InferenceOrdinalMultiCumulProbitRegr$" = "percentile",
+      "^InferenceOrdinalMultiPartialProportionalOddsRegr$" = "percentile",
+      "^InferencePropMultiZeroOneInflatedBetaRegr$" = "percentile",
+      "^InferencePropMultiFractionalLogit$" = "percentile",
+      "^InferenceCountMultiHurdleNegBinRegr$" = "percentile",
+      "^InferenceContinMultiRobustRegr$" = "percentile"
     ),
     design_class_overrides = list(
       FixedDesignBlockedCluster = c(

@@ -70,10 +70,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		},
 
 		set_failed_fit_cache = function(){
-			private$cached_values$beta_hat_T = NA_real_
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = TRUE
-			private$cached_values$df = NA_real_
+			private$cache_nonestimable_estimate("binomial_identity_fit_unavailable")
 		},
 
 		assert_finite_se = function(){

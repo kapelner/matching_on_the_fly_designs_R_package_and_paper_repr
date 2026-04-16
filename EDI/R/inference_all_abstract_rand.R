@@ -206,6 +206,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (transform_responses == "none" && is.null(private[["custom_randomization_statistic_function"]]) && !is.null(private$cached_values$t0s_rand) && length(private$cached_values$t0s_rand) >= r) {
 				t0s = private$cached_values$t0s_rand[seq_len(r)] + delta
 				t = private$compute_treatment_estimate_during_randomization_inference()
+				if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) return(NA_real_)
 				if (length(t) != 1 || !is.finite(t)) return(NA_real_)
 				na_t0s = !is.finite(t0s)
 				nsim_adj = sum(!na_t0s)
@@ -216,6 +217,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
 
 			t = private$compute_treatment_estimate_during_randomization_inference()
+			if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) return(NA_real_)
 			if (length(t) != 1 || !is.finite(t)) return(NA_real_)
 
 			mc_pval = private$compute_two_sided_pval_with_sequential_mc(
@@ -364,6 +366,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 						w_priv$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
 						error = function(e) NA_real_
 					)
+					if (is.function(worker$is_nonestimable) &&
+					    isTRUE(worker$is_nonestimable("estimate"))) {
+						est = NA_real_
+					}
 					if (is.list(est) && "b" %in% names(est)) est = est$b[1]
 					out[k] = as.numeric(est)[1]
 				}
@@ -633,6 +639,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 				thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
 				error = function(e) { iter_error <<- conditionMessage(e); NA_real_ }
 			)
+			if (is.function(thread_inf_obj$is_nonestimable) &&
+			    isTRUE(thread_inf_obj$is_nonestimable("estimate"))) {
+				estimate = NA_real_
+			}
 			val = if (is.list(estimate) && "b" %in% names(estimate)) as.numeric(estimate$b[1]) else as.numeric(estimate)
 			if (isTRUE(debug)) return(list(val = val, error = iter_error))
 			val

@@ -79,6 +79,7 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -135,9 +136,8 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 			}
 
 			if (is.null(X_comb)){
-				private$cached_values$beta_hat_T   = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("kk_clogit_combined_no_informative_data")
+				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -165,15 +165,13 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 			mod = attempt$fit
 			j_beta_T = if (!is.null(attempt$X)) match("beta_T", colnames(attempt$X)) else NA_integer_
 			if (is.null(mod) || !is.finite(j_beta_T) || is.na(j_beta_T) || !is.finite(mod$b[j_beta_T])){
-				private$cached_values$beta_hat_T   = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("kk_clogit_combined_fit_failed")
+				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 			if (max(abs(mod$b), na.rm = TRUE) > private$max_abs_reasonable_coef){
-				private$cached_values$beta_hat_T   = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("kk_clogit_combined_extreme_coefficients")
+				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -182,9 +180,12 @@ InferenceAbstractKKClogitCombinedLikelihood = R6::R6Class("InferenceAbstractKKCl
 				se = sqrt(mod$ssq_b_j)
 				private$cached_values$s_beta_hat_T = if (is.finite(se) && se <= private$max_abs_reasonable_coef) se else NA_real_
 				if (!is.finite(private$cached_values$s_beta_hat_T)){
-					private$cached_values$beta_hat_T = NA_real_
+					private$cache_nonestimable_se("kk_clogit_combined_standard_error_unavailable")
+					private$cached_values$is_z = TRUE
+					return(invisible(NULL))
 				}
 			}
+			private$clear_nonestimable_state()
 			private$cached_values$is_z         = TRUE
 			invisible(NULL)
 		}

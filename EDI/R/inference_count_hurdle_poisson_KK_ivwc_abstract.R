@@ -187,8 +187,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_ivwc_no_usable_component")
 			}
 			private$cached_values$is_z = TRUE
 			invisible(NULL)

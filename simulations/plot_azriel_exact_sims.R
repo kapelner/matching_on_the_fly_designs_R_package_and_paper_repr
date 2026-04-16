@@ -39,12 +39,12 @@ make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = 
   dat[, y_lo := get(paste0(substr(metric, 1, 3), "_a"))]
   dat[, y_hi := get(paste0(substr(metric, 1, 3), "_b"))]
 
+  dodge = position_dodge(width = 0.4)
   p = ggplot(dat, aes(x = factor(n), y = y,
                       color = inference_short, group = inference_short)) +
     geom_hline(yintercept = hline, linetype = "dashed", color = "gray60", linewidth = 0.4) +
-    #geom_line(linewidth = 0.6) +
-    geom_point(size = 1.5) +
-    geom_errorbar(aes(ymin = y_lo, ymax = y_hi), width = 0.25, linewidth = 0.4) +
+    geom_point(size = 1.5, position = dodge) +
+    geom_errorbar(aes(ymin = y_lo, ymax = y_hi), width = 0.2, linewidth = 0.4, position = dodge) +
     facet_wrap(~ design_short, nrow = 2, ncol = 5) +
     scale_color_brewer(palette = "Set1") +
     labs(x = "n", y = ylab, color = "Inference", title = title_str) +
@@ -70,15 +70,17 @@ make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = 
   invisible(p)
 }
 
+Nrep = max(results_dt$n_pow, na.rm = TRUE)
+
 for (p_val in unique(results_dt$p)) {
   for (dt_val in unique(results_dt$data_type)) {
     sub = results_dt[p == p_val & data_type == dt_val]
     if (nrow(sub) == 0L) next
-    stem_pow = sprintf("plot_power_p%d_%s",    p_val, dt_val)
-    stem_cov = sprintf("plot_coverage_p%d_%s", p_val, dt_val)
-    make_plot(sub, "power",    "Power",    0.05,
-              sprintf("Power (betaT=1) | p=%d, log_odds_model=%s",    p_val, dt_val), stem_pow, save_PDF = TRUE, plot = FALSE)
-    make_plot(sub, "coverage", "Coverage", 0.95,
-              sprintf("Coverage (betaT=1) | p=%d, log_odds_model=%s", p_val, dt_val), stem_cov, save_PDF = TRUE plot = FALSE)
+    stem_pow = sprintf("plot_power_p%s_%s_Nrep_%d",    p_val, dt_val, Nrep)
+    stem_cov = sprintf("plot_coverage_p%s_%s_Nrep_%d", p_val, dt_val, Nrep)
+    make_plot(sub[betaT == 1], "power",    "Power",    0.05,
+              sprintf("Power (betaT=1) | p=%s, log_odds_model=%s",    p_val, dt_val), stem_pow, save_PDF = TRUE, plot = FALSE)
+    make_plot(sub[betaT == 0], "coverage", "Coverage", 0.95,
+              sprintf("Coverage (betaT=1) | p=%s, log_odds_model=%s", p_val, dt_val), stem_cov, save_PDF = TRUE, plot = FALSE)
   }
 }

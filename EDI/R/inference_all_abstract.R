@@ -83,6 +83,35 @@ Inference = R6::R6Class("Inference",
 		},
 
 		#' @description
+		#' Returns whether the most recent inference attempt explicitly marked the
+		#' result as non-estimable.
+		#' @param type Which stage to query: \code{"any"}, \code{"estimate"}, or \code{"se"}.
+		#' @return A logical scalar.
+		is_nonestimable = function(type = c("any", "estimate", "se")){
+			type = match.arg(type)
+			if (!isTRUE(private$cached_values$nonestimable)) return(FALSE)
+			stage = private$cached_values$nonestimable_stage
+			if (identical(type, "any")) return(TRUE)
+			if (identical(type, "estimate")) return(identical(stage, "estimate"))
+			if (identical(type, "se")) return(identical(stage, "se"))
+			FALSE
+		},
+
+		#' @description
+		#' Returns the reason recorded for the most recent explicit non-estimability.
+		#' @return A character scalar or \code{NULL}.
+		get_nonestimable_reason = function(){
+			private$cached_values$nonestimable_reason
+		},
+
+		#' @description
+		#' Returns the stage recorded for the most recent explicit non-estimability.
+		#' @return A character scalar or \code{NULL}.
+		get_nonestimable_stage = function(){
+			private$cached_values$nonestimable_stage
+		},
+
+		#' @description
 		#' Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
 		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork 
@@ -176,6 +205,35 @@ Inference = R6::R6Class("Inference",
 				return(1L)
 			}
 			requested_cores
+		},
+
+		clear_nonestimable_state = function(){
+			private$cached_values$nonestimable = FALSE
+			private$cached_values$nonestimable_reason = NULL
+			private$cached_values$nonestimable_stage = NULL
+			invisible(NULL)
+		},
+
+		cache_nonestimable_estimate = function(reason = "not_estimable"){
+			private$cached_values$beta_hat_T = NA_real_
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$nonestimable = TRUE
+			private$cached_values$nonestimable_reason = as.character(reason)[1L]
+			private$cached_values$nonestimable_stage = "estimate"
+			if (is.null(private$cached_values$is_z)) private$cached_values$is_z = TRUE
+			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
+			invisible(NULL)
+		},
+
+		cache_nonestimable_se = function(reason = "standard_error_unavailable"){
+			if (is.null(private$cached_values$beta_hat_T)) private$cached_values$beta_hat_T = NA_real_
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$nonestimable = TRUE
+			private$cached_values$nonestimable_reason = as.character(reason)[1L]
+			private$cached_values$nonestimable_stage = "se"
+			if (is.null(private$cached_values$is_z)) private$cached_values$is_z = TRUE
+			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
+			invisible(NULL)
 		},
 
 			par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){

@@ -72,10 +72,7 @@ InferenceOrdinalMultiKKGEE = R6::R6Class("InferenceOrdinalMultiKKGEE",
 			}, error = function(e) NULL)
 
 			if (is.null(mod)){
-				private$cached_values$beta_hat_T   = NA_real_
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("ordinal_multi_kk_gee_fit_unavailable")
 				return(invisible(NULL))
 			}
 			

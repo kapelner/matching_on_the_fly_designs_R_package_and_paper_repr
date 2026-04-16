@@ -124,9 +124,7 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		},
 
 		set_failed_fit_cache = function(){
-			private$cached_values$beta_hat_T = NA_real_
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
+			private$cache_nonestimable_estimate("kk_gls_fit_unavailable")
 			private$cached_values$is_z = FALSE
 		},
 

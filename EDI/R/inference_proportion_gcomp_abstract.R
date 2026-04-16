@@ -140,8 +140,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
 		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
+		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
-			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
+			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L,
+			min_number_usable_samples = 50L){
 			assertNumeric(delta, len = 1)
 			old_bootstrap_screening = private$bootstrap_screening_control
 			private$bootstrap_screening_control = list(
@@ -151,7 +153,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				min_group_n = as.integer(min_group_n)
 			)
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, min_number_usable_samples = min_number_usable_samples)
 		},
 
 		#' @description
@@ -165,9 +167,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
+		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL,
 			na.rm = TRUE, show_progress = TRUE, boundary_tol = 0.02, max_boundary_mass = 0.95,
-			sep_tol = 0.02, min_group_n = 5L){
+			sep_tol = 0.02, min_group_n = 5L, min_number_usable_samples = 50L){
 			old_bootstrap_screening = private$bootstrap_screening_control
 			private$bootstrap_screening_control = list(
 				boundary_tol = boundary_tol,
@@ -177,7 +180,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			)
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
 			super$compute_bootstrap_confidence_interval(
-				alpha = alpha, B = B, type = type, na.rm = na.rm, show_progress = show_progress
+				alpha = alpha, B = B, type = type, na.rm = na.rm, show_progress = show_progress,
+				min_number_usable_samples = min_number_usable_samples
 			)
 		},
 

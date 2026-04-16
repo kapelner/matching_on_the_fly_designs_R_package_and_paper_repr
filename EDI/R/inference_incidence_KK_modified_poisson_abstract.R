@@ -47,10 +47,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		},
 
 		set_failed_fit_cache = function(){
-			private$cached_values$beta_hat_T = NA_real_
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = TRUE
-			private$cached_values$df = NA_real_
+			private$cache_nonestimable_estimate("kk_modified_poisson_fit_unavailable")
 			private$cached_values$full_coefficients = NULL
 			private$cached_values$full_vcov = NULL
 			private$cached_values$summary_table = NULL

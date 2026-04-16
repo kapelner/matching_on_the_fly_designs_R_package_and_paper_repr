@@ -85,9 +85,7 @@ InferenceAbstractKKPoissonCPoissonCombinedLikelihood = R6::R6Class("InferenceAbs
 		},
 
 		set_failed_combined_cache = function(){
-			private$cached_values$beta_hat_T = NA_real_
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = TRUE
+			private$cache_nonestimable_estimate("kk_cpoisson_combined_fit_unavailable")
 			invisible(FALSE)
 		},
 

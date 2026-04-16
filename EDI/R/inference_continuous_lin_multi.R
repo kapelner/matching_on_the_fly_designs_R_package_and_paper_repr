@@ -141,14 +141,8 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			j_treat = reduced$j_treat
 
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (estimate_only) {
-					private$cached_values$lin_estimate_only_complete = TRUE
-					return(invisible(NULL))
-				}
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				private$cached_values$df = NA_real_
+				private$cache_nonestimable_estimate("linear_model_design_unusable")
+				if (estimate_only) private$cached_values$lin_estimate_only_complete = TRUE
 				private$cached_values$lin_full_complete = TRUE
 				return(invisible(NULL))
 			}
@@ -156,13 +150,10 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 			mod = stats::lm.fit(X_fit, private$y)
 			coef_hat = as.numeric(mod$coefficients)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
-				private$cached_values$beta_hat_T = NA_real_
+				private$cache_nonestimable_estimate("linear_model_coefficients_unavailable")
 				if (estimate_only){
 					private$cached_values$lin_estimate_only_complete = TRUE
 				} else {
-					private$cached_values$s_beta_hat_T = NA_real_
-					private$cached_values$is_z = TRUE
-					private$cached_values$df = NA_real_
 					private$cached_values$lin_full_complete = TRUE
 				}
 				return(invisible(NULL))
@@ -180,10 +171,7 @@ InferenceContinMultLin = R6::R6Class("InferenceContinMultLin",
 				error = function(e) NULL
 			)
 			if (is.null(post_fit)){
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				private$cached_values$df = NA_real_
+				private$cache_nonestimable_estimate("linear_model_post_fit_unavailable")
 				private$cached_values$lin_full_complete = TRUE
 				return(invisible(NULL))
 			}

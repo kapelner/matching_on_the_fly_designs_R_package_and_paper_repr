@@ -105,10 +105,7 @@ InferenceOrdinalUnivKKCondAdjCatLogitRegr = R6::R6Class(
 			y_ord = as.integer(factor(private$y, ordered = TRUE))
 			K = max(y_ord)
 			if (K < 2L){
-				private$cached_values$beta_hat_T   = NA_real_
-			if (estimate_only) return(invisible(NULL))
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
+				private$cache_nonestimable_estimate("ordinal_cond_adj_cat_logit_too_few_categories")
 				return(invisible(NULL))
 			}
 
@@ -126,12 +123,10 @@ InferenceOrdinalUnivKKCondAdjCatLogitRegr = R6::R6Class(
 			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){
 				if (private$harden && length(unique(expanded$strata)) > 0){
 					private$cached_values$beta_hat_T   = 0
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_se("ordinal_cond_adj_cat_logit_standard_error_unavailable")
 				} else {
-					private$cached_values$beta_hat_T   = NA_real_
-					private$cached_values$s_beta_hat_T = NA_real_
+					private$cache_nonestimable_estimate("ordinal_cond_adj_cat_logit_fit_unavailable")
 				}
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 

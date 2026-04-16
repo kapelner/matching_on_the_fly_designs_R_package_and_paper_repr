@@ -2,7 +2,7 @@ library(EDI)
 suppressPackageStartupMessages(library(data.table))
 
 # ── Tunable parameters ────────────────────────────────────────────────────────
-Nrep       = 1000L   # Monte Carlo replications per cell
+Nrep       = 10000L   # Monte Carlo replications per cell
 betaTs     = c(1, 0) # 0 → size / type-I error;  1 → power / coverage
 alpha      = 0.05
 ns         = c(64L, 128L, 256L)
@@ -51,8 +51,12 @@ inference_classes = list(
 # inheriting InferenceExact are expected and suppressed below.
 inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval")
 
+# ── Load existing results ─────────────────────────────────────────────────────
+existing_dt = if (file.exists(out_file)) fread(out_file) else NULL
+
 # ── Run ───────────────────────────────────────────────────────────────────────
-all_results = list()
+all_results = if (!is.null(existing_dt) && nrow(existing_dt) > 0L)
+  list(existing_dt) else list()
 
 for (betaT in betaTs) {
   for (n in ns) {
@@ -61,6 +65,16 @@ for (betaT in betaTs) {
 
         # Friedman nonlinear function needs at least 5 covariates
         if (data_type == "nonlinear" && p < 5L) next
+
+        # Skip cells already present in the loaded results
+        .bT = betaT; .n = n; .p = p; .dt = data_type
+        if (!is.null(existing_dt) &&
+            nrow(existing_dt[betaT == .bT & n == .n & p == .p & data_type == .dt]) > 0L) {
+          message(sprintf(
+            "\n── SKIP (already done) betaT=%g  n=%d  p=%d  data_type=%s",
+            betaT, n, p, data_type))
+          next
+        }
 
         message(sprintf(
           "\n── betaT=%g  n=%d  p=%d  data_type=%s ───────────────────",
@@ -101,7 +115,11 @@ for (betaT in betaTs) {
           all_results[[length(all_results) + 1L]] = sm
 
           # ── Collect and save ──────────────────────────────────────────────────────────
-          results_dt = rbindlist(all_results)
+          results_dt = rbindlist(all_results, use.names = TRUE)
+          for (.col in c("MSE", "n_est", "coverage", "n_cov", "power", "n_pow")) {
+            if (.col %in% names(results_dt))
+              set(results_dt, j = .col, value = as.numeric(results_dt[[.col]]))
+          }
 
           # Re-order columns for readability
           setcolorder(results_dt, c("betaT", "n", "p", "data_type", "design", "inference", "method"))
