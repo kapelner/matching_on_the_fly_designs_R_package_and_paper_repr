@@ -77,12 +77,13 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
-			if (should_run_asserts()) {
-				if (delta == 0){
-					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-				} else {
+			if (delta == 0){
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			} else {
+				if (should_run_asserts()) {
 					stop("TO-DO")
 				}
+				NA_real_
 			}
 		}
 	),

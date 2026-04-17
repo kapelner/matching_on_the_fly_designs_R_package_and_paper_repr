@@ -276,49 +276,47 @@ Inference = R6::R6Class("Inference",
 				global_cl = get_global_fork_cluster()
 				global_mirai_cores = get_global_mirai_cores()
 
-				if (should_run_asserts()) {
-					if (!is.null(global_cl)){
-						worker_cl = global_cl[seq_len(min(n_cores, length(global_cl)))]
-						tryCatch({
-							if (!is.null(export_list) && length(export_list) > 0L) {
-								export_env = list2env(export_list, parent = emptyenv())
-								parallel::clusterExport(worker_cl, names(export_list), envir = export_env)
-							}
-							flatten_chunk_results(parallel::parLapply(worker_cl, chunks, RUN_CHUNK))
-						}, error = function(e) {
-						# If the persistent cluster has been killed externally (for example by a
-						# timeout watchdog), clear it and fall back to a one-shot Unix fork apply.
-						# This prevents stale socket connections from poisoning subsequent calls.
-						msg = conditionMessage(e)
-							if (.Platform$OS.type == "unix" &&
-								grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
-								edi_env$global_fork_cluster = NULL
-								try(parallel::stopCluster(global_cl), silent = TRUE)
-								if (isTRUE(show_progress) && check_package_installed("pbmcapply")) {
-									return(flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
-								}
-								return(flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
-							}
-								stop(e)
-						})
-					} else if (!is.null(global_mirai_cores)){
-						requested_mirai_cores = min(n_cores, global_mirai_cores)
-						private$ensure_mirai_daemons(requested_mirai_cores)
-						on.exit(private$ensure_mirai_daemons(global_mirai_cores), add = TRUE)
-						tasks = lapply(chunks, function(chunk) mirai::mirai({RUN_CHUNK(chunk)}, RUN_CHUNK = RUN_CHUNK, chunk = chunk))
-						flatten_chunk_results(lapply(tasks, function(m) m[]))
-					} else if (.Platform$OS.type != "unix"){
-						if (!isTRUE(private$warned_no_parallel)){
-							message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
-							private$warned_no_parallel = TRUE
+				if (!is.null(global_cl)){
+					worker_cl = global_cl[seq_len(min(n_cores, length(global_cl)))]
+					tryCatch({
+						if (!is.null(export_list) && length(export_list) > 0L) {
+							export_env = list2env(export_list, parent = emptyenv())
+							parallel::clusterExport(worker_cl, names(export_list), envir = export_env)
 						}
-						RUN_CHUNK(X)
+						flatten_chunk_results(parallel::parLapply(worker_cl, chunks, RUN_CHUNK))
+					}, error = function(e) {
+					# If the persistent cluster has been killed externally (for example by a
+					# timeout watchdog), clear it and fall back to a one-shot Unix fork apply.
+					# This prevents stale socket connections from poisoning subsequent calls.
+					msg = conditionMessage(e)
+						if (.Platform$OS.type == "unix" &&
+							grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
+							edi_env$global_fork_cluster = NULL
+							try(parallel::stopCluster(global_cl), silent = TRUE)
+							if (isTRUE(show_progress) && check_package_installed("pbmcapply")) {
+								return(flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
+							}
+							return(flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
+						}
+							stop(e)
+					})
+				} else if (!is.null(global_mirai_cores)){
+					requested_mirai_cores = min(n_cores, global_mirai_cores)
+					private$ensure_mirai_daemons(requested_mirai_cores)
+					on.exit(private$ensure_mirai_daemons(global_mirai_cores), add = TRUE)
+					tasks = lapply(chunks, function(chunk) mirai::mirai({RUN_CHUNK(chunk)}, RUN_CHUNK = RUN_CHUNK, chunk = chunk))
+					flatten_chunk_results(lapply(tasks, function(m) m[]))
+				} else if (.Platform$OS.type != "unix"){
+					if (!isTRUE(private$warned_no_parallel)){
+						message("Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Install it with install.packages('mirai'). Falling back to serial computation.")
+						private$warned_no_parallel = TRUE
+					}
+					RUN_CHUNK(X)
+				} else {
+					if (isTRUE(show_progress) && check_package_installed("pbmcapply")){
+						flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
 					} else {
-						if (isTRUE(show_progress) && check_package_installed("pbmcapply")){
-							flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
-						} else {
-							flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
-						}
+						flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
 					}
 				}
 			},

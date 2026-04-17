@@ -73,58 +73,60 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 				if ("Date" %in% xnew_data_types){
 					stop("Date data type is not supported; please convert to numeric.")
 				}
+			}
 
-				if (private$t > 0){
-					Xraw_data_types = get_column_types_cpp(private$Xraw)
-					colnames_Xraw = names(private$Xraw)
-					colnames_xnew = names(x_new)
-					if (setequal(colnames_Xraw, colnames_xnew)){
+			if (private$t > 0){
+				Xraw_data_types = get_column_types_cpp(private$Xraw)
+				colnames_Xraw = names(private$Xraw)
+				colnames_xnew = names(x_new)
+				if (setequal(colnames_Xraw, colnames_xnew)){
+					if (should_run_asserts()) {
 						idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
 						if (length(idx_data_types_that_changed) > 0){
 							for (e in idx_data_types_that_changed){
 								warning("You entered data type ", xnew_data_types[e], " for attribute named ", colnames_Xraw[e], " that was previously entered with data type ", Xraw_data_types[e])
 							}
 						}
-					} else {
-						if (allow_new_cols){ #make NA's in appropriate places
-							new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
-							if (length(new_Xraw_cols) > 0){
-								new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
-								for (j in 1 : length(new_Xraw_cols)){
-									private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
-										character = NA_character_,
-										factor =    NA_character_, #I think this is correct
-										numeric =   NA_real_,
-										logical =   NA_real_, #just let it be zero or one
-										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-									)]
-								}
+					}
+				} else {
+					if (allow_new_cols){ #make NA's in appropriate places
+						new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
+						if (length(new_Xraw_cols) > 0){
+							new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
+							for (j in 1 : length(new_Xraw_cols)){
+								private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
+									character = NA_character_,
+									factor =    NA_character_, #I think this is correct
+									numeric =   NA_real_,
+									logical =   NA_real_, #just let it be zero or one
+									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
+								)]
 							}
-
-							new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
-							if (length(new_xnew_cols) > 0){
-								new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
-								for (j in 1 : length(new_xnew_cols)){
-									x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
-										character = NA_character_,
-										factor =    NA_character_, #I think this is correct
-										numeric =   NA_real_,
-										logical =   NA_real_, #just let it be zero or one
-										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-									)]
-								}
-							}
-
-
-						} else {
-							stop(paste(
-								"The new subject vector has columns:\n  ",
-								paste(colnames_xnew, collapse = ", "),
-								"\nwhich are not the same as the current dataset's columns:\n  ",
-								paste(colnames_Xraw, collapse = ", "),
-								"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
-							))
 						}
+
+						new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
+						if (length(new_xnew_cols) > 0){
+							new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
+							for (j in 1 : length(new_xnew_cols)){
+								x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
+									character = NA_character_,
+									factor =    NA_character_, #I think this is correct
+									numeric =   NA_real_,
+									logical =   NA_real_, #just let it be zero or one
+									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
+								)]
+							}
+						}
+
+
+					} else {
+						stop(paste(
+							"The new subject vector has columns:\n  ",
+							paste(colnames_xnew, collapse = ", "),
+							"\nwhich are not the same as the current dataset's columns:\n  ",
+							paste(colnames_Xraw, collapse = ", "),
+							"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
+						))
 					}
 				}
 			}

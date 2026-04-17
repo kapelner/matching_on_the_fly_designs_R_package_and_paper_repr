@@ -82,12 +82,13 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
-			if (should_run_asserts()) {
-				if (delta == 0){
-					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-				} else {
+			if (delta == 0){
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			} else {
+				if (should_run_asserts()) {
 					stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
 				}
+				NA_real_
 			}
 		}
 	),
@@ -98,9 +99,10 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
-		aft_design_candidates = function(w, X){
-			if (!is.null(private$cached_values$rank_regr_design_candidates)) {
-				return(private$cached_values$rank_regr_design_candidates)
+		aft_design_candidates = function(w, X, cache_key = "default"){
+			cache_name = paste0("rank_regr_design_candidates_", cache_key)
+			if (!is.null(private$cached_values[[cache_name]])) {
+				return(private$cached_values[[cache_name]])
 			}
 			X_full = cbind(w = w, X)
 
@@ -131,7 +133,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 					keys = c(keys, key)
 				}
 			}
-			private$cached_values$rank_regr_design_candidates = candidates
+			private$cached_values[[cache_name]] = candidates
 			candidates
 		},
 
@@ -254,7 +256,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			mod = NULL
 			if (private$include_covariates()){
 				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
-				for (X_candidate in private$aft_design_candidates(w_m, X_m)){
+				for (X_candidate in private$aft_design_candidates(w_m, X_m, cache_key = "matched")){
 					dat_try = dat
 					formula_try = formula_str
 					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
@@ -304,7 +306,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 
 			mod = NULL
 			if (private$include_covariates()){
-				for (X_candidate in private$aft_design_candidates(w_r, X_r)){
+				for (X_candidate in private$aft_design_candidates(w_r, X_r, cache_key = "reservoir")){
 					dat_try = dat
 					formula_try = formula_str
 					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]

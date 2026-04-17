@@ -141,21 +141,19 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
 			ci_pval_cache = if (isTRUE(ci_search_control$pval_cache_enable)) new.env(parent = emptyenv()) else NULL
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms, ci_search_control, ci_pval_cache)
-			if (should_run_asserts()) {
-				if (!all(is.finite(c(bounds$l, bounds$u)))) {
-					fallback_ci = as.numeric(bounds$fallback_ci)
-					fallback_mode = ci_search_control$fallback
-					if (identical(fallback_mode, "error")) {
-						stop("Randomization CI search failed to bracket the target p-value within the configured search radius.")
-					}
-					if (identical(fallback_mode, "na") || length(fallback_ci) < 2L || !all(is.finite(fallback_ci[1:2]))) {
-						ci = c(NA_real_, NA_real_)
-					} else {
-						ci = sort(fallback_ci[1:2])
-					}
-					names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-					return(ci)
+			if (!all(is.finite(c(bounds$l, bounds$u)))) {
+				fallback_ci = as.numeric(bounds$fallback_ci)
+				fallback_mode = ci_search_control$fallback
+				if (identical(fallback_mode, "error")) {
+					stop("Randomization CI search failed to bracket the target p-value within the configured search radius.")
 				}
+				if (identical(fallback_mode, "na") || length(fallback_ci) < 2L || !all(is.finite(fallback_ci[1:2]))) {
+					ci = c(NA_real_, NA_real_)
+				} else {
+					ci = sort(fallback_ci[1:2])
+				}
+				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+				return(ci)
 			}
 
 			# Run the lower and upper bounds sequentially and reserve all available

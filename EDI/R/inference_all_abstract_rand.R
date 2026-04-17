@@ -88,17 +88,28 @@ InferenceRand = R6::R6Class("InferenceRand",
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
 			if (isTRUE(debug)) {
-				debug_results = if (private$supports_reusable_bootstrap_worker() && is.null(private$custom_randomization_statistic_function)){
+				debug_results = if (isTRUE(private$supports_reusable_bootstrap_worker()) && is.null(private$custom_randomization_statistic_function)){
 					# Fast path: use reused workers
 					worker_state = private$create_bootstrap_worker_state()
-					on.exit(private$cleanup_bootstrap_worker_state(worker_state), add = TRUE)
+					cleanup_worker = private$cleanup_bootstrap_worker_state
+					if (is.function(cleanup_worker)) on.exit(cleanup_worker(worker_state), add = TRUE)
 
 					lapply(seq_len(r), function(idx){
 						iter_warns = character(0)
 						iter_result = withCallingHandlers(
 							tryCatch({
 								# Generate permuted weights
-								perm_w = if (use_perms) permutations[, idx] else sample(private$w)
+								perm_w = if (use_perms) {
+									if (!is.null(permutations$w_mat)) {
+										j = ((idx - 1L) %% ncol(permutations$w_mat)) + 1L
+										permutations$w_mat[, j]
+									} else {
+										perm_data = permutations[[idx]]
+										if (is.list(perm_data) && !is.null(perm_data$w)) perm_data$w else perm_data
+									}
+								} else {
+									sample(private$w)
+								}
 								# Load into worker
 								private$load_randomization_perm_into_worker(worker_state, perm_w, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, zero_one_logit_clamp)
 								# Compute estimate
@@ -488,9 +499,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key, zero_one_logit_clamp = .Machine$double.eps){
 			mc_control = private$randomization_mc_control
-			if (should_run_asserts()) {
-				if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
-			}
+			if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
 			batch_size = min(as.integer(r), as.integer(mc_control$mc_batch_size))
 			min_draws = min(as.integer(r), as.integer(mc_control$mc_min_draws))
 			if (batch_size <= 0L || min_draws <= 0L || batch_size >= as.integer(r)) return(NULL)
@@ -588,51 +597,61 @@ InferenceRand = R6::R6Class("InferenceRand",
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
 			y_delta = template$.__enclos_env__$private$y
-			if (should_run_asserts()) {
-				if (delta != 0){
-					if (should_run_asserts()) {
-						if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
-					}
-					template$.__enclos_env__$private$y = private$shift_randomization_responses(
-						y = template$.__enclos_env__$private$y,
-						w = private$w,
-						delta = delta,
-						transform_responses = transform_responses,
-						response_type = private$des_obj_priv_int$response_type,
-						inverse = TRUE,
-						zero_one_logit_clamp = zero_one_logit_clamp
-					)
-					y_delta = template$.__enclos_env__$private$y
+			if (delta != 0){
+				if (should_run_asserts()) {
+					if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
 				}
+				template$.__enclos_env__$private$y = private$shift_randomization_responses(
+					y = template$.__enclos_env__$private$y,
+					w = private$w,
+					delta = delta,
+					transform_responses = transform_responses,
+					response_type = private$des_obj_priv_int$response_type,
+					inverse = TRUE,
+					zero_one_logit_clamp = zero_one_logit_clamp
+				)
+				y_delta = template$.__enclos_env__$private$y
 			}
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
 		},
 
 		load_randomization_perm_into_worker = function(worker_state, perm_w, delta, transform_responses, y_delta, base_template_y, base_template_dead, zero_one_logit_clamp = .Machine$double.eps){
-			inf_priv = worker_state$worker_inf$.__enclos_env__$private
-			des_priv = worker_state$worker_des$.__enclos_env__$private
+			inf_priv = if (!is.null(worker_state$worker_inf)) {
+				worker_state$worker_inf$.__enclos_env__$private
+			} else if (!is.null(worker_state$worker_priv)) {
+				worker_state$worker_priv
+			} else {
+				worker_state$worker$.__enclos_env__$private
+			}
+			des_priv = if (!is.null(worker_state$worker_des)) {
+				worker_state$worker_des$.__enclos_env__$private
+			} else {
+				worker_state$worker_des_priv
+			}
 			
 			# Update design private state
-			des_priv$w = perm_w
+			if (!is.null(des_priv)) des_priv$w = perm_w
 			if (delta != 0) {
-				des_priv$y = private$shift_randomization_responses(
+				y_sim = private$shift_randomization_responses(
 					y = y_delta,
 					w = perm_w,
 					delta = delta,
 					transform_responses = transform_responses,
-					response_type = des_priv$response_type,
+					response_type = if (!is.null(des_priv)) des_priv$response_type else private$des_obj_priv_int$response_type,
 					inverse = FALSE,
 					zero_one_logit_clamp = zero_one_logit_clamp
 				)
+				if (!is.null(des_priv)) des_priv$y = y_sim
 			} else {
-				des_priv$y = base_template_y
+				y_sim = base_template_y
+				if (!is.null(des_priv)) des_priv$y = y_sim
 			}
 			
 			# Sync to inference private state
-			inf_priv$w = des_priv$w
-			inf_priv$y = des_priv$y
-			inf_priv$y_temp = des_priv$y
-			inf_priv$dead = des_priv$dead
+			inf_priv$w = perm_w
+			inf_priv$y = y_sim
+			inf_priv$y_temp = y_sim
+			inf_priv$dead = if (!is.null(des_priv)) des_priv$dead else base_template_dead
 			inf_priv$cached_values$KKstats = NULL # reset
 			inf_priv$cached_values$beta_hat_T = NULL
 			inf_priv$cached_values$s_beta_hat_T = NULL

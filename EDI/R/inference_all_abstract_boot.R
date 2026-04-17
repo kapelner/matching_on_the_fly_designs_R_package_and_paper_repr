@@ -289,60 +289,58 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			est = est[1]
 
-			if (should_run_asserts()) {
-				if (type == "percentile") {
-					# Shift bootstrap distribution to be centred at delta (null hypothesis)
-					boot_null = boot_distr - mean(boot_distr) + delta
-					n_bs = length(boot_null)
-					min(1, max(2 / n_bs, 2 * min(
-						sum(boot_null >= est) / n_bs,
-						sum(boot_null <= est) / n_bs
-					)))
-				} else if (type == "symmetric") {
-					# Hall & Wilson (1991) symmetric test: pool both tails via absolute deviations.
-					# p = P(|T* - mean(T*)| >= |t_obs - delta|)
-					D_obs = abs(est - delta)
-					D_boot = abs(boot_distr - mean(boot_distr))
-					n_bs = length(D_boot)
-					min(1, max(1 / n_bs, mean(D_boot >= D_obs)))
-				} else if (type %in% c("studentized", "bootstrap-t")) {
-					# Studentized (bootstrap-t) p-value: pivot by standard error.
-					# t_obs = (est - delta) / se_hat
-					# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
-					# p = P(|t*_b| >= |t_obs|)
-					se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
-					if (!is.finite(se_hat) || se_hat <= 0) {
-						if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
-						return(NA_real_)
-					}
-					t_obs = abs(est - delta) / se_hat
-					se_boot = boot_stats$se
-					ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
-					t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
-					t_boot = t_boot[is.finite(t_boot)]
-					if (length(t_boot) < as.integer(min_number_usable_samples)) {
-						if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
-						return(NA_real_)
-					}
-					min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
-				} else if (type == "bca") {
-					# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
-					pval = tryCatch(
-						private$pval_bca(boot_distr, est, delta),
-						error = function(e) {
-							if (isTRUE(private$harden)) {
-								private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
-								return(NA_real_)
-							}
-							stop(e)
-						}
-					)
-					if (!is.finite(pval) && isTRUE(private$harden)) {
-						private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
-						return(NA_real_)
-					}
-					pval
+			if (type == "percentile") {
+				# Shift bootstrap distribution to be centred at delta (null hypothesis)
+				boot_null = boot_distr - mean(boot_distr) + delta
+				n_bs = length(boot_null)
+				min(1, max(2 / n_bs, 2 * min(
+					sum(boot_null >= est) / n_bs,
+					sum(boot_null <= est) / n_bs
+				)))
+			} else if (type == "symmetric") {
+				# Hall & Wilson (1991) symmetric test: pool both tails via absolute deviations.
+				# p = P(|T* - mean(T*)| >= |t_obs - delta|)
+				D_obs = abs(est - delta)
+				D_boot = abs(boot_distr - mean(boot_distr))
+				n_bs = length(D_boot)
+				min(1, max(1 / n_bs, mean(D_boot >= D_obs)))
+			} else if (type %in% c("studentized", "bootstrap-t")) {
+				# Studentized (bootstrap-t) p-value: pivot by standard error.
+				# t_obs = (est - delta) / se_hat
+				# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
+				# p = P(|t*_b| >= |t_obs|)
+				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
+				if (!is.finite(se_hat) || se_hat <= 0) {
+					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
+					return(NA_real_)
 				}
+				t_obs = abs(est - delta) / se_hat
+				se_boot = boot_stats$se
+				ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
+				t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
+				t_boot = t_boot[is.finite(t_boot)]
+				if (length(t_boot) < as.integer(min_number_usable_samples)) {
+					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
+					return(NA_real_)
+				}
+				min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
+			} else if (type == "bca") {
+				# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
+				pval = tryCatch(
+					private$pval_bca(boot_distr, est, delta),
+					error = function(e) {
+						if (isTRUE(private$harden)) {
+							private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+							return(NA_real_)
+						}
+						stop(e)
+					}
+				)
+				if (!is.finite(pval) && isTRUE(private$harden)) {
+					private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+					return(NA_real_)
+				}
+				pval
 			}
 		},
 
@@ -385,13 +383,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 
 			est = as.numeric(self$compute_treatment_estimate(estimate_only = FALSE))
-			if (should_run_asserts()) {
-				if (length(est) == 0L || !is.finite(est[1])) {
-					if (isTRUE(private$harden)) {
-						return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
-					}
-					stop("Bootstrap confidence interval returned NA bounds")
+			if (length(est) == 0L || !is.finite(est[1])) {
+				if (isTRUE(private$harden)) {
+					return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
 				}
+				stop("Bootstrap confidence interval returned NA bounds")
 			}
 			est = est[1]
 
@@ -411,22 +407,20 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			boot_distr = boot_stats$theta
 			boot_distr = boot_distr[is.finite(boot_distr)]
-			if (should_run_asserts()) {
-				if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
-					se_boot = boot_stats$se
-					ok = is.finite(boot_stats$theta) & is.finite(se_boot) & se_boot > 0
-					if (sum(ok) < as.integer(min_number_usable_samples)) {
-						if (isTRUE(private$harden)) {
-							return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_standard_errors", stage = "se"))
-						}
-						stop("Bootstrap confidence interval returned NA bounds")
-					}
-				} else if (length(boot_distr) < as.integer(min_number_usable_samples)) {
+			if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
+				se_boot = boot_stats$se
+				ok = is.finite(boot_stats$theta) & is.finite(se_boot) & se_boot > 0
+				if (sum(ok) < as.integer(min_number_usable_samples)) {
 					if (isTRUE(private$harden)) {
-						return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_estimates", stage = "estimate"))
+						return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_standard_errors", stage = "se"))
 					}
 					stop("Bootstrap confidence interval returned NA bounds")
 				}
+			} else if (length(boot_distr) < as.integer(min_number_usable_samples)) {
+				if (isTRUE(private$harden)) {
+					return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_estimates", stage = "estimate"))
+				}
+				stop("Bootstrap confidence interval returned NA bounds")
 			}
 
 			ci = tryCatch({
@@ -458,15 +452,13 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				stop(e)
 			})
 
-			if (should_run_asserts()) {
-				if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
-					if (isTRUE(private$harden)) {
-						stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
-						reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
-						return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
-					}
-					stop("Bootstrap confidence interval returned NA bounds")
+			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
+				if (isTRUE(private$harden)) {
+					stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
+					reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
+					return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
 				}
+				stop("Bootstrap confidence interval returned NA bounds")
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")

@@ -23,10 +23,8 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
-				if (!private$design_supports_exact_binomial()) {
-					stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
-				}
+			if (!private$design_supports_exact_binomial()) {
+				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
 			}
 			if (is(des_obj, "FixedDesignBinaryMatch")) {
 				private$des_obj_priv_int$ensure_bms_computed()
@@ -73,10 +71,8 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				assertResponseType(private$des_obj$get_response_type(), "incidence")
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
-				if (!private$design_supports_exact_binomial()) {
-					stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
-				}
+			if (!private$design_supports_exact_binomial()) {
+				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
 			}
 			stats = private$get_exact_binomial_stats()
 			if (should_run_asserts()) {

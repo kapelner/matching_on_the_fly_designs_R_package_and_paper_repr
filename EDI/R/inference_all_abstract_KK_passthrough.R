@@ -65,10 +65,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				if (should_run_asserts()) {
 					private$assert_valid_bootstrap_type(bootstrap_type)
 				}
-				if (should_run_asserts()) {
-					if (!private$has_match_structure){
-						super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug, bootstrap_type = bootstrap_type)
-					} else {
+				if (!private$has_match_structure){
+					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug, bootstrap_type = bootstrap_type)
+				} else {
 					if (should_run_asserts()) {
 						assertCount(B, positive = TRUE)
 					}
@@ -271,7 +270,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 						)))
 						return(beta_hat_T_bs)
 					}
-				}
 				}
 		}
 	),
