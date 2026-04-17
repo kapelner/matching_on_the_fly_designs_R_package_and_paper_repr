@@ -49,6 +49,9 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 
 			if (estimate_only) {
 				res = fast_beta_regression(Xmm = Xmm, y = y_beta)
+				if (!is.null(res)) {
+					private$best_Xmm_colnames = setdiff(colnames(Xmm), c("(Intercept)", "treatment"))
+				}
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(
@@ -57,6 +60,9 @@ InferencePropMultiBetaRegr = R6::R6Class("InferencePropMultiBetaRegr",
 				))
 			} else {
 				res = fast_beta_regression_with_var(Xmm = Xmm, y = y_beta)
+				if (!is.null(res)) {
+					private$best_Xmm_colnames = setdiff(colnames(Xmm), c("(Intercept)", "treatment"))
+				}
 				# Ensure names are set for shared()
 				names(res$b) = colnames(Xmm)
 				return(list(

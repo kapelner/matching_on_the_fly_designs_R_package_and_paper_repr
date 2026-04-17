@@ -11,17 +11,29 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
+				}
 			}
 			super$initialize(des_obj, verbose)
+			if (is(des_obj, "FixedDesignBinaryMatch")){
+				des_obj$.__enclos_env__$private$ensure_bms_computed()
+			}
+			private$m = des_obj$.__enclos_env__$private$m
 			if (identical(private$glmm_response_type(), "proportion")) {
 				private$y = .sanitize_proportion_response(private$y, interior = FALSE)
 			}
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("glmmTMB")){
-				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("glmmTMB")){
+					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -38,9 +50,13 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -49,13 +65,19 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("TO-DO")
+				}
 			}
 		},
 
@@ -166,8 +188,10 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 
 		assert_finite_se = function(){
 			se = private$cached_values$s_beta_hat_T
-			if (!is.finite(se) || se <= 0){
-				stop("GLMM inference produced a non-finite standard error.")
+			if (should_run_asserts()) {
+				if (!is.finite(se) || se <= 0){
+					stop("GLMM inference produced a non-finite standard error.")
+				}
 			}
 			invisible(NULL)
 		},
@@ -183,42 +207,43 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
-			fit_one_candidate = function(predictors_df){
-				dat = data.frame(y = private$y, predictors_df, group_id = factor(group_id))
-				fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
-				glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
-				tryCatch({
-					utils::capture.output(mod <- suppressMessages(suppressWarnings(
-						glmmTMB::glmmTMB(
-							glmm_formula,
-							family  = private$glmm_family(),
-							data    = dat,
-							control = glmm_control,
-							se      = se
-						)
-					)))
-					mod
-				}, error = function(e) NULL)
-			}
-
-			is_usable_fit = function(mod){
-				if (is.null(mod)) return(FALSE)
-				beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
-				if (is.null(beta) || !("w" %in% names(beta)) || !is.finite(beta["w"])) return(FALSE)
-				if (!se) return(TRUE)
-				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
-				if (is.null(coef_table) || !("w" %in% rownames(coef_table)) || !("Std. Error" %in% colnames(coef_table))) return(FALSE)
-				se_w = suppressWarnings(as.numeric(coef_table["w", "Std. Error"]))
-				is.finite(se_w) && se_w > 0
-			}
-
 			for (predictors_df in private$glmm_predictors_df_candidates()){
-				mod = fit_one_candidate(predictors_df)
-				if (is_usable_fit(mod)) return(mod)
+				mod = private$.fit_one_glmm_candidate(predictors_df, group_id, glmm_control, se)
+				if (private$.is_usable_glmm_fit(mod, se)) return(mod)
 			}
 			NULL
+		},
+
+		.fit_one_glmm_candidate = function(predictors_df, group_id, glmm_control, se){
+			dat = data.frame(y = private$y, predictors_df, group_id = factor(group_id))
+			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
+			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
+			tryCatch({
+				utils::capture.output(mod <- suppressMessages(suppressWarnings(
+					glmmTMB::glmmTMB(
+						glmm_formula,
+						family  = private$glmm_family(),
+						data    = dat,
+						control = glmm_control,
+						se      = se
+					)
+				)))
+				mod
+			}, error = function(e) NULL)
+		},
+
+		.is_usable_glmm_fit = function(mod, se){
+			if (is.null(mod)) return(FALSE)
+			beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(beta) || !("w" %in% names(beta)) || !is.finite(beta["w"])) return(FALSE)
+			if (!se) return(TRUE)
+			coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
+			if (is.null(coef_table) || !("w" %in% rownames(coef_table)) || !("Std. Error" %in% colnames(coef_table))) return(FALSE)
+			se_w = suppressWarnings(as.numeric(coef_table["w", "Std. Error"]))
+			is.finite(se_w) && se_w > 0
 		}
 	)
 )

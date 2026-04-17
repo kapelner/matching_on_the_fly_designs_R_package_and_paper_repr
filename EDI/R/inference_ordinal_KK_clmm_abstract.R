@@ -12,14 +12,22 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose, harden)
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("ordinal")){
-				stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("ordinal")){
+					stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -35,9 +43,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -45,18 +57,58 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("TO-DO")
+				}
 			}
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			X_fit = if (length(Xmm_cols) == 0L){
+				# Univariate case
+				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				cbind(treatment = private$w, X_cov)
+			}
+			# Add intercept column for clmm internal expectations
+			X_fit_full = cbind("(Intercept)" = 1, X_fit)
+
+			mod = private$fit_clmm(X_fit_full)
+			if (is.null(mod)) mod = private$fit_clm_fallback(X_fit_full)
+			if (is.null(mod)) return(NA_real_)
+			
+			as.numeric(stats::coef(mod)["w"])
+		},
+
 		clmm_link = function() stop(class(self)[1], " must implement clmm_link()"),
 
 		clmm_predictors_df = function(){
@@ -101,6 +153,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			mod = attempt$fit$mod
 			summ = attempt$fit$summ
 			se = attempt$fit$se
+			if (!is.null(mod)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+			}
 			if (is.null(mod) || is.null(summ)){
 				private$cached_values$beta_hat_T   = NA_real_
 			if (estimate_only) return(invisible(NULL))

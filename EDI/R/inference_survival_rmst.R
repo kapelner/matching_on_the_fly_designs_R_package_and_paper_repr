@@ -48,7 +48,9 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		},
 
@@ -84,7 +86,9 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_treatment_estimate()
 			}
@@ -106,19 +110,23 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#'
 		#' @return	The approximate frequentist p-value
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 
-			if (delta == 0){
-				if (is.null(private$cached_values$s_beta_hat_T)){
-					private$compute_s_beta_hat_T()
+			if (should_run_asserts()) {
+				if (delta == 0){
+					if (is.null(private$cached_values$s_beta_hat_T)){
+						private$compute_s_beta_hat_T()
+					}
+					if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0) {
+						return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
+					}
+					z_beta_hat_T = private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T
+					2 * min(stats::pnorm(z_beta_hat_T), 1 - stats::pnorm(z_beta_hat_T))
+				} else {
+					stop("TO-DO")
 				}
-				if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0) {
-					return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
-				}
-				z_beta_hat_T = private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T
-				2 * min(stats::pnorm(z_beta_hat_T), 1 - stats::pnorm(z_beta_hat_T))
-			} else {
-				stop("TO-DO")
 			}
 		},
 

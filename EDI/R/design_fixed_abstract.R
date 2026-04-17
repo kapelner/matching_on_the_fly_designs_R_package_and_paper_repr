@@ -41,15 +41,17 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#' @param X_all A data frame containing the full covariate matrix.
 		#' @return Invisibly returns the design object.
 		add_all_subjects_to_experiment = function(X_all){
-			assertClass(X_all, "data.frame")
-			self$assert_fixed_sample()
 			n_all = nrow(X_all)
 			n_expected = self$get_n()
-			if (n_all != n_expected){
-				stop("X_all must have exactly ", n_expected, " rows for this fixed design.")
-			}
-			if (private$t > 0L || nrow(private$Xraw) > 0L){
-				stop("Subjects have already been added to this design.")
+			if (should_run_asserts()) {
+				assertClass(X_all, "data.frame")
+				self$assert_fixed_sample()
+				if (n_all != n_expected){
+					stop("X_all must have exactly ", n_expected, " rows for this fixed design.")
+				}
+				if (private$t > 0L || nrow(private$Xraw) > 0L){
+					stop("Subjects have already been added to this design.")
+				}
 			}
 			private$Xraw = copy(as.data.table(X_all))
 			private$p_raw_t = ncol(private$Xraw)
@@ -64,20 +66,30 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#' @param ys The responses as a numeric vector.
 		#' @param deads The binary vector indicating if dead/censored.
 		add_all_subject_responses = function(ys, deads = NULL){
-			self$assert_fixed_sample()
 			if (is.null(deads)){
 				deads = rep(1, private$t)
 			}
+			if (should_run_asserts()) {
+				self$assert_fixed_sample()
+				if (private$response_type == "ordinal" && is.factor(ys)){
+					assertFactor(ys, len = private$t, ordered = TRUE, any.missing = FALSE)
+				} else {
+					assertNumeric(ys, len = private$t)
+				}
+				assertNumeric(deads, len = private$t)
+				
+				if (private$response_type != "survival" && any(deads == 0)){
+					stop("censored observations are only available for survival response types")
+				}
+			}
+			
 			if (private$response_type == "ordinal" && is.factor(ys)){
-				assertFactor(ys, len = private$t, ordered = TRUE, any.missing = FALSE)
-			} else {
-				assertNumeric(ys, len = private$t)
+				ys = as.integer(ys)
 			}
-			assertNumeric(deads, len = private$t)
 
-			for (t in 1 : private$t){
-				self$add_one_subject_response(t, ys[t], deads[t])
-			}
+			private$y = as.numeric(ys)
+			private$dead = as.numeric(deads)
+			private$y_i_t_i = as.list(seq_len(private$t))
 		},
 
 		#' @description
@@ -85,7 +97,9 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#'
 		#' @param w The binary responses.
 		overwrite_all_subject_assignments = function(w){
-			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			if (should_run_asserts()) {
+				assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			}
 			private$w = w
 		},
 
@@ -105,7 +119,9 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			stop("Must be implemented by subclass.")
+			if (should_run_asserts()) {
+				stop("Must be implemented by subclass.")
+			}
 		}
 	),
 	private = list(
@@ -152,8 +168,10 @@ FixedDesign = R6::R6Class("FixedDesign",
 			}
 
 			num_blocks = length(unique(keys))
-			if (num_blocks > n) {
-				stop("Number of blocks (", num_blocks, ") exceeds sample size (", n, "). Reduce the number of strata columns or use fewer bins.")
+			if (should_run_asserts()) {
+				if (num_blocks > n) {
+					stop("Number of blocks (", num_blocks, ") exceeds sample size (", n, "). Reduce the number of strata columns or use fewer bins.")
+				}
 			}
 			keys
 		}

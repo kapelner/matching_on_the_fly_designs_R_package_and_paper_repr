@@ -86,7 +86,9 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#'
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
@@ -104,7 +106,9 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @return	The approximate frequentist p-value
 		#'
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}
@@ -124,8 +128,10 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#'   to the base method.
 		#' @return	A 1 - alpha sized frequentist confidence interval
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
-			if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
-				stop("Randomization confidence intervals are not supported for InferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+			if (should_run_asserts()) {
+				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
+					stop("Randomization confidence intervals are not supported for InferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+				}
 			}
 			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}

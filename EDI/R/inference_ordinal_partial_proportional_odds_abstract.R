@@ -23,10 +23,14 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 				
 				verbose = FALSE,
 				harden = TRUE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
 			super$initialize(des_obj, verbose, harden)
-			assertNoCensoring(private$any_censoring)
-			assertCharacter(nonparallel, null.ok = TRUE)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+				assertCharacter(nonparallel, null.ok = TRUE)
+			}
 			private$nonparallel = unique(nonparallel)
 		},
 
@@ -48,11 +52,13 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'
 		#' @return A confidence interval for the treatment effect.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(
-				alpha,
-				lower = .Machine$double.xmin,
-				upper = 1 - .Machine$double.xmin
-			)
+			if (should_run_asserts()) {
+				assertNumeric(
+					alpha,
+					lower = .Machine$double.xmin,
+					upper = 1 - .Machine$double.xmin
+				)
+			}
 			private$shared()
 			if (!private$has_finite_se()){
 				warning(
@@ -75,7 +81,9 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'
 		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			if (!private$has_finite_se()){
 				warning(
@@ -100,7 +108,9 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'
 		#' @return A named list with timing and result details.
 		benchmark_asymp_two_sided_pval_breakdown = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 
 			t0 = proc.time()[["elapsed"]]
 			fit = private$fit_partial_proportional_odds()
@@ -142,6 +152,34 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 	),
 	private = list(
 		nonparallel = character(0),
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			X_cov = if (length(Xmm_cols) == 0L){
+				matrix(0, nrow = private$n, ncol = 0)
+			} else {
+				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			}
+
+			fit = private$fit_partial_proportional_odds_from_covariates(X_cov)
+			if (is.null(fit) || !is.finite(fit$beta)){
+				return(NA_real_)
+			}
+			as.numeric(fit$beta)
+		},
 
 		ppo_covariate_matrix = function(){
 			stop(class(self)[1], " must implement ppo_covariate_matrix()")
@@ -188,6 +226,9 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 					private$ppo_fit_is_usable(fit)
 				}
 			)
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "treatment")
+			}
 			attempt$fit
 		},
 

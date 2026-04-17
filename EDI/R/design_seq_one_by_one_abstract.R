@@ -39,16 +39,20 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		#' @param x_new A data frame with one row representing the new subject's covariates.
 		#' @param allow_new_cols Allow new features in the new subject's covariates.
 		add_one_subject = function(x_new, allow_new_cols = TRUE){
-			assertClass(x_new, "data.frame")
-			x_new = as.data.table(x_new)
-			if (nrow(x_new) != 1){
-				stop("You can only add one subject at a time.")
+			if (should_run_asserts()) {
+				assertClass(x_new, "data.frame")
 			}
+			x_new = as.data.table(x_new)
+			if (should_run_asserts()) {
+				if (nrow(x_new) != 1){
+					stop("You can only add one subject at a time.")
+				}
 			
-			if (private$t == 0 && !is.null(private$strata_cols)) {
-				for (col in private$strata_cols) {
-					if (is.numeric(x_new[[col]])) {
-						stop("Error: Continuous covariates are not allowed for stratification in sequential designs because stable binning cannot be determined on-the-fly. Please pre-discretize the numeric column(s) into factors/categories (e.g., using fixed clinical thresholds) before adding subjects to the experiment.")
+				if (private$t == 0 && !is.null(private$strata_cols)) {
+					for (col in private$strata_cols) {
+						if (is.numeric(x_new[[col]])) {
+							stop("Error: Continuous covariates are not allowed for stratification in sequential designs because stable binning cannot be determined on-the-fly. Please pre-discretize the numeric column(s) into factors/categories (e.g., using fixed clinical thresholds) before adding subjects to the experiment.")
+						}
 					}
 				}
 			}
@@ -62,63 +66,65 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			}
 
 			xnew_data_types = get_column_types_cpp(x_new)
-			if ("ordered" %in% xnew_data_types){
-				stop("Ordered factor data type is not supported; please convert to either an unordered factor or numeric.")
-			}
-			if ("Date" %in% xnew_data_types){
-				stop("Date data type is not supported; please convert to numeric.")
-			}
+			if (should_run_asserts()) {
+				if ("ordered" %in% xnew_data_types){
+					stop("Ordered factor data type is not supported; please convert to either an unordered factor or numeric.")
+				}
+				if ("Date" %in% xnew_data_types){
+					stop("Date data type is not supported; please convert to numeric.")
+				}
 
-			if (private$t > 0){
-				Xraw_data_types = get_column_types_cpp(private$Xraw)
-				colnames_Xraw = names(private$Xraw)
-				colnames_xnew = names(x_new)
-				if (setequal(colnames_Xraw, colnames_xnew)){
-					idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
-					if (length(idx_data_types_that_changed) > 0){
-						for (e in idx_data_types_that_changed){
-							warning("You entered data type ", xnew_data_types[e], " for attribute named ", colnames_Xraw[e], " that was previously entered with data type ", Xraw_data_types[e])
-						}
-					}
-				} else {
-					if (allow_new_cols){ #make NA's in appropriate places
-						new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
-						if (length(new_Xraw_cols) > 0){
-							new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
-							for (j in 1 : length(new_Xraw_cols)){
-								private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
-									character = NA_character_,
-									factor =    NA_character_, #I think this is correct
-									numeric =   NA_real_,
-									logical =   NA_real_, #just let it be zero or one
-									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-								)]
+				if (private$t > 0){
+					Xraw_data_types = get_column_types_cpp(private$Xraw)
+					colnames_Xraw = names(private$Xraw)
+					colnames_xnew = names(x_new)
+					if (setequal(colnames_Xraw, colnames_xnew)){
+						idx_data_types_that_changed = which(xnew_data_types != Xraw_data_types)
+						if (length(idx_data_types_that_changed) > 0){
+							for (e in idx_data_types_that_changed){
+								warning("You entered data type ", xnew_data_types[e], " for attribute named ", colnames_Xraw[e], " that was previously entered with data type ", Xraw_data_types[e])
 							}
 						}
-
-						new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
-						if (length(new_xnew_cols) > 0){
-							new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
-							for (j in 1 : length(new_xnew_cols)){
-								x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
-									character = NA_character_,
-									factor =    NA_character_, #I think this is correct
-									numeric =   NA_real_,
-									logical =   NA_real_, #just let it be zero or one
-									integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
-								)]
-							}
-						}
-
-
 					} else {
-						stop(paste(
-							"The new subject vector has columns:\n  ",
-							paste(colnames_xnew, collapse = ", "),
-							"\nwhich are not the same as the current dataset's columns:\n  ",
-							paste(colnames_Xraw, collapse = ", "),
-							"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
-						))
+						if (allow_new_cols){ #make NA's in appropriate places
+							new_Xraw_cols = setdiff(colnames_xnew, colnames_Xraw)
+							if (length(new_Xraw_cols) > 0){
+								new_Xraw_col_types = xnew_data_types[new_Xraw_cols]
+								for (j in 1 : length(new_Xraw_cols)){
+									private$Xraw[, (new_Xraw_cols[j]) := switch(new_Xraw_col_types[j],
+										character = NA_character_,
+										factor =    NA_character_, #I think this is correct
+										numeric =   NA_real_,
+										logical =   NA_real_, #just let it be zero or one
+										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
+									)]
+								}
+							}
+
+							new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
+							if (length(new_xnew_cols) > 0){
+								new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
+								for (j in 1 : length(new_xnew_cols)){
+									x_new[, (new_xnew_cols[j]) := switch(new_xnew_cols_types[j],
+										character = NA_character_,
+										factor =    NA_character_, #I think this is correct
+										numeric =   NA_real_,
+										logical =   NA_real_, #just let it be zero or one
+										integer =   NA_real_  #I don't want to take the risk on a decimal popping up somewhere
+									)]
+								}
+							}
+
+
+						} else {
+							stop(paste(
+								"The new subject vector has columns:\n  ",
+								paste(colnames_xnew, collapse = ", "),
+								"\nwhich are not the same as the current dataset's columns:\n  ",
+								paste(colnames_Xraw, collapse = ", "),
+								"\nIf you want to allow new columns on-the-fly, run this function again with the option\n  'allow_new_cols = TRUE'"
+							))
+						}
 					}
 				}
 			}

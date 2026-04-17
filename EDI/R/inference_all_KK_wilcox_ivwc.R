@@ -35,16 +35,24 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 		#'
 		initialize = function(des_obj,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
-			if (res_type == "incidence"){
-				stop("Rank-based compound inference is not recommended for incidence data; clogit or compound mean difference estimators are preferred.")
+			if (should_run_asserts()) {
+				if (res_type == "incidence"){
+					stop("Rank-based compound inference is not recommended for incidence data; clogit or compound mean difference estimators are preferred.")
+				}
 			}
-			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			if (private$any_censoring){
-				stop(class(self)[1], " does not currently support censored survival data. Use restricted mean or Cox-based methods instead.")
+			if (should_run_asserts()) {
+				if (private$any_censoring){
+					stop(class(self)[1], " does not currently support censored survival data. Use restricted mean or Cox-based methods instead.")
+				}
 			}
 		},
 
@@ -61,9 +69,13 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			# Even though estimates are non-parametric, the combined estimator is asymptotically normal
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -73,13 +85,19 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("Testing non-zero delta is not yet implemented for the combined rank estimator.")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("Testing non-zero delta is not yet implemented for the combined rank estimator.")
+				}
 			}
 		}
 

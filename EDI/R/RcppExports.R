@@ -199,6 +199,10 @@ fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi
     .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
+fast_clogit_plus_glmm_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, start, has_discordant, has_concordant, estimate_only = FALSE, max_abs_log_sigma = 8.0, maxit = 200L, eps_g = 1e-5) {
+    .Call(`_EDI_fast_clogit_plus_glmm_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, start, has_discordant, has_concordant, estimate_only, max_abs_log_sigma, maxit, eps_g)
+}
+
 fast_continuation_ratio_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_continuation_ratio_regression_cpp`, X, y, maxit, tol)
 }
@@ -457,6 +461,10 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+wilcox_hl_signed_rank_point_estimate_cpp <- function(dy) {
+    .Call(`_EDI_wilcox_hl_signed_rank_point_estimate_cpp`, dy)
 }
 
 wilcox_hl_point_estimate_cpp <- function(y, w) {

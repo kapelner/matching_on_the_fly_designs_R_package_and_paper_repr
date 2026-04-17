@@ -43,11 +43,17 @@ InferencePropMultiKKQuantileRegrCombinedLikelihood = R6::R6Class("InferencePropM
 		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
 		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "proportion")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "proportion")
+			}
 			super$initialize(des_obj, tau, qlogis, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$y = .sanitize_proportion_response(private$y, interior = TRUE)
-			assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			if (should_run_asserts()) {
+				assertNumeric(private$y, any.missing = FALSE, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			}
 			# Rebuild KK summary data after sanitizing the response, otherwise the
 			# superclass cache can retain raw 0/1 values and qlogis() will produce
 			# non-finite values during the quantile fit and its randomization refits.

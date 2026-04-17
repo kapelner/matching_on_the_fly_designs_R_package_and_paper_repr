@@ -49,31 +49,42 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				n = NULL,
 				verbose = FALSE
 			) {
-				assertChoice(method, c("ompr", "greedy", "K-way"))
-				if (method == "ompr") {
-					if (!(is.function(dist) || (is.character(dist) && length(dist) == 1L)))
-						stop("dist must be a function or one of 'euclidean', 'sum_abs_diff', or 'mahal'.")
-					if (is.character(dist))
-						assertChoice(dist, c("euclidean", "sum_abs_diff", "mahal"))
-					assert_optimal_blocks_libraries_installed("FixedDesignOptimalBlocks with method='ompr'")
-				} else if (method == "greedy") {
-					assert_blocktools_installed("FixedDesignOptimalBlocks with method='greedy'")
-				} else {
-					assert_anticlust_installed("FixedDesignOptimalBlocks with method='K-way'")
+				if (should_run_asserts()) {
+					assertChoice(method, c("ompr", "greedy", "K-way"))
+				}
+				if (should_run_asserts()) {
+					if (method == "ompr") {
+						if (!(is.function(dist) || (is.character(dist) && length(dist) == 1L)))
+							stop("dist must be a function or one of 'euclidean', 'sum_abs_diff', or 'mahal'.")
+						if (is.character(dist))
+							assertChoice(dist, c("euclidean", "sum_abs_diff", "mahal"))
+						assert_optimal_blocks_libraries_installed("FixedDesignOptimalBlocks with method='ompr'")
+					} else if (method == "greedy") {
+						assert_blocktools_installed("FixedDesignOptimalBlocks with method='greedy'")
+					} else {
+						assert_anticlust_installed("FixedDesignOptimalBlocks with method='K-way'")
+					}
 				}
 				if (is.null(B)) {
-					if (is.null(n))
-						stop("FixedDesignOptimalBlocks requires B when n is not supplied.")
+					if (is.null(n)) {
+						if (should_run_asserts()) {
+							stop("FixedDesignOptimalBlocks requires B when n is not supplied.")
+						}
+					}
 					B = max(1L, floor(sqrt(as.integer(n))))
 				}
-				assertCount(B, positive = TRUE)
+				if (should_run_asserts()) {
+					assertCount(B, positive = TRUE)
+				}
 				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 				private$B      = as.integer(B)
 				private$method = method
 				private$dist_spec = dist
 				private$uses_covariates = TRUE
 				if (!is.null(n))
-					private$assert_feasible_block_sizes(as.integer(n))
+					if (should_run_asserts()) {
+						private$assert_feasible_block_sizes(as.integer(n))
+					}
 			},
 
 		#' @description
@@ -81,7 +92,9 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 		#' @param r Number of assignment vectors to draw.
 		#' @return A numeric matrix with one assignment vector per column.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			block_ids = private$get_or_compute_block_ids()
 			w_mat = replicate(r, as.numeric(as.character(randomizr::block_ra(blocks = block_ids, prob = private$prob_T))))
 			storage.mode(w_mat) = "numeric"
@@ -109,12 +122,14 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 		},
 
 		assert_feasible_block_sizes = function(n){
-			if (private$B > n) {
-				stop(
-					"Cannot partition ", n, " subjects into ", private$B,
-					" roughly equal blocks. With the floor(n / B) / ceiling(n / B) size rule, ",
-					"B must be less than or equal to n."
-				)
+			if (should_run_asserts()) {
+				if (private$B > n) {
+					stop(
+						"Cannot partition ", n, " subjects into ", private$B,
+						" roughly equal blocks. With the floor(n / B) / ceiling(n / B) size rule, ",
+						"B must be less than or equal to n."
+					)
+				}
 			}
 			invisible(NULL)
 		},
@@ -125,7 +140,9 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 			}
 
 			n = self$get_n()
-			private$assert_feasible_block_sizes(n)
+			if (should_run_asserts()) {
+				private$assert_feasible_block_sizes(n)
+			}
 
 			if (is.null(private$X)) {
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
@@ -233,12 +250,16 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 
 			result = ompr::solve_model(model, ompr.roi::with_ROI(solver = "glpk", verbose = FALSE))
 			solution = ompr::get_solution(result, x[i, k])
-			if (nrow(solution) == 0L) {
-				stop("ompr failed to produce a block assignment solution.")
+			if (should_run_asserts()) {
+				if (nrow(solution) == 0L) {
+					stop("ompr failed to produce a block assignment solution.")
+				}
 			}
 			solution = solution[solution$value > 0.5, , drop = FALSE]
-			if (nrow(solution) != n) {
-				stop("ompr returned an incomplete block assignment.")
+			if (should_run_asserts()) {
+				if (nrow(solution) != n) {
+					stop("ompr returned an incomplete block assignment.")
+				}
 			}
 			labels = integer(n)
 			labels[solution$i] = solution$k

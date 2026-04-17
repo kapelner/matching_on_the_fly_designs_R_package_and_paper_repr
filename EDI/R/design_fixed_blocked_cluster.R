@@ -32,9 +32,11 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				num_bins_for_continuous_covariate = 2,
 				verbose = FALSE
 			) {
-			assertCharacter(strata_cols, min.len = 1)
-			assertCharacter(cluster_col, len = 1)
-			assertCount(num_bins_for_continuous_covariate, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCharacter(strata_cols, min.len = 1)
+				assertCharacter(cluster_col, len = 1)
+				assertCount(num_bins_for_continuous_covariate, positive = TRUE)
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
 			private$cluster_col = cluster_col
@@ -50,7 +52,9 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			
 			strata_keys = private$get_strata_keys()
 			

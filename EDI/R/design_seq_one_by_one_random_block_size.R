@@ -44,7 +44,9 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 						
 						verbose = FALSE
 					) {
-			assertIntegerish(block_sizes, lower = 1, any.missing = FALSE, min.len = 1)
+			if (should_run_asserts()) {
+				assertIntegerish(block_sizes, lower = 1, any.missing = FALSE, min.len = 1)
+			}
 			
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			
@@ -55,8 +57,10 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 			
 			# Validation for block sizes and prob_T
 			for (bs in private$block_sizes) {
-				if (abs(bs * prob_T - round(bs * prob_T)) > 1e-10) {
-					stop("All block_sizes must result in an integer number of treatment assignments (bs * prob_T).")
+				if (should_run_asserts()) {
+					if (abs(bs * prob_T - round(bs * prob_T)) > 1e-10) {
+						stop("All block_sizes must result in an integer number of treatment assignments (bs * prob_T).")
+					}
 				}
 			}
 		},

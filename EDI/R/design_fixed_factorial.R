@@ -27,7 +27,9 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 				
 				verbose = FALSE
 			) {
-			assertList(factors, types = "numeric", min.len = 1)
+			if (should_run_asserts()) {
+				assertList(factors, types = "numeric", min.len = 1)
+			}
 			# We don't use prob_T in the standard way here, as we have multiple factors
 			# But base Design needs it. We'll set it to 0.5.
 			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose)
@@ -46,7 +48,9 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			n = self$get_n()
 			
 			# Standard balanced factorial: each combination appears n / num_combinations times

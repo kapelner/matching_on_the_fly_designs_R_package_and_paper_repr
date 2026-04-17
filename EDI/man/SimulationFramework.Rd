@@ -90,6 +90,7 @@ Create a new \code{SimulationFramework}.
   prob_censoring = 0.2,
   verbose = FALSE,
   keep_all_intermediate_data = FALSE,
+  turn_off_asserts_for_speed = TRUE,
   design_params = NULL,
   inference_params = NULL,
   inf_types = NULL
@@ -198,6 +199,10 @@ saves the instantiated design and inference objects for every replication.
 These can be retrieved after the run using \code{$get_all_intermediate_data()}.
 Warning: this can consume a lot of memory for many replications.
 Default \code{FALSE}.}
+
+\item{\code{turn_off_asserts_for_speed}}{Logical. If \code{TRUE} (default),
+all \pkg{checkmate} assertions across the package are globally
+disabled during the simulation run to improve performance.}
 
 \item{\code{design_params}}{\code{NULL} (default) or a list of lists of the same
   length as \code{design_classes}.  Each element is a named list of

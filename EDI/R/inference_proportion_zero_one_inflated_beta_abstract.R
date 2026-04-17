@@ -23,9 +23,13 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 		#' @param des_obj A completed \code{Design} object.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "proportion")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "proportion")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -40,7 +44,9 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared(estimate_only = FALSE)
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
@@ -53,7 +59,9 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared(estimate_only = FALSE)
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
@@ -64,6 +72,36 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$cached_values$zoib_best_design_matrix)){
+				private$shared()
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$cached_values$zoib_best_design_matrix)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_orig = private$cached_values$zoib_best_design_matrix
+			X_data = private$get_X()
+			X_cov = X_data[, setdiff(colnames(Xmm_orig), "treatment"), drop = FALSE]
+			Xmm = cbind(treatment = private$w, X_cov)
+
+			# Use original coefficients as starting values for speed
+			starts = if (!is.null(private$cached_values$zoib_best_fit)) {
+				list(private$cached_values$zoib_best_fit$coefficients)
+			} else {
+				NULL
+			}
+
+			fit = .fit_zero_one_inflated_beta(private$y, Xmm, estimate_only = estimate_only, starts = starts)
+			if (is.null(fit) || !("treatment" %in% names(fit$coefficients))){
+				return(NA_real_)
+			}
+			as.numeric(fit$coefficients["treatment"])
+		},
+
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
@@ -140,14 +178,13 @@ InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInfl
 
 			coef_full = fit$coefficients
 			vcov_full = fit$vcov
-			if (!("treatment" %in% names(coef_full)) || (!estimate_only && !("treatment" %in% rownames(vcov_full)))){
+			if (!("treatment" %in% names(coef_full)) || (!estimate_only && (is.null(vcov_full) || !("treatment" %in% rownames(vcov_full))))){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
 
 			if (estimate_only) {
 				private$cached_values$beta_hat_T = as.numeric(coef_full["treatment"])
-			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$is_z = TRUE
 				private$cached_values$df = private$n - length(coef_full)

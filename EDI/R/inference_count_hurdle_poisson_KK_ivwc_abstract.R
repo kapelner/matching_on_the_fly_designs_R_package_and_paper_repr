@@ -18,14 +18,26 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' @param des_obj A completed \code{Design} object.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "count")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "count")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("glmmTMB")){
-				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+			if (is(des_obj, "FixedDesignBinaryMatch")){
+				des_obj$.__enclos_env__$private$ensure_bms_computed()
+			}
+			private$m = des_obj$.__enclos_env__$private$m
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("glmmTMB")){
+					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -41,9 +53,13 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -51,13 +67,19 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("Testing non-zero delta is not yet implemented for this class.")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("Testing non-zero delta is not yet implemented for this class.")
+				}
 			}
 		}
 	),

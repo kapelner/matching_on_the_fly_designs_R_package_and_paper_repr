@@ -22,20 +22,26 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL, zero_one_logit_clamp = .Machine$double.eps){
 			# message("In InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand")
 			# message("Class: ", class(self)[1])
-			private$assert_design_supports_resampling("Randomization inference")
-			assertLogical(na.rm)
-			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
-				if (!identical(transform_responses, "none")) {
-					stop("transform_responses is not supported for incidence randomization inference.")
-				}
-				rand_type = if (is.null(type)) "Zhang" else type
-				exact_args = private$normalize_exact_inference_args(
-					rand_type,
-					args_for_type = args_for_type
-				)
-				return(private$compute_exact_two_sided_pval_rand(rand_type, delta, exact_args))
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertLogical(na.rm)
 			}
-			private$assert_no_incidence_only_randomization_args(private$des_obj_priv_int$response_type, type, args_for_type)
+			if (should_run_asserts()) {
+				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
+					if (!identical(transform_responses, "none")) {
+						stop("transform_responses is not supported for incidence randomization inference.")
+					}
+					rand_type = if (is.null(type)) "Zhang" else type
+					exact_args = private$normalize_exact_inference_args(
+						rand_type,
+						args_for_type = args_for_type
+					)
+					return(private$compute_exact_two_sided_pval_rand(rand_type, delta, exact_args))
+				}
+			}
+			if (should_run_asserts()) {
+				private$assert_no_incidence_only_randomization_args(private$des_obj_priv_int$response_type, type, args_for_type)
+			}
 			super$compute_two_sided_pval_for_treatment_effect_rand(
 				r = r,
 				delta = delta,
@@ -66,10 +72,12 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#'   full enumeration of all requested randomization draws.
 		#' @return 	Randomization CI.
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL, ci_search_control = NULL){
-			private$assert_design_supports_resampling("Randomization inference")
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertCount(r, positive = TRUE); assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			assertLogical(show_progress); show_progress = isTRUE(show_progress) && self$num_cores == 1
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				assertCount(r, positive = TRUE); assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+				assertLogical(show_progress); show_progress = isTRUE(show_progress) && self$num_cores == 1
+			}
 			ci_search_control = private$normalize_randomization_ci_search_control(ci_search_control, r, pval_epsilon)
 			ci_search_control$mc_stop_threshold = alpha / 2
 
@@ -98,7 +106,9 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				)
 				return(private$compute_exact_confidence_interval_rand(rand_type, alpha, exact_args))
 			}
-			private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
+			if (should_run_asserts()) {
+				private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
+			}
 
 			is_glm = inherits(self, "InferenceMLEorKMforGLMs") || 
 			         inherits(self, "InferenceAbstractKKGEE") || 
@@ -131,19 +141,21 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
 			ci_pval_cache = if (isTRUE(ci_search_control$pval_cache_enable)) new.env(parent = emptyenv()) else NULL
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms, ci_search_control, ci_pval_cache)
-			if (!all(is.finite(c(bounds$l, bounds$u)))) {
-				fallback_ci = as.numeric(bounds$fallback_ci)
-				fallback_mode = ci_search_control$fallback
-				if (identical(fallback_mode, "error")) {
-					stop("Randomization CI search failed to bracket the target p-value within the configured search radius.")
+			if (should_run_asserts()) {
+				if (!all(is.finite(c(bounds$l, bounds$u)))) {
+					fallback_ci = as.numeric(bounds$fallback_ci)
+					fallback_mode = ci_search_control$fallback
+					if (identical(fallback_mode, "error")) {
+						stop("Randomization CI search failed to bracket the target p-value within the configured search radius.")
+					}
+					if (identical(fallback_mode, "na") || length(fallback_ci) < 2L || !all(is.finite(fallback_ci[1:2]))) {
+						ci = c(NA_real_, NA_real_)
+					} else {
+						ci = sort(fallback_ci[1:2])
+					}
+					names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+					return(ci)
 				}
-				if (identical(fallback_mode, "na") || length(fallback_ci) < 2L || !all(is.finite(fallback_ci[1:2]))) {
-					ci = c(NA_real_, NA_real_)
-				} else {
-					ci = sort(fallback_ci[1:2])
-				}
-				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-				return(ci)
 			}
 
 			# Run the lower and upper bounds sequentially and reserve all available
@@ -163,11 +175,13 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 	private = list(
 		assert_no_incidence_only_randomization_args = function(resp_type, type, args_for_type){
-			if (!is.null(type)) {
-				stop("Randomization type dispatch is only supported for incidence outcomes.")
-			}
-			if (!is.null(args_for_type)) {
-				stop("args_for_type is only used for incidence randomization inference.")
+			if (should_run_asserts()) {
+				if (!is.null(type)) {
+					stop("Randomization type dispatch is only supported for incidence outcomes.")
+				}
+				if (!is.null(args_for_type)) {
+					stop("args_for_type is only used for incidence randomization inference.")
+				}
 			}
 			invisible(NULL)
 		},
@@ -212,22 +226,38 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				fit_warm_start_enable = TRUE,
 				fit_reuse_factorizations = TRUE
 			)
-			assertList(ci_search_control, null.ok = TRUE)
+			if (should_run_asserts()) {
+				assertList(ci_search_control, null.ok = TRUE)
+			}
 			ctrl = utils::modifyList(defaults, if (is.null(ci_search_control)) list() else ci_search_control)
-			assertChoice(ctrl$fallback, c("fallback", "na", "error"))
-			assertChoice(ctrl$seed, c("asymp_then_boot", "boot_then_asymp", "asymp_only", "boot_only", "none"))
-			assertNumber(ctrl$max_radius_se_mult, lower = 0, finite = TRUE)
-			assertNumber(ctrl$max_radius_scale_mult, lower = 0, finite = TRUE)
-			assertCount(as.integer(ctrl$max_expansions), positive = TRUE)
-			assertCount(as.integer(ctrl$seed_boot_B), positive = TRUE)
-			assertFlag(ctrl$pval_cache_enable)
-			assertNumber(ctrl$pval_cache_resolution, lower = .Machine$double.eps, finite = TRUE)
-			assertFlag(ctrl$mc_enable)
-			assertCount(as.integer(ctrl$mc_batch_size), positive = TRUE)
-			assertCount(as.integer(ctrl$mc_min_draws), positive = TRUE)
-			assertNumber(ctrl$mc_conf_level, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertFlag(ctrl$fit_warm_start_enable)
-			assertFlag(ctrl$fit_reuse_factorizations)
+			if (should_run_asserts()) {
+				assertChoice(ctrl$fallback, c("fallback", "na", "error"))
+				assertChoice(ctrl$seed, c("asymp_then_boot", "boot_then_asymp", "asymp_only", "boot_only", "none"))
+			}
+			if (should_run_asserts()) {
+				assertNumber(ctrl$max_radius_se_mult, lower = 0, finite = TRUE)
+				assertNumber(ctrl$max_radius_scale_mult, lower = 0, finite = TRUE)
+			}
+			if (should_run_asserts()) {
+				assertCount(as.integer(ctrl$max_expansions), positive = TRUE)
+				assertCount(as.integer(ctrl$seed_boot_B), positive = TRUE)
+				assertFlag(ctrl$pval_cache_enable)
+			}
+			if (should_run_asserts()) {
+				assertNumber(ctrl$pval_cache_resolution, lower = .Machine$double.eps, finite = TRUE)
+			}
+			if (should_run_asserts()) {
+				assertFlag(ctrl$mc_enable)
+				assertCount(as.integer(ctrl$mc_batch_size), positive = TRUE)
+				assertCount(as.integer(ctrl$mc_min_draws), positive = TRUE)
+			}
+			if (should_run_asserts()) {
+				assertNumber(ctrl$mc_conf_level, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			if (should_run_asserts()) {
+				assertFlag(ctrl$fit_warm_start_enable)
+				assertFlag(ctrl$fit_reuse_factorizations)
+			}
 			ctrl$max_expansions = as.integer(ctrl$max_expansions)
 			ctrl$seed_boot_B = as.integer(ctrl$seed_boot_B)
 			ctrl$pval_cache_resolution = as.numeric(ctrl$pval_cache_resolution)
@@ -237,32 +267,42 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		},
 
 		normalize_exact_inference_args = function(type, args_for_type = NULL, pval_epsilon = NULL){
-			assertChoice(type, c("Zhang"))
-			assertList(args_for_type, null.ok = TRUE)
+			if (should_run_asserts()) {
+				assertChoice(type, c("Zhang"))
+				assertList(args_for_type, null.ok = TRUE)
+			}
 			default_args = list(combination_method = "Fisher")
 			if (!is.null(pval_epsilon)) default_args$pval_epsilon = pval_epsilon
 			utils::modifyList(setNames(list(default_args), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
 
 		assert_exact_inference_params = function(type, args_for_type){
-			assertChoice(type, c("Zhang"))
-			assertList(args_for_type)
-			if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
+			if (should_run_asserts()) {
+				assertChoice(type, c("Zhang"))
+				assertList(args_for_type)
+				if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
+			}
 			args = args_for_type[[type]]
-			assertList(args)
+			if (should_run_asserts()) {
+				assertList(args)
+			}
 				is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "FixedDesignBernoulli")
-				if (!is_bernoulli && !private$has_match_structure) stop("Zhang randomization inference requires Bernoulli or matching designs.")
-			assertResponseType(private$des_obj$get_response_type(), "incidence")
-			assertNoCensoring(private$any_censoring)
-			assertChoice(args$combination_method, c("Fisher", "Stouffer", "min_p"))
-			if (!is.null(args$pval_epsilon)) assertNumeric(args$pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+				if (should_run_asserts()) {
+					if (!is_bernoulli && !private$has_match_structure) stop("Zhang randomization inference requires Bernoulli or matching designs.")
+				assertResponseType(private$des_obj$get_response_type(), "incidence")
+				assertNoCensoring(private$any_censoring)
+				assertChoice(args$combination_method, c("Fisher", "Stouffer", "min_p"))
+				if (!is.null(args$pval_epsilon)) assertNumeric(args$pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+				}
 			invisible(args)
 		},
 
 		compute_exact_confidence_interval_rand = function(type, alpha, args_for_type){
-			private$assert_design_supports_resampling("Randomization inference")
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$assert_exact_inference_params(type, args_for_type)
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				private$assert_exact_inference_params(type, args_for_type)
+			}
 			switch(type,
 				Zhang = private$ci_exact_zhang_combined(
 					alpha = alpha,
@@ -273,9 +313,11 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		},
 
 		compute_exact_two_sided_pval_rand = function(type, delta, args_for_type){
-			private$assert_design_supports_resampling("Randomization inference")
-			assertNumeric(delta)
-			private$assert_exact_inference_params(type, args_for_type)
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertNumeric(delta)
+				private$assert_exact_inference_params(type, args_for_type)
+			}
 			switch(type,
 				Zhang = private$pval_exact_zhang_combined(
 					delta_0 = delta,
@@ -350,7 +392,9 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		ci_exact_zhang_combined = function(alpha, pval_epsilon, combination_method = "Fisher"){
 			exact_stats = private$get_exact_zhang_stats()
 			est = zhang_incid_treatment_estimate(exact_stats)
-			if (!is.finite(est)) stop("Cannot compute exact CI: point estimate is not finite.")
+			if (should_run_asserts()) {
+				if (!is.finite(est)) stop("Cannot compute exact CI: point estimate is not finite.")
+			}
 			mle_ci = zhang_incid_mle_ci(exact_stats, alpha * 2)
 			ci_width = mle_ci[2] - mle_ci[1]
 			lo_bound = mle_ci[1] - 0.5 * ci_width
@@ -515,9 +559,13 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExactZhang} object.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -536,8 +584,10 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @param args_for_type Optional arguments keyed by exact type.
 		#' @return A confidence interval.
 		compute_exact_confidence_interval = function(alpha = 0.05, pval_epsilon = 0.005, args_for_type = NULL){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+			}
 			exact_args = private$normalize_exact_inference_args(
 				"Zhang",
 				args_for_type = args_for_type,
@@ -552,7 +602,9 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @param args_for_type Optional arguments keyed by exact type.
 		#' @return A two-sided p-value.
 		compute_exact_two_sided_pval_for_treatment_effect = function(delta = 0, args_for_type = NULL){
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 			exact_args = private$normalize_exact_inference_args(
 				"Zhang",
 				args_for_type = args_for_type

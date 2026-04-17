@@ -36,9 +36,13 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -55,7 +59,9 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param pval_epsilon Bisection tolerance for CI bounds.
 		compute_asymp_confidence_interval = function(alpha = 0.05, pval_epsilon = 1e-7){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			counts = private$cached_values$mn_counts
 			if (is.null(counts)) return(c(NA_real_, NA_real_))
@@ -69,18 +75,27 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' Computes a two-sided Miettinen-Nurminen score p-value.
 		#' @param delta The null treatment effect on the risk-difference scale.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 			private$shared()
 			counts = private$cached_values$mn_counts
 			if (is.null(counts)) return(NA_real_)
 			
 			res = mn_pvalue_cpp(counts$x_t, counts$n_t, counts$x_c, counts$n_c, delta, counts$p_t, counts$p_c)
-			if (!is.finite(res)) stop("Miettinen-Nurminen risk-difference: could not compute a finite score statistic.")
+			if (should_run_asserts()) {
+				if (!is.finite(res)) stop("Miettinen-Nurminen risk-difference: could not compute a finite score statistic.")
+			}
 			res
 		}
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+
 		mn_eps = function(){
 			sqrt(.Machine$double.eps)
 		},

@@ -26,16 +26,24 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
-			if (res_type == "incidence"){
-				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
+			if (should_run_asserts()) {
+				if (res_type == "incidence"){
+					stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
+				}
 			}
-			assertResponseType(res_type, "survival")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(res_type, "survival")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			if (!check_package_installed("aftgee")) {
-				stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				if (!check_package_installed("aftgee")) {
+					stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -52,9 +60,13 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -63,13 +75,19 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
+				}
 			}
 		}
 	),
@@ -81,11 +99,12 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
 		aft_design_candidates = function(w, X){
-			X_full = cbind(w = w, as.matrix(X))
-			if (!private$harden || ncol(X_full) <= 1L){
-				return(list(X_full))
+			if (!is.null(private$cached_values$rank_regr_design_candidates)) {
+				return(private$cached_values$rank_regr_design_candidates)
 			}
+			X_full = cbind(w = w, X)
 
+			# Standard candidate: all covariates
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L,
@@ -112,6 +131,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 					keys = c(keys, key)
 				}
 			}
+			private$cached_values$rank_regr_design_candidates = candidates
 			candidates
 		},
 

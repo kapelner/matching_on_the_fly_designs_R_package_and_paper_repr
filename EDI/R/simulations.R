@@ -128,8 +128,7 @@ transform_cont_y_based_on_response_type = function(y_cont, response_type, n_ordi
     survival   = pmax(0.1, y_sh - min(y_sh) + 0.1),
     ordinal    = as.integer(cut(
       y_cont,
-      breaks = unique(quantile(y_cont, probs = seq(0, 1, length.out = n_ordinal_levels + 1L))),
-      include.lowest = TRUE)),
+      breaks = unique(stats::quantile(y_cont, probs = seq(0, 1, length.out = n_ordinal_levels + 1L))),      include.lowest = TRUE)),
     stop("Unknown response_type: ", response_type)
   )
 }
@@ -292,6 +291,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   Warning: this can consume a lot of memory for many replications.
     #'   Default \code{FALSE}.
     #'
+    #' @param turn_off_asserts_for_speed Logical. If \code{TRUE} (default),
+    #'   all \pkg{checkmate} assertions across the package are globally
+    #'   disabled during the simulation run to improve performance.
+    #'
     #' @param design_params \code{NULL} (default) or a list of lists of the same
     #'   length as \code{design_classes}.  Each element is a named list of
     #'   additional constructor arguments passed to the corresponding design's
@@ -376,6 +379,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       prob_censoring        = 0.2,
       verbose                    = FALSE,
       keep_all_intermediate_data = FALSE,
+      turn_off_asserts_for_speed = TRUE,
       design_params              = NULL,
       inference_params           = NULL,
       inf_types                  = NULL
@@ -419,6 +423,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$cov_draw_method_args = cov_draw_method_args
       private$prob_censoring       = prob_censoring
       private$verbose                    = verbose
+      private$turn_off_asserts_for_speed = turn_off_asserts_for_speed
       private$keep_all_intermediate_data = keep_all_intermediate_data
       private$inf_types        = inf_types
 
@@ -478,7 +483,20 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'
     #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {
-      private$raw_results           = list()
+      # Disable assertions for the duration of the simulation for speed
+      if (private$turn_off_asserts_for_speed){
+        toggle_asserts(FALSE)
+        on.exit(toggle_asserts(TRUE))        
+      }
+
+      n_des = length(private$design_classes)
+      n_inf = length(private$inference_classes)
+      n_met = length(private$inf_types)
+      
+      # Pre-allocate results list to maximum possible size to avoid re-allocations
+      private$raw_results = vector("list", private$Nrep * n_des * n_inf * n_met)
+      private$results_idx = 0L
+
       private$all_intermediate_data = vector("list", private$Nrep)
       private$valid_combos          = list()
       private$seen_combo_keys      = character(0L)
@@ -750,13 +768,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   inference class, inference method).
     get_results = function() {
       if (!private$has_run) stop("Call $run() first.")
-      if (length(private$raw_results) == 0L)
+      if (private$results_idx == 0L)
         return(data.table::data.table(
           rep = integer(), design = character(), inference = character(),
           method = character(), estimate = numeric(),
           ci_lo = numeric(), ci_hi = numeric(), pval = numeric()
         ))
-      data.table::rbindlist(private$raw_results)
+      # Prune pre-allocated list to only include what was actually recorded
+      data.table::rbindlist(private$raw_results[seq_len(private$results_idx)])
     },
 
     # ── summarize() ───────────────────────────────────────────────────────────
@@ -896,7 +915,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     design_classes   = NULL,
     inference_classes = NULL,
     design_labels    = NULL,
+    turn_off_asserts_for_speed = NULL,
     raw_results               = NULL,
+    results_idx               = 0L,
     all_intermediate_data     = NULL,
     keep_all_intermediate_data = FALSE,
     has_run                   = FALSE,
@@ -1073,9 +1094,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           private$response_type, private$betaT,
           private$sd_noise, private$prob_censoring,
           private$n_ordinal_levels)
-        for (t in seq_len(n)) {
-          des_obj$add_one_subject_response(t, out$y[t], out$dead[t])
-        }
+        des_obj$add_all_subject_responses(out$y, out$dead)
       }
       des_obj
     },
@@ -1085,7 +1104,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .record = function(rep, design, inf_name, method, est, ci, pval, true_estimand) {
       ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
       if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
-      private$raw_results[[length(private$raw_results) + 1L]] = list(
+      
+      private$results_idx = private$results_idx + 1L
+      private$raw_results[[private$results_idx]] = list(
         rep           = as.integer(rep),
         design        = design,
         inference     = inf_name,

@@ -16,11 +16,17 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidenceExactBinomial} object.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
-			if (!private$design_supports_exact_binomial()) {
-				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!private$design_supports_exact_binomial()) {
+					stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+				}
 			}
 			if (is(des_obj, "FixedDesignBinaryMatch")) {
 				private$des_obj_priv_int$ensure_bms_computed()
@@ -41,48 +47,64 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type
-			assertChoice(type, c("Binomial"))
+			if (should_run_asserts()) {
+				assertChoice(type, c("Binomial"))
+			}
 			type
 		},
 
 		normalize_exact_inference_args = function(type, args_for_type = NULL){
-			assertChoice(type, c("Binomial"))
-			assertList(args_for_type, null.ok = TRUE)
+			if (should_run_asserts()) {
+				assertChoice(type, c("Binomial"))
+				assertList(args_for_type, null.ok = TRUE)
+			}
 			utils::modifyList(setNames(list(list()), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
 
 		assert_exact_inference_params = function(type, args_for_type){
-			assertChoice(type, c("Binomial"))
-			assertList(args_for_type)
-			if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
+			if (should_run_asserts()) {
+				assertChoice(type, c("Binomial"))
+				assertList(args_for_type)
+				if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
+			}
 			args = args_for_type[[type]]
-			assertList(args)
-			assertResponseType(private$des_obj$get_response_type(), "incidence")
-			assertNoCensoring(private$any_censoring)
-			if (!private$design_supports_exact_binomial()) {
-				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+			if (should_run_asserts()) {
+				assertList(args)
+				assertResponseType(private$des_obj$get_response_type(), "incidence")
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!private$design_supports_exact_binomial()) {
+					stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+				}
 			}
 			stats = private$get_exact_binomial_stats()
-			if (stats$m <= 0L) {
-				stop("Exact binomial incidence inference requires at least one matched pair.")
-			}
-			if (stats$d_plus + stats$d_minus <= 0L) {
-				stop("Exact binomial incidence inference requires at least one discordant matched pair.")
+			if (should_run_asserts()) {
+				if (stats$m <= 0L) {
+					stop("Exact binomial incidence inference requires at least one matched pair.")
+				}
+				if (stats$d_plus + stats$d_minus <= 0L) {
+					stop("Exact binomial incidence inference requires at least one discordant matched pair.")
+				}
 			}
 			invisible(args)
 		},
 
 		compute_exact_confidence_interval_by_type = function(type, alpha, args_for_type){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			private$assert_exact_inference_params(type, args_for_type)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				private$assert_exact_inference_params(type, args_for_type)
+			}
 			switch(type,
 				Binomial = private$ci_exact_binomial(alpha)
 			)
 		},
 
 		compute_exact_two_sided_pval_for_treatment_effect_by_type = function(type, delta, args_for_type){
-			assertNumeric(delta, len = 1)
-			private$assert_exact_inference_params(type, args_for_type)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+				private$assert_exact_inference_params(type, args_for_type)
+			}
 			switch(type,
 				Binomial = private$pval_exact_binomial(delta)
 			)
@@ -122,8 +144,10 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			}
 
 			m_vec = private$des_obj_priv_int$m
-			if (is.null(m_vec)) {
-				stop("Matching structure is unavailable for exact binomial incidence inference.")
+			if (should_run_asserts()) {
+				if (is.null(m_vec)) {
+					stop("Matching structure is unavailable for exact binomial incidence inference.")
+				}
 			}
 			m_vec = as.integer(m_vec)
 			m_vec[is.na(m_vec)] = 0L

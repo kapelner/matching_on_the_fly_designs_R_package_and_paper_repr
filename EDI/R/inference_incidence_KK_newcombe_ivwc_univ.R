@@ -47,12 +47,18 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param verbose Flag for progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design.")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design.")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -68,7 +74,9 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared_combined()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -77,7 +85,9 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' Returns the MLE p-value.
 		#' @param delta The null risk difference to test against. Default is zero.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared_combined()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}

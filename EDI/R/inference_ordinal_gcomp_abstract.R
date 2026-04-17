@@ -17,9 +17,13 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -34,7 +38,9 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 		#' Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			if (!private$has_finite_md_se()){
 				warning(
@@ -53,7 +59,9 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 		#' Computes a two-sided Wald p-value for the G-Comp mean difference.
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			if (!private$has_finite_md_se()){
 				warning(
@@ -68,6 +76,50 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			X_fit = if (length(Xmm_cols) == 0L){
+				# Univariate case
+				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				cbind(treatment = private$w, X_cov)
+			}
+
+			# Fit proportional odds model (b[1] is treatment)
+			fit = tryCatch(
+				fast_ordinal_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || length(fit$b) == 0 || is.null(fit$alpha)){
+				return(NA_real_)
+			}
+
+			# Post-fit standardization
+			res = gcomp_ordinal_proportional_odds_post_fit_cpp(
+				X_fit = X_fit,
+				coef_hat = as.numeric(fit$b),
+				alpha_hat = as.numeric(fit$alpha),
+				j_treat = 1L
+			)
+			as.numeric(res$md)
+		},
+
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
 		get_covariate_names = function(){
@@ -105,6 +157,7 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 				return(invisible(NULL))
 			}
 
+			private$best_Xmm_colnames = setdiff(colnames(X_fit), "treatment")
 			coef_hat = as.numeric(fit$b)
 			alpha_hat = as.numeric(fit$alpha)
 

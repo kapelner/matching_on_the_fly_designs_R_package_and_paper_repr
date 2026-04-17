@@ -40,13 +40,17 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
 		initialize = function(des_obj, reference = "control", verbose = FALSE, max_resample_attempts = 50L){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
-			assertChoice(reference, c("control", "treatment", "pooled"))
-			assertCount(max_resample_attempts, positive = TRUE)
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+				assertChoice(reference, c("control", "treatment", "pooled"))
+				assertCount(max_resample_attempts, positive = TRUE)
+			}
 			super$initialize(des_obj, verbose)
 			private$reference = reference
 			private$max_resample_attempts = max_resample_attempts
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -88,7 +92,9 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#' @param delta The null value (centered at 0, so delta=0 means Ridit=0.5).
 		#' @return The p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}

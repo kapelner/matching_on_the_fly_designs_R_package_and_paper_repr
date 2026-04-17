@@ -47,8 +47,10 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			assertCount(r, positive = TRUE)
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				assertCount(r, positive = TRUE)
+				self$assert_all_subjects_arrived()
+			}
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
 				n_T = round(n * private$prob_T)
@@ -116,22 +118,26 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
-				stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+			if (should_run_asserts()) {
+				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
+					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+				}
 			}
 
 			storage.mode(w_mat) = "numeric"
-			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-				stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
-			}
-			if (any(!(w_mat %in% c(0, 1)))) {
-				stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
-			}
+			if (should_run_asserts()) {
+				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+					stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
+				}
+				if (any(!(w_mat %in% c(0, 1)))) {
+					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
+				}
 
-			if (isTRUE(require_balanced)) {
-				treated_counts = colSums(w_mat)
-				if (any(treated_counts != n / 2)) {
-					stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+				if (isTRUE(require_balanced)) {
+					treated_counts = colSums(w_mat)
+					if (any(treated_counts != n / 2)) {
+						stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+					}
 				}
 			}
 

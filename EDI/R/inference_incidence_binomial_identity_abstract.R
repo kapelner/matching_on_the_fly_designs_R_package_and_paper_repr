@@ -22,7 +22,9 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		#' Computes an asymptotic confidence interval for the risk difference.
 		#' @param alpha The confidence level is 1 - alpha. Default 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -31,12 +33,42 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		#' Computes an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect. Default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			# Filter columns that are in Xmm_cols (excluding treatment which we provide separately)
+			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			Xmm = cbind(treatment = private$w, X_cov)
+			# Add intercept
+			Xmm = cbind("(Intercept)" = 1, Xmm)
+
+			mod = tryCatch(private$fit_constrained_binomial_maybe_fast(Xmm, j_treat = 2L, estimate_only = estimate_only), error = function(e) NULL)
+			if (is.null(mod) || !is.finite(mod$b[2])){
+				return(NA_real_)
+			}
+			as.numeric(mod$b[2])
+		},
+
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
@@ -55,8 +87,12 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
-		fit_constrained_binomial = function(X_fit, j_treat){
-			fast_identity_binomial_regression_with_var_cpp(X_fit, as.numeric(private$y), j = j_treat)
+		fit_constrained_binomial_maybe_fast = function(X_fit, j_treat, estimate_only = FALSE){
+			if (estimate_only) {
+				fast_identity_binomial_regression_cpp(X_fit, as.numeric(private$y))
+			} else {
+				fast_identity_binomial_regression_with_var_cpp(X_fit, as.numeric(private$y), j = j_treat)
+			}
 		},
 
 		method_label = function() "Binomial identity-link regression",
@@ -96,8 +132,8 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 				X_fit = reduced$X
 				j_treat = reduced$j_treat
 				if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)) return(NULL)
-				mod = tryCatch(private$fit_constrained_binomial(X_fit, j_treat), error = function(e) NULL)
-				if (is.null(mod) || !isTRUE(mod$converged) || !is.finite(mod$ssq_b_j)) return(NULL)
+				mod = tryCatch(private$fit_constrained_binomial_maybe_fast(X_fit, j_treat, estimate_only = estimate_only), error = function(e) NULL)
+				if (is.null(mod) || !isTRUE(mod$converged) || (!estimate_only && !is.finite(mod$ssq_b_j))) return(NULL)
 				list(mod = mod, j_treat = j_treat, X_fit = X_fit)
 			}
 
@@ -126,6 +162,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 				return(invisible(NULL))
 			}
 
+			private$best_Xmm_colnames = setdiff(colnames(result$X_fit), c("(Intercept)", "treatment"))
 			private$cached_values$beta_hat_T = as.numeric(result$mod$b[result$j_treat])
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(as.numeric(result$mod$ssq_b_j))

@@ -53,8 +53,10 @@ InferenceOrdinalUnivKKGEE = R6::R6Class("InferenceOrdinalUnivKKGEE",
 		initialize = function(des_obj,  verbose = FALSE){
 			super$initialize(des_obj, verbose)
 			
-			if (!check_package_installed("multgee")){
-				stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				if (!check_package_installed("multgee")){
+					stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		}
 	),

@@ -14,7 +14,9 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#'
 		#' @return 	A Wald-type confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			
 			est = self$compute_treatment_estimate()
 			se = private$get_standard_error()
@@ -36,7 +38,9 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#'
 		#' @return 	The asymptotic p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			
 			est = self$compute_treatment_estimate()
 			se = private$get_standard_error()

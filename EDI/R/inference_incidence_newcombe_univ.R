@@ -46,9 +46,13 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj, verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -63,7 +67,9 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 		#' Computes a 1 - \code{alpha} Newcombe confidence interval.
 		#' @param alpha The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			counts = private$cached_values$counts
 			if (is.null(counts)) return(c(NA_real_, NA_real_))
@@ -77,7 +83,9 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 		#' Computes a two-sided p-value by inverting the Newcombe interval.
 		#' @param delta The null risk difference.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 			private$shared()
 			counts = private$cached_values$counts
 			if (is.null(counts) || counts$n_t == 0 || counts$n_c == 0) return(NA_real_)
@@ -95,6 +103,11 @@ InferenceIncidUnivNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivNewcombeRisk
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+
 		get_counts = function(){
 			i_t = private$w == 1
 			i_c = private$w == 0

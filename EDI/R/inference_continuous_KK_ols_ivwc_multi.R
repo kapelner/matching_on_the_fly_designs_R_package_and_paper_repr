@@ -40,13 +40,19 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 				ols_sanity_var_max_factor = 10,
 				ols_sanity_var_min_factor = 1e-6,
 				ols_sanity_se_max_factor  = 5){
-			assertResponseType(des_obj$get_response_type(), "continuous")
-			assertNumber(ols_sanity_kappa_max,      lower = 1)
-			assertNumber(ols_sanity_var_max_factor, lower = 1)
-			assertNumber(ols_sanity_var_min_factor, lower = 0, upper = 1)
-			assertNumber(ols_sanity_se_max_factor,  lower = 0)
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+			}
+			if (should_run_asserts()) {
+				assertNumber(ols_sanity_kappa_max,      lower = 1)
+				assertNumber(ols_sanity_var_max_factor, lower = 1)
+				assertNumber(ols_sanity_var_min_factor, lower = 0, upper = 1)
+				assertNumber(ols_sanity_se_max_factor,  lower = 0)
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$ols_sanity_kappa_max      = ols_sanity_kappa_max
 			private$ols_sanity_var_max_factor = ols_sanity_var_max_factor
 			private$ols_sanity_var_min_factor = ols_sanity_var_min_factor
@@ -140,7 +146,9 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	#' }
 	#'
 	compute_asymp_confidence_interval = function(alpha = 0.05){
-		assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		if (should_run_asserts()) {
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		}
 		private$shared_for_inference()
 		private$compute_z_or_t_ci_from_s_and_df(alpha)
 	},
@@ -169,7 +177,9 @@ InferenceContinMultOLSKKIVWC = R6::R6Class("InferenceContinMultOLSKKIVWC",
 	#' }
 	#'
 	compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-		assertNumeric(delta)
+		if (should_run_asserts()) {
+			assertNumeric(delta)
+		}
 		private$shared_for_inference()
 		private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 	}

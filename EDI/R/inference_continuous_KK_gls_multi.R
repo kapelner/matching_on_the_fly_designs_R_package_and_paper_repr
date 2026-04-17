@@ -52,12 +52,18 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#' infer
 		#'
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "continuous")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 
-			if (!check_package_installed("nlme")) {
-				stop("Package 'nlme' is required for InferenceContinMultGLS. Please install it.")
+			if (should_run_asserts()) {
+				if (!check_package_installed("nlme")) {
+					stop("Package 'nlme' is required for InferenceContinMultGLS. Please install it.")
+				}
 			}
 		},
 
@@ -83,7 +89,9 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#'
 		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}
@@ -98,7 +106,9 @@ InferenceContinMultGLS = R6::R6Class("InferenceContinMultGLS",
 		#'
 		#' @return	The approximate frequentist p-value
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			if (is.null(private$cached_values$df)){
 				private$shared()
 			}

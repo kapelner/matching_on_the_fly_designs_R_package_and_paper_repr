@@ -35,8 +35,10 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				
 				verbose = FALSE
 			) {
-			assertCharacter(strata_cols, min.len = 1)
-			assertNumeric(p_best, lower = 0.5, upper = 1)
+			if (should_run_asserts()) {
+				assertCharacter(strata_cols, min.len = 1)
+				assertNumeric(p_best, lower = 0.5, upper = 1)
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			
 			private$strata_cols = strata_cols
@@ -46,7 +48,9 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 			if (is.null(weights)){
 				private$weights = rep(1, length(strata_cols))
 			} else {
-				assertNumeric(weights, len = length(strata_cols), lower = 0)
+				if (should_run_asserts()) {
+					assertNumeric(weights, len = length(strata_cols), lower = 0)
+				}
 				private$weights = weights
 			}
 		},
@@ -145,8 +149,10 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 			vapply(private$strata_cols, function(col) {
 				key = if (is.na(x_row[[col]])) "NA" else as.character(x_row[[col]])
 				row_idx = private$strata_level_rows[[col]][[key]]
-				if (is.null(row_idx) || !is.finite(row_idx)) {
-					stop("Unknown strata level encountered for Pocock-Simon column ", col, ": ", key)
+				if (should_run_asserts()) {
+					if (is.null(row_idx) || !is.finite(row_idx)) {
+						stop("Unknown strata level encountered for Pocock-Simon column ", col, ": ", key)
+					}
 				}
 				as.integer(row_idx)
 			}, integer(1))

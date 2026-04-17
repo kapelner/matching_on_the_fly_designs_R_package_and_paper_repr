@@ -860,7 +860,7 @@ NULL
 	)
 }
 
-.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE){
+.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE, starts = NULL){
 	y = as.numeric(y)
 	Xmm = as.matrix(Xmm)
 	if (length(y) != nrow(Xmm)){
@@ -884,38 +884,10 @@ NULL
 	y_beta = y[is_beta]
 	X_beta = Xfull[is_beta, , drop = FALSE]
 
-	neg_loglik = function(par){
-		beta = par[seq_len(p)]
-		log_phi = par[p + 1L]
-		alpha0 = par[p + 2L]
-		alpha1 = par[p + 3L]
-
-		if (!is.finite(log_phi) || log_phi < -12 || log_phi > 12 ||
-		    !is.finite(alpha0) || abs(alpha0) > 25 ||
-		    !is.finite(alpha1) || abs(alpha1) > 25){
-			return(1e100)
-		}
-
-		phi = exp(log_phi)
-		eta = as.vector(Xfull %*% beta)
-		mu = pmin(pmax(inv_logit(eta), 1e-8), 1 - 1e-8)
-		pis = .softmax_three_from_logits(alpha0, alpha1)
-
-		ll = numeric(length(y))
-		ll[is_zero] = log(pis["pi0"])
-		ll[is_one] = log(pis["pi1"])
-		if (any(is_beta)){
-			mu_beta = mu[is_beta]
-			shape1 = pmax(mu_beta * phi, 1e-8)
-			shape2 = pmax((1 - mu_beta) * phi, 1e-8)
-			ll[is_beta] = log(pis["pib"]) + stats::dbeta(y_beta, shape1 = shape1, shape2 = shape2, log = TRUE)
-		}
-		if (any(!is.finite(ll))) return(1e100)
-		-sum(ll)
+	if (is.null(starts)){
+		start0 = .build_zoib_start(y, Xmm)
+		starts = list(start0)
 	}
-
-	start0 = .build_zoib_start(y, Xmm)
-	starts = list(start0)
 
 	best = NULL
 	best_val = Inf

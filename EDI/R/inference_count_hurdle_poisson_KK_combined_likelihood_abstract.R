@@ -19,14 +19,26 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		#' @param des_obj A completed \code{Design} object.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "count")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "count")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("glmmTMB")){
-				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+			if (is(des_obj, "FixedDesignBinaryMatch")){
+				des_obj$.__enclos_env__$private$ensure_bms_computed()
+			}
+			private$m = des_obj$.__enclos_env__$private$m
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("glmmTMB")){
+					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -42,7 +54,9 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
@@ -55,7 +69,9 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
@@ -109,8 +125,10 @@ InferenceAbstractKKHurdlePoissonCombinedLikelihood = R6::R6Class("InferenceAbstr
 			m_vec[is.na(m_vec)] = 0L
 
 			pred_df = private$predictors_df()
-			if (!("w" %in% colnames(pred_df))){
-				stop(class(self)[1], " predictors_df() must include a treatment column named 'w'.")
+			if (should_run_asserts()) {
+				if (!("w" %in% colnames(pred_df))){
+					stop(class(self)[1], " predictors_df() must include a treatment column named 'w'.")
+				}
 			}
 
 			X_full = cbind(1, as.matrix(pred_df))

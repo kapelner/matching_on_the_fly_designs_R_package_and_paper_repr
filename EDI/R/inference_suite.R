@@ -32,11 +32,13 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 		#'   \code{des_obj}) forwarded to that class's \code{initialize}.
 		#'   Defaults to an empty list (no extra arguments for any class).
 		initialize = function(des_obj, inference_params = list()) {
-			if (!is(des_obj, "Design")) {
-				stop("InferenceSuite: des_obj must be a Design object.")
-			}
-			if (!is.list(inference_params)) {
-				stop("InferenceSuite: inference_params must be a list.")
+			if (should_run_asserts()) {
+				if (!is(des_obj, "Design")) {
+					stop("InferenceSuite: des_obj must be a Design object.")
+				}
+				if (!is.list(inference_params)) {
+					stop("InferenceSuite: inference_params must be a list.")
+				}
 			}
 			if (length(inference_params) > 0L &&
 					(is.null(names(inference_params)) ||
@@ -50,29 +52,33 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 			# ── 2. Validate inference_params ──────────────────────────────────
 			for (cls_name in names(inference_params)) {
 				# Must be applicable for this design
-				if (!(cls_name %in% self$applicable_design_classes)) {
-					stop(sprintf(
-						"InferenceSuite: '%s' is not applicable for this design/response_type combination.",
-						cls_name))
+				if (should_run_asserts()) {
+					if (!(cls_name %in% self$applicable_design_classes)) {
+						stop(sprintf(
+							"InferenceSuite: '%s' is not applicable for this design/response_type combination.",
+							cls_name))
+					}
 				}
 
 				# All supplied param names must be formals of initialize
 				params = inference_params[[cls_name]]
-				if (!is.list(params)) {
-					stop(sprintf(
-						"InferenceSuite: params for '%s' must be a list.", cls_name))
-				}
-				if (length(params) > 0L) {
-					cls        = get(cls_name, envir = getNamespace("EDI"))
-					init_fn    = cls$public_methods$initialize
-					valid_args = setdiff(names(formals(init_fn)), c("des_obj", "..."))
-					unknown    = setdiff(names(params), valid_args)
-					if (length(unknown) > 0L) {
+				if (should_run_asserts()) {
+					if (!is.list(params)) {
 						stop(sprintf(
-							"InferenceSuite: unknown argument(s) for '%s': %s\n  Valid: %s",
-							cls_name,
-							paste(unknown,    collapse = ", "),
-							paste(valid_args, collapse = ", ")))
+							"InferenceSuite: params for '%s' must be a list.", cls_name))
+					}
+					if (length(params) > 0L) {
+						cls        = get(cls_name, envir = getNamespace("EDI"))
+						init_fn    = cls$public_methods$initialize
+						valid_args = setdiff(names(formals(init_fn)), c("des_obj", "..."))
+						unknown    = setdiff(names(params), valid_args)
+						if (length(unknown) > 0L) {
+							stop(sprintf(
+								"InferenceSuite: unknown argument(s) for '%s': %s\n  Valid: %s",
+								cls_name,
+								paste(unknown,    collapse = ", "),
+								paste(valid_args, collapse = ", ")))
+						}
 					}
 				}
 			}

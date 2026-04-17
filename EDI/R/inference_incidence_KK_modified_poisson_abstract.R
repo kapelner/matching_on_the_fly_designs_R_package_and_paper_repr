@@ -18,9 +18,13 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -28,15 +32,50 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			if (length(Xmm_cols) == 0L){
+				# Univariate case
+				Xmm = cbind("(Intercept)" = 1, treatment = private$w)
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				Xmm = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
+			}
+
+			fit = tryCatch(private$fit_modified_poisson(Xmm, j_treat = 2L, estimate_only = estimate_only), error = function(e) NULL)
+			if (is.null(fit) || !is.finite(fit$beta_hat)){
+				return(NA_real_)
+			}
+			as.numeric(fit$beta_hat)
+		},
 
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
 
@@ -150,6 +189,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			}
 
 			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
+			if (!is.null(fit)) {
+				private$best_Xmm_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
+			}
 			if (private$harden && is.null(fit) && ncol(X_full) > 2L){
 				reduced = private$reduce_design_matrix_preserving_treatment(X_full[, 1:2, drop = FALSE])
 				X_fit = reduced$X

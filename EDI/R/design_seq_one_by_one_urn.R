@@ -30,8 +30,10 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 						
 						verbose = FALSE
 					) {
-			assertNumber(alpha, lower = 0)
-			assertNumber(beta, lower = 0)
+			if (should_run_asserts()) {
+				assertNumber(alpha, lower = 0)
+				assertNumber(beta, lower = 0)
+			}
 			
 			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose)
 			

@@ -18,19 +18,27 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
-			if (res_type == "incidence"){
-				stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
+			if (should_run_asserts()) {
+				if (res_type == "incidence"){
+					stop("Rank-based regression is not recommended for incidence data; clogit and compound mean diff is recommended.")
+				}
 			}
-			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			if (private$any_censoring){
-				stop(class(self)[1], " does not support censored survival data.")
-			}
-			if (!check_package_installed("Rfit")) {
-				stop("Package 'Rfit' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				if (private$any_censoring){
+					stop(class(self)[1], " does not support censored survival data.")
+				}
+				if (!check_package_installed("Rfit")) {
+					stop("Package 'Rfit' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -46,9 +54,13 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		#' Computes the asymptotic confidence interval.
 		#' @param alpha The confidence level is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -56,18 +68,77 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		#' Computes the asymptotic two-sided p-value.
 		#' @param delta The null difference to test against. Default is zero.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("Testing non-zero delta is not yet implemented for the combined rank-regression estimator.")
+				}
 			}
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames_matched = NULL,
+		best_Xmm_colnames_reservoir = NULL,
+		best_Xmm_j_treat_reservoir = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+				private$shared(estimate_only = TRUE)
+			}
+
+			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+			KKstats = private$cached_values$KKstats
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+
+			# --- Matched pairs component ---
+			beta_m = NA_real_
+			if (m > 0){
+				dy = KKstats$y_matched_diffs
+				if (private$include_covariates() && !is.null(private$best_Xmm_colnames_matched)){
+					dX = KKstats$X_matched_diffs[, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE]
+					Xmm = cbind(`(Intercept)` = 1, dX)
+					beta_m = private$fit_rank_regression_exact(dy, Xmm, 1L, estimate_only = TRUE)$beta
+				} else {
+					beta_m = wilcox_hl_signed_rank_point_estimate_cpp(as.numeric(dy))
+				}
+			}
+
+			# --- Reservoir component ---
+			beta_r = NA_real_
+			if (nRT > 0 && nRC > 0){
+				y_r = KKstats$y_reservoir
+				w_r = KKstats$w_reservoir
+				if (private$include_covariates() && !is.null(private$best_Xmm_colnames_reservoir)){
+					X_r = as.matrix(KKstats$X_reservoir)
+					X_cov = X_r[, intersect(private$best_Xmm_colnames_reservoir, colnames(X_r)), drop = FALSE]
+					Xmm = cbind(`(Intercept)` = 1, w = w_r, X_cov)
+					j_treat = private$best_Xmm_j_treat_reservoir %||% 2L
+					beta_r = private$fit_rank_regression_exact(y_r, Xmm, j_treat, estimate_only = TRUE)$beta
+				} else {
+					beta_r = wilcox_hl_point_estimate_cpp(as.numeric(y_r), as.integer(w_r))
+				}
+			}
+
+			combo = private$combine_component_estimates(
+				beta_m = beta_m,
+				ssq_m = private$cached_values$ssq_beta_T_matched, # use orig ssq for weights
+				beta_r = beta_r,
+				ssq_r = private$cached_values$ssq_beta_T_reservoir
+			)
+			combo$beta
+		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
@@ -91,7 +162,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 			private$rfit_internal_fns
 		},
 
-		fit_rank_regression_exact = function(y, X, coef_index){
+		fit_rank_regression_exact = function(y, X, coef_index, estimate_only = FALSE){
 			tryCatch({
 				x = as.matrix(X)
 				storage.mode(x) = "double"
@@ -154,16 +225,20 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 				}
 
 				ehat = y - yhat
-				alphahat = median(ehat)
+				alphahat = stats::median(ehat)
 				ehat = ehat - alphahat
 				yhat = yhat + alphahat
-				bhat = lsfit(x, yhat, intercept = FALSE)$coef
-				alphahat0 = median(y)
+				bhat = stats::lsfit(x, yhat, intercept = FALSE)$coef
+				alphahat0 = stats::median(y)
 				bhat0 = c(alphahat0, rep(0, length(bhat) - 1L))
 				if (fns$disp(bhat, x, y, scores) > fns$disp(bhat0, x, y, scores)){
 					bhat = bhat0
 					ehat = y - alphahat0
 				}
+
+				beta = unname(as.numeric(bhat[coef_index]))
+				if (!is.finite(beta)) return(list(beta = NA_real_, ssq = NA_real_))
+				if (estimate_only) return(list(beta = beta, ssq = NA_real_))
 
 				tauhat = fns$gettauF0(ehat, ncol(xq), scores)
 				taushat = fns$taustar(ehat, qrx$rank)
@@ -180,9 +255,8 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 					vcov_mat = vcov_mat + tauhat^2 * crossprod(A2)
 				}
 
-				beta = unname(as.numeric(bhat[coef_index]))
 				ssq = unname(as.numeric(vcov_mat[coef_index, coef_index]))
-				if (!is.finite(beta) || !is.finite(ssq) || ssq <= 0){
+				if (!is.finite(ssq) || ssq <= 0){
 					return(list(beta = NA_real_, ssq = NA_real_))
 				}
 				list(beta = beta, ssq = ssq)
@@ -231,14 +305,14 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 
 			# --- Matched pairs: Rfit on differences ---
 			if (m > 0){
-				private$rfit_for_matched_pairs()
+				private$rfit_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
 
 			# --- Reservoir: Rfit on level data ---
 			if (nRT > 0 && nRC > 0){
-				private$rfit_for_reservoir()
+				private$rfit_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
@@ -251,33 +325,45 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		},
 
 		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				stop("Rank-regression compound estimator: could not compute a finite standard error.")
+			if (should_run_asserts()) {
+				if (!is.finite(private$cached_values$s_beta_hat_T)){
+					stop("Rank-regression compound estimator: could not compute a finite standard error.")
+				}
 			}
 		},
 
-		rfit_for_matched_pairs = function(){
+		rfit_for_matched_pairs = function(estimate_only = FALSE){
 			KKstats = private$cached_values$KKstats
 			fit = private$fit_matched_component(
 				dy = KKstats$y_matched_diffs,
-				dX = KKstats$X_matched_diffs
+				dX = KKstats$X_matched_diffs,
+				estimate_only = estimate_only
 			)
 			private$cached_values$beta_T_matched = fit$beta
 			private$cached_values$ssq_beta_T_matched = fit$ssq
+			if (private$include_covariates() && !is.null(KKstats$X_matched_diffs)){
+				private$best_Xmm_colnames_matched = colnames(KKstats$X_matched_diffs)
+			}
 		},
 
-		rfit_for_reservoir = function(){
+		rfit_for_reservoir = function(estimate_only = FALSE){
 			KKstats = private$cached_values$KKstats
 			fit = private$fit_reservoir_component(
 				y_r = KKstats$y_reservoir,
 				w_r = KKstats$w_reservoir,
-				X_r = KKstats$X_reservoir
+				X_r = KKstats$X_reservoir,
+				estimate_only = estimate_only
 			)
 			private$cached_values$beta_T_reservoir = fit$beta
 			private$cached_values$ssq_beta_T_reservoir = fit$ssq
+			if (private$include_covariates() && !is.null(KKstats$X_reservoir)){
+				private$best_Xmm_colnames_reservoir = colnames(KKstats$X_reservoir)
+				# j_treat is 2 in fit_reservoir_component when covariates are included
+				private$best_Xmm_j_treat_reservoir = 2L
+			}
 		},
 
-		fit_matched_component = function(dy, dX = NULL){
+		fit_matched_component = function(dy, dX = NULL, estimate_only = FALSE){
 			if (length(dy) == 0L){
 				return(list(beta = NA_real_, ssq = NA_real_))
 			}
@@ -290,8 +376,13 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 
 			# Univariate case: Rfit fails on dy ~ 1. Use Wilcoxon HL estimate.
 			if (all(dy == 0)){
-				return(list(beta = NA_real_, ssq = NA_real_))
+				return(list(beta = 0, ssq = NA_real_))
 			}
+			
+			if (estimate_only) {
+				return(list(beta = wilcox_hl_signed_rank_point_estimate_cpp(as.numeric(dy)), ssq = NA_real_))
+			}
+
 			mod = tryCatch(
 				stats::wilcox.test(dy, conf.int = TRUE),
 				error = function(e) NULL
@@ -309,7 +400,7 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 			)
 		},
 
-		fit_reservoir_component = function(y_r, w_r, X_r = NULL){
+		fit_reservoir_component = function(y_r, w_r, X_r = NULL, estimate_only = FALSE){
 			if (length(y_r) == 0L || !any(w_r == 1) || !any(w_r == 0)){
 				return(list(beta = NA_real_, ssq = NA_real_))
 			}
@@ -318,6 +409,10 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 				X_r = as.matrix(X_r)
 				x = cbind(`(Intercept)` = rep(1, length(y_r)), w = w_r, X_r)
 				return(private$fit_rank_regression_exact(y_r, x, 2L))
+			}
+
+			if (estimate_only) {
+				return(list(beta = wilcox_hl_point_estimate_cpp(as.numeric(y_r), as.integer(w_r)), ssq = NA_real_))
 			}
 
 			yT = y_r[w_r == 1]
@@ -359,7 +454,8 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 					reservoir_fit = private$fit_reservoir_component(
 						y_r = y_res[res_idx],
 						w_r = w_res[res_idx],
-						X_r = if (private$include_covariates()) X_res[res_idx, , drop = FALSE] else NULL
+						X_r = if (private$include_covariates()) X_res[res_idx, , drop = FALSE] else NULL,
+						estimate_only = TRUE
 					)
 				}
 
@@ -368,7 +464,8 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 					pair_idx = sample.int(m, m, replace = TRUE)
 					matched_fit = private$fit_matched_component(
 						dy = matched_dy[pair_idx],
-						dX = if (private$include_covariates()) matched_dX[pair_idx, , drop = FALSE] else NULL
+						dX = if (private$include_covariates()) matched_dX[pair_idx, , drop = FALSE] else NULL,
+						estimate_only = TRUE
 					)
 				}
 

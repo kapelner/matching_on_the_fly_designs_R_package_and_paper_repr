@@ -1,7 +1,11 @@
 ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj,  verbose = FALSE, harden = TRUE){
-	assertResponseType(des_obj$get_response_type(), "ordinal")
+	if (should_run_asserts()) {
+		assertResponseType(des_obj$get_response_type(), "ordinal")
+	}
 	super_obj$initialize(des_obj, verbose = verbose, harden = harden)
-	assertNoCensoring(private_env$any_censoring)
+	if (should_run_asserts()) {
+		assertNoCensoring(private_env$any_censoring)
+	}
 }
 
 

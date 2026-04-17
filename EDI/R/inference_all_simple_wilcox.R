@@ -45,23 +45,31 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' infer
 		#'
 		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
-			assertCount(max_resample_attempts, positive = TRUE)
-			res_type = des_obj$get_response_type()
-			if (res_type == "incidence"){
-				stop(
-					"Wilcoxon rank-sum inference is not implemented for incidence (binary) ",
-					"responses: the Hodges-Lehmann estimator is degenerate (almost always 0) ",
-					"on 0/1 data. Use InferenceAllSimpleMeanDiff or a clogit estimator instead."
-				)
+			if (should_run_asserts()) {
+				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
+			res_type = des_obj$get_response_type()
+			if (should_run_asserts()) {
+				if (res_type == "incidence"){
+					stop(
+						"Wilcoxon rank-sum inference is not implemented for incidence (binary) ",
+						"responses: the Hodges-Lehmann estimator is degenerate (almost always 0) ",
+						"on 0/1 data. Use InferenceAllSimpleMeanDiff or a clogit estimator instead."
+					)
+				}
+			}
+			if (should_run_asserts()) {
+				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
+			}
 			super$initialize(des_obj, verbose)
 			private$max_resample_attempts = max_resample_attempts
-			if (private$any_censoring){
-				stop(
-					"Wilcoxon rank-sum inference does not support censored survival data. ",
-					"Use InferenceSurvivalGehanWilcox for censored survival outcomes."
-				)
+			if (should_run_asserts()) {
+				if (private$any_censoring){
+					stop(
+						"Wilcoxon rank-sum inference does not support censored survival data. ",
+						"Use InferenceSurvivalGehanWilcox for censored survival outcomes."
+					)
+				}
 			}
 		},
 
@@ -79,7 +87,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' approximation for the HL estimator.
 		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T)) return(c(NA_real_, NA_real_))
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
@@ -90,7 +100,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' normal approximation for the HL estimator.
 		#' @param delta Null value; default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T)) return(NA_real_)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)

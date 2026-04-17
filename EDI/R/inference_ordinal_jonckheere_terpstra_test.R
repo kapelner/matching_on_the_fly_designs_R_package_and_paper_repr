@@ -33,9 +33,13 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object.
 		#' @param verbose Whether to print progress.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description

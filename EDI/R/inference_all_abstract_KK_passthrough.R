@@ -16,8 +16,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   to the user. Default is \code{TRUE}
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
-			if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")) {
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")) {
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
+				}
 			}
 			super$initialize(des_obj, verbose, harden)
 				if (private$has_match_structure){
@@ -60,211 +62,217 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   per-iteration diagnostics. Default \code{FALSE}.
 		#' @param bootstrap_type      The type of bootstrap resampling to perform.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-				private$assert_valid_bootstrap_type(bootstrap_type)
-				if (!private$has_match_structure){
-					super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug, bootstrap_type = bootstrap_type)
-				} else {
-				assertCount(B, positive = TRUE)
-
-				if (is.null(private$cached_values$KKstats)){
-					private$compute_basic_match_data()
+				if (should_run_asserts()) {
+					private$assert_valid_bootstrap_type(bootstrap_type)
 				}
-
-				n = private$n
-				y = private$y
-				dead = private$dead
-				w = private$w
-				X = private$get_X()
-
-				# Let Design initialise and own the bootstrap pair structure
-				des_priv = private$des_obj_priv_int
-				.init_kk_bootstrap_structure(des_priv)
-				n_reservoir = des_priv$kk_boot_n_reservoir
-				m            = nrow(des_priv$kk_boot_pair_rows)
-
-				# For the C++ fast-path we still need i_reservoir / m_vec in Inference scope
-				i_reservoir  = des_priv$kk_boot_i_reservoir
-				m_vec = private$m
-				if (is.null(m_vec)) m_vec = rep(0L, n)
-				m_vec = as.integer(m_vec)
-				m_vec[is.na(m_vec)] = 0L
-
-				# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
-				if (!isTRUE(debug) && private$has_private_method("compute_fast_bootstrap_distr")) {
-					fast_distr = private$compute_fast_bootstrap_distr(B, i_reservoir, n_reservoir, m, y, w, m_vec)
-					if (!is.null(fast_distr)) {
-						return(fast_distr)
+				if (should_run_asserts()) {
+					if (!private$has_match_structure){
+						super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug = debug, bootstrap_type = bootstrap_type)
+					} else {
+					if (should_run_asserts()) {
+						assertCount(B, positive = TRUE)
 					}
-				}
 
-				kk_boot_context = private$create_kk_bootstrap_context(
-					y = y, dead = dead, w = w, X = X,
-					m = m, n_reservoir = n_reservoir
-				)
+					if (is.null(private$cached_values$KKstats)){
+						private$compute_basic_match_data()
+					}
 
-				if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
+					n = private$n
+					y = private$y
+					dead = private$dead
+					w = private$w
+					X = private$get_X()
+
+					# Let Design initialise and own the bootstrap pair structure
+					des_priv = private$des_obj_priv_int
+					.init_kk_bootstrap_structure(des_priv)
+					n_reservoir = des_priv$kk_boot_n_reservoir
+					m            = nrow(des_priv$kk_boot_pair_rows)
+
+					# For the C++ fast-path we still need i_reservoir / m_vec in Inference scope
+					i_reservoir  = des_priv$kk_boot_i_reservoir
+					m_vec = private$m
+					if (is.null(m_vec)) m_vec = rep(0L, n)
+					m_vec = as.integer(m_vec)
+					m_vec[is.na(m_vec)] = 0L
+
+					# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
+					if (!isTRUE(debug) && private$has_private_method("compute_fast_bootstrap_distr")) {
+						fast_distr = private$compute_fast_bootstrap_distr(B, i_reservoir, n_reservoir, m, y, w, m_vec)
+						if (!is.null(fast_distr)) {
+							return(fast_distr)
+						}
+					}
+
+					kk_boot_context = private$create_kk_bootstrap_context(
+						y = y, dead = dead, w = w, X = X,
+						m = m, n_reservoir = n_reservoir
+					)
+
+					if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
+						if (isTRUE(debug)) {
+							return(private$compute_kk_bootstrap_debug_with_reused_worker(B, kk_boot_context))
+						}
+
+						actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
+						if (actual_cores > 1L) {
+							do_warmup_iter = function() {
+								worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
+								sample_info = des_priv$draw_bootstrap_indices()
+								private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
+								tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+							}
+							system.time(do_warmup_iter())
+							t_boot_warmup = system.time(do_warmup_iter())[[3]]
+							fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
+							if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores)) {
+								actual_cores = 1L
+							}
+						}
+
+						return(private$compute_kk_bootstrap_distribution_with_reused_workers(
+							B = B,
+							kk_boot_context = kk_boot_context,
+							actual_cores = actual_cores,
+							show_progress = show_progress
+						))
+					}
+
 					if (isTRUE(debug)) {
-						return(private$compute_kk_bootstrap_debug_with_reused_worker(B, kk_boot_context))
+						debug_results = vector("list", B)
+						has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
+						for (b in seq_len(B)) {
+							boot_sample = des_priv$draw_bootstrap_indices()
+							i_b   = boot_sample$i_b
+							m_vec_b = boot_sample$m_vec_b
+							iter_warns = character(0)
+							iter_val = withCallingHandlers(
+								tryCatch({
+									boot_inf_obj = self$duplicate()
+									boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+									boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+									boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+									boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+									boot_inf_obj$.__enclos_env__$private$cached_values = list()
+									boot_inf_obj$.__enclos_env__$private$m = m_vec_b
+									boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
+									if (has_res_stat_debug) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+									boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
+								}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+								warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+							)
+							debug_results[[b]] = list(
+								val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
+								errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+								warnings = iter_warns
+							)
+						}
+						debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
+						if (length(debug_results) == 0L) {
+							stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+						}
+						values = sapply(debug_results, `[[`, "val")
+						errors_list = lapply(debug_results, `[[`, "errors")
+						warnings_list = lapply(debug_results, `[[`, "warnings")
+						num_errors_vec = lengths(errors_list)
+						num_warnings_vec = lengths(warnings_list)
+						return(list(
+							values = values,
+							errors = errors_list,
+							warnings = warnings_list,
+							num_errors = num_errors_vec,
+							num_warnings = num_warnings_vec,
+							prop_iterations_with_errors = mean(num_errors_vec > 0),
+							prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+							prop_illegal_values = mean(!is.finite(values))
+						))
 					}
 
-					actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
-					if (actual_cores > 1L) {
-						do_warmup_iter = function() {
-							worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
-							sample_info = des_priv$draw_bootstrap_indices()
-							private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
-							tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+					# Pure R KK bootstrap implementation
+					if (self$num_cores == 1) {
+						pb = NULL
+						if (private$verbose) {
+							pb = utils::txtProgressBar(min = 0, max = B, style = 3)
+							on.exit(close(pb), add = TRUE)
 						}
-						system.time(do_warmup_iter())
-						t_boot_warmup = system.time(do_warmup_iter())[[3]]
-						fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
-						if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores)) {
-							actual_cores = 1L
-						}
-					}
+						beta_hat_T_bs = rep(NA_real_, B)
 
-					return(private$compute_kk_bootstrap_distribution_with_reused_workers(
-						B = B,
-						kk_boot_context = kk_boot_context,
-						actual_cores = actual_cores,
-						show_progress = show_progress
-					))
-				}
-
-				if (isTRUE(debug)) {
-					debug_results = vector("list", B)
-					has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
-					for (b in seq_len(B)) {
-						boot_sample = des_priv$draw_bootstrap_indices()
-						i_b   = boot_sample$i_b
-						m_vec_b = boot_sample$m_vec_b
-						iter_warns = character(0)
-						iter_val = withCallingHandlers(
-							tryCatch({
-								boot_inf_obj = self$duplicate()
-								boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-								boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-								boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-								boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-								boot_inf_obj$.__enclos_env__$private$cached_values = list()
+						has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
+						for (b in 1:B) {
+							boot_sample = des_priv$draw_bootstrap_indices()
+							i_b    = boot_sample$i_b
+							m_vec_b = boot_sample$m_vec_b
+							boot_inf_obj = self$duplicate()
+							boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+							boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+							boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+							boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+							boot_inf_obj$.__enclos_env__$private$cached_values = list()
+							beta_hat_T_bs[b] = tryCatch({
 								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-								if (has_res_stat_debug) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+								if (has_res_stat_serial) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
 								boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
-							}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
-							warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
-						)
-						debug_results[[b]] = list(
-							val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
-							errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
-							warnings = iter_warns
-						)
+							}, error = function(e) { NA_real_ })
+							if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
+						}
+						return(beta_hat_T_bs)
+					} else {
+						# Parallel bootstrap execution for KK designs
+						cores_to_use = self$num_cores
+
+						if (cores_to_use > 1L) {
+							boot_sample_w = des_priv$draw_bootstrap_indices()
+							i_b_w   = boot_sample_w$i_b
+							m_vec_b_w = boot_sample_w$m_vec_b
+							t_warmup_kk = system.time({
+								boot_w = self$duplicate()
+								boot_w$.__enclos_env__$private$y = y[i_b_w]
+								boot_w$.__enclos_env__$private$dead = dead[i_b_w]
+								boot_w$.__enclos_env__$private$w = w[i_b_w]
+								boot_w$.__enclos_env__$private$X = X[i_b_w, , drop = FALSE]
+								boot_w$.__enclos_env__$private$cached_values = list()
+								boot_w$.__enclos_env__$private$m = m_vec_b_w
+								boot_w$.__enclos_env__$private$compute_basic_match_data()
+								if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
+									boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+								tryCatch(boot_w$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
+							})[[3]]
+							fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
+							if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
+								cores_to_use = 1L
+						}
+
+						kk_template = self$duplicate()
+						has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
+
+						# Use private$par_lapply which handles both persistent fork clusters and other strategies.
+						beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
+							boot_sample = des_priv$draw_bootstrap_indices()
+							i_b    = boot_sample$i_b
+							m_vec_b = boot_sample$m_vec_b
+							worker_inf = kk_template$duplicate()
+							worker_inf$.__enclos_env__$private$y = y[i_b]
+							worker_inf$.__enclos_env__$private$dead = dead[i_b]
+							worker_inf$.__enclos_env__$private$w = w[i_b]
+							worker_inf$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+							worker_inf$.__enclos_env__$private$cached_values = list()
+							tryCatch({
+								worker_inf$.__enclos_env__$private$m = m_vec_b
+								worker_inf$.__enclos_env__$private$compute_basic_match_data()
+								if (has_res_stat) worker_inf$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+								worker_inf$compute_treatment_estimate(estimate_only = TRUE)
+							}, error = function(e) NA_real_)
+						}, n_cores = cores_to_use, show_progress = private$verbose,
+						export_list = list(
+							des_priv = des_priv,
+							y = y, dead = dead, w = w, X = X, kk_template = kk_template,
+							has_res_stat = has_res_stat
+						)))
+						return(beta_hat_T_bs)
 					}
-					debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
-					if (length(debug_results) == 0L) {
-						stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
-					}
-					values = sapply(debug_results, `[[`, "val")
-					errors_list = lapply(debug_results, `[[`, "errors")
-					warnings_list = lapply(debug_results, `[[`, "warnings")
-					num_errors_vec = lengths(errors_list)
-					num_warnings_vec = lengths(warnings_list)
-					return(list(
-						values = values,
-						errors = errors_list,
-						warnings = warnings_list,
-						num_errors = num_errors_vec,
-						num_warnings = num_warnings_vec,
-						prop_iterations_with_errors = mean(num_errors_vec > 0),
-						prop_iterations_with_warnings = mean(num_warnings_vec > 0),
-						prop_illegal_values = mean(!is.finite(values))
-					))
 				}
-
-				# Pure R KK bootstrap implementation
-				if (self$num_cores == 1) {
-					pb = NULL
-					if (private$verbose) {
-						pb = utils::txtProgressBar(min = 0, max = B, style = 3)
-						on.exit(close(pb), add = TRUE)
-					}
-					beta_hat_T_bs = rep(NA_real_, B)
-
-					has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
-					for (b in 1:B) {
-						boot_sample = des_priv$draw_bootstrap_indices()
-						i_b    = boot_sample$i_b
-						m_vec_b = boot_sample$m_vec_b
-						boot_inf_obj = self$duplicate()
-						boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-						boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-						boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-						boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-						boot_inf_obj$.__enclos_env__$private$cached_values = list()
-						beta_hat_T_bs[b] = tryCatch({
-							boot_inf_obj$.__enclos_env__$private$m = m_vec_b
-							boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-							if (has_res_stat_serial) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
-						}, error = function(e) { NA_real_ })
-						if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
-					}
-					return(beta_hat_T_bs)
-				} else {
-					# Parallel bootstrap execution for KK designs
-					cores_to_use = self$num_cores
-
-					if (cores_to_use > 1L) {
-						boot_sample_w = des_priv$draw_bootstrap_indices()
-						i_b_w   = boot_sample_w$i_b
-						m_vec_b_w = boot_sample_w$m_vec_b
-						t_warmup_kk = system.time({
-							boot_w = self$duplicate()
-							boot_w$.__enclos_env__$private$y = y[i_b_w]
-							boot_w$.__enclos_env__$private$dead = dead[i_b_w]
-							boot_w$.__enclos_env__$private$w = w[i_b_w]
-							boot_w$.__enclos_env__$private$X = X[i_b_w, , drop = FALSE]
-							boot_w$.__enclos_env__$private$cached_values = list()
-							boot_w$.__enclos_env__$private$m = m_vec_b_w
-							boot_w$.__enclos_env__$private$compute_basic_match_data()
-							if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
-								boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							tryCatch(boot_w$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
-						})[[3]]
-						fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
-						if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
-							cores_to_use = 1L
-					}
-
-					kk_template = self$duplicate()
-					has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
-
-					# Use private$par_lapply which handles both persistent fork clusters and other strategies.
-					beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
-						boot_sample = des_priv$draw_bootstrap_indices()
-						i_b    = boot_sample$i_b
-						m_vec_b = boot_sample$m_vec_b
-						worker_inf = kk_template$duplicate()
-						worker_inf$.__enclos_env__$private$y = y[i_b]
-						worker_inf$.__enclos_env__$private$dead = dead[i_b]
-						worker_inf$.__enclos_env__$private$w = w[i_b]
-						worker_inf$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-						worker_inf$.__enclos_env__$private$cached_values = list()
-						tryCatch({
-							worker_inf$.__enclos_env__$private$m = m_vec_b
-							worker_inf$.__enclos_env__$private$compute_basic_match_data()
-							if (has_res_stat) worker_inf$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-							worker_inf$compute_treatment_estimate(estimate_only = TRUE)
-						}, error = function(e) NA_real_)
-					}, n_cores = cores_to_use, show_progress = private$verbose,
-					export_list = list(
-						des_priv = des_priv,
-						y = y, dead = dead, w = w, X = X, kk_template = kk_template,
-						has_res_stat = has_res_stat
-					)))
-					return(beta_hat_T_bs)
 				}
-			}
 		}
 	),
 	private = list(
@@ -354,8 +362,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				)
 			}
 			debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
-			if (length(debug_results) == 0L) {
-				stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+			if (should_run_asserts()) {
+				if (length(debug_results) == 0L) {
+					stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+				}
 			}
 			values = sapply(debug_results, `[[`, "val")
 			errors_list = lapply(debug_results, `[[`, "errors")

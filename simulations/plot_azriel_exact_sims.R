@@ -1,7 +1,7 @@
 library(data.table)
 library(ggplot2)
 
-Nrep = 50
+Nrep = 5000L
 results_dt = fread(sprintf("simulations/azriel_exact_sims_results_Nrep_%d.csv", Nrep))
 
 # Wald CIs for power and coverage

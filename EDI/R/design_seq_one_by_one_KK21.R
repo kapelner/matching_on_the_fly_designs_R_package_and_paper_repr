@@ -98,13 +98,17 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			if (is.null(num_boot)){
 				num_boot = 500
 			} else {
-				assertCount(num_boot, positive = TRUE)
+				if (should_run_asserts()) {
+					assertCount(num_boot, positive = TRUE)
+				}
 			}
 			private$num_boot = num_boot
-			assertFlag(count_use_speedup)
-			assertFlag(proportion_use_speedup)
-			assertFlag(survival_use_speedup_for_no_censoring)
-			assertFlag(ordinal_use_speedup)
+			if (should_run_asserts()) {
+				assertFlag(count_use_speedup)
+				assertFlag(proportion_use_speedup)
+				assertFlag(survival_use_speedup_for_no_censoring)
+				assertFlag(ordinal_use_speedup)
+			}
 			private$count_use_speedup = count_use_speedup
 			private$proportion_use_speedup = proportion_use_speedup
 			private$survival_use_speedup_for_no_censoring = survival_use_speedup_for_no_censoring
@@ -152,8 +156,10 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 						#1) need to calculate the weights - this is different between KK21 and KK21stepwise
 						raw_weights = private$compute_weights(all_subject_data)
 
-						if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
-							stop("raw weight values illegal in design ", class(self)[1])
+						if (should_run_asserts()) {
+							if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
+								stop("raw weight values illegal in design ", class(self)[1])
+							}
 						}
 						#ensure the weights are normalized
 						private$covariate_weights = raw_weights / sum(raw_weights)
@@ -203,7 +209,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 																    private$num_boot
 																  )
 
-								min_weighted_dsqd_cutoff_sq = quantile(bootstrapped_weighted_sqd_distances, private$compute_lambda())
+								min_weighted_dsqd_cutoff_sq = stats::quantile(bootstrapped_weighted_sqd_distances, private$compute_lambda())
 
 								#5) Now, does the minimum make the cut?
 								if (length(weighted_sqd_distances[min_weighted_sqd_dist_index]) > 1 || length(min_weighted_dsqd_cutoff_sq) > 1){
@@ -223,8 +229,10 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 								}
 							}
 					}
-			if (is.na(private$m[private$t])){ #this should never happen
-				stop("no match data recorded")
+			if (should_run_asserts()) {
+				if (is.na(private$m[private$t])){ #this should never happen
+					stop("no match data recorded")
+				}
 			}
 			wt
 		}

@@ -30,7 +30,9 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 				
 				verbose = FALSE
 			) {
-			assertCharacter(cluster_col, len = 1)
+			if (should_run_asserts()) {
+				assertCharacter(cluster_col, len = 1)
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$cluster_col = cluster_col
 			private$uses_covariates = TRUE
@@ -44,10 +46,14 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			cluster_ids = as.character(private$Xraw[[private$cluster_col]])
-			if (any(is.na(cluster_ids))){
-				stop("Cluster IDs cannot be missing.")
+			if (should_run_asserts()) {
+				if (any(is.na(cluster_ids))){
+					stop("Cluster IDs cannot be missing.")
+				}
 			}
 			
 			# Use randomizr::cluster_ra for canonical cluster randomization

@@ -40,10 +40,14 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		initialize = function(des_obj, method = "MM",  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "continuous")
-			assertChoice(method, c("M", "MM"))
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+				assertChoice(method, c("M", "MM"))
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$rlm_method = method
 		},
 
@@ -60,7 +64,9 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -70,7 +76,9 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -80,6 +88,38 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 		rlm_method = NULL,
 		fit_warm_coefficients = NULL,
 		fit_warm_keep = NULL,
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			Xmm = if (length(Xmm_cols) == 0L){
+				# Univariate case
+				cbind(1, private$w)
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				cbind(1, treatment = private$w, X_cov)
+			}
+			colnames(Xmm) = c("(Intercept)", "treatment", if (length(Xmm_cols) > 0) Xmm_cols else NULL)
+
+			mod = private$fit_rlm_model(Xmm, private$y, warm_start = TRUE)
+			if (is.null(mod)) return(NA_real_)
+			
+			coef_vec = tryCatch(stats::coef(mod), error = function(e) NULL)
+			private$extract_treatment_beta(coef_vec, 2L)
+		},
 
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
@@ -282,6 +322,7 @@ InferenceContinUnivRobustRegr = R6::R6Class("InferenceContinUnivRobustRegr",
 			}
 
 			X = private$repair_reduced_design_matrix_colnames(X, j_treat)
+			private$best_Xmm_colnames = setdiff(colnames(X), c("(Intercept)", "treatment"))
 			df = nrow(X) - ncol(X)
 			if (df <= 0L) {
 				private$set_failed_fit_cache(reason = "rank failure")

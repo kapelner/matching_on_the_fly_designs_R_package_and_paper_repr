@@ -34,8 +34,10 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				wait = TRUE,
 				diff_method = FALSE
 			) {
-			if (prob_T != 0.5) {
-				stop("FixedDesignMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
+			if (should_run_asserts()) {
+				if (prob_T != 0.5) {
+					stop("FixedDesignMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
+				}
 			}
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
 
@@ -57,13 +59,19 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			assertCount(r, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(r, positive = TRUE)
+			}
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 
 			n = self$get_n()
-			if (n %% 2 != 0) {
-				stop("Binary-match-then-greedy designs require an even number of subjects.")
+			if (should_run_asserts()) {
+				if (n %% 2 != 0) {
+					stop("Binary-match-then-greedy designs require an even number of subjects.")
+				}
 			}
 
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
@@ -106,24 +114,28 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-				stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
+			if (should_run_asserts()) {
+				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
+					stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
+				}
 			}
 
 			w_mat = w_mat[, seq_len(r), drop = FALSE]
 			storage.mode(w_mat) = "numeric"
 
-			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-				stop("resultsBinaryMatchThenGreedySearch returned non-finite treatment assignments.")
-			}
-			if (any(!(w_mat %in% c(0, 1)))) {
-				stop("resultsBinaryMatchThenGreedySearch returned an invalid treatment assignment matrix.")
-			}
+			if (should_run_asserts()) {
+				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+					stop("resultsBinaryMatchThenGreedySearch returned non-finite treatment assignments.")
+				}
+				if (any(!(w_mat %in% c(0, 1)))) {
+					stop("resultsBinaryMatchThenGreedySearch returned an invalid treatment assignment matrix.")
+				}
 
-			if (isTRUE(require_balanced)) {
-				treated_counts = colSums(w_mat)
-				if (any(treated_counts != n / 2)) {
-					stop("resultsBinaryMatchThenGreedySearch returned an unbalanced allocation.")
+				if (isTRUE(require_balanced)) {
+					treated_counts = colSums(w_mat)
+					if (any(treated_counts != n / 2)) {
+						stop("resultsBinaryMatchThenGreedySearch returned an unbalanced allocation.")
+					}
 				}
 			}
 
@@ -141,12 +153,16 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				} else if (!is.null(res$indicTs)) {
 					w_mat = res$indicTs
 				} else {
-					stop("resultsBinaryMatchThenGreedySearch returned an unsupported result structure.")
+					if (should_run_asserts()) {
+						stop("resultsBinaryMatchThenGreedySearch returned an unsupported result structure.")
+					}
 				}
 			} else if (is.vector(res)) {
 				w_mat = matrix(res, nrow = n, ncol = 1)
 			} else {
-				stop("resultsBinaryMatchThenGreedySearch returned an unsupported result type.")
+				if (should_run_asserts()) {
+					stop("resultsBinaryMatchThenGreedySearch returned an unsupported result type.")
+				}
 			}
 			# resultsBinaryMatchThenGreedySearch returns r x n; transpose to n x r
 			t(w_mat)

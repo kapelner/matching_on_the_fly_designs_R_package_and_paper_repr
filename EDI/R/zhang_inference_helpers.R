@@ -76,6 +76,6 @@ zhang_incid_mle_ci = function(stats, alpha){
 	n00 = stats$n00
 	est = log((n11 + 0.5) * (n00 + 0.5) / ((n10 + 0.5) * (n01 + 0.5)))
 	se  = sqrt(1/(n11+0.5) + 1/(n10+0.5) + 1/(n01+0.5) + 1/(n00+0.5))
-	z = qnorm(1 - alpha/2)
+	z = stats::qnorm(1 - alpha/2)
 	c(est - z * se, est + z * se)
 }

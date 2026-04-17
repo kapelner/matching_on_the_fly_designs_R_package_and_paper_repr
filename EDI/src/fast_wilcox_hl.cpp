@@ -135,6 +135,17 @@ double apply_shift(double y_val, double delta, int transform_code, double zero_o
 } // namespace
 
 // [[Rcpp::export]]
+double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy) {
+    std::vector<double> pair_diffs;
+    pair_diffs.reserve(dy.size());
+    const double* dy_ptr = dy.begin();
+    for (int i = 0; i < dy.size(); ++i) {
+        if (std::isfinite(dy_ptr[i])) pair_diffs.push_back(dy_ptr[i]);
+    }
+    return hl_signed_rank(pair_diffs);
+}
+
+// [[Rcpp::export]]
 double wilcox_hl_point_estimate_cpp(const NumericVector& y, const IntegerVector& w) {
     std::vector<double> y_t;
     std::vector<double> y_c;

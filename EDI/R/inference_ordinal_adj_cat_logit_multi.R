@@ -64,6 +64,9 @@ InferenceOrdinalMultiAdjCatLogitRegr = R6::R6Class(
 					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "treatment")
+			}
 			attempt$fit
 		}
 	)

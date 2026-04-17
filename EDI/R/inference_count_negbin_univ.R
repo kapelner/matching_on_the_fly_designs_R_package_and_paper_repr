@@ -45,12 +45,46 @@ InferenceCountUnivNegBinRegr = R6::R6Class("InferenceCountUnivNegBinRegr",
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "count")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "count")
+			}
 			super$initialize(des_obj, verbose)
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			Xmm = if (length(Xmm_cols) == 0L){
+				# Univariate case
+				cbind(1, private$w)
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				cbind(1, treatment = private$w, X_cov)
+			}
+
+			res = fast_negbin_regression(Xmm = Xmm, y = private$y)
+			if (is.null(res) || !is.finite(res$b[2])){
+				return(NA_real_)
+			}
+			as.numeric(res$b[2])
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			if (estimate_only) {
 				res = fast_negbin_regression(

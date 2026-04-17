@@ -42,7 +42,9 @@ InferenceSurvivalUnivKKLWACoxCombinedLikelihood = R6::R6Class("InferenceSurvival
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		}
 

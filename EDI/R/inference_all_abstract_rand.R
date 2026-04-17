@@ -11,7 +11,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#' Set Custom Randomization Statistic Computation
 		#' @param custom_randomization_statistic_function	A function that returns a scalar value.
 		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
-			assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
+			if (should_run_asserts()) {
+				assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
+			}
 			private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
 			if (!is.null(custom_randomization_statistic_function)){
 				environment(private[["custom_randomization_statistic_function"]]) = environment(self$initialize)
@@ -41,8 +43,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#'   \code{prop_illegal_values}.
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		approximate_randomization_distribution_beta_hat_T = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){
-			private$assert_design_supports_resampling("Randomization inference")
-			assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
+			}
 
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 			setup = private$setup_randomization_template_and_shifts(delta, transform_responses, zero_one_logit_clamp)
@@ -84,23 +88,50 @@ InferenceRand = R6::R6Class("InferenceRand",
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
 			if (isTRUE(debug)) {
-				debug_results = vector("list", r)
-				for (idx in seq_len(r)) {
-					iter_warns = character(0)
-					iter_result = withCallingHandlers(
-						tryCatch({
-							worker_des = if (!is.null(des_template)) setup$template$duplicate() else NULL
-							worker_inf = if (!is.null(inf_template)) self$duplicate(verbose = FALSE, make_fork_cluster = FALSE) else NULL
-							private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE, zero_one_logit_clamp = zero_one_logit_clamp)
-						}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
-						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
-					)
-					debug_results[[idx]] = list(
-						val = as.numeric(iter_result$val)[1L],
-						errors = if (!is.null(iter_result$error)) iter_result$error else character(0),
-						warnings = iter_warns
-					)
+				debug_results = if (private$supports_reusable_bootstrap_worker() && is.null(private$custom_randomization_statistic_function)){
+					# Fast path: use reused workers
+					worker_state = private$create_bootstrap_worker_state()
+					on.exit(private$cleanup_bootstrap_worker_state(worker_state), add = TRUE)
+
+					lapply(seq_len(r), function(idx){
+						iter_warns = character(0)
+						iter_result = withCallingHandlers(
+							tryCatch({
+								# Generate permuted weights
+								perm_w = if (use_perms) permutations[, idx] else sample(private$w)
+								# Load into worker
+								private$load_randomization_perm_into_worker(worker_state, perm_w, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, zero_one_logit_clamp)
+								# Compute estimate
+								list(val = private$compute_bootstrap_worker_estimate(worker_state))
+							}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+						)
+						list(
+							val = as.numeric(iter_result$val)[1L],
+							errors = if (!is.null(iter_result$error)) iter_result$error else character(0),
+							warnings = iter_warns
+						)
+					})
+				} else {
+					# Standard path: duplicate objects (slow)
+					lapply(seq_len(r), function(idx) {
+						iter_warns = character(0)
+						iter_result = withCallingHandlers(
+							tryCatch({
+								worker_des = if (!is.null(des_template)) setup$template$duplicate() else NULL
+								worker_inf = if (!is.null(inf_template)) self$duplicate(verbose = FALSE, make_fork_cluster = FALSE) else NULL
+								private$run_randomization_iteration(worker_des, worker_inf, if (use_perms) idx else NULL, permutations, delta, transform_responses, setup$y_delta, setup$base_template_y, setup$base_template_dead, custom_stat_analysis, setup$lightweight_custom_context, debug = TRUE, zero_one_logit_clamp = zero_one_logit_clamp)
+							}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
+							warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
+						)
+						list(
+							val = as.numeric(iter_result$val)[1L],
+							errors = if (!is.null(iter_result$error)) iter_result$error else character(0),
+							warnings = iter_warns
+						)
+					})
 				}
+
 				debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
 				if (length(debug_results) == 0L) {
 					stop("All randomization iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
@@ -185,9 +216,11 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		#' @return 	Randomization p-value.
 		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, zero_one_logit_clamp = .Machine$double.eps){
-			private$assert_design_supports_resampling("Randomization inference")
-			assertLogical(na.rm)
-			if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Randomization inference")
+				assertLogical(na.rm)
+				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
+			}
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 
 			if (identical(transform_responses, "none")) {
@@ -455,7 +488,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key, zero_one_logit_clamp = .Machine$double.eps){
 			mc_control = private$randomization_mc_control
-			if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
+			if (should_run_asserts()) {
+				if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
+			}
 			batch_size = min(as.integer(r), as.integer(mc_control$mc_batch_size))
 			min_draws = min(as.integer(r), as.integer(mc_control$mc_min_draws))
 			if (batch_size <= 0L || min_draws <= 0L || batch_size >= as.integer(r)) return(NULL)
@@ -485,7 +520,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 		},
 
 		generate_permutations = function(r){
-			assertCount(r, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(r, positive = TRUE)
+			}
 
 			design_sig = private$stable_signature(list(
 				class = class(private$des_obj),
@@ -551,20 +588,57 @@ InferenceRand = R6::R6Class("InferenceRand",
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
 			y_delta = template$.__enclos_env__$private$y
-			if (delta != 0){
-				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
-				template$.__enclos_env__$private$y = private$shift_randomization_responses(
-					y = template$.__enclos_env__$private$y,
-					w = private$w,
-					delta = delta,
-					transform_responses = transform_responses,
-					response_type = private$des_obj_priv_int$response_type,
-					inverse = TRUE,
-					zero_one_logit_clamp = zero_one_logit_clamp
-				)
-				y_delta = template$.__enclos_env__$private$y
+			if (should_run_asserts()) {
+				if (delta != 0){
+					if (should_run_asserts()) {
+						if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("randomization tests with delta nonzero not supported for incidence")
+					}
+					template$.__enclos_env__$private$y = private$shift_randomization_responses(
+						y = template$.__enclos_env__$private$y,
+						w = private$w,
+						delta = delta,
+						transform_responses = transform_responses,
+						response_type = private$des_obj_priv_int$response_type,
+						inverse = TRUE,
+						zero_one_logit_clamp = zero_one_logit_clamp
+					)
+					y_delta = template$.__enclos_env__$private$y
+				}
 			}
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
+		},
+
+		load_randomization_perm_into_worker = function(worker_state, perm_w, delta, transform_responses, y_delta, base_template_y, base_template_dead, zero_one_logit_clamp = .Machine$double.eps){
+			inf_priv = worker_state$worker_inf$.__enclos_env__$private
+			des_priv = worker_state$worker_des$.__enclos_env__$private
+			
+			# Update design private state
+			des_priv$w = perm_w
+			if (delta != 0) {
+				des_priv$y = private$shift_randomization_responses(
+					y = y_delta,
+					w = perm_w,
+					delta = delta,
+					transform_responses = transform_responses,
+					response_type = des_priv$response_type,
+					inverse = FALSE,
+					zero_one_logit_clamp = zero_one_logit_clamp
+				)
+			} else {
+				des_priv$y = base_template_y
+			}
+			
+			# Sync to inference private state
+			inf_priv$w = des_priv$w
+			inf_priv$y = des_priv$y
+			inf_priv$y_temp = des_priv$y
+			inf_priv$dead = des_priv$dead
+			inf_priv$cached_values$KKstats = NULL # reset
+			inf_priv$cached_values$beta_hat_T = NULL
+			inf_priv$cached_values$s_beta_hat_T = NULL
+			
+			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
+			invisible(NULL)
 		},
 
 		sync_randomization_worker_state = function(thread_des_obj, thread_inf_obj){

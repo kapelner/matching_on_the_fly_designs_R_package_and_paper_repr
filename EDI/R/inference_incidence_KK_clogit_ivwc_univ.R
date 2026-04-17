@@ -16,9 +16,6 @@ InferenceIncidUnivKKClogitIVWC = R6::R6Class("InferenceIncidUnivKKClogitIVWC",
 	inherit = InferenceAbstractKKClogitIVWC,
 	public = list(
 
-
-
-
 	),
 	private = list(
 		include_covariates = function() FALSE

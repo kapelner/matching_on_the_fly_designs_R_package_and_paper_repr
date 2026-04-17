@@ -24,9 +24,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   \code{prop_illegal_values}.
 		#' @param bootstrap_type      The type of bootstrap resampling to perform.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			private$assert_design_supports_resampling("Bootstrap inference")
-			private$assert_valid_bootstrap_type(bootstrap_type)
-			assertCount(B, positive = TRUE); assertFlag(debug)
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Bootstrap inference")
+				private$assert_valid_bootstrap_type(bootstrap_type)
+				assertCount(B, positive = TRUE); assertFlag(debug)
+			}
 
 			# Check cache (skipped in debug mode to always get fresh diagnostic results)
 			cache_key = as.character(B)
@@ -78,79 +80,81 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					)
 				}
 
-				actual_debug_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
-				chunk_n = max(1L, min(as.integer(actual_debug_cores), as.integer(B)))
-				chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
-				chunks = split(seq_len(B), chunk_id)
+					actual_debug_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
+					chunk_n = max(1L, min(as.integer(actual_debug_cores), as.integer(B)))
+					chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
+					chunks = split(seq_len(B), chunk_id)
 
-				run_debug_chunk = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
-					function(idxs) {
-						worker_state = private$create_bootstrap_worker_state()
-						lapply(idxs, function(idx) run_debug_boot_iter(worker_state = worker_state))
+					run_debug_chunk = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+						function(idxs) {
+							worker_state = private$create_bootstrap_worker_state()
+							lapply(idxs, function(idx) run_debug_boot_iter(worker_state = worker_state))
+						}
+					} else {
+						function(idxs) {
+							lapply(idxs, function(idx) {
+								worker_des = des_template$duplicate()
+								worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
+								run_debug_boot_iter(worker_des = worker_des, worker_inf = worker_inf)
+							})
+						}
 					}
-				} else {
-					function(idxs) {
-						lapply(idxs, function(idx) {
-							worker_des = des_template$duplicate()
-							worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-							run_debug_boot_iter(worker_des = worker_des, worker_inf = worker_inf)
-						})
+
+					debug_results = if (actual_debug_cores <= 1L) {
+						run_debug_chunk(seq_len(B))
+					} else {
+						# par_lapply flattens its internal chunking, so if run_debug_chunk returns a list,
+						# par_lapply returns a list of lists.
+						res_raw = private$par_lapply(
+							chunks,
+							run_debug_chunk,
+							n_cores = actual_debug_cores,
+							budget = 1L,
+							show_progress = show_progress
+						)
+						# Flatten chunks into a single list of results
+						unlist(res_raw, recursive = FALSE, use.names = FALSE)
 					}
-				}
 
-				debug_results = if (actual_debug_cores <= 1L) {
-					run_debug_chunk(seq_len(B))
-				} else {
-					# par_lapply flattens its internal chunking, so if run_debug_chunk returns a list,
-					# par_lapply returns a list of lists.
-					res_raw = private$par_lapply(
-						chunks,
-						run_debug_chunk,
-						n_cores = actual_debug_cores,
-						budget = 1L,
-						show_progress = show_progress
-					)
-					# Flatten chunks into a single list of results
-					unlist(res_raw, recursive = FALSE, use.names = FALSE)
-				}
-
-				# Harden debug_results: remove any NULLs or non-list results that might 
-				# have come from worker crashes in par_lapply/mclapply.
-				debug_results_surviving = Filter(function(x) is.list(x) && !is.null(x$val), debug_results)
-				if (length(debug_results_surviving) < length(debug_results)) {
-					warning("Some bootstrap iterations (", length(debug_results) - length(debug_results_surviving), ") were lost due to worker crashes or invalid results.")
-				}
-				debug_results = debug_results_surviving
+					# Harden debug_results: remove any NULLs or non-list results that might 
+					# have come from worker crashes in par_lapply/mclapply.
+					debug_results_surviving = Filter(function(x) is.list(x) && !is.null(x$val), debug_results)
+					if (length(debug_results_surviving) < length(debug_results)) {
+						warning("Some bootstrap iterations (", length(debug_results) - length(debug_results_surviving), ") were lost due to worker crashes or invalid results.")
+					}
+					debug_results = debug_results_surviving
 				
-				if (length(debug_results) == 0L) {
-					stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
-				}
+					if (length(debug_results) == 0L) {
+						if (should_run_asserts()) {
+							stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+						}
+					}
 
-				values = vapply(debug_results, function(x) {
-					if (is.list(x) && !is.null(x[["val"]])) as.numeric(x[["val"]])[1L] else NA_real_
-				}, numeric(1))
-				errors_list = lapply(debug_results, function(x) {
-					if (is.list(x) && !is.null(x[["errors"]])) x[["errors"]] else character(0)
-				})
-				warnings_list = lapply(debug_results, function(x) {
-					if (is.list(x) && !is.null(x[["warnings"]])) x[["warnings"]] else character(0)
-				})
-				num_errors_vec = lengths(errors_list)
-				num_warnings_vec = lengths(warnings_list)
-				# Populate the normal cache so subsequent non-debug calls can reuse the values
-				if (is.null(private$cached_values$boot_distr_cache)) private$cached_values$boot_distr_cache = list()
-				private$cached_values$boot_distr_cache[[cache_key]] = values
-				return(list(
-					values = values,
-					errors = errors_list,
-					warnings = warnings_list,
-					num_errors = num_errors_vec,
-					num_warnings = num_warnings_vec,
-					prop_iterations_with_errors = mean(num_errors_vec > 0),
-					prop_iterations_with_warnings = mean(num_warnings_vec > 0),
-					prop_illegal_values = mean(!is.finite(values))
-				))
-			}
+					values = vapply(debug_results, function(x) {
+						if (is.list(x) && !is.null(x[["val"]])) as.numeric(x[["val"]])[1L] else NA_real_
+					}, numeric(1))
+					errors_list = lapply(debug_results, function(x) {
+						if (is.list(x) && !is.null(x[["errors"]])) x[["errors"]] else character(0)
+					})
+					warnings_list = lapply(debug_results, function(x) {
+						if (is.list(x) && !is.null(x[["warnings"]])) x[["warnings"]] else character(0)
+					})
+					num_errors_vec = lengths(errors_list)
+					num_warnings_vec = lengths(warnings_list)
+					# Populate the normal cache so subsequent non-debug calls can reuse the values
+					if (is.null(private$cached_values$boot_distr_cache)) private$cached_values$boot_distr_cache = list()
+					private$cached_values$boot_distr_cache[[cache_key]] = values
+					return(list(
+						values = values,
+						errors = errors_list,
+						warnings = warnings_list,
+						num_errors = num_errors_vec,
+						num_warnings = num_warnings_vec,
+						prop_iterations_with_errors = mean(num_errors_vec > 0),
+						prop_iterations_with_warnings = mean(num_warnings_vec > 0),
+						prop_illegal_values = mean(!is.finite(values))
+					))
+				}
 
 			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
 			# cost, then only parallelize if computation outweighs overhead per worker.
@@ -158,7 +162,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# for mclapply (per-call fork) it is ~500ms.
 			# We run the warmup iteration TWICE and use the second timing. The first call often
 			# pays cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
-			# that can inflate the estimate 5–15× vs steady-state cost, causing the guard to
+			# that can inflate the estimate 5-15x vs steady-state cost, causing the guard to
 			# wrongly choose parallel for small B values like r = 19.
 			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 			if (actual_cores > 1L) {
@@ -240,15 +244,23 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'
 		#' @return 	A bootstrap two-sided p-value.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 50L){
-			assertNumeric(delta, len = 1)
-			assertCount(B, positive = TRUE)
-			assertCount(min_number_usable_samples, positive = TRUE)
-			if (as.integer(B) <= as.integer(min_number_usable_samples)) {
-				stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+				assertCount(B, positive = TRUE)
+				assertCount(min_number_usable_samples, positive = TRUE)
 			}
-			assertFlag(na.rm)
+			if (should_run_asserts()) {
+				if (as.integer(B) <= as.integer(min_number_usable_samples)) {
+					stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+				}
+			}
+			if (should_run_asserts()) {
+				assertFlag(na.rm)
+			}
 			type = tolower(private$get_bootstrap_type(type))
-			assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
+			if (should_run_asserts()) {
+				assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
+			}
 
 			if (type %in% c("studentized", "bootstrap-t")) {
 				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(
@@ -277,58 +289,60 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			est = est[1]
 
-			if (type == "percentile") {
-				# Shift bootstrap distribution to be centred at delta (null hypothesis)
-				boot_null = boot_distr - mean(boot_distr) + delta
-				n_bs = length(boot_null)
-				min(1, max(2 / n_bs, 2 * min(
-					sum(boot_null >= est) / n_bs,
-					sum(boot_null <= est) / n_bs
-				)))
-			} else if (type == "symmetric") {
-				# Hall & Wilson (1991) symmetric test: pool both tails via absolute deviations.
-				# p = P(|T* - mean(T*)| >= |t_obs - delta|)
-				D_obs = abs(est - delta)
-				D_boot = abs(boot_distr - mean(boot_distr))
-				n_bs = length(D_boot)
-				min(1, max(1 / n_bs, mean(D_boot >= D_obs)))
-			} else if (type %in% c("studentized", "bootstrap-t")) {
-				# Studentized (bootstrap-t) p-value: pivot by standard error.
-				# t_obs = (est - delta) / se_hat
-				# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
-				# p = P(|t*_b| >= |t_obs|)
-				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
-				if (!is.finite(se_hat) || se_hat <= 0) {
-					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
-					return(NA_real_)
-				}
-				t_obs = abs(est - delta) / se_hat
-				se_boot = boot_stats$se
-				ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
-				t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
-				t_boot = t_boot[is.finite(t_boot)]
-				if (length(t_boot) < as.integer(min_number_usable_samples)) {
-					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
-					return(NA_real_)
-				}
-				min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
-			} else if (type == "bca") {
-				# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
-				pval = tryCatch(
-					private$pval_bca(boot_distr, est, delta),
-					error = function(e) {
-						if (isTRUE(private$harden)) {
-							private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
-							return(NA_real_)
-						}
-						stop(e)
+			if (should_run_asserts()) {
+				if (type == "percentile") {
+					# Shift bootstrap distribution to be centred at delta (null hypothesis)
+					boot_null = boot_distr - mean(boot_distr) + delta
+					n_bs = length(boot_null)
+					min(1, max(2 / n_bs, 2 * min(
+						sum(boot_null >= est) / n_bs,
+						sum(boot_null <= est) / n_bs
+					)))
+				} else if (type == "symmetric") {
+					# Hall & Wilson (1991) symmetric test: pool both tails via absolute deviations.
+					# p = P(|T* - mean(T*)| >= |t_obs - delta|)
+					D_obs = abs(est - delta)
+					D_boot = abs(boot_distr - mean(boot_distr))
+					n_bs = length(D_boot)
+					min(1, max(1 / n_bs, mean(D_boot >= D_obs)))
+				} else if (type %in% c("studentized", "bootstrap-t")) {
+					# Studentized (bootstrap-t) p-value: pivot by standard error.
+					# t_obs = (est - delta) / se_hat
+					# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
+					# p = P(|t*_b| >= |t_obs|)
+					se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
+					if (!is.finite(se_hat) || se_hat <= 0) {
+						if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
+						return(NA_real_)
 					}
-				)
-				if (!is.finite(pval) && isTRUE(private$harden)) {
-					private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
-					return(NA_real_)
+					t_obs = abs(est - delta) / se_hat
+					se_boot = boot_stats$se
+					ok = is.finite(boot_distr) & is.finite(se_boot) & se_boot > 0
+					t_boot = abs(boot_distr[ok] - est) / se_boot[ok]
+					t_boot = t_boot[is.finite(t_boot)]
+					if (length(t_boot) < as.integer(min_number_usable_samples)) {
+						if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
+						return(NA_real_)
+					}
+					min(1, max(1 / length(t_boot), mean(t_boot >= t_obs)))
+				} else if (type == "bca") {
+					# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
+					pval = tryCatch(
+						private$pval_bca(boot_distr, est, delta),
+						error = function(e) {
+							if (isTRUE(private$harden)) {
+								private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+								return(NA_real_)
+							}
+							stop(e)
+						}
+					)
+					if (!is.finite(pval) && isTRUE(private$harden)) {
+						private$cache_nonestimable_estimate("bootstrap_pvalue_unavailable")
+						return(NA_real_)
+					}
+					pval
 				}
-				pval
 			}
 		},
 
@@ -350,26 +364,34 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'
 		#' @return 	A bootstrap confidence interval.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 50L){
-			private$assert_design_supports_resampling("Bootstrap inference")
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			assertCount(B, positive = TRUE)
-			assertCount(min_number_usable_samples, positive = TRUE)
-			if (as.integer(B) <= as.integer(min_number_usable_samples)) {
-				stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+			if (should_run_asserts()) {
+				private$assert_design_supports_resampling("Bootstrap inference")
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				assertCount(B, positive = TRUE)
+				assertCount(min_number_usable_samples, positive = TRUE)
+			}
+			if (should_run_asserts()) {
+				if (as.integer(B) <= as.integer(min_number_usable_samples)) {
+					stop("B must be greater than min_number_usable_samples.", call. = FALSE)
+				}
 			}
 			type = tolower(private$get_bootstrap_type(type))
-			assertChoice(type, c(
-				"percentile", "basic", "studentized", "bootstrap-t",
-				"symmetric-percentile-t", "bca", "prepivoted",
-				"double-bootstrap", "calibrated", "smoothed"
-			))
+			if (should_run_asserts()) {
+				assertChoice(type, c(
+					"percentile", "basic", "studentized", "bootstrap-t",
+					"symmetric-percentile-t", "bca", "prepivoted",
+					"double-bootstrap", "calibrated", "smoothed"
+				))
+			}
 
 			est = as.numeric(self$compute_treatment_estimate(estimate_only = FALSE))
-			if (length(est) == 0L || !is.finite(est[1])) {
-				if (isTRUE(private$harden)) {
-					return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
+			if (should_run_asserts()) {
+				if (length(est) == 0L || !is.finite(est[1])) {
+					if (isTRUE(private$harden)) {
+						return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
+					}
+					stop("Bootstrap confidence interval returned NA bounds")
 				}
-				stop("Bootstrap confidence interval returned NA bounds")
 			}
 			est = est[1]
 
@@ -389,20 +411,22 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 			boot_distr = boot_stats$theta
 			boot_distr = boot_distr[is.finite(boot_distr)]
-			if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
-				se_boot = boot_stats$se
-				ok = is.finite(boot_stats$theta) & is.finite(se_boot) & se_boot > 0
-				if (sum(ok) < as.integer(min_number_usable_samples)) {
+			if (should_run_asserts()) {
+				if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
+					se_boot = boot_stats$se
+					ok = is.finite(boot_stats$theta) & is.finite(se_boot) & se_boot > 0
+					if (sum(ok) < as.integer(min_number_usable_samples)) {
+						if (isTRUE(private$harden)) {
+							return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_standard_errors", stage = "se"))
+						}
+						stop("Bootstrap confidence interval returned NA bounds")
+					}
+				} else if (length(boot_distr) < as.integer(min_number_usable_samples)) {
 					if (isTRUE(private$harden)) {
-						return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_standard_errors", stage = "se"))
+						return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_estimates", stage = "estimate"))
 					}
 					stop("Bootstrap confidence interval returned NA bounds")
 				}
-			} else if (length(boot_distr) < as.integer(min_number_usable_samples)) {
-				if (isTRUE(private$harden)) {
-					return(private$missing_bootstrap_ci(alpha, "bootstrap_too_few_finite_estimates", stage = "estimate"))
-				}
-				stop("Bootstrap confidence interval returned NA bounds")
 			}
 
 			ci = tryCatch({
@@ -421,7 +445,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				} else if (type == "smoothed") {
 					private$ci_smoothed_bootstrap(alpha, B, est, show_progress = show_progress, na.rm = na.rm)
 				} else {
-					stop("Unsupported bootstrap CI type: ", type)
+					if (should_run_asserts()) {
+						stop("Unsupported bootstrap CI type: ", type)
+					}
 				}
 			}, error = function(e) {
 				if (isTRUE(private$harden)) {
@@ -432,13 +458,15 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				stop(e)
 			})
 
-			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
-				if (isTRUE(private$harden)) {
-					stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
-					reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
-					return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
+			if (should_run_asserts()) {
+				if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
+					if (isTRUE(private$harden)) {
+						stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
+						reason = if (identical(stage, "se")) "bootstrap_standard_error_ci_unavailable" else "bootstrap_ci_unavailable"
+						return(private$missing_bootstrap_ci(alpha, reason, stage = stage))
+					}
+					stop("Bootstrap confidence interval returned NA bounds")
 				}
-				stop("Bootstrap confidence interval returned NA bounds")
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -451,10 +479,14 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 		assert_valid_bootstrap_type = function(bootstrap_type){
 			if (is.null(bootstrap_type)) return(invisible(NULL))
-			assertChoice(bootstrap_type, c("within_blocks", "resample_blocks"))
+			if (should_run_asserts()) {
+				assertChoice(bootstrap_type, c("within_blocks", "resample_blocks"))
+			}
 			valid_blocking_classes = c("FixedDesignBlocking", "FixedDesignOptimalBlocks", "DesignSeqOneByOneSPBR", "FixedDesignBlockedCluster")
-			if (!any(vapply(valid_blocking_classes, function(cls) is(private$des_obj, cls), logical(1)))){
-				stop("bootstrap_type can only be set for blocking designs: ", paste(valid_blocking_classes, collapse = ", "))
+			if (should_run_asserts()) {
+				if (!any(vapply(valid_blocking_classes, function(cls) is(private$des_obj, cls), logical(1)))){
+					stop("bootstrap_type can only be set for blocking designs: ", paste(valid_blocking_classes, collapse = ", "))
+				}
 			}
 			invisible(NULL)
 		},
@@ -698,8 +730,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		},
 
 		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE, require_se = FALSE){
-			assertCount(B, positive = TRUE)
-			assertFlag(require_se)
+			if (should_run_asserts()) {
+				assertCount(B, positive = TRUE)
+				assertFlag(require_se)
+			}
 			if (!isTRUE(require_se) && !isTRUE(smooth)) {
 				theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress)
 				if (isTRUE(na.rm)) theta = theta[is.finite(theta)]
@@ -749,7 +783,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 		ci_from_boot_distribution = function(boot_distr, alpha, type, est = NULL){
 			type = tolower(type)
-			if (length(boot_distr) == 0L) stop("Bootstrap confidence interval returned NA bounds")
+			if (should_run_asserts()) {
+				if (length(boot_distr) == 0L) stop("Bootstrap confidence interval returned NA bounds")
+			}
 			if (is.null(est)) est = as.numeric(self$compute_treatment_estimate())[1]
 			if (type == "percentile") {
 				stats::quantile(boot_distr, probs = c(alpha / 2, 1 - alpha / 2), names = FALSE, type = 8)
@@ -760,20 +796,28 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 		ci_studentized = function(boot_stats, alpha, est){
 			se_hat = private$infer_original_se()
-			if (!is.finite(se_hat) || se_hat <= 0) stop("Studentized bootstrap CI requires a finite standard error.")
+			if (should_run_asserts()) {
+				if (!is.finite(se_hat) || se_hat <= 0) stop("Studentized bootstrap CI requires a finite standard error.")
+			}
 			t_vals = (boot_stats$theta - est) / boot_stats$se
 			t_vals = t_vals[is.finite(t_vals)]
-			if (length(t_vals) < 10L) stop("Studentized bootstrap CI returned too few finite bootstrap draws.")
+			if (should_run_asserts()) {
+				if (length(t_vals) < 10L) stop("Studentized bootstrap CI returned too few finite bootstrap draws.")
+			}
 			q = stats::quantile(t_vals, probs = c(1 - alpha / 2, alpha / 2), names = FALSE, type = 8)
 			c(est - q[1L] * se_hat, est - q[2L] * se_hat)
 		},
 
 		ci_symmetric_studentized = function(boot_stats, alpha, est){
 			se_hat = private$infer_original_se()
-			if (!is.finite(se_hat) || se_hat <= 0) stop("Symmetric percentile-t bootstrap CI requires a finite standard error.")
+			if (should_run_asserts()) {
+				if (!is.finite(se_hat) || se_hat <= 0) stop("Symmetric percentile-t bootstrap CI requires a finite standard error.")
+			}
 			t_vals = (boot_stats$theta - est) / boot_stats$se
 			t_vals = abs(t_vals[is.finite(t_vals)])
-			if (length(t_vals) < 10L) stop("Symmetric percentile-t bootstrap CI returned too few finite bootstrap draws.")
+			if (should_run_asserts()) {
+				if (length(t_vals) < 10L) stop("Symmetric percentile-t bootstrap CI returned too few finite bootstrap draws.")
+			}
 			q = stats::quantile(t_vals, probs = 1 - alpha, names = FALSE, type = 8)
 			c(est - q[1L] * se_hat, est + q[1L] * se_hat)
 		},
@@ -781,7 +825,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		ci_bca = function(boot_distr, alpha, est){
 			jack = private$approximate_jackknife_distribution_beta_hat_T()
 			jack = jack[is.finite(jack)]
-			if (length(jack) < 2L) stop("BCa interval requires jackknife estimates.")
+			if (should_run_asserts()) {
+				if (length(jack) < 2L) stop("BCa interval requires jackknife estimates.")
+			}
 			p_less = mean(boot_distr < est)
 			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
 			z0 = stats::qnorm(p_less)
@@ -826,7 +872,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				smooth = identical(type, "smoothed")
 			)$theta
 			outer_boot = outer_boot[is.finite(outer_boot)]
-			if (length(outer_boot) < 10L) stop("Calibrated bootstrap CI returned too few finite bootstrap draws.")
+			if (should_run_asserts()) {
+				if (length(outer_boot) < 10L) stop("Calibrated bootstrap CI returned too few finite bootstrap draws.")
+			}
 			ci = private$ci_from_boot_distribution(outer_boot, alpha_adj, "percentile")
 			if (identical(type, "double-bootstrap")) {
 				ci = private$ci_from_boot_distribution(outer_boot, alpha_adj, "basic", est = est)
@@ -843,7 +891,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		ci_smoothed_bootstrap = function(alpha, B, est, show_progress = TRUE, na.rm = TRUE){
 			boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(B = B, show_progress = show_progress, na.rm = na.rm, smooth = TRUE)
 			boot_distr = boot_stats$theta[is.finite(boot_stats$theta)]
-			if (length(boot_distr) < 10L) stop("Smoothed bootstrap CI returned too few finite bootstrap draws.")
+			if (should_run_asserts()) {
+				if (length(boot_distr) < 10L) stop("Smoothed bootstrap CI returned too few finite bootstrap draws.")
+			}
 			private$ci_from_boot_distribution(boot_distr, alpha, "percentile", est = est)
 		},
 
@@ -865,7 +915,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		pval_bca = function(boot_distr, est, delta){
 			jack = private$approximate_jackknife_distribution_beta_hat_T()
 			jack = jack[is.finite(jack)]
-			if (length(jack) < 2L) stop("BCa p-value requires jackknife estimates.")
+			if (should_run_asserts()) {
+				if (length(jack) < 2L) stop("BCa p-value requires jackknife estimates.")
+			}
 			p_less = mean(boot_distr < est)
 			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
 			z0 = stats::qnorm(p_less)

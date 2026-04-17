@@ -39,10 +39,25 @@ InferenceCountMultiPoissonRegr = R6::R6Class("InferenceCountMultiPoissonRegr",
 
 	private = list(
 		generate_mod = function(estimate_only = FALSE){
-			Xmm = private$create_design_matrix()
-			full_names = c("(Intercept)", "treatment", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
-			colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
-			private$fit_poisson_with_var(Xmm, estimate_only = estimate_only)
+			X_full = private$create_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit, j_treat){
+					private$fit_poisson_with_var(X_fit, estimate_only = estimate_only)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = match(1L, keep)
+					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+				}
+			)
+
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+			}
+			attempt$fit
 		}
 	)
 )

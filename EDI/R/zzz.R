@@ -7,6 +7,11 @@ NULL
 		options(datatable.quiet = TRUE)
 	}
 	
+	# Set default for assertion execution
+	if (is.null(getOption("edi.run_asserts"))) {
+		options(edi.run_asserts = TRUE)
+	}
+	
 	# Set Java heap size for rJava-based dependencies (like GreedyExperimentalDesign)
 	# This must be set before the JVM is initialized.
 	if (is.null(getOption("java.parameters"))) {

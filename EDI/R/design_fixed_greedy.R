@@ -28,8 +28,10 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				
 				verbose = FALSE
 			) {
-			if (prob_T != 0.5){
-				stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
+			if (should_run_asserts()) {
+				if (prob_T != 0.5){
+					stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
+				}
 			}
 			assert_greedy_experimental_design_installed("FixedDesignGreedy")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
@@ -45,12 +47,18 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			assertCount(r, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(r, positive = TRUE)
+			}
 			assert_greedy_experimental_design_installed("FixedDesignGreedy")
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			n = self$get_n()
-			if (n %% 2 != 0){
-				stop("FixedDesignGreedy requires an even number of subjects.")
+			if (should_run_asserts()) {
+				if (n %% 2 != 0){
+					stop("FixedDesignGreedy requires an even number of subjects.")
+				}
 			}
 			if (is.null(private$X) || ncol(private$X) == 0){
 				w_mat = replicate(r, sample(c(rep(1, n / 2), rep(0, n / 2))))
@@ -83,23 +91,29 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-				stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+			if (should_run_asserts()) {
+				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
+					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+				}
 			}
 
 			w_mat = w_mat[, seq_len(r), drop = FALSE]
 			storage.mode(w_mat) = "numeric"
 
-			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-				stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
-			}
-			if (any(!(w_mat %in% c(0, 1)))) {
-				stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
+			if (should_run_asserts()) {
+				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+					stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
+				}
+				if (any(!(w_mat %in% c(0, 1)))) {
+					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
+				}
 			}
 
 			treated_counts = colSums(w_mat)
-			if (any(treated_counts != n / 2)) {
-				stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+			if (should_run_asserts()) {
+				if (any(treated_counts != n / 2)) {
+					stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+				}
 			}
 
 			w_mat

@@ -44,9 +44,13 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 		#'   to the user. Default is \code{TRUE}.
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
 			super$initialize(des_obj, verbose, harden)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		}
 		),
 

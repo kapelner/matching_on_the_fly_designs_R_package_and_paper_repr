@@ -76,18 +76,26 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				"stabilized_robust_strong_clip", "model_based_strong_clip",
 				"model_based_fd_strong_clip"
 			)){
-			assertResponseType(des_obj$get_response_type(), "proportion")
-			assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
-			assertNumber(prob_clip_strong_eps, lower = 0, upper = 0.5)
-			assertSubset(variance_fallback_methods, choices = c(
-				"robust", "stabilized_robust", "model_based",
-				"stabilized_robust_fd", "model_based_fd",
-				"stabilized_robust_strong_clip", "model_based_strong_clip",
-				"model_based_fd_strong_clip"
-			))
-			assertCount(max_resample_attempts, positive = TRUE)
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "proportion")
+			}
+			if (should_run_asserts()) {
+				assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
+				assertNumber(prob_clip_strong_eps, lower = 0, upper = 0.5)
+			}
+			if (should_run_asserts()) {
+				assertSubset(variance_fallback_methods, choices = c(
+					"robust", "stabilized_robust", "model_based",
+					"stabilized_robust_fd", "model_based_fd",
+					"stabilized_robust_strong_clip", "model_based_strong_clip",
+					"model_based_fd_strong_clip"
+				))
+				assertCount(max_resample_attempts, positive = TRUE)
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$prob_clip_eps = prob_clip_eps
 			private$prob_clip_strong_eps = prob_clip_strong_eps
 			private$variance_fallback_methods = variance_fallback_methods
@@ -106,7 +114,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' Computes a 1 - \code{alpha} confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			tryCatch({
 				private$shared(estimate_only = FALSE)
 				private$compute_effect_confidence_interval(alpha)
@@ -120,7 +130,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 			tryCatch({
 				private$shared(estimate_only = FALSE)
 				private$compute_effect_pvalue(delta)
@@ -144,7 +156,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L,
 			min_number_usable_samples = 50L){
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 			old_bootstrap_screening = private$bootstrap_screening_control
 			private$bootstrap_screening_control = list(
 				boundary_tol = boundary_tol,
@@ -198,13 +212,21 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, max_resample_attempts = NULL,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L, debug = FALSE){
-			assertCount(B, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(B, positive = TRUE)
+			}
 			if (is.null(max_resample_attempts)) max_resample_attempts = private$max_resample_attempts
-			assertCount(max_resample_attempts, positive = TRUE)
-			assertNumber(boundary_tol, lower = 0, upper = 0.5)
-			assertNumber(max_boundary_mass, lower = 0, upper = 1)
-			assertNumber(sep_tol, lower = 0)
-			assertCount(min_group_n, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(max_resample_attempts, positive = TRUE)
+			}
+			if (should_run_asserts()) {
+				assertNumber(boundary_tol, lower = 0, upper = 0.5)
+				assertNumber(max_boundary_mass, lower = 0, upper = 1)
+				assertNumber(sep_tol, lower = 0)
+			}
+			if (should_run_asserts()) {
+				assertCount(min_group_n, positive = TRUE)
+			}
 			private$shared(estimate_only = TRUE)
 			old_bootstrap_screening = private$bootstrap_screening_control
 			private$bootstrap_screening_control = list(
@@ -248,7 +270,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				}
 				debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
 				if (length(debug_results) == 0L) {
-					stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+					if (should_run_asserts()) {
+						stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
+					}
 				}
 
 				values = sapply(debug_results, `[[`, "val")
@@ -291,6 +315,11 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$md
+		},
+
 		gcomp_design_colnames = NULL,
 		gcomp_design_j_treat = NULL,
 		bootstrap_screening_control = NULL,
@@ -817,6 +846,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			X_full = private$build_named_design_matrix()
 
 			fit = private$fit_fractional_logit_with_sandwich(X_full, estimate_only = estimate_only)
+			if (!is.null(fit)) {
+				private$gcomp_design_colnames = setdiff(colnames(fit$X), c("(Intercept)", "treatment"))
+				private$gcomp_design_j_treat = 2L
+			}
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			if (private$harden && (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
 				fit = private$fit_fractional_logit_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)

@@ -7,7 +7,7 @@
 #' @keywords internal
 InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
+	inherit = InferenceAsymp,
 	public = list(
 
 		#' @description
@@ -44,7 +44,9 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		#'
 		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -57,12 +59,16 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		#'
 		#' @return 	The approximate frequentist p-value
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("TO-DO")
+				}
 			}
 		}
 	),
@@ -76,8 +82,10 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			model_output = private$generate_mod(estimate_only = estimate_only) # Implemented by child classes (Weibull, NegBin)
 			private$cached_mod = model_output
 
-			if (is.null(model_output$coefficients) || (!estimate_only && is.null(model_output$vcov))){
-				stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")
+			if (should_run_asserts()) {
+				if (is.null(model_output$coefficients) || (!estimate_only && is.null(model_output$vcov))){
+					stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")
+				}
 			}
 
 			full_coefficients = model_output$coefficients

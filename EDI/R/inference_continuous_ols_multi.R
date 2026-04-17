@@ -25,10 +25,14 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
 		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
-			assertResponseType(des_obj$get_response_type(), "continuous")
-			assertCount(max_resample_attempts, positive = TRUE)
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+				assertCount(max_resample_attempts, positive = TRUE)
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$max_resample_attempts = max_resample_attempts
 		},
 
@@ -90,7 +94,9 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#' }
 		#'
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -120,7 +126,9 @@ InferenceContinMultOLS = R6::R6Class("InferenceContinMultOLS",
 		#' }
 		#'
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}

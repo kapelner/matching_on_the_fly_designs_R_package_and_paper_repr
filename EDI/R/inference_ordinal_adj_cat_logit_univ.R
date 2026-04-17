@@ -36,13 +36,63 @@ InferenceOrdinalUniAdjCatLogitRegr = R6::R6Class(
 		#'   to the user. Default is \code{TRUE}.
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
 			super$initialize(des_obj, verbose, harden)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			y_ord = as.integer(factor(private$y, ordered = TRUE))
+			K = max(y_ord)
+			if (K < 2L) return(NA_real_)
+
+			expanded = expand_adjacent_category_data_cpp(as.integer(y_ord), as.integer(private$w), as.integer(seq_len(private$n)), as.integer(K))
+			
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			if (length(Xmm_cols) == 0L){
+				# Univariate case: treatment only
+				mod = clogit_helper(expanded$y, data.frame(), expanded$w, expanded$strata)
+			} else {
+				# Multivariate case
+				X_stack_list = list()
+				for (i in 1:private$n) {
+					yi = y_ord[i]
+					Xi = X_data[i, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+					trials_i = integer()
+					for (j in 1 : (K-1L)) {
+						if (yi == j || yi == j + 1) trials_i = c(trials_i, j)
+					}
+					if (length(trials_i) > 0) {
+						X_stack_list[[i]] = matrix(rep(Xi, each = length(trials_i)), nrow = length(trials_i))
+					}
+				}
+				X_stack = do.call(rbind, X_stack_list)
+				mod = clogit_helper(expanded$y, as.data.frame(X_stack), expanded$w, expanded$strata)
+			}
+
+			if (is.null(mod) || !is.finite(mod$b[1])) return(NA_real_)
+			as.numeric(mod$b[1])
+		},
+
 		adjacent_category_design_matrix = function(){
 			Xmm = matrix(private$w, ncol = 1)
 			full_names = "treatment"

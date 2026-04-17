@@ -16,18 +16,29 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), private$gee_response_type())
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
+				}
 			}
 			super$initialize(des_obj, verbose)
+			if (is(des_obj, "FixedDesignBinaryMatch")){
+				des_obj$.__enclos_env__$private$ensure_bms_computed()
+			}
 			private$m = des_obj$.__enclos_env__$private$m
 			if (identical(private$gee_response_type(), "proportion")) {
 				private$y = .sanitize_proportion_response(private$y, interior = FALSE)
 			}
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("geepack")){
-				stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("geepack")){
+					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -44,9 +55,13 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -55,13 +70,19 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("TO-DO")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("TO-DO")
+				}
 			}
 		}
 	),

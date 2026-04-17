@@ -45,7 +45,9 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		}
 
@@ -56,45 +58,39 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 			# Multivariate: covariates + treatment (mirrors InferenceSurvivalMultiCoxPHRegr)
 			X_cov_orig = private$get_X()
 
-			if (ncol(X_cov_orig) > 0) {
-				full_X_matrix = cbind(X_cov_orig, private$w)
-				colnames(full_X_matrix) = c(colnames(X_cov_orig), "treatment")
-			} else {
-				full_X_matrix = matrix(private$w, ncol = 1)
-				colnames(full_X_matrix) = "treatment"
-			}
-
-			if (!private$harden) {
+			if (ncol(X_cov_orig) == 0L) {
+				full_X_matrix = matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix, estimate_only = estimate_only), error = function(e) NULL)
-				if (!is.null(mod)) return(mod)
-				stop("Weibull regression failed to converge.")
+				if (should_run_asserts()) {
+					if (is.null(mod)) stop("Weibull regression failed to converge (univariate).")
+				}
+				private$best_Xmm_colnames = character(0)
+				return(mod)
 			}
 
-			# Try fast C++ path with progressively lower correlation thresholds.
-			# The robust survreg fallback (slow: up to 50 random restarts) is invoked at most
-			# ONCE after all fast paths are exhausted, so bootstrap iterations stay fast.
+			# We already have a complex fallback loop here, but we need to populate best_Xmm_colnames
+			# for the optimized randomization/bootstrap path.
+			
 			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
 			full_X_matrix_last = NULL
 			for (thresh in thresholds) {
-				if (ncol(X_cov_orig) > 0) {
-					if (is.finite(thresh)) {
-						X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
-					} else {
-						X_cov = X_cov_orig
-					}
-					full_X_matrix = cbind(X_cov, private$w)
-					colnames(full_X_matrix) = c(colnames(X_cov), "treatment")
+				if (is.finite(thresh)) {
+					X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
 				} else {
-					full_X_matrix = matrix(private$w, ncol = 1)
-					colnames(full_X_matrix) = "treatment"
+					X_cov = X_cov_orig
 				}
+				full_X_matrix = cbind(X_cov, treatment = private$w)
 				full_X_matrix_last = full_X_matrix
 				mod = tryCatch(private$weibull_generate_mod_from_X(full_X_matrix, estimate_only = estimate_only), error = function(e) NULL)
-				if (!is.null(mod)) return(mod)
+				if (!is.null(mod)) {
+					private$best_Xmm_colnames = setdiff(colnames(full_X_matrix), "treatment")
+					return(mod)
+				}
 			}
 			# All fast C++ paths failed: one robust survreg fallback on the most-reduced matrix
 			surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), full_X_matrix_last)
 			if (!is.null(surv_mod)) {
+				private$best_Xmm_colnames = setdiff(colnames(full_X_matrix_last), "treatment")
 				full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
 				if (estimate_only) {
 					return(list(coefficients = full_coefficients, vcov = NULL))
@@ -105,36 +101,25 @@ InferenceSurvivalMultiWeibullRegr = R6::R6Class("InferenceSurvivalMultiWeibullRe
 					return(list(coefficients = full_coefficients, vcov = full_vcov))
 				}
 			}
-			# Progressive QR-ordered column dropping: remove covariates one at a time in
-			# reverse QR-pivot order (most redundant first), keeping treatment, down to
-			# treatment-only.
+			# Progressive QR-ordered column dropping
 			X_cov_last = full_X_matrix_last[, seq_len(ncol(full_X_matrix_last) - 1L), drop = FALSE]
 			if (ncol(X_cov_last) > 0L) {
-				keep_js = qr(X_cov_last)$pivot  # most important first
+				keep_js = qr(X_cov_last)$pivot
 				while (length(keep_js) > 0L) {
-					keep_js = keep_js[-length(keep_js)]  # drop most redundant
+					keep_js = keep_js[-length(keep_js)]
 					if (length(keep_js) > 0L) {
-						X_try = cbind(X_cov_last[, keep_js, drop = FALSE], private$w)
-						colnames(X_try) = c(colnames(X_cov_last)[keep_js], "treatment")
+						X_try = cbind(X_cov_last[, keep_js, drop = FALSE], treatment = private$w)
 					} else {
-						X_try = matrix(private$w, ncol = 1L)
-						colnames(X_try) = "treatment"
+						X_try = matrix(private$w, ncol = 1L, dimnames = list(NULL, "treatment"))
 					}
 					mod = tryCatch(private$weibull_generate_mod_from_X(X_try, estimate_only = estimate_only), error = function(e) NULL)
-					if (!is.null(mod)) return(mod)
-					surv_mod = robust_survreg_with_surv_object(survival::Surv(private$y, private$dead), X_try)
-					if (!is.null(surv_mod)) {
-						full_coefficients = c(surv_mod$coefficients, "log(scale)" = log(surv_mod$scale))
-						if (estimate_only) return(list(coefficients = full_coefficients, vcov = NULL))
-						full_vcov = surv_mod$var
-						if (!is.null(full_vcov) && is.matrix(full_vcov) && all(is.finite(diag(full_vcov)))) {
-							colnames(full_vcov) = rownames(full_vcov) = names(full_coefficients)
-							return(list(coefficients = full_coefficients, vcov = full_vcov))
-						}
+					if (!is.null(mod)) {
+						private$best_Xmm_colnames = setdiff(colnames(X_try), "treatment")
+						return(mod)
 					}
 				}
 			}
-			stop("Weibull regression failed to converge even after progressive correlation dropping and robust retries.")
+			stop("Weibull regression failed to converge even after progressive reduction.")
 		}
 	)
 )

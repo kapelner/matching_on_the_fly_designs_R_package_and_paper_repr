@@ -40,9 +40,11 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						B_preferred = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
 						verbose = FALSE
 					) {
-			if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
-			assertCount(num_bins_for_continuous_covariate, positive = TRUE)
-			if (!is.null(B_preferred) && !is.na(B_preferred)) assertCount(B_preferred, positive = TRUE)
+			if (should_run_asserts()) {
+				if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
+				assertCount(num_bins_for_continuous_covariate, positive = TRUE)
+				if (!is.null(B_preferred) && !is.na(B_preferred)) assertCount(B_preferred, positive = TRUE)
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$strata_cols = strata_cols
 			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
@@ -57,7 +59,9 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			
 			strata_keys = private$get_strata_keys()
 			

@@ -2,11 +2,12 @@ library(EDI)
 suppressPackageStartupMessages(library(data.table))
 
 # ── Tunable parameters ────────────────────────────────────────────────────────
-Nrep       = 50   # Monte Carlo replications per cell
+Nrep       = 5000L   # Monte Carlo replications per cell
 betaTs     = c(1, 0) # 0 → size / type-I error;  1 → power / coverage
 alpha      = 0.05
 ns         = c(64L, 128L, 256L)
 ps         = c(1L, 2L, 5L, 10L)
+keep_all_intermediate_data = FALSE
 data_types = c("linear", "nonlinear")
 out_file   = sprintf("simulations/azriel_exact_sims_results_Nrep_%d.csv", Nrep)
 
@@ -94,23 +95,24 @@ for (betaT in betaTs) {
             alpha             = alpha,
             inf_types         = inf_types,
             design_params     = design_params,
-            keep_all_intermediate_data = TRUE
+            keep_all_intermediate_data = keep_all_intermediate_data
           )
         )
 
         # Suppress the expected per-class exact-inheritance warnings during run
         suppressWarnings(sim$run())
 
-
-        sim_intermediate_data = sim$get_all_intermediate_data()
+        if (keep_all_intermediate_data){
+          sim_intermediate_data = sim$get_all_intermediate_data()
+          all_y_base[[bT_key]][[n_key]][[p_key]][[data_type]] =
+            lapply(sim_intermediate_data, `[[`, "y_base")
+          sim$clear_all_intermediate_data_and_gc()
+        }
 
         # Save y_base vectors for all reps into the nested list
         bT_key = as.character(betaT)
         n_key  = as.character(n)
         p_key  = as.character(p)
-        all_y_base[[bT_key]][[n_key]][[p_key]][[data_type]] =
-          lapply(sim_intermediate_data, `[[`, "y_base")
-        sim$clear_all_intermediate_data_and_gc()
 
         # for (i in seq_along(ds)){
         #   message(sprintf(
@@ -144,6 +146,26 @@ for (betaT in betaTs) {
     }
   }
 }
+
+# # ── Inspect y_base distributions ─────────────────────────────────────────────
+# for (bT_key in names(all_y_base)) {
+#   for (n_key in names(all_y_base[[bT_key]])) {
+#     for (p_key in names(all_y_base[[bT_key]][[n_key]])) {
+#       for (dt_key in names(all_y_base[[bT_key]][[n_key]][[p_key]])) {
+#         y_vecs = all_y_base[[bT_key]][[n_key]][[p_key]][[dt_key]]
+#         y_all  = unlist(y_vecs)
+#         hist(y_all,
+#              breaks = 40,
+#              main   = sprintf("y_base | betaT=%s  n=%s  p=%s  data_type=%s  (N=%d)",
+#                               bT_key, n_key, p_key, dt_key, length(y_all)),
+#              xlab   = "y_base",
+#              col    = "steelblue",
+#              border = "white")
+#         readline("Press Enter for next plot...")
+#       }
+#     }
+#   }
+# }
 
 
 

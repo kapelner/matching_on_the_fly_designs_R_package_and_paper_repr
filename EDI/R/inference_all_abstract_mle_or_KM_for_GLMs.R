@@ -18,6 +18,11 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+
 		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
 
 		create_bootstrap_worker_state = function(){

@@ -68,9 +68,13 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' infer
 		#'
 		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "continuous")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+			}
 			super$initialize(des_obj, tau, identity, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		}
 
 

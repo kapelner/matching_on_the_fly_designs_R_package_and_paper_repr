@@ -17,7 +17,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		},
 
@@ -94,7 +96,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' seq_des_inf$compute_asymp_confidence_interval()
 		#' }
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			y    = private$y
 			dead = private$dead
 			w    = private$w
@@ -103,8 +107,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			if (is.null(fit_T) || is.null(fit_C)){
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
-			q_T = quantile(fit_T, 0.5)
-			q_C = quantile(fit_C, 0.5)
+			q_T = stats::quantile(fit_T, 0.5)
+			q_C = stats::quantile(fit_C, 0.5)
 			med_T = as.numeric(q_T$quantile)
 			lo_T  = as.numeric(q_T$lower)
 			hi_T  = as.numeric(q_T$upper)
@@ -150,15 +154,15 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' }
 		#'
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-
-			if (delta == 0){
-				survival_obj = survival::Surv(private$y, private$dead)
-				surv_diff = survival::survdiff(survival_obj ~ private$w)
-				surv_diff$pvalue
-			} else {
-				stop("TO-DO")
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+				if (delta != 0){
+					stop("Log-rank p-value for non-zero delta is not yet implemented.")
+				}
 			}
+			survival_obj = survival::Surv(private$y, private$dead)
+			surv_diff = survival::survdiff(survival_obj ~ private$w)
+			surv_diff$pvalue
 		},
 
 		#' @description

@@ -15,9 +15,13 @@ InferenceIncidenceWald = R6::R6Class("InferenceIncidenceWald",
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidenceWald} object.
 		initialize = function(des_obj, verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$cached_values$is_z = TRUE
 		}
 	),

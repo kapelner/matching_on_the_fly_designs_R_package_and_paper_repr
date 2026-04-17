@@ -30,10 +30,16 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
 		#'   Default \code{.Machine$double.eps} (essentially no clamping).
 		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
-			assertResponseType(des_obj$get_response_type(), "incidence")
-			assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
+			if (should_run_asserts()) {
+				assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$prob_clip_eps = prob_clip_eps
 		},
 
@@ -49,7 +55,9 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#' Computes a 1 - \code{alpha} confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
@@ -78,6 +86,57 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			if (length(Xmm_cols) == 0L){
+				# Univariate case
+				Xmm = cbind("(Intercept)" = 1, treatment = private$w)
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				Xmm = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
+			}
+
+			fit = tryCatch(
+				fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y)),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !private$coefficients_are_usable(as.numeric(fit$b))){
+				return(NA_real_)
+			}
+
+			# Standardized effect
+			coef_hat = as.numeric(fit$b)
+			X1 = Xmm
+			X0 = Xmm
+			X1[, 2L] = 1
+			X0[, 2L] = 0
+			risk1 = mean(stats::plogis(as.numeric(X1 %*% coef_hat)))
+			risk0 = mean(stats::plogis(as.numeric(X0 %*% coef_hat)))
+
+			estimand = private$get_estimand_type()
+			if (identical(estimand, "RD")) return(risk1 - risk0)
+			if (risk1 > 0 && risk0 > 0) return(risk1 / risk0)
+			NA_real_
+		},
+
 		prob_clip_eps = .Machine$double.eps,
 		max_abs_reasonable_coef = 1e4,
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
@@ -376,7 +435,9 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			if (is.null(delta)){
 				delta = private$default_null_value()
 			}
-			assertNumeric(delta, len = 1)
+			if (should_run_asserts()) {
+				assertNumeric(delta, len = 1)
+			}
 
 			if (identical(estimand, "RD")){
 				est = private$cached_values$rd
@@ -388,8 +449,10 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			} else {
 				log_rr = private$cached_values$log_rr
 				se_log_rr = private$cached_values$se_log_rr
-				if (delta <= 0){
-					stop("For RR inference, delta must be strictly positive.")
+				if (should_run_asserts()) {
+					if (delta <= 0){
+						stop("For RR inference, delta must be strictly positive.")
+					}
 				}
 				if (!is.finite(log_rr) || !is.finite(se_log_rr) || se_log_rr <= 0){
 					return(NA_real_)
@@ -415,6 +478,9 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			}
 
 			fit = private$fit_logistic_with_sandwich(X_full, estimate_only = estimate_only)
+			if (!is.null(fit)) {
+				private$best_Xmm_colnames = setdiff(colnames(fit$X), c("(Intercept)", "treatment"))
+			}
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			if (private$harden && (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){
 				fit = private$fit_logistic_with_sandwich(X_full[, 1:2, drop = FALSE], estimate_only = estimate_only)
@@ -435,6 +501,9 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$cached_values$log_rr = effects$log_rr
 			private$cached_values$rr = effects$rr
 			private$cached_values$se_log_rr = effects$se_log_rr
+
+			# Populate beta_hat_T for the base class methods
+			private$cached_values$beta_hat_T = if (identical(private$get_estimand_type(), "RD")) effects$rd else effects$rr
 		}
 	)
 )

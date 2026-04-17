@@ -519,6 +519,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_clogit_plus_glmm_cpp
+List fast_clogit_plus_glmm_cpp(const Eigen::MatrixXd& X_disc, const Eigen::VectorXd& y_disc, const Eigen::MatrixXd& X_conc, const Eigen::VectorXd& y_conc, const Eigen::VectorXi& group_conc, const Eigen::VectorXd& start, bool has_discordant, bool has_concordant, bool estimate_only, double max_abs_log_sigma, int maxit, double eps_g);
+RcppExport SEXP _EDI_fast_clogit_plus_glmm_cpp(SEXP X_discSEXP, SEXP y_discSEXP, SEXP X_concSEXP, SEXP y_concSEXP, SEXP group_concSEXP, SEXP startSEXP, SEXP has_discordantSEXP, SEXP has_concordantSEXP, SEXP estimate_onlySEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_disc(X_discSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_disc(y_discSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_conc(X_concSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y_conc(y_concSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_conc(group_concSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type start(startSEXP);
+    Rcpp::traits::input_parameter< bool >::type has_discordant(has_discordantSEXP);
+    Rcpp::traits::input_parameter< bool >::type has_concordant(has_concordantSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_clogit_plus_glmm_cpp(X_disc, y_disc, X_conc, y_conc, group_conc, start, has_discordant, has_concordant, estimate_only, max_abs_log_sigma, maxit, eps_g));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_continuation_ratio_regression_cpp
 List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
 RcppExport SEXP _EDI_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
@@ -1190,6 +1212,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(get_restricted_mean_se_diff(y, dead, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// wilcox_hl_signed_rank_point_estimate_cpp
+double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy);
+RcppExport SEXP _EDI_wilcox_hl_signed_rank_point_estimate_cpp(SEXP dySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector& >::type dy(dySEXP);
+    rcpp_result_gen = Rcpp::wrap(wilcox_hl_signed_rank_point_estimate_cpp(dy));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2485,6 +2518,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_bai_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_bai_distr_parallel_cpp, 7},
     {"_EDI_fast_beta_regression_cpp", (DL_FUNC) &_EDI_fast_beta_regression_cpp, 5},
     {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 5},
+    {"_EDI_fast_clogit_plus_glmm_cpp", (DL_FUNC) &_EDI_fast_clogit_plus_glmm_cpp, 12},
     {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 4},
     {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 2},
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
@@ -2534,6 +2568,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},
     {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
+    {"_EDI_wilcox_hl_signed_rank_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_signed_rank_point_estimate_cpp, 1},
     {"_EDI_wilcox_hl_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_point_estimate_cpp, 2},
     {"_EDI_compute_wilcox_hl_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_bootstrap_parallel_cpp, 4},
     {"_EDI_compute_wilcox_hl_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_distr_parallel_cpp, 6},

@@ -26,7 +26,9 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		},
 
@@ -86,7 +88,9 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' seq_des_inf$compute_asymp_confidence_interval()
 		#' }
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$compute_shared()
 			if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
@@ -123,14 +127,15 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 		#' }
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (delta == 0){
-				surv_obj  = survival::Surv(private$y, private$dead)
-				surv_diff = survival::survdiff(surv_obj ~ private$w, rho = 1)
-				surv_diff$pvalue
-			} else {
-				stop("Testing non-zero delta is not yet implemented for InferenceSurvivalGehanWilcox.")
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+				if (delta != 0){
+					stop("Testing non-zero delta is not yet implemented for InferenceSurvivalGehanWilcox.")
+				}
 			}
+			surv_obj  = survival::Surv(private$y, private$dead)
+			surv_diff = survival::survdiff(surv_obj ~ private$w, rho = 1)
+			surv_diff$pvalue
 		},
 
 		#' @description

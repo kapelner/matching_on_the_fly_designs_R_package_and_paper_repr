@@ -17,11 +17,17 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' @param des_obj A completed \code{Design} object.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "count")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "count")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
-			if (!check_package_installed("glmmTMB")){
-				stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("glmmTMB")){
+					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+				}
 			}
 		},
 
@@ -37,7 +43,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' Compute asymp confidence interval
 		#' @param alpha Description for alpha
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning(private$za_description(), ": falling back to bootstrap because standard error is unavailable.")
@@ -50,7 +58,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning(private$za_description(), ": falling back to bootstrap because standard error is unavailable.")
@@ -61,6 +71,39 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			if (length(Xmm_cols) == 0L){
+				# Univariate case
+				dat = data.frame(y = private$y, w = private$w)
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				dat = data.frame(y = private$y, w = private$w, X_cov)
+			}
+
+			mod = private$fit_zero_augmented_model(dat)
+			if (is.null(mod)) return(NA_real_)
+			
+			cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_coef) || !("w" %in% names(cond_coef))) return(NA_real_)
+			as.numeric(cond_coef["w"])
+		},
+
 		za_family = function() stop(class(self)[1], " must implement za_family()."),
 
 		za_description = function() stop(class(self)[1], " must implement za_description()."),
@@ -132,6 +175,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 			pred_df = as.data.frame(X_reduced[, -1, drop = FALSE])
 			colnames(pred_df)[1] = "w"
+			private$best_Xmm_colnames = setdiff(colnames(pred_df), "w")
 			dat = data.frame(y = private$y, pred_df)
 
 			mod = private$fit_zero_augmented_model(dat)

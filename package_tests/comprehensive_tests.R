@@ -2,6 +2,7 @@
 rm(list = ls())
 set.seed(1)
 devtools::load_all("EDI")
+
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
 source("package_tests/_dataset_load.R")
@@ -12,7 +13,7 @@ args = commandArgs(trailingOnly = TRUE)
 Nrep      = if (length(args) >= 1) as.integer(args[1]) else 40L
 NUM_CORES = if (length(args) >= 2) as.integer(args[2]) else 2L
 ALL_RESPONSE_TYPES = c("continuous", "incidence", "proportion", "count", "survival", "ordinal")
-RESPONSE_TYPE_FILTER = if (length(args) >= 3) as.character(args[3]) else NA_character_
+RESPONSE_TYPE_FILTER = if (length(args) >= 3 && args[3] != "NA") as.character(args[3]) else NA_character_
 if (!is.na(RESPONSE_TYPE_FILTER) && !(RESPONSE_TYPE_FILTER %in% ALL_RESPONSE_TYPES)) {
 	stop(
 		"Unsupported response_type filter: ",
@@ -21,7 +22,19 @@ if (!is.na(RESPONSE_TYPE_FILTER) && !(RESPONSE_TYPE_FILTER %in% ALL_RESPONSE_TYP
 		paste(ALL_RESPONSE_TYPES, collapse = ", ")
 	)
 }
+ALL_DESIGN_TYPES = c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "PocockSimon", "Urn", "RandomBlockSize", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedCluster", "FixedBlockedCluster", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy", "FixedDOptimal", "FixedAOptimal")
+DESIGN_TYPE_FILTER = if (length(args) >= 4) as.character(args[4]) else NA_character_
+if (!is.na(DESIGN_TYPE_FILTER) && !(DESIGN_TYPE_FILTER %in% ALL_DESIGN_TYPES)) {
+	stop(
+		"Unsupported design_type filter: ",
+		DESIGN_TYPE_FILTER,
+		". Supported values are: ",
+		paste(ALL_DESIGN_TYPES, collapse = ", ")
+	)
+}
 set_num_cores(NUM_CORES)
+toggle_asserts(FALSE)
+
 prob_censoring = 0.15
 r = 351
 pval_epsilon = 0.007
@@ -863,7 +876,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		}
 	}
 
-	is_kk_design = design_type %in% c("KK21", "KK21stepwise", "KK14")
+	is_kk_design = design_type %in% c("KK21", "KK21stepwise", "KK14", "FixedBinaryMatch")
 	if (response_type == "continuous"){
 		inference_banner("InferenceAllSimpleMeanDiff")
 		run_inference_checks(InferenceAllSimpleMeanDiff$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
@@ -1317,7 +1330,10 @@ for (rep_curr in 1:Nrep) {
 					next
 				}
 				pending_response_header <<- paste0("      === response_type: ", response_type, " ===")
-				for (design_type in c("Bernoulli", "iBCRD", "Efron", "KK14", "KK21", "KK21stepwise", "SPBR", "PocockSimon", "Urn", "RandomBlockSize", "FixedBernoulli", "FixediBCRD", "FixedBlocking", "FixedCluster", "FixedBlockedCluster", "FixedBinaryMatch", "FixedGreedy", "FixedRerandomization", "FixedMatchingGreedy", "FixedDOptimal", "FixedAOptimal")) {
+				for (design_type in ALL_DESIGN_TYPES) {
+					if (!is.na(DESIGN_TYPE_FILTER) && !identical(design_type, DESIGN_TYPE_FILTER)) {
+						next
+					}
 					pending_design_header <<- paste0("        === design: ", design_type, " ===")
 					run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name)
 				}

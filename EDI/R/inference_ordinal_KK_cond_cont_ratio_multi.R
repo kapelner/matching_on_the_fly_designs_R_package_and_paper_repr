@@ -28,6 +28,52 @@ InferenceOrdinalMultiKKCondContRatioRegr = R6::R6Class(
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			strata_ids = m_vec
+			reservoir_idx = which(strata_ids == 0L)
+			if (length(reservoir_idx) > 0L){
+				strata_ids[reservoir_idx] = max(strata_ids) + seq_along(reservoir_idx)
+			}
+
+			y_ord = as.integer(factor(private$y, ordered = TRUE))
+			K = max(y_ord)
+			if (K < 2L) return(NA_real_)
+
+			expanded = expand_continuation_ratio_data_cpp(as.integer(y_ord), as.integer(private$w), as.integer(strata_ids), as.integer(K))
+			
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			X_stack_list = list()
+			for (i in 1:private$n) {
+				yi = y_ord[i]
+				n_trials_i = min(yi, K - 1L)
+				if (n_trials_i > 0) {
+					Xi = X_data[i, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+					X_stack_list[[i]] = matrix(rep(Xi, each = n_trials_i), nrow = n_trials_i)
+				}
+			}
+			X_stack = do.call(rbind, X_stack_list)
+
+			mod = clogit_helper(expanded$y, as.data.frame(X_stack), expanded$w, expanded$strata)
+			if (is.null(mod) || !is.finite(mod$b[1])) return(NA_real_)
+			as.numeric(mod$b[1])
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -91,6 +137,9 @@ InferenceOrdinalMultiKKCondContRatioRegr = R6::R6Class(
 						mod$ssq_b_j > 0
 				}
 			)
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "treatment")
+			}
 			mod = attempt$fit
 			
 			if (is.null(mod) || !is.finite(mod$b[1]) || !is.finite(mod$ssq_b_j) || mod$ssq_b_j <= 0){

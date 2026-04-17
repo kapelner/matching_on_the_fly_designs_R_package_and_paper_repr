@@ -1,6 +1,46 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
 
+# Closure to encapsulate the internal assertion override flag (used by SimulationFramework)
+.assert_manager = (function() {
+  internal_run_asserts = TRUE
+  list(
+    toggle = function(on = TRUE) {
+      internal_run_asserts <<- isTRUE(on)
+      invisible(internal_run_asserts)
+    },
+    should_run = function() {
+      internal_run_asserts && isTRUE(getOption("edi.run_asserts", TRUE))
+    }
+  )
+})()
+
+#' Toggle the execution of assertions throughout the package
+#' 
+#' @description
+#' This function enables or disables the internal input validation checks (assertions)
+#' by setting the \code{options(edi.run_asserts = ...)} value.
+#' Disabling assertions can provide a significant performance boost in heavy
+#' simulations (often 10x-20x speedup), but it removes the safety rails that
+#' prevent invalid data from reaching the internal algorithms.
+#' 
+#' \strong{Warning:} If assertions are disabled, passing malformed or invalid
+#' data to package functions may result in cryptic R errors, incorrect
+#' statistical results, or even hard system crashes (SEGFAULTs) at the C++ layer.
+#' Only disable assertions if you are certain your data is pre-validated and
+#' follows the package requirements exactly.
+#' 
+#' @param on Logical scalar. If TRUE (default), assertions are executed. If FALSE, they are skipped.
+#' @keywords internal
+#' @export
+toggle_asserts = function(on = TRUE) {
+  options(edi.run_asserts = isTRUE(on))
+  invisible(isTRUE(on))
+}
+
+# private method
+should_run_asserts = .assert_manager$should_run
+
 #' Set the number of cores for parallelization
 #' 
 #' This function initializes a persistent parallel cluster (either a fork cluster
@@ -156,7 +196,9 @@ get_bootstrap_dispatch_policy = function() {
       "^InferenceSurvival(Uni|Multi)DepCensTransformRegr$" = "percentile",
       "^InferenceSurvival(Univ|Multi)KKRankRegrIVWC$" = "percentile",
       "^InferenceIncidMultiKKClogitIVWC$" = "percentile",
+      "^InferenceIncidMultiKKClogitPlusGLMMIVWC$" = "percentile",
       "^InferenceIncidMultiKKClogitCombinedLikelihood$" = "percentile",
+      "^InferenceIncidMultiKKClogitPlusGLMMCombinedLikelihood$" = "percentile",
       "^InferenceOrdinalUnivKKCondPropOddsRegr$" = "percentile",
       "^InferenceOrdinalMultiAdjCatLogitRegr$" = "percentile",
       "^InferenceSurvival(Univ|Multi)KKStratCoxCombinedLikelihood$" = "percentile",
@@ -183,6 +225,7 @@ get_bootstrap_dispatch_policy = function() {
 }
 
 edi_env$bootstrap_dispatch_policy_config = get_bootstrap_dispatch_policy()
+
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an

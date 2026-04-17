@@ -21,7 +21,9 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 		#' Computes an asymptotic confidence interval for the log risk ratio.
 		#' @param alpha The confidence level is 1 - alpha. Default 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
@@ -30,12 +32,42 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 		#' Computes an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect. Default 0.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			# Filter columns that are in Xmm_cols (excluding treatment which we provide separately)
+			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			Xmm = cbind(treatment = private$w, X_cov)
+			# Add intercept
+			Xmm = cbind("(Intercept)" = 1, Xmm)
+
+			mod = tryCatch(private$fit_constrained_binomial(Xmm, j_treat = 2L), error = function(e) NULL)
+			if (is.null(mod) || !is.finite(mod$b[2])){
+				return(NA_real_)
+			}
+			as.numeric(mod$b[2])
+		},
+
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
@@ -125,6 +157,7 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 				return(invisible(NULL))
 			}
 
+			private$best_Xmm_colnames = setdiff(colnames(result$X_fit), c("(Intercept)", "treatment"))
 			private$cached_values$beta_hat_T = as.numeric(result$mod$b[result$j_treat])
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(as.numeric(result$mod$ssq_b_j))

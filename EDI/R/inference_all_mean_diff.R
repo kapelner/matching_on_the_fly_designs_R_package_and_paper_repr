@@ -41,7 +41,9 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
 		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
-			assertCount(max_resample_attempts, positive = TRUE)
+			if (should_run_asserts()) {
+				assertCount(max_resample_attempts, positive = TRUE)
+			}
 			super$initialize(des_obj, verbose)
 			private$max_resample_attempts = max_resample_attempts
 		},
@@ -82,14 +84,26 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'   to the base method.
 		#' @return	A 1 - alpha sized frequentist confidence interval
 		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
-			if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
-				stop("Randomization confidence intervals are not supported for InferenceAllSimpleMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+			if (should_run_asserts()) {
+				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
+					stop("Randomization confidence intervals are not supported for InferenceAllSimpleMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+				}
 			}
 			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
 	),
 
 	private = list(
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (is.null(private$cached_values$beta_hat_T)){
+				yTs = private$y[private$w == 1]
+				yCs = private$y[private$w == 0]
+				if (length(yTs) == 0 || length(yCs) == 0) return(NA_real_)
+				private$cached_values$beta_hat_T = mean(yTs) - mean(yCs)
+			}
+			private$cached_values$beta_hat_T
+		},
+
 		max_resample_attempts = 50L,
 		get_standard_error = function(){
 			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()

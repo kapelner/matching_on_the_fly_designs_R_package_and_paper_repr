@@ -20,9 +20,13 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 		#' @param des_obj A completed KK design object.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "survival")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose)
 		},
@@ -39,9 +43,13 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 		#' Computes an asymptotic confidence interval for the treatment effect.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -49,15 +57,67 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 		#' Returns a 2-sided p-value for H0: beta_T = delta.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared_combined_likelihood(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			X_cov = if (length(Xmm_cols) == 0L){
+				matrix(0, nrow = private$n, ncol = 0)
+			} else {
+				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			}
+			X_fit = cbind(w = private$w, X_cov)
+
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			strata_id = m_vec
+			strata_id[strata_id == 0L] = max(strata_id) + 1L
+
+			dat = data.frame(y = private$y, dead = private$dead, w = X_fit[, "w"], strata = factor(strata_id))
+			formula_str = "survival::Surv(y, dead) ~ w"
+			if (ncol(X_cov) > 0){
+				colnames(X_cov) = paste0("x", seq_len(ncol(X_cov)))
+				dat = cbind(dat, X_cov)
+				formula_str = paste(formula_str, "+", paste(colnames(X_cov), collapse = " + "))
+			}
+			formula_str = paste(formula_str, "+ strata(strata)")
+			
+			mod = tryCatch(
+				suppressWarnings(survival::coxph(as.formula(formula_str), data = dat)),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NA_real_)
+			
+			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
+			if (is.null(coefs) || !("w" %in% names(coefs))) return(NA_real_)
+			as.numeric(coefs["w"])
+		},
 
 		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
 
@@ -129,6 +189,9 @@ InferenceAbstractKKStratCoxCombinedLikelihood = R6::R6Class("InferenceAbstractKK
 				}
 			)
 			mod = attempt$fit
+			if (!is.null(mod)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "w")
+			}
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_fit_failed")
 				private$cached_values$is_z = TRUE

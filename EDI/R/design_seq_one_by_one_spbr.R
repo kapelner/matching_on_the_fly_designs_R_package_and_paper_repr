@@ -37,8 +37,10 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 			private$uses_covariates = TRUE
 			private$strata_states = new.env(parent = emptyenv())
 			
-			if (abs(block_size * prob_T - round(block_size * prob_T)) > 1e-10) {
-				stop("block_size must result in an integer number of treatment assignments (block_size * prob_T).")
+			if (should_run_asserts()) {
+				if (abs(block_size * prob_T - round(block_size * prob_T)) > 1e-10) {
+					stop("block_size must result in an integer number of treatment assignments (block_size * prob_T).")
+				}
 			}
 		},
 

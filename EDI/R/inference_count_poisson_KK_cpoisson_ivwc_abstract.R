@@ -17,12 +17,18 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "count")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "count")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
+				}
 			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -38,9 +44,13 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared()
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -49,18 +59,103 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared()
-			private$assert_finite_se()
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				stop("Testing non-zero delta is not yet implemented for this class.")
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			if (should_run_asserts()) {
+				if (delta == 0){
+					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+				} else {
+					stop("Testing non-zero delta is not yet implemented for this class.")
+				}
 			}
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames_matched = NULL,
+		best_Xmm_colnames_reservoir = NULL,
+		best_Xmm_j_treat_reservoir = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+				private$shared(estimate_only = TRUE)
+			}
+
+			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+			KKstats = private$cached_values$KKstats
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+
+			# --- Matched pairs component ---
+			beta_m = NA_real_
+			if (m > 0){
+				yT = KKstats$yTs_matched
+				yC = KKstats$yCs_matched
+				y_total = yT + yC
+				valid_idx = which(y_total > 0)
+				if (length(valid_idx) > 0){
+					y_prop = yT[valid_idx] / y_total[valid_idx]
+					weights = y_total[valid_idx]
+					
+					if (private$include_covariates() && !is.null(private$best_Xmm_colnames_matched)){
+						X_diff = KKstats$X_matched_diffs[valid_idx, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE]
+						Xmm = cbind(1, X_diff)
+					} else {
+						Xmm = matrix(1, nrow = length(valid_idx), ncol = 1)
+					}
+					
+					mod_m = tryCatch(fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights), error = function(e) NULL)
+					if (!is.null(mod_m) && is.finite(mod_m$b[1])) beta_m = as.numeric(mod_m$b[1])
+				}
+			}
+
+			# --- Reservoir component ---
+			beta_r = NA_real_
+			if (nRT > 0 && nRC > 0){
+				y_r = KKstats$y_reservoir
+				w_r = KKstats$w_reservoir
+				
+				if (private$include_covariates() && !is.null(private$best_Xmm_colnames_reservoir)){
+					X_r = as.matrix(KKstats$X_reservoir)
+					X_cov = X_r[, intersect(private$best_Xmm_colnames_reservoir, colnames(X_r)), drop = FALSE]
+					Xmm = cbind(1, w_r, X_cov)
+					j_treat = private$best_Xmm_j_treat_reservoir %||% 2L
+				} else {
+					Xmm = cbind(1, w_r)
+					j_treat = 2L
+				}
+				
+				mod_r = tryCatch(fast_negbin_regression(Xmm, y_r), error = function(e) NULL)
+				if (!is.null(mod_r) && length(mod_r$b) >= j_treat && is.finite(mod_r$b[j_treat])) beta_r = as.numeric(mod_r$b[j_treat])
+			}
+
+			# Inverse-variance weighted pooling (using original variances for weights)
+			m_ok = is.finite(beta_m)
+			r_ok = is.finite(beta_r)
+
+			if (m_ok && r_ok){
+				ssq_m_orig = private$cached_values$ssq_beta_T_matched
+				ssq_r_orig = private$cached_values$ssq_beta_T_reservoir
+				if (is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
+					w_star = ssq_r_orig / (ssq_r_orig + ssq_m_orig)
+					return(w_star * beta_m + (1 - w_star) * beta_r)
+				}
+				return((beta_m + beta_r) / 2)
+			} else if (m_ok){
+				return(beta_m)
+			} else if (r_ok){
+				return(beta_r)
+			}
+			NA_real_
+		},
+
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
@@ -156,17 +251,20 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			mod = tryCatch({
 				if (estimate_only) {
 					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
-					list(b = res$b, ssq_b_1 = NA_real_)
+					list(b = res$b, ssq_b_1 = NA_real_, X_fit = Xmm)
 				} else {
 					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
 					vcov = solve(res$XtWX)
-					list(b = res$b, ssq_b_1 = vcov[1, 1])
+					list(b = res$b, ssq_b_1 = vcov[1, 1], X_fit = Xmm)
 				}
 			}, error = function(e) NULL)
 
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_matched     = as.numeric(mod$b[1])
+			if (private$include_covariates()){
+				private$best_Xmm_colnames_matched = setdiff(colnames(mod$X_fit), "(Intercept)")
+			}
 			if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
 		},
 
@@ -195,14 +293,20 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 
 			mod = tryCatch({
 				if (estimate_only) {
-					list(b = fast_negbin_regression(X_full, y_r)$b, ssq_b_j = NA_real_)
+					list(b = fast_negbin_regression(X_full, y_r)$b, ssq_b_j = NA_real_, X_fit = X_full)
 				} else {
-					fast_negbin_regression_with_var(X_full, y_r, j = j_treat)
+					res = fast_negbin_regression_with_var(X_full, y_r, j = j_treat)
+					res$X_fit = X_full
+					res
 				}
 			}, error = function(e) NULL)
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_reservoir     = as.numeric(mod$b[j_treat])
+			if (private$include_covariates()){
+				private$best_Xmm_colnames_reservoir = setdiff(colnames(mod$X_fit), c("(Intercept)", "w_r"))
+				private$best_Xmm_j_treat_reservoir = j_treat
+			}
 			if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
 		}
 	)

@@ -29,10 +29,12 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				n = NULL,				
 				verbose = FALSE
 			) {
-			if (prob_T != 0.5){
-				stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
+			if (should_run_asserts()) {
+				if (prob_T != 0.5){
+					stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
+				}
+				assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			}
-			assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$mahal_match = mahal_match
 			private$uses_covariates = TRUE
@@ -46,8 +48,10 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			assertCount(r, positive = TRUE)
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				assertCount(r, positive = TRUE)
+				self$assert_all_subjects_arrived()
+			}
 			private$ensure_bms_computed()
 			n = self$get_n()
 			if (is.null(private$m)){
@@ -83,21 +87,25 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
-			if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
-				stop("resultsBinaryMatchSearch returned an unexpected allocation matrix shape.")
+			if (should_run_asserts()) {
+				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
+					stop("resultsBinaryMatchSearch returned an unexpected allocation matrix shape.")
+				}
 			}
 
 			storage.mode(w_mat) = "numeric"
-			if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-				stop("resultsBinaryMatchSearch returned non-finite treatment assignments.")
-			}
-			if (any(!(w_mat %in% c(0, 1)))) {
-				stop("resultsBinaryMatchSearch returned an invalid treatment assignment matrix.")
-			}
+			if (should_run_asserts()) {
+				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
+					stop("resultsBinaryMatchSearch returned non-finite treatment assignments.")
+				}
+				if (any(!(w_mat %in% c(0, 1)))) {
+					stop("resultsBinaryMatchSearch returned an invalid treatment assignment matrix.")
+				}
 
-			treated_counts = colSums(w_mat)
-			if (any(treated_counts != n / 2)) {
-				stop("resultsBinaryMatchSearch returned an unbalanced allocation.")
+				treated_counts = colSums(w_mat)
+				if (any(treated_counts != n / 2)) {
+					stop("resultsBinaryMatchSearch returned an unbalanced allocation.")
+				}
 			}
 
 			if (ncol(w_mat) < r){

@@ -57,9 +57,13 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' infer
 		#'
 		initialize = function(des_obj, verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "continuous")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "continuous")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -87,7 +91,9 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
 		#' @return Named numeric vector of length 2: lower and upper bounds.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()
 			}
@@ -101,7 +107,9 @@ InferenceContinMultOLSKKCombinedLikelihood = R6::R6Class("InferenceContinMultOLS
 		#' @param delta Null value to test against; default 0.
 		#' @return Numeric scalar p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$fit_combined_likelihood()
 			}

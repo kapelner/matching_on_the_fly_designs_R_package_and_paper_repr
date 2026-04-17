@@ -15,7 +15,9 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 		#' @return A new \code{InferenceAllSimpleMeanDiffPooledVar} object.
 		initialize = function(des_obj,  verbose = FALSE){
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		}
 	),
 

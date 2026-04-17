@@ -89,8 +89,10 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 							private$assign_wt_Bernoulli()
 						}
 					}
-			if (is.na(private$m[private$t])){
-				stop("no match data recorded")
+			if (should_run_asserts()) {
+				if (is.na(private$m[private$t])){
+					stop("no match data recorded")
+				}
 			}
 			wt
 		},

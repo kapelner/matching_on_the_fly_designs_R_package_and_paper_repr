@@ -37,9 +37,13 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' seq_des_inf$compute_treatment_estimate()
 		#' }
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -57,9 +61,13 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' @param alpha The confidence level in the computed confidence interval is
 		#'   1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -67,14 +75,48 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null treatment effect on the log-risk-ratio scale.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			if (length(Xmm_cols) == 0L){
+				# Univariate case
+				return(private$fit_univariate_modified_poisson(estimate_only = TRUE)$beta_hat)
+			}
+
+			# Multivariate case
+			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			Xmm = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
+
+			fit = private$fit_modified_poisson(Xmm, j_treat = 2L, estimate_only = estimate_only)
+			if (is.null(fit)) return(NA_real_)
+			as.numeric(fit$beta_hat)
+		},
+
 		max_abs_reasonable_coef = 1e4,
 
 		build_design_matrix = function(){
@@ -254,6 +296,7 @@ InferenceIncidUnivModifiedPoisson = R6::R6Class("InferenceIncidUnivModifiedPoiss
 				fallback_to_univariate = TRUE
 			}
 
+			private$best_Xmm_colnames = if (fallback_to_univariate) character(0) else setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
 			private$cached_values$beta_hat_T = fit$beta_hat
 			if (estimate_only) return(invisible(NULL))
 

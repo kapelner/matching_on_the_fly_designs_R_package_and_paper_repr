@@ -45,7 +45,9 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		},
 
@@ -64,7 +66,9 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' Falls back to bootstrap if the estimated standard error is unavailable.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$compute_shared()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
@@ -77,11 +81,15 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' Computes the standard two-sided log-rank p-value for a zero treatment effect.
 		#' @param delta Null treatment effect to test against. Only \code{0} is supported.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$compute_shared()
 
-			if (delta != 0){
-				stop("Testing non-zero delta is not yet implemented for InferenceSurvivalLogRank.")
+			if (should_run_asserts()) {
+				if (delta != 0){
+					stop("Testing non-zero delta is not yet implemented for InferenceSurvivalLogRank.")
+				}
 			}
 
 			if (!is.finite(private$cached_values$logrank_var) || private$cached_values$logrank_var <= 0){

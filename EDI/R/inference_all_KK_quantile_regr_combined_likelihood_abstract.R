@@ -33,9 +33,13 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		#' @param verbose Whether to print progress messages.
 		#' @return A new inference object.
 		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
-			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			if (!check_package_installed("quantreg")) {
-				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
+			if (should_run_asserts()) {
+				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("quantreg")) {
+					stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
+				}
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
@@ -60,9 +64,13 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		#' @param alpha Significance level.
 		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -71,9 +79,13 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		#' @param delta Null treatment effect value.
 		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			private$assert_finite_se()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
@@ -82,6 +94,12 @@ InferenceAbstractKKQuantileRegrCombinedLikelihood = R6::R6Class("InferenceAbstra
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			private$shared_combined_likelihood(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},

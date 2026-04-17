@@ -44,12 +44,14 @@ Design = R6::R6Class("Design",
 				verbose = FALSE,
 				missingness_method = "impute"
 			) {
-			assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
-			assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			assertFlag(include_is_missing_as_a_new_feature)
-			assertFlag(verbose)
-			assertCount(n, null.ok = TRUE)
-			assertChoice(missingness_method, c("impute", "drop_column", "error"))
+			if (should_run_asserts()) {
+				assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
+				assertNumeric(prob_T, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+				assertFlag(include_is_missing_as_a_new_feature)
+				assertFlag(verbose)
+				assertCount(n, null.ok = TRUE)
+				assertChoice(missingness_method, c("impute", "drop_column", "error"))
+			}
 
 			if (is.null(n)){
 				private$fixed_sample = FALSE
@@ -91,41 +93,59 @@ Design = R6::R6Class("Design",
 		#' @param y The response value.
 		#' @param dead If the response is censored (0 for survival).
 		add_one_subject_response = function(t, y, dead = 1) {
-			assertNumeric(t, len = 1)
-			assertNumeric(y, len = 1)
-			assertNumeric(dead, len = 1)
-			assertChoice(dead, c(0, 1))
-			assertCount(t, positive = TRUE)
-			if (t > private$t){
-				stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", private$t))
+			if (should_run_asserts()) {
+				assertNumeric(t, len = 1)
+				assertNumeric(y, len = 1)
+				assertNumeric(dead, len = 1)
+				assertChoice(dead, c(0, 1))
+				assertCount(t, positive = TRUE)
+				if (t > private$t){
+					stop(paste("You cannot add response for subject", t, "when the most recent subjects' record added is", private$t))
+				}
 			}
 			if (length(private$y) >= t & !is.na(private$y[t])){
 				warning(paste("Overwriting previous response for t =", t, "y[t] =", private$y[t]))
 			}
 			if (private$response_type == "continuous"){
-				assertNumeric(y, any.missing = FALSE)
+				if (should_run_asserts()) {
+					assertNumeric(y, any.missing = FALSE)
+				}
 			} else if (private$response_type == "incidence"){
-				assertChoice(y, c(0, 1))
+				if (should_run_asserts()) {
+					assertChoice(y, c(0, 1))
+				}
 			} else if (private$response_type == "proportion"){
-				assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1)
+				if (should_run_asserts()) {
+					assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1)
+				}
 			} else if (private$response_type == "count"){
-				assertCount(y, na.ok = FALSE)
+				if (should_run_asserts()) {
+					assertCount(y, na.ok = FALSE)
+				}
 			} else if (private$response_type == "survival"){
-				assertNumeric(y, any.missing = FALSE, lower = 0)
+				if (should_run_asserts()) {
+					assertNumeric(y, any.missing = FALSE, lower = 0)
+				}
 				if (y == 0){
 					warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
 					y = .Machine$double.eps
 				}
 			} else if (private$response_type == "ordinal"){
 				if (is.factor(y)){
-					assertFactor(y, ordered = TRUE, any.missing = FALSE)
+					if (should_run_asserts()) {
+						assertFactor(y, ordered = TRUE, any.missing = FALSE)
+					}
 					y = as.integer(y)
 				} else {
-					assertCount(y, positive = TRUE, na.ok = FALSE)
+					if (should_run_asserts()) {
+						assertCount(y, positive = TRUE, na.ok = FALSE)
+					}
 				}
 			}
-			if (dead == 0 & private$response_type != "survival"){
-				stop("censored observations are only available for survival response types")
+			if (should_run_asserts()) {
+				if (dead == 0 & private$response_type != "survival"){
+					stop("censored observations are only available for survival response types")
+				}
 			}
 			if (private$fixed_sample | t <= length(private$y)){
 				private$y[t] = y
@@ -134,7 +154,9 @@ Design = R6::R6Class("Design",
 				private$y = c(private$y, y)
 				private$dead = c(private$dead, dead)
 			} else {
-				stop("You cannot add a response for a subject that has not yet arrived when the sample size is not fixed in advance.")
+				if (should_run_asserts()) {
+					stop("You cannot add a response for a subject that has not yet arrived when the sample size is not fixed in advance.")
+				}
 			}
 			private$y_i_t_i[[t]] = private$t
 		},
@@ -148,16 +170,26 @@ Design = R6::R6Class("Design",
 			if (is.null(deads)){
 				deads = rep(1, private$t)
 			}
+			if (should_run_asserts()) {
+				if (private$response_type == "ordinal" && is.factor(ys)){
+					assertFactor(ys, len = private$t, ordered = TRUE, any.missing = FALSE)
+				} else {
+					assertNumeric(ys, len = private$t)
+				}
+				assertNumeric(deads, len = private$t)
+				
+				if (private$response_type != "survival" && any(deads == 0)){
+					stop("censored observations are only available for survival response types")
+				}
+			}
+			
 			if (private$response_type == "ordinal" && is.factor(ys)){
-				assertFactor(ys, len = private$t, ordered = TRUE, any.missing = FALSE)
-			} else {
-				assertNumeric(ys, len = private$t)
+				ys = as.integer(ys)
 			}
-			assertNumeric(deads, len = private$t)
 
-			for (t in 1 : private$t){
-				self$add_one_subject_response(t, ys[t], deads[t])
-			}
+			private$y = as.numeric(ys)
+			private$dead = as.numeric(deads)
+			private$y_i_t_i = as.list(seq_len(private$t))
 		},
 
 		#' @description
@@ -165,7 +197,9 @@ Design = R6::R6Class("Design",
 		#'
 		#' @param w The binary responses.
 		overwrite_all_subject_assignments = function(w) {
-			assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			if (should_run_asserts()) {
+				assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+			}
 			private$w = w
 		},
 
@@ -180,17 +214,21 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Asserts if all subjects arrived.
 		assert_all_subjects_arrived = function(){
-			if (private$fixed_sample & private$t < private$n){
-				stop("This experiment is incomplete as all n subjects haven't arrived yet.")
+			if (should_run_asserts()) {
+				if (private$fixed_sample & private$t < private$n){
+					stop("This experiment is incomplete as all n subjects haven't arrived yet.")
+				}
 			}
 		},
 
 		#' @description
 		#' Asserts if all responses are recorded.
 		assert_all_responses_recorded = function(){
-			self$assert_all_subjects_arrived()
-			if (sum(!is.na(private$y)) != length(private$w)){
-				stop("This experiment is incomplete as all responses aren't recorded yet.")
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+				if (sum(!is.na(private$y)) != length(private$w)){
+					stop("This experiment is incomplete as all responses aren't recorded yet.")
+				}
 			}
 		},
 
@@ -211,16 +249,20 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Checks if the experiment has a 50-50 allocation.
 		assert_even_allocation = function(){
-			if (private$prob_T != 0.5){
-		 		stop("This type of design currently only works with even treatment allocation, i.e. you must set prob_T = 0.5 upon initialization")
-		 	}
+			if (should_run_asserts()) {
+				if (private$prob_T != 0.5){
+					stop("This type of design currently only works with even treatment allocation, i.e. you must set prob_T = 0.5 upon initialization")
+				}
+			}
 		},
 
 		#' @description
 		#' Checks whether this design is a blocking design.
 		assert_blocking_design = function(){
-			if (!private$design_is_supported_blocking(self)){
-				stop("This design requires a blocking design.")
+			if (should_run_asserts()) {
+				if (!private$design_is_supported_blocking(self)){
+					stop("This design requires a blocking design.")
+				}
 			}
 		},
 
@@ -232,11 +274,10 @@ Design = R6::R6Class("Design",
 			self$assert_blocking_design()
 			block_ids = self$get_block_ids()
 			block_sizes = as.integer(table(block_ids))
-			if (length(block_sizes) <= 1L){
-				return(invisible(TRUE))
-			}
-			if (any(block_sizes != block_sizes[1L])) {
-				stop("All blocks must have the same number of subjects.")
+			if (should_run_asserts()) {
+				if (length(block_sizes) > 1L && any(block_sizes != block_sizes[1L])) {
+					stop("All blocks must have the same number of subjects.")
+				}
 			}
 			invisible(TRUE)
 		},
@@ -244,8 +285,10 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Checks if the experiment has a fixed sample size.
 		assert_fixed_sample = function(){
-			if (!private$fixed_sample){
-				stop("This type of design currently only works with fixed sample, i.e., you must specify n upon initialization")
+			if (should_run_asserts()) {
+				if (!private$fixed_sample){
+					stop("This type of design currently only works with fixed sample, i.e., you must specify n upon initialization")
+				}
 			}
 		},
 
@@ -303,6 +346,9 @@ Design = R6::R6Class("Design",
 		#'
 		#' @return 			An integer vector of block identifiers.
 		get_block_ids = function(){
+			if (!is.null(private$m) && length(private$m) == length(private$y)) {
+				return(private$m)
+			}
 			block_ids = private$m
 			strata_cols = private$strata_cols
 			Xraw = private$Xraw
@@ -316,13 +362,19 @@ Design = R6::R6Class("Design",
 					block_ids = match(strata_keys, unique(strata_keys))
 				}
 			}
-			if (is.null(block_ids)) {
-				stop("Block identifiers are undefined for this design.")
+			if (should_run_asserts()) {
+				if (is.null(block_ids)) {
+					stop("Block identifiers are undefined for this design.")
+				}
 			}
 			block_ids = as.integer(block_ids)
-			if (length(block_ids) != length(private$y)) {
-				stop("Block identifiers are improperly sized for this design.")
+			if (should_run_asserts()) {
+				if (length(block_ids) != length(private$y)) {
+					stop("Block identifiers are improperly sized for this design.")
+				}
 			}
+			# Cache it back to private$m for next time if it wasn't already there
+			private$m = block_ids
 			block_ids
 		},
 
@@ -333,7 +385,9 @@ Design = R6::R6Class("Design",
 		#'
 		#' @return A list of data.tables, one for each block.
 		summarize_blocks = function(block_ids = NULL) {
-			self$assert_blocking_design()
+			if (should_run_asserts()) {
+				self$assert_blocking_design()
+			}
 			all_block_ids = self$get_block_ids()
 			if (is.null(block_ids)) {
 				block_ids = sort(unique(all_block_ids))
@@ -429,7 +483,9 @@ Design = R6::R6Class("Design",
 		#' @param verbose 	A flag for verbosity.
 		#' @return 			A new `Design` object with the same data
 		duplicate = function(verbose = FALSE){
-			self$assert_all_responses_recorded() #can't duplicate without the experiment being done
+			if (should_run_asserts()) {
+				self$assert_all_responses_recorded() #can't duplicate without the experiment being done
+			}
 			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
 			d = self$clone()
 			d$.__enclos_env__$private$verbose = verbose
@@ -506,10 +562,12 @@ Design = R6::R6Class("Design",
 			column_has_missingness = columns_have_missingness_cpp(private$Xraw)
 			if (any(column_has_missingness)){
 				if (private$missingness_method == "error"){
-					missing_names = names(private$Xraw)[column_has_missingness]
-					stop("Missing values detected in covariate(s): ",
-						paste(missing_names, collapse = ", "),
-						". Set missingness_method = \"impute\" or \"drop_column\" to handle missing data automatically.")
+					if (should_run_asserts()) {
+						missing_names = names(private$Xraw)[column_has_missingness]
+						stop("Missing values detected in covariate(s): ",
+							paste(missing_names, collapse = ", "),
+							". Set missingness_method = \"impute\" or \"drop_column\" to handle missing data automatically.")
+					}
 				} else if (private$missingness_method == "drop_column"){
 					cols_to_keep = which(!column_has_missingness)
 					private$Ximp = private$Ximp[, ..cols_to_keep]
@@ -569,18 +627,23 @@ Design = R6::R6Class("Design",
 				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
 				private$X = model.matrix(~ ., data = Ximp_for_model)[, -1, drop = FALSE]
 				# Ensure it is a numeric matrix (not character)
-				if (is.character(private$X)){
-					stop("model.matrix returned a character matrix - this should not happen.")
+				if (should_run_asserts()) {
+					if (is.character(private$X)){
+						stop("model.matrix returned a character matrix - this should not happen.")
+					}
 				}
 				private$X = drop_linearly_dependent_cols(private$X)$M
 
-				if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
-					stop("improper sizing for the internal X representation")
+				if (should_run_asserts()) {
+					if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
+						stop("improper sizing for the internal X representation")
+					}
 				}
 			} else {
 				#blank covariate matrix
 				private$X = matrix(NA, nrow = nrow(private$Xraw), ncol = 0)
 			}
+
 		},
 
 		compute_all_subject_data = function(){

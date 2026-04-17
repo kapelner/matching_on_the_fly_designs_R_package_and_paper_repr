@@ -32,9 +32,13 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 		#' @param	des_obj		A completed KK matching-on-the-fly design object.
 		#' @param	verbose			Whether to print progress messages.
 		initialize = function(des_obj,  verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "ordinal")
-			if (!is(des_obj, "DesignSeqOneByOneKK14")){
-				stop(class(self)[1], " requires a KK matching-on-the-fly design with matched pairs.")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "ordinal")
+			}
+			if (should_run_asserts()) {
+				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+					stop(class(self)[1], " requires a KK matching-on-the-fly design with matched pairs.")
+				}
 			}
 			super$initialize(des_obj, verbose)
 		},
@@ -59,8 +63,10 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 		#' Computes the p-value for the sign test.
 		#' @param	delta					The null difference (must be 0 for sign test).
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
-			if (delta != 0) stop("Sign test only supports testing against delta = 0.")
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+				if (delta != 0) stop("Sign test only supports testing against delta = 0.")
+			}
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}

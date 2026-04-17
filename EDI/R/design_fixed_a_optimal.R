@@ -29,8 +29,10 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 				
 				verbose = FALSE
 			) {
-			if (prob_T != 0.5){
-				stop("A-optimal exchange search currently only supports even treatment allocation (prob_T = 0.5)")
+			if (should_run_asserts()) {
+				if (prob_T != 0.5){
+					stop("A-optimal exchange search currently only supports even treatment allocation (prob_T = 0.5)")
+				}
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
 			private$uses_covariates = TRUE
@@ -44,7 +46,9 @@ FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 		#'
 		#' @return A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			self$assert_all_subjects_arrived()
+			if (should_run_asserts()) {
+				self$assert_all_subjects_arrived()
+			}
 			n = self$get_n()
 			if (is.null(private$X) || ncol(private$X) == 0){
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))

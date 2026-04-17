@@ -14,11 +14,15 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidAzriel} object.
 		initialize = function(des_obj, verbose = FALSE){
-			assertResponseType(des_obj$get_response_type(), "incidence")
-			des_obj$assert_even_allocation()
-			des_obj$assert_equal_block_sizes()
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "incidence")
+				des_obj$assert_even_allocation()
+				des_obj$assert_equal_block_sizes()
+			}
 			super$initialize(des_obj, verbose)
-			assertNoCensoring(private$any_censoring)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 			private$cached_values$is_z = TRUE
 		}
 	),

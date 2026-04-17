@@ -45,13 +45,47 @@ InferenceSurvivalUniWeibullRegr = R6::R6Class("InferenceSurvivalUniWeibullRegr",
 		#' @param des_obj The design object.
 		#' @param verbose If TRUE, print additional information.
 		initialize = function(des_obj, verbose = FALSE) {
-			assertResponseType(des_obj$get_response_type(), "survival")
+			if (should_run_asserts()) {
+				assertResponseType(des_obj$get_response_type(), "survival")
+			}
 			super$initialize(des_obj, verbose)
 		}
 
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Ensure we have the best design from the original data
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			# Fallback if initial fit failed
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			}
+
+			# Use the same design matrix structure as the original fit
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+			
+			Xmm = if (length(Xmm_cols) == 0L){
+				# Univariate case
+				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			} else {
+				# Multivariate case
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				cbind(treatment = private$w, X_cov)
+			}
+
+			mod = tryCatch(private$weibull_generate_mod_from_X(Xmm, estimate_only = estimate_only), error = function(e) NULL)
+			if (is.null(mod) || !("treatment" %in% names(mod$coefficients))){
+				return(NA_real_)
+			}
+			as.numeric(mod$coefficients["treatment"])
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			# Univariate: treatment only, no covariates (mirrors InferenceSurvivalUniCoxPHRegr)
 			full_X_matrix = matrix(private$w, ncol = 1)
@@ -85,8 +119,10 @@ InferenceSurvivalUniWeibullRegr = R6::R6Class("InferenceSurvivalUniWeibullRegr",
 			# fast_weibull_regression already names coefficients correctly (only retained columns after
 			# collinearity dropping), so no name re-assignment is needed here.
 
-			if (is.null(weibull_regr_mod$coefficients) || (!estimate_only && (is.null(weibull_regr_mod$vcov) || !is.matrix(weibull_regr_mod$vcov)))){
-				stop("fast_weibull_regression failed to return valid coefficients or vcov.")
+			if (should_run_asserts()) {
+				if (is.null(weibull_regr_mod$coefficients) || (!estimate_only && (is.null(weibull_regr_mod$vcov) || !is.matrix(weibull_regr_mod$vcov)))){
+					stop("fast_weibull_regression failed to return valid coefficients or vcov.")
+				}
 			}
 
 			full_coefficients = c(weibull_regr_mod$coefficients, "log(scale)" = weibull_regr_mod$log_sigma)

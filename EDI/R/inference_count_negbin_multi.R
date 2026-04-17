@@ -40,18 +40,32 @@ InferenceCountMultiNegBinRegr = R6::R6Class("InferenceCountMultiNegBinRegr",
 
 	private = list(
 		generate_mod = function(estimate_only = FALSE){
-			if (estimate_only) {
-				res = fast_negbin_regression(
-					Xmm = private$create_design_matrix(),
-					y = private$y
-				)
-				list(b = res$b, ssq_b_2 = NA_real_)
-			} else {
-				fast_negbin_regression_with_var(
-					Xmm = private$create_design_matrix(),
-					y = private$y
-				)
+			X_full = private$create_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit, j_treat){
+					if (estimate_only) {
+						res = fast_negbin_regression(Xmm = X_fit, y = private$y)
+						list(b = res$b, ssq_b_2 = NA_real_, j_treat = j_treat)
+					} else {
+						res = fast_negbin_regression_with_var(Xmm = X_fit, y = private$y)
+						res$j_treat = j_treat
+						res
+					}
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = mod$j_treat
+					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+				}
+			)
+
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
 			}
+			attempt$fit
 		}
 	)
 )

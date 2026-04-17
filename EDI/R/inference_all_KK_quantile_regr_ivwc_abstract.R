@@ -27,9 +27,13 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @param verbose                 A flag indicating whether messages should be displayed.
 		#'   Default is \code{FALSE}.
 		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
-			assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-			if (!check_package_installed("quantreg")) {
-				stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
+			if (should_run_asserts()) {
+				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
+			}
+			if (should_run_asserts()) {
+				if (!check_package_installed("quantreg")) {
+					stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
+				}
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
@@ -61,7 +65,9 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#'
 		#' @return 	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}
@@ -75,7 +81,9 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#'
 		#' @return 	The approximate frequentist p-value
 		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			assertNumeric(delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}
@@ -138,8 +146,10 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		},
 
 		set_colnames_safely = function(X, names_vec){
-			if (length(names_vec) != ncol(X)) {
-				names_vec = paste0("x", seq_len(ncol(X)))
+			n = ncol(X)
+			if (is.null(n) || n == 0L) return(X)
+			if (length(names_vec) != n) {
+				names_vec = paste0("x", seq_len(n))
 			}
 			colnames(X) = names_vec
 			X
@@ -295,9 +305,9 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		# IQR-based SE for a sample quantile: CLT approximation SE = IQR/(2*qnorm(0.75)) / sqrt(n)
 		iqr_se = function(x, n){
 			if (n < 2) return(NA_real_)
-			iqr = IQR(x)
+			iqr = stats::IQR(x)
 			if (!is.finite(iqr) || iqr <= 0) return(NA_real_)
-			iqr / (2 * qnorm(0.75)) / sqrt(n)
+			iqr / (2 * stats::qnorm(0.75)) / sqrt(n)
 		},
 
 		# Helper: extract SE from rq fit by coefficient name, trying "nid" then "iid".

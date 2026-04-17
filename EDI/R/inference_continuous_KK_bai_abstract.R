@@ -25,12 +25,16 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#'
 	initialize = function(des_obj, verbose = TRUE, convex_flag = FALSE){
-		if (!check_package_installed("nbpMatching")) {
-		stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
+		if (should_run_asserts()) {
+			if (!check_package_installed("nbpMatching")) {
+			stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
+			}
 		}
 		super$initialize(des_obj, verbose)
 		private$convex_flag = convex_flag
-		assertNoCensoring(private$any_censoring)
+		if (should_run_asserts()) {
+			assertNoCensoring(private$any_censoring)
+		}
 	},
 
 	#'
@@ -119,7 +123,9 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' }
 	#'
 	compute_asymp_confidence_interval = function(alpha = 0.05){
-		assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		if (should_run_asserts()) {
+			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+		}
 		if (is.null(private$cached_values$beta_hat_T)){
 		self$compute_treatment_estimate()
 		}
@@ -154,7 +160,9 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' }
 	#'
 	compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-		assertNumeric(delta)
+		if (should_run_asserts()) {
+			assertNumeric(delta)
+		}
 		if (is.null(private$cached_values$beta_hat_T)){
 		self$compute_treatment_estimate()
 		}
