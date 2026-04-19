@@ -1,15 +1,15 @@
-#' Cumulative Cauchit Inference for Ordinal Responses
+#' Cumulative Cloglog Inference for Ordinal Responses
 #'
-#' Cumulative Cauchit model inference for ordinal responses using the treatment
+#' Cumulative cloglog model inference for ordinal responses using the treatment
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
 #' @export
-InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
+InferenceOrdinalCloglogRegr = R6::R6Class("InferenceOrdinalCloglogRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 		#' @description
-		#' Initialize a cumulative-cauchit inference object.
+		#' Initialize a cumulative-cloglog inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
 		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
@@ -37,13 +37,13 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 	private = list(
 		include_covariates = NULL,
 
-		cauchit_polr_fallback = function(){
+		cloglog_polr_fallback = function(){
 			if (!check_package_installed("MASS")) return(NULL)
 			y_fac = factor(private$y, levels = sort(unique(private$y)))
 			if (length(levels(y_fac)) < 2) return(NULL)
 			dat = data.frame(y = y_fac, w = private$w)
 			mod = tryCatch(
-				MASS::polr(y ~ w, data = dat, method = "cauchit", Hess = TRUE),
+				MASS::polr(y ~ w, data = dat, method = "cloglog", Hess = TRUE),
 				error = function(e) NULL
 			)
 			if (is.null(mod) || !"w" %in% names(stats::coef(mod))) return(NULL)
@@ -60,13 +60,13 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 					X_full = X_full,
 					required_cols = 1L,
 					fit_fun = function(X_fit){
-						res = fast_ordinal_cauchit_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
+						res = fast_ordinal_cloglog_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
 						b1 = tryCatch(res$b[1], error = function(e) NA_real_)
 						if (is.finite(b1)){
 							if (estimate_only) return(list(b = c(NA, res$b), ssq_b_2 = NA_real_, converged = res$converged))
 							if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, res$b), ssq_b_2 = res$ssq_b_2, converged = res$converged))
 						}
-						fallback = private$cauchit_polr_fallback()
+						fallback = private$cloglog_polr_fallback()
 						if (!is.null(fallback)){
 							if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_, converged = TRUE))
 							return(c(fallback, list(converged = TRUE)))
@@ -85,13 +85,13 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 				Xmm = matrix(private$w, ncol = 1)
 				colnames(Xmm) = "treatment"
 
-				res = fast_ordinal_cauchit_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
+				res = fast_ordinal_cloglog_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
 				b1 = tryCatch(res$b[1], error = function(e) NA_real_)
 				if (is.finite(b1)){
 					if (estimate_only) return(list(b = c(NA, b1), ssq_b_2 = NA_real_))
 					if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, b1), ssq_b_2 = res$ssq_b_2))
 				}
-				fallback = private$cauchit_polr_fallback()
+				fallback = private$cloglog_polr_fallback()
 				if (!is.null(fallback)){
 					if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
 					return(fallback)

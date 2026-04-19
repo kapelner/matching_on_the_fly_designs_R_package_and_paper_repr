@@ -636,9 +636,48 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
 #'   dead <- c(1, 1, 0, 1, 0, 1)
 #'   fast_coxph_regression(Xmm, y, dead)
 #' }
-fast_coxph_regression = function(Xmm, y, dead){
+#' Cox PH Regression using survival package or Rcpp (fast)
+#'
+#' This function performs Cox proportional hazards regression using either
+#' \pkg{survival::coxph} or an optimized Rcpp implementation.
+#'
+#' @param	Xmm A numeric matrix of predictor variables.
+#' @param	y Survival times.
+#' @param	dead Event indicator (1 = event, 0 = censored).
+#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
+#'   implementation. If \code{FALSE}, use \pkg{glmnet}.
+#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
+#'   matrix calculation for speed.
+#' @return	A list containing the following component:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated regression coefficients.}
+#' \item{vcov}{The variance-covariance matrix of the estimated coefficients (only if \code{estimate_only = FALSE}).}
+#' }
+#' @export
+fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = FALSE){
+	if (use_rcpp) {
+		Xmm = as.matrix(Xmm)
+		res = tryCatch(
+			fast_coxph_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only),
+			error = function(e) stop("Cox PH regression (Rcpp) failed to converge: ", e$message)
+		)
+		if (is.null(res) || !isTRUE(res$converged)) {
+			stop("Cox PH regression (Rcpp) failed to converge.")
+		}
+		
+		b = as.numeric(res$coefficients)
+		names(b) = colnames(Xmm)
+		
+		return(list(
+			b = b,
+			coefficients = b,
+			vcov = if (estimate_only) NULL else res$vcov,
+			neg_log_lik = as.numeric(res$neg_ll)
+		))
+	}
+
 	if (!check_package_installed("glmnet")) {
-		stop("Package 'glmnet' is required for fast_coxph_regression. Please install it.")
+		stop("Package 'glmnet' is required for fast_coxph_regression when use_rcpp = FALSE. Please install it.")
 	}
 	mod = glmnet::glmnet(Xmm, survival::Surv(y, dead), family = "cox", lambda = 0)
 	list(b = stats::coef(mod))

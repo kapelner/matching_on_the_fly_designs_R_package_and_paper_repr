@@ -196,6 +196,47 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_clogit_plus_glmm_score_cpp(
+	const Eigen::MatrixXd& X_disc,
+	const Eigen::VectorXd& y_disc,
+	const Eigen::MatrixXd& X_conc,
+	const Eigen::VectorXd& y_conc,
+	const Eigen::VectorXi& group_conc,
+	const Eigen::VectorXd& params,
+	bool has_discordant,
+	bool has_concordant,
+	double max_abs_log_sigma = 8.0
+) {
+	ClogitPlusGLMMObjective obj(
+		X_disc, y_disc, X_conc, y_conc, group_conc,
+		has_discordant, has_concordant, 20, max_abs_log_sigma
+	);
+	return -obj.finite_diff_grad(params);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_clogit_plus_glmm_hessian_cpp(
+	const Eigen::MatrixXd& X_disc,
+	const Eigen::VectorXd& y_disc,
+	const Eigen::MatrixXd& X_conc,
+	const Eigen::VectorXd& y_conc,
+	const Eigen::VectorXi& group_conc,
+	const Eigen::VectorXd& params,
+	bool has_discordant,
+	bool has_concordant,
+	double max_abs_log_sigma = 8.0
+) {
+	ClogitPlusGLMMObjective obj(
+		X_disc, y_disc, X_conc, y_conc, group_conc,
+		has_discordant, has_concordant, 20, max_abs_log_sigma
+	);
+	Eigen::MatrixXd info = Eigen::MatrixXd::Zero(params.size(), params.size());
+	if (has_discordant) info += obj.finite_diff_hessian_component(params, 1);
+	if (has_concordant) info += obj.finite_diff_hessian_component(params, 2);
+	return -((info + info.transpose()) / 2.0);
+}
+
+// [[Rcpp::export]]
 List fast_clogit_plus_glmm_cpp(
 	const Eigen::MatrixXd& X_disc,
 	const Eigen::VectorXd& y_disc,

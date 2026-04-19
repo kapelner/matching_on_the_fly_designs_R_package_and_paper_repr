@@ -191,12 +191,28 @@ compute_bai_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, halves_idx, c
     .Call(`_EDI_compute_bai_distr_parallel_cpp`, y, w_mat, m_mat, delta, halves_idx, convex_flag, num_cores)
 }
 
+get_beta_regression_score_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_beta_regression_score_cpp`, X, y, params)
+}
+
+get_beta_regression_hessian_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_beta_regression_hessian_cpp`, X, y, params)
+}
+
 fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE) {
     .Call(`_EDI_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs)
 }
 
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE) {
     .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs)
+}
+
+get_clogit_plus_glmm_score_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_clogit_plus_glmm_score_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma)
+}
+
+get_clogit_plus_glmm_hessian_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_clogit_plus_glmm_hessian_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma)
 }
 
 fast_clogit_plus_glmm_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, start, has_discordant, has_concordant, estimate_only = FALSE, max_abs_log_sigma = 8.0, maxit = 200L, eps_g = 1e-5) {
@@ -209,6 +225,10 @@ fast_continuation_ratio_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-
 
 fast_continuation_ratio_regression_with_var_cpp <- function(X, y) {
     .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y)
+}
+
+fast_coxph_regression_cpp <- function(y, dead, X, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9) {
+    .Call(`_EDI_fast_coxph_regression_cpp`, y, dead, X, start_beta, estimate_only, maxit, tol)
 }
 
 fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8) {
@@ -258,6 +278,14 @@ fast_identity_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit
     .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol)
 }
 
+get_logistic_regression_score_cpp <- function(X, y, beta) {
+    .Call(`_EDI_get_logistic_regression_score_cpp`, X, y, beta)
+}
+
+get_logistic_regression_hessian_cpp <- function(X, beta) {
+    .Call(`_EDI_get_logistic_regression_hessian_cpp`, X, beta)
+}
+
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_logistic_regression_cpp`, X, y, maxit, tol)
 }
@@ -276,6 +304,14 @@ fast_logrank_stats_cpp <- function(time, dead, w) {
 
 matrix_rank_cpp <- function(A, tol = 1e-7) {
     .Call(`_EDI_matrix_rank_cpp`, A, tol)
+}
+
+get_negbin_regression_score_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_negbin_regression_score_cpp`, X, y, params)
+}
+
+get_negbin_regression_hessian_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_negbin_regression_hessian_cpp`, X, y, params)
 }
 
 fast_neg_bin_with_var_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5) {
@@ -318,6 +354,14 @@ fast_ordinal_probit_regression_with_var_cpp <- function(X, y) {
     .Call(`_EDI_fast_ordinal_probit_regression_with_var_cpp`, X, y)
 }
 
+get_ordinal_regression_score_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_ordinal_regression_score_cpp`, X, y, params)
+}
+
+get_ordinal_regression_hessian_cpp <- function(X, y, params) {
+    .Call(`_EDI_get_ordinal_regression_hessian_cpp`, X, y, params)
+}
+
 fast_ordinal_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6) {
     .Call(`_EDI_fast_ordinal_regression_cpp`, X, y, maxit, tol)
 }
@@ -336,6 +380,14 @@ expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
 
 expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
+}
+
+get_poisson_regression_score_cpp <- function(X, y, beta) {
+    .Call(`_EDI_get_poisson_regression_score_cpp`, X, y, beta)
+}
+
+get_poisson_regression_hessian_cpp <- function(X, beta) {
+    .Call(`_EDI_get_poisson_regression_hessian_cpp`, X, beta)
 }
 
 fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8) {
@@ -415,6 +467,22 @@ compute_stereotype_logit_distr_parallel_cpp <- function(y, X_covars, w_mat, delt
     .Call(`_EDI_compute_stereotype_logit_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
 }
 
+get_clayton_weibull_aft_score_cpp <- function(y, dead, X, pair_idx, singleton_rows, params) {
+    .Call(`_EDI_get_clayton_weibull_aft_score_cpp`, y, dead, X, pair_idx, singleton_rows, params)
+}
+
+get_clayton_weibull_aft_hessian_cpp <- function(y, dead, X, pair_idx, singleton_rows, params) {
+    .Call(`_EDI_get_clayton_weibull_aft_hessian_cpp`, y, dead, X, pair_idx, singleton_rows, params)
+}
+
+get_dep_cens_transform_score_cpp <- function(y, dead, X, params) {
+    .Call(`_EDI_get_dep_cens_transform_score_cpp`, y, dead, X, params)
+}
+
+get_dep_cens_transform_hessian_cpp <- function(y, dead, X, params) {
+    .Call(`_EDI_get_dep_cens_transform_hessian_cpp`, y, dead, X, params)
+}
+
 fast_clayton_weibull_aft_optim_cpp <- function(y, dead, X, pair_idx, singleton_rows, start_params, maxit = 2000L, reltol = 1e-9) {
     .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, y, dead, X, pair_idx, singleton_rows, start_params, maxit, reltol)
 }
@@ -473,6 +541,14 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+get_weibull_regression_score_cpp <- function(y, dead, X, params) {
+    .Call(`_EDI_get_weibull_regression_score_cpp`, y, dead, X, params)
+}
+
+get_weibull_regression_hessian_cpp <- function(y, dead, X, params) {
+    .Call(`_EDI_get_weibull_regression_hessian_cpp`, y, dead, X, params)
 }
 
 fast_weibull_regression_cpp <- function(y, dead, X, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-6) {

@@ -121,13 +121,30 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
     res.XtWX = fun.hessian(params); // This is actually the Hessian H
     res.converged = (niter < 1000);
     return res;
-}
+    }
 
-} // namespace
+    } // namespace
 
-// [[Rcpp::export]]
-List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
-								const NumericVector& y,
+    // [[Rcpp::export]]
+    Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& params) {
+    BetaRegression fun(y, X);
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad; // Return the actual score (gradient of log-likelihood)
+    }
+
+    // [[Rcpp::export]]
+    Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& params) {
+    BetaRegression fun(y, X);
+    return -fun.hessian(params); // Return the actual Hessian of log-likelihood (Fisher Information is -Hessian)
+    }
+
+    // [[Rcpp::export]]
+    List fast_beta_regression_cpp(const Eigen::MatrixXd& X,								const NumericVector& y,
 								Nullable<NumericVector> start_beta = R_NilValue,
 								double start_phi = 10.0,
 								bool compute_std_errs = false) {

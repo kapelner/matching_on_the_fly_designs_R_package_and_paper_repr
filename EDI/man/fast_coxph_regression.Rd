@@ -4,19 +4,30 @@
 \alias{fast_coxph_regression}
 \title{Fast Cox Proportional Hazards Regression (R Wrapper)}
 \usage{
-fast_coxph_regression(Xmm, y, dead)
+fast_coxph_regression(Xmm, y, dead, use_rcpp = TRUE, estimate_only = FALSE)
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept term
-is handled implicitly by the Cox model and should not be included in \code{Xmm}.}
+\item{Xmm}{A numeric matrix of predictor variables.}
 
-\item{y}{A numeric vector representing the observed time (event time or censoring time).}
+\item{y}{Survival times.}
 
-\item{dead}{A numeric vector (0 or 1) indicating event status (1 for event, 0 for censored).}
+\item{dead}{Event indicator (1 = event, 0 = censored).}
+
+\item{use_rcpp}{Logical. If \code{TRUE} (default), use the optimized Rcpp
+implementation. If \code{FALSE}, use \pkg{glmnet}.}
+
+\item{estimate_only}{Logical. If \code{TRUE}, skip variance-covariance
+matrix calculation for speed.}
 }
 \value{
 A list containing the following component:
 \item{b}{A numeric vector of the estimated Cox regression coefficients.}
+
+A list containing the following component:
+\describe{
+\item{b}{A numeric vector of the estimated regression coefficients.}
+\item{vcov}{The variance-covariance matrix of the estimated coefficients (only if \code{estimate_only = FALSE}).}
+}
 }
 \description{
 This function provides a fast implementation of Cox Proportional Hazards regression
@@ -41,4 +52,9 @@ if (check_package_installed("glmnet")) {
   dead <- c(1, 1, 0, 1, 0, 1)
   fast_coxph_regression(Xmm, y, dead)
 }
+Cox PH Regression using survival package or Rcpp (fast)
+
+This function performs Cox proportional hazards regression using either
+\pkg{survival::coxph} or an optimized Rcpp implementation.
+
 }

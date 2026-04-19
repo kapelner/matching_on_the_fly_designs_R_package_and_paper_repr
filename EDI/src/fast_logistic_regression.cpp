@@ -60,6 +60,25 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
+    return X.transpose() * (y - mu);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
+    int n = X.rows();
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd w(n);
+    for(int i=0; i<n; i++) {
+        double mu_i = 1.0 / (1.0 + std::exp(-eta[i]));
+        w[i] = mu_i * (1.0 - mu_i);
+    }
+    return - (X.transpose() * w.asDiagonal() * X);
+}
+
+// [[Rcpp::export]]
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
     ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), maxit, tol);
     return List::create(

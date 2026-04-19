@@ -108,6 +108,26 @@ public:
     }
 };
 
+// [[Rcpp::export]]
+Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
+    OrdinalRegression model(X, y);
+    int n_params = params.size();
+    Eigen::VectorXd grad(n_params);
+    double h = 1e-4;
+    for (int i = 0; i < n_params; ++i) {
+        Eigen::VectorXd p_plus = params; p_plus[i] += h;
+        Eigen::VectorXd p_minus = params; p_minus[i] -= h;
+        grad[i] = (model.neg_log_likelihood(p_plus) - model.neg_log_likelihood(p_minus)) / (2.0 * h);
+    }
+    return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
+    OrdinalRegression model(X, y);
+    return -model.hessian(params);
+}
+
 // Simple solver using Newton-Raphson as we have a small number of parameters (usually)
 // [[Rcpp::export]]
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6) {

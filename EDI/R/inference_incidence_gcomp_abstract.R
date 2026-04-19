@@ -29,18 +29,26 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#'   \code{[prob_clip_eps, 1 - prob_clip_eps]} so that the IWLS weight
 		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
 		#'   Default \code{.Machine$double.eps} (essentially no clamping).
-		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
+		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
+		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
+		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
+		#'   contains covariates.
+		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
-			}
-			if (should_run_asserts()) {
 				assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
+				assertFlag(include_covariates, null.ok = TRUE)
 			}
 			super$initialize(des_obj, verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$prob_clip_eps = prob_clip_eps
+			
+			if (is.null(include_covariates)) {
+				include_covariates = des_obj$has_covariates()
+			}
+			private$include_covariates = include_covariates
 		},
 
 		#' @description
@@ -86,6 +94,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 	),
 
 	private = list(
+		include_covariates = NULL,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){

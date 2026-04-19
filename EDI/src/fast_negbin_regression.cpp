@@ -85,13 +85,30 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X, const Eigen::VectorX
     res.converged = (niter < maxit);
     res.sigma2_hat = -neg_ll; // using sigma2_hat to store logLik temporarily
     return res;
-}
+    }
 
-} // namespace
+    } // namespace
 
-// [[Rcpp::export]]
-List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
-                                Eigen::VectorXi y,
+    // [[Rcpp::export]]
+    Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
+    const Eigen::VectorXi& y,
+    const Eigen::VectorXd& params) {
+    NBLogLik fun(X, y);
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
+    }
+
+    // [[Rcpp::export]]
+    Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
+    const Eigen::VectorXi& y,
+    const Eigen::VectorXd& params) {
+    NBLogLik fun(X, y);
+    return -fun.hessian(params);
+    }
+
+    // [[Rcpp::export]]
+    List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,                                Eigen::VectorXi y,
                                 int maxit = 1000,
                                 double eps_f = 1e-8,
                                 double eps_g = 1e-5) {

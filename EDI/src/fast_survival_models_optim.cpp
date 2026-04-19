@@ -331,6 +331,58 @@ public:
 // -----------------------------------------------------------------------------
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_clayton_weibull_aft_score_cpp(
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Eigen::MatrixXd& X,
+    const Eigen::MatrixXi& pair_idx,
+    const Eigen::VectorXi& singleton_rows,
+    const Eigen::VectorXd& params
+) {
+    ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_clayton_weibull_aft_hessian_cpp(
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Eigen::MatrixXd& X,
+    const Eigen::MatrixXi& pair_idx,
+    const Eigen::VectorXi& singleton_rows,
+    const Eigen::VectorXd& params
+) {
+    ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
+    return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_dep_cens_transform_score_cpp(
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& params
+) {
+    DepCensTransformLikelihood fun(y, dead, X);
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_dep_cens_transform_hessian_cpp(
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& params
+) {
+    DepCensTransformLikelihood fun(y, dead, X);
+    return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
 List fast_clayton_weibull_aft_optim_cpp(
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,

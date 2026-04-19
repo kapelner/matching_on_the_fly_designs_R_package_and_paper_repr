@@ -13,11 +13,16 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' @param des_obj A completed \code{Design} object.
+		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
+		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
+		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
+		#'   contains covariates.
+		#' @param verbose A flag indicating whether messages should be displayed.
+		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
+				assertFlag(include_covariates, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
@@ -40,6 +45,11 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
+			
+			if (is.null(include_covariates)) {
+				include_covariates = des_obj$has_covariates()
+			}
+			private$include_covariates = include_covariates
 		},
 
 		#' @description
@@ -89,6 +99,8 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 	),
 
 	private = list(
+		m = NULL,
+		include_covariates = NULL,
 		max_abs_reasonable_coef = 1e4,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
@@ -109,10 +121,14 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		# Default (multivariate): intercept dropped, treatment column named "w".
 		# Univariate subclasses override this to return data.frame(w = private$w).
 		gee_predictors_df = function(){
-			full_X = private$create_design_matrix()
-			X_model = full_X[, -1, drop = FALSE]
-			colnames(X_model)[1] = "w"
-			as.data.frame(X_model)
+			if (private$include_covariates) {
+				full_X = private$create_design_matrix()
+				X_model = full_X[, -1, drop = FALSE]
+				colnames(X_model)[1] = "w"
+				as.data.frame(X_model)
+			} else {
+				data.frame(w = private$w)
+			}
 		},
 
 		gee_predictors_df_candidates = function(){
@@ -124,11 +140,11 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			X_full = as.matrix(predictors_df)
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
-				required_cols = 1L,
+				required_cols = match("w", colnames(X_full)),
 				fit_fun = function(X_fit) X_fit,
 				fit_ok = function(mod, X_fit, keep) TRUE
 			)
-			candidates = list(as.data.frame(attempt$X, check.names = FALSE))
+			candidates = list(as.data.frame(attempt$X_fit, check.names = FALSE))
 			keys = paste(colnames(candidates[[1L]]), collapse = "|")
 
 			other_idx = setdiff(seq_len(ncol(X_full)), 1L)
@@ -139,13 +155,13 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 					X_try = cbind(w = X_full[, 1], X_cov)
 					attempt_try = private$fit_with_hardened_qr_column_dropping(
 						X_full = X_try,
-						required_cols = 1L,
+						required_cols = match("w", colnames(X_try)),
 						fit_fun = function(X_fit) X_fit,
 						fit_ok = function(mod, X_fit, keep) TRUE
 					)
-					key = paste(colnames(attempt_try$X), collapse = "|")
+					key = paste(colnames(attempt_try$X_fit), collapse = "|")
 					if (!(key %in% keys)){
-						candidates[[length(candidates) + 1L]] = as.data.frame(attempt_try$X, check.names = FALSE)
+						candidates[[length(candidates) + 1L]] = as.data.frame(attempt_try$X_fit, check.names = FALSE)
 						keys = c(keys, key)
 					}
 				}

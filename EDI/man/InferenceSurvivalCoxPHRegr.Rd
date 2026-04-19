@@ -55,6 +55,7 @@ Initialize a Cox PH inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalCoxPHRegr$new(
   des_obj,
   include_covariates = NULL,
+  use_rcpp = TRUE,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -68,6 +69,9 @@ Initialize a Cox PH inference object.
 are included as predictors. If \code{FALSE}, only the treatment indicator
 is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
 contains covariates.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use the optimized Rcpp
+implementation. If \code{FALSE}, use \pkg{survival::coxph}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

@@ -55,15 +55,20 @@ rejected and treated as non-estimable.
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGEE$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGEE$new(des_obj, include_covariates = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+\item{\code{des_obj}}{A completed \code{Design} object.}
 
-\item{\code{verbose}}{Whether to print progress messages.}
+\item{\code{include_covariates}}{Logical. If \code{TRUE}, all covariates in the design
+are included as predictors. If \code{FALSE}, only the treatment indicator
+is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
+contains covariates.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
 }
 \if{html}{\out{</div>}}
 }

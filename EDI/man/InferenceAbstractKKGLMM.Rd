@@ -19,8 +19,6 @@ Abstract class for GLMM-based Inference
 \item \href{#method-InferenceAbstractKKGLMM-compute_treatment_estimate}{\code{InferenceAbstractKKGLMM$compute_treatment_estimate()}}
 \item \href{#method-InferenceAbstractKKGLMM-compute_asymp_confidence_interval}{\code{InferenceAbstractKKGLMM$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKGLMM-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAbstractKKGLMM$compute_asymp_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceAbstractKKGLMM-compute_confidence_interval_rand}{\code{InferenceAbstractKKGLMM$compute_confidence_interval_rand()}}
-\item \href{#method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand}{\code{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand()}}
 \item \href{#method-InferenceAbstractKKGLMM-clone}{\code{InferenceAbstractKKGLMM$clone()}}
 }
 }
@@ -35,6 +33,8 @@ Abstract class for GLMM-based Inference
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
@@ -49,13 +49,22 @@ Abstract class for GLMM-based Inference
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$new(
+  des_obj,
+  include_covariates = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{include_covariates}}{Logical. If \code{TRUE}, all covariates in the design
+are included as fixed-effect predictors. If \code{FALSE}, only the treatment
+indicator is used. If \code{NULL} (default), it is set to \code{TRUE} if the
+design contains covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }
@@ -113,47 +122,6 @@ Computes the asymptotic p-value.
 \describe{
 \item{\code{delta}}{The null difference to test against. For
 any treatment effect at all this is set to zero (the default).}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
-Overridden to provide a warning about slowness.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_confidence_interval_rand(r = 501, ...)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization iterations.}
-
-\item{\code{...}}{Additional arguments passed to super.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKGLMM-compute_two_sided_pval_for_treatment_effect_rand}{}}}
-\subsection{Method \code{compute_two_sided_pval_for_treatment_effect_rand()}}{
-Overridden to provide a warning about slowness.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKGLMM$compute_two_sided_pval_for_treatment_effect_rand(
-  r = 501,
-  ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization iterations.}
-
-\item{\code{...}}{Additional arguments passed to super.}
 }
 \if{html}{\out{</div>}}
 }

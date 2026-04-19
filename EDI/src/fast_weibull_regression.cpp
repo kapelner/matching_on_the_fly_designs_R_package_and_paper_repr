@@ -87,6 +87,26 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::VectorXd& y,
+                                                 const Eigen::VectorXd& dead,
+                                                 const Eigen::MatrixXd& X,
+                                                 const Eigen::VectorXd& params) {
+    WeibullAFTLikelihood fun(y, dead, X);
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
+                                                   const Eigen::VectorXd& dead,
+                                                   const Eigen::MatrixXd& X,
+                                                   const Eigen::VectorXd& params) {
+    WeibullAFTLikelihood fun(y, dead, X);
+    return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
 List fast_weibull_regression_cpp(const Eigen::VectorXd& y, 
                                  const Eigen::VectorXd& dead, 
                                  const Eigen::MatrixXd& X, 

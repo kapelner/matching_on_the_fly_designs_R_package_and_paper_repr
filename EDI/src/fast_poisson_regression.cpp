@@ -85,6 +85,20 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 	return res;
 }
 
+// [[Rcpp::export]]
+Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd mu = eta.array().exp().matrix();
+    return X.transpose() * (y - mu);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd mu = eta.array().exp().matrix();
+    return - (X.transpose() * mu.asDiagonal() * X);
+}
+
 }
 
 // [[Rcpp::export]]
