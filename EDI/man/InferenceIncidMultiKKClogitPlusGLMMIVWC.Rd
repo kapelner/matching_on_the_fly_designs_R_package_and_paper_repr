@@ -3,20 +3,15 @@
 %   R/inference_incidence_KK_clogit_plus_glmm_ivwc_multi.R
 \name{InferenceIncidMultiKKClogitPlusGLMMIVWC}
 \alias{InferenceIncidMultiKKClogitPlusGLMMIVWC}
-\title{Multivariate Conditional Logistic Regression Inference for KK Designs with Binary Response}
+\title{Multivariate Conditional Logistic Plus GLMM IVWC Inference for KK Designs}
 \description{
-Fits a compound estimator for KK matching-on-the-fly designs with binary (incidence)
-responses using the treatment indicator and all recorded covariates. For matched
-pairs, a conditional logistic regression model is used (via the internal
-\code{clogit_helper}, which processes discordant pairs and fits logistic regression
-on within-pair signed differences). For reservoir subjects, a standard logistic
-regression is used. The two estimates are combined via a variance-weighted linear
-combination, analogous to \code{InferenceContinMultOLSKK}. If clogit fails
-(e.g. no discordant pairs), the estimator falls back to logistic regression on the
-reservoir only.
+Fits one likelihood with a conditional-logistic contribution from discordant
+matched pairs and a random-intercept logistic GLMM contribution from concordant
+matched pairs. The treatment effect is estimated by the conditional-logistic
+component; the GLMM component includes only the intercept and covariates.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{InferenceIncidMultiKKClogitPlusGLMMIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKClogitPlusGLMM]{EDI::InferenceAbstractKKClogitPlusGLMM}} -> \code{InferenceIncidMultiKKClogitPlusGLMMIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -44,6 +39,8 @@ reservoir only.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_treatment_estimate'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_treatment_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-initialize'><code>EDI::InferenceAbstractKKClogitPlusGLMM$initialize()</code></a></span></li>
 </ul>
 </details>
 }}

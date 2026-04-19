@@ -90,13 +90,30 @@ InferenceSurvivalUniDepCensTransformRegr = R6::R6Class("InferenceSurvivalUniDepC
 
 		generate_mod = function(estimate_only = FALSE){
 			for (Xmm in private$build_design_matrix_candidates()){
-				mod = .fit_dep_cens_transform_model(
-					y = private$y,
-					dead = private$dead,
-					Xmm = Xmm,
-					estimate_only = estimate_only
+				treatment_col = match("treatment", colnames(Xmm))
+				if (!is.finite(treatment_col)) treatment_col = 1L
+				attempt = private$fit_with_hardened_qr_column_dropping(
+					X_full = Xmm,
+					required_cols = treatment_col,
+					fit_fun = function(X_fit){
+						.fit_dep_cens_transform_model(
+							y = private$y,
+							dead = private$dead,
+							Xmm = X_fit,
+							estimate_only = estimate_only
+						)
+					},
+					fit_ok = function(mod, X_fit, keep){
+						if (is.null(mod) || is.null(mod$coefficients)) return(FALSE)
+						if (!"treatment" %in% names(mod$coefficients)) return(FALSE)
+						if (!is.finite(as.numeric(mod$coefficients["treatment"]))) return(FALSE)
+						if (estimate_only) return(TRUE)
+						if (is.null(mod$vcov) || !"treatment" %in% rownames(mod$vcov)) return(FALSE)
+						treatment_var = as.numeric(mod$vcov["treatment", "treatment"])
+						is.finite(treatment_var) && treatment_var > 0
+					}
 				)
-				if (!is.null(mod)) return(mod)
+				if (!is.null(attempt$fit)) return(attempt$fit)
 			}
 			warning("Dependent-censoring transformation model failed to converge; returning NA.")
 			private$failed_dep_cens_transform_mod()

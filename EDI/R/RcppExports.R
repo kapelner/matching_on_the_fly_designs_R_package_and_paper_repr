@@ -411,6 +411,14 @@ compute_stereotype_logit_distr_parallel_cpp <- function(y, X_covars, w_mat, delt
     .Call(`_EDI_compute_stereotype_logit_distr_parallel_cpp`, y, X_covars, w_mat, delta, num_cores)
 }
 
+fast_clayton_weibull_aft_optim_cpp <- function(y, dead, X, pair_idx, singleton_rows, start_params, maxit = 2000L, reltol = 1e-9) {
+    .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, y, dead, X, pair_idx, singleton_rows, start_params, maxit, reltol)
+}
+
+fast_dep_cens_transform_optim_cpp <- function(y, dead, X, start_params, maxit = 2000L, reltol = 1e-9) {
+    .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, y, dead, X, start_params, maxit, reltol)
+}
+
 #' Calculates the median or restricted mean survival time for a single group.
 #'
 #' @param y Numeric vector of survival times.

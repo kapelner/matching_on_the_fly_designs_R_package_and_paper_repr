@@ -23,9 +23,10 @@ Randomization tests for `incidence` (binary) response types were being blocked i
 - **Issue:** `set_package_threads` was calling slow `Sys.setenv` and package-specific thread setters (e.g., `fixest`) in every iteration of randomization loops.
 - **Optimization:** Added a caching mechanism to `set_package_threads` to bypass redundant work if the thread count is already at the target value.
 
-### 2.2 Closure Creation Bottleneck
-- **Issue:** The `get_perm_data` closure was being recreated in every iteration of the randomization distribution loop.
-- **Optimization:** Moved closure creation outside the loop in `InferenceRand$approximate_randomization_distribution`.
+### 2.3 Survival Model Optimizations
+- **Issue:** Parametric survival models (Dependent Censoring Transformation and Clayton Copula Weibull AFT) were using R's `stats::optim` with the `BFGS` method. This was slow in bootstrap and randomization loops due to R function call overhead and numerical gradient calculation.
+- **Optimization:** Implemented the joint likelihoods and analytical gradients in C++ using `RcppEigen` and `LBFGSpp`.
+- **Impact:** This provides a significant speedup (approx. 10x-50x for individual fits) and improved convergence stability. These models are now used across six survival inference classes (Multi/Uni DepCensTransform, Multi/Univ KK Clayton Copula CombinedLikelihood/IVWC).
 
 ## 3. Core Scaling Analysis
 The investigation into why more cores do not always improve performance revealed the following:

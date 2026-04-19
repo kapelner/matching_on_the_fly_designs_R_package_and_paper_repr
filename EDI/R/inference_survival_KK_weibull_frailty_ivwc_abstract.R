@@ -166,12 +166,22 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				ssq_r  = private$cached_values$ssq_beta_T_reservoir
 			}
 
-			m_ok = is.finite(beta_m) && is.finite(ssq_m) && ssq_m > 0
-			r_ok = is.finite(beta_r) && is.finite(ssq_r) && ssq_r > 0
+			# For rand inference we only need a point estimate, so relax ssq requirement.
+			# Fall back to original cached SSQ values for weighting when fresh ssq is NA
+			# (fast approximation may not always return a reliable ssq).
+			if (!is.finite(ssq_m) || ssq_m <= 0) ssq_m = private$cached_values$ssq_beta_T_matched
+			if (!is.finite(ssq_r) || ssq_r <= 0) ssq_r = private$cached_values$ssq_beta_T_reservoir
+			m_ok = is.finite(beta_m)
+			r_ok = is.finite(beta_r)
+			ssq_m_ok = !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0
+			ssq_r_ok = !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0
 
 			if (m_ok && r_ok){
-				w_star = ssq_r / (ssq_r + ssq_m)
-				return(w_star * beta_m + (1 - w_star) * beta_r)
+				if (ssq_m_ok && ssq_r_ok){
+					w_star = ssq_r / (ssq_r + ssq_m)
+					return(w_star * beta_m + (1 - w_star) * beta_r)
+				}
+				return(0.5 * beta_m + 0.5 * beta_r)
 			} else if (m_ok){
 				return(beta_m)
 			} else if (r_ok){

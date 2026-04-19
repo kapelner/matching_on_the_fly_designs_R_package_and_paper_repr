@@ -191,6 +191,12 @@ run_comprehensive_inference_suite <- function(
 			fn = function() inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
 			)
 		}
+		if ("compute_asymp_log_rank_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
+			metrics[[length(metrics) + 1]] <- list(
+			name = "compute_asymp_log_rank_two_sided_pval_for_treatment_effect",
+			fn = function() inf_obj$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
+			)
+		}
 
 		for (metric in metrics) {
 			metric_res <- safe_run_timed(metric$fn)

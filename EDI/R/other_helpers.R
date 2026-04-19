@@ -760,23 +760,40 @@ NULL
 		)
 	}
 	best = NULL
-	for (start_par in starts){
+	# Attempt C++ fast path first
+	for (start_par in starts) {
 		fit = tryCatch(
-			stats::optim(
-				par = start_par,
-				fn = neg_loglik,
-				method = "BFGS",
-				hessian = !isTRUE(estimate_only),
-				control = list(
-					maxit = 2000, 
-					# Tight tolerance for main estimate, looser for bootstrap iterations
-					reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9
-				)
+			fast_dep_cens_transform_optim_cpp(
+				y = y, dead = dead, X = Xfull, start_params = start_par,
+				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9
 			),
 			error = function(e) NULL
 		)
-		if (is.null(fit) || !is.finite(fit$value)) next
-		if (is.null(best) || fit$value < best$value) best = fit
+		if (!is.null(fit) && isTRUE(fit$converged) && is.finite(fit$value)) {
+			if (is.null(best) || fit$value < best$value) best = fit
+		}
+	}
+
+	# Fallback to R optim if C++ failed to converge
+	if (is.null(best)) {
+		for (start_par in starts){
+			fit = tryCatch(
+				stats::optim(
+					par = start_par,
+					fn = neg_loglik,
+					method = "BFGS",
+					hessian = !isTRUE(estimate_only),
+					control = list(
+						maxit = 2000, 
+						# Tight tolerance for main estimate, looser for bootstrap iterations
+						reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9
+					)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !is.finite(fit$value)) next
+			if (is.null(best) || fit$value < best$value) best = fit
+		}
 	}
 	if (is.null(best)) return(NULL)
 
@@ -860,6 +877,33 @@ NULL
 	)
 }
 
+.neg_loglik_zoib = function(par, p, is_zero, is_one, y_beta, X_beta) {
+	beta = par[seq_len(p)]
+	phi = exp(par[p + 1L])
+	a0 = par[p + 2L]
+	a1 = par[p + 3L]
+
+	denom = 1 + exp(a0) + exp(a1)
+	p0 = exp(a0) / denom
+	p1 = exp(a1) / denom
+	pb = 1 / denom
+
+	ll = 0
+	n0 = sum(is_zero)
+	n1 = sum(is_one)
+	if (n0 > 0L) ll = ll + n0 * log(p0)
+	if (n1 > 0L) ll = ll + n1 * log(p1)
+
+	if (length(y_beta) > 0L) {
+		mu = as.vector(stats::plogis(X_beta %*% beta))
+		mu = pmin(pmax(mu, .Machine$double.eps), 1 - .Machine$double.eps)
+		shape1 = mu * phi
+		shape2 = (1 - mu) * phi
+		ll = ll + length(y_beta) * log(pb) + sum(stats::dbeta(y_beta, shape1, shape2, log = TRUE))
+	}
+	-ll
+}
+
 .fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE, starts = NULL){
 	y = as.numeric(y)
 	Xmm = as.matrix(Xmm)
@@ -921,11 +965,11 @@ NULL
 		vcov_full = NULL
 	}
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
-		vcov_full = tryCatch(numDeriv::hessian(neg_loglik, best_params), error = function(e) NULL)
+		vcov_full = tryCatch(numDeriv::hessian(.neg_loglik_zoib, best_params, p = p, is_zero = is_zero, is_one = is_one, y_beta = y_beta, X_beta = X_beta), error = function(e) NULL)
 		vcov_full = tryCatch(solve(vcov_full), error = function(e) NULL)
 	}
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
-		hess_alt = tryCatch(numDeriv::hessian(neg_loglik, best_params), error = function(e) NULL)
+		hess_alt = tryCatch(numDeriv::hessian(.neg_loglik_zoib, best_params, p = p, is_zero = is_zero, is_one = is_one, y_beta = y_beta, X_beta = X_beta), error = function(e) NULL)
 		if (!is.null(hess_alt)){
 			vcov_full = tryCatch(MASS::ginv(hess_alt), error = function(e) NULL)
 		}
@@ -1040,20 +1084,40 @@ NULL
 	# Use a slightly coarser tolerance for randomization draws if nsim is high
 	control_list = list(maxit = 2000, reltol = 1e-9)
 
-	for (start_par in starts){
+	# Attempt C++ fast path first
+	for (start_par in starts) {
 		fit = tryCatch(
-			stats::optim(
-				par = start_par,
-				fn = neg_loglik,
-				method = "BFGS",
-				hessian = !isTRUE(estimate_only),
-				control = control_list
+			fast_clayton_weibull_aft_optim_cpp(
+				y = y, dead = dead, X = Xfull, 
+				pair_idx = if (has_pairs) pair_mat - 1L else matrix(0L, 0, 2), 
+				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
+				start_params = start_par,
+				maxit = 2000, reltol = 1e-9
 			),
 			error = function(e) NULL
 		)
-		if (is.null(fit) || !is.finite(fit$value)) next
-		if (is.null(best) || fit$value < best$value){
-			best = fit
+		if (!is.null(fit) && isTRUE(fit$converged) && is.finite(fit$value)) {
+			if (is.null(best) || fit$value < best$value) best = fit
+		}
+	}
+
+	# Fallback to R optim if C++ failed to converge
+	if (is.null(best)) {
+		for (start_par in starts){
+			fit = tryCatch(
+				stats::optim(
+					par = start_par,
+					fn = neg_loglik,
+					method = "BFGS",
+					hessian = !isTRUE(estimate_only),
+					control = control_list
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !is.finite(fit$value)) next
+			if (is.null(best) || fit$value < best$value){
+				best = fit
+			}
 		}
 	}
 	if (is.null(best)) return(NULL)

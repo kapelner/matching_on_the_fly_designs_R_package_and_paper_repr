@@ -145,6 +145,58 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			
 			val = (beta_hat_T - delta) / s_beta_hat_T
 			if (isTRUE(is_z) || !is.finite(df)) 2 * stats::pnorm(-abs(val)) else 2 * stats::pt(-abs(val), df = df)
+		},
+
+		invert_ci_to_find_two_sided_pval_for_treatment_effect = function(delta = 0){
+			# Use bisection to find alpha such that delta is on the boundary of the CI.
+			# The p-value is the largest alpha such that delta is outside the (1-alpha) CI.
+			
+			# Check if delta is already outside a very tight CI (alpha=0.99)
+			# or inside a very wide CI (alpha=1e-10)
+			
+			f = function(alpha) {
+				ci = self$compute_asymp_confidence_interval(alpha = alpha)
+				if (any(!is.finite(ci))) return(NA_real_)
+				# Distance to the nearest boundary. If delta is inside, return positive.
+				# If delta is outside, return negative.
+				# Actually, easier: return 0 if delta is on boundary.
+				min(abs(ci - delta))
+			}
+			
+			# More robust: check if delta is within the range of the estimate
+			est = self$compute_treatment_estimate()
+			if (!is.finite(est)) return(NA_real_)
+			
+			# We want to find alpha such that ci_boundary(alpha) == delta
+			# This is monotonic in alpha.
+			
+			target_fn = function(alpha) {
+				ci = self$compute_asymp_confidence_interval(alpha = alpha)
+				if (est > delta) {
+					# Null is below estimate, we care about the lower bound
+					ci[1] - delta
+				} else {
+					# Null is above estimate, we care about the upper bound
+					ci[2] - delta
+				}
+			}
+			
+			# p-value is usually between 0 and 1.
+			lower = .Machine$double.eps
+			upper = 1 - .Machine$double.eps
+			
+			# Check if target_fn has different signs at boundaries
+			tl = tryCatch(target_fn(lower), error = function(e) NA_real_)
+			tu = tryCatch(target_fn(upper), error = function(e) NA_real_)
+			
+			if (!is.finite(tl) || !is.finite(tu)) return(NA_real_)
+			if (tl * tu > 0) {
+				# If both are same sign, delta is either always outside or always inside
+				if (abs(est - delta) < .Machine$double.eps) return(1)
+				if (abs(tl) < abs(tu)) return(lower) else return(upper)
+			}
+			
+			stats::uniroot(target_fn, lower = lower, upper = upper, tol = 1e-6)$root
 		}
 	)
 )

@@ -772,7 +772,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (identical(private$des_obj_priv_int$response_type, "proportion") &&
-			    (inherits(self, "InferenceAbstractKKQuantileRegrIVWC") || inherits(self, "InferenceAbstractKKQuantileRegrCombinedLikelihood"))){
+			    (inherits(self, "InferenceAbstractKKQuantileRegrIVWC") || inherits(self, "InferenceAbstractKKQuantileRegrOneLik"))){
 				private$y = .sanitize_proportion_response(private$y, interior = TRUE)
 				private$cached_values$KKstats = NULL
 				private$cached_values$beta_hat_T = NULL

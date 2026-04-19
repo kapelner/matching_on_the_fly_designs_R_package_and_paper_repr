@@ -57,6 +57,17 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			if (isTRUE(!is.null(private$cached_values$beta_hat_T) && (estimate_only || has_cached_se))) return(invisible(NULL))
 			model_output = private$generate_mod(estimate_only = estimate_only) #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.
 			private$cached_mod = model_output
+			# generate_mod may return NULL when the fit failed for all column subsets
+			# (tryCatch in fit_with_hardened_qr_column_dropping catches convergence errors
+			# and returns NULL). NULL$b[2] evaluates to NULL in R without error, which
+			# would propagate as NULL from compute_treatment_estimate(). Guard here.
+			if (is.null(model_output)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z = TRUE
+				private$cached_values$df = NA_real_
+				return(invisible(NULL))
+			}
 			private$cached_values$beta_hat_T = model_output$b[2]
 			if (estimate_only) return(invisible(NULL))
 

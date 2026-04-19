@@ -1166,7 +1166,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceContinUnivRobustRegr,
           InferenceContinMultiRobustRegr,
           InferenceContinMultOLSKKIVWC,
-          InferenceContinMultOLSKKCombinedLikelihood
+          InferenceContinMultOLSKKOneLik
         ),
         incidence = list(
           InferenceIncidUnivLogRegr,
@@ -1174,7 +1174,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceIncidUnivModifiedPoisson,
           InferenceIncidMultiModifiedPoisson,
           InferenceIncidUnivKKClogitIVWC,
-          InferenceIncidMultiKKClogitCombinedLikelihood,
+          InferenceIncidMultiKKClogitOneLik,
           InferenceIncidAzriel,
           InferenceIncidExtendedRobins,
           InferenceIncidExactZhang,

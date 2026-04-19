@@ -78,9 +78,22 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		},
 
 		#' @description
+		#' Computes a Wald-style 2-sided p-value by inverting the confidence interval.
+		#'
+		#' @param delta The null difference to test against. Default is 0.
+		#'
+		#' @return	The approximate frequentist p-value
+		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
+			private$invert_ci_to_find_two_sided_pval_for_treatment_effect(delta = delta)
+		},
+
+		#' @description
 		#' Computes the standard two-sided log-rank p-value for a zero treatment effect.
 		#' @param delta Null treatment effect to test against. Only \code{0} is supported.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_log_rank_two_sided_pval_for_treatment_effect = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}

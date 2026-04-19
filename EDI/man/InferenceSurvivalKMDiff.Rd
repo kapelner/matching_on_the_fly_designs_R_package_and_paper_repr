@@ -58,7 +58,7 @@ seq_des_inf$compute_asymp_confidence_interval()
 }
 
 ## ------------------------------------------------
-## Method `InferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect`
+## Method `InferenceSurvivalKMDiff$compute_asymp_log_rank_two_sided_pval_for_treatment_effect`
 ## ------------------------------------------------
 
 \dontrun{
@@ -75,7 +75,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 }
 
 }
@@ -88,7 +88,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 \item \href{#method-InferenceSurvivalKMDiff-new}{\code{InferenceSurvivalKMDiff$new()}}
 \item \href{#method-InferenceSurvivalKMDiff-compute_treatment_estimate}{\code{InferenceSurvivalKMDiff$compute_treatment_estimate()}}
 \item \href{#method-InferenceSurvivalKMDiff-compute_asymp_confidence_interval}{\code{InferenceSurvivalKMDiff$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalKMDiff$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceSurvivalKMDiff-compute_confidence_interval_rand}{\code{InferenceSurvivalKMDiff$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceSurvivalKMDiff-clone}{\code{InferenceSurvivalKMDiff$clone()}}
 }
@@ -108,6 +108,7 @@ seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 </ul>
@@ -234,12 +235,12 @@ seq_des_inf$compute_asymp_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}{
 Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_log_rank_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
@@ -271,7 +272,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 }
 
 }

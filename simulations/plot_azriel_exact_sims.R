@@ -34,7 +34,7 @@ design_levels = c(
 )
 results_dt[, design_short := factor(design_short, levels = design_levels)]
 
-make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = TRUE, save_PDF = FALSE, save_PNG = FALSE) {
+make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = TRUE, save_PDF = FALSE, save_PNG = FALSE, free_y = FALSE, hline_linetype = "dashed") {
   dat = copy(dat)
   dat[, y := get(metric)]
 
@@ -48,7 +48,7 @@ make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = 
   p = ggplot(dat, aes(x = factor(n), y = y,
                       color = inference_short, group = inference_short)) +
     geom_point(size = 1.5, position = dodge) +
-    facet_wrap(~ design_short, nrow = 2, ncol = 5) +
+    facet_wrap(~ design_short, nrow = 2, ncol = 5, scales = if (free_y) "free_y" else "fixed") +
     scale_color_brewer(palette = "Set1") +
     labs(x = "n", y = ylab, color = "Inference", title = title_str) +
     theme_bw(base_size = 9) +
@@ -62,7 +62,7 @@ make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = 
       panel.grid.minor = element_blank()
     )
   if (!is.null(hline)) {
-    p = p + geom_hline(yintercept = hline, linetype = "dashed", color = "gray60", linewidth = 0.4)
+    p = p + geom_hline(yintercept = hline, linetype = hline_linetype, color = "gray60", linewidth = 0.4)
   }
   if (has_ci_cols) {
     p = p + geom_errorbar(aes(ymin = y_lo, ymax = y_hi), width = 0.2, linewidth = 0.4, position = dodge)
@@ -94,9 +94,9 @@ for (p_val in unique(results_dt$p)) {
     make_plot(sub[betaT == 1], "coverage",  "Coverage", 0.95,
               sprintf("Coverage (betaT=1) | p=%s, log_odds_model=%s", p_val, dt_val), stem_cov,  save_PDF = TRUE, plot = FALSE)
     make_plot(sub[betaT == 1], "ci_length", "CI Length", NULL,
-              sprintf("CI Length (betaT=1) | p=%s, log_odds_model=%s", p_val, dt_val), stem_len, save_PDF = TRUE, plot = FALSE)
+              sprintf("CI Length (betaT=1) | p=%s, log_odds_model=%s", p_val, dt_val), stem_len, save_PDF = TRUE, plot = FALSE, free_y = TRUE)
     if (nrow(sub[betaT == 0]) == 0L) next
     make_plot(sub[betaT == 0], "power",     "Size",     0.05,
-              sprintf("Size (betaT=0) | p=%s, log_odds_model=%s",     p_val, dt_val), stem_size, save_PDF = TRUE, plot = FALSE)
+              sprintf("Size (betaT=0) | p=%s, log_odds_model=%s",     p_val, dt_val), stem_size, save_PDF = TRUE, plot = FALSE, hline_linetype = "dotted")
   }
 }

@@ -26,6 +26,7 @@ X[function_run == "compute_mle_confidence_interval", function_run := "ci_asymp"]
 X[function_run == "compute_asymp_confidence_interval", function_run := "ci_asymp"]
 X[function_run == "compute_mle_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"] ####OLD
 X[function_run == "compute_asymp_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"]
+X[function_run == "compute_asymp_log_rank_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"]
 X[function_run == "compute_treatment_estimate", function_run := "est"]
 X[function_run == "compute_two_sided_pval_for_treatment_effect_rand", function_run := "pval_rand"]
 X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(custom)", function_run := "pval_rand_custom"]

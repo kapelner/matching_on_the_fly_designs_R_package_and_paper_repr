@@ -1163,6 +1163,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_clayton_weibull_aft_optim_cpp
+List fast_clayton_weibull_aft_optim_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::MatrixXi& pair_idx, const Eigen::VectorXi& singleton_rows, const Eigen::VectorXd& start_params, int maxit, double reltol);
+RcppExport SEXP _EDI_fast_clayton_weibull_aft_optim_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP pair_idxSEXP, SEXP singleton_rowsSEXP, SEXP start_paramsSEXP, SEXP maxitSEXP, SEXP reltolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXi& >::type pair_idx(pair_idxSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type singleton_rows(singleton_rowsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type start_params(start_paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type reltol(reltolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_clayton_weibull_aft_optim_cpp(y, dead, X, pair_idx, singleton_rows, start_params, maxit, reltol));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_dep_cens_transform_optim_cpp
+List fast_dep_cens_transform_optim_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXd& start_params, int maxit, double reltol);
+RcppExport SEXP _EDI_fast_dep_cens_transform_optim_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_paramsSEXP, SEXP maxitSEXP, SEXP reltolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type start_params(start_paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type reltol(reltolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_dep_cens_transform_optim_cpp(y, dead, X, start_params, maxit, reltol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_survival_stat_for_group
 double get_survival_stat_for_group(NumericVector y, IntegerVector dead, std::string requested_stat);
 RcppExport SEXP _EDI_get_survival_stat_for_group(SEXP ySEXP, SEXP deadSEXP, SEXP requested_statSEXP) {
@@ -2564,6 +2598,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_with_var_cpp, 4},
     {"_EDI_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_EDI_fast_stereotype_profile_loglik_cpp, 5},
     {"_EDI_compute_stereotype_logit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_stereotype_logit_distr_parallel_cpp, 5},
+    {"_EDI_fast_clayton_weibull_aft_optim_cpp", (DL_FUNC) &_EDI_fast_clayton_weibull_aft_optim_cpp, 8},
+    {"_EDI_fast_dep_cens_transform_optim_cpp", (DL_FUNC) &_EDI_fast_dep_cens_transform_optim_cpp, 6},
     {"_EDI_get_survival_stat_for_group", (DL_FUNC) &_EDI_get_survival_stat_for_group, 3},
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},

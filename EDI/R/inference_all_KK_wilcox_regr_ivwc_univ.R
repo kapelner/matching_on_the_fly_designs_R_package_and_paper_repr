@@ -142,7 +142,13 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+			# Preserve original SSQ values across rand worker cache resets so that
+			# combine_component_estimates() can use them for IVWC variance-weighting.
+			private$compute_fast_randomization_distr_via_reused_worker(
+				y, permutations, delta, transform_responses,
+				preserve_cache_keys = c("ssq_beta_T_matched", "ssq_beta_T_reservoir"),
+				zero_one_logit_clamp = zero_one_logit_clamp
+			)
 		},
 
 		include_covariates = function(){
@@ -448,6 +454,12 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 			w_res = KKstats$w_reservoir
 			X_res = if (private$include_covariates()) as.matrix(KKstats$X_reservoir) else NULL
 
+			# Capture original SSQ values for variance-weighting.
+			# fit_matched_component / fit_reservoir_component always return ssq = NA_real_
+			# under estimate_only = TRUE, so we fix the weights at the original-data values.
+			orig_ssq_m = private$cached_values$ssq_beta_T_matched
+			orig_ssq_r = private$cached_values$ssq_beta_T_reservoir
+
 			compute_one_bootstrap_estimate = function(b){
 				reservoir_fit = list(beta = NA_real_, ssq = NA_real_)
 				if (n_reservoir > 0){
@@ -472,9 +484,9 @@ InferenceAllKKWilcoxRegrUnivIVWC = R6::R6Class("InferenceAllKKWilcoxRegrUnivIVWC
 
 				private$combine_component_estimates(
 					beta_m = matched_fit$beta,
-					ssq_m = matched_fit$ssq,
+					ssq_m = orig_ssq_m,
 					beta_r = reservoir_fit$beta,
-					ssq_r = reservoir_fit$ssq
+					ssq_r = orig_ssq_r
 				)$beta
 			}
 

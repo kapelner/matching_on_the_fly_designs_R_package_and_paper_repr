@@ -53,7 +53,7 @@ infer
 \item \href{#method-InferenceSurvivalLogRank-new}{\code{InferenceSurvivalLogRank$new()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_treatment_estimate}{\code{InferenceSurvivalLogRank$compute_treatment_estimate()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_asymp_confidence_interval}{\code{InferenceSurvivalLogRank$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalLogRank$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceSurvivalLogRank-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalLogRank$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceSurvivalLogRank-compute_confidence_interval_rand}{\code{InferenceSurvivalLogRank$compute_confidence_interval_rand()}}
 \item \href{#method-InferenceSurvivalLogRank-clone}{\code{InferenceSurvivalLogRank$clone()}}
 }
@@ -73,6 +73,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval_for_treatment_effect'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 </ul>
@@ -134,12 +135,12 @@ Falls back to bootstrap if the estimated standard error is unavailable.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_log_rank_two_sided_pval_for_treatment_effect"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{}}}
+\subsection{Method \code{compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}{
 Computes the standard two-sided log-rank p-value for a zero treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_asymp_two_sided_pval_for_treatment_effect(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_asymp_log_rank_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }

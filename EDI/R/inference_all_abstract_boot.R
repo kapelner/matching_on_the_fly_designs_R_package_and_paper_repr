@@ -262,6 +262,14 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
 			}
 
+			# Early exit: if the treatment estimate is already cached and non-finite,
+			# skip the expensive bootstrap computation entirely.
+			est_cached = private$cached_values$beta_hat_T
+			if (!is.null(est_cached) && length(est_cached) >= 1L && !is.finite(est_cached[1L])) {
+				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_original_estimate_unavailable")
+				return(NA_real_)
+			}
+
 			if (type %in% c("studentized", "bootstrap-t")) {
 				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(
 					B = B,

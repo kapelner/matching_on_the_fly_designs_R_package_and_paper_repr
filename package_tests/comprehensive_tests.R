@@ -335,9 +335,9 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceAbstractKKGLMM",
 		"InferenceContinMultGLS",
 		"InferenceAbstractKKClaytonCopulaIVWC",
-		"InferenceAbstractKKClaytonCopulaCombinedLikelihood",
+		"InferenceAbstractKKClaytonCopulaOneLik",
 		"InferenceAbstractKKWeibullFrailtyIVWC",
-		"InferenceAbstractKKWeibullFrailtyCombinedLikelihood",
+		"InferenceAbstractKKWeibullFrailtyOneLik",
 		"InferenceAllKKWilcoxIVWC",
 		"InferenceAbstractKKWilcoxRegrIVWC",
 		"InferenceSurvivalUnivKKRankRegrIVWC",
@@ -372,17 +372,17 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceContinMultiRobustRegr"
 	))
 	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
-	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood")
-	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is_any_inference_class(c(
+	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyOneLik")
+	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyOneLik") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is_any_inference_class(c(
 		"InferenceSurvivalMultiKKRankRegrIVWC",
 		"InferenceSurvivalMultiKKClaytonCopulaIVWC",
-		"InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood"
+		"InferenceSurvivalMultiKKClaytonCopulaOneLik"
 	))
 	skip_ci_rand   = is_any_inference_class(c(
 		"InferenceContinMultKKQuantileRegrIVWC",
 		"InferencePropMultiKKQuantileRegrIVWC",
-		"InferenceContinMultKKQuantileRegrCombinedLikelihood",
-		"InferencePropMultiKKQuantileRegrCombinedLikelihood",
+		"InferenceContinMultKKQuantileRegrOneLik",
+		"InferencePropMultiKKQuantileRegrOneLik",
 		"InferencePropUniGCompMeanDiff",
 		"InferencePropMultiGCompMeanDiff",
 		"InferenceContinMultiRobustRegr",
@@ -397,9 +397,9 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceCountUnivZeroInflatedPoissonRegr",
 		"InferenceCountUnivZeroInflatedNegBinRegr",
 		"InferenceCountMultiKKHurdlePoissonIVWC",
-		"InferenceCountMultiKKHurdlePoissonCombinedLikelihood",
+		"InferenceCountMultiKKHurdlePoissonOneLik",
 		"InferenceCountUnivKKHurdlePoissonIVWC",
-		"InferenceCountUnivKKHurdlePoissonCombinedLikelihood"
+		"InferenceCountUnivKKHurdlePoissonOneLik"
 	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
 	skip_ci_rand_custom = FALSE
 	
@@ -412,11 +412,11 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		is(seq_des_inf, "InferenceSurvivalMultiKKLWACoxIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKStratCoxIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKClaytonCopulaIVWC") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKLWACoxCombinedLikelihood") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKStratCoxCombinedLikelihood") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood") ||
+		is(seq_des_inf, "InferenceSurvivalMultiKKLWACoxOneLik") ||
+		is(seq_des_inf, "InferenceSurvivalMultiKKStratCoxOneLik") ||
+		is(seq_des_inf, "InferenceSurvivalMultiKKClaytonCopulaOneLik") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKWeibullFrailtyIVWC") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood") ||
+		is(seq_des_inf, "InferenceSurvivalMultiKKWeibullFrailtyOneLik") ||
 		is(seq_des_inf, "InferenceAllKKWilcoxRegrMultiIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKRankRegrIVWC")
 	)
@@ -589,9 +589,9 @@ safe_call = function(label, expr){
 						 													  is(seq_des_inf, "InferenceAbstractKKGEE") ||
 						 													  is(seq_des_inf, "InferenceAbstractKKGLMM") ||
 						 													  is(seq_des_inf, "InferenceAbstractKKRobustRegrIVWC") ||
-						 													  is(seq_des_inf, "InferenceAbstractKKRobustRegrCombinedLikelihood") ||
+						 													  is(seq_des_inf, "InferenceAbstractKKRobustRegrOneLik") ||
 						 													  is(seq_des_inf, "InferenceAbstractKKQuantileRegrIVWC") ||
-						 													  is(seq_des_inf, "InferenceAbstractKKQuantileRegrCombinedLikelihood") ||
+						 													  is(seq_des_inf, "InferenceAbstractKKQuantileRegrOneLik") ||
 						 													  													  is(seq_des_inf, "InferencePropUniFractionalLogit") ||
 						 													  													  is(seq_des_inf, "InferenceIncidUnivRiskDiff") ||
 						 													  													  is(seq_des_inf, "InferenceIncidMultiRiskDiff") ||
@@ -634,7 +634,12 @@ safe_call = function(label, expr){
 
 	safe_call("compute_treatment_estimate", seq_des_inf$compute_treatment_estimate())
 	if (!skip_mle_pval){
-		safe_call("compute_asymp_two_sided_pval_for_treatment_effect", seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect())
+		if ("compute_asymp_log_rank_two_sided_pval_for_treatment_effect" %in% names(seq_des_inf)) {
+			safe_call("compute_asymp_log_rank_two_sided_pval_for_treatment_effect", seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect())
+		}
+		if ("compute_asymp_two_sided_pval_for_treatment_effect" %in% names(seq_des_inf)) {
+			safe_call("compute_asymp_two_sided_pval_for_treatment_effect", seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect())
+		}
 	}
 	if (!skip_ci){
 		safe_call("compute_asymp_confidence_interval", seq_des_inf$compute_asymp_confidence_interval(0.05))
@@ -899,14 +904,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			run_inference_checks(InferenceAllKKWilcoxRegrUnivIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceAllKKWilcoxRegrMultiIVWC")
 			run_inference_checks(InferenceAllKKWilcoxRegrMultiIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
-			inference_banner("InferenceContinMultOLSKKCombinedLikelihood")
-			run_inference_checks(InferenceContinMultOLSKKCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
+			inference_banner("InferenceContinMultOLSKKOneLik")
+			run_inference_checks(InferenceContinMultOLSKKOneLik$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinMultOLSKKIVWC")
 			run_inference_checks(InferenceContinMultOLSKKIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinMultiKKLinIVWC")
 			run_inference_checks(InferenceContinMultiKKLinIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
-			inference_banner("InferenceContinMultiKKLinCombinedLikelihood")
-			run_inference_checks(InferenceContinMultiKKLinCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
+			inference_banner("InferenceContinMultiKKLinOneLik")
+			run_inference_checks(InferenceContinMultiKKLinOneLik$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinMultGLS")
 			run_inference_checks(InferenceContinMultGLS$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinUnivKKGLMM")
@@ -917,14 +922,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			run_inference_checks(InferenceContinUnivKKRobustRegrIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinMultiKKRobustRegrIVWC")
 			run_inference_checks(InferenceContinMultiKKRobustRegrIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
-			inference_banner("InferenceContinUnivKKRobustRegrCombinedLikelihood")
-			run_inference_checks(InferenceContinUnivKKRobustRegrCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
-			inference_banner("InferenceContinMultiKKRobustRegrCombinedLikelihood")
-			run_inference_checks(InferenceContinMultiKKRobustRegrCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
+			inference_banner("InferenceContinUnivKKRobustRegrOneLik")
+			run_inference_checks(InferenceContinUnivKKRobustRegrOneLik$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
+			inference_banner("InferenceContinMultiKKRobustRegrOneLik")
+			run_inference_checks(InferenceContinMultiKKRobustRegrOneLik$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 			inference_banner("InferenceContinMultKKQuantileRegrIVWC")
 			run_inference_checks(InferenceContinMultKKQuantileRegrIVWC$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
-			inference_banner("InferenceContinMultKKQuantileRegrCombinedLikelihood")
-			run_inference_checks(InferenceContinMultKKQuantileRegrCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
+			inference_banner("InferenceContinMultKKQuantileRegrOneLik")
+			run_inference_checks(InferenceContinMultKKQuantileRegrOneLik$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
 		} else {
 			inference_banner("InferenceContinUnivRobustRegr")
 			run_inference_checks(InferenceContinUnivRobustRegr$new(des_obj), response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols)
@@ -947,10 +952,10 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 		if (is_kk_design){
 			inference_banner("InferenceAllKKCompoundMeanDiff")
 			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceIncidUnivKKClogitCombinedLikelihood")
-			run_inference_checks(InferenceIncidUnivKKClogitCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceIncidMultiKKClogitCombinedLikelihood")
-			run_inference_checks(InferenceIncidMultiKKClogitCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceIncidUnivKKClogitOneLik")
+			run_inference_checks(InferenceIncidUnivKKClogitOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceIncidMultiKKClogitOneLik")
+			run_inference_checks(InferenceIncidMultiKKClogitOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferenceIncidUnivKKClogitIVWC")
 			run_inference_checks(InferenceIncidUnivKKClogitIVWC$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferenceIncidMultiKKClogitIVWC")
@@ -1038,8 +1043,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			run_inference_checks(InferencePropMultiKKGLMM$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferencePropMultiKKQuantileRegrIVWC")
 			run_inference_checks(InferencePropMultiKKQuantileRegrIVWC$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferencePropMultiKKQuantileRegrCombinedLikelihood")
-			run_inference_checks(InferencePropMultiKKQuantileRegrCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferencePropMultiKKQuantileRegrOneLik")
+			run_inference_checks(InferencePropMultiKKQuantileRegrOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 		}
 		inference_banner("InferencePropUniBetaRegr")
 		run_inference_checks(InferencePropUniBetaRegr$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
@@ -1079,14 +1084,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 			run_inference_checks(InferenceCountPoissonUnivKKGEE$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferenceCountPoissonMultiKKGEE")
 			run_inference_checks(InferenceCountPoissonMultiKKGEE$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceCountPoissonUnivKKCPoissonCombinedLikelihood")
-			run_inference_checks(InferenceCountPoissonUnivKKCPoissonCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceCountPoissonMultiKKCPoissonCombinedLikelihood")
-			run_inference_checks(InferenceCountPoissonMultiKKCPoissonCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceCountUnivKKHurdlePoissonCombinedLikelihood")
-			run_inference_checks(InferenceCountUnivKKHurdlePoissonCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
-			inference_banner("InferenceCountMultiKKHurdlePoissonCombinedLikelihood")
-			run_inference_checks(InferenceCountMultiKKHurdlePoissonCombinedLikelihood$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceCountPoissonUnivKKCPoissonOneLik")
+			run_inference_checks(InferenceCountPoissonUnivKKCPoissonOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceCountPoissonMultiKKCPoissonOneLik")
+			run_inference_checks(InferenceCountPoissonMultiKKCPoissonOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceCountUnivKKHurdlePoissonOneLik")
+			run_inference_checks(InferenceCountUnivKKHurdlePoissonOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
+			inference_banner("InferenceCountMultiKKHurdlePoissonOneLik")
+			run_inference_checks(InferenceCountMultiKKHurdlePoissonOneLik$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferenceCountUnivKKHurdlePoissonIVWC")
 			run_inference_checks(InferenceCountUnivKKHurdlePoissonIVWC$new(des_obj), response_type, design_type, dataset_name, nrow(D$X), ncol(D$X))
 			inference_banner("InferenceCountMultiKKHurdlePoissonIVWC")
@@ -1170,14 +1175,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name){
 				InferenceSurvivalMultiKKRankRegrIVWC,
 				InferenceSurvivalUnivKKWeibullFrailtyIVWC,
 				InferenceSurvivalMultiKKWeibullFrailtyIVWC,
-				InferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood,
-				InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood,
-				InferenceSurvivalUnivKKLWACoxCombinedLikelihood,
-				InferenceSurvivalMultiKKLWACoxCombinedLikelihood,
-				InferenceSurvivalUnivKKStratCoxCombinedLikelihood,
-				InferenceSurvivalMultiKKStratCoxCombinedLikelihood,
-				InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood,
-				InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood
+				InferenceSurvivalUnivKKClaytonCopulaOneLik,
+				InferenceSurvivalMultiKKClaytonCopulaOneLik,
+				InferenceSurvivalUnivKKLWACoxOneLik,
+				InferenceSurvivalMultiKKLWACoxOneLik,
+				InferenceSurvivalUnivKKStratCoxOneLik,
+				InferenceSurvivalMultiKKStratCoxOneLik,
+				InferenceSurvivalUnivKKWeibullFrailtyOneLik,
+				InferenceSurvivalMultiKKWeibullFrailtyOneLik
 			)){
 				class_name = kk_surv_class$classname
 				inference_banner(class_name)
