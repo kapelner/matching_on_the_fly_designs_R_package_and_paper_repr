@@ -21,7 +21,7 @@
 #'
 InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedProbitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceOrdinalUniCumulProbitRegr,
+	inherit = InferenceOrdinalPropOddsRegr,
 	public = list(
 	)
 )
@@ -51,7 +51,7 @@ InferenceOrdinalUniOrderedProbitRegr = R6::R6Class("InferenceOrdinalUniOrderedPr
 #'
 InferenceOrdinalMultiOrderedProbitRegr = R6::R6Class("InferenceOrdinalMultiOrderedProbitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceOrdinalMultiCumulProbitRegr,
+	inherit = InferenceOrdinalPropOddsRegr,
 	public = list(
 	)
 )

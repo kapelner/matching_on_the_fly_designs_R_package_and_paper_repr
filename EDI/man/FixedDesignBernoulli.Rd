@@ -47,6 +47,7 @@ An R6 Class encapsulating the data and functionality for a fixed Bernoulli exper
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>

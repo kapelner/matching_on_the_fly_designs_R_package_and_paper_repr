@@ -23,14 +23,11 @@ run_tests_for_response = function(response_type, inference_classes) {
   des = design_cls$new(response_type = response_type, n = n)
   
   # Fill Design (Sequential)
-  # For simulation purposes, we need to apply treatment effect and noise like SimulationFramework does
   betaT = 1
   sd_noise = 0.1
   
   for (i in 1:n) {
     w_i = des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
-    
-    # Simple version of .apply_one logic
     bt = if (w_i == 1) betaT else 0
     eps = rnorm(1, 0, sd_noise)
     
@@ -50,13 +47,17 @@ run_tests_for_response = function(response_type, inference_classes) {
       ordinal  = as.integer(max(1, round(y_base[i] + bt + eps))),
       stop("Unknown response_type")
     )
-    
     des$add_one_subject_response(i, y_i, dead = 1)
   }
   
-  for (inf_cls in inference_classes) {
-    cat("\n--- Inference:", inf_cls$classname, "---\n")
-    inf = inf_cls$new(des)
+  for (inf_info in inference_classes) {
+    inf_cls = if (is.list(inf_info)) inf_info[[1]] else inf_info
+    inf_args = if (is.list(inf_info) && length(inf_info) > 1) inf_info[-1] else list()
+    
+    cls_name = if (is.character(inf_cls)) inf_cls else inf_cls$classname
+    cat("\n--- Inference:", cls_name, if (length(inf_args)) paste0("(", paste(names(inf_args), inf_args, sep="=", collapse=", "), ")") else "", "---\n")
+    
+    inf = do.call(inf_cls$new, c(list(des_obj = des), inf_args))
     
     # 1. Treatment Estimate
     tryCatch({
@@ -95,41 +96,57 @@ run_tests_for_response = function(response_type, inference_classes) {
 ##### response_type = continuous
 run_tests_for_response("continuous", list(
   InferenceAllSimpleMeanDiff,
-  InferenceContinMultOLS,
-  InferenceContinMultOLSKKIVWC
+  list(InferenceContinOLS, include_covariates = FALSE),
+  list(InferenceContinOLS, include_covariates = TRUE),
+  list(InferenceContinLin, include_covariates = TRUE),
+  list(InferenceContinQuantileRegr, include_covariates = TRUE),
+  list(InferenceContinRobustRegr, include_covariates = TRUE),
+  list(InferenceContinKKRobustRegrIVWC, include_covariates = TRUE),
+  list(InferenceContinKKRobustRegrOneLik, include_covariates = TRUE),
+  list(InferenceContinKKGLMM, include_covariates = TRUE)
 ))
 
 ##### response_type = incidence
 run_tests_for_response("incidence", list(
-  InferenceIncidUnivLogRegr,
-  InferenceIncidMultiLogRegr,
-  InferenceIncidUnivKKClogitIVWC
+  list(InferenceIncidLogRegr, include_covariates = FALSE),
+  list(InferenceIncidLogRegr, include_covariates = TRUE),
+  list(InferenceIncidLogBinomial, include_covariates = TRUE),
+  list(InferenceIncidModifiedPoisson, include_covariates = TRUE),
+  list(InferenceIncidRiskDiff, include_covariates = TRUE),
+  list(InferenceIncidBinomialIdentityRiskDiff, include_covariates = TRUE),
+  list(InferenceIncidGCompRiskDiff, include_covariates = TRUE),
+  list(InferenceIncidGCompRiskRatio, include_covariates = TRUE),
+  list(InferenceIncidKKClogitIVWC, include_covariates = TRUE),
+  list(InferenceIncidKKClogitOneLik, include_covariates = TRUE),
+  list(InferenceIncidKKGEE, include_covariates = TRUE),
+  list(InferenceIncidKKGLMM, include_covariates = TRUE)
 ))
 
 ##### response_type = proportion
 run_tests_for_response("proportion", list(
   InferenceAllSimpleMeanDiff,
-  InferencePropUniBetaRegr,
-  InferencePropMultiKKGEE
+  list(InferencePropBetaRegr, include_covariates = TRUE),
+  list(InferencePropFractionalLogit, include_covariates = TRUE),
+  list(InferencePropGCompMeanDiff, include_covariates = TRUE),
+  list(InferencePropKKGEE, include_covariates = TRUE),
+  list(InferencePropKKGLMM, include_covariates = TRUE)
 ))
 
 ##### response_type = count
 run_tests_for_response("count", list(
-  InferenceCountUnivPoissonRegr,
-  InferenceCountMultiNegBinRegr,
-  InferenceCountPoissonUnivKKCPoissonIVWC
+  list(InferenceCountPoisson, include_covariates = TRUE),
+  list(InferenceCountNegBin, include_covariates = TRUE),
+  list(InferenceCountKKCPoissonIVWC, include_covariates = TRUE)
 ))
 
 ##### response_type = survival
 run_tests_for_response("survival", list(
   InferenceSurvivalLogRank,
-  InferenceSurvivalUniCoxPHRegr,
-  InferenceSurvivalUnivKKLWACoxIVWC
+  list(InferenceSurvivalCoxPHRegr, include_covariates = TRUE),
+  list(InferenceSurvivalKKLWACoxIVWC, include_covariates = TRUE)
 ))
 
 ##### response_type = ordinal
 run_tests_for_response("ordinal", list(
-  InferenceOrdinalUniPropOddsRegr,
-  InferenceOrdinalJonckheereTerpstraTest,
-  InferenceOrdinalUnivKKGEE
+  InferenceOrdinalJonckheereTerpstraTest
 ))

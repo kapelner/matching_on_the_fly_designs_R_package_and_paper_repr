@@ -26,7 +26,7 @@ infer
 
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceOrdinalUniCumulProbitRegr]{EDI::InferenceOrdinalUniCumulProbitRegr}} -> \code{\link[EDI:InferenceOrdinalMultiCumulProbitRegr]{EDI::InferenceOrdinalMultiCumulProbitRegr}} -> \code{InferenceOrdinalMultiOrderedProbitRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{\link[EDI:InferenceOrdinalPropOddsRegr]{EDI::InferenceOrdinalPropOddsRegr}} -> \code{InferenceOrdinalMultiOrderedProbitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -55,7 +55,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_treatment_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_treatment_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_treatment_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalUniCumulProbitRegr" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalUniCumulProbitRegr.html#method-InferenceOrdinalUniCumulProbitRegr-initialize'><code>EDI::InferenceOrdinalUniCumulProbitRegr$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalPropOddsRegr" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalPropOddsRegr.html#method-InferenceOrdinalPropOddsRegr-initialize'><code>EDI::InferenceOrdinalPropOddsRegr$initialize()</code></a></span></li>
 </ul>
 </details>
 }}

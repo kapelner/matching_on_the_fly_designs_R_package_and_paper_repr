@@ -21,13 +21,14 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
 		#'   uses its own LQS-based start. Default `TRUE`.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
+		initialize = function(des_obj, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, include_covariates = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertChoice(method, c("M", "MM"))
 				if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
 				if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
 				assertFlag(start_with_ols)
+				assertFlag(include_covariates, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
@@ -38,6 +39,11 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			
+			if (is.null(include_covariates)) {
+				include_covariates = des_obj$has_covariates()
+			}
+			private$include_covariates_flag = include_covariates
 			private$rlm_method = method
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
@@ -99,6 +105,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		rlm_maxit = NULL,
 		rlm_acc = NULL,
 		rlm_start_with_ols = TRUE,
+		include_covariates_flag = NULL,
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_combined_reduced_design") else character()
@@ -106,7 +113,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		},
 		rlm_force_M = FALSE,
 
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
+		include_covariates = function() private$include_covariates_flag,
 
 		reduce_design_matrix_once = function(X, j_treat, cache_key){
 			cached = private$cached_values[[cache_key]]

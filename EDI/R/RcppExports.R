@@ -375,6 +375,10 @@ fast_ridit_analysis_cpp <- function(y, w, reference = "control") {
     .Call(`_EDI_fast_ridit_analysis_cpp`, y, w, reference)
 }
 
+fast_robust_regression_cpp <- function(X, y, start_beta = NULL, method = "MM", j = 2L, c = 1.345, maxit = 50L, tol = 1e-7) {
+    .Call(`_EDI_fast_robust_regression_cpp`, X, y, start_beta, method, j, c, maxit, tol)
+}
+
 sample_int_replace_cpp <- function(n, size) {
     .Call(`_EDI_sample_int_replace_cpp`, n, size)
 }
@@ -471,6 +475,10 @@ get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
 }
 
+fast_weibull_regression_cpp <- function(y, dead, X, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-6) {
+    .Call(`_EDI_fast_weibull_regression_cpp`, y, dead, X, start_params, estimate_only, maxit, tol)
+}
+
 wilcox_hl_signed_rank_point_estimate_cpp <- function(dy) {
     .Call(`_EDI_wilcox_hl_signed_rank_point_estimate_cpp`, dy)
 }
@@ -506,6 +514,10 @@ compute_wilcox_distr_parallel_cpp <- function(y, w_mat, delta, num_cores) {
 
 compute_wilcox_distr_from_list_parallel_cpp <- function(y, permutations, delta, num_cores) {
     .Call(`_EDI_compute_wilcox_distr_from_list_parallel_cpp`, y, permutations, delta, num_cores)
+}
+
+fast_zero_augmented_poisson_cpp <- function(y, Xcond, Xzi, is_hurdle, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-6) {
+    .Call(`_EDI_fast_zero_augmented_poisson_cpp`, y, Xcond, Xzi, is_hurdle, start_params, estimate_only, maxit, tol)
 }
 
 fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init) {

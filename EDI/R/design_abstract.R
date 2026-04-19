@@ -462,6 +462,14 @@ Design = R6::R6Class("Design",
 			private$prob_T
 		},
 
+		#' @description
+		#' Checks if the design contains any covariates.
+		#'
+		#' @return \code{TRUE} if there are covariates, \code{FALSE} otherwise.
+		has_covariates = function(){
+			!is.null(private$Xraw) && ncol(private$Xraw) > 0L
+		},
+
 		#' @description Get response type
 		#'
 		#' @return 			The specified response type.

@@ -340,14 +340,19 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 	}
 }
 
-#' Weibull Regression using survival package internals (fast, coefficients only)
+#' Weibull Regression using survival package internals or Rcpp (fast)
 #'
-#' This function performs Weibull regression using survival::survreg.fit for speed.
+#' This function performs Weibull regression using either \pkg{survival} or an
+#' optimized Rcpp implementation.
 #'
 #' @param	y Survival times.
 #' @param	dead Event indicator (1 = event, 0 = censored).
 #' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
+#'   implementation. If \code{FALSE}, use \pkg{survival::survreg}.
+#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
+#'   matrix calculation for speed.
 #' @return	A list containing the following components:
 #' \describe{
 #' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients,
@@ -355,39 +360,35 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #' \item{log_sigma}{The logarithm of the scale parameter from the Weibull distribution.}
 #' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
 #' }
-#' @examples
-#' \dontrun{
-#' # Generate some sample survival data
-#' set.seed(123)
-#' n <- 100
-#' X_weibull <- matrix(rnorm(n), ncol = 1) # One predictor without intercept
-#' true_beta <- 0.5
-#' true_scale <- 1
-#' linear_predictor <- 1 + X_weibull %*% true_beta # Intercept + predictor
-#' time_true <- exp(linear_predictor + rweibull(n, shape = 1/true_scale, scale = 1))
-#' censor_time <- rexp(n, rate = 0.1)
-#' y_weibull <- pmin(time_true, censor_time)
-#' dead_weibull <- as.numeric(time_true <= censor_time)
-#'
-#' # Fit Weibull regression using fast_weibull_regression
-#' fit_weibull <- fast_weibull_regression(y = y_weibull, dead = dead_weibull, X = X_weibull)
-#' print(fit_weibull$
-#'   coefficients)
-#' print(fit_weibull$
-#'   log_sigma)
-#'
-#' # Compare with standard R survreg
-#' library(survival)
-#' surv_obj <- Surv(y_weibull, dead_weibull)
-#' df_weibull <- data.frame(time = y_weibull, status = dead_weibull, X = X_weibull)
-#' survreg_fit <- survreg(surv_obj ~ X, data = df_weibull, dist = "weibull")
-#' print(coef(survreg_fit))
-#' print(log(survreg_fit$
-#'   scale))
-#' }
 #' @export
-fast_weibull_regression = function(y, dead, X){
+fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE){
 	Xmm = as.matrix(X)
+	
+	if (use_rcpp) {
+		# Ensure intercept is present
+		if (NCOL(Xmm) == 0 || !all(Xmm[, 1] == 1)) {
+			Xmm = cbind("(Intercept)" = 1, Xmm)
+		}
+		
+		res = tryCatch(
+			fast_weibull_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only),
+			error = function(e) stop("Weibull regression (Rcpp) failed to converge: ", e$message)
+		)
+		if (is.null(res) || !isTRUE(res$converged)) {
+			stop("Weibull regression (Rcpp) failed to converge.")
+		}
+		
+		coefficients = as.numeric(res$coefficients)
+		names(coefficients) = colnames(Xmm)
+		
+		return(list(
+			coefficients = coefficients,
+			log_sigma = as.numeric(res$log_sigma),
+			vcov = if (estimate_only) NULL else res$vcov,
+			neg_log_lik = as.numeric(res$neg_ll)
+		))
+	}
+
 	# Check if Xmm has an intercept column (a column of all ones)
 	# Assuming intercept is the first column if present
 	if (NCOL(Xmm) > 0 && all(Xmm[, 1] == 1)) {
@@ -449,18 +450,18 @@ fast_weibull_regression = function(y, dead, X){
 	if (any(!is.finite(coefficients))) {
 	stop("Weibull regression failed to converge: survreg returned non-finite coefficients")
 	}
-	if (is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
+	if (!estimate_only && is.matrix(vcov) && any(!is.finite(diag(vcov)))) {
 	stop("Weibull regression failed to converge: survreg returned non-finite variance-covariance")
 	}
 
 	list(
-	coefficients = coefficients,
-	log_sigma = log_sigma,
-	std_errs = std_errs,
-	vcov = vcov,
-	neg_log_lik = neg_log_lik,
-	b = coefficients,
-	ssq_b_2 = if (is.matrix(vcov) && nrow(vcov) >= 2) vcov[2, 2] else NA_real_
+		coefficients = coefficients,
+		log_sigma = log_sigma,
+		std_errs = std_errs,
+		vcov = vcov,
+		neg_log_lik = neg_log_lik,
+		b = coefficients,
+		ssq_b_2 = if (is.matrix(vcov) && nrow(vcov) >= 2) vcov[2, 2] else NA_real_
 	)
 }
 

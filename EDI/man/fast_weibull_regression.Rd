@@ -2,9 +2,9 @@
 % Please edit documentation in R/glm_fit_helpers.R
 \name{fast_weibull_regression}
 \alias{fast_weibull_regression}
-\title{Weibull Regression using survival package internals (fast, coefficients only)}
+\title{Weibull Regression using survival package internals or Rcpp (fast)}
 \usage{
-fast_weibull_regression(y, dead, X)
+fast_weibull_regression(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE)
 }
 \arguments{
 \item{y}{Survival times.}
@@ -13,6 +13,12 @@ fast_weibull_regression(y, dead, X)
 
 \item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
 (e.g., a column of ones) is already included in \code{X} if desired.}
+
+\item{use_rcpp}{Logical. If \code{TRUE} (default), use the optimized Rcpp
+implementation. If \code{FALSE}, use \pkg{survival::survreg}.}
+
+\item{estimate_only}{Logical. If \code{TRUE}, skip variance-covariance
+matrix calculation for speed.}
 }
 \value{
 A list containing the following components:
@@ -24,36 +30,6 @@ including the intercept.}
 }
 }
 \description{
-This function performs Weibull regression using survival::survreg.fit for speed.
-}
-\examples{
-\dontrun{
-# Generate some sample survival data
-set.seed(123)
-n <- 100
-X_weibull <- matrix(rnorm(n), ncol = 1) # One predictor without intercept
-true_beta <- 0.5
-true_scale <- 1
-linear_predictor <- 1 + X_weibull \%*\% true_beta # Intercept + predictor
-time_true <- exp(linear_predictor + rweibull(n, shape = 1/true_scale, scale = 1))
-censor_time <- rexp(n, rate = 0.1)
-y_weibull <- pmin(time_true, censor_time)
-dead_weibull <- as.numeric(time_true <= censor_time)
-
-# Fit Weibull regression using fast_weibull_regression
-fit_weibull <- fast_weibull_regression(y = y_weibull, dead = dead_weibull, X = X_weibull)
-print(fit_weibull$
-  coefficients)
-print(fit_weibull$
-  log_sigma)
-
-# Compare with standard R survreg
-library(survival)
-surv_obj <- Surv(y_weibull, dead_weibull)
-df_weibull <- data.frame(time = y_weibull, status = dead_weibull, X = X_weibull)
-survreg_fit <- survreg(surv_obj ~ X, data = df_weibull, dist = "weibull")
-print(coef(survreg_fit))
-print(log(survreg_fit$
-  scale))
-}
+This function performs Weibull regression using either \pkg{survival} or an
+optimized Rcpp implementation.
 }

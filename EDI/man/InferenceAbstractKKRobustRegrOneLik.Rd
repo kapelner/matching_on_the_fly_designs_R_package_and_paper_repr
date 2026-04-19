@@ -60,6 +60,7 @@ Initialize the inference object.
   maxit = NULL,
   acc = NULL,
   start_with_ols = TRUE,
+  include_covariates = NULL,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }

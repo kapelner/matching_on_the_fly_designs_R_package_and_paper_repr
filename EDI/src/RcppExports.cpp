@@ -1071,6 +1071,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_robust_regression_cpp
+List fast_robust_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> start_beta, std::string method, int j, double c, int maxit, double tol);
+RcppExport SEXP _EDI_fast_robust_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP methodSEXP, SEXP jSEXP, SEXP cSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_beta(start_betaSEXP);
+    Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< int >::type j(jSEXP);
+    Rcpp::traits::input_parameter< double >::type c(cSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_robust_regression_cpp(X, y, start_beta, method, j, c, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_int_replace_cpp
 IntegerVector sample_int_replace_cpp(int n, int size);
 RcppExport SEXP _EDI_sample_int_replace_cpp(SEXP nSEXP, SEXP sizeSEXP) {
@@ -1249,6 +1267,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_weibull_regression_cpp
+List fast_weibull_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, Nullable<NumericVector> start_params, bool estimate_only, int maxit, double tol);
+RcppExport SEXP _EDI_fast_weibull_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_paramsSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_params(start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression_cpp(y, dead, X, start_params, estimate_only, maxit, tol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // wilcox_hl_signed_rank_point_estimate_cpp
 double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy);
 RcppExport SEXP _EDI_wilcox_hl_signed_rank_point_estimate_cpp(SEXP dySEXP) {
@@ -1343,6 +1378,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< int >::type num_cores(num_coresSEXP);
     rcpp_result_gen = Rcpp::wrap(compute_wilcox_distr_from_list_parallel_cpp(y, permutations, delta, num_cores));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_zero_augmented_poisson_cpp
+List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXd& Xcond, const Eigen::MatrixXd& Xzi, bool is_hurdle, Nullable<NumericVector> start_params, bool estimate_only, int maxit, double tol);
+RcppExport SEXP _EDI_fast_zero_augmented_poisson_cpp(SEXP ySEXP, SEXP XcondSEXP, SEXP XziSEXP, SEXP is_hurdleSEXP, SEXP start_paramsSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xcond(XcondSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xzi(XziSEXP);
+    Rcpp::traits::input_parameter< bool >::type is_hurdle(is_hurdleSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_params(start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_zero_augmented_poisson_cpp(y, Xcond, Xzi, is_hurdle, start_params, estimate_only, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2591,6 +2644,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_poisson_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_poisson_distr_parallel_cpp, 6},
     {"_EDI_fast_ridit_scores_cpp", (DL_FUNC) &_EDI_fast_ridit_scores_cpp, 2},
     {"_EDI_fast_ridit_analysis_cpp", (DL_FUNC) &_EDI_fast_ridit_analysis_cpp, 3},
+    {"_EDI_fast_robust_regression_cpp", (DL_FUNC) &_EDI_fast_robust_regression_cpp, 8},
     {"_EDI_sample_int_replace_cpp", (DL_FUNC) &_EDI_sample_int_replace_cpp, 2},
     {"_EDI_scale_columns_cpp", (DL_FUNC) &_EDI_scale_columns_cpp, 1},
     {"_EDI_shuffle_cpp", (DL_FUNC) &_EDI_shuffle_cpp, 1},
@@ -2604,6 +2658,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},
     {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
+    {"_EDI_fast_weibull_regression_cpp", (DL_FUNC) &_EDI_fast_weibull_regression_cpp, 7},
     {"_EDI_wilcox_hl_signed_rank_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_signed_rank_point_estimate_cpp, 1},
     {"_EDI_wilcox_hl_point_estimate_cpp", (DL_FUNC) &_EDI_wilcox_hl_point_estimate_cpp, 2},
     {"_EDI_compute_wilcox_hl_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_hl_bootstrap_parallel_cpp, 4},
@@ -2611,6 +2666,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp, 6},
     {"_EDI_compute_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_parallel_cpp, 4},
     {"_EDI_compute_wilcox_distr_from_list_parallel_cpp", (DL_FUNC) &_EDI_compute_wilcox_distr_from_list_parallel_cpp, 4},
+    {"_EDI_fast_zero_augmented_poisson_cpp", (DL_FUNC) &_EDI_fast_zero_augmented_poisson_cpp, 8},
     {"_EDI_fast_zero_one_inflated_beta_cpp", (DL_FUNC) &_EDI_fast_zero_one_inflated_beta_cpp, 3},
     {"_EDI_gcomp_logistic_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_logistic_post_fit_cpp, 5},
     {"_EDI_gcomp_fractional_logit_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_fractional_logit_post_fit_cpp, 5},

@@ -43,6 +43,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
+\item \href{#method-Design-has_covariates}{\code{Design$has_covariates()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
 \item \href{#method-Design-get_missingness_method}{\code{Design$get_missingness_method()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
@@ -409,6 +410,19 @@ Get probability of treatment
 
 \subsection{Returns}{
 The specified probability.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-has_covariates"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-has_covariates}{}}}
+\subsection{Method \code{has_covariates()}}{
+Checks if the design contains any covariates.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$has_covariates()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+\code{TRUE} if there are covariates, \code{FALSE} otherwise.
 }
 }
 \if{html}{\out{<hr>}}
