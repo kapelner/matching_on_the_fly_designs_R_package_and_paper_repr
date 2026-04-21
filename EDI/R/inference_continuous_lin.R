@@ -10,35 +10,29 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
 		#' @description
 		#' Initialize a Lin (2013) inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors with interactions. If \code{FALSE}, only the
-		#'   treatment indicator is used (this reduces to a simple OLS). If \code{NULL}
-		#'   (default), it is set to \code{TRUE} if the design contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		},
 
 		#' @description
 		#' Computes Lin's estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -60,7 +54,7 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 		#' @description
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null treatment effect. Defaults to 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -73,8 +67,6 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 	),
 
 	private = list(
-		include_covariates = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -85,12 +77,6 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 		},
 
 		build_lin_design_matrix = function(){
-			if (!private$include_covariates) {
-				X_lin = cbind(1, private$w)
-				colnames(X_lin) = c("(Intercept)", "treatment")
-				return(X_lin)
-			}
-
 			Xc_info = private$get_centered_covariates()
 			if (is.null(Xc_info)){
 				X_lin = cbind(1, private$w)
@@ -115,7 +101,7 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 				return(if (length(cached) == 0L) NULL else cached)
 			}
 
-			X = as.matrix(private$get_X())
+			X = as.matrix(private$X)
 			p = ncol(X)
 			if (p == 0L){
 				des_priv$lin_centered_covariates = list()  # sentinel: computed, no covariates

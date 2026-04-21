@@ -12,26 +12,17 @@ InferenceSurvivalKKLWACoxIVWC = R6::R6Class("InferenceSurvivalKKLWACoxIVWC",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates_flag = include_covariates
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 		}
-	),
-	private = list(
-		include_covariates_flag = NULL,
-		include_covariates = function() private$include_covariates_flag
 	)
 )
 
@@ -48,25 +39,16 @@ InferenceSurvivalKKLWACoxOneLik = R6::R6Class("InferenceSurvivalKKLWACoxOneLik",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates_flag = include_covariates
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 		}
-	),
-	private = list(
-		include_covariates_flag = NULL,
-		include_covariates = function() private$include_covariates_flag
 	)
 )

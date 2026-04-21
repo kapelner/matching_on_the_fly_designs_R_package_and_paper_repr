@@ -18,19 +18,23 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' sequential design is completed.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
 	#' @param convex_flag       A flag indicating whether the estimator should use a convex
 	#'   combination of the Bai et al
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.
 	#'
-	initialize = function(des_obj, verbose = TRUE, convex_flag = FALSE){
+	initialize = function(des_obj, model_formula = NULL, verbose = TRUE, convex_flag = FALSE){
 		if (should_run_asserts()) {
 			if (!check_package_installed("nbpMatching")) {
 			stop("Package 'nbpMatching' is required for InferenceBaiAdjustedT. Please install it.")
 			}
 		}
-		super$initialize(des_obj, verbose)
+		super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		private$convex_flag = convex_flag
 		if (should_run_asserts()) {
 			assertNoCensoring(private$any_censoring)
@@ -55,11 +59,11 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 	#'
 	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
-	#' seq_des_inf$compute_treatment_estimate()
+	#' seq_des_inf$compute_estimate()
 	#' }
 	#'
 	#' @param estimate_only If TRUE, skip variance component calculations.
-	compute_treatment_estimate = function(estimate_only = FALSE){
+	compute_estimate = function(estimate_only = FALSE){
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		KKstats = private$cached_values$KKstats
@@ -127,7 +131,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 		}
 		if (is.null(private$cached_values$beta_hat_T)){
-		self$compute_treatment_estimate()
+		self$compute_estimate()
 		}
 		if (is.null(private$cached_values$s_beta_hat_T)){
 		private$shared()
@@ -156,15 +160,15 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 	#'
 	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
-	#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	#' seq_des_inf$compute_asymp_two_sided_pval()
 	#' }
 	#'
-	compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+	compute_asymp_two_sided_pval = function(delta = 0){
 		if (should_run_asserts()) {
 			assertNumeric(delta)
 		}
 		if (is.null(private$cached_values$beta_hat_T)){
-		self$compute_treatment_estimate()
+		self$compute_estimate()
 		}
 		if (is.null(private$cached_values$s_beta_hat_T)){
 		private$shared()

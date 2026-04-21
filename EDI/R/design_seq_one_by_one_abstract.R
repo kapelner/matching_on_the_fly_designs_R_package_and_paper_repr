@@ -6,6 +6,7 @@
 #' @keywords internal
 #' @export
 DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
+	lock_objects = FALSE,
 	inherit = Design,
 	public = list(
 		#' @description
@@ -16,14 +17,20 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		#'   variable for it.
 		#' @param n The sample size (if fixed).
 		#' @param verbose Whether to print progress messages.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
+		#' @param ... Extra arguments passed to the \code{Design} superclass.
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,				
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .,
+				...
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, ...)
 		},
 
 		#' @description

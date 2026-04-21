@@ -1,4 +1,4 @@
-ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj,  verbose = FALSE, harden = TRUE){
+ordinal_cond_clogit_initialize = function(super_obj, private_env, des_obj, model_formula = NULL,  verbose = FALSE, harden = TRUE){
 	if (should_run_asserts()) {
 		assertResponseType(des_obj$get_response_type(), "ordinal")
 	}

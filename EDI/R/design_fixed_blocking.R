@@ -28,6 +28,8 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'   are added. Set to `NULL` to disable the target and use all `strata_cols` columns
 		#'   unconditionally (the original behaviour).
 		#' @param verbose A flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return	A new `FixedDesignBlocking` object
 		initialize = function(
@@ -38,14 +40,15 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						n = NULL,
 						num_bins_for_continuous_covariate = 2,
 						B_preferred = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
-						verbose = FALSE
-					) {
+						verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .) {
 			if (should_run_asserts()) {
 				if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
 				assertCount(num_bins_for_continuous_covariate, positive = TRUE)
 				if (!is.null(B_preferred) && !is.na(B_preferred)) assertCount(B_preferred, positive = TRUE)
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$strata_cols = strata_cols
 			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
 			private$B_preferred = B_preferred

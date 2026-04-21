@@ -1,109 +1,101 @@
-#' Survival Transformation Regression with Dependent Censoring
+#' Dependent-Censoring Transformation Inference for Survival Responses
 #'
-#' Fits a lognormal transformation model for survival responses that jointly models
-#' the event and censoring times.
+#' Fits a survival model accounting for dependent censoring via a transformation
+#' approach using the treatment indicator and, optionally, all recorded covariates
+#' as predictors.
 #'
 #' @export
 InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTransformRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMSummaryTable,
+	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-
 		#' @description
-		#' Initialize the inference object.
+		#' Initialize a dependent-censoring transformation inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
+		best_Xmm_colnames = NULL,
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_estimate(estimate_only = estimate_only))
+			}
+
+			Xmm_cols = private$best_Xmm_colnames
+			X_data = private$get_X()
+
+			if (length(Xmm_cols) == 0L){
+				Xmm = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				Xmm = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+
+			# We need start_params for this optimizer
+			start_params = rep(0, ncol(Xmm))
+			res = fast_dep_cens_transform_optim_cpp(y = private$y, dead = private$dead, X = Xmm, start_params = start_params)
+			if (is.null(res) || !is.finite(res$b[2])){
+				return(NA_real_)
+			}
+			as.numeric(res$b[2])
+		},
 
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
 
-		create_bootstrap_worker_state = function(){
-			private$create_design_backed_bootstrap_worker_state()
-		},
+		generate_mod = function(estimate_only = FALSE){
+			X_full = private$build_design_matrix()
+			
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
+				fit_fun = function(X_fit){
+					start_params = rep(0, ncol(X_fit))
+					fast_dep_cens_transform_optim_cpp(
+						y = private$y,
+						dead = private$dead,
+						X = X_fit,
+						start_params = start_params
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
+				}
+			)
 
-		load_bootstrap_sample_into_worker = function(worker_state, indices){
-			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
-		},
-
-		compute_bootstrap_worker_estimate = function(worker_state){
-			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+			}
+			attempt$fit
 		},
 
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
-				X = matrix(private$w, ncol = 1)
-				colnames(X) = "treatment"
-				X
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-		},
-
-		build_design_matrix_candidates = function(){
-			list(private$build_design_matrix())
-		},
-
-		generate_mod = function(estimate_only = FALSE){
-			for (Xmm in private$build_design_matrix_candidates()){
-				treatment_col = match("treatment", colnames(Xmm))
-				if (!is.finite(treatment_col)) treatment_col = 1L
-				attempt = private$fit_with_hardened_qr_column_dropping(
-					X_full = Xmm,
-					required_cols = treatment_col,
-					fit_fun = function(X_fit){
-						.fit_dep_cens_transform_model(
-							y = private$y,
-							dead = private$dead,
-							Xmm = X_fit,
-							estimate_only = estimate_only
-						)
-					},
-					fit_ok = function(mod, X_fit, keep){
-						if (is.null(mod) || is.null(mod$coefficients)) return(FALSE)
-						if (!"treatment" %in% names(mod$coefficients)) return(FALSE)
-						if (!is.finite(as.numeric(mod$coefficients["treatment"]))) return(FALSE)
-						if (estimate_only) return(TRUE)
-						if (is.null(mod$vcov) || !"treatment" %in% rownames(mod$vcov)) return(FALSE)
-						treatment_var = as.numeric(mod$vcov["treatment", "treatment"])
-						is.finite(treatment_var) && treatment_var > 0
-					}
-				)
-				if (!is.null(attempt$fit)) return(attempt$fit)
-			}
-			warning("Dependent-censoring transformation model failed to converge; returning NA.")
-			private$failed_dep_cens_transform_mod()
-		},
-
-		failed_dep_cens_transform_mod = function(){
-			coef_names = "treatment"
-			coef = stats::setNames(NA_real_, coef_names)
-			vcov_mat = matrix(NA_real_, nrow = 1L, ncol = 1L,
-				dimnames = list(coef_names, coef_names))
-			list(
-				coefficients = coef,
-				vcov = vcov_mat
-			)
+			X
 		}
 	)
 )

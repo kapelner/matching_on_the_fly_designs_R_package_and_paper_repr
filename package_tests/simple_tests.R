@@ -12,15 +12,16 @@ dataset = generate_covariate_dataset(n, p, data_type)
 X = dataset$X
 y_cont = dataset$y_cont
 
-run_tests_for_response = function(response_type, inference_classes) {
+run_tests_for_response = function(response_type, inference_classes, model_formula = NULL) {
   cat("\n\n###########################################################################\n")
-  cat("##### response_type =", response_type, "\n")
+  cat("##### response_type =", response_type, 
+      if (!is.null(model_formula)) paste0(" (formula: ", deparse(model_formula), ")") else "", "\n")
   cat("###########################################################################\n")
   
   y_base = transform_cont_y_based_on_response_type(y_cont, response_type)
   
   # Initialize Design
-  des = design_cls$new(response_type = response_type, n = n)
+  des = design_cls$new(response_type = response_type, n = n, model_formula = if (is.null(model_formula)) ~ . else model_formula)
   
   # Fill Design (Sequential)
   betaT = 1
@@ -54,21 +55,33 @@ run_tests_for_response = function(response_type, inference_classes) {
     inf_cls = if (is.list(inf_info)) inf_info[[1]] else inf_info
     inf_args = if (is.list(inf_info) && length(inf_info) > 1) inf_info[-1] else list()
     
-    cls_name = if (is.character(inf_cls)) inf_cls else inf_cls$classname
-    cat("\n--- Inference:", cls_name, if (length(inf_args)) paste0("(", paste(names(inf_args), inf_args, sep="=", collapse=", "), ")") else "", "---\n")
+    # Filter inf_args to only include those in the initialize method
+    init_params = names(formals(inf_cls$public_methods$initialize))
     
-    inf = do.call(inf_cls$new, c(list(des_obj = des), inf_args))
+    # If model_formula is provided, ensure it's passed to inference too if it supports it
+    if (!is.null(model_formula)) {
+      if ("model_formula" %in% init_params) {
+        inf_args$model_formula = model_formula
+      }
+    }
+    
+    inf_args_filtered = inf_args[names(inf_args) %in% init_params]
+    
+    cls_name = if (is.character(inf_cls)) inf_cls else inf_cls$classname
+    cat("\n--- Inference:", cls_name, if (length(inf_args_filtered)) paste0("(", paste(names(inf_args_filtered), inf_args_filtered, sep="=", collapse=", "), ")") else "", "---\n")
+
+    inf = do.call(inf_cls$new, c(list(des_obj = des), inf_args_filtered))
     
     # 1. Treatment Estimate
     tryCatch({
-      est = inf$compute_treatment_estimate()
+      est = inf$compute_estimate()
       cat("  Estimate:", est, "\n")
     }, error = function(e) cat("  Estimate Error:", e$message, "\n"))
     
     # 2. Asymptotic Inference
     if (inherits(inf, "InferenceAsymp")) {
       tryCatch({
-        cat("  Asymp P-val:", inf$compute_asymp_two_sided_pval_for_treatment_effect(), "\n")
+        cat("  Asymp P-val:", inf$compute_asymp_two_sided_pval(), "\n")
         cat("  Asymp CI:", paste(inf$compute_asymp_confidence_interval(), collapse = ", "), "\n")
       }, error = function(e) cat("  Asymp Error:", e$message, "\n"))
     }
@@ -84,66 +97,76 @@ run_tests_for_response = function(response_type, inference_classes) {
     # 4. Randomization Inference
     if (inherits(inf, "InferenceRand")) {
       tryCatch({
-        cat("  Rand P-val:", inf$compute_two_sided_pval_for_treatment_effect_rand(r = r), "\n")
+        cat("  Rand P-val:", inf$compute_rand_two_sided_pval(r = r), "\n")
         if (inherits(inf, "InferenceRandCI")) {
-          cat("  Rand CI:", paste(inf$compute_confidence_interval_rand(r = r), collapse = ", "), "\n")
+          cat("  Rand CI:", paste(inf$compute_rand_confidence_interval(r = r), collapse = ", "), "\n")
         }
       }, error = function(e) cat("  Rand Error:", e$message, "\n"))
     }
   }
 }
 
-##### response_type = continuous
+##### response_type = continuous (standard)
 run_tests_for_response("continuous", list(
   InferenceAllSimpleMeanDiff,
-  list(InferenceContinOLS, include_covariates = FALSE),
-  list(InferenceContinOLS, include_covariates = TRUE),
-  list(InferenceContinLin, include_covariates = TRUE),
-  list(InferenceContinQuantileRegr, include_covariates = TRUE),
-  list(InferenceContinRobustRegr, include_covariates = TRUE),
-  list(InferenceContinKKRobustRegrIVWC, include_covariates = TRUE),
-  list(InferenceContinKKRobustRegrOneLik, include_covariates = TRUE),
-  list(InferenceContinKKGLMM, include_covariates = TRUE)
+  list(InferenceContinOLS, model_formula = ~ 1),
+  list(InferenceContinOLS, model_formula = ~ .),
+  list(InferenceContinLin, model_formula = ~ .),
+  list(InferenceContinQuantileRegr, model_formula = ~ .),
+  list(InferenceContinRobustRegr, model_formula = ~ .),
+  list(InferenceContinKKRobustRegrIVWC, model_formula = ~ .),
+  list(InferenceContinKKRobustRegrOneLik, model_formula = ~ .),
+  list(InferenceContinKKGLMM, model_formula = ~ .)
 ))
+
+##### response_type = continuous (model_formula = ~ .)
+run_tests_for_response("continuous", list(
+  list(InferenceContinOLS)
+), model_formula = ~ .)
+
+##### response_type = continuous (model_formula = ~ 1)
+run_tests_for_response("continuous", list(
+  list(InferenceContinOLS)
+), model_formula = ~ 1)
 
 ##### response_type = incidence
 run_tests_for_response("incidence", list(
-  list(InferenceIncidLogRegr, include_covariates = FALSE),
-  list(InferenceIncidLogRegr, include_covariates = TRUE),
-  list(InferenceIncidLogBinomial, include_covariates = TRUE),
-  list(InferenceIncidModifiedPoisson, include_covariates = TRUE),
-  list(InferenceIncidRiskDiff, include_covariates = TRUE),
-  list(InferenceIncidBinomialIdentityRiskDiff, include_covariates = TRUE),
-  list(InferenceIncidGCompRiskDiff, include_covariates = TRUE),
-  list(InferenceIncidGCompRiskRatio, include_covariates = TRUE),
-  list(InferenceIncidKKClogitIVWC, include_covariates = TRUE),
-  list(InferenceIncidKKClogitOneLik, include_covariates = TRUE),
-  list(InferenceIncidKKGEE, include_covariates = TRUE),
-  list(InferenceIncidKKGLMM, include_covariates = TRUE)
+  list(InferenceIncidLogRegr, model_formula = ~ 1),
+  list(InferenceIncidLogRegr, model_formula = ~ .),
+  list(InferenceIncidLogBinomial, model_formula = ~ .),
+  list(InferenceIncidModifiedPoisson, model_formula = ~ .),
+  list(InferenceIncidRiskDiff, model_formula = ~ .),
+  list(InferenceIncidBinomialIdentityRiskDiff, model_formula = ~ .),
+  list(InferenceIncidGCompRiskDiff, model_formula = ~ .),
+  list(InferenceIncidGCompRiskRatio, model_formula = ~ .),
+  list(InferenceIncidKKClogitIVWC, model_formula = ~ .),
+  list(InferenceIncidKKClogitOneLik, model_formula = ~ .),
+  list(InferenceIncidKKGEE, model_formula = ~ .),
+  list(InferenceIncidKKGLMM, model_formula = ~ .)
 ))
 
 ##### response_type = proportion
 run_tests_for_response("proportion", list(
   InferenceAllSimpleMeanDiff,
-  list(InferencePropBetaRegr, include_covariates = TRUE),
-  list(InferencePropFractionalLogit, include_covariates = TRUE),
-  list(InferencePropGCompMeanDiff, include_covariates = TRUE),
-  list(InferencePropKKGEE, include_covariates = TRUE),
-  list(InferencePropKKGLMM, include_covariates = TRUE)
+  list(InferencePropBetaRegr, model_formula = ~ .),
+  list(InferencePropFractionalLogit, model_formula = ~ .),
+  list(InferencePropGCompMeanDiff, model_formula = ~ .),
+  list(InferencePropKKGEE, model_formula = ~ .),
+  list(InferencePropKKGLMM, model_formula = ~ .)
 ))
 
 ##### response_type = count
 run_tests_for_response("count", list(
-  list(InferenceCountPoisson, include_covariates = TRUE),
-  list(InferenceCountNegBin, include_covariates = TRUE),
-  list(InferenceCountKKCPoissonIVWC, include_covariates = TRUE)
+  list(InferenceCountPoisson, model_formula = ~ .),
+  list(InferenceCountNegBin, model_formula = ~ .),
+  list(InferenceCountKKCPoissonIVWC, model_formula = ~ .)
 ))
 
 ##### response_type = survival
 run_tests_for_response("survival", list(
   InferenceSurvivalLogRank,
-  list(InferenceSurvivalCoxPHRegr, include_covariates = TRUE),
-  list(InferenceSurvivalKKLWACoxIVWC, include_covariates = TRUE)
+  list(InferenceSurvivalCoxPHRegr, model_formula = ~ .),
+  list(InferenceSurvivalKKLWACoxIVWC, model_formula = ~ .)
 ))
 
 ##### response_type = ordinal

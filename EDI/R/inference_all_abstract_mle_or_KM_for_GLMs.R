@@ -11,7 +11,7 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 		#' @description
 		#' Computes the treatment estimate using the underlying model.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
@@ -60,7 +60,7 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			# generate_mod may return NULL when the fit failed for all column subsets
 			# (tryCatch in fit_with_hardened_qr_column_dropping catches convergence errors
 			# and returns NULL). NULL$b[2] evaluates to NULL in R without error, which
-			# would propagate as NULL from compute_treatment_estimate(). Guard here.
+			# would propagate as NULL from compute_estimate(). Guard here.
 			if (is.null(model_output)) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_

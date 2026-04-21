@@ -18,19 +18,19 @@ colnames(X)
 #rename the inferences
 X[function_run == "compute_bootstrap_confidence_interval", function_run := "ci_bootstrap"]
 X[function_run == "compute_bootstrap_two_sided_pval", function_run := "pval_bootstrap"]
-X[function_run == "compute_confidence_interval_rand", function_run := "ci_rand"]
+X[function_run == "compute_rand_confidence_interval", function_run := "ci_rand"]
 X[function_run == "compute_exact_confidence_interval", function_run := "ci_exact"]
 X[function_run == "compute_exact_two_sided_pval_for_treatment_effect", function_run := "pval_exact"]
-X[function_run == "compute_confidence_interval_rand(custom)", function_run := "ci_rand_custom"]
+X[function_run == "compute_rand_confidence_interval(custom)", function_run := "ci_rand_custom"]
 X[function_run == "compute_mle_confidence_interval", function_run := "ci_asymp"] ####OLD
 X[function_run == "compute_asymp_confidence_interval", function_run := "ci_asymp"]
 X[function_run == "compute_mle_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"] ####OLD
-X[function_run == "compute_asymp_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"]
+X[function_run == "compute_asymp_two_sided_pval", function_run := "pval_asymp"]
 X[function_run == "compute_asymp_log_rank_two_sided_pval_for_treatment_effect", function_run := "pval_asymp"]
-X[function_run == "compute_treatment_estimate", function_run := "est"]
-X[function_run == "compute_two_sided_pval_for_treatment_effect_rand", function_run := "pval_rand"]
-X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(custom)", function_run := "pval_rand_custom"]
-X[function_run == "compute_two_sided_pval_for_treatment_effect_rand(delta=0.5)", function_run := "pval_rand_shift"]
+X[function_run == "compute_estimate", function_run := "est"]
+X[function_run == "compute_rand_two_sided_pval", function_run := "pval_rand"]
+X[function_run == "compute_rand_two_sided_pval(custom)", function_run := "pval_rand_custom"]
+X[function_run == "compute_rand_two_sided_pval(delta=0.5)", function_run := "pval_rand_shift"]
 table(X$function_run)
 
 #check duration time

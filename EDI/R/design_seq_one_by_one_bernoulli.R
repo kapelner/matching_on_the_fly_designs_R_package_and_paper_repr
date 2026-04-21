@@ -21,6 +21,8 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		#'   should we include another dummy variable for its missingness? The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL}.
 		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#' @return	A new `DesignSeqOneByOneBernoulli` object
 		#'
 		initialize = function(
@@ -29,9 +31,11 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						
-						verbose = FALSE
-					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+						verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
+			) {
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 		},
 
 		#' @description

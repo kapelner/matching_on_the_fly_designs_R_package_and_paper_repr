@@ -43,19 +43,23 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose If TRUE, print additional information.
-		initialize = function(des_obj, verbose = FALSE) {
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 
 		#' @description
 		#' Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -83,7 +87,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' @param delta The null difference to test against. Default is 0.
 		#'
 		#' @return	The approximate frequentist p-value
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -122,7 +126,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#' @param pval_epsilon Unused.
 		#' @param show_progress Unused.
 		#' @param ci_search_control Unused.
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalLogRank due to inconsistent estimator units on the log-rank score scale.")
 		}
 	),

@@ -6,7 +6,6 @@
 #' asymptotic variance is computed from the inverse of the summed observed Fisher
 #' information matrices for the two components.
 #'
-#' @export
 InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
@@ -15,6 +14,10 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
 		#' @param max_abs_reasonable_coef Maximum absolute value allowed for the
 		#'   treatment estimate and its standard error before the fit is treated as
@@ -22,12 +25,10 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		#' @param max_abs_log_sigma Maximum absolute value allowed for the log
 		#'   random-intercept standard deviation in the concordant-pair GLMM
 		#'   likelihood. Defaults to \code{8}.
-		initialize = function(
-				des_obj,
+		initialize = function(des_obj, model_formula = NULL,
 				verbose = FALSE,
 				max_abs_reasonable_coef = 1e4,
-				max_abs_log_sigma = 8
-			){
+				max_abs_log_sigma = 8){
 			if (should_run_asserts()) {
 				assertNumeric(max_abs_reasonable_coef, lower = .Machine$double.xmin, len = 1, any.missing = FALSE)
 				assertNumeric(max_abs_log_sigma, lower = .Machine$double.xmin, len = 1, any.missing = FALSE)
@@ -40,7 +41,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$max_abs_reasonable_coef = max_abs_reasonable_coef
 			private$max_abs_log_sigma = max_abs_log_sigma
 			if (should_run_asserts()) {
@@ -51,7 +52,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		#' @description
 		#' Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_clogit_plus_glmm(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
@@ -60,69 +61,6 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 		max_abs_log_sigma = 8,
-
-		include_covariates = function() TRUE,
-		combine_reservoir_into_glmm = function() stop(class(self)[1], " must implement combine_reservoir_into_glmm()"),
-
-		get_standard_error = function(){
-			private$shared_clogit_plus_glmm(estimate_only = FALSE)
-			private$cached_values$s_beta_hat_T
-		},
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
-
-		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			self$compute_treatment_estimate(estimate_only = TRUE)
-		},
-
-		shared_clogit_plus_glmm = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
-
-			data_parts = private$build_clogit_plus_glmm_data()
-			if (is.null(data_parts) || !data_parts$has_discordant){
-				private$cache_nonestimable_estimate("kk_clogit_plus_glmm_no_discordant_pairs")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			fit = if (private$combine_reservoir_into_glmm()) {
-				private$fit_clogit_plus_glmm(data_parts, estimate_only = estimate_only)
-			} else {
-				private$fit_clogit_plus_glmm_ivwc(data_parts, estimate_only = estimate_only)
-			}
-			if (is.null(fit)){
-				private$cache_nonestimable_estimate("kk_clogit_plus_glmm_fit_failed")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			private$cached_values$beta_hat_T = as.numeric(fit$beta_T)
-			if (!is.finite(private$cached_values$beta_hat_T) ||
-			    abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
-				private$cache_nonestimable_estimate("kk_clogit_plus_glmm_extreme_estimate")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			if (!estimate_only){
-				se = as.numeric(fit$se_beta_T)
-				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
-				if (!is.finite(private$cached_values$s_beta_hat_T)){
-					private$cache_nonestimable_se("kk_clogit_plus_glmm_standard_error_unavailable")
-					private$cached_values$is_z = TRUE
-					return(invisible(NULL))
-				}
-			}
-			private$clear_nonestimable_state()
-			private$cached_values$is_z = TRUE
-			invisible(NULL)
-		},
 
 		build_clogit_plus_glmm_data = function(include_reservoir = private$combine_reservoir_into_glmm()){
 			if (is.null(private$cached_values$KKstats)){
@@ -135,8 +73,8 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			i_matched = which(m_vec > 0L)
 			if (length(i_matched) == 0L) return(NULL)
 
-			p = if (private$include_covariates()) ncol(private$get_X()) else 0L
-			X_m = if (p > 0L) as.matrix(private$get_X()[i_matched, , drop = FALSE]) else matrix(nrow = length(i_matched), ncol = 0L)
+			p = ncol(as.matrix(private$X))
+			X_m = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(i_matched), ncol = 0L)
 			y_m = as.numeric(private$y[i_matched])
 			w_m = as.numeric(private$w[i_matched])
 			strata_m = as.integer(m_vec[i_matched])
@@ -156,7 +94,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				disc = collect_discordant_pairs_cpp(
 					as.double(y_m[discordant_rows]),
 					as.double(w_m[discordant_rows]),
-					X_m[discordant_rows, , drop = FALSE],
+					X_m[discordant_rows, drop = FALSE],
 					as.integer(disc_strata)
 				)
 				if (disc$nd > 0L){
@@ -170,7 +108,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			group_conc = NULL
 			if (length(concordant_pairs) > 0L){
 				conc_rows = unlist(concordant_pairs, use.names = FALSE)
-				X_conc = cbind(Intercept = 1, w = w_m[conc_rows], X_m[conc_rows, , drop = FALSE])
+				X_conc = cbind(Intercept = 1, w = w_m[conc_rows], X_m[conc_rows, drop = FALSE])
 				y_conc = y_m[conc_rows]
 				group_conc = rep(seq_along(concordant_pairs), each = 2L)
 			}
@@ -358,7 +296,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			total = 0
 			for (g in unique(data_parts$group_conc)){
 				ii = which(data_parts$group_conc == g)
-				eta0 = as.vector(data_parts$X_conc[ii, , drop = FALSE] %*% beta)
+				eta0 = as.vector(data_parts$X_conc[ii, drop = FALSE] %*% beta)
 				log_terms = vapply(seq_along(b_vals), function(k){
 					eta = eta0 + b_vals[k]
 					sum(data_parts$y_conc[ii] * eta - private$log1pexp(eta)) + log_norm_weights[k]

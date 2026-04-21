@@ -11,24 +11,21 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
+				
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
-		#'   implementation. If \code{FALSE}, use \pkg{glmmTMB}.
-		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, include_covariates = NULL, use_rcpp = TRUE, verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, verbose = verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -38,17 +35,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 			}
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
+			
 			private$use_rcpp = use_rcpp
 		},
 
 		#' @description
 		#' Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -71,7 +65,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -96,7 +90,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 	private = list(
 		best_Xmm_colnames = NULL,
-		include_covariates = NULL,
 		use_rcpp = TRUE,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -106,7 +99,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
@@ -147,7 +140,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		za_description = function() stop(class(self)[1], " must implement za_description()."),
 
 		predictors_df = function(){
-			if (private$include_covariates) {
+			if (ncol(as.matrix(private$X)) > 0){
 				full_X = private$create_design_matrix()
 				X_model = full_X[, -1, drop = FALSE]
 				colnames(X_model)[1] = "w"

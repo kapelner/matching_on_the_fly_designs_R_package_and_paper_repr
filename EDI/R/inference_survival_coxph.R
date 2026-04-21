@@ -8,46 +8,41 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-
+				
 		#' @description
 		#' Initialize a Cox PH inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
-		#'   implementation. If \code{FALSE}, use \pkg{survival::coxph}.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
+			
 			private$use_rcpp = use_rcpp
 		},
 
 		#' @description
 		#' Computes the Cox PH estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
-			super$compute_treatment_estimate(estimate_only = estimate_only)
+		compute_estimate = function(estimate_only = FALSE){
+			super$compute_estimate(estimate_only = estimate_only)
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
 		use_rcpp = TRUE,
 
 		generate_mod = function(estimate_only = FALSE){
-			X_fit = if (private$include_covariates) {
+			X_fit = if (ncol(as.matrix(private$X)) > 0){
 				cbind(treatment = private$w, private$get_X())
 			} else {
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))

@@ -8,6 +8,7 @@
 #' @keywords internal
 #' @export
 Design = R6::R6Class("Design",
+	lock_objects = FALSE,
 	public = list(
 		#' @description
 		#' Initialize an experimental design
@@ -34,6 +35,9 @@ Design = R6::R6Class("Design",
 		#'       detected in the covariate matrix. Use this when you want to guarantee that
 		#'       inference runs on exactly the data you supplied, with no silent modification.}
 		#'   }
+		#' @param model_formula A formula object used to create the design matrix from
+		#'   covariates. Default is \code{~ .}.
+		#' @param ordinal_levels If the response type is "ordinal", the labels for the levels.
 		#'
 		#' @return 			A new `Design` object
 		initialize = function(
@@ -42,7 +46,9 @@ Design = R6::R6Class("Design",
 				include_is_missing_as_a_new_feature = FALSE,
 				n = NULL,
 				verbose = FALSE,
-				missingness_method = "impute"
+				missingness_method = "impute",
+				model_formula = ~ .,
+				ordinal_levels = NULL
 			) {
 			if (should_run_asserts()) {
 				assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
@@ -51,6 +57,10 @@ Design = R6::R6Class("Design",
 				assertFlag(verbose)
 				assertCount(n, null.ok = TRUE)
 				assertChoice(missingness_method, c("impute", "drop_column", "error"))
+				assertFormula(model_formula)
+				if (response_type == "ordinal" && !is.null(ordinal_levels)) {
+					assertCharacter(ordinal_levels, min.len = 2, any.missing = FALSE)
+				}
 			}
 
 			if (is.null(n)){
@@ -63,16 +73,21 @@ Design = R6::R6Class("Design",
 
 			private$prob_T = prob_T
 			private$response_type = response_type
+			private$response_type_original = response_type
+			private$ordinal_levels = ordinal_levels
+			private$original_ordinal_levels = ordinal_levels
 			private$include_is_missing_as_a_new_feature = include_is_missing_as_a_new_feature
 			private$missingness_method = missingness_method
+			private$model_formula = model_formula
 
 			# Ensure budget is respected among openmp and other packages
 
 			private$verbose = verbose
 			if (private$fixed_sample){
-				private$y = 	rep(NA_real_, n)
-				private$w = 	rep(NA_real_, n)
-				private$dead =  rep(NA_real_, n)
+				private$y = 	     rep(NA_real_, n)
+				private$y_original = rep(NA_real_, n)
+				private$w = 	     rep(NA_real_, n)
+				private$dead =       rep(NA_real_, n)
 			}
 
 			if (private$verbose){
@@ -106,42 +121,26 @@ Design = R6::R6Class("Design",
 			if (length(private$y) >= t & !is.na(private$y[t])){
 				warning(paste("Overwriting previous response for t =", t, "y[t] =", private$y[t]))
 			}
-			if (private$response_type == "continuous"){
+			if (private$response_type == "ordinal" && is.factor(y)){
 				if (should_run_asserts()) {
-					assertNumeric(y, any.missing = FALSE)
+					assertFactor(y, ordered = TRUE, any.missing = FALSE)
 				}
-			} else if (private$response_type == "incidence"){
-				if (should_run_asserts()) {
-					assertChoice(y, c(0, 1))
+				levs = levels(y)
+				private$ordinal_levels = levs
+				if (private$response_type_original == "ordinal" && is.null(private$original_ordinal_levels)){
+					private$original_ordinal_levels = levs
 				}
-			} else if (private$response_type == "proportion"){
-				if (should_run_asserts()) {
-					assertNumeric(y, any.missing = FALSE, lower = 0, upper = 1)
-				}
-			} else if (private$response_type == "count"){
-				if (should_run_asserts()) {
-					assertCount(y, na.ok = FALSE)
-				}
-			} else if (private$response_type == "survival"){
-				if (should_run_asserts()) {
-					assertNumeric(y, any.missing = FALSE, lower = 0)
-				}
-				if (y == 0){
-					warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
-					y = .Machine$double.eps
-				}
-			} else if (private$response_type == "ordinal"){
-				if (is.factor(y)){
-					if (should_run_asserts()) {
-						assertFactor(y, ordered = TRUE, any.missing = FALSE)
-					}
-					y = as.integer(y)
-				} else {
-					if (should_run_asserts()) {
-						assertCount(y, positive = TRUE, na.ok = FALSE)
-					}
-				}
+				y = as.integer(y)
 			}
+
+			
+			private$assert_y(y, private$response_type)
+
+			if (private$response_type == "survival" && y == 0){
+				warning("0 survival responses not allowed --- recording .Machine$double.eps as its value instead")
+				y = .Machine$double.eps
+			}
+
 			if (should_run_asserts()) {
 				if (dead == 0 & private$response_type != "survival"){
 					stop("censored observations are only available for survival response types")
@@ -149,9 +148,11 @@ Design = R6::R6Class("Design",
 			}
 			if (private$fixed_sample | t <= length(private$y)){
 				private$y[t] = y
+				private$y_original[t] = y
 				private$dead[t] = dead
 			} else if (t == length(private$y) + 1){
 				private$y = c(private$y, y)
+				private$y_original = c(private$y_original, y)
 				private$dead = c(private$dead, dead)
 			} else {
 				if (should_run_asserts()) {
@@ -176,6 +177,8 @@ Design = R6::R6Class("Design",
 				} else {
 					assertNumeric(ys, len = private$t)
 				}
+				private$assert_y(ys, private$response_type)
+
 				assertNumeric(deads, len = private$t)
 				
 				if (private$response_type != "survival" && any(deads == 0)){
@@ -184,10 +187,16 @@ Design = R6::R6Class("Design",
 			}
 			
 			if (private$response_type == "ordinal" && is.factor(ys)){
+				levs = levels(ys)
+				private$ordinal_levels = levs
+				if (private$response_type_original == "ordinal" && is.null(private$original_ordinal_levels)){
+					private$original_ordinal_levels = levs
+				}
 				ys = as.integer(ys)
 			}
 
 			private$y = as.numeric(ys)
+			private$y_original = as.numeric(ys)
 			private$dead = as.numeric(deads)
 			private$y_i_t_i = as.list(seq_len(private$t))
 		},
@@ -335,6 +344,13 @@ Design = R6::R6Class("Design",
 			private$y
 		},
 
+		#' @description Get y_original
+		#'
+		#' @return 			A numeric vector of the original subject responses.
+		get_y_original = function(){
+			private$y_original
+		},
+
 		#' @description Get w
 		#'
 		#' @return 			A binary vector of subject assignments.
@@ -477,12 +493,70 @@ Design = R6::R6Class("Design",
 			private$response_type
 		},
 
+		#' @description Get the original response type
+		#'
+		#' @return 			The original specified response type.
+		get_response_type_original = function(){
+			private$response_type_original
+		},
+
+		#' @description Get ordinal levels
+		#'
+		#' @return 			The levels of the ordinal response.
+		get_ordinal_levels = function(){
+			private$ordinal_levels
+		},
+
+		#' @description Get original ordinal levels
+		#'
+		#' @return 			The labels for the levels of the original ordinal response.
+		get_original_ordinal_levels = function(){
+			private$original_ordinal_levels
+		},
+
 		#' @description Get the missingness method
 		#'
 		#' @return 			The missingness handling method: \code{"impute"}, \code{"drop_column"},
 		#'   or \code{"error"}.
 		get_missingness_method = function(){
 			private$missingness_method
+		},
+
+		#' @description Transform the response vector y
+		#'
+		#' @param transform_fun A function that takes y_original and returns a new y.
+		#' @param transformed_response_type The response type of the transformed y.
+		#' @param ordinal_levels If the transformed response type is "ordinal", the labels for the levels.
+		transform_y = function(transform_fun, transformed_response_type, ordinal_levels = NULL) {
+			if (should_run_asserts()) {
+				assertFunction(transform_fun)
+				if (!identical(names(formals(transform_fun))[1], "y_original")) {
+					stop("transform_fun must have its first argument named 'y_original'")
+				}
+				assertChoice(transformed_response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
+				if (transformed_response_type == "ordinal" && !is.null(ordinal_levels)) {
+					assertCharacter(ordinal_levels, min.len = 2, any.missing = FALSE)
+				}
+			}
+
+			y_temp = transform_fun(y_original = private$y_original)
+
+			if (should_run_asserts()) {
+				assertNumeric(y_temp, len = length(private$y_original))
+				private$assert_y(y_temp, transformed_response_type)
+			}
+
+			private$y = as.numeric(y_temp)
+			private$response_type = transformed_response_type
+			private$ordinal_levels = ordinal_levels
+			invisible(private$y)
+		},
+
+		#' @description Get the model formula
+		#'
+		#' @return 			The model formula.
+		get_model_formula = function(){
+			private$model_formula
 		},
 
 		#' @description
@@ -512,11 +586,12 @@ Design = R6::R6Class("Design",
 		t = 0L,
 		n = NULL,
 		Xraw = data.table(),
-		p_raw_t = NULL,
 		Ximp = data.table(),
 		X = NULL,
+		p_raw_t = NULL,
 		w = numeric(),
 		y = numeric(),
+		y_original = numeric(),
 		dead = numeric(),
 		m = NULL,
 		kk_xm_structural     = NULL,
@@ -536,9 +611,13 @@ Design = R6::R6Class("Design",
 		strata_cols = NULL,
 		prob_T = NULL,
 		response_type = NULL,
+		response_type_original = NULL,
+		ordinal_levels = NULL,
+		original_ordinal_levels = NULL,
 		fixed_sample = NULL,
 		include_is_missing_as_a_new_feature = NULL,
 		missingness_method = "impute",
+		model_formula = NULL,
 		verbose = NULL,
 		design_is_supported_blocking = function(des_obj){
 			is(des_obj, "DesignSeqOneByOneKK14") ||
@@ -556,11 +635,28 @@ Design = R6::R6Class("Design",
 			i_b = sample(n, n, replace = TRUE)
 			private$w    = private$w[i_b]
 			private$y    = private$y[i_b]
+			private$y_original = private$y_original[i_b]
 			private$dead = private$dead[i_b]
 			if (!is.null(private$m)){
 				private$m = private$m[i_b]
 			}
 			invisible(self)
+		},
+
+		assert_y = function(y, response_type) {
+			if (should_run_asserts()) {
+				if (response_type == "incidence") {
+					assertIntegerish(y, lower = 0, upper = 1, any.missing = FALSE)
+				} else if (response_type == "proportion") {
+					assertNumeric(y, lower = 0, upper = 1, any.missing = FALSE)
+				} else if (response_type == "count") {
+					assertIntegerish(y, lower = 0, any.missing = FALSE)
+				} else if (response_type == "survival") {
+					assertNumeric(y, lower = 0, any.missing = FALSE)
+				} else if (response_type == "ordinal") {
+					assertIntegerish(y, lower = 1, any.missing = FALSE)
+				}
+			}
 		},
 
 		covariate_impute_if_necessary_and_then_create_model_matrix = function(){
@@ -630,26 +726,22 @@ Design = R6::R6Class("Design",
 			num_unique_values_per_column = count_unique_values_cpp(Ximp_for_model)
 			Ximp_for_model = Ximp_for_model[, .SD, .SDcols = which(num_unique_values_per_column > 1)]
 
-			#for nonblank data frames...
-			if (ncol(Ximp_for_model) > 0){
-				#now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
-				private$X = model.matrix(~ ., data = Ximp_for_model)[, -1, drop = FALSE]
-				# Ensure it is a numeric matrix (not character)
-				if (should_run_asserts()) {
-					if (is.character(private$X)){
-						stop("model.matrix returned a character matrix - this should not happen.")
-					}
-				}
-				private$X = drop_linearly_dependent_cols(private$X)$M
+			# now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
+			private$X = create_model_matrix_from_features(private$model_formula, Ximp_for_model)
 
+			# Ensure it is a numeric matrix (not character)
+			if (should_run_asserts()) {
+				if (ncol(private$X) > 0 && is.character(private$X)){
+					stop("model.matrix returned a character matrix - this should not happen.")
+				}
+			}
+
+			if (ncol(private$X) > 0){
 				if (should_run_asserts()) {
 					if (nrow(private$X) != nrow(private$Xraw) | nrow(private$X) != nrow(private$Ximp) | nrow(private$Ximp) != nrow(private$Xraw)){
 						stop("improper sizing for the internal X representation")
 					}
 				}
-			} else {
-				#blank covariate matrix
-				private$X = matrix(NA, nrow = nrow(private$Xraw), ncol = 0)
 			}
 
 		},

@@ -18,45 +18,41 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
+				
 		#' @description
 		#' Initialize a quantile-regression inference object for a completed design
 		#' with a continuous response.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates and \code{FALSE} otherwise.
-		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
-		#'   \code{tau = 0.5} estimates the median treatment effect.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, tau = 0.5,  verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param tau Description for tau. Default 0.5.
+		#' @param verbose Description for verbose. Default FALSE.
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!check_package_installed("quantreg")) {
 					stop("Package 'quantreg' is required. Please install it with install.packages(\"quantreg\").")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
+			
 			private$tau = tau
 		},
 
 		#' @description
 		#' Computes the quantile-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -76,7 +72,7 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 		#' @description
 		#' Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -87,7 +83,6 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 
 	private = list(
 		tau = NULL,
-		include_covariates = NULL,
 		fit_warm_keep = NULL,
 
 		supports_reusable_bootstrap_worker = function(){
@@ -107,13 +102,7 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 		},
 
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
-			} else {
-				X = cbind(1, private$w)
-				colnames(X) = c("(Intercept)", "treatment")
-				X
-			}
+			private$create_design_matrix()
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){

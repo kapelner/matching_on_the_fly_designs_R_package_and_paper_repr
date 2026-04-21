@@ -21,6 +21,8 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#' @param t_0_pct The percentage of subjects to allocate before matching begins.
 		#' @param morrison If TRUE, use Morrison's method for matching.
 		#' @param p The number of covariates to use for matching.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return	A new `DesignSeqOneByOneKK14` object
 		initialize = function(
@@ -33,9 +35,11 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 						lambda = NULL,
 						t_0_pct = NULL,
 						morrison = FALSE,
-						p = NULL
+						p = NULL,
+						missingness_method = "impute",
+						model_formula = ~ .
 					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$uses_covariates = TRUE
 			private$lambda = if (is.null(lambda)) 0.1 else lambda
 			private$t_0_pct = if (is.null(t_0_pct)) 0.35 else t_0_pct

@@ -31,7 +31,11 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 		#'   corresponding list contains keyword arguments (beyond
 		#'   \code{des_obj}) forwarded to that class's \code{initialize}.
 		#'   Defaults to an empty list (no extra arguments for any class).
-		initialize = function(des_obj, inference_params = list()) {
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		initialize = function(des_obj, model_formula = NULL, inference_params = list()) {
 			if (should_run_asserts()) {
 				if (!is(des_obj, "Design")) {
 					stop("InferenceSuite: des_obj must be a Design object.")

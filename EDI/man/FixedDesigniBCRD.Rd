@@ -42,15 +42,21 @@ completely randomized experimental design.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_block_ids"><a href='../../EDI/html/Design.html#method-Design-get_block_ids'><code>EDI::Design$get_block_ids()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_missingness_method"><a href='../../EDI/html/Design.html#method-Design-get_missingness_method'><code>EDI::Design$get_missingness_method()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_model_formula"><a href='../../EDI/html/Design.html#method-Design-get_model_formula'><code>EDI::Design$get_model_formula()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_ordinal_levels'><code>EDI::Design$get_ordinal_levels()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_original_ordinal_levels'><code>EDI::Design$get_original_ordinal_levels()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type_original"><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>EDI::Design$get_response_type_original()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y_original"><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>EDI::Design$get_y_original()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="transform_y"><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>EDI::Design$transform_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subjects_to_experiment"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subjects_to_experiment'><code>EDI::FixedDesign$add_all_subjects_to_experiment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="assign_w_to_all_subjects"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-assign_w_to_all_subjects'><code>EDI::FixedDesign$assign_w_to_all_subjects()</code></a></span></li>
@@ -70,7 +76,9 @@ Initialize a fixed balanced completely randomized experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  missingness_method = "impute",
+  model_formula = ~.
 )}\if{html}{\out{</div>}}
 }
 
@@ -87,6 +95,10 @@ Initialize a fixed balanced completely randomized experimental design
 \item{\code{n}}{The sample size.}
 
 \item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
 }
 \if{html}{\out{</div>}}
 }

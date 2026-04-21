@@ -9,42 +9,35 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-
+				
 		#' @description
 		#' Initialize a robust Poisson regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param verbose			Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
-				assertFlag(include_covariates, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		},
 
 		#' @description
 		#' Computes the robust Poisson estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -52,7 +45,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				private$shared(estimate_only = TRUE)
 			}
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			Xmm_cols = private$best_Xmm_colnames
@@ -65,7 +58,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				Xmm = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = fast_poisson_regression_cpp(X = Xmm, y = as.numeric(private$y))
+			res = tryCatch(fast_poisson_regression_cpp(X = Xmm, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -77,13 +70,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 		},
 
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
-			} else {
-				X = cbind(1, private$w)
-				colnames(X) = c("(Intercept)", "treatment")
-				X
-			}
+			private$create_design_matrix()
 		},
 
 		fit_count_model_with_var = function(Xmm, estimate_only = FALSE){

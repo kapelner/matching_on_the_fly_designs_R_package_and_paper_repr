@@ -23,8 +23,12 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			res_type = des_obj$get_response_type()
 			if (should_run_asserts()) {
 				if (res_type == "incidence"){
@@ -39,7 +43,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				if (!check_package_installed("aftgee")) {
 					stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
@@ -50,7 +54,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @description
 		#' Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -74,7 +78,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -97,46 +101,6 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		aft_design_candidates = function(w, X, cache_key = "default"){
-			cache_name = paste0("rank_regr_design_candidates_", cache_key)
-			if (!is.null(private$cached_values[[cache_name]])) {
-				return(private$cached_values[[cache_name]])
-			}
-			X_full = cbind(w = w, X)
-
-			# Standard candidate: all covariates
-			attempt = private$fit_with_hardened_qr_column_dropping(
-				X_full = X_full,
-				required_cols = 1L,
-				fit_fun = function(X_fit) X_fit,
-				fit_ok = function(mod, X_fit, keep) TRUE
-			)
-			candidates = list(attempt$X)
-			keys = paste(colnames(candidates[[1L]]), collapse = "|")
-
-			thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
-			X_cov_orig = X_full[, -1, drop = FALSE]
-			for (thresh in thresholds){
-				X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
-				X_try = cbind(w = w, X_cov)
-				attempt_try = private$fit_with_hardened_qr_column_dropping(
-					X_full = X_try,
-					required_cols = 1L,
-					fit_fun = function(X_fit) X_fit,
-					fit_ok = function(mod, X_fit, keep) TRUE
-				)
-				key = paste(colnames(attempt_try$X), collapse = "|")
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = attempt_try$X
-					keys = c(keys, key)
-				}
-			}
-			private$cached_values[[cache_name]] = candidates
-			candidates
-		},
-
 		extract_term_estimate = function(mod, term_name = "w"){
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
 			if (is.null(coefs) || is.null(names(coefs)) || !(term_name %in% names(coefs))){
@@ -254,8 +218,8 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			formula_str = "survival::Surv(y, dead) ~ w"
 
 			mod = NULL
-			if (private$include_covariates()){
-				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
+			if (ncol(as.matrix(private$X)) > 0){
+				X_m = as.matrix(private$get_X()[i_matched, drop = FALSE])
 				for (X_candidate in private$aft_design_candidates(w_m, X_m, cache_key = "matched")){
 					dat_try = dat
 					formula_try = formula_str
@@ -305,7 +269,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			formula_str = "survival::Surv(y, dead) ~ w"
 
 			mod = NULL
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				for (X_candidate in private$aft_design_candidates(w_r, X_r, cache_key = "reservoir")){
 					dat_try = dat
 					formula_try = formula_str

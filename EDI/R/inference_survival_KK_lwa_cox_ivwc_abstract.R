@@ -21,8 +21,12 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -31,13 +35,13 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
 		#' Returns the estimated treatment effect (log-hazard ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -61,7 +65,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -83,18 +87,9 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
-
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
 
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
@@ -120,7 +115,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
+				if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T   = beta_m
@@ -191,50 +186,21 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 			candidates
 		},
 
-		fit_cox_model = function(y, dead, w, X, cluster = NULL, robust = FALSE){
+		# Fit Cox model with optional cluster-robust variance.
+		# cluster: integer vector of cluster IDs (length = length(y)), or NULL for standard Cox.
+		fit_cox_model = function(y, dead, w, X, cluster = NULL){
 			if (length(y) == 0L || sum(dead) == 0L) return(NULL)
+			cl_int = if (!is.null(cluster)) as.integer(cluster) else NULL
+
 			for (X_full in private$cox_design_candidates(w, X)){
-				dat = data.frame(y = y, dead = dead, w = X_full[, "w"])
-				formula_str = "survival::Surv(y, dead) ~ w"
-
-				X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-				if (ncol(X_covs) > 0){
-					colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-					dat = cbind(dat, X_covs)
-					formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-				}
-
-				if (!is.null(cluster)){
-					dat$cluster = factor(cluster)
-					formula_str = paste(formula_str, "+ cluster(cluster)")
-				}
-
-				mod = tryCatch(
-					suppressWarnings(survival::coxph(as.formula(formula_str), data = dat, robust = robust)),
+				res = tryCatch(
+					fast_coxph_regression_cpp(y, dead, X_full, cluster = cl_int),
 					error = function(e) NULL
 				)
+				if (is.null(res)) next
 
-				if (is.null(mod) && ncol(X_covs) > 0){
-					fallback_formula = "survival::Surv(y, dead) ~ w"
-					if (!is.null(cluster)){
-						fallback_formula = paste(fallback_formula, "+ cluster(cluster)")
-					}
-					mod = tryCatch(
-						suppressWarnings(survival::coxph(as.formula(fallback_formula), data = dat, robust = robust)),
-						error = function(e) NULL
-					)
-				}
-
-				if (is.null(mod)) next
-
-				coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-				vcv   = tryCatch(stats::vcov(mod), error = function(e) NULL)
-				if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))){
-					next
-				}
-
-				beta = as.numeric(coefs["w"])
-				se   = sqrt(as.numeric(vcv["w", "w"]))
+				beta = tryCatch(res$coefficients[1L], error = function(e) NA_real_)
+				se   = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
 				if (!is.finite(beta) || abs(beta) > private$max_abs_reasonable_coef ||
 				    !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef) next
 
@@ -255,9 +221,8 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 				y = private$y[i_matched],
 				dead = private$dead[i_matched],
 				w = private$w[i_matched],
-				X = private$get_X()[i_matched, , drop = FALSE],
-				cluster = m_vec[i_matched],
-				robust = TRUE
+				X = private$get_X()[i_matched, drop = FALSE],
+				cluster = m_vec[i_matched]
 			)
 			if (is.null(fit)) return(invisible(NULL))
 
@@ -277,8 +242,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 				y = private$y[i_reservoir],
 				dead = private$dead[i_reservoir],
 				w = private$w[i_reservoir],
-				X = private$get_X()[i_reservoir, , drop = FALSE],
-				robust = FALSE
+				X = private$get_X()[i_reservoir, drop = FALSE]
 			)
 			if (is.null(fit)) return(invisible(NULL))
 

@@ -2,7 +2,7 @@ library(data.table)
 library(ggplot2)
 
 Nrep = 5000L
-results_dt = fread(sprintf("simulations/azriel_exact_sims_results_Nrep_%d.csv", Nrep))
+results_dt = fread(sprintf("azriel_exact_sims_results_Nrep_%d.csv", Nrep))
 
 # Wald CIs for power and coverage
 z = qnorm(0.975)
@@ -71,10 +71,10 @@ make_plot = function(dat, metric, ylab, hline, title_str, filename_stem, plot = 
       plot(p)
   }
   if(save_PDF){
-    ggsave(sprintf("simulations/%s.pdf", filename_stem), p, width = 12, height = 6)
+    ggsave(sprintf("%s.pdf", filename_stem), p, width = 12, height = 6)
   }
   if (save_PNG){
-    ggsave(sprintf("simulations/%s.png", filename_stem), p, width = 12, height = 6, dpi = 150)
+    ggsave(sprintf("%s.png", filename_stem), p, width = 12, height = 6, dpi = 150)
   }
   invisible(p)
 }

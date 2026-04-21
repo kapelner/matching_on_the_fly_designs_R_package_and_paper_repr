@@ -1,3 +1,9 @@
+.normalize_optimizer_algorithm = function(optimization_alg, allow_irls = FALSE, default = if (allow_irls) "irls" else "lbfgs"){
+	if (missing(optimization_alg) || is.null(optimization_alg)) optimization_alg = default
+	valid = if (allow_irls) c("irls", "lbfgs", "newton_raphson") else c("lbfgs", "newton_raphson")
+	match.arg(optimization_alg, valid)
+}
+
 #' Fast Ordinary Least Squares (OLS) Regression (C++ Backend)
 #'
 #' This function provides a highly optimized implementation of Ordinary Least Squares (OLS)
@@ -225,8 +231,15 @@ NULL
 #' }
 #'
 #' @export
-fast_logistic_regression = function(Xmm, y){
+fast_logistic_regression = function(Xmm, y, optimization_alg = "irls"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "irls")
 	na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
+	if (optimization_alg != "irls"){
+		return(tryCatch({
+			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(y), optimization_alg = optimization_alg)
+			list(b = as.vector(res$b))
+		}, error = function(e) na_b()))
+	}
 	tryCatch({
 	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 		Xmm = Xmm,
@@ -295,7 +308,8 @@ fast_logistic_regression = function(Xmm, y){
 #' }
 #'
 #' @export
-fast_logistic_regression_with_var = function(Xmm, y, j = 2){
+fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "irls"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "irls")
 	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
 	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
 	# but finite value (which passes is.finite() checks and would silently corrupt CIs).
@@ -304,6 +318,14 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 	# Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
 	# 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
 	try_fit = function(X){
+	if (optimization_alg != "irls"){
+		return(tryCatch({
+			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = optimization_alg)
+			list(b = as.vector(mod$b), ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = is.null(mod$converged) || isTRUE(mod$converged))
+		}, error = function(e) {
+			list(b = rep(NA_real_, ncol(X)), ssq_b_j = NA_real_, ssq_b_2 = NA_real_, converged = FALSE)
+		}))
+	}
 	tryCatch({
 		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 			Xmm = X,
@@ -361,7 +383,8 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2){
 #' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
 #' }
 #' @export
-fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE){
+fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	Xmm = as.matrix(X)
 	
 	if (use_rcpp) {
@@ -371,7 +394,7 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		}
 		
 		res = tryCatch(
-			fast_weibull_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only),
+			fast_weibull_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only, optimization_alg = optimization_alg),
 			error = function(e) stop("Weibull regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -509,10 +532,11 @@ sanitize_beta_response = function(y){
 #' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
 #' fast_beta_regression(Xmm, y)
-fast_beta_regression = function(Xmm, y, start_phi = 10){
+fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi)$coefficients)
+	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)$coefficients)
 	}, error = function(e) {
 	warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
 	if (!check_package_installed("betareg")) {
@@ -570,10 +594,11 @@ fast_beta_regression = function(Xmm, y, start_phi = 10){
 #' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
 #' fast_beta_regression_with_var(Xmm, y)
-fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2){
+fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi)
+	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)
 	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
@@ -703,9 +728,10 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression(Xmm, y)
 #' @export
-fast_negbin_regression <- function(Xmm, y) {
+fast_negbin_regression <- function(Xmm, y, optimization_alg = "lbfgs") {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	X_full = as.matrix(Xmm)
-	res = tryCatch(fast_neg_bin_cpp(X = X_full, y = as.integer(y)), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_cpp(X = X_full, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
 	if (!is.null(res)) return(list(b = as.numeric(res$b)))
 	# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 	# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -719,7 +745,7 @@ fast_negbin_regression <- function(Xmm, y) {
 			} else {
 				X_full[, 1:2, drop = FALSE]
 			}
-			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y)), error = function(e) NULL)
+			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
 			if (!is.null(res)) return(list(b = as.numeric(res$b)))
 		}
 	}
@@ -753,10 +779,11 @@ fast_negbin_regression <- function(Xmm, y) {
 #' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression_with_var(Xmm, y)
-fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
+fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "lbfgs") {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	X_full = as.matrix(Xmm)
 	X_curr = X_full
-	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y)), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
 	if (is.null(res)) {
 		# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 		# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -770,7 +797,7 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2) {
 				} else {
 					X_full[, 1:2, drop = FALSE]
 				}
-				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y)), error = function(e) NULL)
+				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
 			}
 		}
 		if (is.null(res))

@@ -14,11 +14,7 @@ InferenceIncidGCompRiskDiff = R6::R6Class("InferenceIncidGCompRiskDiff",
 
 	private = list(
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
-			} else {
-				cbind("(Intercept)" = 1, treatment = private$w)
-			}
+			private$create_design_matrix()
 		},
 
 		get_estimand_type = function() "RD"
@@ -41,11 +37,7 @@ InferenceIncidGCompRiskRatio = R6::R6Class("InferenceIncidGCompRiskRatio",
 
 	private = list(
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
-			} else {
-				cbind("(Intercept)" = 1, treatment = private$w)
-			}
+			private$create_design_matrix()
 		},
 
 		get_estimand_type = function() "RR"

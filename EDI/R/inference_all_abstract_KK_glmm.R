@@ -5,26 +5,25 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as fixed-effect predictors. If \code{FALSE}, only the treatment
-		#'   indicator is used. If \code{NULL} (default), it is set to \code{TRUE} if the
-		#'   design contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
 			}
@@ -35,22 +34,17 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
+			if (should_run_asserts() && !isTRUE(private$skip_glmm_pkg_check)) {
 				if (!check_package_installed("glmmTMB")){
 					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		},
 
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 				private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
@@ -74,7 +68,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -88,7 +82,9 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 
 	private = list(
 		m = NULL,
-		include_covariates = NULL,
+		# Subclasses that provide their own fitter (e.g. Rcpp) set this to TRUE
+		# before calling super$initialize() to suppress the glmmTMB package check.
+		skip_glmm_pkg_check = FALSE,
 
 		# Abstract: subclasses must return the expected response type string.
 		glmm_response_type = function() stop(class(self)[1], " must implement glmm_response_type()"),
@@ -99,11 +95,11 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		# Default (multivariate): all covariates + treatment.
 		# Univariate subclasses override this to return data.frame(w = private$w).
 		glmm_predictors_df = function(){
-			if (private$include_covariates) {
-				as.data.frame(private$create_design_matrix()[, -1, drop = FALSE])
-			} else {
-				data.frame(w = private$w)
-			}
+			df = as.data.frame(private$create_design_matrix()[, -1, drop = FALSE])
+			# create_design_matrix uses "treatment"; glmmTMB path expects "w"
+			if ("treatment" %in% colnames(df))
+				colnames(df)[colnames(df) == "treatment"] = "w"
+			df
 		},
 
 		glmm_predictors_df_candidates = function(){
@@ -126,8 +122,8 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			
 			if (is.null(attempt$fit)) return(list(data.frame(w = predictors_df$w)))
 			
-			candidates = list(as.data.frame(attempt$X_fit))
-			if (ncol(attempt$X_fit) > 1L){
+			candidates = list(as.data.frame(attempt$X))
+			if (ncol(attempt$X) > 1L){
 				if (!("w" %in% unlist(lapply(candidates, colnames), use.names = FALSE))){
 					candidates[[length(candidates) + 1L]] = data.frame(w = predictors_df$w)
 				}

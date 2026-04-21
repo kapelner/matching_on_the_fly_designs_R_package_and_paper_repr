@@ -9,10 +9,13 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
 		#' @param maxit			Maximum number of robust-regression iterations. If `NULL`, a
 		#'   data-adaptive default is chosen at fit time.
@@ -22,29 +25,25 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
 		#'   uses its own LQS-based start. Default `TRUE`.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
+				assertFormula(model_formula, null.ok = TRUE)
 				assertChoice(method, c("M", "MM"))
 				if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
 				if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
 				assertFlag(start_with_ols)
-				assertFlag(include_covariates, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates_flag = include_covariates
 			private$rlm_method = method
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
@@ -54,7 +53,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -78,7 +77,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#' Computes the approximate p-value.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -104,16 +103,13 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		rlm_maxit = NULL,
 		rlm_acc = NULL,
 		rlm_start_with_ols = TRUE,
-		include_covariates_flag = NULL,
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_ivwc_matched_reduced_design", "kk_robust_ivwc_reservoir_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, preserve_cache_keys = preserve, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 		rlm_force_M = FALSE,
 
-		include_covariates = function() private$include_covariates_flag,
-		
+				
 
 		reduce_design_matrix_once = function(X, j_treat, cache_key){
 			cached = private$cached_values[[cache_key]]
@@ -282,7 +278,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		robust_for_matched_pairs = function(estimate_only = FALSE){
 			yd = private$cached_values$KKstats$y_matched_diffs
 			m  = length(yd)
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				Xd = as.matrix(private$cached_values$KKstats$X_matched_diffs)
 				X = if (ncol(Xd) > 0L) cbind(1, Xd) else matrix(1, nrow = m, ncol = 1L)
 				reduced = private$reduce_design_matrix_once(
@@ -311,7 +307,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
 			j_treat = 2L
 
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				X_full = cbind(1, w_r, X_r)
 				reduced = private$reduce_design_matrix_once(
 					X_full,

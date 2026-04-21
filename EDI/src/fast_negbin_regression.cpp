@@ -1,10 +1,8 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -64,61 +62,72 @@ public:
     }
 };
 
-ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, int maxit = 1000, double eps_g = 1e-5) {
+ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
+                                  const Eigen::VectorXi& y,
+                                  int maxit = 1000,
+                                  double eps_g = 1e-5,
+                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                  std::string optimization_alg = "lbfgs") {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
     params[p] = 0.0; 
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
     NBLogLik fun(X, y);
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = eps_g;
-    lbfgs_params.max_iterations = maxit;
-
-    LBFGSSolver<double> solver(lbfgs_params);
-    double neg_ll;
-    int niter = solver.minimize(fun, params, neg_ll);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
+    params = fit.params;
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // theta
     res.XtWX = fun.hessian(params); // Hessian
-    res.converged = (niter < maxit);
-    res.sigma2_hat = -neg_ll; // using sigma2_hat to store logLik temporarily
+    res.converged = fit.converged;
+    res.sigma2_hat = -fit.value; // using sigma2_hat to store logLik temporarily
     return res;
-    }
+}
 
-    } // namespace
+} // namespace
 
-    // [[Rcpp::export]]
-    Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
-    const Eigen::VectorXi& y,
-    const Eigen::VectorXd& params) {
+// [[Rcpp::export]]
+Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
+                                                const Eigen::VectorXi& y,
+                                                const Eigen::VectorXd& params) {
     NBLogLik fun(X, y);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
     return -grad;
-    }
+}
 
-    // [[Rcpp::export]]
-    Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
-    const Eigen::VectorXi& y,
-    const Eigen::VectorXd& params) {
+// [[Rcpp::export]]
+Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
+                                                  const Eigen::VectorXi& y,
+                                                  const Eigen::VectorXd& params) {
     NBLogLik fun(X, y);
     return -fun.hessian(params);
-    }
+}
 
-    // [[Rcpp::export]]
-    List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,                                Eigen::VectorXi y,
+// [[Rcpp::export]]
+List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
+                                Eigen::VectorXi y,
                                 int maxit = 1000,
                                 double eps_f = 1e-8,
-                                double eps_g = 1e-5) {
-    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g);
+                                double eps_g = 1e-5,
+                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                std::string optimization_alg = "lbfgs") {
+    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
+    Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd vcov = expand_free_covariance(X.cols() + 1, fixed_spec, cov_free, true);
     return List::create(
         Named("b") = res.b,
         Named("theta_hat") = res.dispersion,
         Named("logLik") = res.sigma2_hat,
         Named("converged") = res.converged,
-        Named("hess_fisher_info_matrix") = res.XtWX
+        Named("hess_fisher_info_matrix") = res.XtWX,
+        Named("vcov") = vcov
     );
 }
 
@@ -127,8 +136,11 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Eigen::VectorXi y,
                         int maxit = 1000,
                         double eps_f = 1e-8,
-                        double eps_g = 1e-5) {
-    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g);
+                        double eps_g = 1e-5,
+                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                        std::string optimization_alg = "lbfgs") {
+    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
     return List::create(
         Named("b") = res.b,
         Named("theta_hat") = res.dispersion,

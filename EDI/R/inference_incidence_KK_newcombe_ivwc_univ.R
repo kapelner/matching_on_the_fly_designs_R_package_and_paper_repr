@@ -11,7 +11,6 @@
 #' independent samples. The two estimates are combined using the standard IVWC
 #' framework of the package.
 #'
-#' @export
 #' @examples
 #' set.seed(1)
 #' x_dat <- data.frame(
@@ -45,8 +44,12 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Flag for progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -55,7 +58,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 					stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -64,7 +67,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @description
 		#' Returns the IVWC Newcombe estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined()
 			private$cached_values$beta_hat_T
 		},
@@ -84,7 +87,7 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 		#' @description
 		#' Returns the MLE p-value.
 		#' @param delta The null risk difference to test against. Default is zero.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -159,4 +162,15 @@ InferenceIncidUnivKKNewcombeRiskDiff = R6::R6Class("InferenceIncidUnivKKNewcombe
 			private$cached_values$df = NA_real_
 		}
 	)
+)
+
+#' KK Newcombe Risk-Difference IVWC Inference for Binary Responses
+#'
+#' Public collapsed-name wrapper for \code{InferenceIncidUnivKKNewcombeRiskDiff}.
+#'
+#' @export
+InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff",
+	lock_objects = FALSE,
+	inherit = InferenceIncidUnivKKNewcombeRiskDiff,
+	public = list()
 )

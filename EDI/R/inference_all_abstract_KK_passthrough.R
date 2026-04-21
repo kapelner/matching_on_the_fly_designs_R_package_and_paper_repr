@@ -12,16 +12,20 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj,  verbose = FALSE, harden = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, harden = TRUE){
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")) {
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose, harden)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
 					if (is(des_obj, "FixedDesignBinaryMatch")){
@@ -156,7 +160,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 									boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 									boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 									if (has_res_stat_debug) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-									boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
+									boot_inf_obj$compute_estimate(estimate_only = TRUE)
 								}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
 								warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
 							)
@@ -211,7 +215,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
 								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
 								if (has_res_stat_serial) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								boot_inf_obj$compute_treatment_estimate(estimate_only = TRUE)
+								boot_inf_obj$compute_estimate(estimate_only = TRUE)
 							}, error = function(e) { NA_real_ })
 							if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 						}
@@ -235,7 +239,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								boot_w$.__enclos_env__$private$compute_basic_match_data()
 								if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
 									boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								tryCatch(boot_w$compute_treatment_estimate(estimate_only = TRUE), error = function(e) NA_real_)
+								tryCatch(boot_w$compute_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 							})[[3]]
 							fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
 							if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
@@ -260,7 +264,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								worker_inf$.__enclos_env__$private$m = m_vec_b
 								worker_inf$.__enclos_env__$private$compute_basic_match_data()
 								if (has_res_stat) worker_inf$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								worker_inf$compute_treatment_estimate(estimate_only = TRUE)
+								worker_inf$compute_estimate(estimate_only = TRUE)
 							}, error = function(e) NA_real_)
 						}, n_cores = cores_to_use, show_progress = private$verbose,
 						export_list = list(
@@ -337,7 +341,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		},
 
 		compute_kk_bootstrap_worker_estimate = function(worker_state){
-			as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+			as.numeric(worker_state$worker$compute_estimate(estimate_only = TRUE))[1L]
 		},
 
 		compute_kk_bootstrap_debug_with_reused_worker = function(B, kk_boot_context){

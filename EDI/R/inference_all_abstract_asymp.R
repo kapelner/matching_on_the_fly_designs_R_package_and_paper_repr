@@ -18,7 +18,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
 			
-			est = self$compute_treatment_estimate()
+			est = self$compute_estimate()
 			se = private$get_standard_error()
 			df = private$get_degrees_of_freedom()
 			
@@ -37,12 +37,12 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#' @param delta					Null treatment effect to test against. Default 0.
 		#'
 		#' @return 	The asymptotic p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
 			
-			est = self$compute_treatment_estimate()
+			est = self$compute_estimate()
 			se = private$get_standard_error()
 			df = private$get_degrees_of_freedom()
 			
@@ -61,17 +61,17 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#' Abstract method to compute the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return 	A scalar treatment estimate.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
 		},
 
 		#' @description
 		#' Returns the model object from the last call that produced the treatment
-		#' estimate and SE. Calls \code{compute_treatment_estimate()} first if needed.
+		#' estimate and SE. Calls \code{compute_estimate()} first if needed.
 		#'
 		#' @return The cached model object (type depends on the concrete class).
 		get_mod = function(){
-			if (is.null(private$cached_mod)) self$compute_treatment_estimate()
+			if (is.null(private$cached_mod)) self$compute_estimate()
 			private$cached_mod
 		},
 
@@ -81,7 +81,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		get_summary = function(){
 			mod = self$get_mod()
 			if (is.null(mod)) {
-				cat("No model available (call compute_treatment_estimate() first).\n")
+				cat("No model available (call compute_estimate() first).\n")
 				return(invisible(NULL))
 			}
 			if (identical(class(mod), "list")) {
@@ -164,7 +164,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			}
 			
 			# More robust: check if delta is within the range of the estimate
-			est = self$compute_treatment_estimate()
+			est = self$compute_estimate()
 			if (!is.finite(est)) return(NA_real_)
 			
 			# We want to find alpha such that ci_boundary(alpha) == delta

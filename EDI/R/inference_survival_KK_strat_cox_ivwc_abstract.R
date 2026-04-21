@@ -20,8 +20,12 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -30,13 +34,13 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
 		#' Returns the estimated treatment effect (log-hazard ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -60,7 +64,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -83,8 +87,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 		max_abs_reasonable_coef = 1e4,
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
 		cox_design_candidates = function(w, X){
 			X_full = cbind(w = w, as.matrix(X))
 			if (!private$harden || ncol(X_full) <= 1L){
@@ -118,14 +120,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				}
 			}
 			candidates
-		},
-
-		cox_fit_is_usable = function(mod){
-			if (is.null(mod)) return(FALSE)
-			beta = tryCatch(as.numeric(coef(mod)["w"]), error = function(e) NA_real_)
-			se = tryCatch(sqrt(as.numeric(vcov(mod)["w", "w"])), error = function(e) NA_real_)
-			is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
-				is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -222,51 +216,37 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			if (length(strata_with_events) == 0) return(invisible(NULL))
 
 			i_valid = which(strata_m %in% strata_with_events)
+			y_v     = y_m[i_valid]
+			dead_v  = dead_m[i_valid]
+			w_v     = w_m[i_valid]
+			strata_v = as.integer(strata_m[i_valid])
 
-			dat = data.frame(y = y_m[i_valid], dead = dead_m[i_valid], w = w_m[i_valid], strata = strata_m[i_valid])
-			formula_str = "survival::Surv(y, dead) ~ w + strata(strata)"
-
-			mod = NULL
-			if (private$include_covariates()){
-				X_m = as.matrix(private$get_X()[i_matched[i_valid], , drop = FALSE])
-				for (X_candidate in private$cox_design_candidates(dat$w, X_m)){
-					dat_try = dat
-					formula_try = formula_str
-					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
-					if (ncol(X_covs) > 0){
-						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-						dat_try = cbind(dat_try, X_covs)
-						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
-					}
-					mod_try = tryCatch(
-						survival::coxph(as.formula(formula_try), data = dat_try),
-						error = function(e) NULL,
-						warning = function(w) {
-							if (grepl("converge|infinite", w$message)) return(NULL)
-							invokeRestart("muffleWarning")
-						}
+			res = NULL
+			if (ncol(as.matrix(private$X)) > 0){
+				X_m = as.matrix(private$get_X()[i_matched[i_valid], drop = FALSE])
+				for (X_candidate in private$cox_design_candidates(w_v, X_m)){
+					res_try = tryCatch(
+						fast_stratified_coxph_regression_cpp(y_v, dead_v, X_candidate, strata_v),
+						error = function(e) NULL
 					)
-					if (private$cox_fit_is_usable(mod_try)){
-						mod = mod_try
+					if (private$rcpp_cox_fit_is_usable(res_try)){
+						res = res_try
 						break
 					}
 				}
 			} else {
-				mod = tryCatch(
-					survival::coxph(as.formula(formula_str), data = dat),
-					error = function(e) NULL,
-					warning = function(w) {
-						if (grepl("converge|infinite", w$message)) return(NULL)
-						invokeRestart("muffleWarning")
-					}
+				X_mat = matrix(w_v, ncol = 1L)
+				colnames(X_mat) = "w"
+				res = tryCatch(
+					fast_stratified_coxph_regression_cpp(y_v, dead_v, X_mat, strata_v),
+					error = function(e) NULL
 				)
 			}
-			if (is.null(mod)) return(invisible(NULL))
+			if (is.null(res)) return(invisible(NULL))
 
-			beta = as.numeric(coef(mod)["w"])
-			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
-			
-			# If estimate is clearly degenerate, treat as failure
+			beta = res$coefficients[1L]
+			se   = sqrt(res$vcov[1L, 1L])
+
 			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
 
 			private$cached_values$beta_T_matched     = beta
@@ -285,50 +265,33 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			dead_r = private$dead[m_vec_safe == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 
-			dat = data.frame(y = y_r, dead = dead_r, w = w_r)
-			formula_str = "survival::Surv(y, dead) ~ w"
-
-			mod = NULL
-			if (private$include_covariates()){
-				for (X_candidate in private$cox_design_candidates(dat$w, X_r)){
-					dat_try = dat
-					formula_try = formula_str
-					X_covs = X_candidate[, colnames(X_candidate) != "w", drop = FALSE]
-					if (ncol(X_covs) > 0){
-						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-						dat_try = cbind(dat_try, X_covs)
-						formula_try = paste(formula_try, "+", paste(colnames(X_covs), collapse = " + "))
-					}
-					mod_try = tryCatch(
-						survival::coxph(as.formula(formula_try), data = dat_try),
-						error = function(e) NULL,
-						warning = function(w) {
-							if (grepl("converge|infinite", w$message)) return(NULL)
-							invokeRestart("muffleWarning")
-						}
+			res = NULL
+			if (ncol(as.matrix(private$X)) > 0){
+				for (X_candidate in private$cox_design_candidates(w_r, X_r)){
+					res_try = tryCatch(
+						fast_coxph_regression_cpp(y_r, dead_r, X_candidate),
+						error = function(e) NULL
 					)
-					if (private$cox_fit_is_usable(mod_try)){
-						mod = mod_try
+					if (private$rcpp_cox_fit_is_usable(res_try)){
+						res = res_try
 						break
 					}
 				}
 			}
-			if (is.null(mod)){
-				mod = tryCatch(
-					survival::coxph(survival::Surv(y, dead) ~ w, data = data.frame(y = y_r, dead = dead_r, w = w_r)),
-					error = function(e) NULL,
-					warning = function(w) {
-						if (grepl("converge|infinite", w$message)) return(NULL)
-						invokeRestart("muffleWarning")
-					}
+			if (is.null(res)){
+				X_mat = matrix(w_r, ncol = 1L)
+				colnames(X_mat) = "w"
+				res = tryCatch(
+					fast_coxph_regression_cpp(y_r, dead_r, X_mat),
+					error = function(e) NULL
 				)
 			}
 
-			if (is.null(mod)) return(invisible(NULL))
+			if (is.null(res)) return(invisible(NULL))
 
-			beta = as.numeric(coef(mod)["w"])
-			se   = sqrt(as.numeric(vcov(mod)["w", "w"]))
-			
+			beta = res$coefficients[1L]
+			se   = sqrt(res$vcov[1L, 1L])
+
 			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
 
 			private$cached_values$beta_T_reservoir     = beta

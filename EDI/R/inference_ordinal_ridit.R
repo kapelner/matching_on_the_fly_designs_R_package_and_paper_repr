@@ -34,18 +34,22 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#'   response y is recorded within.
 		#' @param reference The group to use as the "Identified Distribution" (reference).
 		#'   Must be one of "control", "treatment", or "pooled". Default is "control".
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
 		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
-		initialize = function(des_obj, reference = "control", verbose = FALSE, max_resample_attempts = 50L){
+		initialize = function(des_obj, model_formula = NULL, reference = "control", verbose = FALSE, max_resample_attempts = 50L){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 				assertChoice(reference, c("control", "treatment", "pooled"))
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$reference = reference
 			private$max_resample_attempts = max_resample_attempts
 			if (should_run_asserts()) {
@@ -57,7 +61,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#' Returns the estimated treatment effect (Mean Ridit - 0.5).
 		#' @return The numeric estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -91,7 +95,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		#' Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
 		#' @param delta The null value (centered at 0, so delta=0 means Ridit=0.5).
 		#' @return The p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}

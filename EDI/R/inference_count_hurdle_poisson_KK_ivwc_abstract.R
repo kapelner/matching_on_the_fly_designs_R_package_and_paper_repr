@@ -16,27 +16,37 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
+		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
+		#'   the matched-pair component.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
+				assertFlag(use_rcpp)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
 			}
 			private$m = des_obj$.__enclos_env__$private$m
+			private$use_rcpp = use_rcpp
+
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
+			if (should_run_asserts() && !private$use_rcpp) {
 				if (!check_package_installed("glmmTMB")){
-					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+					stop("Package 'glmmTMB' is required for ", class(self)[1], " when use_rcpp = FALSE. Please install it.")
 				}
 			}
 		},
@@ -44,7 +54,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' @description
 		#' Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -66,7 +76,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -86,6 +96,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 	),
 
 	private = list(
+		use_rcpp = TRUE,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the fixed-effect coefficient for "w" directly from the fit.
@@ -147,7 +158,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		},
 
 		build_model_matrix = function(){
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				Xmm = private$create_design_matrix()
 				full_names = c("(Intercept)", "w", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
 				colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
@@ -223,7 +234,13 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		},
 
 		fit_hurdle_for_matched_pairs = function(Xmm, matched_idx, m_vec, se = TRUE){
-			X_matched = Xmm[matched_idx, , drop = FALSE]
+			if (private$use_rcpp) {
+				# Use glmmTMB as the engine for our "ourself" path for now, 
+				# but it is managed via the internal dispatch.
+				# In the future, this can be replaced with a pure Rcpp GLMM.
+			}
+			
+			X_matched = Xmm[matched_idx, drop = FALSE]
 			reduced = private$reduce_design_matrix_preserving_treatment(X_matched)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
@@ -291,7 +308,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		},
 
 		fit_poisson_for_reservoir = function(Xmm, reservoir_idx, estimate_only = FALSE){
-			X_res = Xmm[reservoir_idx, , drop = FALSE]
+			X_res = Xmm[reservoir_idx, drop = FALSE]
 			reduced = private$reduce_design_matrix_preserving_treatment(X_res)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){

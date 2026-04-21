@@ -24,7 +24,7 @@ cat("Creating InferenceAllKKCompoundMeanDiff...\n")
 inf2 = InferenceAllKKCompoundMeanDiff$new(des_obj)
 
 cat("Computing treatment estimate...\n")
-te = inf2$compute_treatment_estimate()
+te = inf2$compute_estimate()
 cat("Treatment estimate:", te, "\n")
 
 cat("\nCalling approximate_bootstrap_distribution_beta_hat_T with B=10...\n")

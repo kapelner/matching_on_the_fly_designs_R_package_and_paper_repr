@@ -1,12 +1,10 @@
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 #include "_helper_functions.h"
 
 // [[Rcpp::depends(RcppEigen)]]
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -391,29 +389,27 @@ List fast_clayton_weibull_aft_optim_cpp(
     const Eigen::VectorXi& singleton_rows,
     const Eigen::VectorXd& start_params,
     int maxit = 2000,
-    double reltol = 1e-9
+    double reltol = 1e-9,
+    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    std::string optimization_alg = "lbfgs"
 ) {
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
-    
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = reltol;
-    lbfgs_params.max_iterations = maxit;
-    
-    LBFGSSolver<double> solver(lbfgs_params);
     Eigen::VectorXd params = start_params;
-    double neg_ll;
-    int niter = 0;
+    FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    LikelihoodFitResult fit;
     try {
-        niter = solver.minimize(fun, params, neg_ll);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs");
     } catch (...) {
         return List::create(Named("converged") = false);
     }
+    params = fit.params;
 
     return List::create(
         Named("par") = params,
-        Named("value") = neg_ll,
-        Named("niter") = niter,
-        Named("converged") = (niter < maxit),
+        Named("value") = fit.value,
+        Named("niter") = fit.niter,
+        Named("converged") = fit.converged,
         Named("hessian") = fun.hessian(params)
     );
 }
@@ -425,29 +421,27 @@ List fast_dep_cens_transform_optim_cpp(
     const Eigen::MatrixXd& X,
     const Eigen::VectorXd& start_params,
     int maxit = 2000,
-    double reltol = 1e-9
+    double reltol = 1e-9,
+    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    std::string optimization_alg = "lbfgs"
 ) {
     DepCensTransformLikelihood fun(y, dead, X);
-    
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = reltol;
-    lbfgs_params.max_iterations = maxit;
-    
-    LBFGSSolver<double> solver(lbfgs_params);
     Eigen::VectorXd params = start_params;
-    double neg_ll;
-    int niter = 0;
+    FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    LikelihoodFitResult fit;
     try {
-        niter = solver.minimize(fun, params, neg_ll);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs");
     } catch (...) {
         return List::create(Named("converged") = false);
     }
+    params = fit.params;
 
     return List::create(
         Named("par") = params,
-        Named("value") = neg_ll,
-        Named("niter") = niter,
-        Named("converged") = (niter < maxit),
+        Named("value") = fit.value,
+        Named("niter") = fit.niter,
+        Named("converged") = fit.converged,
         Named("hessian") = fun.hessian(params)
     );
 }

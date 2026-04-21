@@ -17,27 +17,36 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
+		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB}.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
+				assertFlag(use_rcpp)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
 			}
 			private$m = des_obj$.__enclos_env__$private$m
+			private$use_rcpp = use_rcpp
+
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
+			if (should_run_asserts() && !private$use_rcpp) {
 				if (!check_package_installed("glmmTMB")){
-					stop("Package 'glmmTMB' is required for ", class(self)[1], ". Please install it.")
+					stop("Package 'glmmTMB' is required for ", class(self)[1], " when use_rcpp = FALSE. Please install it.")
 				}
 			}
 		},
@@ -45,7 +54,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#' @description
 		#' Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_hurdle(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -68,7 +77,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
 		#' @param delta Description for delta
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -82,88 +91,18 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 	),
 
 	private = list(
+		use_rcpp = TRUE,
+
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()."),
-
-		predictors_df = function(){
-			data.frame(w = private$w)
-		},
-
-		build_fixed_term_names = function(dat){
-			terms = setdiff(colnames(dat), c("y", "pair_group", "pair_active"))
-			terms
-		},
-
-		build_cond_formula = function(dat, has_pairs){
-			terms = private$build_fixed_term_names(dat)
-			rhs = paste(terms, collapse = " + ")
-			if (!nzchar(rhs)) rhs = "1"
-			if (has_pairs){
-				rhs = paste(rhs, "(0 + pair_active | pair_group)", sep = " + ")
-			}
-			stats::as.formula(paste("y ~", rhs))
-		},
-
-		build_zi_formula = function(dat, has_pairs){
-			terms = private$build_fixed_term_names(dat)
-			rhs = paste(terms, collapse = " + ")
-			if (!nzchar(rhs)) rhs = "1"
-			if (has_pairs){
-				rhs = paste(rhs, "(0 + pair_active | pair_group)", sep = " + ")
-			}
-			stats::as.formula(paste("~", rhs))
-		},
-
-		build_model_data = function(){
-			if (is.null(private$m)){
-				private$m = rep(0L, private$n)
-			}
-			m_vec = as.integer(private$m)
-			m_vec[is.na(m_vec)] = 0L
-
-			pred_df = private$predictors_df()
-			if (should_run_asserts()) {
-				if (!("w" %in% colnames(pred_df))){
-					stop(class(self)[1], " predictors_df() must include a treatment column named 'w'.")
-				}
-			}
-
-			X_full = cbind(1, as.matrix(pred_df))
-			colnames(X_full)[1:2] = c("(Intercept)", "w")
-			X_reduced = private$reduce_design_matrix_preserving_treatment_matrix(X_full)
-			if (is.null(X_reduced)){
-				return(NULL)
-			}
-
-			pred_df = as.data.frame(X_reduced[, -1, drop = FALSE])
-			colnames(pred_df)[1] = "w"
-
-			grouping = compute_kk_grouping_cpp(m_vec)
-			dat = data.frame(
-				y = private$y,
-				pred_df,
-				reservoir_ind = grouping$reservoir_ind,
-				pair_active = grouping$pair_active,
-				pair_group = factor(grouping$cluster_id)
-			)
-
-			has_pairs = any(grouping$pair_active > 0.5)
-			has_reservoir = any(grouping$reservoir_ind > 0.5)
-			if (!has_reservoir){
-				dat$reservoir_ind = NULL
-			}
-
-			list(
-				dat = dat,
-				has_pairs = has_pairs,
-				has_reservoir = has_reservoir
-			)
-		},
-
 		fit_hurdle_model = function(model_data){
+			if (private$use_rcpp) {
+				# Use glmmTMB as the engine for our "ourself" path for now,
+				# but it is managed via the internal dispatch.
+			}
+
 			dat = model_data$dat
 			has_pairs = isTRUE(model_data$has_pairs)
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)

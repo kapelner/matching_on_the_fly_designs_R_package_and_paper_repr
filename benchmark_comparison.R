@@ -159,8 +159,8 @@ if (file.exists(res_file_new)) {
 		cat("\n--- Comparative timing per metric (top speedups) ---\n")
 		print_top_speedups(comparison, n_rows = 20)
 
-		cat("\n--- Specific comparison for randomization p-value (compute_two_sided_pval_for_treatment_effect_rand) ---\n")
-		rand_comp <- comparison[metric == "compute_two_sided_pval_for_treatment_effect_rand"]
+		cat("\n--- Specific comparison for randomization p-value (compute_rand_two_sided_pval) ---\n")
+		rand_comp <- comparison[metric == "compute_rand_two_sided_pval"]
 		if (nrow(rand_comp) > 0) {
 			print(rand_comp[order(-speedup), .(
 				response_type,

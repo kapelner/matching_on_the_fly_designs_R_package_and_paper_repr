@@ -18,9 +18,13 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#' @param type Optional incidence-specific exact randomization type.
 		#' @param args_for_type Optional arguments keyed by \code{type}.
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @return A two-sided p-value.
-		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL, zero_one_logit_clamp = .Machine$double.eps){
-			# message("In InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand")
+		compute_rand_two_sided_pval = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, type = NULL, args_for_type = NULL, zero_one_logit_clamp = .Machine$double.eps){
+			# message("In InferenceRandCI$compute_rand_two_sided_pval")
 			# message("Class: ", class(self)[1])
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
@@ -42,7 +46,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (should_run_asserts()) {
 				private$assert_no_incidence_only_randomization_args(private$des_obj_priv_int$response_type, type, args_for_type)
 			}
-			super$compute_two_sided_pval_for_treatment_effect_rand(
+			super$compute_rand_two_sided_pval(
 				r = r,
 				delta = delta,
 				transform_responses = transform_responses,
@@ -71,7 +75,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		#'   \code{fit_reuse_factorizations}. Set \code{mc_enable = FALSE} to force
 		#'   full enumeration of all requested randomization draws.
 		#' @return 	Randomization CI.
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL, ci_search_control = NULL){
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, type = NULL, args_for_type = NULL, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -85,7 +89,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (dispatch_cores != self$num_cores) {
 				serial_inf = self$duplicate(verbose = private$verbose)
 				serial_inf$num_cores = dispatch_cores
-				return(serial_inf$compute_confidence_interval_rand(
+				return(serial_inf$compute_rand_confidence_interval(
 					alpha = alpha,
 					r = r,
 					pval_epsilon = pval_epsilon,
@@ -195,7 +199,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				if (!is.null(ci_pval_cache[[cache_key]])) return(ci_pval_cache[[cache_key]])
 			}
 			pval = tryCatch(
-				as.numeric(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(
+				as.numeric(inf_obj$compute_rand_two_sided_pval(
 					r,
 					delta = delta,
 					transform_responses = transform_responses,
@@ -451,7 +455,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (transform_arg == "none" && (is.null(obj_private$cached_values$t0s_rand) || length(obj_private$cached_values$t0s_rand) < r)) {
 				private$compute_randomization_ci_pval_cached(inf_obj, r, 0, transform_arg, permutations, ci_search_control, ci_pval_cache)
 			}
-			est = as.numeric(inf_obj$compute_treatment_estimate())
+			est = as.numeric(inf_obj$compute_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) est = NA_real_ else est = est[1]
 			asym_ci = normalize_ci(tryCatch(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2), error = function(e) c(NA_real_, NA_real_)))
 			boot_ci = c(NA_real_, NA_real_)
@@ -558,13 +562,17 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' @description
 		#' Initialize exact Zhang incidence inference.
 		#' @param des_obj A completed design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExactZhang} object.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -574,7 +582,7 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 		#' Compute the Zhang incidence treatment estimate.
 		#' @param estimate_only Ignored for this estimator.
 		#' @return The treatment estimate.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			stats = private$get_exact_zhang_stats()
 			zhang_incid_treatment_estimate(stats)
 		},

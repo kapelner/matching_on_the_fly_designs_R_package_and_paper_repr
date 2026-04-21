@@ -11,39 +11,22 @@ Abstract class for Weibull Frailty / Standard Weibull Compound Inference
 }
 \details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
-survival responses using the Weibull AFT model. For matched pairs, it uses a frailty
-model (each pair is a cluster) to estimate the log-time ratio (AFT scale). For
-reservoir subjects, it uses standard Weibull AFT regression. The two estimates
-are combined via a variance-weighted linear combination.
+survival responses using a Gamma-frail Weibull AFT model for matched pairs.
+The matched-pair component uses a shared frailty per pair, fitted using the
+\pkg{parfm} package. The reservoir component uses standard Weibull AFT regression.
+The two treatment-effect estimates are combined by inverse-variance weighting.
 
 
-The matched-pairs frailty estimator differs between the univariate and multivariate
-subclasses due to computational constraints:
+This compound estimator accounts for the dependence within matched pairs by
+modeling it as a shared frailty.
 
-\strong{Univariate} (\code{include_covariates() == FALSE}): uses \code{parfm::parfm()}
-to fit a fully parametric Weibull gamma-frailty model with only the treatment
-indicator. The PH coefficient and Weibull shape \eqn{\rho} are both taken from
-\code{parfm}, and the AFT log-time ratio is recovered as
-\eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho}.
-This is fast because there is only one fixed-effect parameter.
+\strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses \code{parfm::parfm()}
+with \code{formula = survival::Surv(y, dead) ~ w + cluster(pair_id)}.
 
-\strong{Multivariate} (\code{include_covariates() == TRUE}): \code{parfm} becomes
-prohibitively slow when many covariates are present (its EM algorithm is
-\eqn{O(p^2)} per iteration and convergence degrades sharply with dimension).
-Instead, the treatment PH coefficient \eqn{\hat\beta_\mathrm{PH}} and its SE are
-obtained from \code{survival::coxph()} with a \code{frailty(cluster,
-distribution = "gamma")} term, which is a highly optimised C implementation.
-The Weibull shape \eqn{\hat\rho} is estimated separately from a standard
-\code{survival::survreg()} fit (no frailty) on the same matched-pair data.
-The AFT log-time ratio is then
-\eqn{\hat\alpha_\mathrm{AFT} = -\hat\beta_\mathrm{PH} / \hat\rho},
-and the SE is \eqn{\widehat{\mathrm{SE}}_\mathrm{AFT} =
-\widehat{\mathrm{SE}}_\mathrm{PH} / \hat\rho}
-(delta method treating \eqn{\hat\rho} as fixed). Because \code{coxph} is
-semi-parametric, \eqn{\hat\rho} from the auxiliary \code{survreg} fit is used
-only for scale conversion and does not affect the frailty correction itself.
-
-The \pkg{parfm} package is required only for the univariate subclass.
+\strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): \code{parfm} becomes
+unstable with many covariates. We instead fit the multivariate model using
+an all-subject stratified Weibull AFT approach or a reduced set of covariates
+if the full model fails to converge.
 }
 \keyword{internal}
 \section{Super classes}{
@@ -53,9 +36,10 @@ The \pkg{parfm} package is required only for the univariate subclass.
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-new}{\code{InferenceAbstractKKWeibullFrailtyIVWC$new()}}
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-duplicate}{\code{InferenceAbstractKKWeibullFrailtyIVWC$duplicate()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-clone}{\code{InferenceAbstractKKWeibullFrailtyIVWC$clone()}}
 }
 }
@@ -64,14 +48,22 @@ The \pkg{parfm} package is required only for the univariate subclass.
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_confidence_interval_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_confidence_interval_rand'><code>EDI::InferenceRandCI$compute_confidence_interval_rand()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
@@ -86,7 +78,11 @@ The \pkg{parfm} package is required only for the univariate subclass.
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -94,20 +90,23 @@ Initialize the inference object.
 \describe{
 \item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
 \item{\code{verbose}}{Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
 Returns the estimated treatment effect (log-time ratio).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_treatment_estimate(
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -139,21 +138,40 @@ confidence interval is 1 - \code{alpha}. The default is 0.05.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
 Computes the asymptotic p-value.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For
-any treatment effect at all this is set to zero (the default).}
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
 }
 \if{html}{\out{</div>}}
 }

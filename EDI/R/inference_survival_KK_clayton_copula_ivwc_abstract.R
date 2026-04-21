@@ -22,8 +22,12 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -32,13 +36,13 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
 		#' Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -62,7 +66,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -98,7 +102,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 
 			# If we still don't have enough (e.g., initial fit failed), fall back to standard
 			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			if (is.null(private$cached_values$KKstats)){
@@ -201,47 +205,12 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		best_par_matched = NULL,
 		best_Xmm_colnames_reservoir = NULL,
 
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		# Pre-calculate filtered covariate matrices to avoid redundant correlation checks
-		# during repeated calls (e.g., in randomization inference).
-		filtered_covariate_candidates = function(){
-			if (!is.null(private$filtered_cov_cache)){
-				return(private$filtered_cov_cache)
-			}
-
-			X_cov_orig = as.matrix(private$get_X())
-			if (is.null(colnames(X_cov_orig))){
-				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
-			}
-
-			if (!private$harden) {
-				private$filtered_cov_cache = list(X_cov_orig)
-				return(private$filtered_cov_cache)
-			}
-
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
-			candidates = list()
-			keys = character()
-
-			for (thresh in thresholds){
-				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
-				key = if (ncol(X_cov) > 0) paste(colnames(X_cov), collapse = "|") else ""
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = X_cov
-					keys = c(keys, key)
-				}
-			}
-			private$filtered_cov_cache = candidates
-			candidates
-		},
-
 		design_matrix_candidates = function(){
 			if (!is.null(private$cached_values$clayton_design_candidates)){
 				return(private$cached_values$clayton_design_candidates)
 			}
 
-			if (!private$include_covariates() || ncol(private$get_X()) == 0L){
+			if (ncol(as.matrix(private$X)) == 0L){
 				M = matrix(private$w, ncol = 1)
 				colnames(M) = "w"
 				private$cached_values$clayton_design_candidates = list(M)
@@ -340,7 +309,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				fit = .fit_clayton_weibull_aft(
 					y = private$y[i_matched],
 					dead = private$dead[i_matched],
-					Xmm = Xcand[i_matched, , drop = FALSE],
+					Xmm = Xcand[i_matched, drop = FALSE],
 					pair_id = m_vec[i_matched],
 					include_singletons = FALSE,
 					estimate_only = estimate_only
@@ -368,7 +337,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				fit = .fit_standard_weibull_aft_from_matrix(
 					y = private$y[i_reservoir],
 					dead = private$dead[i_reservoir],
-					Xmm = Xcand[i_reservoir, , drop = FALSE],
+					Xmm = Xcand[i_reservoir, drop = FALSE],
 					estimate_only = estimate_only
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){

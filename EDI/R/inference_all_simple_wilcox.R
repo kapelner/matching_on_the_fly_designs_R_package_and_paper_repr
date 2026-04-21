@@ -24,6 +24,10 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj  A completed \code{DesignSeqOneByOne} object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose      Whether to print progress messages. Default \code{FALSE}.
 		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
 		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
@@ -44,7 +48,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, verbose = FALSE, max_resample_attempts = 50L){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L){
 			if (should_run_asserts()) {
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
@@ -61,7 +65,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			if (should_run_asserts()) {
 				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$max_resample_attempts = max_resample_attempts
 			if (should_run_asserts()) {
 				if (private$any_censoring){
@@ -77,7 +81,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
 		#' differences.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -99,7 +103,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' Returns a two-sided p-value for \eqn{H_0: \Delta = \delta} using the asymptotic
 		#' normal approximation for the HL estimator.
 		#' @param delta Null value; default 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}

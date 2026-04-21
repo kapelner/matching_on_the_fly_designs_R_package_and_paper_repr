@@ -4,7 +4,7 @@
 \alias{fast_logistic_regression_with_var}
 \title{Fast Logistic Regression with Variance Calculation (R Wrapper)}
 \usage{
-fast_logistic_regression_with_var(Xmm, y, j = 2)
+fast_logistic_regression_with_var(Xmm, y, j = 2, optimization_alg = "irls")
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column

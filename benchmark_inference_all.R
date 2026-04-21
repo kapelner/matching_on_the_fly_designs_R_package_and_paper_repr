@@ -328,7 +328,7 @@ for (response_type in names(categorized_classes)) {
                 bm_safe("boot", quote(inf_obj_screen$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE)))
                 else NA,
             rand = if (!is.null(inf_obj_screen) && !is_heavy_model)
-                bm_safe("rand", quote(inf_obj_screen$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)))
+                bm_safe("rand", quote(inf_obj_screen$compute_rand_two_sided_pval(r = r, show_progress = FALSE)))
                 else NA
         )
         n_inf = sum(sapply(screen_times, function(x) !is.na(x) && is.finite(x)))
@@ -375,7 +375,7 @@ for (response_type in names(categorized_classes)) {
                                benchmark_dispatch_skip(inf_class_name, response_type, "rand_ci", num_cores)) {
                     skip_benchmark_step("ci", inf_class_name, response_type, "rand_ci", num_cores)
                 } else if (!is.null(inf_obj) && !is_heavy_model) {
-                    bm_safe("ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
+                    bm_safe("ci", quote(inf_obj$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
                             num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
                 } else NA
 
@@ -391,7 +391,7 @@ for (response_type in names(categorized_classes)) {
                     skip_benchmark_step("custom_ci", inf_class_name, response_type, "rand_ci", num_cores)
                 } else if (!is.null(inf_obj) && !is_heavy_model) {
                     tryCatch(inf_obj$set_custom_randomization_statistic_function(custom_rand_stat), error = function(e) NULL)
-                    bm_safe("custom_ci", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
+                    bm_safe("custom_ci", quote(inf_obj$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
                             num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
                 } else NA
 
@@ -406,7 +406,7 @@ for (response_type in names(categorized_classes)) {
                                  benchmark_dispatch_skip(inf_class_name, response_type, "rand_pval", num_cores)) {
                     skip_benchmark_step("rand", inf_class_name, response_type, "rand_pval", num_cores)
                 } else if (!is.null(inf_obj) && !is_heavy_model) {
-                    bm_safe("rand", quote(inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = r, show_progress = FALSE)),
+                    bm_safe("rand", quote(inf_obj$compute_rand_two_sided_pval(r = r, show_progress = FALSE)),
                             num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
                 } else NA
 
@@ -415,7 +415,7 @@ for (response_type in names(categorized_classes)) {
                                           benchmark_dispatch_skip(inf_class_name, response_type, "rand_ci", num_cores)) {
                     skip_benchmark_step("ci_after_rand", inf_class_name, response_type, "rand_ci", num_cores)
                 } else if (!is.null(inf_obj) && !is_heavy_model) {
-                    bm_safe("ci_after_rand", quote(inf_obj$compute_confidence_interval_rand(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
+                    bm_safe("ci_after_rand", quote(inf_obj$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE)),
                             num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
                 } else NA
 
@@ -449,7 +449,7 @@ for (response_type in names(categorized_classes)) {
                             asymp_breakdown$elapsed
                         }
                     } else {
-                        bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()),
+                        bm_safe("asymp_pval", quote(inf_obj$compute_asymp_two_sided_pval()),
                                 num_cores_to_restore = num_cores, force_mirai_to_restore = force_mirai)
                     }
                 } else NA

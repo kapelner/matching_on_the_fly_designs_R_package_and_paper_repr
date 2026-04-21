@@ -17,7 +17,7 @@ after the sequential design is completed.
 \examples{
 
 ## ------------------------------------------------
-## Method `InferenceSurvivalKMDiff$compute_treatment_estimate`
+## Method `InferenceSurvivalKMDiff$compute_estimate`
 ## ------------------------------------------------
 
 seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
@@ -33,7 +33,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_estimate()
 
 
 ## ------------------------------------------------
@@ -86,11 +86,11 @@ seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceSurvivalKMDiff-new}{\code{InferenceSurvivalKMDiff$new()}}
-\item \href{#method-InferenceSurvivalKMDiff-compute_treatment_estimate}{\code{InferenceSurvivalKMDiff$compute_treatment_estimate()}}
+\item \href{#method-InferenceSurvivalKMDiff-compute_estimate}{\code{InferenceSurvivalKMDiff$compute_estimate()}}
 \item \href{#method-InferenceSurvivalKMDiff-compute_asymp_confidence_interval}{\code{InferenceSurvivalKMDiff$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect()}}
+\item \href{#method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval}{\code{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{\code{InferenceSurvivalKMDiff$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceSurvivalKMDiff-compute_confidence_interval_rand}{\code{InferenceSurvivalKMDiff$compute_confidence_interval_rand()}}
+\item \href{#method-InferenceSurvivalKMDiff-compute_rand_confidence_interval}{\code{InferenceSurvivalKMDiff$compute_rand_confidence_interval()}}
 \item \href{#method-InferenceSurvivalKMDiff-clone}{\code{InferenceSurvivalKMDiff$clone()}}
 }
 }
@@ -100,12 +100,21 @@ seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_two_sided_pval_for_treatment_effect_rand"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_two_sided_pval_for_treatment_effect_rand'><code>EDI::InferenceRandCI$compute_two_sided_pval_for_treatment_effect_rand()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
@@ -120,7 +129,7 @@ seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 \subsection{Method \code{new()}}{
 Initialize the Inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$new(des_obj, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -128,18 +137,23 @@ Initialize the Inference object.
 \describe{
 \item{\code{des_obj}}{The design object.}
 
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
 \item{\code{verbose}}{If TRUE, print additional information.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_treatment_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_treatment_estimate}{}}}
-\subsection{Method \code{compute_treatment_estimate()}}{
+\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
 Computes the appropriate estimate for mean difference
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_treatment_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -167,7 +181,7 @@ seq_des$add_all_subject_responses(
 )
 
 seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-seq_des_inf$compute_treatment_estimate()
+seq_des_inf$compute_estimate()
 
 }
 \if{html}{\out{</div>}}
@@ -235,14 +249,12 @@ seq_des_inf$compute_asymp_confidence_interval()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval_for_treatment_effect()}}{
+\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
 Computes a Wald-style 2-sided p-value by inverting the confidence interval.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval_for_treatment_effect(
-  delta = 0
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -304,12 +316,12 @@ seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_confidence_interval_rand"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_confidence_interval_rand}{}}}
-\subsection{Method \code{compute_confidence_interval_rand()}}{
+\if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_rand_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_rand_confidence_interval}{}}}
+\subsection{Method \code{compute_rand_confidence_interval()}}{
 Computes a 1-alpha level frequentist confidence interval for the randomization test
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_confidence_interval_rand(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_rand_confidence_interval(
   alpha = 0.05,
   r = 501,
   pval_epsilon = 0.005,

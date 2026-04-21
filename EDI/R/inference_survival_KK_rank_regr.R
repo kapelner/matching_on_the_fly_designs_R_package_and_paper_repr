@@ -1,7 +1,8 @@
-#' Survival Rank-based Regression (AFT) Compound Inference for KK Designs
+#' Rank Regression Inference for Survival Responses under KK Designs
 #'
-#' Fits a robust compound estimator for KK matching-on-the-fly designs with survival
-#' responses using rank-based estimating equations.
+#' Fits a multivariate Gehan-Wilcoxon rank regression for survival outcomes under
+#' a KK matching-on-the-fly design. The model adjusts for the treatment indicator
+#' and, optionally, all recorded covariates.
 #'
 #' @export
 InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
@@ -10,14 +11,26 @@ InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 	public = list(
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object with a survival response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
-			super$initialize(des_obj, include_covariates, verbose)
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+		}
+	),
+
+	private = list(
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+			X
 		}
 	)
 )

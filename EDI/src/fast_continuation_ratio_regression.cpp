@@ -8,6 +8,87 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+static List build_continuation_ratio_augmented_data(const Eigen::MatrixXd& X,
+													const Eigen::VectorXd& y) {
+	int n = X.rows();
+	int p = X.cols();
+
+	std::vector<double> levels;
+	for (int i = 0; i < y.size(); ++i) {
+		if (std::find(levels.begin(), levels.end(), y[i]) == levels.end()) {
+			levels.push_back(y[i]);
+		}
+	}
+	std::sort(levels.begin(), levels.end());
+	int K = levels.size();
+	if (K < 2) {
+		return List::create(Named("X_aug") = MatrixXd(0, p), Named("z") = VectorXd(0), Named("n_alpha") = 0);
+	}
+	int n_alpha = K - 1;
+
+	std::vector<double> z_vals;
+	std::vector<VectorXd> x_aug_vecs;
+	for (int i = 0; i < n; ++i) {
+		int yi_level = -1;
+		for (int k = 0; k < K; ++k) {
+			if (y[i] == levels[k]) {
+				yi_level = k;
+				break;
+			}
+		}
+		for (int j = 0; j < std::min(yi_level + 1, n_alpha); ++j) {
+			VectorXd x_row(n_alpha + p);
+			x_row.setZero();
+			x_row[j] = 1.0;
+			if (p > 0) x_row.tail(p) = X.row(i);
+			x_aug_vecs.push_back(x_row);
+			z_vals.push_back((yi_level == j) ? 1.0 : 0.0);
+		}
+	}
+
+	MatrixXd X_aug(z_vals.size(), n_alpha + p);
+	VectorXd z(z_vals.size());
+	for (int i = 0; i < X_aug.rows(); ++i) {
+		X_aug.row(i) = x_aug_vecs[i];
+		z[i] = z_vals[i];
+	}
+	return List::create(Named("X_aug") = X_aug, Named("z") = z, Named("n_alpha") = n_alpha);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_continuation_ratio_regression_score_cpp(const Eigen::MatrixXd& X,
+															const Eigen::VectorXd& y,
+															const Eigen::VectorXd& params) {
+	List aug = build_continuation_ratio_augmented_data(X, y);
+	MatrixXd X_aug = aug["X_aug"];
+	VectorXd z = aug["z"];
+	if (X_aug.rows() == 0) return VectorXd::Zero(params.size());
+	VectorXd eta = X_aug * params;
+	VectorXd mu = eta.unaryExpr([](double x) {
+		if (x > 20) return 1.0;
+		if (x < -20) return 0.0;
+		return 1.0 / (1.0 + std::exp(-x));
+	});
+	return X_aug.transpose() * (z - mu);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::MatrixXd& X,
+															  const Eigen::VectorXd& y,
+															  const Eigen::VectorXd& params) {
+	List aug = build_continuation_ratio_augmented_data(X, y);
+	MatrixXd X_aug = aug["X_aug"];
+	if (X_aug.rows() == 0) return MatrixXd::Zero(params.size(), params.size());
+	VectorXd eta = X_aug * params;
+	VectorXd mu = eta.unaryExpr([](double x) {
+		if (x > 20) return 1.0;
+		if (x < -20) return 0.0;
+		return 1.0 / (1.0 + std::exp(-x));
+	});
+	VectorXd w = mu.array() * (1.0 - mu.array());
+	return -(X_aug.transpose() * w.asDiagonal() * X_aug);
+}
+
 // [[Rcpp::export]]
 List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
     int n = X.rows();

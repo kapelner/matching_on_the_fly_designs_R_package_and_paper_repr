@@ -65,7 +65,7 @@ build_kk_exact_fisher_tables <- function(des) {
 	format_exact_fisher_tables(table_list)
 }
 
-test_that("compute_confidence_interval_rand works for continuous response", {
+test_that("compute_rand_confidence_interval works for continuous response", {
 	set.seed(123)
 	n <- 40
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "continuous", verbose = TRUE)
@@ -81,18 +81,18 @@ test_that("compute_confidence_interval_rand works for continuous response", {
 
 	# Compute randomization CI
 	# Using small nsim for speed in tests
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
 	# The estimate should be within the CI
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(est >= ci[1] && est <= ci[2])
 
 	message("Continuous Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
 })
 
-test_that("compute_confidence_interval_rand works for proportion response", {
+test_that("compute_rand_confidence_interval works for proportion response", {
 	set.seed(123)
 	n <- 100
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "proportion", verbose = FALSE)
@@ -108,19 +108,19 @@ test_that("compute_confidence_interval_rand works for proportion response", {
 	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
 	expect_true(all(is.finite(ci)))
 
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(est >= ci[1] && est <= ci[2])
 
 	message("Proportion Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
 })
 
-test_that("compute_confidence_interval_rand works for survival response (uncensored)", {
+test_that("compute_rand_confidence_interval works for survival response (uncensored)", {
 	set.seed(123)
 	n <- 50
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "survival", verbose = FALSE)
@@ -135,20 +135,20 @@ test_that("compute_confidence_interval_rand works for survival response (uncenso
 	inf <- InferenceSurvivalUniWeibullRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
+	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
 	# Survival times (ratios) should be positive
 	expect_true(all(ci > 0))
 
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(est >= ci[1] && est <= ci[2])
 
 	message("Survival Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
 })
 
-test_that("compute_confidence_interval_rand works for ordinal response (cumulative logit)", {
+test_that("compute_rand_confidence_interval works for ordinal response (cumulative logit)", {
 	set.seed(456)
 	n <- 40
 	des <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "ordinal", verbose = FALSE)
@@ -162,30 +162,30 @@ test_that("compute_confidence_interval_rand works for ordinal response (cumulati
 
 	inf <- InferenceOrdinalUniPropOddsRegr$new(des, verbose = FALSE)
 
-	ci <- inf$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05, show_progress = FALSE)
+	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05, show_progress = FALSE)
 
 	expect_equal(length(ci), 2)
 	expect_true(ci[1] < ci[2])
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(est >= ci[1] && est <= ci[2])
 	expect_true(all(is.finite(ci)))
 
 	message("Ordinal Rand CI: [", ci[1], ", ", ci[2], "] Est: ", est)
 })
 
-test_that("compute_confidence_interval_rand throws error for unsupported types", {
+test_that("compute_rand_confidence_interval throws error for unsupported types", {
 	n <- 20
 	des_incid <- DesignSeqOneByOneEfron$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) des_incid$add_one_subject_to_experiment_and_assign(data.table(x=1))
 	add_all_subject_responses_seq(des_incid, rbinom(n, 1, 0.5))
 	inf_incid <- InferenceIncidUnivLogRegr$new(des_incid)
-	expect_error(inf_incid$compute_confidence_interval_rand(), "Zhang randomization inference requires Bernoulli or matching designs")
+	expect_error(inf_incid$compute_rand_confidence_interval(), "Zhang randomization inference requires Bernoulli or matching designs")
 
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	for (i in 1:n) des_count$add_one_subject_to_experiment_and_assign(data.table(x=1))
 	add_all_subject_responses_seq(des_count, rpois(n, 5))
 	inf_count <- InferenceCountUnivNegBinRegr$new(des_count)
-	ci_count <- inf_count$compute_confidence_interval_rand(alpha = 0.05, r = 100, pval_epsilon = 0.05)
+	ci_count <- inf_count$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 	expect_equal(length(ci_count), 2)
 	expect_true(ci_count[1] < ci_count[2])
 	expect_true(all(is.finite(ci_count)))
@@ -207,11 +207,11 @@ test_that("Zhang incidence inference is available through randomization and exac
 	inf_serial <- InferenceIncidExactZhang$new(des, num_cores = 1, verbose = FALSE)
 	inf_parallel <- InferenceIncidExactZhang$new(des, num_cores = 4, verbose = FALSE)
 
-	ci_rand_serial <- inf_rand_serial$compute_confidence_interval_rand(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
-	ci_rand_parallel <- inf_rand_parallel$compute_confidence_interval_rand(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
+	ci_rand_serial <- inf_rand_serial$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
+	ci_rand_parallel <- inf_rand_parallel$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
 	ci_exact_serial <- inf_serial$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
 	ci_exact_parallel <- inf_parallel$compute_exact_confidence_interval(alpha = 0.10, pval_epsilon = 0.01)
-	p_rand <- inf_rand_serial$compute_two_sided_pval_for_treatment_effect_rand(delta = 0)
+	p_rand <- inf_rand_serial$compute_rand_two_sided_pval(delta = 0)
 	p_exact <- inf_serial$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
 
 	expect_length(ci_rand_serial, 2)
@@ -240,7 +240,7 @@ test_that("Fisher exact inference matches fisher.test for iBCRD incidence", {
 	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.10)
 	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
 
-	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(inf_exact$compute_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
 	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
 	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
 })
@@ -270,7 +270,7 @@ test_that("Fisher exact inference matches mantelhaen.test for blocking incidence
 	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.05)
 	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
 
-	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(inf_exact$compute_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
 	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
 	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
 	expect_error(
@@ -306,7 +306,7 @@ test_that("Fisher exact inference matches mantelhaen.test for KK incidence", {
 	ci_exact <- inf_exact$compute_exact_confidence_interval(alpha = 0.05)
 	p_exact <- inf_exact$compute_exact_two_sided_pval_for_treatment_effect(delta = 0)
 
-	expect_equal(inf_exact$compute_treatment_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
+	expect_equal(inf_exact$compute_estimate(), log(as.numeric(ref$estimate)), tolerance = 1e-12)
 	expect_equal(unname(ci_exact), log(as.numeric(ref$conf.int)), tolerance = 1e-12)
 	expect_equal(p_exact, ref$p.value, tolerance = 1e-12)
 })

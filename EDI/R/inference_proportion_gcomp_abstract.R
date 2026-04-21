@@ -24,6 +24,10 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @description
 		#' Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param prob_clip_eps Primary probability clamp applied to fitted values during
 		#'   model-based variance computation. Predicted probabilities are clipped to
@@ -68,7 +72,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Can be overridden per-call in \code{approximate_bootstrap_distribution_beta_hat_T}.
 		#'   Must be a positive integer. Default \code{50L}.
-		initialize = function(des_obj, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
 			max_resample_attempts = 50L,
 			variance_fallback_methods = c(
 				"robust", "stabilized_robust", "model_based",
@@ -92,7 +96,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				))
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -105,7 +109,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @description
 		#' Computes the g-computation treatment-effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$cached_values$md
 		},
@@ -129,7 +133,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @description
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null mean difference. Defaults to 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 			}

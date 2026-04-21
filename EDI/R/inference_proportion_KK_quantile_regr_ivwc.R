@@ -34,7 +34,6 @@
 #' and is not installed automatically with \pkg{EDI}.
 #' Install \pkg{quantreg} before using this class.
 #'
-#' @export
 #' @examples
 #' set.seed(1)
 #' x_dat <- data.frame(
@@ -75,13 +74,17 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 		#' 							The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
 		#' 							Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
 		#' 							different percentile of the treatment effect distribution.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
-		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 			}
-			super$initialize(des_obj, tau, qlogis, verbose)
+			super$initialize(des_obj, tau, qlogis, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -100,4 +103,15 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 
 
 	)
+)
+
+#' Quantile Regression Compound Estimator for KK Designs with Proportion Outcomes
+#'
+#' Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrIVWC}.
+#'
+#' @export
+InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
+	lock_objects = FALSE,
+	inherit = InferencePropMultiKKQuantileRegrIVWC,
+	public = list()
 )

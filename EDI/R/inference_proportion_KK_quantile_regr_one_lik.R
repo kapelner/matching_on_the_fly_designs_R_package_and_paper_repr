@@ -7,7 +7,6 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
-#' @export
 #' @examples
 #' set.seed(1)
 #' x_dat <- data.frame(
@@ -42,11 +41,15 @@ InferencePropMultiKKQuantileRegrOneLik = R6::R6Class("InferencePropMultiKKQuanti
 		#'   between 0 and 1. Default is 0.5.
 		#' @param	num_cores			Number of CPU cores for parallel processing.
 		#' @param	verbose			Whether to print progress messages.
-		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 			}
-			super$initialize(des_obj, tau, qlogis, verbose)
+			super$initialize(des_obj, tau, qlogis, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -65,8 +68,19 @@ InferencePropMultiKKQuantileRegrOneLik = R6::R6Class("InferencePropMultiKKQuanti
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE) super$compute_treatment_estimate()
+		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
 
 
 	)
+)
+
+#' Quantile Regression Combined-Likelihood Estimator for KK Designs with Proportion Outcomes
+#'
+#' Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrOneLik}.
+#'
+#' @export
+InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneLik",
+	lock_objects = FALSE,
+	inherit = InferencePropMultiKKQuantileRegrOneLik,
+	public = list()
 )

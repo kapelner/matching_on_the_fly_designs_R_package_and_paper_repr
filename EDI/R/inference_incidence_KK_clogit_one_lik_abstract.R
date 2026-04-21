@@ -27,8 +27,12 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -37,7 +41,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -46,7 +50,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		#' @description
 		#' Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
@@ -67,13 +71,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		get_standard_error = function(){
-			private$shared_combined_likelihood(estimate_only = FALSE)
-			private$cached_values$s_beta_hat_T
-		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
@@ -95,7 +92,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			p             = if (private$include_covariates()) ncol(private$get_X()) else 0L
+			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
 
 			# ---- Build combined design matrix ------------------------------------
@@ -111,7 +108,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				y_m      = private$y[i_matched]
 				w_m      = private$w[i_matched]
 				strata_m = m_vec[i_matched]
-				X_mat    = if (p > 0L) as.matrix(private$get_X()[i_matched, , drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
+				X_mat    = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
 
 				if (has_reservoir){
 					y_r    = KKstats$y_reservoir

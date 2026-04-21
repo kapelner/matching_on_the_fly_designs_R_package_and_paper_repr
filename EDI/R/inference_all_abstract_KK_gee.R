@@ -10,26 +10,25 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
 			}
@@ -45,17 +44,12 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		},
 
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 				private$shared(estimate_only = TRUE)
 			private$cached_values$beta_hat_T
 		},
@@ -79,7 +73,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -100,7 +94,6 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 	private = list(
 		m = NULL,
-		include_covariates = NULL,
 		max_abs_reasonable_coef = 1e4,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
@@ -121,14 +114,10 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		# Default (multivariate): intercept dropped, treatment column named "w".
 		# Univariate subclasses override this to return data.frame(w = private$w).
 		gee_predictors_df = function(){
-			if (private$include_covariates) {
-				full_X = private$create_design_matrix()
-				X_model = full_X[, -1, drop = FALSE]
-				colnames(X_model)[1] = "w"
-				as.data.frame(X_model)
-			} else {
-				data.frame(w = private$w)
-			}
+			full_X = private$create_design_matrix()
+			X_model = full_X[, -1, drop = FALSE]
+			colnames(X_model)[1] = "w"
+			as.data.frame(X_model)
 		},
 
 		gee_predictors_df_candidates = function(){
@@ -294,8 +283,8 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			pred_df = predictors_df
 			if (is.null(pred_df)) pred_df = private$gee_predictors_df()
 			if (!is.data.frame(pred_df)) pred_df = as.data.frame(pred_df)
-			dat = data.frame(y = private$y[keep], pred_df[keep, , drop = FALSE], group_id = group_id)
-			dat = dat[order(dat$group_id), , drop = FALSE]
+			dat = data.frame(y = private$y[keep], pred_df[keep, drop = FALSE], group_id = group_id)
+			dat = dat[order(dat$group_id), drop = FALSE]
 			id_sorted = dat$group_id
 			dat$group_id = NULL
 			list(dat = dat, id_sorted = id_sorted)

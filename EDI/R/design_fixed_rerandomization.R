@@ -20,6 +20,8 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return 			A new `FixedDesignRerandomization` object
 		#'
@@ -31,9 +33,11 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$obj_val_cutoff = obj_val_cutoff
 			private$objective = objective
 			private$uses_covariates = TRUE

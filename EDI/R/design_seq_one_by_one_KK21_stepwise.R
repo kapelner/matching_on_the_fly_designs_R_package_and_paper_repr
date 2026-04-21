@@ -69,6 +69,8 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#'                                                         instead of a proportional odds
 		#' model each time? This is at the expense of the weights being less accurate. Default is
 		#' \code{TRUE}.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#' @return	A new `DesignSeqOneByOneKK21stepwise` object
 		#'
 		#' @examples
@@ -91,9 +93,11 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			count_use_speedup = TRUE,
 			proportion_use_speedup = TRUE,
 			survival_use_speedup_for_no_censoring = TRUE,
-			ordinal_use_speedup = TRUE
+			ordinal_use_speedup = TRUE,
+			missingness_method = "impute",
+			model_formula = ~ .
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring, ordinal_use_speedup)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, num_boot, count_use_speedup, proportion_use_speedup, survival_use_speedup_for_no_censoring, ordinal_use_speedup, missingness_method, model_formula)
 		}
 	),
 	private = list(

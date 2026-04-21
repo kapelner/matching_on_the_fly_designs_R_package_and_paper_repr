@@ -1,10 +1,8 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -129,6 +127,28 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_zero_augmented_poisson_score_cpp(const Eigen::VectorXd& y,
+													 const Eigen::MatrixXd& Xcond,
+													 const Eigen::MatrixXd& Xzi,
+													 const Eigen::VectorXd& params,
+													 bool is_hurdle) {
+	ZeroAugmentedPoisson fun(y, Xcond, Xzi, is_hurdle);
+	Eigen::VectorXd grad(params.size());
+	fun(params, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(const Eigen::VectorXd& y,
+													   const Eigen::MatrixXd& Xcond,
+													   const Eigen::MatrixXd& Xzi,
+													   const Eigen::VectorXd& params,
+													   bool is_hurdle) {
+	ZeroAugmentedPoisson fun(y, Xcond, Xzi, is_hurdle);
+	return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
 List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y, 
                                      const Eigen::MatrixXd& Xcond, 
                                      const Eigen::MatrixXd& Xzi, 
@@ -136,7 +156,10 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
                                      Nullable<NumericVector> start_params = R_NilValue,
                                      bool estimate_only = false,
                                      int maxit = 1000, 
-                                     double tol = 1e-6) {
+                                     double tol = 1e-6,
+                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                     std::string optimization_alg = "lbfgs") {
     int p_cond = Xcond.cols();
     int p_zi = Xzi.cols();
     int total_p = p_cond + p_zi;
@@ -153,22 +176,18 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
         double prop_zero = 0;
         for(int i=0; i<y.size(); ++i) if(y[i] == 0) prop_zero++;
         prop_zero /= y.size();
-        if (prop_zero > 0 && prop_zero < 1) params[p_cond] = std::log(prop_zero / (1.0 - prop_zero));
+            if (prop_zero > 0 && prop_zero < 1) params[p_cond] = std::log(prop_zero / (1.0 - prop_zero));
     }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
 
     ZeroAugmentedPoisson fun(y, Xcond, Xzi, is_hurdle);
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = tol;
-    lbfgs_params.max_iterations = maxit;
-
-    LBFGSSolver<double> solver(lbfgs_params);
-    double neg_ll;
-    int niter = 0;
+    LikelihoodFitResult fit;
     try {
-        niter = solver.minimize(fun, params, neg_ll);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
     } catch (...) {
         return List::create(Named("converged") = false);
     }
+    params = fit.params;
 
     if (estimate_only) {
         return List::create(
@@ -176,13 +195,15 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
                 Named("cond") = params.head(p_cond),
                 Named("zi") = params.tail(p_zi)
             ),
-            Named("converged") = (niter < maxit),
-            Named("neg_ll") = neg_ll
+            Named("converged") = fit.converged,
+            Named("neg_ll") = fit.value
         );
     }
 
     Eigen::MatrixXd H = fun.hessian(params);
-    Eigen::MatrixXd vcov = H.inverse();
+    Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd vcov = expand_free_covariance(total_p, fixed_spec, cov_free, true);
 
     return List::create(
         Named("coefficients") = List::create(
@@ -190,7 +211,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
             Named("zi") = params.tail(p_zi)
         ),
         Named("vcov") = vcov,
-        Named("converged") = (niter < maxit),
-        Named("neg_ll") = neg_ll
+        Named("converged") = fit.converged,
+        Named("neg_ll") = fit.value
     );
 }

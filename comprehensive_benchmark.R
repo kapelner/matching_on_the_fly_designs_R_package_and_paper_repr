@@ -174,14 +174,14 @@ for (rt in response_types) {
 		inf_obj <- inf_class$new(des_obj, verbose = verbose)
 
 		# Benchmark estimate computation
-		est <- inf_obj$compute_treatment_estimate()
+		est <- inf_obj$compute_estimate()
 
 		bootstrap_ci_res <- safe_run_metric(function() inf_obj$compute_bootstrap_confidence_interval())
 		bootstrap_ci_bounds <- extract_ci_bounds(bootstrap_ci_res$value)
 		bootstrap_pval_res <- safe_run_metric(function() inf_obj$compute_bootstrap_two_sided_pval())
 
-		rand_pval_res <- safe_run_metric(function() inf_obj$compute_two_sided_pval_for_treatment_effect_rand())
-		rand_ci_res <- safe_run_metric(function() inf_obj$compute_confidence_interval_rand())
+		rand_pval_res <- safe_run_metric(function() inf_obj$compute_rand_two_sided_pval())
+		rand_ci_res <- safe_run_metric(function() inf_obj$compute_rand_confidence_interval())
 		rand_ci_bounds <- extract_ci_bounds(rand_ci_res$value)
 
 		if ("compute_asymp_confidence_interval" %in% names(inf_obj)) {
@@ -191,8 +191,8 @@ for (rt in response_types) {
 		}
 		mle_ci_bounds <- extract_ci_bounds(mle_ci_res$value)
 
-		if ("compute_asymp_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
-			mle_pval_res <- safe_run_metric(function() inf_obj$compute_asymp_two_sided_pval_for_treatment_effect())
+		if ("compute_asymp_two_sided_pval" %in% names(inf_obj)) {
+			mle_pval_res <- safe_run_metric(function() inf_obj$compute_asymp_two_sided_pval())
 		} else {
 			mle_pval_res <- list(value = NA, error = NA_character_)
 		}

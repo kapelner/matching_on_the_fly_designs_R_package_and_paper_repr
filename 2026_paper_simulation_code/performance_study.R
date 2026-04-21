@@ -94,7 +94,7 @@ for (n_setting in 1 : nrow(exp_settings)){
 
 		seq_des_inf_obj = Inference$new(des_obj, estimate_type = inference_method, test_type = test_type, verbose = FALSE)
 
-		estimate = seq_des_inf_obj$compute_treatment_estimate()
+		estimate = seq_des_inf_obj$compute_estimate()
 
 		if (test_type == "MLE-or-KM-based"){
 			ci = seq_des_inf_obj$compute_confidence_interval(r = r)

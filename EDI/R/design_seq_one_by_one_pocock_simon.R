@@ -21,6 +21,8 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return 			A new `DesignSeqOneByOnePocockSimon` object
 		#'
@@ -33,13 +35,15 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 			if (should_run_asserts()) {
 				assertCharacter(strata_cols, min.len = 1)
 				assertNumeric(p_best, lower = 0.5, upper = 1)
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			
 			private$strata_cols = strata_cols
 			private$p_best = p_best

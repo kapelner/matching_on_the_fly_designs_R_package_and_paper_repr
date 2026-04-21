@@ -10,15 +10,27 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKHurdlePoissonIVWC,
 	public = list(
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
+		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
+		#'   the matched-pair component.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		}
 	)
 )
 
-#' KK Poisson-Conditional-Poisson IVWC Inference for Count Responses
+#' Conditional-Poisson Inference for KK Designs with IVWC
 #'
-#' Fits a compound estimator for KK matching-on-the-fly designs with count
-#' responses using a conditional Poisson model for matched pairs and an ordinary
-#' Poisson regression for reservoir subjects. Estimates are combined via
-#' inverse-variance weighting.
+#' Fits a conditional-Poisson regression for count responses under a KK design
+#' using the Independent-Variables-as-Working-Covariates (IVWC) approach.
 #'
 #' @export
 InferenceCountKKCPoissonIVWC = R6::R6Class("InferenceCountKKCPoissonIVWC",
@@ -27,26 +39,38 @@ InferenceCountKKCPoissonIVWC = R6::R6Class("InferenceCountKKCPoissonIVWC",
 	public = list(
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj A completed \code{Design} object with a count response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
-			if (should_run_asserts()) {
-				assertFlag(include_covariates, null.ok = TRUE)
-			}
-			super$initialize(des_obj, verbose)
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates_flag = include_covariates
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 		}
-	),
-	private = list(
-		include_covariates_flag = NULL,
-		include_covariates = function() private$include_covariates_flag
+	)
+)
+
+#' Conditional-Poisson Inference for KK Designs with Combined Likelihood
+#'
+#' Fits a conditional-Poisson regression for count responses under a KK design
+#' using the combined-likelihood approach.
+#'
+#' @export
+InferenceCountKKCPoissonOneLik = R6::R6Class("InferenceCountKKCPoissonOneLik",
+	lock_objects = FALSE,
+	inherit = InferenceAbstractKKPoissonCPoissonOneLik,
+	public = list(
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+		}
 	)
 )

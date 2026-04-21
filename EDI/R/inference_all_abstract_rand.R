@@ -226,7 +226,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#' @param permutations		Pre-computed permutations.
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		#' @return 	Randomization p-value.
-		compute_two_sided_pval_for_treatment_effect_rand = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, zero_one_logit_clamp = .Machine$double.eps){
+		compute_rand_two_sided_pval = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, zero_one_logit_clamp = .Machine$double.eps){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
 				assertLogical(na.rm)
@@ -778,9 +778,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 				private$cached_values$beta_hat_T = NULL
 				private$cached_values$s_beta_hat_T = NULL
 				if (!is.null(private$compute_basic_match_data)) private$compute_basic_match_data()
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-			if (is.null(private$custom_randomization_statistic_function)) self$compute_treatment_estimate(estimate_only = estimate_only)
+			if (is.null(private$custom_randomization_statistic_function)) self$compute_estimate(estimate_only = estimate_only)
 			else private$custom_randomization_statistic_function()
 		}
 	)

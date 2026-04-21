@@ -1,10 +1,8 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -99,55 +97,58 @@ public:
 ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         const Eigen::VectorXd& y,
                                         const Eigen::VectorXd* start_beta = nullptr,
-                                        double start_phi = 10.0) {
+                                        double start_phi = 10.0,
+                                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                        std::string optimization_alg = "lbfgs") {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params(p + 1);
     if (start_beta) params.head(p) = *start_beta;
     else params.head(p).setZero();
     params[p] = std::log(start_phi);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
     BetaRegression fun(y, X);
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = 1e-6;
-    lbfgs_params.max_iterations = 1000;
-
-    LBFGSSolver<double> solver(lbfgs_params);
-    double neg_ll;
-    int niter = solver.minimize(fun, params, neg_ll);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "lbfgs");
+    params = fit.params;
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // phi
     res.XtWX = fun.hessian(params); // This is actually the Hessian H
-    res.converged = (niter < 1000);
+    res.converged = fit.converged;
     return res;
-    }
+}
 
-    } // namespace
+} // namespace
 
-    // [[Rcpp::export]]
-    Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& params) {
+// [[Rcpp::export]]
+Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
+                                              const Eigen::VectorXd& y,
+                                              const Eigen::VectorXd& params) {
     BetaRegression fun(y, X);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
     return -grad; // Return the actual score (gradient of log-likelihood)
-    }
+}
 
-    // [[Rcpp::export]]
-    Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& params) {
+// [[Rcpp::export]]
+Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
+                                                const Eigen::VectorXd& y,
+                                                const Eigen::VectorXd& params) {
     BetaRegression fun(y, X);
     return -fun.hessian(params); // Return the actual Hessian of log-likelihood (Fisher Information is -Hessian)
-    }
+}
 
-    // [[Rcpp::export]]
-    List fast_beta_regression_cpp(const Eigen::MatrixXd& X,								const NumericVector& y,
+// [[Rcpp::export]]
+List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
+								const NumericVector& y,
 								Nullable<NumericVector> start_beta = R_NilValue,
 								double start_phi = 10.0,
-								bool compute_std_errs = false) {
+                                bool compute_std_errs = false,
+                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                std::string optimization_alg = "lbfgs") {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
@@ -157,7 +158,7 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg);
 
 	return List::create(
 		Named("coefficients") = fit.b,
@@ -171,7 +172,10 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 									 const NumericVector& y,
 									 Nullable<NumericVector> start_beta = R_NilValue,
 									 double start_phi = 10.0,
-									 bool compute_std_errs = true) {
+                                     bool compute_std_errs = true,
+                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                     std::string optimization_alg = "lbfgs") {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
@@ -181,14 +185,18 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi);
-	Eigen::MatrixXd cov_mat = fit.XtWX.inverse();
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
+    Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
+	Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd cov_mat = expand_free_covariance(X.cols() + 1, fixed_spec, cov_free, true);
+    Eigen::VectorXd se = cov_mat.diagonal().array().sqrt();
 
 	return List::create(
 		Named("coefficients") = fit.b,
 		Named("phi") = fit.dispersion,
 		Named("vcov") = cov_mat,
-		Named("std_errs") = cov_mat.diagonal().array().sqrt(),
+		Named("std_errs") = se,
         Named("converged") = fit.converged
 	);
 }

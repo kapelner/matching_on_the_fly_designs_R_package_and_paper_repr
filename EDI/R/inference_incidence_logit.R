@@ -8,34 +8,30 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-
+				
 		#' @description
 		#' Initialize a logistic-regression inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		#' @param optimization_alg  Optimization algorithm to use.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "irls"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "irls")
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -45,7 +41,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
@@ -61,7 +57,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				Xmm = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y))
+			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -73,61 +69,40 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		},
 
 		generate_mod = function(estimate_only = FALSE){
-			if (private$include_covariates) {
-				# Multivariate logic (formerly in Multi class)
-				if (estimate_only && !is.null(private$best_Xmm_colnames)) {
-					X_data = private$get_X()
-					Xmm_cols = private$best_Xmm_colnames
-					if (length(Xmm_cols) == 0L) {
-						Xmm = cbind(1, private$w)
+			X_full = private$build_design_matrix()
+			
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L, # intercept and treatment
+				fit_fun = function(X_fit){
+					if (estimate_only) {
+						res = fast_logistic_regression_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						list(b = res$b, ssq_b_2 = NA_real_)
 					} else {
-						X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-						Xmm = cbind(1, treatment = private$w, X_cov)
+						fast_logistic_regression_with_var_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
 					}
-					res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y))
-					if (is.null(res) || !is.finite(res$b[2])) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
-					return(list(b = res$b, ssq_b_2 = NA_real_))
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
+			)
 
-				X_full = private$create_design_matrix()
-				attempt = private$fit_with_hardened_qr_column_dropping(
-					X_full = X_full,
-					required_cols = 1L,
-					fit_fun = function(X_fit, j_treat){
-						if (estimate_only) {
-							res = fast_logistic_regression_cpp(X_fit, private$y)
-							list(b = res$b, ssq_b_2 = NA_real_, j_treat = j_treat)
-						} else {
-							res = fast_logistic_regression_with_var_cpp(X_fit, private$y, j = j_treat)
-							res$j_treat = j_treat
-							res
-						}
-					},
-					fit_ok = function(mod, X_fit, keep){
-						j_treat = mod$j_treat
-						if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
-						if (estimate_only) return(TRUE)
-						is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
-					}
-				)
-
-				if (!is.null(attempt$fit)){
-					private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
-				}
-				attempt$fit
-			} else {
-				# Univariate logic (formerly in Univ class)
-				Xmm = cbind(1, private$w)
-				full_names = c("(Intercept)", "treatment")
-				colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
-
-				if (estimate_only) {
-					res = fast_logistic_regression_cpp(Xmm, private$y)
-					list(b = res$b, ssq_b_2 = NA_real_)
-				} else {
-					fast_logistic_regression_with_var_cpp(Xmm, private$y)
-				}
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 			}
+			attempt$fit
+		},
+
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+			X
 		}
 	)
 )

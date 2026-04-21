@@ -30,10 +30,15 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 		#'   the bound is enforced as \code{(.Machine$double.eps, 1 - .Machine$double.eps)},
 		#'   i.e. the smallest representable positive number away from 0 and 1.
 		#' @param transform_y_fn Optional response transformation.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new inference object.
-		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			if (should_run_asserts()) {
+				assertFormula(model_formula, null.ok = TRUE)
 				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			}
 			if (should_run_asserts()) {
@@ -43,7 +48,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
@@ -54,7 +59,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 		#' Compute the quantile-regression treatment estimate.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		#' @return The treatment estimate.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -78,7 +83,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 		#' Compute an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect value.
 		#' @return A two-sided p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}

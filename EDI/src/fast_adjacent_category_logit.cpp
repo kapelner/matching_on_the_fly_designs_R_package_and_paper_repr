@@ -1,3 +1,4 @@
+#include "_helper_functions.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
@@ -8,58 +9,28 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-class AdjacentCategoryLogitRegression {
+namespace {
+
+class AdjacentCategoryLogitNegLogLik {
 private:
-    MatrixXd m_X;
-    std::vector<int> m_y;
+    const MatrixXd& m_X;
+    const std::vector<int>& m_y;
     int m_n;
     int m_p;
     int m_K;
 
 public:
-    AdjacentCategoryLogitRegression(const MatrixXd& X, const VectorXd& y) :
-        m_X(X), m_n(X.rows()), m_p(X.cols()), m_K(0) {
-        std::vector<double> levels = init_levels(y);
-        m_K = static_cast<int>(levels.size());
-        m_y.resize(m_n);
-        for (int i = 0; i < m_n; ++i) {
-            double yi = y[i];
-            int idx = 0;
-            while (idx < m_K && levels[idx] != yi) {
-                ++idx;
-            }
-            m_y[i] = idx + 1;
-        }
-    }
+    AdjacentCategoryLogitNegLogLik(const MatrixXd& X, const std::vector<int>& y, int K) :
+        m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()), m_K(K) {}
 
-    static std::vector<double> init_levels(const VectorXd& y) {
-        std::vector<double> levels(y.data(), y.data() + y.size());
-        std::sort(levels.begin(), levels.end());
-        levels.erase(std::unique(levels.begin(), levels.end()), levels.end());
-        return levels;
-    }
-
-    int num_params() const {
-        return (m_K - 1) + m_p;
-    }
-
-    int num_categories() const {
-        return m_K;
-    }
-
-    double loglik_grad_hess(const VectorXd& params, VectorXd* grad = NULL, MatrixXd* hess = NULL) const {
+    double operator()(const VectorXd& params, VectorXd& grad) const {
         const int n_alpha = m_K - 1;
         const VectorXd alpha = params.head(n_alpha);
         const VectorXd beta = params.tail(m_p);
 
-        if (grad != NULL) {
-            grad->setZero(params.size());
-        }
-        if (hess != NULL) {
-            hess->setZero(params.size(), params.size());
-        }
+        grad.setZero(params.size());
 
-        double ll = 0.0;
+        double neg_ll = 0.0;
         std::vector<double> alpha_suffix(m_K, 0.0);
         for (int j = m_K - 2; j >= 0; --j) {
             alpha_suffix[j] = alpha_suffix[j + 1] + alpha[j];
@@ -68,18 +39,16 @@ public:
         std::vector<double> scores(m_K, 0.0);
         std::vector<double> probs(m_K, 0.0);
         std::vector<double> cdf(m_K - 1, 0.0);
-        std::vector<double> prefix_first_moment(m_K - 1, 0.0);
 
         for (int i = 0; i < m_n; ++i) {
             double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
-            double max_score = 0.0;
-
+            
             for (int j = 0; j < m_K - 1; ++j) {
                 scores[j] = alpha_suffix[j] - static_cast<double>(m_K - 1 - j) * eta;
             }
             scores[m_K - 1] = 0.0;
-            max_score = *std::max_element(scores.begin(), scores.end());
-
+            
+            double max_score = *std::max_element(scores.begin(), scores.end());
             double denom = 0.0;
             for (int j = 0; j < m_K; ++j) {
                 probs[j] = std::exp(scores[j] - max_score);
@@ -90,7 +59,63 @@ public:
             }
 
             int y_i = m_y[i];
-            ll += scores[y_i - 1] - max_score - std::log(denom);
+            neg_ll -= (scores[y_i - 1] - max_score - std::log(denom));
+
+            double running_cdf = 0.0;
+            double ey = 0.0;
+            for (int j = 0; j < m_K; ++j) {
+                double y_val = static_cast<double>(j + 1);
+                ey += y_val * probs[j];
+                if (j < m_K - 1) {
+                    running_cdf += probs[j];
+                    cdf[j] = running_cdf;
+                }
+            }
+
+            for (int j = 0; j < m_K - 1; ++j) {
+                grad[j] -= (((y_i <= (j + 1)) ? 1.0 : 0.0) - cdf[j]);
+            }
+            if (m_p > 0) {
+                grad.tail(m_p).noalias() -= m_X.row(i).transpose() * (static_cast<double>(y_i) - ey);
+            }
+        }
+
+        return neg_ll;
+    }
+
+    MatrixXd hessian(const VectorXd& params) const {
+        const int n_alpha = m_K - 1;
+        const VectorXd beta = params.tail(m_p);
+        
+        MatrixXd hess = MatrixXd::Zero(params.size(), params.size());
+
+        std::vector<double> alpha_suffix(m_K, 0.0);
+        for (int j = m_K - 2; j >= 0; --j) {
+            alpha_suffix[j] = alpha_suffix[j + 1] + params[j];
+        }
+
+        std::vector<double> scores(m_K, 0.0);
+        std::vector<double> probs(m_K, 0.0);
+        std::vector<double> cdf(m_K - 1, 0.0);
+        std::vector<double> prefix_first_moment(m_K - 1, 0.0);
+
+        for (int i = 0; i < m_n; ++i) {
+            double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+
+            for (int j = 0; j < m_K - 1; ++j) {
+                scores[j] = alpha_suffix[j] - static_cast<double>(m_K - 1 - j) * eta;
+            }
+            scores[m_K - 1] = 0.0;
+
+            double max_score = *std::max_element(scores.begin(), scores.end());
+            double denom = 0.0;
+            for (int j = 0; j < m_K; ++j) {
+                probs[j] = std::exp(scores[j] - max_score);
+                denom += probs[j];
+            }
+            for (int j = 0; j < m_K; ++j) {
+                probs[j] /= denom;
+            }
 
             double ey = 0.0;
             double ey2 = 0.0;
@@ -109,159 +134,126 @@ public:
             }
             double var_y = std::max(0.0, ey2 - ey * ey);
 
-            if (grad != NULL) {
-                for (int j = 0; j < m_K - 1; ++j) {
-                    (*grad)[j] += ((y_i <= (j + 1)) ? 1.0 : 0.0) - cdf[j];
-                }
-                if (m_p > 0) {
-                    grad->tail(m_p).noalias() += m_X.row(i).transpose() * (static_cast<double>(y_i) - ey);
+            for (int j = 0; j < m_K - 1; ++j) {
+                for (int k = j; k < m_K - 1; ++k) {
+                    double f_min = cdf[std::min(j, k)];
+                    double val = (f_min - cdf[j] * cdf[k]);
+                    hess(j, k) += val;
+                    if (j != k) hess(k, j) += val;
                 }
             }
 
-            if (hess != NULL) {
+            if (m_p > 0) {
                 for (int j = 0; j < m_K - 1; ++j) {
-                    for (int k = j; k < m_K - 1; ++k) {
-                        double f_min = cdf[std::min(j, k)];
-                        double val = -(f_min - cdf[j] * cdf[k]);
-                        (*hess)(j, k) += val;
-                        if (j != k) {
-                            (*hess)(k, j) += val;
-                        }
-                    }
+                    double cov_ind_y = prefix_first_moment[j] - ey * cdf[j];
+                    VectorXd cross = m_X.row(i).transpose() * cov_ind_y;
+                    hess.block(j, n_alpha, 1, m_p) += cross.transpose();
+                    hess.block(n_alpha, j, m_p, 1) += cross;
                 }
-
-                if (m_p > 0) {
-                    for (int j = 0; j < m_K - 1; ++j) {
-                        double cov_ind_y = prefix_first_moment[j] - ey * cdf[j];
-                        VectorXd cross = m_X.row(i).transpose() * cov_ind_y;
-                        hess->block(j, n_alpha, 1, m_p) += cross.transpose();
-                        hess->block(n_alpha, j, m_p, 1) += cross;
-                    }
-
-                    hess->block(n_alpha, n_alpha, m_p, m_p).noalias() -= var_y * (m_X.row(i).transpose() * m_X.row(i));
-                }
+                hess.block(n_alpha, n_alpha, m_p, m_p).noalias() += var_y * (m_X.row(i).transpose() * m_X.row(i));
             }
         }
 
-        return ll;
+        return hess;
     }
 };
 
-static VectorXd adjacent_category_newton_fit(
-    const AdjacentCategoryLogitRegression& model,
-    int maxit,
-    double tol,
-    bool* converged = NULL
-) {
-    const int n_params = model.num_params();
-    const int K = model.num_categories();
-    const int n_alpha = K - 1;
+std::vector<double> get_levels(const VectorXd& y) {
+    std::vector<double> levels(y.data(), y.data() + y.size());
+    std::sort(levels.begin(), levels.end());
+    levels.erase(std::unique(levels.begin(), levels.end()), levels.end());
+    return levels;
+}
 
-    VectorXd params(n_params);
-    params.setZero();
-
-    VectorXd grad(n_params);
-    MatrixXd hess(n_params, n_params);
-
-    if (converged != NULL) {
-        *converged = false;
+std::vector<int> map_y_to_1K(const VectorXd& y, const std::vector<double>& levels) {
+    int n = y.size();
+    int K = levels.size();
+    std::vector<int> y_mapped(n);
+    for (int i = 0; i < n; ++i) {
+        double yi = y[i];
+        auto it = std::lower_bound(levels.begin(), levels.end(), yi);
+        y_mapped[i] = static_cast<int>(std::distance(levels.begin(), it)) + 1;
     }
+    return y_mapped;
+}
 
-    for (int iter = 0; iter < maxit; ++iter) {
-        double current_ll = model.loglik_grad_hess(params, &grad, &hess);
-        if (grad.norm() < tol) {
-            if (converged != NULL) {
-                *converged = true;
-            }
-            break;
-        }
+} // namespace
 
-        FullPivLU<MatrixXd> lu(hess);
-        if (!lu.isInvertible()) {
-            break;
-        }
-
-        VectorXd step = lu.solve(grad);
-        double step_scale = 1.0;
-        bool accepted = false;
-
-        while (step_scale > 1e-8) {
-            VectorXd next_params = params - step_scale * step;
-            double next_ll = model.loglik_grad_hess(next_params, NULL, NULL);
-            if (R_finite(next_ll) && next_ll > current_ll) {
-                params = next_params;
-                accepted = true;
-                break;
-            }
-            step_scale *= 0.5;
-        }
-
-        if (!accepted) {
-            break;
-        }
-
-        if ((step_scale * step).norm() < tol) {
-            if (converged != NULL) {
-                *converged = true;
-            }
-            break;
-        }
-    }
-
-    return params;
+// [[Rcpp::export]]
+Eigen::VectorXd get_adjacent_category_logit_score_cpp(const Eigen::MatrixXd& X,
+                                                      const Eigen::VectorXd& y,
+                                                      const Eigen::VectorXd& params) {
+    std::vector<double> levels = get_levels(y);
+    std::vector<int> y_mapped = map_y_to_1K(y, levels);
+    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, levels.size());
+    VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
 }
 
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
-    AdjacentCategoryLogitRegression model(X, y);
-    if (model.num_categories() < 2) {
+Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X,
+                                                        const Eigen::VectorXd& y,
+                                                        const Eigen::VectorXd& params) {
+    std::vector<double> levels = get_levels(y);
+    std::vector<int> y_mapped = map_y_to_1K(y, levels);
+    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, levels.size());
+    return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
+List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8, std::string optimization_alg = "newton_raphson") {
+    std::vector<double> levels = get_levels(y);
+    int K = levels.size();
+    if (K < 2) {
         stop("Adjacent-category logits require at least two observed outcome categories.");
     }
-
-    bool converged = false;
-    VectorXd params = adjacent_category_newton_fit(model, maxit, tol, &converged);
-    int n_alpha = model.num_categories() - 1;
+    std::vector<int> y_mapped = map_y_to_1K(y, levels);
+    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
+    
+    VectorXd params = VectorXd::Zero((K - 1) + X.cols());
+    LikelihoodFitResult fit = optimize_likelihood(fun, params, maxit, tol, optimization_alg, "newton_raphson");
 
     return List::create(
-        Named("b") = params.tail(X.cols()),
-        Named("alpha") = params.head(n_alpha),
-        Named("params") = params,
-        Named("converged") = converged
+        Named("b") = fit.params.tail(X.cols()),
+        Named("alpha") = fit.params.head(K - 1),
+        Named("params") = fit.params,
+        Named("converged") = fit.converged
     );
 }
 
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
-    AdjacentCategoryLogitRegression model(X, y);
-    if (model.num_categories() < 2) {
+List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8, std::string optimization_alg = "newton_raphson") {
+    std::vector<double> levels = get_levels(y);
+    int K = levels.size();
+    if (K < 2) {
         stop("Adjacent-category logits require at least two observed outcome categories.");
     }
+    std::vector<int> y_mapped = map_y_to_1K(y, levels);
+    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
+    
+    VectorXd params = VectorXd::Zero((K - 1) + X.cols());
+    LikelihoodFitResult fit = optimize_likelihood(fun, params, maxit, tol, optimization_alg, "newton_raphson");
 
-    bool converged = false;
-    VectorXd params = adjacent_category_newton_fit(model, maxit, tol, &converged);
-    VectorXd grad(model.num_params());
-    MatrixXd hess(model.num_params(), model.num_params());
-    model.loglik_grad_hess(params, &grad, &hess);
-
-    MatrixXd info = -hess;
+    MatrixXd info = fun.hessian(fit.params);
     FullPivLU<MatrixXd> lu(info);
 
     if (!lu.isInvertible()) {
         return List::create(
-            Named("b") = params.tail(X.cols()),
+            Named("b") = fit.params.tail(X.cols()),
             Named("ssq_b_1") = NA_REAL,
-            Named("converged") = converged
+            Named("converged") = fit.converged
         );
     }
 
     MatrixXd cov = lu.inverse();
-    int n_alpha = model.num_categories() - 1;
+    int n_alpha = K - 1;
     double ssq_b_1 = (X.cols() >= 1) ? cov(n_alpha, n_alpha) : NA_REAL;
 
     return List::create(
-        Named("b") = params.tail(X.cols()),
+        Named("b") = fit.params.tail(X.cols()),
         Named("ssq_b_1") = ssq_b_1,
-        Named("converged") = converged
+        Named("converged") = fit.converged
     );
 }
 
@@ -271,61 +263,56 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
 // [[Rcpp::plugins(openmp)]]
 
-//' Parallel Adjacent-Category Logit Randomization Distribution
-//'
-//' @param y Numeric vector of response values (pre-null-shifted for treated).
-//' @param X_covars Matrix of covariates (without intercept or treatment).
-//' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
-//' @param delta Null treatment effect (additive shift).
-//' @param num_cores Number of OpenMP threads.
-//' @return Numeric vector of length nsim with treatment coefficients.
 // [[Rcpp::export]]
 NumericVector compute_adj_cat_logit_distr_parallel_cpp(
-	const Eigen::VectorXd& y,
-	const Eigen::MatrixXd& X_covars,
-	const Rcpp::IntegerMatrix& w_mat,
-	double delta,
-	int num_cores
+    const Eigen::VectorXd& y,
+    const Eigen::MatrixXd& X_covars,
+    const Rcpp::IntegerMatrix& w_mat,
+    double delta,
+    int num_cores
 ) {
-	int nsim = w_mat.cols();
-	int n = y.size();
-	int p_covars = X_covars.cols();
-	int p_full = p_covars + 1; // treatment + covars (no intercept — thresholds handle location)
+    int nsim = w_mat.cols();
+    int n = y.size();
+    int p_covars = X_covars.cols();
+    int p_full = p_covars + 1;
 
-	std::vector<double> results(nsim, NA_REAL);
-	const int* w_ptr = w_mat.begin();
+    std::vector<double> results(nsim, NA_REAL);
+    const int* w_ptr = w_mat.begin();
 
 #ifdef _OPENMP
-	omp_set_num_threads(num_cores);
+    omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(static)
-	for (int b = 0; b < nsim; ++b) {
-		const int* w_col = w_ptr + (size_t)b * n;
+    for (int b = 0; b < nsim; ++b) {
+        const int* w_col = w_ptr + (size_t)b * n;
 
-		Eigen::MatrixXd X_full(n, p_full);
-		Eigen::VectorXd y_shifted(n);
+        Eigen::MatrixXd X_full(n, p_full);
+        Eigen::VectorXd y_shifted(n);
 
-		for (int i = 0; i < n; ++i) {
-			X_full(i, 0) = (double)w_col[i];
-			for (int k = 0; k < p_covars; ++k) {
-				X_full(i, 1 + k) = X_covars(i, k);
-			}
-			y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
-		}
+        for (int i = 0; i < n; ++i) {
+            X_full(i, 0) = (double)w_col[i];
+            for (int k = 0; k < p_covars; ++k) {
+                X_full(i, 1 + k) = X_covars(i, k);
+            }
+            y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
+        }
 
-		AdjacentCategoryLogitRegression model(X_full, y_shifted);
-		if (model.num_categories() < 2) continue;
+        std::vector<double> levels = get_levels(y_shifted);
+        int K = levels.size();
+        if (K < 2) continue;
 
-		bool converged = false;
-		Eigen::VectorXd params = adjacent_category_newton_fit(model, 100, 1e-8, &converged);
+        std::vector<int> y_mapped = map_y_to_1K(y_shifted, levels);
+        AdjacentCategoryLogitNegLogLik fun(X_full, y_mapped, K);
+        VectorXd params = VectorXd::Zero((K - 1) + p_full);
 
-		int n_alpha = model.num_categories() - 1;
-		// accept result even if not formally converged, matching R generate_mod behaviour
-		if ((int)params.size() >= n_alpha + 1 && std::isfinite(params[n_alpha])) {
-			results[b] = params[n_alpha];
-		}
-	}
+        LikelihoodFitResult fit = optimize_likelihood(fun, params, 100, 1e-8, "newton_raphson", "newton_raphson");
 
-	return wrap(results);
+        int n_alpha = K - 1;
+        if ((int)fit.params.size() >= n_alpha + 1 && std::isfinite(fit.params[n_alpha])) {
+            results[b] = fit.params[n_alpha];
+        }
+    }
+
+    return wrap(results);
 }

@@ -47,19 +47,35 @@ RobustModelResult fast_robust_regression_internal(
     double c_bisquare = 4.685, // Bisquare constant
     int maxit = 50,
     double tol = 1e-7,
-    double scale_est = -1.0 // If negative, compute MAD
+    double scale_est = -1.0, // If negative, compute MAD
+    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
     int n = X.rows();
     int p = X.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    const int p_free = fixed_spec.free_idx.size();
+    Eigen::MatrixXd X_free(n, p_free);
+    for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
+    Eigen::VectorXd y_adj = y;
+    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
+        y_adj.noalias() -= X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
+    }
     RobustModelResult res;
 
     // 1. Initial estimate
+    Eigen::VectorXd b_free;
     if (start_beta.isNotNull()) {
-        res.b = as<Eigen::VectorXd>(NumericVector(start_beta));
+        Eigen::VectorXd b_start = as<Eigen::VectorXd>(NumericVector(start_beta));
+        b_start = apply_fixed_values(b_start, fixed_spec);
+        b_free = subset_vector(b_start, fixed_spec.free_idx);
     } else {
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-        res.b = cod.solve(y);
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
+        b_free = cod.solve(y_adj);
     }
+    res.b = Eigen::VectorXd::Zero(p);
+    for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = b_free[j];
+    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) res.b[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
 
     Eigen::VectorXd r = y - X * res.b;
     
@@ -78,7 +94,7 @@ RobustModelResult fast_robust_regression_internal(
 
     // 3. IRLS loop
     res.w = Eigen::VectorXd::Ones(n);
-    Eigen::VectorXd b_old = res.b;
+    Eigen::VectorXd b_old = b_free;
     
     for (int iter = 1; iter <= maxit; ++iter) {
         res.iterations = iter;
@@ -94,22 +110,23 @@ RobustModelResult fast_robust_regression_internal(
         }
 
         // Solve Weighted Least Squares
-        Eigen::MatrixXd XtWX = X.transpose() * res.w.asDiagonal() * X;
-        Eigen::VectorXd XtWy = X.transpose() * res.w.asDiagonal() * y;
+        Eigen::MatrixXd XtWX = X_free.transpose() * res.w.asDiagonal() * X_free;
+        Eigen::VectorXd XtWy = X_free.transpose() * res.w.asDiagonal() * y_adj;
         
         Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
         if (ldlt.info() != Eigen::Success) break; // Numerical failure
         
-        res.b = ldlt.solve(XtWy);
+        b_free = ldlt.solve(XtWy);
+        for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = b_free[j];
         r = y - X * res.b;
 
         // Check convergence
-        if ((res.b - b_old).norm() / (res.b.norm() + 1e-10) < tol) {
+        if ((b_free - b_old).norm() / (b_free.norm() + 1e-10) < tol) {
             res.converged = true;
-            res.XtWX = XtWX;
+            res.XtWX = expand_free_covariance(p, fixed_spec, XtWX, false);
             break;
         }
-        b_old = res.b;
+        b_old = b_free;
     }
 
     return res;
@@ -124,12 +141,18 @@ List fast_robust_regression_cpp(
     int j = 2,
     double c = 1.345,
     int maxit = 50,
-    double tol = 1e-7
+    double tol = 1e-7,
+    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
-    RobustModelResult res = fast_robust_regression_internal(X, y, start_beta, method, c, 4.685, maxit, tol);
+    RobustModelResult res = fast_robust_regression_internal(X, y, start_beta, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     if (!res.converged && res.XtWX.rows() == 0) {
-        res.XtWX = X.transpose() * res.w.asDiagonal() * X;
+        Eigen::MatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
+        for (int jj = 0; jj < fixed_spec.free_idx.size(); ++jj) X_free.col(jj) = X.col(fixed_spec.free_idx[jj]);
+        Eigen::MatrixXd XtWX_free = X_free.transpose() * res.w.asDiagonal() * X_free;
+        res.XtWX = expand_free_covariance(X.cols(), fixed_spec, XtWX_free, false);
     }
 
     int n = X.rows();
@@ -166,14 +189,19 @@ List fast_robust_regression_cpp(
         }
         
         double m = sum_psi_prime / n;
-        Eigen::MatrixXd XtX = X.transpose() * X;
-        Eigen::MatrixXd invXtX = XtX.inverse();
+        Eigen::MatrixXd X_free(n, fixed_spec.free_idx.size());
+        for (int jj = 0; jj < fixed_spec.free_idx.size(); ++jj) X_free.col(jj) = X.col(fixed_spec.free_idx[jj]);
+        Eigen::MatrixXd XtX = X_free.transpose() * X_free;
+        Eigen::MatrixXd invXtX_free = XtX.inverse();
+        Eigen::MatrixXd vcov_free;
         
         double sum_psi_sq = psi_r.squaredNorm();
-        double factor = (n / (double(n - p))) * sum_psi_sq / (n * m * m);
+        double factor = (n / (double(n - fixed_spec.free_idx.size()))) * sum_psi_sq / (n * m * m);
+        vcov_free = factor * invXtX_free;
+        Eigen::MatrixXd vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
         
         if (j > 0 && j <= p) {
-            ssq_j = factor * invXtX(j-1, j-1);
+            ssq_j = vcov(j-1, j-1);
         }
     }
 

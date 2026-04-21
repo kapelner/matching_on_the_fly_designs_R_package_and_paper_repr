@@ -37,6 +37,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_X_imp}{\code{Design$get_X_imp()}}
 \item \href{#method-Design-get_X}{\code{Design$get_X()}}
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
+\item \href{#method-Design-get_y_original}{\code{Design$get_y_original()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
 \item \href{#method-Design-get_block_ids}{\code{Design$get_block_ids()}}
 \item \href{#method-Design-summarize_blocks}{\code{Design$summarize_blocks()}}
@@ -45,7 +46,12 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
 \item \href{#method-Design-has_covariates}{\code{Design$has_covariates()}}
 \item \href{#method-Design-get_response_type}{\code{Design$get_response_type()}}
+\item \href{#method-Design-get_response_type_original}{\code{Design$get_response_type_original()}}
+\item \href{#method-Design-get_ordinal_levels}{\code{Design$get_ordinal_levels()}}
+\item \href{#method-Design-get_original_ordinal_levels}{\code{Design$get_original_ordinal_levels()}}
 \item \href{#method-Design-get_missingness_method}{\code{Design$get_missingness_method()}}
+\item \href{#method-Design-transform_y}{\code{Design$transform_y()}}
+\item \href{#method-Design-get_model_formula}{\code{Design$get_model_formula()}}
 \item \href{#method-Design-duplicate}{\code{Design$duplicate()}}
 \item \href{#method-Design-clone}{\code{Design$clone()}}
 }
@@ -62,7 +68,9 @@ Initialize an experimental design
   include_is_missing_as_a_new_feature = FALSE,
   n = NULL,
   verbose = FALSE,
-  missingness_method = "impute"
+  missingness_method = "impute",
+  model_formula = ~.,
+  ordinal_levels = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -96,6 +104,11 @@ model matrix for inference. One of:
     detected in the covariate matrix. Use this when you want to guarantee that
     inference runs on exactly the data you supplied, with no silent modification.}
 }}
+
+\item{\code{model_formula}}{A formula object used to create the design matrix from
+covariates. Default is \code{~ .}.}
+
+\item{\code{ordinal_levels}}{If the response type is "ordinal", the labels for the levels.}
 }
 \if{html}{\out{</div>}}
 }
@@ -328,6 +341,19 @@ A numeric vector of subject responses.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_y_original"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_y_original}{}}}
+\subsection{Method \code{get_y_original()}}{
+Get y_original
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_y_original()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A numeric vector of the original subject responses.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_w"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_w}{}}}
 \subsection{Method \code{get_w()}}{
@@ -439,6 +465,45 @@ The specified response type.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_response_type_original"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_response_type_original}{}}}
+\subsection{Method \code{get_response_type_original()}}{
+Get the original response type
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_response_type_original()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The original specified response type.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_ordinal_levels"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_ordinal_levels}{}}}
+\subsection{Method \code{get_ordinal_levels()}}{
+Get ordinal levels
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_ordinal_levels()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The levels of the ordinal response.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_original_ordinal_levels"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_original_ordinal_levels}{}}}
+\subsection{Method \code{get_original_ordinal_levels()}}{
+Get original ordinal levels
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_original_ordinal_levels()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The labels for the levels of the original ordinal response.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_missingness_method"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_missingness_method}{}}}
 \subsection{Method \code{get_missingness_method()}}{
@@ -450,6 +515,44 @@ Get the missingness method
 \subsection{Returns}{
 The missingness handling method: \code{"impute"}, \code{"drop_column"},
   or \code{"error"}.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-transform_y"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-transform_y}{}}}
+\subsection{Method \code{transform_y()}}{
+Transform the response vector y
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$transform_y(
+  transform_fun,
+  transformed_response_type,
+  ordinal_levels = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{transform_fun}}{A function that takes y_original and returns a new y.}
+
+\item{\code{transformed_response_type}}{The response type of the transformed y.}
+
+\item{\code{ordinal_levels}}{If the transformed response type is "ordinal", the labels for the levels.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-get_model_formula"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-get_model_formula}{}}}
+\subsection{Method \code{get_model_formula()}}{
+Get the model formula
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$get_model_formula()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+The model formula.
 }
 }
 \if{html}{\out{<hr>}}

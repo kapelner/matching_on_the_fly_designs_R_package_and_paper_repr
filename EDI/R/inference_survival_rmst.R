@@ -24,17 +24,17 @@
 #' seq_des_inf = InferenceSurvivalRestrictedMeanDiff$
 #'   new(seq_des)
 #'
-#' # compute_treatment_estimate
+#' # compute_estimate
 #' seq_des_inf$
-#'   compute_treatment_estimate()
+#'   compute_estimate()
 #'
 #' # compute_asymp_confidence_interval
 #' seq_des_inf$
 #'   compute_asymp_confidence_interval()
 #'
-#' # compute_asymp_two_sided_pval_for_treatment_effect
+#' # compute_asymp_two_sided_pval
 #' seq_des_inf$
-#'   compute_asymp_two_sided_pval_for_treatment_effect()
+#'   compute_asymp_two_sided_pval()
 #' }
 #'
 #' @export
@@ -46,12 +46,16 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#' Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose If TRUE, print additional information.
-		initialize = function(des_obj, verbose = FALSE) {
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 
@@ -60,7 +64,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$beta_hat_T = get_survival_stat_diff(
 					private$y,
@@ -90,7 +94,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
 			if (is.null(private$cached_values$beta_hat_T)){
-				self$compute_treatment_estimate()
+				self$compute_estimate()
 			}
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$compute_s_beta_hat_T()
@@ -109,7 +113,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return	The approximate frequentist p-value
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -141,7 +145,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		#' @param	show_progress		Show a text progress indicator.
 		#' @param ci_search_control Unused.
 		#' @return	A 1 - alpha sized frequentist confidence interval
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalRestrictedMeanDiff due to inconsistent estimator units on the transformed scale (estimates time difference, but randomization test searches for log-time ratio).")
 		}
 	),

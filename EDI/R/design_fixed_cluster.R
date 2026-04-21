@@ -18,6 +18,8 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return 			A new `FixedDesignCluster` object
 		#'
@@ -28,12 +30,14 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 			if (should_run_asserts()) {
 				assertCharacter(cluster_col, len = 1)
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$cluster_col = cluster_col
 			private$uses_covariates = TRUE
 		},

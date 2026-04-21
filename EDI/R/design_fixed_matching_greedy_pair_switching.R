@@ -16,6 +16,8 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		#' @param include_is_missing_as_a_new_feature Flag for missingness indicators.
 		#' @param n The sample size.
 		#' @param verbose A flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#' @param max_designs The number of searched designs to retain.
 		#' @param objective The imbalance objective passed to \pkg{GreedyExperimentalDesign}.
 		#' @param wait If \code{TRUE}, wait for the search to finish before returning.
@@ -32,7 +34,9 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 				max_designs = 100,
 				objective = "mahal_dist",
 				wait = TRUE,
-				diff_method = FALSE
+				diff_method = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5) {
@@ -41,7 +45,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			}
 			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
 
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 
 			private$max_designs = max_designs
 			private$objective = objective

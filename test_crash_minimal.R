@@ -34,6 +34,6 @@ cat("Step 10: Creating inference object\n")
 seq_des_inf <- InferenceAllKKCompoundMeanDiff$new(des_obj)
 
 cat("Step 11: Computing treatment estimate\n")
-result <- seq_des_inf$compute_treatment_estimate()
+result <- seq_des_inf$compute_estimate()
 
 cat("SUCCESS: Treatment estimate =", result, "\n")

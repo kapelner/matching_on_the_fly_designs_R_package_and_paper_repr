@@ -1,4 +1,5 @@
 // [[Rcpp::depends(RcppEigen)]]
+#include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <limits>
@@ -70,14 +71,26 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
                                        const Eigen::VectorXd& y,
                                        BinomialConstrainedLink link_type,
                                        int maxit,
-                                       double tol) {
+                                       double tol,
+                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
   const int n = X.rows();
   const int p = X.cols();
   if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
+  FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+  const int p_free = fixed_spec.free_idx.size();
+  Eigen::MatrixXd X_free(n, p_free);
+  for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
+  Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
+  for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
+    eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
+  }
 
   Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
   const double y_mean = std::min(std::max(y.mean(), kMinMu), kMaxMu);
   beta[0] = (link_type == BinomialConstrainedLink::kLog) ? std::log(y_mean) : y_mean;
+  beta = apply_fixed_values(beta, fixed_spec);
+  Eigen::VectorXd beta_free = subset_vector(beta, fixed_spec.free_idx);
 
   bool converged = false;
   Eigen::VectorXd mu = Eigen::VectorXd::Constant(n, y_mean);
@@ -89,7 +102,7 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   );
 
   for (int iter = 0; iter < maxit; ++iter) {
-    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
     for (int i = 0; i < n; ++i) {
       if (link_type == BinomialConstrainedLink::kLog) {
         if (eta[i] >= kMaxEtaLog) eta[i] = kMaxEtaLog;
@@ -107,27 +120,30 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     Eigen::VectorXd z = (link_type == BinomialConstrainedLink::kLog) ?
       eta + (y - mu).cwiseQuotient(mu.array().max(kEps).matrix()) :
       y;
+    Eigen::VectorXd z_adj = z - eta_fixed;
 
-    Eigen::MatrixXd XtW = X.transpose() * w.asDiagonal();
-    Eigen::MatrixXd XtWX = XtW * X;
-    Eigen::VectorXd XtWz = XtW * z;
+    Eigen::MatrixXd XtW = X_free.transpose() * w.asDiagonal();
+    Eigen::MatrixXd XtWX = XtW * X_free;
+    Eigen::VectorXd XtWz = XtW * z_adj;
 
     Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
     if (ldlt.info() != Eigen::Success) {
       return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
     }
 
-    Eigen::VectorXd beta_target = ldlt.solve(XtWz);
-    if (ldlt.info() != Eigen::Success || !all_finite_vec(beta_target)) {
+    Eigen::VectorXd beta_free_target = ldlt.solve(XtWz);
+    if (ldlt.info() != Eigen::Success || !all_finite_vec(beta_free_target)) {
       return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
     }
 
     const double ll_curr = loglik_constrained_binomial(X, y, beta, link_type);
     double step = 1.0;
     Eigen::VectorXd beta_new = beta;
+    Eigen::VectorXd beta_free_new = beta_free;
     bool accepted = false;
     while (step >= 1e-8) {
-      beta_new = beta + step * (beta_target - beta);
+      beta_free_new = beta_free + step * (beta_free_target - beta_free);
+      beta_new = expand_free_params(beta_free_new, beta, fixed_spec);
       const double ll_new = loglik_constrained_binomial(X, y, beta_new, link_type);
       if (R_finite(ll_new) && ll_new >= ll_curr - 1e-10) {
         accepted = true;
@@ -136,12 +152,14 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
       step *= 0.5;
     }
     if (!accepted) break;
-    if ((beta_new - beta).norm() < tol) {
+    if ((beta_free_new - beta_free).norm() < tol) {
       beta = beta_new;
+      beta_free = beta_free_new;
       converged = true;
       break;
     }
     beta = beta_new;
+    beta_free = beta_free_new;
   }
 
   Eigen::VectorXd eta = X * beta;
@@ -172,8 +190,10 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
                                                 BinomialConstrainedLink link_type,
                                                 int j,
                                                 int maxit,
-                                                double tol) {
-  List fit = fit_constrained_binomial_cpp_impl(Xmm, y, link_type, maxit, tol);
+                                                double tol,
+                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+  List fit = fit_constrained_binomial_cpp_impl(Xmm, y, link_type, maxit, tol, fixed_idx, fixed_values);
   const bool converged = as<bool>(fit["converged"]);
   Eigen::VectorXd beta = fit["b"];
   Eigen::VectorXd w = fit["working_weights"];
@@ -189,7 +209,10 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
     );
   }
 
-  Eigen::MatrixXd XtWX = Xmm.transpose() * w.asDiagonal() * Xmm;
+  FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+  Eigen::MatrixXd X_free(Xmm.rows(), fixed_spec.free_idx.size());
+  for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = Xmm.col(fixed_spec.free_idx[col]);
+  Eigen::MatrixXd XtWX = X_free.transpose() * w.asDiagonal() * X_free;
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     return List::create(
@@ -202,8 +225,8 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
     );
   }
 
-  Eigen::MatrixXd vcov = ldlt.solve(Eigen::MatrixXd::Identity(Xmm.cols(), Xmm.cols()));
-  if (ldlt.info() != Eigen::Success || !all_finite_mat(vcov)) {
+  Eigen::MatrixXd vcov_free = ldlt.solve(Eigen::MatrixXd::Identity(fixed_spec.free_idx.size(), fixed_spec.free_idx.size()));
+  if (ldlt.info() != Eigen::Success || !all_finite_mat(vcov_free)) {
     return List::create(
       _["b"] = beta,
       _["vcov"] = NumericMatrix(0, 0),
@@ -214,7 +237,7 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
     );
   }
 
-  vcov = 0.5 * (vcov + vcov.transpose());
+  Eigen::MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, 0.5 * (vcov_free + vcov_free.transpose()), true);
   Eigen::VectorXd std_err(Xmm.cols());
   Eigen::VectorXd z_vals(Xmm.cols());
   for (int k = 0; k < Xmm.cols(); ++k) {
@@ -236,14 +259,85 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
   );
 }
 
+Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::MatrixXd& X,
+													const Eigen::VectorXd& y,
+													const Eigen::VectorXd& beta,
+													BinomialConstrainedLink link_type) {
+	const int p = beta.size();
+	Eigen::VectorXd score(p);
+	const double h = 1e-6;
+	for (int j = 0; j < p; ++j) {
+		Eigen::VectorXd bp = beta;
+		Eigen::VectorXd bm = beta;
+		bp[j] += h;
+		bm[j] -= h;
+		score[j] = (loglik_constrained_binomial(X, y, bp, link_type) -
+					loglik_constrained_binomial(X, y, bm, link_type)) / (2.0 * h);
+	}
+	return score;
+}
+
+Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::MatrixXd& X,
+													  const Eigen::VectorXd& y,
+													  const Eigen::VectorXd& beta,
+													  BinomialConstrainedLink link_type) {
+	const int p = beta.size();
+	Eigen::MatrixXd H(p, p);
+	const double h = 1e-4;
+	for (int i = 0; i < p; ++i) {
+		for (int j = i; j < p; ++j) {
+			Eigen::VectorXd bpp = beta; bpp[i] += h; bpp[j] += h;
+			Eigen::VectorXd bpm = beta; bpm[i] += h; bpm[j] -= h;
+			Eigen::VectorXd bmp = beta; bmp[i] -= h; bmp[j] += h;
+			Eigen::VectorXd bmm = beta; bmm[i] -= h; bmm[j] -= h;
+			H(i, j) = (loglik_constrained_binomial(X, y, bpp, link_type) -
+					   loglik_constrained_binomial(X, y, bpm, link_type) -
+					   loglik_constrained_binomial(X, y, bmp, link_type) +
+					   loglik_constrained_binomial(X, y, bmm, link_type)) / (4.0 * h * h);
+			H(j, i) = H(i, j);
+		}
+	}
+	return H;
+}
+
 }  // namespace
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
+													  const Eigen::VectorXd& y,
+													  const Eigen::VectorXd& beta) {
+	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
+														const Eigen::VectorXd& y,
+														const Eigen::VectorXd& beta) {
+	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
+														   const Eigen::VectorXd& y,
+														   const Eigen::VectorXd& beta) {
+	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
+															 const Eigen::VectorXd& y,
+															 const Eigen::VectorXd& beta) {
+	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
+}
 
 // [[Rcpp::export]]
 List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                       const Eigen::VectorXd& y,
                                       int maxit = 100,
-                                      double tol = 1e-8) {
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol);
+                                      double tol = 1e-8,
+                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values);
 }
 
 // [[Rcpp::export]]
@@ -251,16 +345,20 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
                                                const Eigen::VectorXd& y,
                                                int j = 2,
                                                int maxit = 100,
-                                               double tol = 1e-8) {
-  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kLog, j, maxit, tol);
+                                               double tol = 1e-8,
+                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values);
 }
 
 // [[Rcpp::export]]
 List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                            const Eigen::VectorXd& y,
                                            int maxit = 100,
-                                           double tol = 1e-8) {
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol);
+                                           double tol = 1e-8,
+                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values);
 }
 
 // [[Rcpp::export]]
@@ -268,6 +366,8 @@ List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
                                                     const Eigen::VectorXd& y,
                                                     int j = 2,
                                                     int maxit = 100,
-                                                    double tol = 1e-8) {
-  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kIdentity, j, maxit, tol);
+                                                    double tol = 1e-8,
+                                                    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values);
 }

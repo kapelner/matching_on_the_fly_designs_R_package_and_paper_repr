@@ -6,6 +6,7 @@
 #' @keywords internal
 #' @export
 FixedDesign = R6::R6Class("FixedDesign",
+	lock_objects = FALSE,
 	inherit = Design,
 	public = list(
 		#' @description
@@ -17,6 +18,9 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
 		#' @param verbose A flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
+		#' @param ... Extra arguments passed to the \code{Design} superclass.
 		#'
 		#' @return	A new `FixedDesign` object
 		initialize = function(
@@ -24,9 +28,12 @@ FixedDesign = R6::R6Class("FixedDesign",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .,
+				...
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, ...)
 		},
 
 		#' @description
@@ -76,6 +83,8 @@ FixedDesign = R6::R6Class("FixedDesign",
 				} else {
 					assertNumeric(ys, len = private$t)
 				}
+				private$assert_y(ys, private$response_type)
+
 				assertNumeric(deads, len = private$t)
 				
 				if (private$response_type != "survival" && any(deads == 0)){
@@ -84,10 +93,16 @@ FixedDesign = R6::R6Class("FixedDesign",
 			}
 			
 			if (private$response_type == "ordinal" && is.factor(ys)){
+				levs = levels(ys)
+				private$ordinal_levels = levs
+				if (private$response_type_original == "ordinal" && is.null(private$original_ordinal_levels)){
+					private$original_ordinal_levels = levs
+				}
 				ys = as.integer(ys)
 			}
 
 			private$y = as.numeric(ys)
+			private$y_original = as.numeric(ys)
 			private$dead = as.numeric(deads)
 			private$y_i_t_i = as.list(seq_len(private$t))
 		},

@@ -1,11 +1,9 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <cmath>
 #include <limits>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -128,68 +126,90 @@ public:
 	}
 
 	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
-		const double f0 = value(par);
-		grad = finite_diff_grad(par);
-		return f0;
-	}
+		const int p_full = par.size();
+		grad.setZero(p_full);
+		double total_nll = 0.0;
 
-	Eigen::VectorXd finite_diff_grad(const Eigen::VectorXd& par) const {
-		const int p = par.size();
-		Eigen::VectorXd grad(p);
-		for (int j = 0; j < p; ++j) {
-			const double h = 1e-5 * std::max(1.0, std::abs(par[j]));
-			Eigen::VectorXd pp = par;
-			Eigen::VectorXd pm = par;
-			pp[j] += h;
-			pm[j] -= h;
-			grad[j] = (value(pp) - value(pm)) / (2.0 * h);
-		}
-		return grad;
-	}
-
-	Eigen::MatrixXd finite_diff_hessian_total(const Eigen::VectorXd& par) const {
-		return finite_diff_hessian_component(par, 0);
-	}
-
-	Eigen::MatrixXd finite_diff_hessian_component(const Eigen::VectorXd& par, int component) const {
-		const int p = par.size();
-		Eigen::MatrixXd H(p, p);
-		for (int j = 0; j < p; ++j) {
-			const double h = 1e-4 * std::max(1.0, std::abs(par[j]));
-			Eigen::VectorXd pp = par;
-			Eigen::VectorXd pm = par;
-			pp[j] += h;
-			pm[j] -= h;
-			Eigen::VectorXd gp = finite_diff_grad_component(pp, component);
-			Eigen::VectorXd gm = finite_diff_grad_component(pm, component);
-			H.col(j) = (gp - gm) / (2.0 * h);
-		}
-		return (H + H.transpose()) / 2.0;
-	}
-
-	Eigen::VectorXd finite_diff_grad_component(const Eigen::VectorXd& par, int component) const {
-		const int p = par.size();
-		Eigen::VectorXd grad = Eigen::VectorXd::Zero(p);
-		for (int j = 0; j < p; ++j) {
-			const double h = 1e-5 * std::max(1.0, std::abs(par[j]));
-			Eigen::VectorXd pp = par;
-			Eigen::VectorXd pm = par;
-			pp[j] += h;
-			pm[j] -= h;
-			grad[j] = (component_value(pp, component) - component_value(pm, component)) / (2.0 * h);
-		}
-		return grad;
-	}
-
-	double component_value(const Eigen::VectorXd& par, int component) const {
-		if (component == 1) {
-			if (!has_discordant) return 0.0;
+		// 1. Conditional Logistic component
+		if (has_discordant) {
 			const Eigen::VectorXd beta_no_intercept =
 				has_concordant ? par.segment(1, q) : par.head(q);
-			return neg_clogit(beta_no_intercept);
+			
+			const Eigen::VectorXd eta_d = X_disc * beta_no_intercept;
+			Eigen::VectorXd mu_d(eta_d.size());
+			for (int i = 0; i < eta_d.size(); ++i) {
+				double ed = eta_d[i];
+				total_nll += log1pexp_cpp(ed) - y_disc[i] * ed;
+				mu_d[i] = plogis_safe(ed);
+			}
+
+			Eigen::VectorXd grad_clogit = X_disc.transpose() * (mu_d - y_disc);
+			if (has_concordant) {
+				grad.segment(1, q) += grad_clogit;
+			} else {
+				grad.head(q) += grad_clogit;
+			}
 		}
-		if (component == 2) return has_concordant ? neg_glmm(par) : 0.0;
-		return value(par);
+
+		// 2. GLMM component
+		if (has_concordant) {
+			const double log_sigma = par[p_full - 1];
+			const double sigma = std::exp(log_sigma);
+			const Eigen::VectorXd beta = par.head(p_full - 1);
+			const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * gh.nodes;
+			const int n_nodes = (int)b_vals.size();
+
+			int i = 0;
+			while (i < group_conc.size()) {
+				const int g = group_conc[i];
+				int j = i + 1;
+				while (j < group_conc.size() && group_conc[j] == g) ++j;
+				const int sz = j - i;
+				const Eigen::MatrixXd Xg = X_conc.middleRows(i, sz);
+				const Eigen::VectorXd eta0 = Xg * beta;
+
+				Eigen::VectorXd log_terms(n_nodes);
+				std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
+
+				for (int k = 0; k < n_nodes; ++k) {
+					double ll = gh.log_norm_weights[k];
+					mu_nodes[k].resize(sz);
+					for (int r = 0; r < sz; ++r) {
+						const double eta = eta0[r] + b_vals[k];
+						ll += y_conc[i + r] * eta - log1pexp_cpp(eta);
+						mu_nodes[k][r] = plogis_safe(eta);
+					}
+					log_terms[k] = ll;
+				}
+
+				const double ll_g = log_sum_exp_cpp(log_terms);
+				total_nll -= ll_g;
+
+				for (int k = 0; k < n_nodes; ++k) {
+					double post_k = std::exp(log_terms[k] - ll_g);
+					if (post_k < 1e-15) continue;
+
+					Eigen::VectorXd res_k(sz);
+					for (int r = 0; r < sz; ++r) {
+						res_k[r] = y_conc[i + r] - mu_nodes[k][r];
+					}
+
+					// dLL/dbeta
+					grad.head(p_full - 1) -= post_k * (Xg.transpose() * res_k);
+
+					// dLL/dsigma * dsigma/dlog_sigma
+					double dll_dsigma = res_k.sum() * std::sqrt(2.0) * gh.nodes[k];
+					grad[p_full - 1] -= post_k * dll_dsigma * sigma;
+				}
+				i = j;
+			}
+		}
+
+		return total_nll;
+	}
+
+	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
+		return numerical_hessian(*this, par);
 	}
 };
 
@@ -211,7 +231,9 @@ Eigen::VectorXd get_clogit_plus_glmm_score_cpp(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
 		has_discordant, has_concordant, 20, max_abs_log_sigma
 	);
-	return -obj.finite_diff_grad(params);
+	Eigen::VectorXd grad(params.size());
+	obj(params, grad);
+	return -grad;
 }
 
 // [[Rcpp::export]]
@@ -230,10 +252,7 @@ Eigen::MatrixXd get_clogit_plus_glmm_hessian_cpp(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
 		has_discordant, has_concordant, 20, max_abs_log_sigma
 	);
-	Eigen::MatrixXd info = Eigen::MatrixXd::Zero(params.size(), params.size());
-	if (has_discordant) info += obj.finite_diff_hessian_component(params, 1);
-	if (has_concordant) info += obj.finite_diff_hessian_component(params, 2);
-	return -((info + info.transpose()) / 2.0);
+	return -obj.hessian(params);
 }
 
 // [[Rcpp::export]]
@@ -249,7 +268,10 @@ List fast_clogit_plus_glmm_cpp(
 	bool estimate_only = false,
 	double max_abs_log_sigma = 8.0,
 	int maxit = 200,
-	double eps_g = 1e-5
+	double eps_g = 1e-5,
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	std::string optimization_alg = "lbfgs"
 ) {
 	ClogitPlusGLMMObjective obj(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
@@ -257,17 +279,17 @@ List fast_clogit_plus_glmm_cpp(
 	);
 
 	Eigen::VectorXd par = start;
-	LBFGSParam<double> params;
-	params.epsilon = eps_g;
-	params.max_iterations = maxit;
-	LBFGSSolver<double> solver(params);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(par.size(), fixed_idx, fixed_values);
 
 	double neg_ll = NA_REAL;
 	int niter = maxit;
 	bool converged = false;
 	try {
-		niter = solver.minimize(obj, par, neg_ll);
-		converged = std::isfinite(neg_ll) && niter < maxit;
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
+		par = fit.params;
+		neg_ll = fit.value;
+		niter = fit.niter;
+		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
 		return List::create(
 			Named("b") = par,
@@ -279,14 +301,13 @@ List fast_clogit_plus_glmm_cpp(
 
 	const int j_beta_T = has_concordant ? 1 : 0; // 0-based
 	double ssq_b_j = NA_REAL;
-	if (!estimate_only) {
-		Eigen::MatrixXd info = Eigen::MatrixXd::Zero(par.size(), par.size());
-		if (has_discordant) info += obj.finite_diff_hessian_component(par, 1);
-		if (has_concordant) info += obj.finite_diff_hessian_component(par, 2);
-		info = (info + info.transpose()) / 2.0;
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(info);
+	if (!estimate_only && converged) {
+		Eigen::MatrixXd info = obj.hessian(par);
+		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
 		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(info.rows(), info.cols()));
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
+			Eigen::MatrixXd inv = expand_free_covariance(par.size(), fixed_spec, inv_free, true);
 			if (inv.allFinite()) ssq_b_j = inv(j_beta_T, j_beta_T);
 		}
 	}

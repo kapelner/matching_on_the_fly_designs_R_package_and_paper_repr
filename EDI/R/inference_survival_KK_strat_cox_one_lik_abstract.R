@@ -18,8 +18,12 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed KK design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -28,13 +32,13 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
 		#' Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only Whether to skip standard-error calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -56,7 +60,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 		#' @description
 		#' Returns a 2-sided p-value for H0: beta_T = delta.
 		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -79,19 +83,19 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
 			Xmm_cols = private$best_Xmm_colnames
 			X_data = private$get_X()
-			
+
 			X_cov = if (length(Xmm_cols) == 0L){
 				matrix(0, nrow = private$n, ncol = 0)
 			} else {
 				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
 			}
-			X_fit = cbind(w = private$w, X_cov)
+			X_fit = if (ncol(X_cov) > 0L) cbind(w = private$w, X_cov) else matrix(private$w, ncol = 1L, dimnames = list(NULL, "w"))
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -99,38 +103,19 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			strata_id = m_vec
 			strata_id[strata_id == 0L] = max(strata_id) + 1L
 
-			dat = data.frame(y = private$y, dead = private$dead, w = X_fit[, "w"], strata = factor(strata_id))
-			formula_str = "survival::Surv(y, dead) ~ w"
-			if (ncol(X_cov) > 0){
-				colnames(X_cov) = paste0("x", seq_len(ncol(X_cov)))
-				dat = cbind(dat, X_cov)
-				formula_str = paste(formula_str, "+", paste(colnames(X_cov), collapse = " + "))
-			}
-			formula_str = paste(formula_str, "+ strata(strata)")
-			
-			mod = tryCatch(
-				suppressWarnings(survival::coxph(as.formula(formula_str), data = dat)),
+			res = tryCatch(
+				fast_stratified_coxph_regression_cpp(private$y, private$dead, X_fit,
+				                                     as.integer(strata_id), estimate_only = TRUE),
 				error = function(e) NULL
 			)
-			if (is.null(mod)) return(NA_real_)
-			
-			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-			if (is.null(coefs) || !("w" %in% names(coefs))) return(NA_real_)
-			as.numeric(coefs["w"])
-		},
-
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
+			if (is.null(res)) return(NA_real_)
+			res$coefficients[1L]
 		},
 
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			if (private$include_covariates() && ncol(private$get_X()) > 0L){
+			if (ncol(as.matrix(private$X)) > 0 && ncol(private$get_X()) > 0L){
 				X_full = cbind(X_full, as.matrix(private$get_X()))
 			}
 			X_full
@@ -151,6 +136,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 
 			strata_id = m_vec
 			strata_id[strata_id == 0L] = max(strata_id) + 1L
+			strata_int = as.integer(strata_id)
 
 			if (sum(private$dead) == 0L){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_no_events")
@@ -163,70 +149,44 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 				X_full = X_full,
 				required_cols = 1L,
 				fit_fun = function(X_fit){
-					dat = data.frame(y = private$y, dead = private$dead, w = X_fit[, "w"], strata = factor(strata_id))
-					formula_str = "survival::Surv(y, dead) ~ w"
-					X_covs = X_fit[, colnames(X_fit) != "w", drop = FALSE]
-					if (ncol(X_covs) > 0){
-						colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-						dat = cbind(dat, X_covs)
-						formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-					}
-					formula_str = paste(formula_str, "+ strata(strata)")
 					tryCatch(
-						suppressWarnings(survival::coxph(as.formula(formula_str), data = dat)),
+						fast_stratified_coxph_regression_cpp(private$y, private$dead, X_fit, strata_int),
 						error = function(e) NULL
 					)
 				},
-				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod)) return(FALSE)
-					coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-					vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
-					if (is.null(coefs) || is.null(vcv) || !("w" %in% names(coefs)) || !("w" %in% rownames(vcv))) return(FALSE)
-					beta = suppressWarnings(as.numeric(coefs["w"]))
-					se = suppressWarnings(sqrt(as.numeric(vcv["w", "w"])))
+				fit_ok = function(res, X_fit, keep){
+					if (is.null(res)) return(FALSE)
+					beta = tryCatch(res$coefficients[1L], error = function(e) NA_real_)
+					se   = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
 					is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
 						is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 				}
 			)
-			mod = attempt$fit
-			if (!is.null(mod)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "w")
+			res = attempt$fit
+			if (!is.null(res)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "w")
 			}
-			if (is.null(mod)){
+			if (is.null(res)){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_fit_failed")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-			if (is.null(coefs) || !("w" %in% names(coefs))){
-				private$cache_nonestimable_estimate("kk_strat_cox_combined_treatment_missing")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			beta = as.numeric(coefs["w"])
+			beta = tryCatch(res$coefficients[1L], error = function(e) NA_real_)
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
 			if (!is.finite(private$cached_values$beta_hat_T) || abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_extreme_estimate")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
-			
+
 			if (!estimate_only) {
-				vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
-				if (is.null(vcv) || !("w" %in% rownames(vcv))){
+				se = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
+				if (!is.finite(private$cached_values$s_beta_hat_T)){
 					private$cache_nonestimable_se("kk_strat_cox_combined_standard_error_unavailable")
 					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
-				} else {
-					se = sqrt(as.numeric(vcv["w", "w"]))
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
-					if (!is.finite(private$cached_values$s_beta_hat_T)){
-						private$cache_nonestimable_se("kk_strat_cox_combined_standard_error_unavailable")
-						private$cached_values$is_z = TRUE
-						return(invisible(NULL))
-					}
 				}
 			}
 			private$clear_nonestimable_state()

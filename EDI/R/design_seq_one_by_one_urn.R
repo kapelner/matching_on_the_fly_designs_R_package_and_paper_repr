@@ -19,6 +19,8 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
 		#' @param verbose A flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#' @return	A new `DesignSeqOneByOneUrn` object
 		#'
 		initialize = function(
@@ -28,14 +30,16 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						
-						verbose = FALSE
-					) {
+						verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
+			) {
 			if (should_run_asserts()) {
 				assertNumber(alpha, lower = 0)
 				assertNumber(beta, lower = 0)
 			}
 			
-			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			
 			private$alpha = alpha
 			private$beta = beta

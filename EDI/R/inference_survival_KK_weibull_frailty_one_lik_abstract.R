@@ -14,8 +14,12 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed KK design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -24,13 +28,13 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
 		#' Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only Whether to skip standard-error calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -52,7 +56,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		#' @description
 		#' Returns a 2-sided p-value for H0: beta_T = delta.
 		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -66,18 +70,10 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 
 	private = list(
 
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
-
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				X_full = cbind(X_full, as.matrix(private$get_X()))
 				qr_full = qr(X_full)
 				r_full = qr_full$rank

@@ -54,7 +54,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
 					worker_inf$.__enclos_env__$private$compute_basic_match_data()
 				}
-				worker_inf$compute_treatment_estimate(estimate_only = TRUE)
+				worker_inf$compute_estimate(estimate_only = TRUE)
 			}
 
 			if (isTRUE(debug)) {
@@ -290,7 +290,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			if (length(boot_distr) == 0L) return(NA_real_)
 
-			est = as.numeric(self$compute_treatment_estimate())
+			est = as.numeric(self$compute_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) {
 				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_original_estimate_unavailable")
 				return(NA_real_)
@@ -390,7 +390,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				))
 			}
 
-			est = as.numeric(self$compute_treatment_estimate(estimate_only = FALSE))
+			est = as.numeric(self$compute_estimate(estimate_only = FALSE))
 			if (length(est) == 0L || !is.finite(est[1])) {
 				if (isTRUE(private$harden)) {
 					return(private$missing_bootstrap_ci(alpha, "bootstrap_original_estimate_unavailable", stage = "estimate"))
@@ -587,7 +587,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		},
 
 		compute_bootstrap_worker_estimate_via_compute_treatment_estimate = function(worker_state){
-			theta = as.numeric(worker_state$worker$compute_treatment_estimate(estimate_only = TRUE))[1L]
+			theta = as.numeric(worker_state$worker$compute_estimate(estimate_only = TRUE))[1L]
 			if (is.function(worker_state$worker$is_nonestimable) &&
 			    isTRUE(worker_state$worker$is_nonestimable("estimate"))){
 				return(NA_real_)
@@ -712,10 +712,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = smooth)
 			if (is.null(sub_inf)) return(c(theta = NA_real_, se = NA_real_))
 			tryCatch({
-				# Use the return value of compute_treatment_estimate() for theta.
+				# Use the return value of compute_estimate() for theta.
 				# Reading cached_values$beta_hat_T is unreliable: some classes (e.g.
 				# GComp, KMDiff) return estimates directly without storing beta_hat_T.
-				theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = !isTRUE(require_se)))[1L]
+				theta = as.numeric(sub_inf$compute_estimate(estimate_only = !isTRUE(require_se)))[1L]
 				se = if (isTRUE(require_se)) as.numeric(sub_inf$.__enclos_env__$private$cached_values$s_beta_hat_T)[1L] else NA_real_
 				if (is.function(sub_inf$is_nonestimable) && isTRUE(sub_inf$is_nonestimable("estimate"))) {
 					return(c(theta = NA_real_, se = NA_real_))
@@ -774,7 +774,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				sub_inf = private$bootstrap_subset_inference(idx, smooth = FALSE)
 				if (is.null(sub_inf)) return(NA_real_)
 				tryCatch({
-					theta = as.numeric(sub_inf$compute_treatment_estimate(estimate_only = TRUE))[1L]
+					theta = as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 					if (is.finite(theta)) theta else NA_real_
 				}, error = function(e) NA_real_)
 			}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
@@ -786,7 +786,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (should_run_asserts()) {
 				if (length(boot_distr) == 0L) stop("Bootstrap confidence interval returned NA bounds")
 			}
-			if (is.null(est)) est = as.numeric(self$compute_treatment_estimate())[1]
+			if (is.null(est)) est = as.numeric(self$compute_estimate())[1]
 			if (type == "percentile") {
 				stats::quantile(boot_distr, probs = c(alpha / 2, 1 - alpha / 2), names = FALSE, type = 8)
 			} else {
@@ -901,7 +901,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			fresh = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			fresh$.__enclos_env__$private$cached_values = list()
 			tryCatch({
-				fresh$compute_treatment_estimate(estimate_only = FALSE)
+				fresh$compute_estimate(estimate_only = FALSE)
 				as.numeric(fresh$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
 			}, error = function(e) NA_real_)
 		},

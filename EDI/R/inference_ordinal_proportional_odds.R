@@ -1,41 +1,34 @@
-#' Proportional Odds Inference for Ordinal Responses
+#' Proportional Odds Regression Inference for Ordinal Responses
 #'
-#' Fits a proportional odds model (cumulative logit) for ordinal responses using the
-#' treatment indicator and, optionally, all recorded covariates as predictors.
+#' Fits a proportional odds regression for ordinal responses using the treatment
+#' indicator and, optionally, all recorded covariates as predictors.
 #'
 #' @export
 InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-
 		#' @description
 		#' Initialize a proportional-odds inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -43,26 +36,25 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 				private$shared(estimate_only = TRUE)
 			}
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			Xmm_cols = private$best_Xmm_colnames
 			X_data = private$get_X()
-			
-			Xmm = if (length(Xmm_cols) == 0L){
-				# Univariate case
-				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+
+			if (length(Xmm_cols) == 0L){
+				Xmm = as.matrix(private$w)
+				colnames(Xmm) = "treatment"
 			} else {
-				# Multivariate case
 				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				cbind(treatment = private$w, X_cov)
+				Xmm = cbind(treatment = private$w, X_cov)
 			}
 
 			res = fast_ordinal_regression_cpp(X = Xmm, y = as.numeric(private$y))
-			if (is.null(res) || !is.finite(res$b[1])){
+			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
-			as.numeric(res$b[1])
+			as.numeric(res$b[length(res$b)])
 		},
 
 		supports_reusable_bootstrap_worker = function(){
@@ -70,74 +62,45 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 		},
 
 		generate_mod = function(estimate_only = FALSE){
-			# Proportional odds model logit(P(Y <= k)) = alpha_k - beta * w
-			# We use fast_ordinal_regression_with_var_cpp
-			# Xmm should NOT include intercept
+			X_full = private$build_design_matrix()
 			
-			if (private$include_covariates) {
-				if (estimate_only && !is.null(private$best_Xmm_colnames)) {
-					X_data = private$get_X()
-					Xmm_cols = private$best_Xmm_colnames
-					Xmm = if (length(Xmm_cols) == 0L) {
-						matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit){
+					if (estimate_only) {
+						res = fast_ordinal_regression_cpp(X_fit, private$y)
+						list(b = res$b, ssq_b_j = NA_real_)
 					} else {
-						X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-						cbind(treatment = private$w, X_cov)
+						res = fast_ordinal_regression_with_var_cpp(X_fit, private$y)
+						list(b = res$b, ssq_b_j = res$ssq_b_j)
 					}
-					res = fast_ordinal_regression_cpp(X = Xmm, y = as.numeric(private$y))
-					if (is.null(res) || !is.finite(res$b[1])) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
-					return(list(b = c(NA, res$b[1]), ssq_b_2 = NA_real_))
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = length(mod$b)
+					if (is.null(mod) || j_treat < 1L || !is.finite(mod$b[j_treat])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
+			)
 
-				X_full = private$get_X()
-				if (ncol(X_full) == 0L) {
-					Xmm = matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
-					res = if (estimate_only) {
-						r = fast_ordinal_regression_cpp(Xmm, as.numeric(private$y))
-						list(b = c(NA, r$b[1]), ssq_b_2 = NA_real_)
-					} else {
-						r = fast_ordinal_regression_with_var_cpp(Xmm, as.numeric(private$y))
-						list(b = c(NA, r$b[1]), ssq_b_2 = r$ssq_b_2)
-					}
-					private$best_Xmm_colnames = character(0)
-					return(res)
-				}
-
-				attempt = private$fit_with_hardened_qr_column_dropping(
-					X_full = cbind(treatment = private$w, X_full),
-					required_cols = 1L, # treatment is first
-					fit_fun = function(X_fit, j_treat){
-						if (estimate_only) {
-							res = fast_ordinal_regression_cpp(X_fit, as.numeric(private$y))
-							list(b = c(NA, res$b[j_treat]), ssq_b_2 = NA_real_, j_treat = j_treat)
-						} else {
-							res = fast_ordinal_regression_with_var_cpp(X_fit, as.numeric(private$y))
-							list(b = c(NA, res$b[j_treat]), ssq_b_2 = res$ssq_b_2, j_treat = j_treat)
-						}
-					},
-					fit_ok = function(mod, X_fit, keep){
-						if (is.null(mod) || !is.finite(mod$b[2])) return(FALSE)
-						if (estimate_only) return(TRUE)
-						is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
-					}
-				)
-
-				if (!is.null(attempt$fit)){
-					private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "treatment")
-				}
-				attempt$fit
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "treatment")
+				list(b = c(0, attempt$fit$b[length(attempt$fit$b)]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {
-				Xmm = matrix(private$w, ncol = 1)
-				colnames(Xmm) = "treatment"
-
-				if (estimate_only) {
-					res = fast_ordinal_regression_cpp(Xmm, as.numeric(private$y))
-					list(b = c(NA, res$b[1]), ssq_b_2 = NA_real_)
-				} else {
-					res = fast_ordinal_regression_with_var_cpp(Xmm, as.numeric(private$y))
-					list(b = c(NA, res$b[1]), ssq_b_2 = res$ssq_b_2)
-				}
+				NULL
 			}
+		},
+
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = matrix(private$w, ncol = 1L)
+				colnames(X) = "treatment"
+			} else {
+				X = cbind(treatment = private$w, X_cov)
+			}
+			X
 		}
 	)
 )

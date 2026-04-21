@@ -16,11 +16,7 @@ InferenceIncidKKGCompRiskDiff = R6::R6Class("InferenceIncidKKGCompRiskDiff",
 
 	private = list(
 		build_design_matrix = function(){
-			if (private$include_covariates()) {
-				private$create_design_matrix()
-			} else {
-				cbind("(Intercept)" = 1, treatment = private$w)
-			}
+			private$create_design_matrix()
 		},
 
 		get_estimand_type = function() "RD"
@@ -45,11 +41,7 @@ InferenceIncidKKGCompRiskRatio = R6::R6Class("InferenceIncidKKGCompRiskRatio",
 
 	private = list(
 		build_design_matrix = function(){
-			if (private$include_covariates()) {
-				private$create_design_matrix()
-			} else {
-				cbind("(Intercept)" = 1, treatment = private$w)
-			}
+			private$create_design_matrix()
 		},
 
 		get_estimand_type = function() "RR"
@@ -73,11 +65,7 @@ InferenceIncidKKModifiedPoisson = R6::R6Class("InferenceIncidKKModifiedPoisson",
 
 	private = list(
 		build_design_matrix = function(){
-			if (private$include_covariates()) {
-				private$create_design_matrix()
-			} else {
-				cbind("(Intercept)" = 1, treatment = private$w)
-			}
+			private$create_design_matrix()
 		}
 	)
 )

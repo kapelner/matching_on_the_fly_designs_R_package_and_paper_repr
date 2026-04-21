@@ -24,9 +24,14 @@ Inference = R6::R6Class("Inference",
 		#'   failure will surface as an error rather than being silently worked around. Set to
 		#'   \code{FALSE} when you want to verify that the raw model converges without
 		#'   intervention.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL){
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
+				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(verbose)
 				assertFlag(harden)
 				des_obj$assert_all_responses_recorded()
@@ -46,6 +51,27 @@ Inference = R6::R6Class("Inference",
 			private$n = des_obj$get_n()
 			private$prob_T = des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
+
+			# Handle model_formula and X matrix construction
+			if (is.null(model_formula)) {
+				private$model_formula = des_obj$get_model_formula()
+				# Time-saving trick: copy pre-computed X if using the same formula
+				private$X = private$des_obj_priv_int$X
+			} else {
+				if (should_run_asserts()) {
+					all_features = names(des_obj$get_X_imp())
+					required_vars = all.vars(model_formula)
+					# '.' is a special symbol in formulas representing all variables
+					required_vars = setdiff(required_vars, ".")
+					if (length(required_vars) > 0 && !all(required_vars %in% all_features)) {
+						stop("model_formula contains variables not present in the design's covariates: ", 
+							 paste(setdiff(required_vars, all_features), collapse = ", "))
+					}
+				}
+				private$model_formula = model_formula
+				# Path #3: final numeric design matrix
+				private$X = create_model_matrix_from_features(private$model_formula, des_obj$get_X_imp())
+			}
 			
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
@@ -79,7 +105,7 @@ Inference = R6::R6Class("Inference",
 		#' Computes the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return A numeric treatment estimate.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
 		},
 
@@ -139,6 +165,124 @@ Inference = R6::R6Class("Inference",
 				clone_private[["custom_randomization_statistic_function"]] = fn
 			}
 			i
+		},
+
+		#' @description
+		#' Return the response vector used by inference extension classes.
+		#'
+		#' This accessor is part of the supported extension contract for user-defined
+		#' R6 inference classes. Prefer this method over direct access to private
+		#' fields.
+		#'
+		#' @return A numeric response vector.
+		get_response = function(){
+			private$y
+		},
+
+		#' @description
+		#' Return the treatment-assignment vector used by inference extension classes.
+		#'
+		#' This accessor is part of the supported extension contract for user-defined
+		#' R6 inference classes. Treatment is encoded as 0/1.
+		#'
+		#' @return A numeric or integer 0/1 treatment vector.
+		get_treatment = function(){
+			private$w
+		},
+
+		#' @description
+		#' Return the processed covariate matrix used by inference extension classes.
+		#'
+		#' This accessor returns the design object's model-matrix covariates, after
+		#' the package's missingness handling and encoding. It may be \code{NULL} if
+		#' no covariates are available.
+		#'
+		#' @return A numeric matrix of covariates or \code{NULL}.
+		get_covariates = function(){
+			private$des_obj$get_X()
+		},
+
+		#' @description
+		#' Return a data frame with response, treatment, censoring status, and covariates.
+		#'
+		#' This accessor is the preferred data interface for user-defined R6
+		#' inference classes. It avoids reliance on private implementation fields.
+		#' The returned data frame always contains \code{y}, \code{w}, and
+		#' \code{dead}; covariate columns are appended when available.
+		#'
+		#' @return A data frame suitable for user-defined model fitting.
+		get_analysis_data = function(){
+			out = data.frame(
+				y = private$y,
+				w = private$w,
+				dead = private$dead
+			)
+			X = self$get_covariates()
+			if (!is.null(X) && length(X) > 0L) {
+				X = as.data.frame(X)
+				if (is.null(names(X)) || any(names(X) == "")) {
+					names(X) = paste0("x", seq_len(ncol(X)))
+				}
+				out = cbind(out, X)
+			}
+			out
+		},
+
+		#' @description
+		#' Return the completed design object backing this inference object.
+		#'
+		#' This accessor is part of the supported extension contract. Extension
+		#' classes should use this method instead of \code{private$des_obj}.
+		#'
+		#' @return The completed \code{Design} object.
+		get_design_object = function(){
+			private$des_obj
+		},
+
+		#' @description
+		#' Return the response type for the backing design.
+		#'
+		#' @return A character scalar such as \code{"continuous"},
+		#'   \code{"incidence"}, \code{"proportion"}, \code{"count"},
+		#'   \code{"survival"}, or \code{"ordinal"}.
+		get_response_type = function(){
+			private$des_obj$get_response_type()
+		},
+
+		#' @description
+		#' Return the model formula used for covariate adjustment.
+		#' @return A formula object or \code{NULL}.
+		get_model_formula = function(){
+			private$model_formula
+		},
+
+		#' @description
+		#' Set the optimizer used by likelihood-based inference implementations.
+		#' @param optimization_alg The optimizer name. Valid values are configured by
+		#'   the concrete inference class.
+		#' @param allow_irls 		Whether to allow IRLS (Iteratively Reweighted Least Squares)
+		#'   as a fallback or primary optimization algorithm.
+		#' @param default 			The default optimizer to use if none is specified.
+		#' @return Invisibly returns \code{self}.
+		set_optimization_alg = function(optimization_alg = NULL, allow_irls = private$optimization_alg_allow_irls, default = private$optimization_alg_default){
+			private$optimization_alg_allow_irls = allow_irls
+			private$optimization_alg_default = default
+			new_optimization_alg = .normalize_optimizer_algorithm(
+				optimization_alg,
+				allow_irls = allow_irls,
+				default = default
+			)
+			if (!identical(private$optimization_alg, new_optimization_alg) && length(private$cached_values) > 0L){
+				private$cached_values = list()
+			}
+			private$optimization_alg = new_optimization_alg
+			invisible(self)
+		},
+
+		#' @description
+		#' Return the optimizer used by likelihood-based inference implementations.
+		get_optimization_alg = function(){
+			private$optimization_alg
 		}
 		),
 
@@ -180,6 +324,10 @@ Inference = R6::R6Class("Inference",
 		dead = NULL,
 		y_temp = NULL,
 		X = NULL,
+		model_formula = NULL,
+		optimization_alg = NULL,
+		optimization_alg_allow_irls = FALSE,
+		optimization_alg_default = "lbfgs",
 		reduced_design_keep_cache = NULL,
 		fixed_covariate_keep_cache = NULL,
 			cached_values = list(),

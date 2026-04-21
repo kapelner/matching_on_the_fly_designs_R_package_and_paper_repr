@@ -20,7 +20,7 @@ for (t in 1:n) {
 	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceAllSimpleMeanDiff$new(seq_des)
-te = inf$compute_treatment_estimate()
+te = inf$compute_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Incidence
@@ -32,7 +32,7 @@ for (t in 1:n) {
 	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceIncidUnivLogRegr$new(seq_des)
-te = inf$compute_treatment_estimate()
+te = inf$compute_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Proportion
@@ -44,7 +44,7 @@ for (t in 1:n) {
 	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferencePropUniBetaRegr$new(seq_des)
-te = inf$compute_treatment_estimate()
+te = inf$compute_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Count
@@ -56,7 +56,7 @@ for (t in 1:n) {
 	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceCountUnivNegBinRegr$new(seq_des)
-te = inf$compute_treatment_estimate()
+te = inf$compute_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 # Survival
@@ -68,7 +68,7 @@ for (t in 1:n) {
 	seq_des$add_one_subject_response(t, y[t], 1)
 }
 inf = InferenceSurvivalRestrictedMeanDiff$new(seq_des)
-te = inf$compute_treatment_estimate()
+te = inf$compute_estimate()
 cat("✓ Treatment estimate =", te, "\n")
 
 cat("\n✓✓✓ ALL RESPONSE TYPES WORKING! ✓✓✓\n")

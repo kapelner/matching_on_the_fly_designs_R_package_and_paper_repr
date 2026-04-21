@@ -60,7 +60,7 @@ manual_kk_bootstrap_reference <- function(inf, B = 11L, seed = 1L) {
 		if (is.function(get0("compute_reservoir_and_match_statistics", envir = boot_priv, inherits = TRUE))) {
 			boot_priv$compute_reservoir_and_match_statistics()
 		}
-		out[b] = as.numeric(boot_inf$compute_treatment_estimate(estimate_only = TRUE))[1L]
+		out[b] = as.numeric(boot_inf$compute_estimate(estimate_only = TRUE))[1L]
 	}
 	out
 }

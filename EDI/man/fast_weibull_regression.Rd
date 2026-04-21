@@ -4,7 +4,14 @@
 \alias{fast_weibull_regression}
 \title{Weibull Regression using survival package internals or Rcpp (fast)}
 \usage{
-fast_weibull_regression(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE)
+fast_weibull_regression(
+  y,
+  dead,
+  X,
+  use_rcpp = TRUE,
+  estimate_only = FALSE,
+  optimization_alg = "lbfgs"
+)
 }
 \arguments{
 \item{y}{Survival times.}

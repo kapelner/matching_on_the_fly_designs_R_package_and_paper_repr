@@ -1,9 +1,8 @@
+#include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 struct DigammaFunctor {
 	double operator()(double x) const {
@@ -175,27 +174,52 @@ private:
 };
 
 // [[Rcpp::export]]
-List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull, NumericVector y, NumericVector init){
+Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd Xfull,
+													 NumericVector y,
+													 NumericVector params){
+	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
+	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
+	ZeroOneInflatedBeta fun(y_eigen, Xfull);
+	Eigen::VectorXd grad(par.size());
+	fun(par, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd Xfull,
+													   NumericVector y,
+													   NumericVector params){
+	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
+	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
+	ZeroOneInflatedBeta fun(y_eigen, Xfull);
+	return -fun.hessian(par);
+}
+
+// [[Rcpp::export]]
+List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull,
+									 NumericVector y,
+									 NumericVector init,
+									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+									 std::string optimization_alg = "lbfgs"){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd params = Rcpp::as<Eigen::VectorXd>(init);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
 
 	ZeroOneInflatedBeta fun(y_eigen, Xfull);
-	LBFGSParam<double> lbfgs_params;
-	lbfgs_params.epsilon = 1e-6;
-	lbfgs_params.max_iterations = 1500;
-	LBFGSSolver<double> solver(lbfgs_params);
-
-	double neg_ll;
-	solver.minimize(fun, params, neg_ll);
+	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs");
+	params = fit.params;
 
 	Eigen::MatrixXd H = fun.hessian(params);
 	int dim = params.size();
 	NumericMatrix vcov_mat(dim, dim);
 	bool has_vcov = false;
 	if (H.rows() == dim && H.cols() == dim && H.allFinite()){
-		Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
+		Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
 		if (lu.isInvertible()){
-			Eigen::MatrixXd inv = lu.inverse();
+			Eigen::MatrixXd inv_free = lu.inverse();
+			Eigen::MatrixXd inv = expand_free_covariance(dim, fixed_spec, inv_free, true);
 			for (int i = 0; i < dim; ++i){
 				for (int j = 0; j < dim; ++j){
 					vcov_mat(i, j) = inv(i, j);
@@ -216,6 +240,6 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull, NumericVector y, Num
 	return List::create(
 		Named("coefficients") = coeff,
 		Named("vcov") = vcov_mat,
-		Named("neg_loglik") = neg_ll
+		Named("neg_loglik") = fit.value
 	);
 }

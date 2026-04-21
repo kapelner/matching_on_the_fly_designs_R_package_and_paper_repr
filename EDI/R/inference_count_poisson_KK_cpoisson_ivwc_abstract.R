@@ -15,8 +15,12 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
@@ -25,7 +29,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -34,7 +38,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -58,7 +62,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#' Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -105,7 +109,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 					y_prop = yT[valid_idx] / y_total[valid_idx]
 					weights = y_total[valid_idx]
 					
-					if (private$include_covariates() && !is.null(private$best_Xmm_colnames_matched)){
+					if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_matched)){
 						X_diff = KKstats$X_matched_diffs[valid_idx, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE]
 						Xmm = cbind(1, X_diff)
 					} else {
@@ -123,7 +127,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 				y_r = KKstats$y_reservoir
 				w_r = KKstats$w_reservoir
 				
-				if (private$include_covariates() && !is.null(private$best_Xmm_colnames_reservoir)){
+				if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
 					X_r = as.matrix(KKstats$X_reservoir)
 					X_cov = X_r[, intersect(private$best_Xmm_colnames_reservoir, colnames(X_r)), drop = FALSE]
 					Xmm = cbind(1, w_r, X_cov)
@@ -162,64 +166,6 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
-			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-
-			KKstats = private$cached_values$KKstats
-			m   = KKstats$m
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-
-			# --- Matched pairs: Conditional Poisson via Binomial Trick ---
-			if (m > 0){
-				private$cpoisson_for_matched_pairs(estimate_only = estimate_only)
-			}
-			beta_m   = private$cached_values$beta_T_matched
-			ssq_m    = private$cached_values$ssq_beta_T_matched
-			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
-			           (estimate_only || (!is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0))
-
-			# --- Reservoir: Negative Binomial ---
-			if (nRT > 0 && nRC > 0){
-				private$negbin_for_reservoir(estimate_only = estimate_only)
-			}
-			beta_r   = private$cached_values$beta_T_reservoir
-			ssq_r    = private$cached_values$ssq_beta_T_reservoir
-			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
-			           (estimate_only || (!is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0))
-
-			# --- Variance-weighted combination ---
-			if (m_ok && r_ok){
-				if (estimate_only) {
-					# Simple mean if SEs not available
-					private$cached_values$beta_hat_T = (beta_m + beta_r) / 2
-					return(invisible(NULL))
-				}
-				w_star = ssq_r / (ssq_r + ssq_m)
-				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
-			} else if (m_ok){
-				private$cached_values$beta_hat_T   = beta_m
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m)
-			} else if (r_ok){
-				private$cached_values$beta_hat_T   = beta_r
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_r)
-			} else {
-				private$cache_nonestimable_estimate("kk_cpoisson_ivwc_no_usable_component")
-			}
-			private$cached_values$is_z = TRUE
-		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
@@ -239,9 +185,9 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			y_prop = yT[valid_idx] / y_total[valid_idx]
 			weights = y_total[valid_idx]
 
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				# Use differences of covariates as predictors
-				X_diff = KKstats$X_matched_diffs[valid_idx, , drop = FALSE]
+				X_diff = KKstats$X_matched_diffs[valid_idx, drop = FALSE]
 				# Ensure treatment effect is the intercept (since treatment diff is always 1)
 				Xmm = cbind(1, X_diff)
 			} else {
@@ -263,7 +209,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_matched     = as.numeric(mod$b[1])
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				private$best_Xmm_colnames_matched = setdiff(colnames(mod$X_fit), "(Intercept)")
 			}
 			if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
@@ -275,7 +221,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 			j_treat = 2L
 
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				X_full = cbind(1, w_r, X_r)
 				if (!estimate_only) {
 					qr_full = qr(X_full)
@@ -304,7 +250,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			if (is.null(mod)) return(invisible(NULL))
 
 			private$cached_values$beta_T_reservoir     = as.numeric(mod$b[j_treat])
-			if (private$include_covariates()){
+			if (ncol(as.matrix(private$X)) > 0){
 				private$best_Xmm_colnames_reservoir = setdiff(colnames(mod$X_fit), c("(Intercept)", "w_r"))
 				private$best_Xmm_j_treat_reservoir = j_treat
 			}

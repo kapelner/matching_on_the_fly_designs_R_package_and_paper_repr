@@ -43,13 +43,18 @@ class names derived during initialization.}
 \subsection{Method \code{new()}}{
 Initialize an \code{InferenceSuite}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSuite$new(des_obj, inference_params = list())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSuite$new(des_obj, model_formula = NULL, inference_params = list())}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{des_obj}}{A completed \code{Design} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
 
 \item{\code{inference_params}}{A named list of lists supplying additional
 constructor arguments for specific inference classes.  Each name

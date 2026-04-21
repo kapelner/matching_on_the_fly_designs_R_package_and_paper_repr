@@ -59,7 +59,7 @@ for (nsim in 1 : Nsim){
 		for (estimate_type in c("difference-in-means", "OLS")){
 			seq_des_inf_obj = Inference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = num_cores, verbose = FALSE)
 
-			beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
+			beta_hat_T = seq_des_inf_obj$compute_estimate()
 			pval = seq_des_inf_obj$compute_pval_for_no_treatment_effect(r = r)
 
 			res = rbind(res, data.frame(

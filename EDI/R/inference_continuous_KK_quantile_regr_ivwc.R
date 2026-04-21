@@ -33,7 +33,6 @@
 #' and is not installed automatically with \pkg{EDI}.
 #' Install \pkg{quantreg} before using this class.
 #'
-#' @export
 InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
@@ -50,6 +49,10 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' effect. Pass a different value (e.g. \code{tau = 0.25} or
 		#'                                                         \code{tau = 0.75}) to target the
 		#' corresponding percentile of the treatment effect distribution.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
 		#' @examples
@@ -67,11 +70,11 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#' infer <- InferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, tau = 0.5,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 			}
-			super$initialize(des_obj, tau, identity, verbose)
+			super$initialize(des_obj, tau, identity, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -81,4 +84,15 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 
 
 	)
+)
+
+#' Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+#'
+#' Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrIVWC}.
+#'
+#' @export
+InferenceContinKKQuantileRegrIVWC = R6::R6Class("InferenceContinKKQuantileRegrIVWC",
+	lock_objects = FALSE,
+	inherit = InferenceContinMultKKQuantileRegrIVWC,
+	public = list()
 )

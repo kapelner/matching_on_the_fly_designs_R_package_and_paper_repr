@@ -1,0 +1,103 @@
+---
+title: "Extending EDI with Custom R6 Inference Classes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Extending EDI with Custom R6 Inference Classes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+EDI is implemented with R6 classes. Advanced users can define their own R6
+classes outside the package and reuse EDI's design storage, response handling,
+randomization, bootstrap, and summary methods.
+
+The custom-extension base classes are intentionally internal while the extension
+contract is experimental. Retrieve them with `getFromNamespace()`:
+
+```{r}
+library(EDI)
+library(R6)
+
+InferenceCustomAsymp <- getFromNamespace("InferenceCustomAsymp", "EDI")
+```
+
+## Inference Contract
+
+A custom asymptotic inference class should inherit from `InferenceCustomAsymp`
+and implement a public `fit(estimate_only = FALSE)` method. `fit()` returns a
+named list with:
+
+- `estimate`: required numeric scalar treatment-effect estimate.
+- `se`: optional numeric scalar standard error.
+- `df`: optional degrees of freedom. Use `NA_real_` for z inference.
+- `is_z`: optional logical. `TRUE` uses normal reference inference.
+- `model`: optional fitted model object retained by `get_mod()`.
+- `nonestimable_reason`: optional character scalar used when the estimate or
+  standard error is unavailable.
+
+Use public accessors instead of private fields:
+
+- `get_response()`
+- `get_treatment()`
+- `get_covariates()`
+- `get_analysis_data()`
+- `get_design_object()`
+- `get_response_type()`
+
+## Example
+
+```{r}
+InferenceMedianDiff <- R6Class(
+  "InferenceMedianDiff",
+  inherit = InferenceCustomAsymp,
+  public = list(
+    fit = function(estimate_only = FALSE) {
+      dat <- self$get_analysis_data()
+      y_t <- dat$y[dat$w == 1]
+      y_c <- dat$y[dat$w == 0]
+
+      est <- stats::median(y_t) - stats::median(y_c)
+      if (estimate_only) {
+        return(list(estimate = est))
+      }
+
+      list(
+        estimate = est,
+        se = sqrt(stats::var(y_t) / length(y_t) + stats::var(y_c) / length(y_c)),
+        df = length(y_t) + length(y_c) - 2,
+        is_z = FALSE,
+        model = NULL
+      )
+    }
+  )
+)
+
+des <- FixedDesignBernoulli$new(n = 20, response_type = "continuous")
+des$add_all_subjects_to_experiment(data.frame(x = seq_len(20)))
+des$overwrite_all_subject_assignments(rep(c(0, 1), each = 10))
+des$add_all_subject_responses(rnorm(20))
+
+inf <- InferenceMedianDiff$new(des)
+inf$compute_estimate()
+inf$compute_asymp_two_sided_pval()
+inf$compute_asymp_confidence_interval()
+inf$compute_bootstrap_two_sided_pval(B = 501)
+```
+
+## Custom Designs
+
+EDI also provides internal bases for user-defined designs:
+
+```{r}
+DesignCustomFixed <- getFromNamespace("DesignCustomFixed", "EDI")
+DesignCustomSequential <- getFromNamespace("DesignCustomSequential", "EDI")
+```
+
+For fixed designs, implement `draw_assignments(r)` and return an `n x r` 0/1
+assignment matrix. For sequential designs, implement `assignment_rule()` and
+return a scalar 0/1 assignment for the current subject. EDI handles subject
+storage, response recording, and validation.

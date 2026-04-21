@@ -8,7 +8,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
+				
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
@@ -20,30 +20,31 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		#' @param start_with_ols	Whether to compute an OLS warm start and pass it to `MASS::rlm`
 		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
 		#'   uses its own LQS-based start. Default `TRUE`.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertChoice(method, c("M", "MM"))
 				if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
 				if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
 				assertFlag(start_with_ols)
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates_flag = include_covariates
+			
 			private$rlm_method = method
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
@@ -55,7 +56,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		#' @param estimate_only If TRUE, skip variance component calculations and use
 		#'   the faster \code{"M"} robust estimator regardless of the \code{method}
 		#'   argument passed at construction time.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -79,7 +80,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		#' Computes the approximate p-value.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -105,16 +106,13 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		rlm_maxit = NULL,
 		rlm_acc = NULL,
 		rlm_start_with_ols = TRUE,
-		include_covariates_flag = NULL,
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_combined_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp, preserve_cache_keys = preserve)
 		},
 		rlm_force_M = FALSE,
 
-		include_covariates = function() private$include_covariates_flag,
-
+		
 		reduce_design_matrix_once = function(X, j_treat, cache_key){
 			cached = private$cached_values[[cache_key]]
 			if (!is.null(cached)) return(cached)
@@ -261,7 +259,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			nR  = nRT + nRC
 
 			if (m > 0 && nRT > 0 && nRC > 0){
-				if (private$include_covariates()){
+				if (ncol(as.matrix(private$X)) > 0){
 					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
 					p = ncol(Xd_full)
 				} else {
@@ -275,12 +273,12 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				y_comb = c(KKstats$y_matched_diffs, KKstats$y_reservoir)
 				j_treat = 2L
 			} else if (m > 0){
-				Xd = if (private$include_covariates()) as.matrix(KKstats$X_matched_diffs) else matrix(nrow = m, ncol = 0L)
+				Xd = if (ncol(as.matrix(private$X)) > 0) as.matrix(KKstats$X_matched_diffs) else matrix(nrow = m, ncol = 0L)
 				X_comb = if (ncol(Xd) > 0L) cbind(1, Xd) else matrix(1, nrow = m, ncol = 1L)
 				y_comb = KKstats$y_matched_diffs
 				j_treat = 1L
 			} else if (nRT > 0 && nRC > 0){
-				X_r = if (private$include_covariates()) as.matrix(KKstats$X_reservoir) else matrix(nrow = nR, ncol = 0L)
+				X_r = if (ncol(as.matrix(private$X)) > 0) as.matrix(KKstats$X_reservoir) else matrix(nrow = nR, ncol = 0L)
 				X_comb = if (ncol(X_r) > 0L) cbind(rep(1, nR), KKstats$w_reservoir, X_r) else cbind(rep(1, nR), KKstats$w_reservoir)
 				y_comb = KKstats$y_reservoir
 				j_treat = 2L

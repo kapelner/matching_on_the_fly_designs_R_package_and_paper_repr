@@ -15,206 +15,77 @@
 #' @noRd
 InferencePropZeroOneInflatedBetaAbstract = R6::R6Class("InferencePropZeroOneInflatedBetaAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 
 		#' @description
-		#' Initialize
-		#' @param des_obj A completed \code{Design} object.
-		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj,  verbose = FALSE){
+		#' Initialize a zero-one-inflated beta regression inference object.
+		#' @param des_obj A completed \code{Design} object with a proportion response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param verbose			Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-		},
-
-		#' @description
-		#' Compute treatment estimate
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
-		},
-
-		#' @description
-		#' Compute asymp confidence interval
-		#' @param alpha Description for alpha
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared(estimate_only = FALSE)
-			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-
-		#' @description
-		#' Compute asymp two sided pval for treatment effect
-		#' @param delta Description for delta
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared(estimate_only = FALSE)
-			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				warning("Zero/one-inflated beta estimator: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
-			}
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 
 	private = list(
+		best_Xmm_colnames = NULL,
+
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Ensure we have the best design from the original data
-			if (is.null(private$cached_values$zoib_best_design_matrix)){
-				private$shared()
+			if (is.null(private$best_Xmm_colnames)){
+				private$shared(estimate_only = TRUE)
 			}
-			# Fallback if initial fit failed
-			if (is.null(private$cached_values$zoib_best_design_matrix)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+			if (is.null(private$best_Xmm_colnames)){
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			# Use the same design matrix structure as the original fit
-			Xmm_orig = private$cached_values$zoib_best_design_matrix
+			Xmm_cols = private$best_Xmm_colnames
 			X_data = private$get_X()
-			X_cov = X_data[, setdiff(colnames(Xmm_orig), "treatment"), drop = FALSE]
-			Xmm = cbind(treatment = private$w, X_cov)
-
-			# Use original coefficients as starting values for speed
-			starts = if (!is.null(private$cached_values$zoib_best_fit)) {
-				list(private$cached_values$zoib_best_fit$coefficients)
+			Xmm = if (length(Xmm_cols) == 0L) {
+				cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
-				NULL
+				cbind(`(Intercept)` = 1, treatment = private$w, X_data[, Xmm_cols, drop = FALSE])
 			}
-
-			fit = .fit_zero_one_inflated_beta(private$y, Xmm, estimate_only = estimate_only, starts = starts)
-			if (is.null(fit) || !("treatment" %in% names(fit$coefficients))){
-				return(NA_real_)
-			}
-			as.numeric(fit$coefficients["treatment"])
+			
+			res = tryCatch(fast_zero_one_inflated_beta_cpp(Xmm, private$y), error = function(e) NULL)
+			if (is.null(res) || length(res$b) < 2 || !is.finite(res$b[2])) return(NA_real_)
+			as.numeric(res$b[2])
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
 		},
 
-		build_design_matrix_candidates = function(){
-			X_cov_orig = as.matrix(private$predictors_df())
-			if (ncol(X_cov_orig) == 0L){
-				M = matrix(private$w, ncol = 1)
-				colnames(M) = "treatment"
-				return(list(M))
-			}
-
-			if (!private$harden) {
-				M = cbind(treatment = private$w, X_cov_orig)
-				return(list(M))
-			}
-
-			thresholds = c(Inf, 0.95, 0.90, 0.80, 0.70)
-			candidates = list()
-			keys = character()
-			for (thresh in thresholds){
-				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
-				M = cbind(treatment = private$w, X_cov)
-				qr_M = qr(M)
-				if (qr_M$rank < ncol(M)){
-					keep = qr_M$pivot[seq_len(qr_M$rank)]
-					if (!(1L %in% keep)) keep = c(1L, keep)
-					keep = sort(unique(keep))
-					M = M[, keep, drop = FALSE]
+		generate_mod = function(estimate_only = FALSE){
+			# Use the common GLM fitting pattern
+			attempt = private$try_fit_full_and_harden(
+				fit_fun = function(X_fit, keep){
+					j_treat = which(keep == 2L)
+					res = fast_zero_one_inflated_beta_cpp(X_fit, private$y)
+					res$j_treat = j_treat
+					res
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = mod$j_treat
+					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
-				full_names = c("treatment", colnames(X_cov))
-				colnames(M) = full_names[seq_len(ncol(M))]
-				key = paste(colnames(M), collapse = "|")
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = M
-					keys = c(keys, key)
-				}
-			}
-			candidates
-		},
-
-		predictors_df = function(){
-			matrix(numeric(0), nrow = private$n, ncol = 0)
-		},
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				return(invisible(NULL))
-			}
-		},
-
-		set_failed_fit_cache = function(){
-			private$cache_nonestimable_estimate("zero_one_inflated_beta_fit_unavailable")
-			private$cached_values$full_coefficients = NULL
-			private$cached_values$full_vcov = NULL
-			private$cached_values$summary_table = NULL
-		},
-
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			if (!is.null(private$cached_values$beta_hat_T) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
-
-			fit = NULL
-			for (Xmm in private$build_design_matrix_candidates()){
-				fit = .fit_zero_one_inflated_beta(private$y, Xmm, estimate_only = estimate_only)
-				if (!is.null(fit)) break
-			}
-			if (is.null(fit)){
-				private$set_failed_fit_cache()
-				return(invisible(NULL))
-			}
-
-			coef_full = fit$coefficients
-			vcov_full = fit$vcov
-			if (!("treatment" %in% names(coef_full)) || (!estimate_only && (is.null(vcov_full) || !("treatment" %in% rownames(vcov_full))))){
-				private$set_failed_fit_cache()
-				return(invisible(NULL))
-			}
-
-			if (estimate_only) {
-				private$cached_values$beta_hat_T = as.numeric(coef_full["treatment"])
-				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
-				private$cached_values$df = private$n - length(coef_full)
-				private$cached_values$full_coefficients = coef_full
-				private$cached_values$full_vcov = NULL
-				private$cached_values$summary_table = NULL
-				return(invisible(NULL))
-			}
-
-			se_full = sqrt(pmax(diag(vcov_full), 0))
-			z_vals = coef_full / se_full
-			summary_table = cbind(
-				Value = coef_full,
-				`Std. Error` = se_full,
-				`z value` = z_vals,
-				`Pr(>|z|)` = 2 * stats::pnorm(-abs(z_vals))
 			)
 
-			private$cached_values$beta_hat_T = as.numeric(coef_full["treatment"])
-			private$cached_values$s_beta_hat_T = as.numeric(se_full["treatment"])
-			private$cached_values$is_z = TRUE
-			private$cached_values$df = private$n - length(coef_full)
-			private$cached_values$full_coefficients = coef_full
-			private$cached_values$full_vcov = vcov_full
-			private$cached_values$summary_table = summary_table
-			private$cached_values$zoib_best_design_matrix = Xmm
-			private$cached_values$zoib_best_fit = list(
-				coefficients = coef_full,
-				vcov = vcov_full
-			)
+			if (!is.null(attempt$fit)){
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+			}
+			attempt$fit
 		}
 	)
 )

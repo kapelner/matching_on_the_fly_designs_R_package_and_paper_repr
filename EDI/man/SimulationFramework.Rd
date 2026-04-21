@@ -160,7 +160,7 @@ call.  Default \code{201}.}
 call, and per bisection step of the rand CI.  Default \code{201}.}
 
 \item{\code{pval_epsilon}}{Numeric.  Bisection convergence tolerance for
-randomisation-based CIs (\code{compute_confidence_interval_rand}).
+randomisation-based CIs (\code{compute_rand_confidence_interval}).
 Default \code{0.02}.}
 
 \item{\code{sd_noise}}{Numeric \eqn{> 0}. Standard deviation of independent

@@ -48,12 +48,15 @@ Suggests:
     parfm,
     quantreg,
     Rfit,
+    knitr,
+    rmarkdown,
     testthat,
     VGAM,
     GreedyExperimentalDesign,
     ompr,
     ompr.roi,
     ROI.plugin.glpk
+VignetteBuilder: knitr
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 Collate:
     'RcppExports.R'
@@ -64,6 +67,7 @@ Collate:
     'design_abstract.R'
     'design_fixed_abstract.R'
     'design_seq_one_by_one_abstract.R'
+    'design_custom_extensions.R'
     'design_fixed_a_optimal.R'
     'design_fixed_bernoulli.R'
     'design_fixed_binary_match.R'
@@ -97,6 +101,7 @@ Collate:
     'inference_all_abstract_rand_ci.R'
     'inference_all_abstract_boot.R'
     'inference_all_abstract_asymp.R'
+    'inference_custom_extensions.R'
     'inference_all_KK_compound_mean_diff.R'
     'inference_all_abstract_KK_gee.R'
     'inference_all_abstract_KK_glmm.R'
@@ -169,6 +174,7 @@ Collate:
     'inference_ordinal_KK_cond_clogit_abstract.R'
     'inference_ordinal_KK_combined.R'
     'inference_ordinal_cauchit.R'
+    'inference_ordinal_cloglog.R'
     'inference_ordinal_gcomp_abstract.R'
     'inference_ordinal_ordered_probit.R'
     'inference_ordinal_paired_sign_test.R'

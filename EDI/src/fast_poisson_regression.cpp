@@ -19,24 +19,90 @@ double clamp_eta_for_exp(double eta) {
 	return std::min(eta, 700.0);
 }
 
+class PoissonNegLogLik {
+private:
+    const MatrixXd& m_X;
+    const VectorXd& m_y;
+    const VectorXd& m_weights;
+    const bool m_use_weights;
+    const int m_n;
+
+public:
+    PoissonNegLogLik(const MatrixXd& X,
+                     const VectorXd& y,
+                     const VectorXd& weights) :
+        m_X(X), m_y(y), m_weights(weights), m_use_weights(weights.size() == X.rows()), m_n(X.rows()) {}
+
+    double operator()(const VectorXd& beta, VectorXd& grad) {
+        VectorXd eta = m_X * beta;
+        for (int i = 0; i < m_n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        VectorXd mu = eta.array().exp().matrix();
+        VectorXd wt = m_use_weights ? m_weights : VectorXd::Ones(m_n);
+        double neg_ll = (wt.array() * (mu.array() - m_y.array() * eta.array())).sum();
+        grad = m_X.transpose() * wt.cwiseProduct(mu - m_y);
+        return neg_ll;
+    }
+
+    MatrixXd hessian(const VectorXd& beta) {
+        VectorXd eta = m_X * beta;
+        for (int i = 0; i < m_n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        VectorXd w = eta.array().exp().matrix();
+        if (m_use_weights) w = w.cwiseProduct(m_weights);
+        return m_X.transpose() * w.asDiagonal() * m_X;
+    }
+};
+
 ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 const Eigen::VectorXd& y,
                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
 							 int maxit = 100,
-							 double tol = 1e-8) {
+							 double tol = 1e-8,
+                             Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                             Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                             std::string optimization_alg = "irls") {
 	const int n = X.rows();
 	const int p = X.cols();
     bool use_weights = (weights.size() == n);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
+
+    if (alg != "irls") {
+        VectorXd beta = VectorXd::Zero(p);
+        beta = apply_fixed_values(beta, fixed_spec);
+        PoissonNegLogLik fun(X, y, weights);
+        LikelihoodFitResult fit = (alg == "lbfgs") ?
+            optimize_fixed_likelihood_lbfgs(fun, beta, fixed_spec, maxit, tol) :
+            optimize_fixed_likelihood_newton(fun, beta, fixed_spec, maxit, tol);
+
+        ModelResult res;
+        res.b = fit.params;
+        VectorXd eta = X * res.b;
+        for (int i = 0; i < n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        res.mu = eta.array().exp().matrix();
+        res.XtWX = fun.hessian(res.b);
+        res.converged = fit.converged;
+        return res;
+    }
+
+    const int p_free = fixed_spec.free_idx.size();
+    MatrixXd X_free(n, p_free);
+    for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
+    VectorXd beta_free = VectorXd::Zero(p_free);
+    VectorXd eta_fixed = VectorXd::Zero(n);
+    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
+        eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
+    }
     ModelResult res;
 
 	res.b = VectorXd::Zero(p);
 	VectorXd mu = (y.array() + 0.1).matrix();
-	VectorXd eta = mu.array().log().matrix();
+	VectorXd eta = eta_fixed + X_free * beta_free;
 
-	VectorXd XtWz(p);
+	VectorXd XtWz(p_free);
     VectorXd w(n);
 
 	for (int iter = 0; iter < maxit; ++iter) {
+        eta = eta_fixed + X_free * beta_free;
 		for (int i = 0; i < n; ++i) {
 			eta[i] = clamp_eta_for_exp(eta[i]);
 		}
@@ -47,26 +113,29 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
             w = mu.cwiseProduct(weights);
         } else {
             w = mu;
-        }
+		}
 
 		VectorXd z = eta + (y - mu).cwiseQuotient(mu);
-		res.XtWX.noalias() = X.transpose() * w.asDiagonal() * X;
-		XtWz.noalias() = X.transpose() * (w.cwiseProduct(z));
+        VectorXd z_adj = z - eta_fixed;
+        MatrixXd XtWX_free = X_free.transpose() * w.asDiagonal() * X_free;
+		XtWz.noalias() = X_free.transpose() * (w.cwiseProduct(z_adj));
 
-		VectorXd beta_new = res.XtWX.ldlt().solve(XtWz);
+		VectorXd beta_new = XtWX_free.ldlt().solve(XtWz);
 		if (!beta_new.allFinite()) {
 			break;
 		}
 
-		if ((beta_new - res.b).norm() < tol) {
-			res.b = beta_new;
+		if ((beta_new - beta_free).norm() < tol) {
+			beta_free = beta_new;
 			res.converged = true;
 			break;
 		}
 
-		res.b = beta_new;
-		eta.noalias() = X * res.b;
+		beta_free = beta_new;
 	}
+
+    for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = beta_free[j];
+    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) res.b[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
 
 	eta.noalias() = X * res.b;
 	for (int i = 0; i < n; ++i) {
@@ -80,10 +149,13 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     } else {
         w = res.mu;
     }
-	res.XtWX.noalias() = X.transpose() * w.asDiagonal() * X;
+    MatrixXd info_free = X_free.transpose() * w.asDiagonal() * X_free;
+	res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
 
 	return res;
 }
+
+} // namespace
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
@@ -99,14 +171,35 @@ Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, con
     return - (X.transpose() * mu.asDiagonal() * X);
 }
 
+// [[Rcpp::export]]
+Eigen::VectorXd get_poisson_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
+                                                          const Eigen::VectorXd& y,
+                                                          const Eigen::VectorXd& weights,
+                                                          const Eigen::VectorXd& beta) {
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd mu = eta.array().exp().matrix();
+    return X.transpose() * weights.cwiseProduct(y - mu);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
+                                                            const Eigen::VectorXd& weights,
+                                                            const Eigen::VectorXd& beta) {
+    Eigen::VectorXd eta = X * beta;
+    Eigen::VectorXd mu = eta.array().exp().matrix();
+    Eigen::VectorXd w = weights.cwiseProduct(mu);
+    return - (X.transpose() * w.asDiagonal() * X);
 }
 
 // [[Rcpp::export]]
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
 									 int maxit = 100,
-									 double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), maxit, tol);
+									 double tol = 1e-8,
+                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                     std::string optimization_alg = "irls") {
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
     return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -120,8 +213,11 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y,
                                           const Eigen::VectorXd& weights,
                                           int maxit = 100,
-                                          double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(X, y, weights, maxit, tol);
+                                          double tol = 1e-8,
+                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                          std::string optimization_alg = "irls") {
+	ModelResult res = fast_poisson_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
     return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -135,17 +231,25 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 											  const Eigen::VectorXd& y,
 											  int j = 2,
 											  int maxit = 100,
-											  double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol);
-	res.ssq_b_j = compute_diagonal_inverse_entry(res.XtWX, j);
-	res.ssq_b_2 = (Xmm.cols() >= 2) ? compute_diagonal_inverse_entry(res.XtWX, 2) : NA_REAL;
+											  double tol = 1e-8,
+                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                              std::string optimization_alg = "irls") {
+	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+    MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
+    MatrixXd cov_free = info_free.inverse();
+    MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
+	res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
+	res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
 
 	return List::create(
 		Named("b") = res.b,
 		Named("ssq_b_j") = res.ssq_b_j,
 		Named("ssq_b_2") = res.ssq_b_2,
 		Named("mu") = res.mu,
-		Named("converged") = res.converged
+		Named("converged") = res.converged,
+        Named("vcov") = vcov
 	);
 }
 
@@ -154,18 +258,24 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 												   const Eigen::VectorXd& y,
 												   int j = 2,
 												   int maxit = 100,
-												   double tol = 1e-8) {
-	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol);
+												   double tol = 1e-8,
+                                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                                   std::string optimization_alg = "irls") {
+	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+    MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
+    MatrixXd cov_free = info_free.inverse();
+    MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
 
 	const int df_resid = Xmm.rows() - Xmm.cols();
 	if (df_resid > 0) {
 		ArrayXd pearson_terms = ((y - res.mu).array().square()) / res.mu.array();
 		res.dispersion = pearson_terms.sum() / static_cast<double>(df_resid);
 		if (std::isfinite(res.dispersion) && res.dispersion > 0) {
-			res.ssq_b_j = res.dispersion * compute_diagonal_inverse_entry(res.XtWX, j);
-			if (Xmm.cols() >= 2) {
-				res.ssq_b_2 = res.dispersion * compute_diagonal_inverse_entry(res.XtWX, 2);
-			}
+            vcov *= res.dispersion;
+			res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
+			if (Xmm.cols() >= 2) res.ssq_b_2 = vcov(1, 1);
 		}
 	}
 
@@ -175,7 +285,8 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		Named("ssq_b_2") = res.ssq_b_2,
 		Named("dispersion") = res.dispersion,
 		Named("mu") = res.mu,
-		Named("converged") = res.converged
+		Named("converged") = res.converged,
+        Named("vcov") = vcov
 	);
 }
 

@@ -25,6 +25,101 @@ using namespace Eigen;
 // Converges in O(1) iterations near the optimum (quadratic convergence).
 // At convergence H = observed information; vcov = H^{-1}; ssq_b_j = H^{-1}[1,1].
 //
+
+static List cpoisson_combined_score_info_cpp_impl(
+	const Eigen::VectorXd& yT_v,
+	const Eigen::VectorXd& n_k_v,
+	const Eigen::MatrixXd& X_diff_v,
+	const Eigen::VectorXd& y_r,
+	const Eigen::VectorXd& w_r,
+	const Eigen::MatrixXd& X_r,
+	const Eigen::VectorXd& params
+) {
+	const int nd = (int)yT_v.size();
+	const int nR = (int)y_r.size();
+	const int p  = (int)X_diff_v.cols();
+	const int np = p + 2;
+
+	VectorXd score = VectorXd::Zero(np);
+	MatrixXd info = MatrixXd::Zero(np, np);
+
+	const double beta_0 = params[0];
+	const double beta_T = params[1];
+	const VectorXd beta_xs = params.tail(p);
+
+	VectorXd eta_p = VectorXd::Constant(nd, beta_T);
+	if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
+	ArrayXd p_k_arr = 1.0 / (1.0 + (-eta_p.array()).exp());
+	ArrayXd w_p_arr = n_k_v.array() * p_k_arr * (1.0 - p_k_arr);
+	VectorXd score_p = (yT_v.array() - n_k_v.array() * p_k_arr).matrix();
+	score[1] += score_p.sum();
+	if (p > 0) score.tail(p).noalias() += X_diff_v.transpose() * score_p;
+
+	VectorXd w_p_vec = w_p_arr.matrix();
+	info(1, 1) += w_p_vec.sum();
+	if (p > 0) {
+		VectorXd Xdw = X_diff_v.transpose() * w_p_vec;
+		info.block(1, 2, 1, p).noalias() += Xdw.transpose();
+		info.block(2, 1, p, 1).noalias() += Xdw;
+		info.block(2, 2, p, p).noalias() += X_diff_v.transpose() * w_p_vec.asDiagonal() * X_diff_v;
+	}
+
+	VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
+	if (p > 0) eta_r.noalias() += X_r * beta_xs;
+	VectorXd mu_r = eta_r.array().exp();
+	VectorXd score_r = y_r - mu_r;
+	score[0] += score_r.sum();
+	score[1] += score_r.dot(w_r);
+	if (p > 0) score.tail(p).noalias() += X_r.transpose() * score_r;
+
+	const double mu_sum = mu_r.sum();
+	const double muw_sum = mu_r.dot(w_r);
+	info(0, 0) += mu_sum;
+	info(0, 1) += muw_sum;
+	info(1, 0) += muw_sum;
+	info(1, 1) += (mu_r.array() * w_r.array().square()).sum();
+	if (p > 0) {
+		VectorXd Xrmu = X_r.transpose() * mu_r;
+		VectorXd Xrwmu = X_r.transpose() * mu_r.cwiseProduct(w_r);
+		info.block(0, 2, 1, p).noalias() += Xrmu.transpose();
+		info.block(2, 0, p, 1).noalias() += Xrmu;
+		info.block(1, 2, 1, p).noalias() += Xrwmu.transpose();
+		info.block(2, 1, p, 1).noalias() += Xrwmu;
+		info.block(2, 2, p, p).noalias() += X_r.transpose() * mu_r.asDiagonal() * X_r;
+	}
+
+	return List::create(Named("score") = score, Named("info") = info);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_cpoisson_combined_score_cpp(
+	const Eigen::VectorXd& yT_v,
+	const Eigen::VectorXd& n_k_v,
+	const Eigen::MatrixXd& X_diff_v,
+	const Eigen::VectorXd& y_r,
+	const Eigen::VectorXd& w_r,
+	const Eigen::MatrixXd& X_r,
+	const Eigen::VectorXd& params
+) {
+	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
+	return Rcpp::as<Eigen::VectorXd>(out["score"]);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
+	const Eigen::VectorXd& yT_v,
+	const Eigen::VectorXd& n_k_v,
+	const Eigen::MatrixXd& X_diff_v,
+	const Eigen::VectorXd& y_r,
+	const Eigen::VectorXd& w_r,
+	const Eigen::MatrixXd& X_r,
+	const Eigen::VectorXd& params
+) {
+	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
+	MatrixXd info = Rcpp::as<Eigen::MatrixXd>(out["info"]);
+	return -info;
+}
+
 // [[Rcpp::export]]
 List fast_cpoisson_combined_with_var_cpp(
 	const Eigen::VectorXd& yT_v,       // treated count per valid pair (nd)

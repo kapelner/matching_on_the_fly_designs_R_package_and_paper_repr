@@ -24,10 +24,15 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @param transform_y_fn  A function applied to y values before quantile regression.
 		#'   Subclasses pass
 		#' \code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed.
 		#'   Default is \code{FALSE}.
-		initialize = function(des_obj, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
 			if (should_run_asserts()) {
+				assertFormula(model_formula, null.ok = TRUE)
 				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
 			}
 			if (should_run_asserts()) {
@@ -37,7 +42,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
@@ -49,7 +54,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#'
 		#' @return 	The setting-appropriate numeric estimate of the treatment effect
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$shared(estimate_only = estimate_only)
 			}
@@ -80,7 +85,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @param delta					The null difference to test against. Default is zero.
 		#'
 		#' @return 	The approximate frequentist p-value
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}

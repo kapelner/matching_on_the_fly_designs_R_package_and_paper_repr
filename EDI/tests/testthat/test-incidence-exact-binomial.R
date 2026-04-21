@@ -32,7 +32,7 @@ test_that("InferenceIncidenceExactBinomial matches binom.test for FixedDesignBin
 	inf <- InferenceIncidenceExactBinomial$new(des, verbose = FALSE)
 	ref <- stats::binom.test(3L, 4L, p = 0.5)
 
-	expect_equal(inf$compute_treatment_estimate(), log((3 + 0.5) / (1 + 0.5)), tolerance = 1e-12)
+	expect_equal(inf$compute_estimate(), log((3 + 0.5) / (1 + 0.5)), tolerance = 1e-12)
 	expect_equal(inf$compute_exact_two_sided_pval_for_treatment_effect(delta = 0), ref$p.value, tolerance = 1e-12)
 	expect_equal(unname(inf$compute_exact_confidence_interval(alpha = 0.05)), stats::qlogis(ref$conf.int), tolerance = 1e-12)
 })
@@ -73,7 +73,7 @@ test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
 	inf_a <- build_inf(c(1L, 0L))
 	inf_b <- build_inf(c(0L, 1L))
 
-	expect_equal(inf_a$compute_treatment_estimate(), inf_b$compute_treatment_estimate(), tolerance = 1e-12)
+	expect_equal(inf_a$compute_estimate(), inf_b$compute_estimate(), tolerance = 1e-12)
 	expect_equal(
 		inf_a$compute_exact_two_sided_pval_for_treatment_effect(delta = 0),
 		inf_b$compute_exact_two_sided_pval_for_treatment_effect(delta = 0),

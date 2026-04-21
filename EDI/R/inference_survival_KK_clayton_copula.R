@@ -5,12 +5,13 @@
 #' Weibull AFT regression for reservoir subjects.
 #'
 #' @export
-InferenceIncidKKClaytonCopulaIVWC = R6::R6Class("InferenceIncidKKClaytonCopulaIVWC",
+InferenceSurvivalKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalKKClaytonCopulaIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaIVWC,
 	public = list(
 	)
 )
+InferenceIncidKKClaytonCopulaIVWC = InferenceSurvivalKKClaytonCopulaIVWC
 
 #' Clayton Copula Combined-Likelihood Inference for KK Designs
 #'
@@ -18,9 +19,10 @@ InferenceIncidKKClaytonCopulaIVWC = R6::R6Class("InferenceIncidKKClaytonCopulaIV
 #' survival responses using a Clayton copula with Weibull AFT margins.
 #'
 #' @export
-InferenceIncidKKClaytonCopulaOneLik = R6::R6Class("InferenceIncidKKClaytonCopulaOneLik",
+InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaOneLik,
 	public = list(
 	)
 )
+InferenceIncidKKClaytonCopulaOneLik = InferenceSurvivalKKClaytonCopulaOneLik

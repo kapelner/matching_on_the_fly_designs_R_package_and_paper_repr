@@ -26,7 +26,7 @@ cat("Subjects added successfully\n")
 cat("Testing InferenceAllSimpleMeanDiff...\n")
 inf1 = InferenceAllSimpleMeanDiff$new(des_obj)
 cat("  Created successfully\n")
-cat("  Treatment estimate:", inf1$compute_treatment_estimate(), "\n")
+cat("  Treatment estimate:", inf1$compute_estimate(), "\n")
 
 cat("\nNow testing InferenceAllKKCompoundMeanDiff...\n")
 cat("  About to call $new()...\n")
@@ -44,7 +44,7 @@ result = tryCatch({
 })
 
 if (!is.null(result)) {
-	cat("  Treatment estimate:", result$compute_treatment_estimate(), "\n")
+	cat("  Treatment estimate:", result$compute_estimate(), "\n")
 	cat("SUCCESS!\n")
 } else {
 	cat("FAILED - R error caught\n")

@@ -20,7 +20,7 @@ test_that("Different designs work with continuous response", {
 
 	# Check if we can run a simple inference
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
-	expect_true(is.numeric(inf$compute_treatment_estimate()), info = paste("Design:", name))
+	expect_true(is.numeric(inf$compute_estimate()), info = paste("Design:", name))
 	}
 })
 
@@ -35,7 +35,7 @@ test_that("KK14 with Morrison works", {
 	add_all_subject_responses_seq(des, rnorm(n))
 
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
-	expect_true(is.numeric(inf$compute_treatment_estimate()))
+	expect_true(is.numeric(inf$compute_estimate()))
 })
 
 test_that("Multivariate inference works", {
@@ -50,7 +50,7 @@ test_that("Multivariate inference works", {
 
 	# Continuous MultOLS
 	inf_cont <- InferenceContinMultOLS$new(des, verbose = FALSE)
-	expect_true(is.numeric(inf_cont$compute_treatment_estimate()))
+	expect_true(is.numeric(inf_cont$compute_estimate()))
 
 	# Incidence MultiLogRegr
 	des_inc <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence")
@@ -59,7 +59,7 @@ test_that("Multivariate inference works", {
 	}
 	add_all_subject_responses_seq(des_inc, rbinom(n, 1, 0.5))
 	inf_inc <- InferenceIncidMultiLogRegr$new(des_inc, verbose = FALSE)
-	expect_true(is.numeric(inf_inc$compute_treatment_estimate()))
+	expect_true(is.numeric(inf_inc$compute_estimate()))
 
 	# Count MultiNegBinRegr
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count")
@@ -68,7 +68,7 @@ test_that("Multivariate inference works", {
 	}
 	add_all_subject_responses_seq(des_count, rpois(n, 5))
 	inf_count <- InferenceCountMultiNegBinRegr$new(des_count, verbose = FALSE)
-	expect_true(is.numeric(inf_count$compute_treatment_estimate()))
+	expect_true(is.numeric(inf_count$compute_estimate()))
 })
 
 test_that("Generated permutations support randomization p-values", {
@@ -86,7 +86,7 @@ test_that("Generated permutations support randomization p-values", {
 	expect_true(is.character(attr(perms, "sig")))
 	expect_length(attr(perms, "sig"), 1)
 
-	pval <- inf$compute_two_sided_pval_for_treatment_effect_rand(
+	pval <- inf$compute_rand_two_sided_pval(
 		r = 64,
 		show_progress = FALSE,
 		permutations = perms
@@ -119,7 +119,7 @@ test_that("KK designs with KK inference work", {
 	add_all_subject_responses_seq(des, rnorm(n))
 
 	inf <- inf_classes[[name]]$new(des, verbose = FALSE)
-	expect_true(is.numeric(inf$compute_treatment_estimate()), info = paste("KK Design/Inf:", name))
+	expect_true(is.numeric(inf$compute_estimate()), info = paste("KK Design/Inf:", name))
 	}
 })
 
@@ -141,14 +141,14 @@ test_that("Debug randomization does not poison the cached p-value path", {
 		permutations = perms,
 		debug = TRUE
 	)
-	pval_after_debug <- inf$compute_two_sided_pval_for_treatment_effect_rand(
+	pval_after_debug <- inf$compute_rand_two_sided_pval(
 		r = 32,
 		show_progress = FALSE,
 		permutations = perms
 	)
 
 	inf_fresh <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
-	pval_fresh <- inf_fresh$compute_two_sided_pval_for_treatment_effect_rand(
+	pval_fresh <- inf_fresh$compute_rand_two_sided_pval(
 		r = 32,
 		show_progress = FALSE,
 		permutations = perms
@@ -180,7 +180,7 @@ test_that("Fast randomization worker does not mutate shared proportion design st
 	perms <- inf$.__enclos_env__$private$generate_permutations(19)
 	y_before <- des$.__enclos_env__$private$y
 
-	pval <- inf$compute_two_sided_pval_for_treatment_effect_rand(
+	pval <- inf$compute_rand_two_sided_pval(
 		r = 19,
 		delta = 0.5,
 		transform_responses = "logit",

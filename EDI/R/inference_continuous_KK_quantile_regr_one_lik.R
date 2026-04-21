@@ -5,7 +5,6 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
-#' @export
 InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuantileRegrOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrOneLik,
@@ -31,11 +30,15 @@ InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuan
 		#' = FALSE)
 		#' infer
 		#'
-		initialize = function(des_obj, tau = 0.5, verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 			}
-			super$initialize(des_obj, tau, identity, verbose)
+			super$initialize(des_obj, tau, identity, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -45,8 +48,19 @@ InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuan
 		#' @description
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE) super$compute_treatment_estimate()
+		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
 
 
 	)
+)
+
+#' Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
+#'
+#' Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrOneLik}.
+#'
+#' @export
+InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegrOneLik",
+	lock_objects = FALSE,
+	inherit = InferenceContinMultKKQuantileRegrOneLik,
+	public = list()
 )

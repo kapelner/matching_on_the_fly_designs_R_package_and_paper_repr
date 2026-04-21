@@ -169,6 +169,227 @@ double compute_cox_ll_grad_hess_fast(
     return neg_ll;
 }
 
+// Newton-Raphson for (possibly stratified) Cox model.
+// strata_data: vector of CoxData, one per stratum.  For unstratified Cox pass a single element.
+// Returns beta (converged), H^{-1} (inverse information), neg_ll, converged, iterations.
+struct CoxFitResult {
+    std::vector<double> beta;
+    Eigen::MatrixXd vcov;   // p x p inverse information (empty if estimate_only)
+    Eigen::MatrixXd hess_mat; // p x p information matrix at convergence
+    double neg_ll;
+    bool converged;
+    int iterations;
+};
+
+CoxFitResult cox_newton_raphson(
+    const std::vector<CoxData>& strata_data,
+    Nullable<NumericVector> start_beta,
+    bool estimate_only,
+    int maxit,
+    double tol)
+{
+    const int p = strata_data[0].p;
+    std::vector<double> beta(p, 0.0);
+    if (start_beta.isNotNull()) {
+        NumericVector sb(start_beta);
+        for (int q = 0; q < p; ++q) beta[q] = sb[q];
+    }
+
+    std::vector<double> grad(p), hess(p * p);
+
+    // Per-stratum work buffers (we'll resize per stratum inside the loop)
+    double old_ll = 1e300;
+    int iter = 0;
+
+    for (iter = 0; iter < maxit; ++iter) {
+        // Accumulate over strata
+        for (int q = 0; q < p; ++q) grad[q] = 0.0;
+        for (int qq = 0; qq < p * p; ++qq) hess[qq] = 0.0;
+        double ll = 0.0;
+
+        for (const CoxData& sd : strata_data) {
+            std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
+            std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
+            ll += compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, false,
+                                                 exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
+            for (int q = 0; q < p; ++q) grad[q] += g_s[q];
+            for (int qq = 0; qq < p * p; ++qq) hess[qq] += h_s[qq];
+        }
+
+        if (std::abs(old_ll - ll) < tol) break;
+        old_ll = ll;
+
+        Eigen::Map<const Eigen::MatrixXd> H(hess.data(), p, p);
+        Eigen::Map<const Eigen::VectorXd> g(grad.data(), p);
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
+        if (ldlt.info() != Eigen::Success) break;
+        Eigen::VectorXd delta = ldlt.solve(g);
+        for (int q = 0; q < p; ++q) beta[q] -= delta[q];
+    }
+
+    CoxFitResult res;
+    res.beta = beta;
+    res.neg_ll = old_ll;
+    res.converged = (iter < maxit);
+    res.iterations = iter;
+
+    if (!estimate_only) {
+        // Final pass for Hessian at converged beta
+        for (int q = 0; q < p; ++q) grad[q] = 0.0;
+        for (int qq = 0; qq < p * p; ++qq) hess[qq] = 0.0;
+        for (const CoxData& sd : strata_data) {
+            std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
+            std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
+            compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, false,
+                                           exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
+            for (int qq = 0; qq < p * p; ++qq) hess[qq] += h_s[qq];
+        }
+        Eigen::Map<const Eigen::MatrixXd> H_final(hess.data(), p, p);
+        res.hess_mat = H_final;
+        res.vcov = H_final.inverse();
+    }
+
+    return res;
+}
+
+// Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
+//
+// Score residual: U_i[q] = (x_i[q] - e(y_i)[q])*dead_i
+//                          - exp(eta_i) * sum_{k: t_k<=y_i} (x_i[q] - e_k[q]) * d_k/R_k
+// where e_k = weighted mean of x in risk set at t_k.  sum_i U_i = 0 at MLE.
+//
+// Sandwich: H^{-1} * (sum_c V_c * V_c^T) * H^{-1},  V_c = sum_{i in c} U_i
+Eigen::MatrixXd compute_robust_vcov(
+    const std::vector<CoxData>& strata_data,
+    const std::vector<double>& beta,
+    const Eigen::MatrixXd& H_inv,
+    const std::vector<int>& cluster)
+{
+    int n_total = 0;
+    for (const CoxData& sd : strata_data) n_total += sd.n;
+    const int p = beta.size();
+
+    Eigen::MatrixXd U(n_total, p);
+    U.setZero();
+
+    int row_offset = 0;
+    for (const CoxData& sd : strata_data) {
+        const int ns = sd.n;
+
+        double max_eta = -1e300;
+        std::vector<double> exp_eta(ns);
+        for (int i = 0; i < ns; ++i) {
+            const double* xi = sd.row(i);
+            double eta_i = 0.0;
+            for (int q = 0; q < p; ++q) eta_i += xi[q] * beta[q];
+            exp_eta[i] = eta_i;
+            if (eta_i > max_eta) max_eta = eta_i;
+        }
+        for (int i = 0; i < ns; ++i) exp_eta[i] = std::exp(exp_eta[i] - max_eta);
+
+        double r_exp = 0.0;
+        std::vector<double> r_x_exp(p, 0.0);
+        for (int i = 0; i < ns; ++i) {
+            const double* xi = sd.row(i);
+            r_exp += exp_eta[i];
+            for (int q = 0; q < p; ++q) r_x_exp[q] += xi[q] * exp_eta[i];
+        }
+
+        const int n_events = (int)sd.unique_event_times.size();
+        // dk/Rk, e_k (weighted mean x at t_k), and dk*e_k/Rk per event time
+        std::vector<double> dk_over_Rk(n_events, 0.0);
+        std::vector<std::vector<double>> ek(n_events, std::vector<double>(p, 0.0));
+        std::vector<std::vector<double>> dk_ek_over_Rk(n_events, std::vector<double>(p, 0.0));
+
+        int j = 0;
+        for (int k = 0; k < n_events; ++k) {
+            double tk = sd.unique_event_times[k];
+            while (j < ns && sd.y[sd.idx_asc[j]] < tk) {
+                int id = sd.idx_asc[j];
+                const double* xi = sd.row(id);
+                r_exp -= exp_eta[id];
+                for (int q = 0; q < p; ++q) r_x_exp[q] -= xi[q] * exp_eta[id];
+                ++j;
+            }
+            int dk = sd.event_counts[k];
+            if (dk > 0) {
+                double safe_r = std::max(r_exp, 1e-100);
+                dk_over_Rk[k] = (double)dk / safe_r;
+                for (int q = 0; q < p; ++q) {
+                    ek[k][q] = r_x_exp[q] / safe_r;
+                    dk_ek_over_Rk[k][q] = (double)dk * ek[k][q] / safe_r;
+                }
+            }
+        }
+
+        // Cumulative A(t) = sum_{k: t_k<=t} d_k/R_k  and  B_q(t) = sum d_k*e_k[q]/R_k
+        std::vector<double> cum_A(n_events, 0.0);
+        std::vector<std::vector<double>> cum_B(n_events, std::vector<double>(p, 0.0));
+        if (n_events > 0) {
+            cum_A[0] = dk_over_Rk[0];
+            for (int q = 0; q < p; ++q) cum_B[0][q] = dk_ek_over_Rk[0][q];
+            for (int k = 1; k < n_events; ++k) {
+                cum_A[k] = cum_A[k-1] + dk_over_Rk[k];
+                for (int q = 0; q < p; ++q)
+                    cum_B[k][q] = cum_B[k-1][q] + dk_ek_over_Rk[k][q];
+            }
+        }
+
+        // Score residuals: U_i[q] = (x_i[q] - e(y_i)[q])*dead_i
+        //                           - exp_i * (x_i[q]*A(y_i) - B_q(y_i))
+        for (int i = 0; i < ns; ++i) {
+            double yi = sd.y[i];
+            const double* xi = sd.row(i);
+            double ei = exp_eta[i];
+            double di = sd.dead[i];
+
+            // Binary search: last event time <= y_i
+            int k_last = -1;
+            if (n_events > 0) {
+                int lo = 0, hi = n_events - 1;
+                while (lo <= hi) {
+                    int mid = (lo + hi) / 2;
+                    if (sd.unique_event_times[mid] <= yi) { k_last = mid; lo = mid + 1; }
+                    else hi = mid - 1;
+                }
+            }
+            double A_i = (k_last >= 0) ? cum_A[k_last] : 0.0;
+
+            // e(y_i) for dead subjects: the event time y_i equals t_{k_last} when dead_i=1
+            // (since y_i is one of the unique event times in this case)
+            for (int q = 0; q < p; ++q) {
+                double B_iq    = (k_last >= 0) ? cum_B[k_last][q] : 0.0;
+                double e_yi_q  = (di > 0.5 && k_last >= 0) ? ek[k_last][q] : 0.0;
+                U(row_offset + i, q) = (xi[q] - e_yi_q) * di
+                                       - ei * (xi[q] * A_i - B_iq);
+            }
+        }
+        row_offset += ns;
+    }
+
+    // Aggregate score residuals by cluster: V_c = sum_{i in c} U_i
+    // cluster is length n_total, one entry per row of U (in strata-stacked order)
+    std::map<int, Eigen::VectorXd> cluster_scores;
+    for (int i = 0; i < n_total; ++i) {
+        int c = cluster[i];
+        auto it = cluster_scores.find(c);
+        if (it == cluster_scores.end()) {
+            cluster_scores[c] = U.row(i).transpose();
+        } else {
+            it->second += U.row(i).transpose();
+        }
+    }
+
+    // B = sum_c V_c * V_c^T
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(p, p);
+    for (auto& kv : cluster_scores) {
+        B += kv.second * kv.second.transpose();
+    }
+
+    // Robust vcov = H^{-1} * B * H^{-1}
+    return H_inv * B * H_inv;
+}
+
 } // namespace
 
 // [[Rcpp::export]]
@@ -178,69 +399,102 @@ List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
                                Nullable<NumericVector> start_beta = R_NilValue,
                                bool estimate_only = false,
                                int maxit = 20,
-                               double tol = 1e-9) {
+                               double tol = 1e-9,
+                               Nullable<IntegerVector> cluster = R_NilValue) {
     int p = X.cols();
-    std::vector<double> beta(p, 0.0);
-    if (start_beta.isNotNull()) {
-        NumericVector sb(start_beta);
-        for (int q = 0; q < p; ++q) beta[q] = sb[q];
-    }
 
-    CoxData data(y, dead, X);
+    std::vector<CoxData> strata_data;
+    strata_data.emplace_back(y, dead, X);
 
-    // Pre-allocate all work buffers once
-    std::vector<double> grad(p), hess(p * p);
-    std::vector<double> exp_eta(data.n), r_x_exp(p), r_xx_exp(p * p);
-    std::vector<double> sum_x_dk(p), e_z(p);
+    CoxFitResult fit = cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
 
-    double old_ll = 1e300;
-    int iter = 0;
-
-    for (iter = 0; iter < maxit; ++iter) {
-        double ll = compute_cox_ll_grad_hess_fast(
-            data, beta, grad, hess, false,
-            exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-
-        if (std::abs(old_ll - ll) < tol) break;
-        old_ll = ll;
-
-        // Newton step: solve hess * delta = grad, then beta -= delta
-        // Use Eigen for the p×p solve (cheap and correct)
-        Eigen::Map<const Eigen::MatrixXd> H(hess.data(), p, p);
-        Eigen::Map<const Eigen::VectorXd> g(grad.data(), p);
-        Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
-        if (ldlt.info() != Eigen::Success) break;
-        Eigen::VectorXd delta = ldlt.solve(g);
-        for (int q = 0; q < p; ++q) beta[q] -= delta[q];
-    }
-
-    // Map beta to Rcpp
     NumericVector coef_r(p);
-    for (int q = 0; q < p; ++q) coef_r[q] = beta[q];
+    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
 
     if (estimate_only) {
         return List::create(
             Named("coefficients") = coef_r,
-            Named("converged") = (iter < maxit),
-            Named("neg_ll") = old_ll,
-            Named("iterations") = iter
+            Named("converged") = fit.converged,
+            Named("neg_ll") = fit.neg_ll,
+            Named("iterations") = fit.iterations
         );
     }
 
-    // One final pass to get the Hessian at the converged beta for vcov
-    compute_cox_ll_grad_hess_fast(
-        data, beta, grad, hess, false,
-        exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-
-    // vcov = hess^{-1}
-    Eigen::Map<const Eigen::MatrixXd> H_final(hess.data(), p, p);
-    Eigen::MatrixXd vcov = H_final.inverse();
+    // Use robust sandwich vcov if cluster provided
+    Eigen::MatrixXd vcov_mat;
+    if (cluster.isNotNull()) {
+        IntegerVector cl(cluster);
+        std::vector<int> cl_vec(cl.begin(), cl.end());
+        vcov_mat = compute_robust_vcov(strata_data, fit.beta, fit.vcov, cl_vec);
+    } else {
+        vcov_mat = fit.vcov;
+    }
 
     return List::create(
         Named("coefficients") = coef_r,
-        Named("vcov") = vcov,
-        Named("converged") = (iter < maxit),
-        Named("neg_ll") = old_ll,
-        Named("iterations") = iter
+        Named("vcov") = vcov_mat,
+        Named("converged") = fit.converged,
+        Named("neg_ll") = fit.neg_ll,
+        Named("iterations") = fit.iterations
+    );
+}
+
+// [[Rcpp::export]]
+List fast_stratified_coxph_regression_cpp(
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Eigen::MatrixXd& X,
+    const Rcpp::IntegerVector& strata_r,
+    Nullable<NumericVector> start_beta = R_NilValue,
+    bool estimate_only = false,
+    int maxit = 20,
+    double tol = 1e-9)
+{
+    const int n = y.size();
+    const int p = X.cols();
+
+    std::vector<int> strata(strata_r.begin(), strata_r.end());
+    std::vector<int> unique_strata = strata;
+    std::sort(unique_strata.begin(), unique_strata.end());
+    unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
+
+    // Build one CoxData per stratum
+    std::vector<CoxData> strata_data;
+    strata_data.reserve(unique_strata.size());
+    for (int s : unique_strata) {
+        std::vector<int> idx;
+        for (int i = 0; i < n; ++i) if (strata[i] == s) idx.push_back(i);
+
+        const int ns = (int)idx.size();
+        Eigen::VectorXd y_s(ns), dead_s(ns);
+        Eigen::MatrixXd X_s(ns, p);
+        for (int ii = 0; ii < ns; ++ii) {
+            y_s[ii]    = y[idx[ii]];
+            dead_s[ii] = dead[idx[ii]];
+            X_s.row(ii) = X.row(idx[ii]);
+        }
+        strata_data.emplace_back(y_s, dead_s, X_s);
+    }
+
+    CoxFitResult fit = cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
+
+    NumericVector coef_r(p);
+    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
+
+    if (estimate_only) {
+        return List::create(
+            Named("coefficients") = coef_r,
+            Named("converged") = fit.converged,
+            Named("neg_ll") = fit.neg_ll,
+            Named("iterations") = fit.iterations
+        );
+    }
+
+    return List::create(
+        Named("coefficients") = coef_r,
+        Named("vcov") = fit.vcov,
+        Named("converged") = fit.converged,
+        Named("neg_ll") = fit.neg_ll,
+        Named("iterations") = fit.iterations
     );
 }

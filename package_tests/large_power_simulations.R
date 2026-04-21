@@ -270,7 +270,7 @@ res = foreach(
 		t_0 = proc.time()
 
 		seq_des_inf_obj = Inference$new(des_obj, estimate_type = estimate_type, test_type = test_type, num_cores = 1)
-		beta_hat_T = seq_des_inf_obj$compute_treatment_estimate()
+		beta_hat_T = seq_des_inf_obj$compute_estimate()
 		cat("  beta_T = ", beta_T, "  beta_hat_T =", beta_hat_T, "\n")
 		pval = seq_des_inf_obj$compute_two_sided_pval_for_treatment_effect(r = r)
 		cat("  pval =", pval, "\n")

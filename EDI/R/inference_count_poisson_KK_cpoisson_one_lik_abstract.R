@@ -27,9 +27,13 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		#' @description
 		#' Initialize combined-likelihood conditional-Poisson inference for KK count data.
 		#' @param des_obj A completed KK design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new inference object.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
@@ -38,7 +42,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -48,7 +52,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		#' Compute the treatment estimate.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		#' @return The treatment estimate.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -72,7 +76,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		#' Compute an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect value.
 		#' @return A two-sided p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -90,83 +94,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
-
-		set_failed_combined_cache = function(){
-			private$cache_nonestimable_estimate("kk_cpoisson_combined_fit_unavailable")
-			invisible(FALSE)
-		},
-
-			reduce_combined_covariates = function(X_diff_v, X_r_v, w_r_v){
-				cached_keep = private$cached_values$combined_cov_keep
-				p = ncol(X_r_v)
-				if (is.null(p) || p == 0L) return(integer(0))
-
-				build_combined = function(){
-					nd = nrow(X_diff_v)
-					nR = nrow(X_r_v)
-					X_pairs = cbind(
-						matrix(0, nrow = nd, ncol = 2L),
-						X_diff_v
-					)
-					if (nR == 0L){
-						X_res = matrix(0, nrow = 0L, ncol = ncol(X_pairs))
-					} else {
-						X_res = cbind(rep(1, nR), w_r_v, X_r_v)
-						if (ncol(X_res) != ncol(X_pairs)) {
-							max_cols = max(ncol(X_pairs), ncol(X_res))
-							if (ncol(X_pairs) < max_cols) {
-								X_pairs = cbind(X_pairs, matrix(0, nrow = nd, ncol = max_cols - ncol(X_pairs)))
-							}
-							if (ncol(X_res) < max_cols) {
-								X_res = cbind(X_res, matrix(0, nrow = nR, ncol = max_cols - ncol(X_res)))
-							}
-						}
-					}
-					rbind(X_pairs, X_res)
-				}
-
-				X_full = build_combined()
-				required = 2L
-
-				if (!is.null(cached_keep) && length(cached_keep) > 0L){
-					valid_cached = cached_keep[cached_keep >= 1L & cached_keep <= p]
-					if (length(valid_cached) > 0L){
-						keep_full = sort(unique(c(required, valid_cached + 2L)))
-						keep_full = keep_full[keep_full <= ncol(X_full)]
-						if (length(keep_full) > 0L){
-							X_try = X_full[, keep_full, drop = FALSE]
-							qr_try = qr(X_try)
-							if (qr_try$rank == ncol(X_try) && (2L %in% keep_full)){
-								private$cached_values$combined_cov_keep = sort(unique(valid_cached))
-								return(private$cached_values$combined_cov_keep)
-							}
-						}
-					}
-					private$cached_values$combined_cov_keep = NULL
-				}
-
-				qr_full = qr(X_full)
-				r_full = qr_full$rank
-				if (r_full <= 2L){
-					private$cached_values$combined_cov_keep = integer(0)
-					return(integer(0))
-				}
-				keep_full = qr_full$pivot[seq_len(r_full)]
-				if (!(required %in% keep_full)) keep_full[r_full] = required
-				keep_full = sort(unique(keep_full))
-				keep_cov = keep_full[keep_full > 2L] - 2L
-				keep_cov = keep_cov[keep_cov >= 1L & keep_cov <= p]
-				private$cached_values$combined_cov_keep = keep_cov
-				keep_cov
-			},
-
 		try_combined_fit = function(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v){
 			mod = tryCatch(
 				fast_cpoisson_combined_with_var_cpp(
@@ -269,7 +196,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			p             = if (private$include_covariates()) ncol(private$get_X()) else 0L
+			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
 
 			# ---- Pair data (conditional Poisson, zero-total pairs discarded) ----
@@ -288,7 +215,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					if (p > 0L) {
 						# Use the full-width pair-difference matrix here so any later
 						# covariate reduction stays aligned with the reservoir matrix.
-						X_diff_v = as.matrix(KKstats$X_matched_diffs_full[valid, , drop = FALSE])
+						X_diff_v = as.matrix(KKstats$X_matched_diffs_full[valid, drop = FALSE])
 					}
 				}
 			}

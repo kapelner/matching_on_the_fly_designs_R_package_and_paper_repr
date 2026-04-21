@@ -19,6 +19,8 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#' @param n			The sample size.
 		#' @param num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return 			A new `FixedDesignBlockedCluster` object
 		#'
@@ -30,14 +32,16 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				num_bins_for_continuous_covariate = 2,
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 			if (should_run_asserts()) {
 				assertCharacter(strata_cols, min.len = 1)
 				assertCharacter(cluster_col, len = 1)
 				assertCount(num_bins_for_continuous_covariate, positive = TRUE)
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$strata_cols = strata_cols
 			private$cluster_col = cluster_col
 			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate

@@ -172,11 +172,11 @@ run_comprehensive_inference_suite <- function(
 		inf_obj <- init_res$value
 
 		metrics <- list(
-			list(name = "compute_treatment_estimate", fn = function() inf_obj$compute_treatment_estimate()),
+			list(name = "compute_estimate", fn = function() inf_obj$compute_estimate()),
 			list(name = "compute_bootstrap_confidence_interval", fn = function() inf_obj$compute_bootstrap_confidence_interval(B = 100)),
 			list(name = "compute_bootstrap_two_sided_pval", fn = function() inf_obj$compute_bootstrap_two_sided_pval(B = 100)),
-			list(name = "compute_two_sided_pval_for_treatment_effect_rand", fn = function() inf_obj$compute_two_sided_pval_for_treatment_effect_rand(r = 100)),
-			list(name = "compute_confidence_interval_rand", fn = function() inf_obj$compute_confidence_interval_rand(r = 100))
+			list(name = "compute_rand_two_sided_pval", fn = function() inf_obj$compute_rand_two_sided_pval(r = 100)),
+			list(name = "compute_rand_confidence_interval", fn = function() inf_obj$compute_rand_confidence_interval(r = 100))
 		)
 
 		if ("compute_asymp_confidence_interval" %in% names(inf_obj)) {
@@ -185,10 +185,10 @@ run_comprehensive_inference_suite <- function(
 			fn = function() inf_obj$compute_asymp_confidence_interval()
 			)
 		}
-		if ("compute_asymp_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {
+		if ("compute_asymp_two_sided_pval" %in% names(inf_obj)) {
 			metrics[[length(metrics) + 1]] <- list(
-			name = "compute_asymp_two_sided_pval_for_treatment_effect",
-			fn = function() inf_obj$compute_asymp_two_sided_pval_for_treatment_effect()
+			name = "compute_asymp_two_sided_pval",
+			fn = function() inf_obj$compute_asymp_two_sided_pval()
 			)
 		}
 		if ("compute_asymp_log_rank_two_sided_pval_for_treatment_effect" %in% names(inf_obj)) {

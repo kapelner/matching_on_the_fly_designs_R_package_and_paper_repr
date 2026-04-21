@@ -8,35 +8,26 @@ InferenceOrdinalCloglogRegr = R6::R6Class("InferenceOrdinalCloglogRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-		#' @description
+						#' @description
 		#' Initialize a cumulative-cloglog inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
-		#' @param verbose Whether to print progress messages.
-		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE, harden = TRUE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param verbose			Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
-				assertFlag(include_covariates, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose, harden)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		}
 	),
 
 	private = list(
-		include_covariates = NULL,
-
 		cloglog_polr_fallback = function(){
 			if (!check_package_installed("MASS")) return(NULL)
 			y_fac = factor(private$y, levels = sort(unique(private$y)))
@@ -54,50 +45,22 @@ InferenceOrdinalCloglogRegr = R6::R6Class("InferenceOrdinalCloglogRegr",
 		},
 
 		generate_mod = function(estimate_only = FALSE){
-			if (private$include_covariates) {
-				X_full = cbind(treatment = private$w, private$get_X())
-				attempt = private$fit_with_hardened_qr_column_dropping(
-					X_full = X_full,
-					required_cols = 1L,
-					fit_fun = function(X_fit){
-						res = fast_ordinal_cloglog_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
-						b1 = tryCatch(res$b[1], error = function(e) NA_real_)
-						if (is.finite(b1)){
-							if (estimate_only) return(list(b = c(NA, res$b), ssq_b_2 = NA_real_, converged = res$converged))
-							if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, res$b), ssq_b_2 = res$ssq_b_2, converged = res$converged))
-						}
-						fallback = private$cloglog_polr_fallback()
-						if (!is.null(fallback)){
-							if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_, converged = TRUE))
-							return(c(fallback, list(converged = TRUE)))
-						}
-						list(b = c(NA, res$b), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2, converged = res$converged)
-					},
-					fit_ok = function(mod, X_fit, keep){
-						if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
-						if (!is.null(mod$converged) && !mod$converged) return(FALSE)
-						if (estimate_only) return(TRUE)
-						is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
-					}
-				)
-				return(attempt$fit)
-			} else {
-				Xmm = matrix(private$w, ncol = 1)
-				colnames(Xmm) = "treatment"
-
-				res = fast_ordinal_cloglog_regression_with_var_cpp(X = Xmm, y = as.numeric(private$y))
-				b1 = tryCatch(res$b[1], error = function(e) NA_real_)
-				if (is.finite(b1)){
-					if (estimate_only) return(list(b = c(NA, b1), ssq_b_2 = NA_real_))
-					if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) return(list(b = c(NA, b1), ssq_b_2 = res$ssq_b_2))
+			# Use the common GLM fitting pattern
+			attempt = private$try_fit_full_and_harden(
+				fit_fun = function(X_fit, keep){
+					res = fast_ordinal_cloglog_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
+					# Add intercept placeholder to b for MLEorKM logic
+					res$b = c(NA_real_, res$b)
+					res
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					if (!is.null(mod$converged) && !mod$converged) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
-				fallback = private$cloglog_polr_fallback()
-				if (!is.null(fallback)){
-					if (estimate_only) return(list(b = fallback$b, ssq_b_2 = NA_real_))
-					return(fallback)
-				}
-				return(list(b = c(NA, b1), ssq_b_2 = if (estimate_only) NA_real_ else res$ssq_b_2))
-			}
+			)
+			attempt$fit
 		}
 	)
 )

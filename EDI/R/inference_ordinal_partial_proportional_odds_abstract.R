@@ -16,9 +16,13 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal
 		#'   response.
 		#' @param nonparallel Covariate names that may vary across thresholds.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj,
+		initialize = function(des_obj, model_formula = NULL,
 				nonparallel = character(0),
 				
 				verbose = FALSE,
@@ -26,7 +30,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			super$initialize(des_obj, verbose, harden)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 				assertCharacter(nonparallel, null.ok = TRUE)
@@ -39,7 +43,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'
 		#' @return The estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -80,7 +84,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#' @param delta Null treatment effect to test.
 		#'
 		#' @return A two-sided p-value.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -161,7 +165,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit

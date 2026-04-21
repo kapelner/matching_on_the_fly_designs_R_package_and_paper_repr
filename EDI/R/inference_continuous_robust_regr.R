@@ -17,36 +17,31 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
+				
 		#' @description
 		#' Initialize a robust-regression inference object for a completed design
 		#' with a continuous response.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates and \code{FALSE} otherwise.
-		#' @param method Robust-regression fitting method for \code{MASS::rlm}; one
-		#'   of \code{"M"} or \code{"MM"}. The default is \code{"MM"}.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
-		#'   implementation. If \code{FALSE}, use \code{MASS::rlm}.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, method = "MM", use_rcpp = TRUE, verbose = FALSE){
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param method Description for method. Default "MM".
+		#' @param use_rcpp Description for use_rcpp. Default TRUE.
+		#' @param verbose Description for verbose. Default FALSE.
+		initialize = function(des_obj, model_formula = NULL, method = "MM", use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertChoice(method, c("M", "MM"))
-				assertFlag(include_covariates, null.ok = TRUE)
+				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
+			
 			private$rlm_method = method
 			private$use_rcpp = use_rcpp
 		},
@@ -54,7 +49,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		#' @description
 		#' Computes the robust-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -74,7 +69,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		#' @description
 		#' Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -86,7 +81,6 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 	private = list(
 		rlm_method = NULL,
 		use_rcpp = TRUE,
-		include_covariates = NULL,
 		fit_warm_coefficients = NULL,
 		fit_warm_keep = NULL,
 		best_Xmm_colnames = NULL,
@@ -98,7 +92,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
@@ -147,13 +141,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		},
 
 		build_design_matrix = function(){
-			if (private$include_covariates) {
-				private$create_design_matrix()
-			} else {
-				X = cbind(1, private$w)
-				colnames(X) = c("(Intercept)", "treatment")
-				X
-			}
+			private$create_design_matrix()
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){

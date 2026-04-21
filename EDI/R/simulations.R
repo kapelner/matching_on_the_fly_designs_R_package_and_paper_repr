@@ -251,7 +251,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   call, and per bisection step of the rand CI.  Default \code{201}.
     #'
     #' @param pval_epsilon Numeric.  Bisection convergence tolerance for
-    #'   randomisation-based CIs (\code{compute_confidence_interval_rand}).
+    #'   randomisation-based CIs (\code{compute_rand_confidence_interval}).
     #'   Default \code{0.02}.
     #'
     #' @param sd_noise Numeric \eqn{> 0}. Standard deviation of independent
@@ -609,7 +609,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
             # Point estimate (shared across inference methods)
             est = tryCatch({
-              v = inf_obj$compute_treatment_estimate()
+              v = inf_obj$compute_estimate()
               if (is.null(v) || length(v) == 0L) NA_real_ else as.numeric(v)[1L]
             }, error = function(e) NA_real_)
 
@@ -618,7 +618,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 (private$want_asymp_ci || private$want_asymp_pval)) {
               pval_a = if (private$want_asymp_pval) {
                 tryCatch(
-                  do.call(inf_obj$compute_asymp_two_sided_pval_for_treatment_effect,
+                  do.call(inf_obj$compute_asymp_two_sided_pval,
                           routed$asymp_pval),
                   error = function(e) NA_real_
                 )
@@ -689,7 +689,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 (private$want_rand_ci || private$want_rand_pval)) {
               pval_r = if (private$want_rand_pval) {
                 tryCatch(
-                  do.call(inf_obj$compute_two_sided_pval_for_treatment_effect_rand,
+                  do.call(inf_obj$compute_rand_two_sided_pval,
                           modifyList(list(r             = private$r_rand,
                                           na.rm         = TRUE,
                                           show_progress = FALSE),
@@ -703,7 +703,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 private$response_type %in% c("continuous", "proportion", "count")
               ) {
                 tryCatch(
-                  do.call(inf_obj$compute_confidence_interval_rand,
+                  do.call(inf_obj$compute_rand_confidence_interval,
                           modifyList(list(r             = private$r_rand,
                                           alpha         = private$alpha,
                                           pval_epsilon  = private$pval_epsilon,
@@ -930,11 +930,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     # Maps argument names found in inference_params to the call site(s) that
     # accept them.  Destinations:
     #   inf_init   → inf_gen$new()                          (filtered by formals)
-    #   asymp_pval → compute_asymp_two_sided_pval_for_treatment_effect()
+    #   asymp_pval → compute_asymp_two_sided_pval()
     #   boot_ci    → compute_bootstrap_confidence_interval()
     #   boot_pval  → compute_bootstrap_two_sided_pval()
-    #   rand_pval  → compute_two_sided_pval_for_treatment_effect_rand()
-    #   rand_ci    → compute_confidence_interval_rand()
+    #   rand_pval  → compute_rand_two_sided_pval()
+    #   rand_ci    → compute_rand_confidence_interval()
     .INF_ARG_ROUTES = list(
       # constructor
       harden                = c("inf_init"),

@@ -19,42 +19,37 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
+				
 		#' @description
 		#' Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param prob_clip_eps Probability clamp applied to fitted values before computing
 		#'   the sandwich covariance. Predicted probabilities (mu) are clipped to
 		#'   \code{[prob_clip_eps, 1 - prob_clip_eps]} so that the IWLS weight
 		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
 		#'   Default \code{.Machine$double.eps} (essentially no clamping).
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
+				assertFormula(model_formula, null.ok = TRUE)
 				assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
-				assertFlag(include_covariates, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$prob_clip_eps = prob_clip_eps
-			
-			if (is.null(include_covariates)) {
-				include_covariates = des_obj$has_covariates()
-			}
-			private$include_covariates = include_covariates
 		},
 
 		#' @description
 		#' Computes the g-computation treatment-effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = TRUE)
 			private$get_effect_estimate()
 		},
@@ -73,7 +68,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#' @description
 		#' Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = NULL){
+		compute_asymp_two_sided_pval = function(delta = NULL){
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
@@ -94,7 +89,6 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 	),
 
 	private = list(
-		include_covariates = NULL,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -107,7 +101,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				private$shared(estimate_only = TRUE)
 			}
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
@@ -148,7 +142,15 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 
 		prob_clip_eps = .Machine$double.eps,
 		max_abs_reasonable_coef = 1e4,
-		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+			X
+		},
 
 		get_estimand_type = function() stop(class(self)[1], " must implement get_estimand_type()."),
 

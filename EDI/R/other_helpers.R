@@ -78,6 +78,35 @@ inv_logit = function(x, zero_one_logit_clamp = .Machine$double.eps){
 }
 
 
+#' Create a numeric design matrix from a formula and data frame
+#'
+#' This helper handles formula-based expansion (e.g. factors, interactions),
+#' optionally drops the intercept, and ensures rank-deficiency cleanup.
+#'
+#' @param formula A formula object.
+#' @param data A data frame or data table.
+#' @return A numeric matrix.
+#' @keywords internal
+#' @export
+create_model_matrix_from_features = function(formula, data){
+	# For blank data frames...
+	if (ncol(data) == 0){
+		return(matrix(NA, nrow = nrow(data), ncol = 0))
+	}
+	
+	# now we need to update the numeric model matrix which may have expanded due to new factors, new missingness cols, etc
+	mm = model.matrix(formula, data = data)
+	
+	# Packaged designs/inferences typically handle their own intercept separately (at the front),
+	# so we drop the one from model.matrix if it's there.
+	if (ncol(mm) > 0 && colnames(mm)[1] == "(Intercept)") {
+		mm = mm[, -1, drop = FALSE]
+	}
+	
+	# Standard cleanup: drop linearly dependent columns
+	drop_linearly_dependent_cols(mm)$M
+}
+
 drop_linearly_dependent_cols = function(M){
 	M = as.matrix(M)
 	js = seq_len(ncol(M))
@@ -686,7 +715,8 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_dep_cens_transform_model = function(y, dead, Xmm, estimate_only = FALSE){
+.fit_dep_cens_transform_model = function(y, dead, Xmm, estimate_only = FALSE, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = pmax(as.numeric(y), .Machine$double.xmin)
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
@@ -765,7 +795,8 @@ NULL
 		fit = tryCatch(
 			fast_dep_cens_transform_optim_cpp(
 				y = y, dead = dead, X = Xfull, start_params = start_par,
-				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9
+				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9,
+				optimization_alg = optimization_alg
 			),
 			error = function(e) NULL
 		)
@@ -904,7 +935,8 @@ NULL
 	-ll
 }
 
-.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE, starts = NULL){
+.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE, starts = NULL, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
 	Xmm = as.matrix(Xmm)
 	if (length(y) != nrow(Xmm)){
@@ -937,7 +969,7 @@ NULL
 	best_val = Inf
 	for (start_par in starts){
 		fit = tryCatch(
-			fast_zero_one_inflated_beta_cpp(Xfull, y, start_par),
+			fast_zero_one_inflated_beta_cpp(Xfull, y, start_par, optimization_alg = optimization_alg),
 			error = function(e) NULL
 		)
 		if (is.null(fit) || !is.finite(fit$neg_loglik)) next
@@ -986,7 +1018,8 @@ NULL
 	)
 }
 
-.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE){
+.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
 	dead = as.integer(dead > 0)
 	Xmm = as.matrix(Xmm)
@@ -1092,7 +1125,8 @@ NULL
 				pair_idx = if (has_pairs) pair_mat - 1L else matrix(0L, 0, 2), 
 				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
 				start_params = start_par,
-				maxit = 2000, reltol = 1e-9
+				maxit = 2000, reltol = 1e-9,
+				optimization_alg = optimization_alg
 			),
 			error = function(e) NULL
 		)

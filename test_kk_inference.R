@@ -22,7 +22,7 @@ tryCatch({
 	cat("SUCCESS: Created inference object\n")
 
 	cat("Computing treatment estimate...\n")
-	result <- seq_des_inf$compute_treatment_estimate()
+	result <- seq_des_inf$compute_estimate()
 	cat("Treatment estimate:", result, "\n")
 }, error = function(e) {
 	cat("ERROR:", e$message, "\n")

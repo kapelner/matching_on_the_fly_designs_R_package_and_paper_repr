@@ -1,14 +1,20 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
 using namespace Eigen;
-using namespace LBFGSpp;
 
 // Forward declaration from fast_logistic_regression.cpp
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights = Eigen::VectorXd(), int maxit = 100, double tol = 1e-8);
+ModelResult fast_logistic_regression_internal(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXd& weights = Eigen::VectorXd(),
+	int maxit = 100,
+	double tol = 1e-8,
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	std::string optimization_alg = "irls");
 
 namespace {
 
@@ -100,20 +106,79 @@ public:
 
 }
 
+static List build_positive_hurdle_negbin_data(const Eigen::MatrixXd& Xmm,
+											  const Eigen::VectorXd& y) {
+	std::vector<int> pos_rows;
+	for (int i = 0; i < Xmm.rows(); ++i) {
+		if (y[i] > 0.0) pos_rows.push_back(i);
+	}
+
+	const int p = Xmm.cols();
+	MatrixXd X_pos(pos_rows.size(), p);
+	VectorXi y_pos(pos_rows.size());
+	for (size_t k = 0; k < pos_rows.size(); ++k) {
+		const int i = pos_rows[k];
+		X_pos.row(k) = Xmm.row(i);
+		y_pos[k] = static_cast<int>(y[i]);
+	}
+	return List::create(Named("X_pos") = X_pos, Named("y_pos") = y_pos);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& Xmm,
+												  const Eigen::VectorXd& y,
+												  const Eigen::VectorXd& params) {
+	List pos = build_positive_hurdle_negbin_data(Xmm, y);
+	MatrixXd X_pos = pos["X_pos"];
+	VectorXi y_pos = pos["y_pos"];
+	TruncatedNegBinCount fun(X_pos, y_pos);
+	VectorXd grad(params.size());
+	fun(params, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& Xmm,
+													const Eigen::VectorXd& y,
+													const Eigen::VectorXd& params) {
+	List pos = build_positive_hurdle_negbin_data(Xmm, y);
+	MatrixXd X_pos = pos["X_pos"];
+	VectorXi y_pos = pos["y_pos"];
+	TruncatedNegBinCount fun(X_pos, y_pos);
+	return -fun.hessian(params);
+}
+
 // [[Rcpp::export]]
 List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 						   const Eigen::VectorXd& y,
 						   int maxit = 1000,
-						   double tol = 1e-8) {
+						   double tol = 1e-8,
+						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+						   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+						   std::string optimization_alg = "irls") {
 	const int n = Xmm.rows();
 	const int p = Xmm.cols();
+	std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
+	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+	IntegerVector hurdle_fixed_idx;
+	NumericVector hurdle_fixed_values;
+	if (fixed_idx.isNotNull()) {
+		IntegerVector idx_r(fixed_idx);
+		NumericVector val_r(fixed_values);
+		for (int k = 0; k < idx_r.size(); ++k) {
+			if (idx_r[k] <= p) {
+				hurdle_fixed_idx.push_back(idx_r[k]);
+				hurdle_fixed_values.push_back(val_r[k]);
+			}
+		}
+	}
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p, NA_REAL);
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind);
+        ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind, Eigen::VectorXd(), 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, alg);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -145,16 +210,14 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 	params[0] = std::log(std::max(1.0, y_pos.cast<double>().mean()));
 
 	TruncatedNegBinCount fun(X_pos, y_pos);
-	LBFGSParam<double> lbfgs_params;
-	lbfgs_params.epsilon = tol;
-	lbfgs_params.max_iterations = maxit;
-
-	LBFGSSolver<double> solver(lbfgs_params);
 	double neg_ll = NA_REAL;
 	bool converged = false;
 	try {
-		int niter = solver.minimize(fun, params, neg_ll);
-        converged = (niter < maxit);
+		std::string count_alg = (alg == "irls") ? "lbfgs" : alg;
+		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, count_alg, "lbfgs");
+		params = fit.params;
+		neg_ll = fit.value;
+        converged = fit.converged;
 	} catch (const std::exception& e) {
 		Rcpp::warning(e.what());
 	}
@@ -176,8 +239,11 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 									 const Eigen::VectorXd& y,
 									 int j = 2,
 									 int maxit = 1000,
-									 double tol = 1e-8) {
-	List fit = fast_hurdle_negbin_cpp(Xmm, y, maxit, tol);
+									 double tol = 1e-8,
+									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+									 std::string optimization_alg = "irls") {
+	List fit = fast_hurdle_negbin_cpp(Xmm, y, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);
 	const int p = b_nv.size();
@@ -187,9 +253,24 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	if (fit.containsElementNamed("hurdle_b")) {
 		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-			ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind);
-			hurdle_ssq_b_j = compute_diagonal_inverse_entry(hurdle_res.XtWX, j);
-			if (p >= 2) hurdle_ssq_b_2 = compute_diagonal_inverse_entry(hurdle_res.XtWX, 2);
+			IntegerVector hurdle_fixed_idx;
+			NumericVector hurdle_fixed_values;
+			if (fixed_idx.isNotNull()) {
+				IntegerVector idx_r(fixed_idx);
+				NumericVector val_r(fixed_values);
+				for (int k = 0; k < idx_r.size(); ++k) {
+					if (idx_r[k] <= p) {
+						hurdle_fixed_idx.push_back(idx_r[k]);
+						hurdle_fixed_values.push_back(val_r[k]);
+					}
+				}
+			}
+			ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind, Eigen::VectorXd(), 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, optimization_alg);
+			FixedParamSpec hurdle_spec = make_fixed_param_spec(p, hurdle_fixed_idx, hurdle_fixed_values);
+			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
+			MatrixXd vcov = expand_free_covariance(p, hurdle_spec, info_free.inverse(), true);
+			if (j > 0 && j <= p) hurdle_ssq_b_j = vcov(j - 1, j - 1);
+			if (p >= 2) hurdle_ssq_b_2 = vcov(1, 1);
 		}
 	}
 
@@ -219,8 +300,11 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 				TruncatedNegBinCount fun(X_pos, y_pos);
 				MatrixXd H = fun.hessian(params);
 				if (H.allFinite()) {
-					ssq_b_j = compute_diagonal_inverse_entry(H, j);
-					if (p >= 2) ssq_b_2 = compute_diagonal_inverse_entry(H, 2);
+					FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+					MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
+					MatrixXd vcov = expand_free_covariance(p + 1, count_fixed_spec, H_free.inverse(), true);
+					if (j > 0 && j <= p + 1) ssq_b_j = vcov(j - 1, j - 1);
+					if (p >= 2) ssq_b_2 = vcov(1, 1);
 				}
 			}
 		}

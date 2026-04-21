@@ -442,6 +442,24 @@ static VectorXd stereotype_newton_fit(
 }
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
+											   const Eigen::VectorXd& y,
+											   const Eigen::VectorXd& params) {
+	StereotypeLogitRegression model(X, y);
+	Eigen::VectorXd grad(params.size());
+	model.loglik_grad(params, &grad);
+	return grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
+												 const Eigen::VectorXd& y,
+												 const Eigen::VectorXd& params) {
+	StereotypeLogitRegression model(X, y);
+	return numeric_hessian_from_gradient(model, params);
+}
+
+// [[Rcpp::export]]
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {

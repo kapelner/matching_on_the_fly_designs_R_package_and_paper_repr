@@ -11,15 +11,19 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 		#' @description
 		#' Initialize Azriel blocked-design incidence inference.
 		#' @param des_obj A completed design object.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @return A new \code{InferenceIncidAzriel} object.
-		initialize = function(des_obj, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				des_obj$assert_even_allocation()
 				des_obj$assert_equal_block_sizes()
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

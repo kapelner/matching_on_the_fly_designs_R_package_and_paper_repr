@@ -17,9 +17,9 @@
 #'
 #' seq_des_inf = InferenceAllKKCompoundMeanDiff$
 #'   new(seq_des)
-#' seq_des_inf$compute_treatment_estimate()
+#' seq_des_inf$compute_estimate()
 #' seq_des_inf$compute_asymp_confidence_interval()
-#' seq_des_inf$compute_asymp_two_sided_pval_for_treatment_effect()
+#' seq_des_inf$compute_asymp_two_sided_pval()
 #' }
 InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 	lock_objects = FALSE,
@@ -34,7 +34,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
@@ -105,7 +105,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#'
 		#' @return	The approximate frequentist p-value
 		#'
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -127,13 +127,13 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @param ci_search_control Optional randomization-CI search control list passed through 
 		#'   to the base method.
 		#' @return	A 1 - alpha sized frequentist confidence interval
-		compute_confidence_interval_rand = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
 					stop("Randomization confidence intervals are not supported for InferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
 				}
 			}
-			super$compute_confidence_interval_rand(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
+			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
 	),
 
@@ -210,7 +210,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$beta_hat_T)){
-				self$compute_treatment_estimate()
+				self$compute_estimate()
 			}
 			if (is.null(private$cached_values$KKstats$ssqD_bar) ||
 				is.null(private$cached_values$KKstats$ssqR) ||

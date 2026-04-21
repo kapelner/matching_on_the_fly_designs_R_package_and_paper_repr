@@ -9,12 +9,12 @@ test_that("Inference works for continuous", {
 
 	# Simple Mean Diff
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 
 	# OLS
 	inf_ols <- InferenceContinMultOLS$new(des, verbose = FALSE)
-	est_ols <- inf_ols$compute_treatment_estimate()
+	est_ols <- inf_ols$compute_estimate()
 	expect_true(is.numeric(est_ols))
 })
 
@@ -28,7 +28,7 @@ test_that("Inference works for incidence", {
 	add_all_subject_responses_seq(des, rbinom(n, 1, 0.5))
 
 	inf <- InferenceIncidUnivLogRegr$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 })
 
@@ -39,9 +39,9 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	des$add_all_subject_responses(c(1, 1, 0, 1, 0, 0, 1, 0, 0, 0))
 
 	inf <- InferenceAllSimpleMeanDiffPooledVar$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	ci <- inf$compute_asymp_confidence_interval(alpha = 0.05)
-	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	pval <- inf$compute_asymp_two_sided_pval()
 
 	y_t <- c(1, 1, 0, 1, 0)
 	y_c <- c(0, 1, 0, 0, 0)
@@ -71,9 +71,9 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	add_all_subject_responses_seq(des_cont, y_cont)
 	
 	inf_cont <- InferenceAllSimpleMeanDiffPooledVar$new(des_cont, verbose = FALSE)
-	est_cont <- inf_cont$compute_treatment_estimate()
+	est_cont <- inf_cont$compute_estimate()
 	expect_true(is.numeric(est_cont))
-	expect_true(is.finite(inf_cont$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_true(is.finite(inf_cont$compute_asymp_two_sided_pval()))
 })
 
 test_that("Azriel inference is gated to blocked incidence designs", {
@@ -88,9 +88,9 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	inf <- InferenceIncidAzriel$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	ci <- inf$compute_asymp_confidence_interval()
-	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	pval <- inf$compute_asymp_two_sided_pval()
 
 	y <- c(1, 0, 1, 0, 1, 1, 0, 0)
 	w <- c(1, 0, 1, 0, 1, 0, 1, 0)
@@ -266,28 +266,28 @@ test_that("Inference works for count", {
 	add_all_subject_responses_seq(des, rpois(n, 5))
 
 	inf <- InferenceCountUnivNegBinRegr$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 
 	inf_robust_pois <- InferenceCountUnivRobustPoissonRegr$new(des, verbose = FALSE)
-	est_robust_pois <- inf_robust_pois$compute_treatment_estimate()
+	est_robust_pois <- inf_robust_pois$compute_estimate()
 	expect_true(is.numeric(est_robust_pois))
 
 	inf_quasi_pois <- InferenceCountUnivQuasiPoissonRegr$new(des, verbose = FALSE)
-	est_quasi_pois <- inf_quasi_pois$compute_treatment_estimate()
+	est_quasi_pois <- inf_quasi_pois$compute_estimate()
 	expect_true(is.numeric(est_quasi_pois))
 
 	if (requireNamespace("glmmTMB", quietly = TRUE)) {
 		inf_zinb <- InferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE)
-		est_zinb <- inf_zinb$compute_treatment_estimate()
+		est_zinb <- inf_zinb$compute_estimate()
 		expect_true(is.numeric(est_zinb))
 	}
 
 	inf_hurdle_nb <- InferenceCountUnivHurdleNegBinRegr$new(des, verbose = FALSE)
-	est_hurdle_nb <- inf_hurdle_nb$compute_treatment_estimate()
+	est_hurdle_nb <- inf_hurdle_nb$compute_estimate()
 	expect_true(is.numeric(est_hurdle_nb))
 
-	est_hurdle_nb_fast <- inf_hurdle_nb$compute_treatment_estimate(estimate_only = TRUE)
+	est_hurdle_nb_fast <- inf_hurdle_nb$compute_estimate(estimate_only = TRUE)
 	expect_true(is.numeric(est_hurdle_nb_fast))
 	expect_equal(est_hurdle_nb_fast, est_hurdle_nb, tolerance = 1e-8)
 })
@@ -316,7 +316,7 @@ test_that("KK count combined-likelihood multi inference handles full-width covar
 	}
 
 	inf <- InferenceCountPoissonMultiKKCPoissonCombinedLikelihood$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 
 	expect_true(is.numeric(est))
 	expect_length(est, 1L)
@@ -333,7 +333,7 @@ test_that("Inference works for proportion", {
 	add_all_subject_responses_seq(des, runif(n))
 
 	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 })
 
@@ -348,22 +348,22 @@ test_that("Inference works for survival", {
 
 	# KM Diff
 	inf <- InferenceSurvivalKMDiff$new(des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 
 	# Log-rank
 	inf_logrank <- InferenceSurvivalLogRank$new(des, verbose = FALSE)
-	est_logrank <- inf_logrank$compute_treatment_estimate()
+	est_logrank <- inf_logrank$compute_estimate()
 	expect_true(is.numeric(est_logrank))
 
 	# Cox PH
 	inf_cox <- InferenceSurvivalUniCoxPHRegr$new(des, verbose = FALSE)
-	est_cox <- inf_cox$compute_treatment_estimate()
+	est_cox <- inf_cox$compute_estimate()
 	expect_true(is.numeric(est_cox))
 
 	# Stratified Cox PH
 	inf_strat_cox <- InferenceSurvivalUniStratCoxPHRegr$new(des, verbose = FALSE)
-	est_strat_cox <- inf_strat_cox$compute_treatment_estimate()
+	est_strat_cox <- inf_strat_cox$compute_estimate()
 	expect_true(is.numeric(est_strat_cox))
 })
 
@@ -378,9 +378,9 @@ test_that("Inference works for ordinal partial proportional odds", {
 	add_all_subject_responses_seq(des, y_levels)
 
 	inf_ppod <- InferenceOrdinalPartialProportionalOdds$new(des, nonparallel = c("x"), verbose = FALSE)
-	est_ppod <- inf_ppod$compute_treatment_estimate()
+	est_ppod <- inf_ppod$compute_estimate()
 	expect_true(is.numeric(est_ppod))
-	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval_for_treatment_effect()
+	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval()
 	expect_true(is.numeric(pval_ppod))
 })
 
@@ -397,14 +397,14 @@ test_that("Inference works for incidence KK Newcombe IVWC", {
 	add_all_subject_responses_seq(seq_des, y)
 
 	inf <- InferenceIncidUnivKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
-	est <- inf$compute_treatment_estimate()
+	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 	
 	ci <- inf$compute_asymp_confidence_interval()
 	expect_true(is.numeric(ci))
 	expect_length(ci, 2)
 	
-	pval <- inf$compute_asymp_two_sided_pval_for_treatment_effect()
+	pval <- inf$compute_asymp_two_sided_pval()
 	expect_true(is.numeric(pval))
 })
 
@@ -437,19 +437,19 @@ test_that("ordinal hardening drops QR-ranked covariates only when enabled", {
 
 	adj_hardened <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
 	adj_raw <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
-	expect_true(is.finite(adj_hardened$compute_treatment_estimate()))
-	expect_true(is.finite(adj_hardened$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_true(is.finite(adj_hardened$compute_estimate()))
+	expect_true(is.finite(adj_hardened$compute_asymp_two_sided_pval()))
 	expect_true(all(is.finite(adj_hardened$compute_asymp_confidence_interval())))
-	expect_false(is.finite(adj_raw$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_false(is.finite(adj_raw$compute_asymp_two_sided_pval()))
 	expect_false(all(is.finite(adj_raw$compute_asymp_confidence_interval())))
 
 	kk_adj_hardened <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
 	kk_adj_raw <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
-	expect_true(is.finite(kk_adj_hardened$compute_treatment_estimate()))
-	expect_true(is.finite(kk_adj_hardened$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_true(is.finite(kk_adj_hardened$compute_estimate()))
+	expect_true(is.finite(kk_adj_hardened$compute_asymp_two_sided_pval()))
 	expect_true(all(is.finite(kk_adj_hardened$compute_asymp_confidence_interval())))
-	expect_false(is.finite(kk_adj_raw$compute_treatment_estimate()))
-	expect_false(is.finite(kk_adj_raw$compute_asymp_two_sided_pval_for_treatment_effect()))
+	expect_false(is.finite(kk_adj_raw$compute_estimate()))
+	expect_false(is.finite(kk_adj_raw$compute_asymp_two_sided_pval()))
 	expect_false(all(is.finite(kk_adj_raw$compute_asymp_confidence_interval())))
 })
 

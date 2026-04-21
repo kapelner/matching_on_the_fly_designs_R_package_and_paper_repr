@@ -16,6 +16,8 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
 		#' @param verbose	Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return 			A new `FixedDesignGreedy` object
 		#'
@@ -26,7 +28,9 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5){
@@ -34,7 +38,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 				}
 			}
 			assert_greedy_experimental_design_installed("FixedDesignGreedy")
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},

@@ -1,54 +1,48 @@
 #' Abstract class for Clayton Copula Combined-Likelihood Inference
 #'
-#' Fits a single joint likelihood over all KK design data for survival responses using
-#' a Clayton survival copula with Weibull AFT margins for matched pairs and standard
-#' Weibull AFT singleton contributions for reservoir subjects. The treatment effect is
-#' reported on the AFT log-time-ratio scale.
-#'
-#' @details
-#' This keeps the package's established \code{OneLik} terminology even though
-#' the matched and reservoir parts are combined through a joint copula-based likelihood
-#' rather than a classical Gaussian-style likelihood. The matched-pair contribution uses
-#' a Clayton copula with censored bivariate survival contributions; reservoir subjects
-#' contribute ordinary univariate Weibull AFT terms.
+#' This class implements a combined-likelihood estimator for KK matching-on-the-fly
+#' designs with survival responses using a Clayton copula with Weibull AFT margins.
+#' The likelihood includes contributions from both matched pairs (bivariate) and
+#' reservoir subjects (univariate).
 #'
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceKKPassThrough,
 	public = list(
 
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
 				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose)
-			if (is(des_obj, "FixedDesignBinaryMatch")){
-				des_obj$.__enclos_env__$private$ensure_bms_computed()
-			}
-			private$m = des_obj$.__enclos_env__$private$m
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
 		#' @description
-		#' Returns the combined-likelihood estimate of the treatment effect (log-time ratio).
+		#' Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
 		#' @description
-		#' Computes an asymptotic confidence interval for the treatment effect.
-		#' @param alpha Significance level. Default 0.05.
+		#' Computes the asymptotic confidence interval.
+		#' @param alpha                                   The confidence level in the computed
+		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -58,16 +52,13 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		},
 
 		#' @description
-		#' Returns a 2-sided p-value for H0: beta_T = delta.
-		#' @param delta Null value; default 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		#' Computes the asymptotic p-value.
+		#' @param delta                                   The null difference to test against. Default is 0.
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
 			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
@@ -83,33 +74,28 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 	private = list(
 
-		filtered_cov_cache = NULL,
-		best_Xmm_colnames = NULL,
-		best_par = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Ensure we have the best design and parameters from the original data
+			# Ensure we have the best design from the original data
 			if (is.null(private$best_Xmm_colnames)){
 				private$shared()
 			}
-
-			# If we still don't have it (e.g., initial fit failed), fall back to standard
+			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			# Use the same design matrix columns as the original fit
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
 			X_data = private$get_X()
-			Xmm_cols = private$best_Xmm_colnames
-			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			X_cov = X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE]
 			Xmm = cbind(w = private$w, X_cov)
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
-			# Use the best parameters from the original fit as the ONLY starting point
-			# This significantly speeds up each randomization draw.
 			fit = .fit_clayton_weibull_aft(
 				y = private$y,
 				dead = private$dead,
@@ -119,90 +105,14 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 				starts = list(private$best_par),
 				estimate_only = estimate_only
 			)
-
-			if (!is.null(fit) && is.finite(fit$beta)){
-				return(fit$beta)
+			if (is.null(fit) || !is.finite(fit$beta)){
+				return(NA_real_)
 			}
-			NA_real_
-			},
-
-		include_covariates = function() stop(class(self)[1], " must implement include_covariates()"),
-
-		# Pre-calculate filtered covariate matrices to avoid redundant correlation checks
-		# during repeated calls (e.g., in randomization inference).
-		filtered_covariate_candidates = function(){
-			if (!is.null(private$filtered_cov_cache)){
-				return(private$filtered_cov_cache)
-			}
-
-			X_cov_orig = as.matrix(private$get_X())
-			if (is.null(colnames(X_cov_orig))){
-				colnames(X_cov_orig) = paste0("x", seq_len(ncol(X_cov_orig)))
-			}
-
-			if (!private$harden) {
-				private$filtered_cov_cache = list(X_cov_orig)
-				return(private$filtered_cov_cache)
-			}
-
-			thresholds = c(Inf, 0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
-			candidates = list()
-			keys = character()
-
-			for (thresh in thresholds){
-				X_cov = if (is.finite(thresh)) drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M else X_cov_orig
-				key = if (ncol(X_cov) > 0) paste(colnames(X_cov), collapse = "|") else ""
-				if (!(key %in% keys)){
-					candidates[[length(candidates) + 1L]] = X_cov
-					keys = c(keys, key)
-				}
-			}
-			private$filtered_cov_cache = candidates
-			candidates
+			as.numeric(fit$beta)
 		},
 
-		design_matrix_candidates = function(){
-			if (!is.null(private$cached_values$clayton_design_candidates)){
-				return(private$cached_values$clayton_design_candidates)
-			}
-
-			if (!private$include_covariates() || ncol(private$get_X()) == 0L){
-				M = matrix(private$w, ncol = 1)
-				colnames(M) = "w"
-				private$cached_values$clayton_design_candidates = list(M)
-				return(private$cached_values$clayton_design_candidates)
-			}
-
-			cov_candidates = private$filtered_covariate_candidates()
-			candidates = list()
-
-			for (X_cov in cov_candidates){
-				if (ncol(X_cov) == 0L){
-					M = matrix(private$w, ncol = 1)
-					colnames(M) = "w"
-				} else {
-					M = cbind(w = private$w, X_cov)
-					qr_M = qr(M)
-					if (qr_M$rank < ncol(M)){
-						keep = qr_M$pivot[seq_len(qr_M$rank)]
-						if (!(1L %in% keep)) keep = c(1L, keep)
-						keep = sort(unique(keep))
-						M = M[, keep, drop = FALSE]
-					}
-					colnames(M)[1] = "w"
-				}
-				candidates[[length(candidates) + 1L]] = M
-			}
-
-			private$cached_values$clayton_design_candidates = candidates
-			candidates
-		},
-
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
+		best_Xmm_colnames = NULL,
+		best_par = NULL,
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -210,26 +120,56 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
-			for (Xcand in private$design_matrix_candidates()){
+			# Optimization candidates
+			if (ncol(as.matrix(private$X)) == 0L){
+				Xcand = matrix(private$w, ncol = 1)
+				colnames(Xcand) = "w"
+				candidates = list(Xcand)
+			} else {
+				cov_candidates = private$filtered_covariate_candidates()
+				candidates = list()
+				for (X_cov in cov_candidates){
+					if (ncol(X_cov) == 0L){
+						M = matrix(private$w, ncol = 1)
+						colnames(M) = "w"
+					} else {
+						M = cbind(w = private$w, X_cov)
+						qr_M = qr(M)
+						if (qr_M$rank < ncol(M)){
+							keep = qr_M$pivot[seq_len(qr_M$rank)]
+							if (!(1L %in% keep)) keep = c(1L, keep)
+							keep = sort(unique(keep))
+							M = M[, keep, drop = FALSE]
+						}
+						colnames(M)[1] = "w"
+					}
+					candidates[[length(candidates) + 1L]] = M
+				}
+			}
+
+			for (Xmm in candidates){
 				fit = .fit_clayton_weibull_aft(
 					y = private$y,
 					dead = private$dead,
-					Xmm = Xcand,
+					Xmm = Xmm,
 					pair_id = m_vec,
 					include_singletons = TRUE,
 					estimate_only = estimate_only
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_hat_T = fit$beta
-			if (estimate_only) return(invisible(NULL))
-					private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
-					private$cached_values$theta_hat = fit$theta
+					private$cached_values$s_beta_hat_T = if (is.finite(fit$ssq) && fit$ssq > 0) sqrt(fit$ssq) else NA_real_
+					private$cached_values$theta = fit$theta
 					private$best_par = fit$best_par
-					private$best_Xmm_colnames = colnames(Xcand)
+					private$best_Xmm_colnames = colnames(Xmm)
 					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
 				}

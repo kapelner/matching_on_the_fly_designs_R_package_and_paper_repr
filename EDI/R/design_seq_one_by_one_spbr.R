@@ -19,6 +19,8 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
 		#' @param	n			The sample size.
 		#' @param verbose A flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
 		#'
 		#' @return	A new `DesignSeqOneByOneSPBR` object
 		initialize = function(
@@ -29,9 +31,11 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						
-						verbose = FALSE
-					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+						verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
+			) {
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$strata_cols = strata_cols
 			private$block_size = as.integer(block_size)
 			private$uses_covariates = TRUE

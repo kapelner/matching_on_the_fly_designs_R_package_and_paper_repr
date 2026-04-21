@@ -38,6 +38,8 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 			#' @param include_is_missing_as_a_new_feature Whether to include missingness indicators.
 			#' @param n Planned sample size.
 			#' @param verbose Whether to print progress messages.
+			#' @param missingness_method How to handle missing values in covariates.
+			#' @param model_formula A formula object.
 			#' @return A new \code{FixedDesignOptimalBlocks} object.
 			initialize = function(
 				B = NULL,
@@ -47,7 +49,9 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				verbose = FALSE
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .
 			) {
 				if (should_run_asserts()) {
 					assertChoice(method, c("ompr", "greedy", "K-way"))
@@ -76,7 +80,7 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 				if (should_run_asserts()) {
 					assertCount(B, positive = TRUE)
 				}
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose)
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 				private$B      = as.integer(B)
 				private$method = method
 				private$dist_spec = dist

@@ -11,7 +11,6 @@
 #' the natural classical binary-endpoint complement to the regression-based
 #' incidence methods already in the package.
 #'
-#' @export
 InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMiettinenNurminenRiskDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
@@ -21,6 +20,10 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' Initialize a Miettinen-Nurminen risk-difference inference object for a
 		#' completed design with an incidence response.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#'
 		#' @examples
@@ -33,13 +36,13 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' 	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
 		#' }
 		#' seq_des_inf = InferenceIncidUnivMiettinenNurminenRiskDiff$new(seq_des)
-		#' seq_des_inf$compute_treatment_estimate()
+		#' seq_des_inf$compute_estimate()
 		#' }
-		initialize = function(des_obj,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -48,7 +51,7 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' @description
 		#' Computes the observed risk-difference estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -74,7 +77,7 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' @description
 		#' Computes a two-sided Miettinen-Nurminen score p-value.
 		#' @param delta The null treatment effect on the risk-difference scale.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 			}
@@ -173,4 +176,15 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 			)
 		}
 	)
+)
+
+#' Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+#'
+#' Public collapsed-name wrapper for \code{InferenceIncidUnivMiettinenNurminenRiskDiff}.
+#'
+#' @export
+InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNurminenRiskDiff",
+	lock_objects = FALSE,
+	inherit = InferenceIncidUnivMiettinenNurminenRiskDiff,
+	public = list()
 )

@@ -13,7 +13,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		#' @description
 		#' Returns the treatment effect estimate (risk difference).
 		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_treatment_estimate = function(estimate_only = FALSE){
+		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -32,7 +32,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 		#' @description
 		#' Computes an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect. Default 0.
-		compute_asymp_two_sided_pval_for_treatment_effect = function(delta = 0){
+		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
@@ -50,7 +50,7 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_treatment_estimate(estimate_only = estimate_only))
+				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit

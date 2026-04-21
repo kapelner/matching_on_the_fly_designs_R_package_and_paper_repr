@@ -1,10 +1,8 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
-#include <optimization/LBFGS.h>
 #include <Rmath.h>
 
 using namespace Rcpp;
-using namespace LBFGSpp;
 
 namespace {
 
@@ -113,7 +111,10 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
                                  Nullable<NumericVector> start_params = R_NilValue,
                                  bool estimate_only = false,
                                  int maxit = 1000, 
-                                 double tol = 1e-6) {
+                                 double tol = 1e-6,
+                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                 std::string optimization_alg = "lbfgs") {
     int p = X.cols();
     Eigen::VectorXd params(p + 1);
     
@@ -126,40 +127,38 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
         params.head(p) = cod.solve(log_y);
         Eigen::VectorXd resid = log_y - X * params.head(p);
         double std_resid = std::sqrt(resid.squaredNorm() / (y.size() - p));
-        params[p] = std::log(std::max(std_resid * 0.7797, 0.01)); // 0.7797 is ~sqrt(6)/pi * some factor? Actually sigma ~ SD * sqrt(6)/pi for Gumbel
+        params[p] = std::log(std_resid * 0.7797); // 0.7797 is ~sqrt(6)/pi
     }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
     WeibullAFTLikelihood fun(y, dead, X);
-    LBFGSParam<double> lbfgs_params;
-    lbfgs_params.epsilon = tol;
-    lbfgs_params.max_iterations = maxit;
-
-    LBFGSSolver<double> solver(lbfgs_params);
-    double neg_ll;
-    int niter = 0;
+    LikelihoodFitResult fit;
     try {
-        niter = solver.minimize(fun, params, neg_ll);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
     } catch (...) {
         return List::create(Named("converged") = false);
     }
+    params = fit.params;
 
     if (estimate_only) {
         return List::create(
             Named("coefficients") = params.head(p),
             Named("log_sigma") = params[p],
-            Named("converged") = (niter < maxit),
-            Named("neg_ll") = neg_ll
+            Named("converged") = fit.converged,
+            Named("neg_ll") = fit.value
         );
     }
 
     Eigen::MatrixXd H = fun.hessian(params);
-    Eigen::MatrixXd vcov = H.inverse();
+    Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd vcov = expand_free_covariance(p + 1, fixed_spec, cov_free, true);
 
     return List::create(
         Named("coefficients") = params.head(p),
         Named("log_sigma") = params[p],
         Named("vcov") = vcov,
-        Named("converged") = (niter < maxit),
-        Named("neg_ll") = neg_ll
+        Named("converged") = fit.converged,
+        Named("neg_ll") = fit.value
     );
 }

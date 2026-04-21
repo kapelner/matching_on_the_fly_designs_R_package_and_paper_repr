@@ -12,18 +12,18 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
-		#' @param include_covariates Logical. If \code{TRUE}, all covariates in the design
-		#'   are included as predictors. If \code{FALSE}, only the treatment indicator
-		#'   is used. If \code{NULL} (default), it is set to \code{TRUE} if the design
-		#'   contains covariates.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, include_covariates = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				if (!check_package_installed("multgee")){
 					stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			super$initialize(des_obj, include_covariates, verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 		}
 	),
 	private = list(
@@ -91,18 +91,134 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 
 #' GLMM Inference for KK Designs with Ordinal Response
 #'
-#' Fits a cumulative-link mixed model (using \pkg{glmmTMB}) for ordinal responses
-#' under a KK matching-on-the-fly design using the treatment indicator and,
-#' optionally, all recorded covariates as fixed-effect predictors.
+#' Fits a cumulative-logit mixed model (proportional odds) for ordinal responses
+#' under a KK matching-on-the-fly design. The random intercept per matched pair is
+#' integrated out via Gauss-Hermite quadrature.
+#'
+#' When \code{use_rcpp = TRUE} (default) the likelihood is maximised by an internal
+#' Rcpp/L-BFGS routine that requires no external packages. Set \code{use_rcpp = FALSE}
+#' to fall back to \pkg{glmmTMB}.
 #'
 #' @export
 InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
+		#' @description
+		#' Initialize the inference object.
+		#' @param des_obj A completed \code{Design} object with an ordinal response.
+		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   the formula from the design object is used and its pre-computed design matrix is
+		#'   reused. If a formula is provided, a new design matrix is constructed from the
+		#'   design's imputed covariates.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			if (should_run_asserts()) {
+				assertFormula(model_formula, null.ok = TRUE)
+				assertFlag(use_rcpp)
+			}
+			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			private$use_rcpp = use_rcpp
+		}
 	),
 	private = list(
+		use_rcpp = TRUE,
 		glmm_response_type  = function() "ordinal",
-		glmm_family         = function() glmmTMB::cumulative(link = "logit")
+		glmm_family         = function() glmmTMB::cumulative(link = "logit"),
+
+		shared = function(estimate_only = FALSE){
+			if (private$use_rcpp) {
+				private$shared_rcpp(estimate_only)
+			} else {
+				super$shared(estimate_only)
+			}
+		},
+
+		shared_rcpp = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
+
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			group_id = m_vec
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L)
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+
+			# X WITHOUT intercept (cutpoints serve as intercepts)
+			if (ncol(as.matrix(private$X)) > 0){
+				X_fit = as.matrix(private$glmm_predictors_df())  # [w, cov1, ...]
+			} else {
+				X_fit = matrix(private$w, ncol = 1L, dimnames = list(NULL, "w"))
+			}
+
+			# Convert y to 1-indexed integers
+			y_levels = sort(unique(private$y))
+			K = length(y_levels)
+			y_int = as.integer(match(private$y, y_levels))
+			n_alpha = K - 1L
+
+			# Treatment is always the first column of X_fit (j_T = 0, 0-based)
+			j_T = 0L
+
+			# Warm start from fixed-effects ordinal MLE to avoid divergence
+			start = tryCatch({
+				nore = fast_ordinal_regression_cpp(X_fit, as.numeric(y_int) - 1L)
+				alpha_direct = as.numeric(nore$alpha)  # K-1 direct cutpoints
+				beta_nore    = as.numeric(nore$b)      # p betas
+				# Convert direct alphas to log-diff parameterization
+				alpha_par = numeric(n_alpha)
+				if (n_alpha >= 1L) alpha_par[1L] = alpha_direct[1L]
+				if (n_alpha >= 2L) {
+					for (k in 2L:n_alpha) {
+						diff_k = alpha_direct[k] - alpha_direct[k - 1L]
+						alpha_par[k] = if (diff_k > 0) log(diff_k) else 0.0
+					}
+				}
+				c(alpha_par, beta_nore, -3.0)  # log_sigma = -3 (small random effect)
+			}, error = function(e) NULL)
+
+			fit = tryCatch(
+				fast_ordinal_glmm_cpp(
+					X          = X_fit,
+					y_int      = y_int,
+					group_id   = as.integer(group_id),
+					K          = K,
+					j_T        = j_T,
+					estimate_only = estimate_only,
+					start      = start,
+					eps_g      = 1e-3
+				),
+				error = function(e) NULL
+			)
+
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				private$cache_nonestimable_estimate("kk_glmm_rcpp_failed")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+
+			# b is the beta vector (no cutpoints); treatment is at index j_T+1 (1-based R)
+			beta_hat_T = as.numeric(fit$b[j_T + 1L])
+
+			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+				private$cache_nonestimable_estimate("kk_glmm_rcpp_nonestimable")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$is_z = TRUE
+			private$cached_values$df   = Inf
+
+			if (estimate_only) return(invisible(NULL))
+
+			ssq = fit$ssq_b_T
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+		}
 	)
 )
