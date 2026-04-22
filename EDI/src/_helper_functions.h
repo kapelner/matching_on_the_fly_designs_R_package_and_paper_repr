@@ -175,15 +175,18 @@ inline Eigen::VectorXd numerical_gradient(const Functor& fun, const Eigen::Vecto
 }
 
 template <typename Functor>
-inline Eigen::MatrixXd numerical_hessian(const Functor& fun, const Eigen::VectorXd& par) {
+inline Eigen::MatrixXd numerical_hessian(Functor& fun, const Eigen::VectorXd& par) {
     const int n = par.size();
     Eigen::MatrixXd hess(n, n);
     for (int i = 0; i < n; ++i) {
         double h = 1e-4 * std::max(1.0, std::abs(par[i]));
         Eigen::VectorXd p_plus = par, p_minus = par;
         p_plus[i] += h; p_minus[i] -= h;
-        Eigen::VectorXd g_plus = numerical_gradient(fun, p_plus);
-        Eigen::VectorXd g_minus = numerical_gradient(fun, p_minus);
+        
+        Eigen::VectorXd g_plus(n), g_minus(n);
+        fun(p_plus, g_plus);
+        fun(p_minus, g_minus);
+        
         hess.col(i) = (g_plus - g_minus) / (2.0 * h);
     }
     return (hess + hess.transpose()) / 2.0;
@@ -334,6 +337,33 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
     return fit;
 }
 
+template <typename LikelihoodFunctor>
+inline LikelihoodFitResult optimize_likelihood_newton_then_lbfgs(LikelihoodFunctor& fun,
+                                                                 Eigen::VectorXd params,
+                                                                 int maxit,
+                                                                 double tol,
+                                                                 int max_linesearch = 0) {
+    LikelihoodFitResult newton_fit = optimize_likelihood_newton(fun, params, maxit, tol);
+    if (newton_fit.converged) {
+        return newton_fit;
+    }
+
+    try {
+        LikelihoodFitResult lbfgs_fit = optimize_likelihood_lbfgs(fun, newton_fit.params, maxit, tol, max_linesearch);
+        if (lbfgs_fit.converged) {
+            return lbfgs_fit;
+        }
+        if (std::isfinite(lbfgs_fit.value) &&
+            (!std::isfinite(newton_fit.value) || lbfgs_fit.value < newton_fit.value)) {
+            return lbfgs_fit;
+        }
+    } catch (...) {
+        // Keep the best damped-Newton result when the fallback optimizer also fails.
+    }
+
+    return newton_fit;
+}
+
 template <typename FullFunctor>
 inline LikelihoodFitResult optimize_fixed_likelihood_lbfgs(FullFunctor& fun,
                                                            Eigen::VectorXd params,
@@ -376,7 +406,12 @@ inline LikelihoodFitResult optimize_fixed_likelihood(FullFunctor& fun,
     if (alg == "lbfgs") {
         return optimize_fixed_likelihood_lbfgs(fun, params, fixed_spec, maxit, tol, max_linesearch);
     }
-    return optimize_fixed_likelihood_newton(fun, params, fixed_spec, maxit, tol);
+    params = apply_fixed_values(params, fixed_spec);
+    Eigen::VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
+    FixedParameterFunctor<FullFunctor> fixed_fun(fun, fixed_spec, params);
+    LikelihoodFitResult fit = optimize_likelihood_newton_then_lbfgs(fixed_fun, params_free, maxit, tol, max_linesearch);
+    fit.params = fixed_fun.expand(fit.params);
+    return fit;
 }
 
 template <typename LikelihoodFunctor>
@@ -391,7 +426,7 @@ inline LikelihoodFitResult optimize_likelihood(LikelihoodFunctor& fun,
     if (alg == "lbfgs") {
         return optimize_likelihood_lbfgs(fun, params, maxit, tol, max_linesearch);
     }
-    return optimize_likelihood_newton(fun, params, maxit, tol);
+    return optimize_likelihood_newton_then_lbfgs(fun, params, maxit, tol, max_linesearch);
 }
 
 #endif

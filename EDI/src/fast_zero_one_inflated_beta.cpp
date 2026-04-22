@@ -144,18 +144,67 @@ public:
 		Eigen::MatrixXd H(m_p + 3, m_p + 3);
 		H.setZero();
 
-		Eigen::VectorXd grad_at_params(m_p + 3);
-		operator()(params, grad_at_params);
+		Eigen::VectorXd beta = params.head(m_p);
+		double log_phi = params[m_p];
+		double phi = std::exp(log_phi);
 
-		double h = 1e-6;
-		for (int i = 0; i < m_p + 3; ++i){
-			Eigen::VectorXd params_plus = params;
-			params_plus[i] += h;
-			Eigen::VectorXd grad_plus(m_p + 3);
-			operator()(params_plus, grad_plus);
-			H.col(i) = (grad_plus - grad_at_params) / h;
+		if (m_n_beta > 0){
+			Eigen::VectorXd eta_beta = m_X_beta * beta;
+			Eigen::VectorXd mu_beta = logistic(eta_beta);
+			clamp_probs(mu_beta);
+
+			double d_neg_ll_d_phi = -m_n_beta * R::digamma(phi);
+			double d2_neg_ll_d_phi2 = -m_n_beta * R::trigamma(phi);
+
+			for (int i = 0; i < m_n_beta; ++i){
+				const double mu = mu_beta[i];
+				const double one_minus_mu = 1.0 - mu;
+				const double dmu_deta = mu * one_minus_mu;
+				const double d2mu_deta2 = dmu_deta * (1.0 - 2.0 * mu);
+				const double a = mu * phi;
+				const double b = one_minus_mu * phi;
+				const double digamma_a = R::digamma(a);
+				const double digamma_b = R::digamma(b);
+				const double trigamma_a = R::trigamma(a);
+				const double trigamma_b = R::trigamma(b);
+				const double c = digamma_a - digamma_b - m_log_y_beta[i] + m_log1_y_beta[i];
+				const double dc_dmu = phi * (trigamma_a + trigamma_b);
+				const double dc_dphi = mu * trigamma_a - one_minus_mu * trigamma_b;
+				const double dscore_eta_deta =
+					phi * (dc_dmu * dmu_deta * dmu_deta + c * d2mu_deta2);
+				const double dscore_eta_dlogphi =
+					phi * dmu_deta * (c + phi * dc_dphi);
+				const Eigen::VectorXd x = m_X_beta.row(i).transpose();
+
+				H.topLeftCorner(m_p, m_p).noalias() += dscore_eta_deta * (x * x.transpose());
+				H.topRightCorner(m_p, 1).noalias() += dscore_eta_dlogphi * x;
+
+				d_neg_ll_d_phi +=
+					mu * digamma_a +
+					one_minus_mu * digamma_b -
+					mu * m_log_y_beta[i] -
+					one_minus_mu * m_log1_y_beta[i];
+				d2_neg_ll_d_phi2 +=
+					mu * mu * trigamma_a +
+					one_minus_mu * one_minus_mu * trigamma_b;
+			}
+
+			H(m_p, m_p) = phi * d_neg_ll_d_phi + phi * phi * d2_neg_ll_d_phi2;
 		}
-		H = (H + H.transpose()) * 0.5;
+
+		Eigen::Vector3d logits;
+		logits << params[m_p + 1], params[m_p + 2], 0.0;
+		double max_logit = logits.maxCoeff();
+		Eigen::Vector3d exp_logits = (logits.array() - max_logit).exp();
+		Eigen::Vector3d pis = exp_logits / exp_logits.sum();
+		const double pi0 = pis[0];
+		const double pi1 = pis[1];
+		H(m_p + 1, m_p + 1) = m_n * pi0 * (1.0 - pi0);
+		H(m_p + 2, m_p + 2) = m_n * pi1 * (1.0 - pi1);
+		H(m_p + 1, m_p + 2) = -m_n * pi0 * pi1;
+		H(m_p + 2, m_p + 1) = H(m_p + 1, m_p + 2);
+
+		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
 		return H;
 	}
 

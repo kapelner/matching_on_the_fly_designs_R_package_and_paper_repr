@@ -19,12 +19,13 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "newton_raphson"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
@@ -119,7 +120,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				# Xcond and Xzi are the same here
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only),
+					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
@@ -233,7 +234,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only),
+					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {

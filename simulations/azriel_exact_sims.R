@@ -1,6 +1,11 @@
 library(EDI)
 suppressPackageStartupMessages(library(data.table))
 
+#fix true tau
+#compute the variance estimate in each nrep. Calculate true variance once.
+# compute prop (variance estimate > true variance)
+# average variance estimate - true variance
+
 # ── Tunable parameters ────────────────────────────────────────────────────────
 Nrep       = 5000L   # Monte Carlo replications per cell
 betaTs     = c(1, 0) # 0 → size / type-I error;  1 → power / coverage

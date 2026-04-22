@@ -208,7 +208,7 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
+	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
 		return numerical_hessian(*this, par);
 	}
 };

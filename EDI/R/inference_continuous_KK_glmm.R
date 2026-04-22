@@ -98,17 +98,13 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			)
 
 			if (is.null(fit) || !isTRUE(fit$converged)) {
-				private$cache_nonestimable_estimate("kk_glmm_rcpp_failed")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+				return(super$shared(estimate_only = estimate_only))
 			}
 
 			beta_hat_T = as.numeric(fit$b[j_T_r])
 
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				private$cache_nonestimable_estimate("kk_glmm_rcpp_nonestimable")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+				return(super$shared(estimate_only = estimate_only))
 			}
 
 			private$cached_values$beta_hat_T = beta_hat_T

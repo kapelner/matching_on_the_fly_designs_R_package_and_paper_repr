@@ -18,8 +18,10 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
+		#' @param use_rcpp Whether to use the custom Rcpp likelihood optimizer.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param optimization_alg The optimization algorithm to use.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -28,6 +30,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
+			private$use_rcpp = use_rcpp
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 
@@ -70,6 +74,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 
 	private = list(
 
+		use_rcpp = TRUE,
+
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
@@ -87,7 +93,70 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			X_full
 		},
 
+		shared_rcpp = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
+			cluster_id = m_vec
+			reservoir_idx = which(cluster_id == 0L)
+			if (length(reservoir_idx) > 0L){
+				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
+			}
+
+			if (sum(private$dead) == 0L){
+				private$cached_values$beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z         = TRUE
+				return(invisible(NULL))
+			}
+
+			X_full = private$build_design_matrix()
+
+			res = tryCatch(
+				fast_weibull_frailty_cpp(
+					y               = private$y,
+					dead            = as.numeric(private$dead),
+					X               = X_full,
+					group_id        = as.integer(cluster_id),
+					estimate_only   = estimate_only,
+					n_gh            = 20L,
+					max_abs_log_sigma = 8.0,
+					maxit           = 300L,
+					eps_g           = 1e-6,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+
+			if (is.null(res) || !isTRUE(res$converged)){
+				private$cached_values$beta_hat_T = NA_real_
+				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$is_z         = TRUE
+				return(invisible(NULL))
+			}
+
+			beta = as.numeric(res$b)[1L]
+			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+
+			if (!estimate_only){
+				ssq = as.numeric(res$ssq_b_T)
+				se  = if (is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+				private$cached_values$s_beta_hat_T = se
+			}
+			private$cached_values$is_z = TRUE
+			invisible(NULL)
+		},
+
 		shared_combined_likelihood = function(estimate_only = FALSE){
+			if (private$use_rcpp) return(private$shared_rcpp(estimate_only = estimate_only))
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 

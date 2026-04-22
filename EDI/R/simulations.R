@@ -112,23 +112,43 @@ generate_covariate_dataset = function(n, p,
 #'   \code{response_type = "ordinal"}.  The continuous signal is cut into this many
 #'   equal-frequency bins.  Default \code{4L}.  Ignored for all other response types.
 #'
-#' @return A numeric vector of base responses on the appropriate scale.
+#' Transform continuous latent signal to the response type scale
+#'
+#' @param y_cont Numeric vector. The continuous latent signal.
+#' @param response_type Character scalar. The type of response variable to generate.
+#' @param n_ordinal_levels Integer. Number of levels for ordinal response. Default 4.
+#' @param proportion_epsilon Numeric. Small value added to proportion to avoid 0 and 1. Default 1e-6.
+#' @param survival_min_time Numeric. Minimum survival time and shift. Default 0.1.
+#' @param count_min_rate Integer. Minimum baseline rate for count response. Default 0.
+#' @param count_shift Numeric. Constant added to counts after zero-centering. Default 0.
+#'
+#' @return A numeric vector of transformed responses on the appropriate scale.
 #'
 #' @export
-transform_cont_y_based_on_response_type = function(y_cont, response_type, n_ordinal_levels = 4L) {
+transform_cont_y_based_on_response_type = function(
+  y_cont, 
+  response_type, 
+  n_ordinal_levels   = 4L,
+  proportion_epsilon = 1e-6,
+  survival_min_time  = 0.1,
+  count_min_rate     = 0L,
+  count_shift        = 0
+) {
   y_sh = as.numeric(scale(y_cont))
   switch(response_type,
     continuous = y_sh,
     incidence  = stats::plogis(y_sh),
     proportion = {
-      y_tmp = y_cont - min(y_cont) + 1e-6
-      y_tmp / (max(y_tmp) + 1e-6)
+      y_tmp = y_cont - min(y_cont) + proportion_epsilon
+      y_tmp / (max(y_tmp) + proportion_epsilon)
     },
-    count      = pmax(1L, round(y_cont - min(y_cont) + 1)),
-    survival   = pmax(0.1, y_sh - min(y_sh) + 0.1),
+    count      = pmax(count_min_rate, round(y_cont - min(y_cont) + count_shift)),
+    survival   = pmax(survival_min_time, y_sh - min(y_sh) + survival_min_time),
     ordinal    = as.integer(cut(
       y_cont,
-      breaks = unique(stats::quantile(y_cont, probs = seq(0, 1, length.out = n_ordinal_levels + 1L))),      include.lowest = TRUE)),
+      breaks = unique(stats::quantile(y_cont, probs = seq(0, 1, length.out = n_ordinal_levels + 1L))),
+      include.lowest = TRUE
+    )),
     stop("Unknown response_type: ", response_type)
   )
 }

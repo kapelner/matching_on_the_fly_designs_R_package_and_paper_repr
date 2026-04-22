@@ -16,11 +16,12 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "newton_raphson"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
@@ -49,11 +50,11 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				Xmm = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 
-			res = fast_beta_regression_cpp(X = Xmm, y = as.numeric(private$y))
-			if (is.null(res) || !is.finite(res$b[2])){
+			res = fast_beta_regression_cpp(X = Xmm, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
+			if (is.null(res) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
-			as.numeric(res$b[2])
+			as.numeric(res$coefficients[2])
 		},
 
 		supports_reusable_bootstrap_worker = function(){
@@ -62,16 +63,17 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
-			
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit){
 					if (estimate_only) {
-						res = fast_beta_regression_cpp(X_fit, private$y)
-						list(b = res$b, ssq_b_2 = NA_real_)
+						res = fast_beta_regression_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						list(b = res$coefficients, ssq_b_2 = NA_real_)
 					} else {
-						fast_beta_regression_with_var_cpp(X_fit, private$y)
+						res = fast_beta_regression_with_var_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						list(b = res$coefficients, ssq_b_2 = if (nrow(res$vcov) >= 2L) res$vcov[2L, 2L] else NA_real_)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){

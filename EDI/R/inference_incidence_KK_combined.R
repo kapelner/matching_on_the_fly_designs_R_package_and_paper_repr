@@ -55,13 +55,15 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param use_rcpp Whether to use the internal Rcpp solver.
+		#' @param optimization_alg Optimization algorithm: "lbfgs" (default) or "newton_raphson".
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$use_rcpp = use_rcpp
 		}
@@ -107,25 +109,22 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 					y        = as.numeric(private$y),
 					group_id = as.integer(group_id),
 					j_T      = j_T,
-					estimate_only = estimate_only,
-					eps_g    = 1e-4
+					estimate_only    = estimate_only,
+					eps_g            = 1e-4,
+					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
 			)
 
 			if (is.null(fit) || !isTRUE(fit$converged)) {
-				private$cache_nonestimable_estimate("kk_glmm_rcpp_failed")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+				return(super$shared(estimate_only = estimate_only))
 			}
 
 			# b[j_T+1] in R 1-based = treatment coefficient
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
 
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				private$cache_nonestimable_estimate("kk_glmm_rcpp_nonestimable")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+				return(super$shared(estimate_only = estimate_only))
 			}
 
 			private$cached_values$beta_hat_T = beta_hat_T

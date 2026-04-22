@@ -95,6 +95,53 @@ public:
         score_vals[m_K - 1] = 1.0;
     }
 
+    void compute_scores_with_second_derivatives(
+        const VectorXd& gamma,
+        std::vector<double>& score_vals,
+        MatrixXd& dscore_dgamma,
+        std::vector<MatrixXd>& d2score_dgamma2
+    ) const {
+        const int n_gamma = num_gamma();
+        compute_scores(gamma, score_vals, dscore_dgamma);
+        d2score_dgamma2.assign(m_K, MatrixXd::Zero(n_gamma, n_gamma));
+
+        if (n_gamma == 0) {
+            return;
+        }
+
+        VectorXd v = gamma.array().exp();
+        const double denom = 1.0 + v.sum();
+        VectorXd cum_v(n_gamma);
+        double running = 0.0;
+        for (int r = 0; r < n_gamma; ++r) {
+            running += v[r];
+            cum_v[r] = running;
+        }
+
+        for (int j = 2; j <= m_K - 1; ++j) {
+            const int interior_idx = j - 2;
+            const double c_j = cum_v[interior_idx];
+            MatrixXd& Hs = d2score_dgamma2[j - 1];
+
+            for (int r = 0; r < n_gamma; ++r) {
+                const double A_r = (r <= interior_idx) ? 1.0 : 0.0;
+                const double numerator_r = A_r * denom - c_j;
+                const double first_r = v[r] * numerator_r / (denom * denom);
+
+                for (int t = 0; t < n_gamma; ++t) {
+                    const double A_t = (t <= interior_idx) ? 1.0 : 0.0;
+                    const double delta_rt = (r == t) ? 1.0 : 0.0;
+                    Hs(r, t) =
+                        delta_rt * first_r +
+                        v[r] * v[t] * (
+                            (A_r - A_t) / (denom * denom) -
+                            2.0 * numerator_r / (denom * denom * denom)
+                        );
+                }
+            }
+        }
+    }
+
     double loglik_grad(
         const VectorXd& params,
         VectorXd* grad = NULL
@@ -167,6 +214,87 @@ public:
 
         return ll;
     }
+
+    MatrixXd loglik_hessian(const VectorXd& params) const {
+        const int n_alpha = num_alpha();
+        const int n_gamma = num_gamma();
+        const int d = num_params();
+
+        VectorXd beta = params.segment(n_alpha, m_p);
+        VectorXd gamma = (n_gamma > 0) ? params.tail(n_gamma) : VectorXd(0);
+
+        std::vector<double> score_vals;
+        MatrixXd dscore_dgamma;
+        std::vector<MatrixXd> d2score_dgamma2;
+        compute_scores_with_second_derivatives(gamma, score_vals, dscore_dgamma, d2score_dgamma2);
+
+        MatrixXd H = MatrixXd::Zero(d, d);
+        std::vector<double> logits(m_K, 0.0);
+        std::vector<double> probs(m_K, 0.0);
+        std::vector<VectorXd> logit_grad(m_K, VectorXd::Zero(d));
+        std::vector<MatrixXd> logit_hess(m_K, MatrixXd::Zero(d, d));
+
+        for (int i = 0; i < m_n; ++i) {
+            const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+            logits[0] = 0.0;
+            logit_grad[0].setZero();
+            logit_hess[0].setZero();
+
+            for (int j = 2; j <= m_K; ++j) {
+                const int cat = j - 1;
+                logits[cat] = params[j - 2] + score_vals[cat] * eta;
+
+                VectorXd& zj = logit_grad[cat];
+                MatrixXd& Bj = logit_hess[cat];
+                zj.setZero();
+                Bj.setZero();
+
+                zj[j - 2] = 1.0;
+                if (m_p > 0) {
+                    zj.segment(n_alpha, m_p).noalias() = score_vals[cat] * m_X.row(i).transpose();
+                }
+                if (n_gamma > 0) {
+                    zj.tail(n_gamma).noalias() = eta * dscore_dgamma.row(cat).transpose();
+                    for (int r = 0; r < n_gamma; ++r) {
+                        const double ds = dscore_dgamma(cat, r);
+                        for (int b = 0; b < m_p; ++b) {
+                            const int beta_idx = n_alpha + b;
+                            const int gamma_idx = n_alpha + m_p + r;
+                            const double cross = m_X(i, b) * ds;
+                            Bj(beta_idx, gamma_idx) = cross;
+                            Bj(gamma_idx, beta_idx) = cross;
+                        }
+                    }
+                    Bj.bottomRightCorner(n_gamma, n_gamma).noalias() =
+                        eta * d2score_dgamma2[cat];
+                }
+            }
+
+            double max_logit = *std::max_element(logits.begin(), logits.end());
+            double denom = 0.0;
+            for (int j = 0; j < m_K; ++j) {
+                probs[j] = std::exp(logits[j] - max_logit);
+                denom += probs[j];
+            }
+            for (int j = 0; j < m_K; ++j) {
+                probs[j] /= denom;
+            }
+
+            VectorXd mean_grad = VectorXd::Zero(d);
+            MatrixXd mean_hess = MatrixXd::Zero(d, d);
+            MatrixXd mean_outer = MatrixXd::Zero(d, d);
+            for (int j = 0; j < m_K; ++j) {
+                mean_grad.noalias() += probs[j] * logit_grad[j];
+                mean_hess.noalias() += probs[j] * logit_hess[j];
+                mean_outer.noalias() += probs[j] * (logit_grad[j] * logit_grad[j].transpose());
+            }
+
+            const int yi = m_y[i] - 1;
+            H.noalias() += logit_hess[yi] - mean_hess - mean_outer + mean_grad * mean_grad.transpose();
+        }
+
+        return 0.5 * (H + H.transpose());
+    }
 };
 
 static MatrixXd numeric_hessian_from_gradient(
@@ -174,20 +302,8 @@ static MatrixXd numeric_hessian_from_gradient(
     const VectorXd& params,
     double h = 1e-5
 ) {
-    const int d = params.size();
-    MatrixXd H(d, d);
-
-    for (int j = 0; j < d; ++j) {
-        VectorXd grad_plus(d), grad_minus(d);
-        VectorXd p_plus = params;
-        VectorXd p_minus = params;
-        p_plus[j] += h;
-        p_minus[j] -= h;
-        model.loglik_grad(p_plus, &grad_plus);
-        model.loglik_grad(p_minus, &grad_minus);
-        H.col(j) = (grad_plus - grad_minus) / (2.0 * h);
-    }
-    return 0.5 * (H + H.transpose());
+    (void)h;
+    return model.loglik_hessian(params);
 }
 
 static MatrixXd pseudo_inverse_symmetric(const MatrixXd& A, double tol = 1e-8) {
@@ -294,20 +410,24 @@ static MatrixXd nuisance_numeric_hessian_from_gradient(
     double h = 1e-5,
     int beta_index = 0
 ) {
+    (void)h;
+    VectorXd params = set_beta_and_pack_nuisance(nuisance, beta_fixed, n_alpha, p, n_gamma, beta_index);
+    MatrixXd H_full = model.loglik_hessian(params);
     const int d = nuisance.size();
     MatrixXd H(d, d);
-
-    for (int j = 0; j < d; ++j) {
-        VectorXd grad_plus(d), grad_minus(d);
-        VectorXd p_plus = nuisance;
-        VectorXd p_minus = nuisance;
-        p_plus[j] += h;
-        p_minus[j] -= h;
-        nuisance_loglik_grad(model, p_plus, beta_fixed, n_alpha, p, n_gamma, &grad_plus, beta_index);
-        nuisance_loglik_grad(model, p_minus, beta_fixed, n_alpha, p, n_gamma, &grad_minus, beta_index);
-        H.col(j) = (grad_plus - grad_minus) / (2.0 * h);
+    std::vector<int> keep;
+    keep.reserve(d);
+    for (int j = 0; j < params.size(); ++j) {
+        if (j != n_alpha + beta_index) {
+            keep.push_back(j);
+        }
     }
-    return 0.5 * (H + H.transpose());
+    for (int r = 0; r < d; ++r) {
+        for (int c = 0; c < d; ++c) {
+            H(r, c) = H_full(keep[r], keep[c]);
+        }
+    }
+    return H;
 }
 
 static VectorXd optimize_nuisance_given_beta(

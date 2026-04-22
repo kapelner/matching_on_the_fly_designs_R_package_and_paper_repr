@@ -1202,3 +1202,92 @@ NULL
 		best_par = best$par
 	)
 }
+
+.fit_weibull_frailty = function(y, dead, Xmm, pair_id, estimate_only = FALSE){
+	if (!check_package_installed("parfm")){
+		stop("Package 'parfm' is required for Weibull frailty matching-on-the-fly inference. Please install it.")
+	}
+	
+	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
+	
+	# parfm requires a data frame
+	dat = data.frame(y = y, dead = dead, w = Xmm[, "w"], cluster = factor(pair_id))
+	X_covs = Xmm[, colnames(Xmm) != "w", drop = FALSE]
+	formula_str = "survival::Surv(y, dead) ~ w"
+	if (ncol(X_covs) > 0){
+		colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
+		dat = cbind(dat, X_covs)
+		formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
+	}
+	
+	# Fit Gamma-frailty Weibull AFT model
+	# Note: parfm reports estimates in a different parameterization than survreg.
+	# We use the 'trans' argument or manual conversion if needed.
+	# Standard Weibull AFT: log(T) = X beta + sigma epsilon
+	mod = tryCatch(
+		suppressWarnings(parfm::parfm(
+			as.formula(formula_str),
+			cluster = "cluster",
+			data = dat,
+			dist = "weibull",
+			frailty = "gamma"
+		)),
+		error = function(e) NULL
+	)
+	
+	if (is.null(mod)) return(NULL)
+	
+	# Extract treatment effect (w)
+	# parfm results are in mod
+	coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
+	if (is.null(coefs) || !("w" %in% rownames(coefs))){
+		return(NULL)
+	}
+	
+	# parfm coefficients for covariates are usually the same as AFT if using dist="weibull"
+	# however, we must check the sign/convention. 
+	# Actually parfm fits proportional hazards models by default.
+	# To get AFT: beta_AFT = - beta_PH / shape
+	# But if we just want a valid treatment effect direction, we need to be careful.
+	
+	# Let's verify convention. survival::survreg(dist="weibull") is AFT.
+	# parfm(dist="weibull") is PH.
+	# beta_AFT = - beta_PH / shape
+	
+	beta_ph = as.numeric(coefs["w", "ESTIMATE"])
+	shape = as.numeric(mod["shape", "ESTIMATE"]) # parfm shape is 'rho' in some texts
+	
+	beta_aft = - beta_ph / shape
+	
+	if (estimate_only) return(list(beta = beta_aft, ssq = NA_real_))
+	
+	# Variance via Delta Method: 
+	# Var(beta_aft) = Var(PH/shape) 
+	# Approx using just the PH variance scaled if shape is precise, 
+	# or full vcov from parfm.
+	vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
+	if (is.null(vcv) || !("w" %in% rownames(vcv))){
+		return(list(beta = beta_aft, ssq = NA_real_))
+	}
+	
+	# Delta method for -beta_ph / shape
+	# g(beta, shape) = -beta/shape
+	# dg/dbeta = -1/shape
+	# dg/dshape = beta/shape^2
+	# Var = (dg/dbeta)^2 Var(beta) + (dg/dshape)^2 Var(shape) + 2(dg/dbeta)(dg/dshape) Cov(beta, shape)
+	
+	idx_w = which(rownames(vcv) == "w")
+	idx_shape = which(rownames(vcv) == "shape")
+	
+	if (length(idx_shape) == 0) { # fallback
+		ssq_aft = vcv["w", "w"] / (shape^2)
+	} else {
+		grad = c(-1/shape, beta_ph / (shape^2))
+		sub_vcv = vcv[c(idx_w, idx_shape), c(idx_w, idx_shape)]
+		ssq_aft = as.numeric(t(grad) %*% sub_vcv %*% grad)
+	}
+	
+	if (!is.finite(beta_aft) || !is.finite(ssq_aft) || ssq_aft <= 0) return(NULL)
+	
+	list(beta = beta_aft, ssq = ssq_aft)
+}

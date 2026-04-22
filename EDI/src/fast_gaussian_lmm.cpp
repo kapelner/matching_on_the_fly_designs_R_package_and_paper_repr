@@ -170,6 +170,78 @@ double neg_ll_and_grad(const LMMData& dat,
     return neg_ll;
 }
 
+Eigen::MatrixXd lmm_analytic_hessian(const LMMData& dat,
+                                     const Eigen::VectorXd& par)
+{
+    const int p = dat.p;
+    const int k = p + 2;
+    const Eigen::VectorXd beta = par.head(p);
+    const double v_e = std::exp(2.0 * par[p]);
+    const double v_b = std::exp(2.0 * par[p + 1]);
+
+    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(k, k);
+    if (!std::isfinite(v_e) || !std::isfinite(v_b) || v_e < 1e-300) {
+        H.setConstant(NA_REAL);
+        return H;
+    }
+
+    const Eigen::VectorXd r_all = dat.y_s - dat.X_s * beta;
+
+    for (int gi = 0; gi < dat.G; ++gi) {
+        const GroupInfo& g = dat.grps[gi];
+        const int m = g.size;
+        const int s = g.start;
+        const Eigen::MatrixXd Xg = dat.X_s.middleRows(s, m);
+        const Eigen::VectorXd rg = r_all.segment(s, m);
+
+        Eigen::MatrixXd I = Eigen::MatrixXd::Identity(m, m);
+        Eigen::MatrixXd J = Eigen::MatrixXd::Ones(m, m);
+        Eigen::MatrixXd V = v_e * I + v_b * J;
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(V);
+        if (ldlt.info() != Eigen::Success) {
+            H.setConstant(NA_REAL);
+            return H;
+        }
+        Eigen::MatrixXd P = ldlt.solve(I);
+
+        Eigen::MatrixXd dV_e = 2.0 * v_e * I;
+        Eigen::MatrixXd dV_b = 2.0 * v_b * J;
+        Eigen::MatrixXd d2V_ee = 4.0 * v_e * I;
+        Eigen::MatrixXd d2V_bb = 4.0 * v_b * J;
+
+        Eigen::MatrixXd dP_e = -P * dV_e * P;
+        Eigen::MatrixXd dP_b = -P * dV_b * P;
+
+        H.topLeftCorner(p, p).noalias() += Xg.transpose() * P * Xg;
+        H.topRightCorner(p, 1).noalias() += -Xg.transpose() * dP_e * rg;
+        H.block(0, p + 1, p, 1).noalias() += -Xg.transpose() * dP_b * rg;
+
+        Eigen::MatrixXd dV[2] = {dV_e, dV_b};
+        Eigen::MatrixXd dP[2] = {dP_e, dP_b};
+        Eigen::MatrixXd d2V[2][2] = {
+            {d2V_ee, Eigen::MatrixXd::Zero(m, m)},
+            {Eigen::MatrixXd::Zero(m, m), d2V_bb}
+        };
+
+        for (int a = 0; a < 2; ++a) {
+            for (int b = a; b < 2; ++b) {
+                Eigen::MatrixXd term_mat =
+                    dP[a] * dV[b] * P +
+                    P * d2V[a][b] * P +
+                    P * dV[b] * dP[a];
+                const double h_ab =
+                    0.5 * (dP[a] * dV[b] + P * d2V[a][b]).trace()
+                    - 0.5 * (rg.transpose() * term_mat * rg)(0, 0);
+                H(p + a, p + b) += h_ab;
+                if (a != b) H(p + b, p + a) += h_ab;
+            }
+        }
+    }
+
+    H.bottomLeftCorner(2, p) = H.topRightCorner(p, 2).transpose();
+    return (H + H.transpose()) / 2.0;
+}
+
 // ── Wrapper satisfying LBFGSpp operator() signature ─────────────────────────
 class GaussianLMMObjective {
 public:
@@ -186,43 +258,17 @@ public:
     }
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
-        const int k = par.size();
-        Eigen::MatrixXd H(k, k);
-        const double h_rel = 1e-4;
-
-        for (int j = 0; j < k; ++j) {
-            const double h = h_rel * std::max(1.0, std::abs(par[j]));
-            Eigen::VectorXd pp = par, pm = par;
-            pp[j] += h;
-            pm[j] -= h;
-            Eigen::VectorXd gp(k), gm(k);
-            neg_ll_and_grad(dat, pp, gp);
-            neg_ll_and_grad(dat, pm, gm);
-            H.col(j) = (gp - gm) / (2.0 * h);
-        }
-        return (H + H.transpose()) / 2.0;
+        return lmm_analytic_hessian(dat, par);
     }
 };
 
-// ── Numerical Hessian of neg_ll (for Fisher info / vcov) ────────────────────
-Eigen::MatrixXd numerical_hessian(const LMMData& dat,
-                                  const Eigen::VectorXd& par,
-                                  double h_rel = 1e-4)
+// ── Hessian of neg_ll (for Fisher info / vcov) ─────────────────────────────
+Eigen::MatrixXd lmm_fisher_hessian(const LMMData& dat,
+                                   const Eigen::VectorXd& par,
+                                   double h_rel = 1e-4)
 {
-    const int k = par.size();
-    Eigen::MatrixXd H(k, k);
-    Eigen::VectorXd dummy(k);
-
-    for (int j = 0; j < k; ++j) {
-        const double h = h_rel * std::max(1.0, std::abs(par[j]));
-        Eigen::VectorXd pp = par, pm = par;
-        pp[j] += h;  pm[j] -= h;
-        Eigen::VectorXd gp(k), gm(k);
-        neg_ll_and_grad(dat, pp, gp);
-        neg_ll_and_grad(dat, pm, gm);
-        H.col(j) = (gp - gm) / (2.0 * h);
-    }
-    return (H + H.transpose()) / 2.0;
+    (void)h_rel;
+    return lmm_analytic_hessian(dat, par);
 }
 
 // ── Starting values: OLS β, residual-based σ_e, σ_b = σ_e/2 ─────────────────
@@ -321,7 +367,7 @@ List fast_gaussian_lmm_cpp(
     }
 
     // Variance-covariance via Hessian of neg_ll
-    Eigen::MatrixXd H = numerical_hessian(dat, par);
+    Eigen::MatrixXd H = lmm_fisher_hessian(dat, par);
     Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 
@@ -396,6 +442,6 @@ NumericMatrix get_gaussian_lmm_fisher_cpp(
             gid[i] = (int)(std::lower_bound(uniq.begin(), uniq.end(), gid_r[i]) - uniq.begin());
     }
     LMMData dat(y, X, gid);
-    Eigen::MatrixXd H = numerical_hessian(dat, par, h_rel);
+    Eigen::MatrixXd H = lmm_fisher_hessian(dat, par, h_rel);
     return wrap(H);
 }

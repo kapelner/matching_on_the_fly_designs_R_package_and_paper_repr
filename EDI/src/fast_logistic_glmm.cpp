@@ -205,12 +205,54 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
+	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
 		return numerical_hessian(*this, par);
 	}
 };
 
 } // namespace
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_logistic_glmm_score_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	int n_gh = 20
+) {
+	std::vector<double> y_v(y.size());
+	std::vector<int> gid_v(group_id.size());
+	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+	
+	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	LogisticGLMMObjective obj(dat);
+	
+	int p = X.cols();
+	Eigen::VectorXd par(p + 1);
+	par.head(p).setZero();
+	par[p] = -3.0; // dummy start or use passed params
+	
+	Eigen::VectorXd grad(p + 1);
+	obj(par, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_logistic_glmm_hessian_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 20
+) {
+	std::vector<double> y_v(y.size());
+	std::vector<int> gid_v(group_id.size());
+	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+	
+	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	LogisticGLMMObjective obj(dat);
+	
+	return -obj.hessian(params);
+}
 
 // [[Rcpp::export]]
 List fast_logistic_glmm_cpp(

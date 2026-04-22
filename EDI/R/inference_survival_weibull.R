@@ -17,11 +17,12 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "newton_raphson"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		}
 	),
@@ -47,7 +48,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				Xmm = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 
-			res = fast_weibull_regression_cpp(y = private$y, dead = private$dead, X = Xmm, estimate_only = TRUE)
+			res = fast_weibull_regression_cpp(y = private$y, dead = private$dead, X = Xmm, estimate_only = TRUE, optimization_alg = private$optimization_alg)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -69,7 +70,8 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 						y = private$y,
 						dead = private$dead,
 						X = X_fit,
-						estimate_only = estimate_only
+						estimate_only = estimate_only,
+						optimization_alg = private$optimization_alg
 					)
 				},
 				fit_ok = function(mod, X_fit, keep){

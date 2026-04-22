@@ -84,22 +84,62 @@ public:
 	}
 
 	MatrixXd hessian(const VectorXd& params) {
-		MatrixXd H(m_p + 1, m_p + 1);
-		H.setZero();
+		const int total_p = m_p + 1;
+		MatrixXd H = MatrixXd::Zero(total_p, total_p);
+		const VectorXd beta = params.head(m_p);
+		const double r = std::exp(params[m_p]);
+		VectorXd eta = m_X * beta;
 
-		const double h = 1e-5;
-		VectorXd grad_at_params(m_p + 1);
-		operator()(params, grad_at_params);
+		for (int i = 0; i < m_n; ++i) {
+			const double eta_i = clamp_exp_arg_hnb(eta[i]);
+			const double mu_i = std::max(std::exp(eta_i), 1e-10);
+			const double yi = static_cast<double>(m_y[i]);
+			const double denom = r + mu_i;
+			const double denom_sq = denom * denom;
+			const VectorXd x = m_X.row(i).transpose();
 
-		for (int i = 0; i < m_p + 1; ++i) {
-			VectorXd params_plus_h = params;
-			params_plus_h[i] += h;
-			VectorXd grad_plus_h(m_p + 1);
-			operator()(params_plus_h, grad_plus_h);
-			H.col(i) = (grad_plus_h - grad_at_params) / h;
+			double log_p0 = r * (std::log(r) - std::log(denom));
+			double p0 = std::exp(log_p0);
+			p0 = std::min(std::max(p0, 1e-12), 1.0 - 1e-12);
+			const double q0 = 1.0 - p0;
+
+			const double c_eta = r * mu_i / denom;
+			const double dlogp0_dr =
+				std::log(r) - std::log(denom) + 1.0 - r / denom;
+
+			const double d_score_eta_d_eta =
+				- (yi + r) * r * mu_i / denom_sq
+				- r * r * mu_i * p0 / (denom_sq * q0)
+				+ c_eta * c_eta * p0 / (q0 * q0);
+			H.topLeftCorner(m_p, m_p).noalias() -= d_score_eta_d_eta * (x * x.transpose());
+
+			const double d_score_eta_d_log_r =
+				r * mu_i * (yi - mu_i) / denom_sq
+				- r * mu_i * mu_i * p0 / (denom_sq * q0)
+				- r * r * mu_i * p0 * dlogp0_dr / (denom * q0 * q0);
+			H.topRightCorner(m_p, 1).noalias() -= d_score_eta_d_log_r * x;
+
+			const double dlogf_dr =
+				R::digamma(yi + r) - R::digamma(r) +
+				std::log(r) - std::log(denom) +
+				1.0 - (yi + r) / denom;
+			const double d2logf_dr2 =
+				R::trigamma(yi + r) - R::trigamma(r) +
+				1.0 / r - 1.0 / denom + (yi - mu_i) / denom_sq;
+			const double d2logp0_dr2 =
+				1.0 / r - 1.0 / denom - mu_i / denom_sq;
+			const double p0_over_q0 = p0 / q0;
+			const double d_score_log_r_d_log_r =
+				r * (dlogf_dr + p0_over_q0 * dlogp0_dr) +
+				r * r * (
+					d2logf_dr2 +
+					p0 * dlogp0_dr * dlogp0_dr / (q0 * q0) +
+					p0_over_q0 * d2logp0_dr2
+				);
+			H(m_p, m_p) -= d_score_log_r_d_log_r;
 		}
 
-		H = (H + H.transpose()) / 2.0;
+		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
 		return H;
 	}
 };

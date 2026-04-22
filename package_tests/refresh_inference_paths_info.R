@@ -40,7 +40,8 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (grepl("QuantileRegr", base_name)) {
     via = "quantreg"
   } else if (base_name == "KKGLMM") {
-    via = "glmmTMB"
+    via = "ourself/Rcpp GLMM"
+    alg = "L-BFGS"
   } else if (base_name == "MultGLS") {
     via = "nlme"
   } else if (grepl("Exact", base_name)) {
@@ -80,18 +81,14 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (base_name == "HurdleNegBin") {
     via = "ourself/Rcpp hurdle negative binomial"
     alg = "IRLS plus L-BFGS"
-  } else if (base_name %in% c("HurdlePoisson", "ZeroInflatedPoisson")) {
-    via = "ourself/Rcpp zero-augmented Poisson"
-    alg = "L-BFGS"
+  } else if (base_name %in% c("HurdlePoisson", "ZeroInflatedPoisson", "ZeroInflatedNegBin") || grepl("KKHurdlePoisson", base_name)) {
+    via = "glmmTMB"
   } else if (base_name == "KKCPoissonIVWC") {
     via = "ourself/Rcpp conditional-Poisson plus negative binomial"
     alg = "weighted logistic IRLS plus L-BFGS"
   } else if (base_name == "KKCPoissonOneLik") {
     via = "ourself/Rcpp conditional-Poisson combined likelihood"
     alg = "Newton-Raphson"
-  } else if (grepl("KKHurdlePoisson", base_name)) {
-    via = "ourself/Rcpp hurdle-Poisson"
-    alg = "IRLS for reservoir Poisson"
   } else if (grepl("KKClogitPlusGLMM", base_name)) {
     via = "ourself/Rcpp conditional-logistic plus GLMM"
     alg = "L-BFGS"
@@ -126,11 +123,19 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (base_name == "WeibullRegr") {
     via = "ourself/Rcpp Weibull AFT"
     alg = "L-BFGS"
+  } else if (grepl("WeibullFrailty", base_name)) {
+    via = "survival"
   } else if (grepl("RankRegr", base_name)) {
     via = "none/rank-regression path"
   } else if (base_name %in% c("CauchitRegr", "CloglogRegr", "OrderedProbitRegr", "PropOddsRegr")) {
     via = "ourself/Rcpp cumulative link"
     alg = "Newton-Raphson with finite-difference derivatives and line search"
+  } else if (grepl("PartialProportionalOdds", base_name)) {
+    via = "VGAM"
+  } else if (grepl("CLMM", base_name)) {
+    via = "ordinal"
+  } else if (grepl("WeibullFrailty", base_name)) {
+    via = "survival"
   } else if (grepl("GComp", base_name)) {
     via = "ourself/nuisance likelihood"
   } else if (base_name == "MLEorKMSummaryTable") {
@@ -141,9 +146,9 @@ get_opt_metadata = function(res_type, base_name) {
   if (grepl("ourself", via)) {
     if (base_name %in% c("LogRegr", "Poisson", "RobustPoisson", "QuasiPoisson", "ModifiedPoisson", "KKModifiedPoisson", "FractionalLogit", "RobustRegr", "OLS", "Lin") || grepl("RobustRegr", base_name)) {
        irls_avail = "Y"
-    } else if (grepl("Hurdle", base_name)) {
+    } else if (base_name == "HurdleNegBin") {
        irls_avail = "Y" # Hurdle models use IRLS for at least one component
-    } else if (base_name %in% c("NegBin", "ZeroInflatedNegBin", "BetaRegr", "ZeroOneInflatedBetaRegr", "CoxPHRegr", "WeibullRegr", "DepCensTransformRegr") || grepl("ClaytonCopula", base_name) || grepl("LWACox", base_name) || grepl("StratCox", base_name) || grepl("Clogit", base_name)) {
+    } else if (base_name %in% c("NegBin", "BetaRegr", "ZeroOneInflatedBetaRegr", "CoxPHRegr", "WeibullRegr", "DepCensTransformRegr") || grepl("ClaytonCopula", base_name) || grepl("LWACox", base_name) || grepl("StratCox", base_name) || grepl("Clogit", base_name)) {
        irls_avail = "N"
     } else if (base_name %in% c("CauchitRegr", "CloglogRegr", "OrderedProbitRegr", "PropOddsRegr")) {
        irls_avail = "N" # Usually NR for cumulative link
@@ -161,12 +166,43 @@ get_opt_metadata = function(res_type, base_name) {
 get_info = function(class_name) {
   obj_gen = get(class_name, envir = ns)
   
-  public_methods = names(obj_gen$public_methods)
-  private_methods = names(obj_gen$private_methods)
+  # Check methods including inheritance
+  has_method = function(gen, method_name) {
+    curr = gen
+    while (!is.null(curr)) {
+      if (method_name %in% names(curr$public_methods) || method_name %in% names(curr$private_methods)) return(TRUE)
+      
+      # Walk up inherit
+      if (is.null(curr$inherit)) break
+      inherit_obj = curr$inherit
+      if (is.symbol(inherit_obj)) {
+        name = as.character(inherit_obj)
+        if (exists(name, envir = ns)) {
+          curr = get(name, envir = ns)
+        } else {
+          break
+        }
+      } else if (is.environment(inherit_obj) && exists("classname", envir = inherit_obj)) {
+        curr = inherit_obj
+      } else {
+        break
+      }
+    }
+    FALSE
+  }
   
-  has_likelihood = "compute_likelihood" %in% public_methods || "compute_likelihood" %in% private_methods
-  has_loglik     = "compute_log_likelihood" %in% public_methods || "compute_log_likelihood" %in% private_methods
-  has_score      = "compute_score" %in% public_methods || "compute_score" %in% private_methods
+  has_likelihood = has_method(obj_gen, "compute_likelihood") || 
+                   has_method(obj_gen, "shared_combined_likelihood") ||
+                   has_method(obj_gen, "fit_glmm") ||
+                   has_method(obj_gen, "generate_mod")
+  has_loglik     = has_method(obj_gen, "compute_log_likelihood") || 
+                   has_method(obj_gen, "shared_combined_likelihood") ||
+                   has_method(obj_gen, "fit_glmm") ||
+                   has_method(obj_gen, "generate_mod")
+  has_score      = has_method(obj_gen, "compute_score") || 
+                   has_method(obj_gen, "shared_combined_likelihood") ||
+                   has_method(obj_gen, "fit_glmm") ||
+                   has_method(obj_gen, "generate_mod")
   
   # Check inheritance for Wald
   curr = obj_gen

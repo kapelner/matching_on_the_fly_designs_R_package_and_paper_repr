@@ -383,8 +383,8 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 #' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
 #' }
 #' @export
-fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "lbfgs"){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	Xmm = as.matrix(X)
 	
 	if (use_rcpp) {
@@ -532,8 +532,8 @@ sanitize_beta_response = function(y){
 #' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
 #' fast_beta_regression(Xmm, y)
-fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "lbfgs"){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newton_raphson"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
 	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)$coefficients)
@@ -594,8 +594,8 @@ fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "lbfg
 #' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
 #' fast_beta_regression_with_var(Xmm, y)
-fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimization_alg = "lbfgs"){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
 	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)
@@ -728,8 +728,8 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression(Xmm, y)
 #' @export
-fast_negbin_regression <- function(Xmm, y, optimization_alg = "lbfgs") {
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+fast_negbin_regression <- function(Xmm, y, optimization_alg = "newton_raphson") {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	X_full = as.matrix(Xmm)
 	res = tryCatch(fast_neg_bin_cpp(X = X_full, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
 	if (!is.null(res)) return(list(b = as.numeric(res$b)))
@@ -779,8 +779,8 @@ fast_negbin_regression <- function(Xmm, y, optimization_alg = "lbfgs") {
 #' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 #' y <- c(0, 1, 1, 2, 3, 4)
 #' fast_negbin_regression_with_var(Xmm, y)
-fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "lbfgs") {
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "newton_raphson") {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	X_full = as.matrix(Xmm)
 	X_curr = X_full
 	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)

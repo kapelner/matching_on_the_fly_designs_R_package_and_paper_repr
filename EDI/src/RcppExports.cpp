@@ -1040,6 +1040,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_logistic_glmm_score_cpp
+Eigen::VectorXd get_logistic_glmm_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int n_gh);
+RcppExport SEXP _EDI_get_logistic_glmm_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP n_ghSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_logistic_glmm_score_cpp(X, y, group_id, n_gh));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_logistic_glmm_hessian_cpp
+Eigen::MatrixXd get_logistic_glmm_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int n_gh);
+RcppExport SEXP _EDI_get_logistic_glmm_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP n_ghSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_logistic_glmm_hessian_cpp(X, y, group_id, params, n_gh));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_logistic_glmm_cpp
 List fast_logistic_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int j_T, bool estimate_only, int n_gh, int maxit, double eps_g, std::string optimization_alg);
 RcppExport SEXP _EDI_fast_logistic_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP j_TSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
@@ -1332,6 +1361,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_ordinal_clmm_cpp
+List fast_ordinal_clmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y_int, const Eigen::VectorXi& group_id, int K, int j_T, std::string link, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::NumericVector> start, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_ordinal_clmm_cpp(SEXP XSEXP, SEXP y_intSEXP, SEXP group_idSEXP, SEXP KSEXP, SEXP j_TSEXP, SEXP linkSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP startSEXP, SEXP optimization_algSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y_int(y_intSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type j_T(j_TSEXP);
+    Rcpp::traits::input_parameter< std::string >::type link(linkSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type start(startSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_clmm_cpp(X, y_int, group_id, K, j_T, link, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, start, optimization_alg));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_ordinal_cloglog_regression_score_cpp
 Eigen::VectorXd get_ordinal_cloglog_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
 RcppExport SEXP _EDI_get_ordinal_cloglog_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
@@ -1383,6 +1435,40 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y, optimization_alg));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_ordinal_glmm_score_cpp
+Eigen::VectorXd get_ordinal_glmm_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y_int, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int K, int n_gh, double max_abs_log_sigma);
+RcppExport SEXP _EDI_get_ordinal_glmm_score_cpp(SEXP XSEXP, SEXP y_intSEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP KSEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y_int(y_intSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_glmm_score_cpp(X, y_int, group_id, params, K, n_gh, max_abs_log_sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_ordinal_glmm_hessian_cpp
+Eigen::MatrixXd get_ordinal_glmm_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y_int, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int K, int n_gh, double max_abs_log_sigma);
+RcppExport SEXP _EDI_get_ordinal_glmm_hessian_cpp(SEXP XSEXP, SEXP y_intSEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP KSEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type y_int(y_intSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_glmm_hessian_cpp(X, y_int, group_id, params, K, n_gh, max_abs_log_sigma));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1556,6 +1642,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type strata(strataSEXP);
     Rcpp::traits::input_parameter< int >::type K(KSEXP);
     rcpp_result_gen = Rcpp::wrap(expand_adjacent_category_data_cpp(y, w, strata, K));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_poisson_glmm_cpp
+List fast_poisson_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int j_T, bool estimate_only, int n_gh, int maxit, double eps_g, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_poisson_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP j_TSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< int >::type j_T(j_TSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_glmm_cpp(X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2010,6 +2115,27 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type dead(deadSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type w(wSEXP);
     rcpp_result_gen = Rcpp::wrap(get_restricted_mean_se_diff(y, dead, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_weibull_frailty_cpp
+List fast_weibull_frailty_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, Rcpp::Nullable<Rcpp::NumericVector> start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_weibull_frailty_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type start(startSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_frailty_cpp(y, dead, X, group_id, start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3477,6 +3603,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_log_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_with_var_cpp, 7},
     {"_EDI_fast_identity_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_cpp, 6},
     {"_EDI_fast_identity_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_with_var_cpp, 7},
+    {"_EDI_get_logistic_glmm_score_cpp", (DL_FUNC) &_EDI_get_logistic_glmm_score_cpp, 4},
+    {"_EDI_get_logistic_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_logistic_glmm_hessian_cpp, 5},
     {"_EDI_fast_logistic_glmm_cpp", (DL_FUNC) &_EDI_fast_logistic_glmm_cpp, 9},
     {"_EDI_get_logistic_regression_score_cpp", (DL_FUNC) &_EDI_get_logistic_regression_score_cpp, 3},
     {"_EDI_get_logistic_regression_hessian_cpp", (DL_FUNC) &_EDI_get_logistic_regression_hessian_cpp, 2},
@@ -3497,10 +3625,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_ordinal_cauchit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cauchit_regression_hessian_cpp, 3},
     {"_EDI_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_cpp, 5},
     {"_EDI_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_with_var_cpp, 3},
+    {"_EDI_fast_ordinal_clmm_cpp", (DL_FUNC) &_EDI_fast_ordinal_clmm_cpp, 13},
     {"_EDI_get_ordinal_cloglog_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_score_cpp, 3},
     {"_EDI_get_ordinal_cloglog_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_hessian_cpp, 3},
     {"_EDI_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_cpp, 5},
     {"_EDI_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_with_var_cpp, 3},
+    {"_EDI_get_ordinal_glmm_score_cpp", (DL_FUNC) &_EDI_get_ordinal_glmm_score_cpp, 7},
+    {"_EDI_get_ordinal_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_glmm_hessian_cpp, 7},
     {"_EDI_fast_ordinal_glmm_cpp", (DL_FUNC) &_EDI_fast_ordinal_glmm_cpp, 12},
     {"_EDI_get_ordinal_probit_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_score_cpp, 3},
     {"_EDI_get_ordinal_probit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_hessian_cpp, 3},
@@ -3513,6 +3644,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_EDI_ordinal_gcomp_post_fit_cpp, 5},
     {"_EDI_expand_continuation_ratio_data_cpp", (DL_FUNC) &_EDI_expand_continuation_ratio_data_cpp, 4},
     {"_EDI_expand_adjacent_category_data_cpp", (DL_FUNC) &_EDI_expand_adjacent_category_data_cpp, 4},
+    {"_EDI_fast_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_poisson_glmm_cpp, 9},
     {"_EDI_get_poisson_regression_score_cpp", (DL_FUNC) &_EDI_get_poisson_regression_score_cpp, 3},
     {"_EDI_get_poisson_regression_hessian_cpp", (DL_FUNC) &_EDI_get_poisson_regression_hessian_cpp, 2},
     {"_EDI_get_poisson_regression_weighted_score_cpp", (DL_FUNC) &_EDI_get_poisson_regression_weighted_score_cpp, 4},
@@ -3544,6 +3676,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},
     {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
+    {"_EDI_fast_weibull_frailty_cpp", (DL_FUNC) &_EDI_fast_weibull_frailty_cpp, 11},
     {"_EDI_get_weibull_regression_score_cpp", (DL_FUNC) &_EDI_get_weibull_regression_score_cpp, 4},
     {"_EDI_get_weibull_regression_hessian_cpp", (DL_FUNC) &_EDI_get_weibull_regression_hessian_cpp, 4},
     {"_EDI_fast_weibull_regression_cpp", (DL_FUNC) &_EDI_fast_weibull_regression_cpp, 10},

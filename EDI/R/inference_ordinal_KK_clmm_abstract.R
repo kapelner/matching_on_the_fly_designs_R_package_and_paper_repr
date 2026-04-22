@@ -9,13 +9,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#' @description
 		#' Initialize
 		#' @param des_obj A completed \code{Design} object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
+		#' @param model_formula   Optional formula for covariate adjustment.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp
+		#'   implementation (no external packages required). Set \code{FALSE} to fall
+		#'   back to \pkg{ordinal::clmm}.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, harden = TRUE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, harden = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
@@ -24,15 +24,16 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
-			if (should_run_asserts()) {
-				assertNoCensoring(private$any_censoring)
-			}
-			if (should_run_asserts()) {
+			if (!use_rcpp && should_run_asserts()) {
 				if (!check_package_installed("ordinal")){
 					stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
+			private$use_rcpp = use_rcpp
 		},
 
 		#' @description
@@ -80,9 +81,14 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	),
 
 	private = list(
+		use_rcpp = TRUE,
+		max_abs_reasonable_coef = 1e4,
 		best_Xmm_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (private$use_rcpp) {
+				return(private$compute_ri_estimate_rcpp())
+			}
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_Xmm_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -95,12 +101,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			# Use the same design matrix structure as the original fit
 			Xmm_cols = private$best_Xmm_colnames
 			X_data = private$get_X()
-			
+
 			X_fit = if (length(Xmm_cols) == 0L){
-				# Univariate case
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			} else {
-				# Multivariate case
 				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
 				cbind(treatment = private$w, X_cov)
 			}
@@ -110,8 +114,31 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			mod = private$fit_clmm(X_fit_full)
 			if (is.null(mod)) mod = private$fit_clm_fallback(X_fit_full)
 			if (is.null(mod)) return(NA_real_)
-			
+
 			as.numeric(stats::coef(mod)["w"])
+		},
+
+		compute_ri_estimate_rcpp = function(){
+			X_fit = private$clmm_X_for_rcpp()
+			group_id = private$clmm_group_id()
+			y_levels = sort(unique(private$y))
+			K = length(y_levels)
+			y_int = as.integer(match(private$y, y_levels))
+			fit = tryCatch(
+				fast_ordinal_clmm_cpp(
+					X          = X_fit,
+					y_int      = y_int,
+					group_id   = as.integer(group_id),
+					K          = K,
+					j_T        = 0L,
+					link       = private$clmm_link(),
+					estimate_only = TRUE,
+					eps_g      = 1e-3
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
+			as.numeric(fit$b[1L])
 		},
 
 		clmm_link = function() stop(class(self)[1], " must implement clmm_link()"),
@@ -127,7 +154,112 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			as.data.frame(X_model)
 		},
 
+		# Build X matrix for Rcpp (no intercept, treatment at col 1)
+		clmm_X_for_rcpp = function(){
+			as.matrix(private$clmm_predictors_df())
+		},
+
+		# Build group_id vector (reservoir singletons get unique IDs)
+		clmm_group_id = function(){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			group_id = m_vec
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L)
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			group_id
+		},
+
+		# Warm start: fixed-effects ordinal MLE with appropriate link
+		clmm_warm_start = function(X_fit, y_int, n_alpha){
+			tryCatch({
+				warm_fn = switch(private$clmm_link(),
+					logit   = fast_ordinal_regression_cpp,
+					probit  = fast_ordinal_probit_regression_cpp,
+					cauchit = fast_ordinal_cauchit_regression_cpp,
+					cloglog = fast_ordinal_cloglog_regression_cpp,
+					stop("Unknown link: ", private$clmm_link())
+				)
+				nore = warm_fn(X_fit, as.numeric(y_int) - 1L)
+				alpha_direct = as.numeric(nore$alpha)
+				beta_nore    = as.numeric(nore$b)
+				alpha_par = numeric(n_alpha)
+				if (n_alpha >= 1L) alpha_par[1L] = alpha_direct[1L]
+				if (n_alpha >= 2L) {
+					for (k in 2L:n_alpha) {
+						diff_k = alpha_direct[k] - alpha_direct[k - 1L]
+						alpha_par[k] = if (diff_k > 0) log(diff_k) else 0.0
+					}
+				}
+				c(alpha_par, beta_nore, -3.0)
+			}, error = function(e) NULL)
+		},
+
 		shared = function(estimate_only = FALSE){
+			if (private$use_rcpp) {
+				private$shared_rcpp(estimate_only)
+			} else {
+				private$shared_clmm(estimate_only)
+			}
+		},
+
+		shared_rcpp = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
+
+			group_id = private$clmm_group_id()
+			X_fit    = private$clmm_X_for_rcpp()
+
+			y_levels = sort(unique(private$y))
+			K        = length(y_levels)
+			y_int    = as.integer(match(private$y, y_levels))
+			n_alpha  = K - 1L
+			j_T      = 0L  # treatment is always first column of X_fit
+
+			start = private$clmm_warm_start(X_fit, y_int, n_alpha)
+
+			fit = tryCatch(
+				fast_ordinal_clmm_cpp(
+					X             = X_fit,
+					y_int         = y_int,
+					group_id      = as.integer(group_id),
+					K             = K,
+					j_T           = j_T,
+					link          = private$clmm_link(),
+					estimate_only = estimate_only,
+					start         = start,
+					eps_g         = 1e-3
+				),
+				error = function(e) NULL
+			)
+
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				private$cache_nonestimable_estimate("kk_clmm_rcpp_failed")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+
+			beta_hat_T = as.numeric(fit$b[j_T + 1L])
+
+			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+				private$cache_nonestimable_estimate("kk_clmm_rcpp_nonestimable")
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
+			}
+
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$is_z       = TRUE
+			private$cached_values$df         = Inf
+
+			if (estimate_only) return(invisible(NULL))
+
+			ssq = fit$ssq_b_T
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+		},
+
+		shared_clmm = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
@@ -180,14 +312,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		},
 
 		fit_clmm = function(full_X = private$create_design_matrix()){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
-			group_id = m_vec
-			reservoir_idx = which(group_id == 0L)
-			if (length(reservoir_idx) > 0L)
-				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			group_id = private$clmm_group_id()
 
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
@@ -210,10 +335,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		},
 
 		fit_clm_fallback = function(full_X = private$create_design_matrix()){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
 				private$clmm_predictors_df_from_design(full_X)
@@ -232,5 +353,94 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				mod
 			}, error = function(e) NULL)
 		}
+	)
+)
+
+#' Ordinal KK CLMM (Proportional Odds / logit link)
+#'
+#' Cumulative-logit mixed model for ordinal KK designs.
+#' Random intercept per matched pair, treatment + optional covariates as fixed effects.
+#' @export
+InferenceOrdinalKKCLMM = R6::R6Class("InferenceOrdinalKKCLMM",
+	lock_objects = FALSE,
+	inherit = InferenceAbstractKKOrdinalCLMM,
+	public = list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
+		#' @param verbose Print messages?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		}
+	),
+	private = list(
+		clmm_link = function() "logit"
+	)
+)
+
+#' Ordinal KK CLMM (Probit link)
+#'
+#' Cumulative-probit mixed model for ordinal KK designs.
+#' @export
+InferenceOrdinalKKCLMMProbit = R6::R6Class("InferenceOrdinalKKCLMMProbit",
+	lock_objects = FALSE,
+	inherit = InferenceAbstractKKOrdinalCLMM,
+	public = list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
+		#' @param verbose Print messages?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		}
+	),
+	private = list(
+		clmm_link = function() "probit"
+	)
+)
+
+#' Ordinal KK CLMM (Cauchit link)
+#'
+#' Cumulative-cauchit mixed model for ordinal KK designs.
+#' @export
+InferenceOrdinalKKCLMMCauchit = R6::R6Class("InferenceOrdinalKKCLMMCauchit",
+	lock_objects = FALSE,
+	inherit = InferenceAbstractKKOrdinalCLMM,
+	public = list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
+		#' @param verbose Print messages?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		}
+	),
+	private = list(
+		clmm_link = function() "cauchit"
+	)
+)
+
+#' Ordinal KK CLMM (Complementary log-log link)
+#'
+#' Cumulative complementary-log-log mixed model for ordinal KK designs.
+#' @export
+InferenceOrdinalKKCLMMCloglog = R6::R6Class("InferenceOrdinalKKCLMMCloglog",
+	lock_objects = FALSE,
+	inherit = InferenceAbstractKKOrdinalCLMM,
+	public = list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
+		#' @param verbose Print messages?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		}
+	),
+	private = list(
+		clmm_link = function() "cloglog"
 	)
 )

@@ -64,20 +64,28 @@ public:
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& params) {
         int total_p = params.size();
-        Eigen::MatrixXd H(total_p, total_p);
-        H.setZero();
-        double h = 1e-6;
-        Eigen::VectorXd grad_at_params(total_p);
-        operator()(params, grad_at_params);
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
+        Eigen::VectorXd beta = params.head(m_p);
+        double log_sigma = params[m_p];
+        double sigma = std::exp(log_sigma);
+        Eigen::VectorXd eta = m_X * beta;
 
-        for (int i = 0; i < total_p; ++i) {
-            Eigen::VectorXd p_plus = params;
-            p_plus[i] += h;
-            Eigen::VectorXd g_plus(total_p);
-            operator()(p_plus, g_plus);
-            H.col(i) = (g_plus - grad_at_params) / h;
+        for (int i = 0; i < m_n; ++i) {
+            double wi = (m_log_y[i] - eta[i]) / sigma;
+            if (wi > 700.0) wi = 700.0;
+            double ewi = std::exp(wi);
+            double delta = (m_dead[i] > 0.5) ? 1.0 : 0.0;
+            Eigen::VectorXd x = m_X.row(i).transpose();
+
+            double w_beta = ewi / (sigma * sigma);
+            H.topLeftCorner(m_p, m_p).noalias() += w_beta * (x * x.transpose());
+
+            double cross = (ewi * (wi + 1.0) - delta) / sigma;
+            H.topRightCorner(m_p, 1).noalias() += cross * x;
+
+            H(m_p, m_p) += ewi * (wi * wi + wi) - delta * wi;
         }
-        H = (H + H.transpose()) / 2.0;
+        H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
         return H;
     }
 };
@@ -114,7 +122,7 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
                                  double tol = 1e-6,
                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                 std::string optimization_alg = "lbfgs") {
+                                 std::string optimization_alg = "newton_raphson") {
     int p = X.cols();
     Eigen::VectorXd params(p + 1);
     
@@ -134,7 +142,7 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
     WeibullAFTLikelihood fun(y, dead, X);
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     } catch (...) {
         return List::create(Named("converged") = false);
     }

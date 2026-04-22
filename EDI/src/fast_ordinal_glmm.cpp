@@ -260,12 +260,52 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
+	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
 		return numerical_hessian(*this, par);
 	}
 };
 
 } // namespace
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_ordinal_glmm_score_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXi& y_int,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int K,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0
+) {
+	std::vector<int> y_v(y_int.size()), gid_v(group_id.size());
+	for (int i = 0; i < y_int.size(); ++i) { y_v[i] = y_int[i]; gid_v[i] = group_id[i]; }
+
+	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
+	OrdinalGLMMObjective obj(dat);
+
+	Eigen::VectorXd grad(params.size());
+	obj(params, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_ordinal_glmm_hessian_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXi& y_int,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int K,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0
+) {
+	std::vector<int> y_v(y_int.size()), gid_v(group_id.size());
+	for (int i = 0; i < y_int.size(); ++i) { y_v[i] = y_int[i]; gid_v[i] = group_id[i]; }
+
+	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
+	OrdinalGLMMObjective obj(dat);
+
+	return -obj.hessian(params);
+}
 
 // [[Rcpp::export]]
 List fast_ordinal_glmm_cpp(

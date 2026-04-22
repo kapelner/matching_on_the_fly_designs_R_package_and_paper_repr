@@ -106,20 +106,55 @@ public:
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& params) {
         int total_p = m_p_cond + m_p_zi;
-        Eigen::MatrixXd H(total_p, total_p);
-        H.setZero();
-        double h = 1e-6;
-        Eigen::VectorXd grad_at_params(total_p);
-        operator()(params, grad_at_params);
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
+        Eigen::VectorXd beta_cond = params.head(m_p_cond);
+        Eigen::VectorXd beta_zi = params.tail(m_p_zi);
+        Eigen::VectorXd eta_cond = m_Xcond * beta_cond;
+        Eigen::VectorXd eta_zi = m_Xzi * beta_zi;
 
-        for (int i = 0; i < total_p; ++i) {
-            Eigen::VectorXd p_plus = params;
-            p_plus[i] += h;
-            Eigen::VectorXd g_plus(total_p);
-            operator()(p_plus, g_plus);
-            H.col(i) = (g_plus - grad_at_params) / h;
+        for (int i = 0; i < m_n; ++i) {
+            double eta_c = std::min(eta_cond[i], 700.0);
+            double lambda = std::exp(eta_c);
+            double eta_z = std::max(std::min(eta_zi[i], 700.0), -700.0);
+            double pi = 1.0 / (1.0 + std::exp(-eta_z));
+            double pi_prime = pi * (1.0 - pi);
+            Eigen::VectorXd xc = m_Xcond.row(i).transpose();
+            Eigen::VectorXd xz = m_Xzi.row(i).transpose();
+
+            if (m_is_hurdle) {
+                double h_zi = pi_prime;
+                H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += h_zi * (xz * xz.transpose());
+                if (m_y[i] > 0) {
+                    double exp_ml = std::exp(-lambda);
+                    double denom = std::max(1.0 - exp_ml, 1e-15);
+                    double h_cond = lambda * (denom - lambda * exp_ml) / (denom * denom);
+                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += h_cond * (xc * xc.transpose());
+                }
+            } else {
+                if (m_y[i] == 0) {
+                    double r = std::exp(-lambda);
+                    double q = std::max(pi + (1.0 - pi) * r, 1e-15);
+                    double pi_second = pi_prime * (1.0 - 2.0 * pi);
+                    double q_z = pi_prime * (1.0 - r);
+                    double q_zz = pi_second * (1.0 - r);
+                    double q_c = -(1.0 - pi) * lambda * r;
+                    double q_cc = (1.0 - pi) * r * (lambda * lambda - lambda);
+                    double q_zc = pi_prime * lambda * r;
+
+                    double h_cc = q_c * q_c / (q * q) - q_cc / q;
+                    double h_zz = q_z * q_z / (q * q) - q_zz / q;
+                    double h_cz = q_c * q_z / (q * q) - q_zc / q;
+
+                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += h_cc * (xc * xc.transpose());
+                    H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += h_zz * (xz * xz.transpose());
+                    H.topRightCorner(m_p_cond, m_p_zi).noalias() += h_cz * (xc * xz.transpose());
+                } else {
+                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += lambda * (xc * xc.transpose());
+                    H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += pi_prime * (xz * xz.transpose());
+                }
+            }
         }
-        H = (H + H.transpose()) / 2.0;
+        H.bottomLeftCorner(m_p_zi, m_p_cond) = H.topRightCorner(m_p_cond, m_p_zi).transpose();
         return H;
     }
 };
@@ -159,7 +194,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
                                      double tol = 1e-6,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "lbfgs") {
+                                     std::string optimization_alg = "newton_raphson") {
     int p_cond = Xcond.cols();
     int p_zi = Xzi.cols();
     int total_p = p_cond + p_zi;
@@ -183,7 +218,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::VectorXd& y,
     ZeroAugmentedPoisson fun(y, Xcond, Xzi, is_hurdle);
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     } catch (...) {
         return List::create(Named("converged") = false);
     }

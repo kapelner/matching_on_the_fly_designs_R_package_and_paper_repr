@@ -18,11 +18,11 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
 		#' @param optimization_alg  Optimization algorithm to use.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "lbfgs"){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "newton_raphson"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
