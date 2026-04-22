@@ -15,11 +15,18 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE) {
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH
+		#'   optimiser. If \code{FALSE}, use \pkg{survival::coxph}.
+		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default)
+		#'   or \code{"lbfgs"}.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
+				assertFlag(use_rcpp)
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$use_rcpp = use_rcpp
 		},
 
 
@@ -66,6 +73,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 	),
 
 	private = list(
+		use_rcpp = TRUE,
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -156,9 +165,59 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			)
 		},
 
+		# Build (y, dead, X_mat) for a given row set.  X_mat = cbind(w, X_linear).
+		build_rcpp_inputs = function(rows, X_linear){
+			y_r    = as.numeric(private$y[rows])
+			dead_r = as.numeric(private$dead[rows])
+			w_r    = private$w[rows]
+			if (ncol(X_linear) > 0){
+				X_mat = cbind(w = w_r, X_linear[rows, , drop = FALSE])
+			} else {
+				X_mat = matrix(w_r, ncol = 1L, dimnames = list(NULL, "w"))
+			}
+			list(y = y_r, dead = dead_r, X = as.matrix(X_mat))
+		},
+
+		fit_rcpp_stratified = function(rows, X_linear, strata_id){
+			inp  = private$build_rcpp_inputs(rows, X_linear)
+			strata_sub = as.integer(strata_id[rows])
+			tryCatch(
+				fast_stratified_coxph_regression_cpp(
+					y             = inp$y,
+					dead          = inp$dead,
+					X             = inp$X,
+					strata_r      = strata_sub,
+					estimate_only = FALSE,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+		},
+
+		fit_rcpp_unstratified = function(rows, X_linear){
+			inp = private$build_rcpp_inputs(rows, X_linear)
+			tryCatch(
+				fast_coxph_regression_cpp(
+					y             = inp$y,
+					dead          = inp$dead,
+					X             = inp$X,
+					estimate_only = FALSE,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+		},
+
+		format_rcpp_output = function(fit){
+			if (is.null(fit) || !isTRUE(fit$converged)) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
+			beta_w  = as.numeric(fit$coefficients[1])
+			ssq_w   = if (!is.null(fit$vcov) && nrow(fit$vcov) >= 1L && is.finite(fit$vcov[1, 1]) && fit$vcov[1, 1] > 0)
+				fit$vcov[1, 1] else NA_real_
+			list(b = c(0, beta_w), ssq_b_2 = ssq_w)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
-			surv_obj = survival::Surv(private$y, private$dead)
-			X_full = private$X
+			X_full      = private$X
 			strata_info = private$compute_strata_info(X_full)
 
 			X_linear = matrix(numeric(0), nrow = length(private$y), ncol = 0)
@@ -169,48 +228,89 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				}
 			}
 
-			dat_full = data.frame(y = private$y, dead = private$dead, w = private$w)
-			if (ncol(X_linear) > 0){
-				colnames(X_linear) = paste0("x", seq_len(ncol(X_linear)))
-				dat_full = cbind(dat_full, as.data.frame(X_linear))
-			}
-
-			base_terms = c("w", colnames(dat_full)[!(colnames(dat_full) %in% c("y", "dead", "w"))])
-			base_formula = paste("survival::Surv(y, dead) ~", paste(base_terms, collapse = " + "))
-
-			# Prefer a genuinely stratified fit if the auto-strata carry information.
+			# ── Prefer a genuinely stratified fit if strata carry information ──
 			informative_rows = integer(0)
 			if (!is.null(strata_info$strata_id) && isTRUE(strata_info$num_strata > 1L)){
 				informative_rows = private$get_informative_rows(strata_info$strata_id)
 			}
 
 			if (length(informative_rows) >= 4){
-				dat_strat = dat_full[informative_rows, drop = FALSE]
-				dat_strat$strata_id = factor(strata_info$strata_id[informative_rows])
-				strat_formula = paste(base_formula, "+ strata(strata_id)")
-
-				mod = private$fit_cox_with_formula(dat_strat, strat_formula)
-				if (!is.null(mod)){
-					return(private$format_mod_output(mod))
-				}
-
-				if (ncol(as.matrix(private$X)) > 0 && ncol(X_linear) > 0){
-					mod = private$fit_cox_with_formula(
-						dat_strat[, c("y", "dead", "w", "strata_id"), drop = FALSE],
-						"survival::Surv(y, dead) ~ w + strata(strata_id)"
-					)
-					if (!is.null(mod)){
-						return(private$format_mod_output(mod))
+				if (private$use_rcpp){
+					fit = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id)
+					if (!is.null(fit) && isTRUE(fit$converged)){
+						return(private$format_rcpp_output(fit))
+					}
+					# fallback: Rcpp unstratified on informative rows
+					fit = private$fit_rcpp_unstratified(informative_rows, X_linear)
+					if (!is.null(fit) && isTRUE(fit$converged)){
+						return(private$format_rcpp_output(fit))
+					}
+				} else {
+					colnames(X_linear) = paste0("x", seq_len(ncol(X_linear)))
+					dat_full = data.frame(y = private$y, dead = private$dead, w = private$w)
+					if (ncol(X_linear) > 0) dat_full = cbind(dat_full, as.data.frame(X_linear))
+					base_terms   = c("w", setdiff(colnames(dat_full), c("y", "dead", "w")))
+					base_formula = paste("survival::Surv(y, dead) ~", paste(base_terms, collapse = " + "))
+					dat_strat    = dat_full[informative_rows, , drop = FALSE]
+					dat_strat$strata_id = factor(strata_info$strata_id[informative_rows])
+					mod = private$fit_cox_with_formula(dat_strat, paste(base_formula, "+ strata(strata_id)"))
+					if (!is.null(mod)) return(private$format_mod_output(mod))
+					if (ncol(X_linear) > 0){
+						mod = private$fit_cox_with_formula(
+							dat_strat[, c("y", "dead", "w", "strata_id"), drop = FALSE],
+							"survival::Surv(y, dead) ~ w + strata(strata_id)"
+						)
+						if (!is.null(mod)) return(private$format_mod_output(mod))
 					}
 				}
 			}
 
-			# Fallback to standard Cox using all subjects.
-			mod = private$fit_cox_with_formula(dat_full, base_formula)
-			if (is.null(mod) && ncol(as.matrix(private$X)) > 0 && ncol(X_linear) > 0){
-				mod = private$fit_cox_with_formula(dat_full[, c("y", "dead", "w"), drop = FALSE], "survival::Surv(y, dead) ~ w")
+			# ── Fallback: standard Cox on all subjects ────────────────────────
+			all_rows = seq_len(length(private$y))
+			if (private$use_rcpp){
+				fit = private$fit_rcpp_unstratified(all_rows, X_linear)
+				if (!is.null(fit) && isTRUE(fit$converged)){
+					return(private$format_rcpp_output(fit))
+				}
+			} else {
+				colnames(X_linear) = paste0("x", seq_len(ncol(X_linear)))
+				dat_full = data.frame(y = private$y, dead = private$dead, w = private$w)
+				if (ncol(X_linear) > 0) dat_full = cbind(dat_full, as.data.frame(X_linear))
+				base_terms   = c("w", setdiff(colnames(dat_full), c("y", "dead", "w")))
+				base_formula = paste("survival::Surv(y, dead) ~", paste(base_terms, collapse = " + "))
+				mod = private$fit_cox_with_formula(dat_full, base_formula)
+				if (is.null(mod) && ncol(X_linear) > 0){
+					mod = private$fit_cox_with_formula(
+						dat_full[, c("y", "dead", "w"), drop = FALSE],
+						"survival::Surv(y, dead) ~ w"
+					)
+				}
+				return(private$format_mod_output(mod))
 			}
-			private$format_mod_output(mod)
+			list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_)
+		}
+	)
+)
+
+#' Stratified Cox PH Inference for Survival Responses
+#'
+#' Fits an auto-stratified Cox PH regression.
+#'
+#' @export
+InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
+	lock_objects = FALSE,
+	inherit = InferenceSurvivalStratCoxPHAbstract,
+	public = list(
+		#' @description
+		#' Initialize
+		#' @param des_obj A completed \code{Design} object with a survival response.
+		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
+		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
+		#' @param use_rcpp Logical.
+		#' @param optimization_alg Optimization algorithm.
+		#' @param verbose Logical.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose)
 		}
 	)
 )

@@ -695,8 +695,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_coxph_regression_cpp
-List fast_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, Nullable<IntegerVector> cluster);
-RcppExport SEXP _EDI_fast_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP clusterSEXP) {
+List fast_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, Nullable<IntegerVector> cluster, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP clusterSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -708,13 +708,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type cluster(clusterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_coxph_regression_cpp(y, dead, X, start_beta, estimate_only, maxit, tol, cluster));
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_coxph_regression_cpp(y, dead, X, start_beta, estimate_only, maxit, tol, cluster, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_stratified_coxph_regression_cpp
-List fast_stratified_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol);
-RcppExport SEXP _EDI_fast_stratified_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List fast_stratified_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_stratified_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -726,7 +727,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_stratified_coxph_regression_cpp(y, dead, X, strata_r, start_beta, estimate_only, maxit, tol));
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stratified_coxph_regression_cpp(y, dead, X, strata_r, start_beta, estimate_only, maxit, tol, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2396,6 +2398,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_zinb_cpp
+List fast_zinb_cpp(const Eigen::VectorXd& y, const Eigen::MatrixXd& Xcond, const Eigen::MatrixXd& Xzi, Nullable<NumericVector> start_params, bool estimate_only, int maxit, double tol, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_zinb_cpp(SEXP ySEXP, SEXP XcondSEXP, SEXP XziSEXP, SEXP start_paramsSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xcond(XcondSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xzi(XziSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_params(start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_zinb_cpp(y, Xcond, Xzi, start_params, estimate_only, maxit, tol, optimization_alg));
+    return rcpp_result_gen;
+END_RCPP
+}
 // gcomp_logistic_post_fit_cpp
 List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit, const Eigen::VectorXd& y, const Eigen::VectorXd& coef_hat, const Eigen::VectorXd& mu_hat, int j_treat);
 RcppExport SEXP _EDI_gcomp_logistic_post_fit_cpp(SEXP X_fitSEXP, SEXP ySEXP, SEXP coef_hatSEXP, SEXP mu_hatSEXP, SEXP j_treatSEXP) {
@@ -3600,8 +3620,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_continuation_ratio_regression_hessian_cpp", (DL_FUNC) &_EDI_get_continuation_ratio_regression_hessian_cpp, 3},
     {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 4},
     {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 2},
-    {"_EDI_fast_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_coxph_regression_cpp, 8},
-    {"_EDI_fast_stratified_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_stratified_coxph_regression_cpp, 8},
+    {"_EDI_fast_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_coxph_regression_cpp, 9},
+    {"_EDI_fast_stratified_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_stratified_coxph_regression_cpp, 9},
     {"_EDI_get_cpoisson_combined_score_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_score_cpp, 7},
     {"_EDI_get_cpoisson_combined_hessian_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_hessian_cpp, 7},
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
@@ -3713,6 +3733,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_zero_one_inflated_beta_score_cpp", (DL_FUNC) &_EDI_get_zero_one_inflated_beta_score_cpp, 3},
     {"_EDI_get_zero_one_inflated_beta_hessian_cpp", (DL_FUNC) &_EDI_get_zero_one_inflated_beta_hessian_cpp, 3},
     {"_EDI_fast_zero_one_inflated_beta_cpp", (DL_FUNC) &_EDI_fast_zero_one_inflated_beta_cpp, 6},
+    {"_EDI_fast_zinb_cpp", (DL_FUNC) &_EDI_fast_zinb_cpp, 8},
     {"_EDI_gcomp_logistic_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_logistic_post_fit_cpp, 5},
     {"_EDI_gcomp_fractional_logit_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_fractional_logit_post_fit_cpp, 5},
     {"_EDI_gcomp_logistic_cluster_post_fit_cpp", (DL_FUNC) &_EDI_gcomp_logistic_cluster_post_fit_cpp, 6},

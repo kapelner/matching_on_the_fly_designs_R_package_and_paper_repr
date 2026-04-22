@@ -235,12 +235,12 @@ fast_continuation_ratio_regression_with_var_cpp <- function(X, y) {
     .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y)
 }
 
-fast_coxph_regression_cpp <- function(y, dead, X, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL) {
-    .Call(`_EDI_fast_coxph_regression_cpp`, y, dead, X, start_beta, estimate_only, maxit, tol, cluster)
+fast_coxph_regression_cpp <- function(y, dead, X, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, optimization_alg = "newton_raphson") {
+    .Call(`_EDI_fast_coxph_regression_cpp`, y, dead, X, start_beta, estimate_only, maxit, tol, cluster, optimization_alg)
 }
 
-fast_stratified_coxph_regression_cpp <- function(y, dead, X, strata_r, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9) {
-    .Call(`_EDI_fast_stratified_coxph_regression_cpp`, y, dead, X, strata_r, start_beta, estimate_only, maxit, tol)
+fast_stratified_coxph_regression_cpp <- function(y, dead, X, strata_r, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, optimization_alg = "newton_raphson") {
+    .Call(`_EDI_fast_stratified_coxph_regression_cpp`, y, dead, X, strata_r, start_beta, estimate_only, maxit, tol, optimization_alg)
 }
 
 get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
@@ -758,6 +758,10 @@ get_zero_one_inflated_beta_hessian_cpp <- function(Xfull, y, params) {
 
 fast_zero_one_inflated_beta_cpp <- function(Xfull, y, init, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, Xfull, y, init, fixed_idx, fixed_values, optimization_alg)
+}
+
+fast_zinb_cpp <- function(y, Xcond, Xzi, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, optimization_alg = "newton_raphson") {
+    .Call(`_EDI_fast_zinb_cpp`, y, Xcond, Xzi, start_params, estimate_only, maxit, tol, optimization_alg)
 }
 
 gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {

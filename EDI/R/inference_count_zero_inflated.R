@@ -25,6 +25,18 @@ InferenceCountZeroInflatedNegBin = R6::R6Class("InferenceCountZeroInflatedNegBin
 	lock_objects = FALSE,
 	inherit = InferenceCountZeroAugmentedPoissonAbstract,
 	public = list(
+		#' @description
+		#' Initialize a zero-inflated negative binomial inference object.
+		#' @param des_obj A completed \code{Design} object with a count response.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
+		#'   implementation. If \code{FALSE}, use \pkg{glmmTMB}.
+		#' @param verbose Whether to print progress messages.
+		#' @param optimization_alg Optimization algorithm. Default \code{"lbfgs"} for
+		#'   consistency with the \pkg{glmmTMB} fallback.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, optimization_alg = optimization_alg)
+		}
 	),
 	private = list(
 		za_family = function() glmmTMB::nbinom2(link = "log"),

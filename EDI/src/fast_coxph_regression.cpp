@@ -1,8 +1,10 @@
+#include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <vector>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 using namespace Rcpp;
 
@@ -252,6 +254,93 @@ CoxFitResult cox_newton_raphson(
     return res;
 }
 
+// ── Functor wrapping stratified Cox partial likelihood for L-BFGS ─────────
+class StratifiedCoxObjective {
+    const std::vector<CoxData>& m_strata;
+    const int m_p;
+public:
+    StratifiedCoxObjective(const std::vector<CoxData>& strata, int p)
+        : m_strata(strata), m_p(p) {}
+
+    // Returns negative partial log-likelihood; fills analytic gradient.
+    double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
+        std::vector<double> beta(par.data(), par.data() + m_p);
+        std::vector<double> g(m_p, 0.0), h_dummy(m_p * m_p, 0.0);
+        double nll = 0.0;
+        for (const CoxData& sd : m_strata) {
+            std::vector<double> g_s(m_p, 0.0), h_s(m_p * m_p, 0.0);
+            std::vector<double> exp_eta(sd.n), r_x_exp(m_p), r_xx_exp(m_p * m_p), sum_x_dk(m_p), e_z(m_p);
+            nll += compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, /*estimate_only=*/true,
+                                                  exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
+            for (int q = 0; q < m_p; ++q) g[q] += g_s[q];
+        }
+        grad = Eigen::Map<Eigen::VectorXd>(g.data(), m_p);
+        return nll;
+    }
+
+    // Analytic Hessian (information matrix) — used by Newton-Raphson path.
+    Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
+        std::vector<double> beta(par.data(), par.data() + m_p);
+        std::vector<double> g(m_p, 0.0), h(m_p * m_p, 0.0);
+        for (const CoxData& sd : m_strata) {
+            std::vector<double> g_s(m_p, 0.0), h_s(m_p * m_p, 0.0);
+            std::vector<double> exp_eta(sd.n), r_x_exp(m_p), r_xx_exp(m_p * m_p), sum_x_dk(m_p), e_z(m_p);
+            compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, /*estimate_only=*/false,
+                                           exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
+            for (int qq = 0; qq < m_p * m_p; ++qq) h[qq] += h_s[qq];
+        }
+        return Eigen::Map<Eigen::MatrixXd>(h.data(), m_p, m_p);
+    }
+};
+
+// Fit via L-BFGS; returns same CoxFitResult as cox_newton_raphson.
+CoxFitResult cox_lbfgs(
+    const std::vector<CoxData>& strata_data,
+    Nullable<NumericVector> start_beta,
+    bool estimate_only,
+    int maxit,
+    double tol)
+{
+    const int p = strata_data[0].p;
+    Eigen::VectorXd par = Eigen::VectorXd::Zero(p);
+    if (start_beta.isNotNull()) {
+        NumericVector sb(start_beta);
+        for (int q = 0; q < p; ++q) par[q] = sb[q];
+    }
+
+    StratifiedCoxObjective obj(strata_data, p);
+    LikelihoodFitResult fit = optimize_likelihood_lbfgs(obj, par, maxit, tol);
+
+    CoxFitResult res;
+    res.beta.assign(fit.params.data(), fit.params.data() + p);
+    res.neg_ll    = fit.value;
+    res.converged = fit.converged;
+    res.iterations = fit.niter;
+
+    if (!estimate_only && fit.converged) {
+        Eigen::MatrixXd H = obj.hessian(fit.params);
+        res.hess_mat = H;
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
+        if (ldlt.info() == Eigen::Success)
+            res.vcov = ldlt.solve(Eigen::MatrixXd::Identity(p, p));
+    }
+    return res;
+}
+
+// Dispatch: pick NR or L-BFGS based on optimization_alg string.
+CoxFitResult cox_fit(
+    const std::vector<CoxData>& strata_data,
+    Nullable<NumericVector> start_beta,
+    bool estimate_only,
+    int maxit,
+    double tol,
+    const std::string& optimization_alg)
+{
+    if (optimization_alg == "lbfgs")
+        return cox_lbfgs(strata_data, start_beta, estimate_only, maxit, tol);
+    return cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
+}
+
 // Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
 //
 // Score residual: U_i[q] = (x_i[q] - e(y_i)[q])*dead_i
@@ -400,13 +489,14 @@ List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
                                bool estimate_only = false,
                                int maxit = 20,
                                double tol = 1e-9,
-                               Nullable<IntegerVector> cluster = R_NilValue) {
+                               Nullable<IntegerVector> cluster = R_NilValue,
+                               std::string optimization_alg = "newton_raphson") {
     int p = X.cols();
 
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
 
-    CoxFitResult fit = cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, estimate_only, maxit, tol, optimization_alg);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
@@ -448,7 +538,8 @@ List fast_stratified_coxph_regression_cpp(
     Nullable<NumericVector> start_beta = R_NilValue,
     bool estimate_only = false,
     int maxit = 20,
-    double tol = 1e-9)
+    double tol = 1e-9,
+    std::string optimization_alg = "newton_raphson")
 {
     const int n = y.size();
     const int p = X.cols();
@@ -476,7 +567,7 @@ List fast_stratified_coxph_regression_cpp(
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
-    CoxFitResult fit = cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, estimate_only, maxit, tol, optimization_alg);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];

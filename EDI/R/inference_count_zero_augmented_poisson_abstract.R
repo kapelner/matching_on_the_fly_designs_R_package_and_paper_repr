@@ -116,7 +116,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				X_fit = cbind(1, treatment = private$w, X_cov)
 			}
 
-			if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
+			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
+				fit = tryCatch(
+					fast_zinb_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					error = function(e) NULL
+				)
+				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
+				return(as.numeric(fit$coefficients$cond[2]))
+			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				# Xcond and Xzi are the same here
 				fit = tryCatch(
@@ -231,7 +238,22 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 			}
 
-			if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
+			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
+				fit = tryCatch(
+					fast_zinb_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					error = function(e) NULL
+				)
+				if (is.null(fit) || !isTRUE(fit$converged)) {
+					private$cache_nonestimable_estimate("zinb_fit_unavailable")
+					return(invisible(NULL))
+				}
+				private$cached_mod = fit
+				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				if (!estimate_only) {
+					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
+					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				}
+			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
@@ -242,7 +264,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					return(invisible(NULL))
 				}
 				private$cached_mod = fit
-				
+
 				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
