@@ -2,16 +2,28 @@
 % Please edit documentation in R/inference_proportion_KK_quantile_regr_one_lik.R
 \name{InferencePropKKQuantileRegrOneLik}
 \alias{InferencePropKKQuantileRegrOneLik}
-\title{Quantile Regression Combined-Likelihood Estimator for KK Designs with Proportion Outcomes}
+\title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)}
 \description{
-Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrOneLik}.
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)
+
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Proportion)
+}
+\details{
+Fits the combined stacked quantile regression (matched-pair differences + reservoir)
+using the treatment indicator and all recorded covariates for proportion responses.
+Responses are transformed via logit before regression; the estimated treatment
+effect is a log-odds-ratio shift at quantile \code{tau}.
+Minimises the joint check-function loss over both data sources simultaneously.
+Inference is based on the stacked combined-likelihood quantile-regression fit.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrOneLik]{EDI::InferenceAbstractKKQuantileRegrOneLik}} -> \code{\link[EDI:InferencePropMultiKKQuantileRegrOneLik]{EDI::InferencePropMultiKKQuantileRegrOneLik}} -> \code{InferencePropKKQuantileRegrOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrOneLik]{EDI::InferenceAbstractKKQuantileRegrOneLik}} -> \code{InferencePropKKQuantileRegrOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferencePropKKQuantileRegrOneLik-new}{\code{InferencePropKKQuantileRegrOneLik$new()}}
+\item \href{#method-InferencePropKKQuantileRegrOneLik-compute_estimate}{\code{InferencePropKKQuantileRegrOneLik$compute_estimate()}}
 \item \href{#method-InferencePropKKQuantileRegrOneLik-clone}{\code{InferencePropKKQuantileRegrOneLik$clone()}}
 }
 }
@@ -44,11 +56,61 @@ Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrOneLik}.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval'><code>EDI::InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropMultiKKQuantileRegrOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferencePropMultiKKQuantileRegrOneLik.html#method-InferencePropMultiKKQuantileRegrOneLik-compute_estimate'><code>EDI::InferencePropMultiKKQuantileRegrOneLik$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropMultiKKQuantileRegrOneLik" data-id="initialize"><a href='../../EDI/html/InferencePropMultiKKQuantileRegrOneLik.html#method-InferencePropMultiKKQuantileRegrOneLik-initialize'><code>EDI::InferencePropMultiKKQuantileRegrOneLik$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrOneLik$new(
+  des_obj,
+  model_formula = NULL,
+  tau = 0.5,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level on the logit scale, strictly
+between 0 and 1. Default is 0.5.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{num_cores}}{Number of CPU cores for parallel processing.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-clone}{}}}

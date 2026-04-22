@@ -892,6 +892,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_hurdle_poisson_glmm_cpp
+List fast_hurdle_poisson_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int j_T, bool estimate_only, int n_gh, int maxit, double eps_g, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_hurdle_poisson_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP j_TSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< int >::type j_T(j_TSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_hurdle_poisson_glmm_cpp(X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, optimization_alg));
+    return rcpp_result_gen;
+END_RCPP
+}
 // exact_jonckheere_terpstra_pval_cpp
 List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y, const IntegerVector& w);
 RcppExport SEXP _EDI_exact_jonckheere_terpstra_pval_cpp(SEXP ySEXP, SEXP wSEXP) {
@@ -3593,6 +3612,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_hurdle_negbin_count_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_hessian_cpp, 3},
     {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 7},
     {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 8},
+    {"_EDI_fast_hurdle_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_hurdle_poisson_glmm_cpp, 9},
     {"_EDI_exact_jonckheere_terpstra_pval_cpp", (DL_FUNC) &_EDI_exact_jonckheere_terpstra_pval_cpp, 2},
     {"_EDI_compute_kk_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_kk_wilcox_distr_parallel_cpp, 8},
     {"_EDI_get_log_binomial_regression_score_cpp", (DL_FUNC) &_EDI_get_log_binomial_regression_score_cpp, 3},

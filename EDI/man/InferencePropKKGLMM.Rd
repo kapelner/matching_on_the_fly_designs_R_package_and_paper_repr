@@ -70,6 +70,7 @@ Initialize the inference object.
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
+  optimization_alg = "lbfgs",
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -83,6 +84,12 @@ Initialize the inference object.
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp.}
+
+\item{\code{optimization_alg}}{Optimization algorithm: "lbfgs" (default) or "newton_raphson".}
+
+\item{\code{verbose}}{Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}
 }

@@ -2,16 +2,56 @@
 % Please edit documentation in R/inference_proportion_KK_quantile_regr_ivwc.R
 \name{InferencePropKKQuantileRegrIVWC}
 \alias{InferencePropKKQuantileRegrIVWC}
-\title{Quantile Regression Compound Estimator for KK Designs with Proportion Outcomes}
+\title{Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)}
 \description{
-Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrIVWC}.
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)
+
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs (Proportion
+Outcomes)
+}
+\details{
+A variance-weighted compound quantile regression estimator for KK matching-on-the-fly
+designs with proportion responses. Inference is performed on the \strong{logit (log-odds)
+scale}: responses \eqn{y \in (0,1)} are transformed via \eqn{\text{logit}(y) = \log(y/(1-y))}
+before quantile regression.
+
+The estimator combines:
+\enumerate{
+  \item Quantile regression on logit-scale within-pair differences
+    \eqn{\text{logit}(y_T) - \text{logit}(y_C)} (matched pairs)
+  \item Quantile regression of \eqn{\text{logit}(y)} on treatment and covariates (reservoir)
+}
+using the same variance-weighted combination logic as the OLS compound estimator.
+
+The estimated treatment effect is a \strong{log-odds-ratio shift} at quantile \code{tau}.
+At \code{beta_T = 1} (one log-odds-ratio unit of treatment effect), the population
+treatment effect on the logit scale is exactly 1, so no \code{skip_ci} is needed.
+
+\strong{Default quantile: \code{tau = 0.5} (median regression).}
+To target a different quantile — for example the 25th or 75th percentile — pass
+\code{tau = 0.25} or \code{tau = 0.75} to the constructor:
+\preformatted{
+  inf = InferencePropKKQuantileRegrIVWC$
+  new(seq_des, tau = 0.75)
+}
+Any value strictly between 0 and 1 is accepted.
+
+Standard errors use Powell's "nid" sandwich estimator (non-iid), falling back to "iid"
+on failure. Asymptotic z-based inference is used throughout.
+
+This class requires the \pkg{quantreg} package, which is listed in Suggests
+and is not installed automatically with \pkg{EDI}.
+Install \pkg{quantreg} before using this class.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{EDI::InferenceAbstractKKQuantileRegrIVWC}} -> \code{\link[EDI:InferencePropMultiKKQuantileRegrIVWC]{EDI::InferencePropMultiKKQuantileRegrIVWC}} -> \code{InferencePropKKQuantileRegrIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{EDI::InferenceAbstractKKQuantileRegrIVWC}} -> \code{InferencePropKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferencePropKKQuantileRegrIVWC-new}{\code{InferencePropKKQuantileRegrIVWC$new()}}
 \item \href{#method-InferencePropKKQuantileRegrIVWC-clone}{\code{InferencePropKKQuantileRegrIVWC$clone()}}
 }
 }
@@ -45,10 +85,47 @@ Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrIVWC}.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferencePropMultiKKQuantileRegrIVWC" data-id="initialize"><a href='../../EDI/html/InferencePropMultiKKQuantileRegrIVWC.html#method-InferencePropMultiKKQuantileRegrIVWC-initialize'><code>EDI::InferencePropMultiKKQuantileRegrIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKQuantileRegrIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  tau = 0.5,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression on the logit
+scale, strictly between 0 and 1.
+                          The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
+                          Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
+                          different percentile of the treatment effect distribution.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrIVWC-clone}{}}}

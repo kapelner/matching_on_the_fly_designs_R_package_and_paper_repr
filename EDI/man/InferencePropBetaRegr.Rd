@@ -61,7 +61,12 @@ the treatment indicator and, optionally, all recorded covariates as predictors.
 \subsection{Method \code{new()}}{
 Initialize a beta-regression inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropBetaRegr$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropBetaRegr$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  optimization_alg = "newton_raphson"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -75,6 +80,9 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Character scalar specifying the optimization algorithm. 
+Default \code{"newton_raphson"}.}
 }
 \if{html}{\out{</div>}}
 }

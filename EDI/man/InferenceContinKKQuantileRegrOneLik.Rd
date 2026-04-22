@@ -2,16 +2,48 @@
 % Please edit documentation in R/inference_continuous_KK_quantile_regr_one_lik.R
 \name{InferenceContinKKQuantileRegrOneLik}
 \alias{InferenceContinKKQuantileRegrOneLik}
-\title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs}
+\title{Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)}
 \description{
-Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrOneLik}.
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)
+
+Quantile Regression Combined-Likelihood Compound Estimator for KK Designs (Continuous)
+}
+\details{
+Fits the combined stacked quantile regression (matched-pair differences + reservoir)
+using the treatment indicator and all recorded covariates for continuous responses.
+Minimises the joint check-function loss over both data sources simultaneously.
+Inference is based on the stacked combined-likelihood quantile-regression fit.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `InferenceContinKKQuantileRegrOneLik$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrOneLik$new(seq_des, verbose
+= FALSE)
+infer
+
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrOneLik]{EDI::InferenceAbstractKKQuantileRegrOneLik}} -> \code{\link[EDI:InferenceContinMultKKQuantileRegrOneLik]{EDI::InferenceContinMultKKQuantileRegrOneLik}} -> \code{InferenceContinKKQuantileRegrOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrOneLik]{EDI::InferenceAbstractKKQuantileRegrOneLik}} -> \code{InferenceContinKKQuantileRegrOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceContinKKQuantileRegrOneLik-new}{\code{InferenceContinKKQuantileRegrOneLik$new()}}
+\item \href{#method-InferenceContinKKQuantileRegrOneLik-compute_estimate}{\code{InferenceContinKKQuantileRegrOneLik$compute_estimate()}}
 \item \href{#method-InferenceContinKKQuantileRegrOneLik-clone}{\code{InferenceContinKKQuantileRegrOneLik$clone()}}
 }
 }
@@ -44,11 +76,80 @@ Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrOneLik}
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval'><code>EDI::InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceContinMultKKQuantileRegrOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferenceContinMultKKQuantileRegrOneLik.html#method-InferenceContinMultKKQuantileRegrOneLik-compute_estimate'><code>EDI::InferenceContinMultKKQuantileRegrOneLik$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceContinMultKKQuantileRegrOneLik" data-id="initialize"><a href='../../EDI/html/InferenceContinMultKKQuantileRegrOneLik.html#method-InferenceContinMultKKQuantileRegrOneLik-initialize'><code>EDI::InferenceContinMultKKQuantileRegrOneLik$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKQuantileRegrOneLik-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrOneLik-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKQuantileRegrOneLik$new(
+  des_obj,
+  model_formula = NULL,
+  tau = 0.5,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. Default is 0.5.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrOneLik$new(seq_des, verbose
+= FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKQuantileRegrOneLik-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrOneLik-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKQuantileRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKQuantileRegrOneLik-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrOneLik-clone}{}}}

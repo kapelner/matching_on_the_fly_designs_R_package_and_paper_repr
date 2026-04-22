@@ -89,6 +89,12 @@ with a continuous response.
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+
+\item{\code{method}}{Description for method. Default "MM".}
+
+\item{\code{use_rcpp}}{Description for use_rcpp. Default TRUE.}
+
+\item{\code{verbose}}{Description for verbose. Default FALSE.}
 }
 \if{html}{\out{</div>}}
 }

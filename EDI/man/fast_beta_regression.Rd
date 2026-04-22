@@ -4,7 +4,12 @@
 \alias{fast_beta_regression}
 \title{Fast Beta Regression (R Wrapper)}
 \usage{
-fast_beta_regression(Xmm, y, start_phi = 10, optimization_alg = "lbfgs")
+fast_beta_regression(
+  Xmm,
+  y,
+  start_phi = 10,
+  optimization_alg = "newton_raphson"
+)
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column

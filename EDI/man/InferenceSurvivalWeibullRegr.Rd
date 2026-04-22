@@ -65,7 +65,8 @@ Initialize a Weibull-regression inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalWeibullRegr$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  optimization_alg = "newton_raphson"
 )}\if{html}{\out{</div>}}
 }
 
@@ -80,6 +81,9 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Character scalar specifying the optimization algorithm. 
+Default \code{"newton_raphson"}.}
 }
 \if{html}{\out{</div>}}
 }

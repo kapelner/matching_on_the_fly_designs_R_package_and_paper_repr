@@ -156,7 +156,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			}
 
 			X_full = private$build_design_matrix()
-			attempt = private$try_fit_full_and_harden(
+			attempt = private$fit_with_hardened_qr_column_dropping(
 				fit_fun = function(X_fit, keep){
 					res = fast_coxph_regression_cpp(private$y, private$dead, X_fit, cluster = cl_int)
 					res$j_treat = 1L
@@ -168,8 +168,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 					se   = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
 					is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
 						is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
-				},
-				include_intercept = FALSE
+				}
 			)
 			res = attempt$fit
 			if (!is.null(res)){

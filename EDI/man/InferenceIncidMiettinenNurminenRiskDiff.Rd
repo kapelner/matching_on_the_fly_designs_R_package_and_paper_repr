@@ -4,14 +4,50 @@
 \alias{InferenceIncidMiettinenNurminenRiskDiff}
 \title{Miettinen-Nurminen Risk-Difference Inference for Binary Responses}
 \description{
-Public collapsed-name wrapper for \code{InferenceIncidUnivMiettinenNurminenRiskDiff}.
+Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+
+Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+}
+\details{
+Fits the classical Miettinen-Nurminen score method for the risk difference in a
+two-arm binary trial. The point estimate is the observed risk difference, while
+confidence intervals and p-values are obtained by inverting the constrained
+score test under the null \eqn{p_T - p_C = \delta}.
+
+
+This class is intentionally unadjusted. It operates on the \eqn{2 \times 2}
+table induced by treatment assignment and incidence response, and is therefore
+the natural classical binary-endpoint complement to the regression-based
+incidence methods already in the package.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `InferenceIncidMiettinenNurminenRiskDiff$new`
+## ------------------------------------------------
+
+\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
+for (i in 1:20) {
+	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
+	p_i = plogis(-0.8 + 0.5 * w_i)
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
+}
+seq_des_inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+}
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceIncidUnivMiettinenNurminenRiskDiff]{EDI::InferenceIncidUnivMiettinenNurminenRiskDiff}} -> \code{InferenceIncidMiettinenNurminenRiskDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceIncidMiettinenNurminenRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceIncidMiettinenNurminenRiskDiff-new}{\code{InferenceIncidMiettinenNurminenRiskDiff$new()}}
+\item \href{#method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate}{\code{InferenceIncidMiettinenNurminenRiskDiff$compute_estimate()}}
+\item \href{#method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_confidence_interval}{\code{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval}{\code{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceIncidMiettinenNurminenRiskDiff-clone}{\code{InferenceIncidMiettinenNurminenRiskDiff$clone()}}
 }
 }
@@ -42,13 +78,113 @@ Public collapsed-name wrapper for \code{InferenceIncidUnivMiettinenNurminenRiskD
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivMiettinenNurminenRiskDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivMiettinenNurminenRiskDiff.html#method-InferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivMiettinenNurminenRiskDiff" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceIncidUnivMiettinenNurminenRiskDiff.html#method-InferenceIncidUnivMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval'><code>EDI::InferenceIncidUnivMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivMiettinenNurminenRiskDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceIncidUnivMiettinenNurminenRiskDiff.html#method-InferenceIncidUnivMiettinenNurminenRiskDiff-compute_estimate'><code>EDI::InferenceIncidUnivMiettinenNurminenRiskDiff$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivMiettinenNurminenRiskDiff" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivMiettinenNurminenRiskDiff.html#method-InferenceIncidUnivMiettinenNurminenRiskDiff-initialize'><code>EDI::InferenceIncidUnivMiettinenNurminenRiskDiff$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a Miettinen-Nurminen risk-difference inference object for a
+completed design with an incidence response.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
+for (i in 1:20) {
+	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
+	p_i = plogis(-0.8 + 0.5 * w_i)
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
+}
+seq_des_inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Computes the observed risk-difference estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_confidence_interval(
+  alpha = 0.05,
+  pval_epsilon = 1e-07
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{pval_epsilon}}{Bisection tolerance for CI bounds.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a two-sided Miettinen-Nurminen score p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect on the risk-difference scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-clone}{}}}

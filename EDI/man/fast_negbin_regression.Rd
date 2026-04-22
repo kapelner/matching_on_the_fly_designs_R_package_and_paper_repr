@@ -4,7 +4,7 @@
 \alias{fast_negbin_regression}
 \title{Fast Negative Binomial Regression (R Wrapper)}
 \usage{
-fast_negbin_regression(Xmm, y, optimization_alg = "lbfgs")
+fast_negbin_regression(Xmm, y, optimization_alg = "newton_raphson")
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column

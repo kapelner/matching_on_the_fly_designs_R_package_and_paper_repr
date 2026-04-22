@@ -61,6 +61,7 @@ Initialize
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKOrdinalCLMM$new(
   des_obj,
   model_formula = NULL,
+  use_rcpp = TRUE,
   verbose = FALSE,
   harden = TRUE
 )}\if{html}{\out{</div>}}
@@ -71,10 +72,11 @@ Initialize
 \describe{
 \item{\code{des_obj}}{A completed \code{Design} object.}
 
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use the internal Rcpp
+implementation (no external packages required). Set \code{FALSE} to fall
+back to \pkg{ordinal::clmm}.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
 

@@ -16,6 +16,8 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param optimization_alg Character scalar specifying the optimization algorithm. 
+		#'   Default \code{"newton_raphson"}.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "newton_raphson"){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")

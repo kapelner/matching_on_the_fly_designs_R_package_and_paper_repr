@@ -46,7 +46,7 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
-			attempt = private$try_fit_full_and_harden(
+			attempt = private$fit_with_hardened_qr_column_dropping(
 				fit_fun = function(X_fit, keep){
 					res = fast_ordinal_cauchit_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
 					# Add intercept placeholder to b for MLEorKM logic

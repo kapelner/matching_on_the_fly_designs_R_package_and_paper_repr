@@ -70,7 +70,7 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
-			attempt = private$try_fit_full_and_harden(
+			attempt = private$fit_with_hardened_qr_column_dropping(
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					if (estimate_only) {

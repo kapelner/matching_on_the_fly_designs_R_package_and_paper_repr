@@ -76,6 +76,11 @@ Initialize the inference object.
 \describe{
 \item{\code{des_obj}}{A completed \code{DesignSeqOneByOneKK14} object.}
 
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
 implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
 the matched-pair component.}

@@ -4,14 +4,31 @@
 \alias{InferenceIncidNewcombeRiskDiff}
 \title{Newcombe Risk-Difference Inference for Binary Responses}
 \description{
-Public collapsed-name wrapper for \code{InferenceIncidUnivNewcombeRiskDiff}.
+Newcombe Risk-Difference Inference for Binary Responses
+
+Newcombe Risk-Difference Inference for Binary Responses
+}
+\details{
+Fits the Newcombe hybrid score method (Method 10) for the risk difference in a
+two-arm binary trial. This method constructs a confidence interval for the
+difference between two independent proportions by combining Wilson score intervals
+for each group.
+
+
+This class is unadjusted and assumes independent samples (e.g. from a Bernoulli). It
+ignores any matched-pair structure if present. For matched data, use
+\code{InferenceIncidKKNewcombeRiskDiff}.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceIncidUnivNewcombeRiskDiff]{EDI::InferenceIncidUnivNewcombeRiskDiff}} -> \code{InferenceIncidNewcombeRiskDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceIncidNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceIncidNewcombeRiskDiff-new}{\code{InferenceIncidNewcombeRiskDiff$new()}}
+\item \href{#method-InferenceIncidNewcombeRiskDiff-compute_estimate}{\code{InferenceIncidNewcombeRiskDiff$compute_estimate()}}
+\item \href{#method-InferenceIncidNewcombeRiskDiff-compute_asymp_confidence_interval}{\code{InferenceIncidNewcombeRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceIncidNewcombeRiskDiff-compute_asymp_two_sided_pval}{\code{InferenceIncidNewcombeRiskDiff$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceIncidNewcombeRiskDiff-clone}{\code{InferenceIncidNewcombeRiskDiff$clone()}}
 }
 }
@@ -42,13 +59,88 @@ Public collapsed-name wrapper for \code{InferenceIncidUnivNewcombeRiskDiff}.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivNewcombeRiskDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivNewcombeRiskDiff.html#method-InferenceIncidUnivNewcombeRiskDiff-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivNewcombeRiskDiff$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivNewcombeRiskDiff" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceIncidUnivNewcombeRiskDiff.html#method-InferenceIncidUnivNewcombeRiskDiff-compute_asymp_two_sided_pval'><code>EDI::InferenceIncidUnivNewcombeRiskDiff$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivNewcombeRiskDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceIncidUnivNewcombeRiskDiff.html#method-InferenceIncidUnivNewcombeRiskDiff-compute_estimate'><code>EDI::InferenceIncidUnivNewcombeRiskDiff$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivNewcombeRiskDiff" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivNewcombeRiskDiff.html#method-InferenceIncidUnivNewcombeRiskDiff-initialize'><code>EDI::InferenceIncidUnivNewcombeRiskDiff$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidNewcombeRiskDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidNewcombeRiskDiff-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a Newcombe risk-difference inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidNewcombeRiskDiff$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidNewcombeRiskDiff-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidNewcombeRiskDiff-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Computes the observed risk-difference estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidNewcombeRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidNewcombeRiskDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1 - \code{alpha} Newcombe confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidNewcombeRiskDiff$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidNewcombeRiskDiff-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidNewcombeRiskDiff-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a two-sided p-value by inverting the Newcombe interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidNewcombeRiskDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null risk difference.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidNewcombeRiskDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidNewcombeRiskDiff-clone}{}}}

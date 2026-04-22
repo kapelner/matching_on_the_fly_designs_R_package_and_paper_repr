@@ -1,11 +1,14 @@
 #' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'
 #' Internal base class for KK hurdle-Poisson combined-likelihood models. The
-#' fitted model uses a single \pkg{glmmTMB} hurdle-Poisson likelihood over all
-#' subjects, with pair-specific random intercepts active on matched rows and a
-#' fixed reservoir intercept on reservoir rows. The reported treatment effect is
-#' the treatment coefficient from the positive-count component on the log-rate
-#' scale.
+#' count component is a zero-truncated Poisson GLMM fitted over all subjects,
+#' with pair-specific random intercepts for matched subjects and singleton
+#' groups for reservoir subjects. The reported treatment effect is the
+#' treatment coefficient on the log-rate scale.
+#'
+#' When \code{use_rcpp = TRUE} (default) the likelihood is maximised by an
+#' internal Rcpp/L-BFGS routine. Set \code{use_rcpp = FALSE} to fall back to
+#' \pkg{glmmTMB}.
 #'
 #' @keywords internal
 #' @noRd
@@ -23,8 +26,9 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
+		#' @param optimization_alg Optimization algorithm: "lbfgs" (default) or "newton_raphson".
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -34,6 +38,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
@@ -92,23 +97,165 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 
 	private = list(
 		use_rcpp = TRUE,
+		max_abs_reasonable_coef = 1e4,
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
-		fit_hurdle_model = function(model_data){
-			if (private$use_rcpp) {
-				# Use glmmTMB as the engine for our "ourself" path for now,
-				# but it is managed via the internal dispatch.
+		# ── Group ID construction (matched pairs + singletons for reservoir) ──────
+		build_group_ids = function(){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			group_id = m_vec
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L)
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			as.integer(group_id)
+		},
+
+		# ── Rcpp path ────────────────────────────────────────────────────────────
+		shared_rcpp = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$clear_nonestimable_state()
+
+			group_id = private$build_group_ids()
+
+			if (ncol(as.matrix(private$X)) > 0){
+				X_fit = private$create_design_matrix()
+				if ("treatment" %in% colnames(X_fit))
+					colnames(X_fit)[colnames(X_fit) == "treatment"] = "w"
+			} else {
+				X_fit = cbind(`(Intercept)` = 1, w = private$w)
+			}
+			X_fit = as.matrix(X_fit)
+			j_T = 1L  # 0-based index of treatment column (w is always column 2 = index 1)
+
+			fit = tryCatch(
+				fast_hurdle_poisson_glmm_cpp(
+					X             = X_fit,
+					y             = as.numeric(private$y),
+					group_id      = as.integer(group_id),
+					j_T           = j_T,
+					estimate_only = estimate_only,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
 			}
 
-			dat = model_data$dat
+			beta_hat_T = as.numeric(fit$b[j_T + 1L])
+
+			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
+			}
+
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$is_z = TRUE
+			private$cached_values$df   = Inf
+
+			if (estimate_only) return(invisible(NULL))
+
+			ssq = fit$ssq_b_T
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+		},
+
+		# ── glmmTMB fallback path ─────────────────────────────────────────────────
+		shared_glmm_tmb = function(estimate_only = FALSE){
+			if (!check_package_installed("glmmTMB")){
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_no_glmmTMB")
+				return(invisible(NULL))
+			}
+
+			model_data = private$build_model_data()
+			if (is.null(model_data)){
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_no_model_data")
+				return(invisible(NULL))
+			}
+
+			mod = private$fit_hurdle_model_glmm(model_data)
+			if (is.null(mod)){
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_fit_unavailable")
+				return(invisible(NULL))
+			}
+
+			cond_fixef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_fixef) || !("w" %in% names(cond_fixef)) || !is.finite(cond_fixef[["w"]])){
+				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_treatment_missing")
+				return(invisible(NULL))
+			}
+
+			private$cached_values$beta_hat_T = as.numeric(cond_fixef[["w"]])
+			private$cached_values$is_z = TRUE
+
+			if (!estimate_only) {
+				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
+				se = if (!is.null(coef_table) && ("w" %in% rownames(coef_table))) as.numeric(coef_table["w", "Std. Error"]) else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			}
+		},
+
+		shared_combined_hurdle = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
+			if (private$use_rcpp) {
+				private$shared_rcpp(estimate_only)
+			} else {
+				private$shared_glmm_tmb(estimate_only)
+			}
+		},
+
+		# ── glmmTMB helpers ───────────────────────────────────────────────────────
+		build_model_data = function(){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
+			X_cov = if (!is.null(private$X) && ncol(as.matrix(private$X)) > 0) as.data.frame(private$X) else NULL
+			dat = data.frame(
+				y          = private$y,
+				w          = private$w,
+				pair_group = factor(ifelse(m_vec > 0L, m_vec, private$n + seq_along(m_vec)))
+			)
+			if (!is.null(X_cov)) dat = cbind(dat, X_cov)
+
+			has_pairs = any(m_vec > 0L)
+			list(dat = dat, has_pairs = has_pairs)
+		},
+
+		build_cond_formula = function(dat, has_pairs = TRUE){
+			fixed_terms = setdiff(colnames(dat), c("y", "pair_group"))
+			if (has_pairs){
+				rhs = paste(c(fixed_terms, "(1 | pair_group)"), collapse = " + ")
+			} else {
+				rhs = paste(fixed_terms, collapse = " + ")
+			}
+			stats::as.formula(paste("y ~", rhs))
+		},
+
+		build_zi_formula = function(dat, has_pairs = TRUE){
+			fixed_terms = setdiff(colnames(dat), c("y", "pair_group"))
+			if (has_pairs){
+				rhs = paste(c(fixed_terms, "(1 | pair_group)"), collapse = " + ")
+			} else {
+				rhs = paste(fixed_terms, collapse = " + ")
+			}
+			stats::as.formula(paste("~", rhs))
+		},
+
+		fit_hurdle_model_glmm = function(model_data){
+			dat       = model_data$dat
 			has_pairs = isTRUE(model_data$has_pairs)
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
 
 			formula_cond = private$build_cond_formula(dat, has_pairs = has_pairs)
-			formula_zi = private$build_zi_formula(dat, has_pairs = has_pairs)
+			formula_zi   = private$build_zi_formula(dat, has_pairs = has_pairs)
 
 			mod = tryCatch(
 				suppressWarnings(suppressMessages(
@@ -124,9 +271,10 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			)
 			if (!is.null(mod)) return(mod)
 
-			dat_fallback = dat[, intersect(c("y", "w", "reservoir_ind", "pair_group", "pair_active"), colnames(dat)), drop = FALSE]
+			# Fallback: treatment + pair_group only
+			dat_fallback = dat[, intersect(c("y", "w", "pair_group"), colnames(dat)), drop = FALSE]
 			formula_cond = private$build_cond_formula(dat_fallback, has_pairs = has_pairs)
-			formula_zi = private$build_zi_formula(dat_fallback, has_pairs = has_pairs)
+			formula_zi   = private$build_zi_formula(dat_fallback, has_pairs = has_pairs)
 			tryCatch(
 				suppressWarnings(suppressMessages(
 					glmmTMB::glmmTMB(
@@ -139,37 +287,6 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				)),
 				error = function(e) NULL
 			)
-		},
-
-		shared_combined_hurdle = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
-			model_data = private$build_model_data()
-			if (is.null(model_data)){
-				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_no_model_data")
-				return(invisible(NULL))
-			}
-
-			mod = private$fit_hurdle_model(model_data)
-			if (is.null(mod)){
-				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_fit_unavailable")
-				return(invisible(NULL))
-			}
-
-			cond_fixef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
-			if (is.null(cond_fixef) || !("w" %in% names(cond_fixef)) || !is.finite(cond_fixef[["w"]])){
-				private$cache_nonestimable_estimate("kk_hurdle_poisson_combined_treatment_missing")
-				return(invisible(NULL))
-			}
-
-			private$cached_values$beta_hat_T = as.numeric(cond_fixef[["w"]])
-			if (!estimate_only) {
-				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
-				se = if (!is.null(coef_table) && ("w" %in% rownames(coef_table))) as.numeric(coef_table["w", "Std. Error"]) else NA_real_
-				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			}
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

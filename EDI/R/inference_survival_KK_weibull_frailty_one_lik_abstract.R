@@ -227,6 +227,12 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			}
 			private$cached_values$is_z         = TRUE
 			invisible(NULL)
+		},
+
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				return(invisible(NULL))
+			}
 		}
 	)
 )

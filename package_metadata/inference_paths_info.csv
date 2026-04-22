@@ -14,8 +14,6 @@ continuous,KKQuantileRegrOneLik,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
 continuous,KKRobustRegrIVWC,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
 continuous,KKRobustRegrOneLik,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
 continuous,Lin,Y,N,N,N,Y,Y,ourself/closed-form linear estimator,closed-form QR solve,Y
-continuous,MultKKQuantileRegrIVWC,N,N,N,N,Y,Y,quantreg,NA,NA
-continuous,MultKKQuantileRegrOneLik,N,Y,Y,Y,Y,Y,quantreg,NA,NA
 continuous,OLS,Y,N,N,N,Y,Y,ourself/Rcpp OLS,closed-form QR solve,Y
 continuous,QuantileRegr,Y,N,N,N,Y,Y,quantreg,NA,NA
 continuous,RobustRegr,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
@@ -23,6 +21,7 @@ count,HurdleNegBin,Y,N,N,N,Y,Y,ourself/Rcpp hurdle negative binomial,IRLS plus L
 count,HurdlePoisson,Y,N,N,N,Y,Y,glmmTMB,NA,NA
 count,KKCPoissonIVWC,Y,N,N,N,Y,Y,ourself/Rcpp conditional-Poisson plus negative binomial,weighted logistic IRLS plus L-BFGS,N
 count,KKCPoissonOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-Poisson combined likelihood,Newton-Raphson,N
+count,KKGLMM,N,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
 count,KKHurdlePoissonIVWC,Y,N,N,N,Y,Y,glmmTMB,NA,NA
 count,KKHurdlePoissonOneLik,Y,N,N,N,Y,Y,glmmTMB,NA,NA
 count,NegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N
@@ -57,9 +56,6 @@ incidence,MiettinenNurminenRiskDiff,N,N,N,N,Y,Y,none/score or interval equations
 incidence,ModifiedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y
 incidence,NewcombeRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
 incidence,RiskDiff,Y,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
-incidence,UnivKKNewcombeRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
-incidence,UnivMiettinenNurminenRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
-incidence,UnivNewcombeRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
 incidence,Wald,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
 ordinal,CauchitRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
 ordinal,CloglogRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
@@ -81,8 +77,6 @@ proportion,KKGEE,Y,N,N,N,Y,Y,geepack,NA,NA
 proportion,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
 proportion,KKQuantileRegrIVWC,Y,N,N,N,Y,Y,quantreg,NA,NA
 proportion,KKQuantileRegrOneLik,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
-proportion,MultiKKQuantileRegrIVWC,N,N,N,N,Y,Y,quantreg,NA,NA
-proportion,MultiKKQuantileRegrOneLik,N,Y,Y,Y,Y,Y,quantreg,NA,NA
 proportion,ZeroOneInflatedBetaRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp zero-one-inflated beta,L-BFGS,N
 survival,CoxPHRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,DepCensTransformRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp dependent-censoring transformation,L-BFGS,N
@@ -94,6 +88,8 @@ survival,KKLWACoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-R
 survival,KKRankRegrIVWC,Y,N,N,N,Y,Y,none/rank-regression path,NA,NA
 survival,KKStratCoxIVWC,Y,N,N,N,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,KKStratCoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
+survival,KKWeibullFrailtyIVWC,N,N,N,N,Y,Y,survival,NA,NA
+survival,KKWeibullFrailtyOneLik,N,Y,Y,Y,Y,Y,survival,NA,NA
 survival,KMDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA
 survival,LogRank,N,N,N,N,Y,Y,none/rank statistic,NA,NA
 survival,RestrictedMeanDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA

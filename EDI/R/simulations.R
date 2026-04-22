@@ -98,7 +98,7 @@ generate_covariate_dataset = function(n, p,
   list(X = X, y_cont = y_cont)
 }
 
-#' Transform Continuous Signal to Response Type Scale
+#' Transform continuous latent signal to the response type scale
 #'
 #' @description
 #' A helper function to transform a latent continuous signal to the scale
@@ -109,18 +109,11 @@ generate_covariate_dataset = function(n, p,
 #' @param response_type Character scalar. One of \code{"continuous"}, \code{"incidence"},
 #'   \code{"proportion"}, \code{"count"}, \code{"survival"}, \code{"ordinal"}.
 #' @param n_ordinal_levels Positive integer. Number of ordinal categories when
-#'   \code{response_type = "ordinal"}.  The continuous signal is cut into this many
-#'   equal-frequency bins.  Default \code{4L}.  Ignored for all other response types.
-#'
-#' Transform continuous latent signal to the response type scale
-#'
-#' @param y_cont Numeric vector. The continuous latent signal.
-#' @param response_type Character scalar. The type of response variable to generate.
-#' @param n_ordinal_levels Integer. Number of levels for ordinal response. Default 4.
-#' @param proportion_epsilon Numeric. Small value added to proportion to avoid 0 and 1. Default 1e-6.
-#' @param survival_min_time Numeric. Minimum survival time and shift. Default 0.1.
-#' @param count_min_rate Integer. Minimum baseline rate for count response. Default 0.
-#' @param count_shift Numeric. Constant added to counts after zero-centering. Default 0.
+#'   \code{response_type = "ordinal"}. Default \code{4L}.
+#' @param proportion_epsilon Numeric scalar. Small value added to proportion to avoid 0 and 1. Default \code{1e-6}.
+#' @param survival_min_time Numeric scalar. Minimum survival time and shift. Default \code{0.1}.
+#' @param count_min_rate Integer scalar. Minimum baseline rate for count response. Default \code{0L}.
+#' @param count_shift Numeric scalar. Constant added to counts after zero-centering. Default \code{0}.
 #'
 #' @return A numeric vector of transformed responses on the appropriate scale.
 #'
@@ -172,8 +165,7 @@ transform_cont_y_based_on_response_type = function(
 #'     requires \eqn{p \ge 5}.
 #' }
 #' The continuous base signal is transformed to the scale appropriate for
-#' \code{response_type} (logistic for incidence, exponentiated for
-#' count/survival, etc.).  Treatment effects are applied per-subject: additive
+#' \code{response_type}.  Treatment effects are applied per-subject: additive
 #' on the linear/logit/ordinal scale, log-multiplicative for count and survival.
 #'
 #' For each \code{(design, inference)} pair the framework runs whichever of the
@@ -217,7 +209,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \code{"ordinal"}.
     #'
     #' @param design_classes List of R6 class generators, for example
-    #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}).  Each
+    #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Each
     #'   generator must be constructable with only \code{response_type} and
     #'   \code{n} (plus any extra params supplied via \code{design_params}).
     #'   \code{NULL} (default) uses the package's standard design set.
@@ -227,7 +219,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \code{factors}) when not supplied via \code{design_params}.
     #'
     #' @param inference_classes List of R6 class generators, for example
-    #'   \code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}).
+    #'   \code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}.
     #'   \code{NULL} (default) selects a curated set for the given
     #'   \code{response_type}: several universal classes that work with any
     #'   design, plus representative KK-specific classes (silently skipped for
@@ -278,7 +270,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   Gaussian noise added to each subject's outcome.  Default \code{1}.
     #'
     #' @param n_ordinal_levels Positive integer. Number of ordinal categories when
-    #'   \code{response_type = "ordinal"}. Default \code{4}.
+    #'   \code{response_type = "ordinal"}. Default \code{4L}.
+    #'
+    #' @param proportion_epsilon Numeric scalar. Small value added to proportion
+    #'   base responses to avoid 0 and 1. Default \code{1e-6}.
+    #'
+    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
+    #'   for base responses. Default \code{0.1}.
+    #'
+    #' @param count_min_rate Integer scalar. Minimum baseline rate for count
+    #'   responses. Default \code{0L}.
+    #'
+    #' @param count_shift Numeric scalar. Constant added to counts after
+    #'   zero-centering for base responses. Default \code{0}.
     #'
     #' @param norm_sq_beta_vec Positive numeric scalar. The desired squared
     #'   Euclidean norm of the latent linear coefficient vector \eqn{\beta}.
@@ -392,6 +396,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       pval_epsilon      = 0.02,
       sd_noise              = 1,
       n_ordinal_levels      = 4L,
+      proportion_epsilon    = 1e-6,
+      survival_min_time     = 0.1,
+      count_min_rate        = 0L,
+      count_shift           = 0,
       norm_sq_beta_vec      = 1,
       X_mat                 = NULL,
       cov_draw_method       = stats::runif,
@@ -437,6 +445,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$pval_epsilon     = pval_epsilon
       private$sd_noise             = sd_noise
       private$n_ordinal_levels     = as.integer(n_ordinal_levels)
+      private$proportion_epsilon    = proportion_epsilon
+      private$survival_min_time     = survival_min_time
+      private$count_min_rate        = as.integer(count_min_rate)
+      private$count_shift           = count_shift
       private$norm_sq_beta_vec     = norm_sq_beta_vec
       private$X_mat                = X_mat
       private$cov_draw_method      = cov_draw_method
@@ -915,6 +927,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     pval_epsilon     = NULL,
     sd_noise             = NULL,
     n_ordinal_levels     = NULL,
+    proportion_epsilon   = NULL,
+    survival_min_time    = NULL,
+    count_min_rate       = NULL,
+    count_shift          = NULL,
     norm_sq_beta_vec     = NULL,
     X_mat                = NULL,
     cov_draw_method      = NULL,
@@ -1060,9 +1076,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cov_draw_method_args = private$cov_draw_method_args
       )
       data$y_base = transform_cont_y_based_on_response_type(
-        y_cont           = data$y_cont,
-        response_type    = private$response_type,
-        n_ordinal_levels = private$n_ordinal_levels
+        y_cont             = data$y_cont,
+        response_type      = private$response_type,
+        n_ordinal_levels   = private$n_ordinal_levels,
+        proportion_epsilon = private$proportion_epsilon,
+        survival_min_time  = private$survival_min_time,
+        count_min_rate     = private$count_min_rate,
+        count_shift        = private$count_shift
       )
       data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
       data

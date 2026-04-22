@@ -22,7 +22,7 @@
 #' To target a different quantile — for example the 25th or 75th percentile — pass
 #' \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 #' \preformatted{
-#'   inf = InferencePropMultiKKQuantileRegrIVWC$
+#'   inf = InferencePropKKQuantileRegrIVWC$
 #'   new(seq_des, tau = 0.75)
 #' }
 #' Any value strictly between 0 and 1 is accepted.
@@ -34,32 +34,8 @@
 #' and is not installed automatically with \pkg{EDI}.
 #' Install \pkg{quantreg} before using this class.
 #'
-#' @examples
-#' set.seed(1)
-#' x_dat <- data.frame(
-#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-#' )
-#' seq_des <- DesignSeqOneByOneKK14$
-#'   new(
-#'   n = nrow(x_dat),
-#'   response_type = "proportion",
-#'   verbose = FALSE
-#' )
-#' for (i in seq_len(nrow(x_dat))) {
-#'   seq_des$
-#'   add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-#' }
-#' seq_des$
-#'   add_all_subject_responses(c(0.10, 0.25, 0.20, 0.40, 0.35, 0.55, 0.60, 0.75))
-#' infer <- InferencePropMultiKKQuantileRegrIVWC$
-#'   new(
-#'   seq_des,
-#'   verbose = FALSE
-#' )
-#' infer
-#'
-InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantileRegrIVWC",
+#' @export
+InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
@@ -98,20 +74,5 @@ InferencePropMultiKKQuantileRegrIVWC = R6::R6Class("InferencePropMultiKKQuantile
 			private$cached_values$KKstats = NULL
 			private$compute_basic_match_data()
 		}
-
-
-
-
 	)
-)
-
-#' Quantile Regression Compound Estimator for KK Designs with Proportion Outcomes
-#'
-#' Public collapsed-name wrapper for \code{InferencePropMultiKKQuantileRegrIVWC}.
-#'
-#' @export
-InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
-	lock_objects = FALSE,
-	inherit = InferencePropMultiKKQuantileRegrIVWC,
-	public = list()
 )

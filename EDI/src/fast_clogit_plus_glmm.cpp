@@ -209,7 +209,108 @@ public:
 	}
 
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-		return numerical_hessian(*this, par);
+		const int p_full = par.size();
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(p_full, p_full);
+
+		// 1. Conditional Logistic component
+		if (has_discordant) {
+			const Eigen::VectorXd beta_no_intercept =
+				has_concordant ? par.segment(1, q) : par.head(q);
+			const Eigen::VectorXd eta_d = X_disc * beta_no_intercept;
+			Eigen::VectorXd w_d(eta_d.size());
+			for (int i = 0; i < eta_d.size(); ++i) {
+				const double mu = plogis_safe(eta_d[i]);
+				w_d[i] = mu * (1.0 - mu);
+			}
+			const Eigen::MatrixXd H_clogit = X_disc.transpose() * w_d.asDiagonal() * X_disc;
+			if (has_concordant) {
+				H.block(1, 1, q, q).noalias() += H_clogit;
+			} else {
+				H.topLeftCorner(q, q).noalias() += H_clogit;
+			}
+		}
+
+		// 2. GLMM component
+		if (has_concordant) {
+			const double log_sigma = par[p_full - 1];
+			if (!std::isfinite(log_sigma) || std::abs(log_sigma) > max_abs_log_sigma) {
+				H.setConstant(NA_REAL);
+				return H;
+			}
+
+			const double sigma = std::exp(log_sigma);
+			const Eigen::VectorXd beta = par.head(p_full - 1);
+			const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * gh.nodes;
+			const int n_nodes = (int)b_vals.size();
+			const int n_beta = p_full - 1;
+
+			int i = 0;
+			while (i < group_conc.size()) {
+				const int g = group_conc[i];
+				int j = i + 1;
+				while (j < group_conc.size() && group_conc[j] == g) ++j;
+				const int sz = j - i;
+				const Eigen::MatrixXd Xg = X_conc.middleRows(i, sz);
+				const Eigen::VectorXd yg = y_conc.segment(i, sz);
+				const Eigen::VectorXd eta0 = Xg * beta;
+
+				Eigen::VectorXd log_terms(n_nodes);
+				std::vector<Eigen::VectorXd> node_score(n_nodes, Eigen::VectorXd::Zero(p_full));
+				std::vector<Eigen::MatrixXd> node_hess(n_nodes, Eigen::MatrixXd::Zero(p_full, p_full));
+
+				for (int k = 0; k < n_nodes; ++k) {
+					double ll = gh.log_norm_weights[k];
+					const double b = b_vals[k];
+					Eigen::VectorXd mu(sz);
+					Eigen::VectorXd res(sz);
+					Eigen::VectorXd weight(sz);
+
+					for (int r = 0; r < sz; ++r) {
+						const double eta = eta0[r] + b;
+						ll += yg[r] * eta - log1pexp_cpp(eta);
+						mu[r] = plogis_safe(eta);
+						res[r] = yg[r] - mu[r];
+						weight[r] = mu[r] * (1.0 - mu[r]);
+					}
+
+					Eigen::VectorXd& a = node_score[k];
+					Eigen::MatrixXd& B = node_hess[k];
+					a.head(n_beta).noalias() = Xg.transpose() * res;
+					a[p_full - 1] = b * res.sum();
+					B.topLeftCorner(n_beta, n_beta).noalias() =
+						-Xg.transpose() * weight.asDiagonal() * Xg;
+					B.block(0, p_full - 1, n_beta, 1).noalias() =
+						-b * (Xg.transpose() * weight);
+					B.block(p_full - 1, 0, 1, n_beta) =
+						B.block(0, p_full - 1, n_beta, 1).transpose();
+					B(p_full - 1, p_full - 1) =
+						b * res.sum() - b * b * weight.sum();
+					log_terms[k] = ll;
+				}
+
+				const double ll_g = log_sum_exp_cpp(log_terms);
+				if (!std::isfinite(ll_g)) {
+					H.setConstant(NA_REAL);
+					return H;
+				}
+
+				Eigen::VectorXd mean_score = Eigen::VectorXd::Zero(p_full);
+				Eigen::MatrixXd mean_hess = Eigen::MatrixXd::Zero(p_full, p_full);
+				Eigen::MatrixXd mean_outer = Eigen::MatrixXd::Zero(p_full, p_full);
+				for (int k = 0; k < n_nodes; ++k) {
+					const double post_k = std::exp(log_terms[k] - ll_g);
+					if (post_k < 1e-15) continue;
+					mean_score.noalias() += post_k * node_score[k];
+					mean_hess.noalias() += post_k * node_hess[k];
+					mean_outer.noalias() += post_k * (node_score[k] * node_score[k].transpose());
+				}
+
+				H.noalias() -= mean_hess + mean_outer - mean_score * mean_score.transpose();
+				i = j;
+			}
+		}
+
+		return 0.5 * (H + H.transpose());
 	}
 };
 

@@ -5,7 +5,8 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
-InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuantileRegrOneLik",
+#' @export
+InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegrOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrOneLik,
 	public = list(
@@ -26,7 +27,7 @@ InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuan
 		#'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 		#' }
 		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-		#' infer <- InferenceContinMultKKQuantileRegrOneLik$new(seq_des, verbose
+		#' infer <- InferenceContinKKQuantileRegrOneLik$new(seq_des, verbose
 		#' = FALSE)
 		#' infer
 		#'
@@ -49,18 +50,5 @@ InferenceContinMultKKQuantileRegrOneLik = R6::R6Class("InferenceContinMultKKQuan
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
-
-
 	)
-)
-
-#' Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
-#'
-#' Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrOneLik}.
-#'
-#' @export
-InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegrOneLik",
-	lock_objects = FALSE,
-	inherit = InferenceContinMultKKQuantileRegrOneLik,
-	public = list()
 )

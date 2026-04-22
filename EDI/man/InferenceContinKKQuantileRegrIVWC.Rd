@@ -4,14 +4,72 @@
 \alias{InferenceContinKKQuantileRegrIVWC}
 \title{Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs}
 \description{
-Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrIVWC}.
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+
+Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
+}
+\details{
+A variance-weighted compound quantile regression estimator for KK
+matching-on-the-fly designs with continuous responses. The estimator
+combines:
+\enumerate{
+  \item Quantile regression on within-pair differences (matched pairs)
+  \item Quantile regression on reservoir subjects (treatment vs control)
+}
+using the same variance-weighted combination logic as the OLS compound estimator.
+
+\strong{Default quantile: \code{tau = 0.5} (median regression).}
+At \code{tau = 0.5} this estimates the median treatment effect, which is the canonical
+nonparametric location estimator and is more robust to outliers and heavy-tailed
+response distributions than the OLS mean-based estimator. To target a different
+quantile of the treatment effect distribution — for example the 25th or 75th
+percentile — pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
+\preformatted{
+  inf = InferenceContinKKQuantileRegrIVWC$
+  new(seq_des, tau = 0.75)
+}
+Any value strictly between 0 and 1 is accepted.
+
+Standard errors use Powell's "nid" sandwich estimator (non-iid), which is more robust
+than the "iid" (constant-density) assumption; the implementation falls back to "iid"
+on failure. Asymptotic z-based inference is used throughout.
+
+The randomization-based confidence interval is inherited from the base class and is
+valid for location-shift models at all quantiles: shifting y by delta maps the
+tau-th quantile treatment effect to delta under the null.
+
+This class requires the \pkg{quantreg} package, which is listed in Suggests
+and is not installed automatically with \pkg{EDI}.
+Install \pkg{quantreg} before using this class.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `InferenceContinKKQuantileRegrIVWC$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{EDI::InferenceAbstractKKQuantileRegrIVWC}} -> \code{\link[EDI:InferenceContinMultKKQuantileRegrIVWC]{EDI::InferenceContinMultKKQuantileRegrIVWC}} -> \code{InferenceContinKKQuantileRegrIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{EDI::InferenceAbstractQuantileRandCI}} -> \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{EDI::InferenceAbstractKKQuantileRegrIVWC}} -> \code{InferenceContinKKQuantileRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceContinKKQuantileRegrIVWC-new}{\code{InferenceContinKKQuantileRegrIVWC$new()}}
 \item \href{#method-InferenceContinKKQuantileRegrIVWC-clone}{\code{InferenceContinKKQuantileRegrIVWC$clone()}}
 }
 }
@@ -45,10 +103,69 @@ Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrIVWC}.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKQuantileRegrIVWC" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate'><code>EDI::InferenceAbstractKKQuantileRegrIVWC$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceContinMultKKQuantileRegrIVWC" data-id="initialize"><a href='../../EDI/html/InferenceContinMultKKQuantileRegrIVWC.html#method-InferenceContinMultKKQuantileRegrIVWC-initialize'><code>EDI::InferenceContinMultKKQuantileRegrIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKQuantileRegrIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKQuantileRegrIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  tau = 0.5,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression, strictly between
+  0 and 1. The default \code{tau = 0.5}
+                                                        estimates the median treatment
+effect. Pass a different value (e.g. \code{tau = 0.25} or
+                                                        \code{tau = 0.75}) to target the
+corresponding percentile of the treatment effect distribution.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKQuantileRegrIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrIVWC-clone}{}}}

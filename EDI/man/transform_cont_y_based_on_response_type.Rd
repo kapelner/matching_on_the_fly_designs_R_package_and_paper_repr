@@ -2,12 +2,16 @@
 % Please edit documentation in R/simulations.R
 \name{transform_cont_y_based_on_response_type}
 \alias{transform_cont_y_based_on_response_type}
-\title{Transform Continuous Signal to Response Type Scale}
+\title{Transform continuous latent signal to the response type scale}
 \usage{
 transform_cont_y_based_on_response_type(
   y_cont,
   response_type,
-  n_ordinal_levels = 4L
+  n_ordinal_levels = 4L,
+  proportion_epsilon = 1e-06,
+  survival_min_time = 0.1,
+  count_min_rate = 0L,
+  count_shift = 0
 )
 }
 \arguments{
@@ -17,11 +21,18 @@ transform_cont_y_based_on_response_type(
 \code{"proportion"}, \code{"count"}, \code{"survival"}, \code{"ordinal"}.}
 
 \item{n_ordinal_levels}{Positive integer. Number of ordinal categories when
-\code{response_type = "ordinal"}.  The continuous signal is cut into this many
-equal-frequency bins.  Default \code{4L}.  Ignored for all other response types.}
+\code{response_type = "ordinal"}. Default \code{4L}.}
+
+\item{proportion_epsilon}{Numeric scalar. Small value added to proportion to avoid 0 and 1. Default \code{1e-6}.}
+
+\item{survival_min_time}{Numeric scalar. Minimum survival time and shift. Default \code{0.1}.}
+
+\item{count_min_rate}{Integer scalar. Minimum baseline rate for count response. Default \code{0L}.}
+
+\item{count_shift}{Numeric scalar. Constant added to counts after zero-centering. Default \code{0}.}
 }
 \value{
-A numeric vector of base responses on the appropriate scale.
+A numeric vector of transformed responses on the appropriate scale.
 }
 \description{
 A helper function to transform a latent continuous signal to the scale

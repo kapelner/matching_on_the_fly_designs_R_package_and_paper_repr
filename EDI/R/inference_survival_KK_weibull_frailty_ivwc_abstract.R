@@ -194,6 +194,85 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		best_Xmm_colnames_matched = NULL,
 		best_Xmm_colnames_reservoir = NULL,
 
+		frailty_for_matched_pairs = function(estimate_only = FALSE){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
+			i_matched = which(m_vec > 0L)
+			if (length(i_matched) == 0L) return(invisible(NULL))
+
+			X_full = if (ncol(as.matrix(private$X)) == 0L){
+				matrix(private$w[i_matched], ncol = 1L, dimnames = list(NULL, "w"))
+			} else {
+				cbind(w = private$w[i_matched], private$get_X()[i_matched, , drop = FALSE])
+			}
+
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				fit_fun = function(X_fit, keep){
+					res = .fit_weibull_frailty(
+						y = private$y[i_matched],
+						dead = private$dead[i_matched],
+						Xmm = X_fit,
+						pair_id = m_vec[i_matched],
+						estimate_only = estimate_only
+					)
+					res
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq) && mod$ssq > 0
+				}
+			)
+			
+			if (!is.null(attempt$fit)){
+				private$cached_values$beta_T_matched = attempt$fit$beta
+				private$cached_values$ssq_beta_T_matched = attempt$fit$ssq
+				private$best_Xmm_colnames_matched = setdiff(colnames(attempt$X_fit), "w")
+			}
+		},
+
+		weibull_for_reservoir = function(estimate_only = FALSE){
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
+			i_reservoir = which(m_vec == 0L)
+			if (length(i_reservoir) == 0L) return(invisible(NULL))
+
+			X_full = if (ncol(as.matrix(private$X)) == 0L){
+				matrix(private$w[i_reservoir], ncol = 1L, dimnames = list(NULL, "w"))
+			} else {
+				cbind(w = private$w[i_reservoir], private$get_X()[i_reservoir, , drop = FALSE])
+			}
+
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				fit_fun = function(X_fit, keep){
+					res = .fit_standard_weibull_aft_from_matrix(
+						y = private$y[i_reservoir],
+						dead = private$dead[i_reservoir],
+						Xmm = X_fit,
+						estimate_only = estimate_only
+					)
+					res
+				},
+				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
+					if (estimate_only) return(TRUE)
+					is.finite(mod$ssq) && mod$ssq > 0
+				}
+			)
+			
+			if (!is.null(attempt$fit)){
+				private$cached_values$beta_T_reservoir = attempt$fit$beta
+				private$cached_values$ssq_beta_T_reservoir = attempt$fit$ssq
+				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X_fit), "w")
+			}
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -246,85 +325,6 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
-			}
-		},
-
-		frailty_for_matched_pairs = function(estimate_only = FALSE){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
-			i_matched = which(m_vec > 0L)
-			if (length(i_matched) == 0L) return(invisible(NULL))
-
-			X_full = if (ncol(as.matrix(private$X)) == 0L){
-				matrix(private$w[i_matched], ncol = 1L, dimnames = list(NULL, "w"))
-			} else {
-				cbind(w = private$w[i_matched], private$get_X()[i_matched, , drop = FALSE])
-			}
-
-			attempt = private$try_fit_full_and_harden(
-				fit_fun = function(X_fit, keep){
-					res = .fit_weibull_frailty(
-						y = private$y[i_matched],
-						dead = private$dead[i_matched],
-						Xmm = X_fit,
-						pair_id = m_vec[i_matched],
-						estimate_only = estimate_only
-					)
-					res
-				},
-				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq) && mod$ssq > 0
-				},
-				include_intercept = FALSE
-			)
-			
-			if (!is.null(attempt$fit)){
-				private$cached_values$beta_T_matched = attempt$fit$beta
-				private$cached_values$ssq_beta_T_matched = attempt$fit$ssq
-				private$best_Xmm_colnames_matched = setdiff(colnames(attempt$X_fit), "w")
-			}
-		},
-
-		weibull_for_reservoir = function(estimate_only = FALSE){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
-			i_reservoir = which(m_vec == 0L)
-			if (length(i_reservoir) == 0L) return(invisible(NULL))
-
-			X_full = if (ncol(as.matrix(private$X)) == 0L){
-				matrix(private$w[i_reservoir], ncol = 1L, dimnames = list(NULL, "w"))
-			} else {
-				cbind(w = private$w[i_reservoir], private$get_X()[i_reservoir, , drop = FALSE])
-			}
-
-			attempt = private$try_fit_full_and_harden(
-				fit_fun = function(X_fit, keep){
-					res = .fit_standard_weibull_aft_from_matrix(
-						y = private$y[i_reservoir],
-						dead = private$dead[i_reservoir],
-						Xmm = X_fit,
-						estimate_only = estimate_only
-					)
-					res
-				},
-				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq) && mod$ssq > 0
-				},
-				include_intercept = FALSE
-			)
-			
-			if (!is.null(attempt$fit)){
-				private$cached_values$beta_T_reservoir = attempt$fit$beta
-				private$cached_values$ssq_beta_T_reservoir = attempt$fit$ssq
-				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X_fit), "w")
 			}
 		}
 	)

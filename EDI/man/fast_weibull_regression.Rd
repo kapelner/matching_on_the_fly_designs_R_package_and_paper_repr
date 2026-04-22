@@ -10,7 +10,7 @@ fast_weibull_regression(
   X,
   use_rcpp = TRUE,
   estimate_only = FALSE,
-  optimization_alg = "lbfgs"
+  optimization_alg = "newton_raphson"
 )
 }
 \arguments{

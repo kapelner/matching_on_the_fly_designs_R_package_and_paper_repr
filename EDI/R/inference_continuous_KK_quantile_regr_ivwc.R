@@ -16,7 +16,7 @@
 #' quantile of the treatment effect distribution — for example the 25th or 75th
 #' percentile — pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 #' \preformatted{
-#'   inf = InferenceContinMultKKQuantileRegrIVWC$
+#'   inf = InferenceContinKKQuantileRegrIVWC$
 #'   new(seq_des, tau = 0.75)
 #' }
 #' Any value strictly between 0 and 1 is accepted.
@@ -33,7 +33,8 @@
 #' and is not installed automatically with \pkg{EDI}.
 #' Install \pkg{quantreg} before using this class.
 #'
-InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuantileRegrIVWC",
+#' @export
+InferenceContinKKQuantileRegrIVWC = R6::R6Class("InferenceContinKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
@@ -67,7 +68,7 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 		#'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
 		#' }
 		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-		#' infer <- InferenceContinMultKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+		#' infer <- InferenceContinKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
 		#' infer
 		#'
 		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
@@ -79,20 +80,5 @@ InferenceContinMultKKQuantileRegrIVWC = R6::R6Class("InferenceContinMultKKQuanti
 				assertNoCensoring(private$any_censoring)
 			}
 		}
-
-
-
-
 	)
-)
-
-#' Quantile Regression Compound Estimator for KK Matching-on-the-Fly Designs
-#'
-#' Public collapsed-name wrapper for \code{InferenceContinMultKKQuantileRegrIVWC}.
-#'
-#' @export
-InferenceContinKKQuantileRegrIVWC = R6::R6Class("InferenceContinKKQuantileRegrIVWC",
-	lock_objects = FALSE,
-	inherit = InferenceContinMultKKQuantileRegrIVWC,
-	public = list()
 )

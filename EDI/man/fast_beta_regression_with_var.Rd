@@ -9,7 +9,7 @@ fast_beta_regression_with_var(
   y,
   start_phi = 10,
   j = 2,
-  optimization_alg = "lbfgs"
+  optimization_alg = "newton_raphson"
 )
 }
 \arguments{

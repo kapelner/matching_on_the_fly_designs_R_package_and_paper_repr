@@ -90,6 +90,8 @@ Gaussian LMM implementation (no external package required). If \code{FALSE},
 use \pkg{glmmTMB}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{The optimization algorithm to use.}
 }
 \if{html}{\out{</div>}}
 }

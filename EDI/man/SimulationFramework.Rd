@@ -20,8 +20,7 @@ Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
     requires \eqn{p \ge 5}.
 }
 The continuous base signal is transformed to the scale appropriate for
-\code{response_type} (logistic for incidence, exponentiated for
-count/survival, etc.).  Treatment effects are applied per-subject: additive
+\code{response_type}.  Treatment effects are applied per-subject: additive
 on the linear/logit/ordinal scale, log-multiplicative for count and survival.
 
 For each \code{(design, inference)} pair the framework runs whichever of the
@@ -83,6 +82,10 @@ Create a new \code{SimulationFramework}.
   pval_epsilon = 0.02,
   sd_noise = 1,
   n_ordinal_levels = 4L,
+  proportion_epsilon = 1e-06,
+  survival_min_time = 0.1,
+  count_min_rate = 0L,
+  count_shift = 0,
   norm_sq_beta_vec = 1,
   X_mat = NULL,
   cov_draw_method = stats::runif,
@@ -106,7 +109,7 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \code{"ordinal"}.}
 
 \item{\code{design_classes}}{List of R6 class generators, for example
-\code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}).  Each
+\code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Each
 generator must be constructable with only \code{response_type} and
 \code{n} (plus any extra params supplied via \code{design_params}).
 \code{NULL} (default) uses the package's standard design set.
@@ -116,7 +119,7 @@ column; second for \code{cluster_col}; \code{list(treatment=2)} for
 \code{factors}) when not supplied via \code{design_params}.}
 
 \item{\code{inference_classes}}{List of R6 class generators, for example
-\code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}).
+\code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}.
 \code{NULL} (default) selects a curated set for the given
 \code{response_type}: several universal classes that work with any
 design, plus representative KK-specific classes (silently skipped for
@@ -167,7 +170,19 @@ Default \code{0.02}.}
 Gaussian noise added to each subject's outcome.  Default \code{1}.}
 
 \item{\code{n_ordinal_levels}}{Positive integer. Number of ordinal categories when
-\code{response_type = "ordinal"}. Default \code{4}.}
+\code{response_type = "ordinal"}. Default \code{4L}.}
+
+\item{\code{proportion_epsilon}}{Numeric scalar. Small value added to proportion
+base responses to avoid 0 and 1. Default \code{1e-6}.}
+
+\item{\code{survival_min_time}}{Numeric scalar. Minimum survival time and shift
+for base responses. Default \code{0.1}.}
+
+\item{\code{count_min_rate}}{Integer scalar. Minimum baseline rate for count
+responses. Default \code{0L}.}
+
+\item{\code{count_shift}}{Numeric scalar. Constant added to counts after
+zero-centering for base responses. Default \code{0}.}
 
 \item{\code{norm_sq_beta_vec}}{Positive numeric scalar. The desired squared
 Euclidean norm of the latent linear coefficient vector \eqn{\beta}.

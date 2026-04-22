@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 // [[Rcpp::depends(RcppEigen)]]
@@ -511,6 +512,12 @@ static VectorXd stereotype_newton_fit(
     VectorXd params = model.initialize_params();
     const int d = params.size();
     VectorXd grad(d);
+    bool did_converge = false;
+    const double score_tol = std::max(tol, std::sqrt(std::max(tol, 0.0)));
+
+    auto score_is_small = [&](const VectorXd& g) {
+        return g.allFinite() && (g.norm() / std::sqrt((double)std::max(1, d))) <= score_tol;
+    };
 
     if (converged != NULL) {
         *converged = false;
@@ -518,10 +525,11 @@ static VectorXd stereotype_newton_fit(
 
     for (int iter = 0; iter < maxit; ++iter) {
         double current_ll = model.loglik_grad(params, &grad);
-        if (grad.norm() < tol) {
-            if (converged != NULL) {
-                *converged = true;
-            }
+        if (!R_finite(current_ll) || !grad.allFinite()) {
+            break;
+        }
+        if (score_is_small(grad)) {
+            did_converge = true;
             break;
         }
 
@@ -547,15 +555,28 @@ static VectorXd stereotype_newton_fit(
         }
 
         if (!accepted) {
+            model.loglik_grad(params, &grad);
+            did_converge = score_is_small(grad);
+            break;
+        }
+
+        model.loglik_grad(params, &grad);
+        if (score_is_small(grad)) {
+            did_converge = true;
             break;
         }
 
         if ((scale * step).norm() < tol) {
-            if (converged != NULL) {
-                *converged = true;
-            }
             break;
         }
+    }
+
+    if (!did_converge) {
+        model.loglik_grad(params, &grad);
+        did_converge = score_is_small(grad);
+    }
+    if (converged != NULL) {
+        *converged = did_converge;
     }
 
     return params;

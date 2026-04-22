@@ -68,7 +68,9 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyOneLik$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  use_rcpp = TRUE,
+  verbose = FALSE,
+  optimization_alg = "lbfgs"
 )}\if{html}{\out{</div>}}
 }
 
@@ -82,7 +84,11 @@ the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
+\item{\code{use_rcpp}}{Whether to use the custom Rcpp likelihood optimizer.}
+
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{The optimization algorithm to use.}
 }
 \if{html}{\out{</div>}}
 }

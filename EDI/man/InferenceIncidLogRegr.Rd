@@ -80,6 +80,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Optimization algorithm to use.}
 }
 \if{html}{\out{</div>}}
 }

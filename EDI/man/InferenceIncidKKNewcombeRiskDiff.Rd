@@ -4,14 +4,32 @@
 \alias{InferenceIncidKKNewcombeRiskDiff}
 \title{KK Newcombe Risk-Difference IVWC Inference for Binary Responses}
 \description{
-Public collapsed-name wrapper for \code{InferenceIncidUnivKKNewcombeRiskDiff}.
+KK Newcombe Risk-Difference IVWC Inference for Binary Responses
+
+KK Newcombe Risk-Difference IVWC Inference for Binary Responses
+}
+\details{
+Implements a compound Newcombe risk-difference estimator for KK designs.
+This class pools information from matched pairs (using the Paired Newcombe
+method) and the reservoir (using the Independent Newcombe method) via
+inverse-variance weighted combination (IVWC).
+
+
+The matched-pair component uses the discordant pairs to estimate the treatment
+effect and its variance. The reservoir component treats unmatched subjects as
+independent samples. The two estimates are combined using the standard IVWC
+framework of the package.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceIncidUnivKKNewcombeRiskDiff]{EDI::InferenceIncidUnivKKNewcombeRiskDiff}} -> \code{InferenceIncidKKNewcombeRiskDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceIncidKKNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceIncidKKNewcombeRiskDiff-new}{\code{InferenceIncidKKNewcombeRiskDiff$new()}}
+\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate()}}
+\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-clone}{\code{InferenceIncidKKNewcombeRiskDiff$clone()}}
 }
 }
@@ -42,13 +60,91 @@ Public collapsed-name wrapper for \code{InferenceIncidUnivKKNewcombeRiskDiff}.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKNewcombeRiskDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceIncidUnivKKNewcombeRiskDiff.html#method-InferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_confidence_interval'><code>EDI::InferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKNewcombeRiskDiff" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceIncidUnivKKNewcombeRiskDiff.html#method-InferenceIncidUnivKKNewcombeRiskDiff-compute_asymp_two_sided_pval'><code>EDI::InferenceIncidUnivKKNewcombeRiskDiff$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKNewcombeRiskDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceIncidUnivKKNewcombeRiskDiff.html#method-InferenceIncidUnivKKNewcombeRiskDiff-compute_estimate'><code>EDI::InferenceIncidUnivKKNewcombeRiskDiff$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidUnivKKNewcombeRiskDiff" data-id="initialize"><a href='../../EDI/html/InferenceIncidUnivKKNewcombeRiskDiff.html#method-InferenceIncidUnivKKNewcombeRiskDiff-initialize'><code>EDI::InferenceIncidUnivKKNewcombeRiskDiff$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed KK \code{DesignSeqOneByOne} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Flag for progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the IVWC Newcombe estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Returns the asymptotic confidence interval based on pooled variance.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Returns the MLE p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null risk difference to test against. Default is zero.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-clone}{}}}

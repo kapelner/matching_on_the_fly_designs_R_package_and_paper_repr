@@ -283,6 +283,10 @@ fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol =
     .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+fast_hurdle_poisson_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n_gh = 7L, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_hurdle_poisson_glmm_cpp`, X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, optimization_alg)
+}
+
 exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
     .Call(`_EDI_exact_jonckheere_terpstra_pval_cpp`, y, w)
 }

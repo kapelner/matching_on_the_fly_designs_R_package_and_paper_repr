@@ -1,4 +1,4 @@
-#' Univariate Miettinen-Nurminen Risk-Difference Inference for Binary Responses
+#' Miettinen-Nurminen Risk-Difference Inference for Binary Responses
 #'
 #' Fits the classical Miettinen-Nurminen score method for the risk difference in a
 #' two-arm binary trial. The point estimate is the observed risk difference, while
@@ -11,7 +11,8 @@
 #' the natural classical binary-endpoint complement to the regression-based
 #' incidence methods already in the package.
 #'
-InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMiettinenNurminenRiskDiff",
+#' @export
+InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNurminenRiskDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
@@ -35,7 +36,7 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 		#' 	p_i = plogis(-0.8 + 0.5 * w_i)
 		#' 	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
 		#' }
-		#' seq_des_inf = InferenceIncidUnivMiettinenNurminenRiskDiff$new(seq_des)
+		#' seq_des_inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
 		#' seq_des_inf$compute_estimate()
 		#' }
 		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
@@ -176,15 +177,4 @@ InferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidUnivMie
 			)
 		}
 	)
-)
-
-#' Miettinen-Nurminen Risk-Difference Inference for Binary Responses
-#'
-#' Public collapsed-name wrapper for \code{InferenceIncidUnivMiettinenNurminenRiskDiff}.
-#'
-#' @export
-InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNurminenRiskDiff",
-	lock_objects = FALSE,
-	inherit = InferenceIncidUnivMiettinenNurminenRiskDiff,
-	public = list()
 )
