@@ -45,7 +45,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-				private$shared(estimate_only = TRUE)
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -60,7 +60,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_confidence_interval(alpha = alpha))
 			}
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
@@ -78,7 +78,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_two_sided_pval(delta = delta))
 			}
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
@@ -141,6 +141,8 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 
 			get_standard_error = function(){
 				private$shared(estimate_only = FALSE)
+				se = private$compute_standard_error_from_information_matrix()
+				if (is.finite(se)) return(se)
 				private$cached_values$s_beta_hat_T
 			},
 
@@ -199,7 +201,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 
 			shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
 			private$clear_nonestimable_state()
 
 			mod = private$fit_glmm(se = !estimate_only)

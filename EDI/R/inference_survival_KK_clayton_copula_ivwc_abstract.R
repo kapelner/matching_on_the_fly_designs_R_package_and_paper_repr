@@ -98,21 +98,35 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			private$cached_values$beta_hat_T
 		},
 
-		filtered_cov_cache = NULL,
-		best_Xmm_colnames_matched = NULL,
-		best_par_matched = NULL,
-		best_Xmm_colnames_reservoir = NULL,
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
 
-		filtered_covariate_candidates = function(){
-			if (ncol(as.matrix(private$X)) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
-			# Use the helper to get candidates (dropping linearly dependent or high-correlation columns)
-			get_reduced_design_matrix_candidates(as.matrix(private$X))
+		filtered_covariate_candidates = function(X = as.matrix(private$X)){
+			if (ncol(X) == 0L) return(list(matrix(nrow = nrow(X), ncol = 0L)))
+			
+			# Ensure no linearly dependent columns first
+			X_reduced = drop_linearly_dependent_cols(X)
+			if (ncol(X_reduced) == 0L) return(list(matrix(nrow = nrow(X), ncol = 0L)))
+			
+			# Generate candidates by dropping highly correlated columns at various thresholds
+			thresholds = c(0.99, 0.9, 0.7)
+			candidates = list(X_reduced)
+			for (thresh in thresholds) {
+				X_try = drop_highly_correlated_cols(X_reduced, threshold = thresh)$M
+				# Simple way to avoid duplicates in the list
+				is_new = TRUE
+				for (c in candidates) {
+					if (ncol(c) == ncol(X_try) && all(colnames(c) == colnames(X_try))) {
+						is_new = FALSE
+						break
+					}
+				}
+				if (is_new) candidates[[length(candidates) + 1L]] = X_try
+			}
+			candidates
 		},
 
 		design_matrix_candidates = function(){
@@ -222,7 +236,6 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			if (!is.null(fit) && is.finite(fit$beta)){
 				private$cached_values$beta_T_matched = fit$beta
 				private$cached_values$ssq_beta_T_matched = if (estimate_only) NA_real_ else fit$ssq
-				private$best_Xmm_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
 			}
 		},
 
@@ -243,9 +256,13 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				colnames(Xcand) = "w"
 				candidates = list(Xcand)
 			} else {
-				cov_candidates = get_reduced_design_matrix_candidates(X_r)
+				cov_candidates = private$filtered_covariate_candidates(X_r)
 				for (X in cov_candidates){
-					M = cbind(w = w_r, X)
+					M = matrix(w_r, ncol = 1)
+					colnames(M) = "w"
+					if (ncol(X) > 0){
+						M = cbind(M, X)
+					}
 					qr_res = qr(M)
 					if (qr_res$rank < ncol(M)){
 						keep = qr_res$pivot[seq_len(qr_res$rank)]
@@ -267,7 +284,6 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				if (!is.null(fit) && is.finite(fit$beta) && (estimate_only || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_T_reservoir = fit$beta
 					private$cached_values$ssq_beta_T_reservoir = fit$ssq
-					private$best_Xmm_colnames_reservoir = colnames(Xcand)
 					return(invisible(NULL))
 				}
 			}

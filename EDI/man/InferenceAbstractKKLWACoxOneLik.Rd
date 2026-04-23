@@ -12,13 +12,8 @@ Abstract class for LWA-style Marginal Cox Combined-Likelihood Inference
 \details{
 Fits a single joint marginal Cox model over all KK design data for survival
 responses. Matched subjects share their pair ID as a cluster, and reservoir
-subjects are assigned singleton cluster IDs. The treatment effect is estimated by
-the Cox partial likelihood on all data, with Lee-Wei-Amato style cluster-robust
-variance treating within-pair correlation as a nuisance.
-
-Under \code{harden = TRUE}, the multivariate fit preserves the treatment column
-and retries reduced covariate sets after QR-based rank reduction. Extreme finite
-coefficients / standard errors are rejected and treated as non-estimable.
+subjects are treated as independent (unique clusters). Standard errors are
+obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 }
 \keyword{internal}
 \section{Super classes}{
@@ -58,8 +53,19 @@ coefficients / standard errors are rejected and treated as non-estimable.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_information_preferences'><code>EDI::InferenceAsymp$get_supported_information_preferences()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_testing_type'><code>EDI::InferenceAsymp$get_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_information_preference'><code>EDI::InferenceAsymp$set_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
@@ -68,7 +74,7 @@ coefficients / standard errors are rejected and treated as non-estimable.
 \if{html}{\out{<a id="method-InferenceAbstractKKLWACoxOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxOneLik-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize LWA-style combined-likelihood Cox inference for KK survival data.
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKLWACoxOneLik$new(
   des_obj,
@@ -80,7 +86,7 @@ Initialize LWA-style combined-likelihood Cox inference for KK survival data.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A completed KK design object.}
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
@@ -91,15 +97,12 @@ design's imputed covariates.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-A new inference object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKLWACoxOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Compute the treatment estimate.
+Returns the combined-likelihood estimate of the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKLWACoxOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -107,12 +110,9 @@ Compute the treatment estimate.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{estimate_only}}{Whether to skip standard-error calculations.}
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
 }
 }
 \if{html}{\out{<hr>}}
@@ -131,15 +131,12 @@ Compute an asymptotic confidence interval.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-A confidence interval.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKLWACoxOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute an asymptotic two-sided p-value for the treatment effect.
+Compute an asymptotic two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKLWACoxOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -150,9 +147,6 @@ Compute an asymptotic two-sided p-value for the treatment effect.
 \item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
 }
 }
 \if{html}{\out{<hr>}}

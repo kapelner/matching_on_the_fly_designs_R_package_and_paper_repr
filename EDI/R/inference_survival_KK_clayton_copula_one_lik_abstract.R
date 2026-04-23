@@ -74,47 +74,6 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 	private = list(
 
-		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
-				private$shared()
-			}
-			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_estimate(estimate_only = estimate_only))
-			}
-
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-
-			X_data = private$get_X()
-			X_cov = X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE]
-			Xmm = matrix(private$w, ncol = 1)
-			colnames(Xmm) = "w"
-			if (ncol(X_cov) > 0){
-				Xmm = cbind(Xmm, X_cov)
-			}
-
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-
-			fit = .fit_clayton_weibull_aft(
-				y = private$y,
-				dead = private$dead,
-				Xmm = Xmm,
-				pair_id = m_vec,
-				include_singletons = TRUE,
-				starts = list(private$best_par),
-				estimate_only = estimate_only
-			)
-			if (is.null(fit) || !is.finite(fit$beta)){
-				return(NA_real_)
-			}
-			as.numeric(fit$beta)
-		},
-
 		best_Xmm_colnames = NULL,
 		best_par = NULL,
 
@@ -139,9 +98,29 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		},
 
 		filtered_covariate_candidates = function(){
-			if (ncol(as.matrix(private$X)) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
-			# Use the helper to get candidates (dropping linearly dependent or high-correlation columns)
-			get_reduced_design_matrix_candidates(as.matrix(private$X))
+			X = as.matrix(private$X)
+			if (ncol(X) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
+			
+			# Ensure no linearly dependent columns first
+			X_reduced = drop_linearly_dependent_cols(X)
+			if (ncol(X_reduced) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
+			
+			# Generate candidates by dropping highly correlated columns at various thresholds
+			thresholds = c(0.99, 0.9, 0.7)
+			candidates = list(X_reduced)
+			for (thresh in thresholds) {
+				X_try = drop_highly_correlated_cols(X_reduced, threshold = thresh)$M
+				# Simple way to avoid duplicates in the list
+				is_new = TRUE
+				for (c in candidates) {
+					if (ncol(c) == ncol(X_try) && all(colnames(c) == colnames(X_try))) {
+						is_new = FALSE
+						break
+					}
+				}
+				if (is_new) candidates[[length(candidates) + 1L]] = X_try
+			}
+			candidates
 		},
 
 		shared = function(estimate_only = FALSE){

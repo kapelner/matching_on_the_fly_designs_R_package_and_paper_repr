@@ -110,7 +110,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' Computes the g-computation treatment-effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = TRUE)
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
 
@@ -842,9 +842,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		},
 
 		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$md) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
 
 			X_full = private$build_named_design_matrix()

@@ -18,61 +18,61 @@ continuous,OLS,Y,Y,Y,Y,Y,Y,ourself/Rcpp OLS,closed-form QR solve,Y,Y
 continuous,QuantileRegr,Y,Y,Y,Y,Y,Y,quantreg,NA,NA,N
 continuous,RobustRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp robust,IRLS,Y,N
 count,HurdleNegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp hurdle negative binomial,IRLS plus L-BFGS,Y,Y
-count,HurdlePoisson,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA,N
+count,HurdlePoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp zero-augmented Poisson,L-BFGS,N,N
 count,KKCPoissonIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-Poisson plus negative binomial,weighted logistic IRLS plus L-BFGS,N,Y
 count,KKCPoissonOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-Poisson combined likelihood,Newton-Raphson,N,Y
-count,KKGLMM,N,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,Y
-count,KKHurdlePoissonIVWC,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA,N
-count,KKHurdlePoissonOneLik,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA,N
+count,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,Y
+count,KKHurdlePoissonIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM and Poisson,L-BFGS,N,N
+count,KKHurdlePoissonOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM and Poisson,L-BFGS,N,N
 count,NegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N,Y
 count,Poisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson,IRLS,Y,Y
 count,QuasiPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-Poisson,IRLS,Y,Y
 count,RobustPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson,IRLS,Y,Y
 count,ZeroInflatedNegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N,Y
-count,ZeroInflatedPoisson,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA,N
+count,ZeroInflatedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp zero-augmented Poisson,L-BFGS,N,N
 incidence,Azriel,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA,N
 incidence,BinomialIdentityRiskDiff,Y,Y,Y,Y,Y,Y,ourself/Rcpp identity-binomial,constrained Fisher scoring with step-halving,Y,Y
 incidence,ExactBinomial,N,N,N,N,N,N,none/exact enumeration,NA,NA,N
 incidence,ExactFisher,N,N,N,N,N,N,none/exact enumeration,NA,NA,N
 incidence,ExactZhang,N,N,N,N,N,N,none/exact enumeration,NA,NA,N
 incidence,ExtendedRobins,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA,N
-incidence,GCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,Y
-incidence,GCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,Y
-incidence,KKClaytonCopulaIVWC,N,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N,N
-incidence,KKClaytonCopulaOneLik,N,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N,N
-incidence,KKClogitIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N,Y
-incidence,KKClogitOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N,Y
-incidence,KKClogitPlusGLMMIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N,Y
-incidence,KKClogitPlusGLMMOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N,Y
-incidence,KKGCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,Y
-incidence,KKGCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,Y
+incidence,GCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,N
+incidence,GCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,N
+incidence,KKClaytonCopulaIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N,N
+incidence,KKClaytonCopulaOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N,N
+incidence,KKClogitIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N,N
+incidence,KKClogitOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N,N
+incidence,KKClogitPlusGLMMIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N,N
+incidence,KKClogitPlusGLMMOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N,N
+incidence,KKGCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,N
+incidence,KKGCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,N
 incidence,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA,N
 incidence,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,Y
 incidence,KKModifiedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y,Y
-incidence,KKNewcombeRiskDiff,Y,N,N,N,Y,Y,none/score or interval equations,NA,NA,N
+incidence,KKNewcombeRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA,N
 incidence,LogBinomial,Y,Y,Y,Y,Y,Y,ourself/Rcpp identity-binomial,constrained Fisher scoring with step-halving,Y,Y
 incidence,LogRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp logistic,IRLS,Y,Y
 incidence,MiettinenNurminenRiskDiff,N,Y,Y,Y,Y,Y,none/score or interval equations,NA,NA,N
 incidence,ModifiedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y,Y
 incidence,NewcombeRiskDiff,N,Y,Y,Y,Y,Y,none/score or interval equations,NA,NA,N
-incidence,RiskDiff,Y,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
+incidence,RiskDiff,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
 incidence,Wald,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
 ordinal,CauchitRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N,Y
 ordinal,CloglogRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N,Y
 ordinal,JonckheereTerpstraTest,N,Y,Y,Y,Y,Y,none/Jonckheere-Terpstra statistic,NA,NA,N
-ordinal,KKCLMM,N,Y,Y,Y,Y,Y,ordinal,NA,NA,N
-ordinal,KKCLMMCauchit,N,Y,Y,Y,Y,Y,ordinal,NA,NA,N
-ordinal,KKCLMMCloglog,N,Y,Y,Y,Y,Y,ordinal,NA,NA,N
-ordinal,KKCLMMProbit,N,Y,Y,Y,Y,Y,ordinal,NA,NA,N
+ordinal,KKCLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,N
+ordinal,KKCLMMCauchit,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,N
+ordinal,KKCLMMCloglog,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,N
+ordinal,KKCLMMProbit,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,N
 ordinal,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA,N
 ordinal,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,Y
 ordinal,OrderedProbitRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N,Y
 ordinal,PairedSignTest,N,Y,Y,Y,Y,Y,none/sign statistic,NA,NA,N
-ordinal,PropOddsRegr,N,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N,Y
+ordinal,PropOddsRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N,Y
 ordinal,Ridit,N,Y,Y,Y,Y,Y,none/rank statistic,NA,NA,N
 proportion,BetaRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp beta regression,L-BFGS,N,Y
-proportion,FractionalLogit,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-binomial-style objective,IRLS,Y,Y
-proportion,GCompMeanDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,Y
+proportion,FractionalLogit,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-binomial-style objective,IRLS,Y,N
+proportion,GCompMeanDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N,N
 proportion,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA,N
 proportion,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N,Y
 proportion,KKQuantileRegrIVWC,Y,Y,Y,Y,Y,Y,quantreg,NA,NA,N
@@ -85,15 +85,15 @@ survival,KKClaytonCopulaIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT
 survival,KKClaytonCopulaOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N,N
 survival,KKLWACoxIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
 survival,KKLWACoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
-survival,KKRankRegrIVWC,Y,Y,Y,Y,Y,Y,none/rank-regression path,NA,NA,N
+survival,KKRankRegrIVWC,N,Y,Y,Y,Y,Y,none/rank-regression path,NA,NA,N
 survival,KKStratCoxIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
 survival,KKStratCoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
-survival,KKWeibullFrailtyIVWC,N,Y,Y,Y,Y,Y,survival,NA,NA,N
-survival,KKWeibullFrailtyOneLik,N,Y,Y,Y,Y,Y,survival,NA,NA,N
+survival,KKWeibullFrailtyIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Weibull frailty,L-BFGS,N,N
+survival,KKWeibullFrailtyOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Weibull frailty,L-BFGS,N,N
 survival,KMDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA,N
 survival,LogRank,N,N,N,N,Y,Y,none/rank statistic,NA,NA,N
 survival,RestrictedMeanDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA,N
-survival,StratCoxPHRegr,N,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
+survival,StratCoxPHRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N,Y
 survival,WeibullRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp Weibull AFT,L-BFGS,N,Y
 unknown,InferenceCustomAsymp,N,N,N,N,Y,Y,TODO,NA,NA,N
 unknown,InferenceCustomBoot,N,N,N,N,N,N,TODO,NA,NA,N

@@ -1,4 +1,3 @@
-
 # Ensure we are in the project root if run from package_tests
 if (basename(getwd()) == "package_tests") {
   setwd("..")
@@ -32,6 +31,7 @@ get_opt_metadata = function(res_type, base_name) {
   # Defaults
   via = "TODO"
   alg = "NA"
+  has_analytic_hess = "N"
   
   if (base_name %in% c("BaiAdjustedT", "BaiAdjustedTKK14", "BaiAdjustedTKK21", "KKCompoundMeanDiff", "SimpleMeanDiff", "SimpleMeanDiffPooledVar", "Wald", "RiskDiff")) {
     via = "none/closed-form statistic"
@@ -42,6 +42,7 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (base_name == "KKGLMM") {
     via = "ourself/Rcpp GLMM"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (base_name == "MultGLS") {
     via = "nlme"
   } else if (grepl("Exact", base_name)) {
@@ -60,35 +61,48 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (base_name == "OLS") {
     via = "ourself/Rcpp OLS"
     alg = "closed-form QR solve"
+    has_analytic_hess = "Y"
   } else if (grepl("RobustRegr", base_name)) {
     via = "ourself/Rcpp robust"
     alg = "IRLS"
   } else if (base_name == "LogRegr") {
     via = "ourself/Rcpp logistic"
     alg = "IRLS"
+    has_analytic_hess = "Y"
   } else if (base_name == "ModifiedPoisson" || base_name == "KKModifiedPoisson") {
     via = "ourself/Rcpp Poisson working likelihood"
     alg = "IRLS"
+    has_analytic_hess = "Y"
   } else if (base_name == "Poisson" || base_name == "RobustPoisson") {
     via = "ourself/Rcpp Poisson"
     alg = "IRLS"
+    has_analytic_hess = "Y"
   } else if (base_name == "QuasiPoisson") {
     via = "ourself/Rcpp quasi-Poisson"
     alg = "IRLS"
+    has_analytic_hess = "Y"
   } else if (base_name == "NegBin" || base_name == "ZeroInflatedNegBin") {
     via = "ourself/Rcpp negative binomial"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (base_name == "HurdleNegBin") {
     via = "ourself/Rcpp hurdle negative binomial"
     alg = "IRLS plus L-BFGS"
-  } else if (base_name %in% c("HurdlePoisson", "ZeroInflatedPoisson", "ZeroInflatedNegBin") || grepl("KKHurdlePoisson", base_name)) {
-    via = "glmmTMB"
+    has_analytic_hess = "Y"
+  } else if (base_name %in% c("HurdlePoisson", "ZeroInflatedPoisson")) {
+    via = "ourself/Rcpp zero-augmented Poisson"
+    alg = "L-BFGS"
+  } else if (grepl("KKHurdlePoisson", base_name)) {
+    via = "ourself/Rcpp GLMM and Poisson"
+    alg = "L-BFGS"
   } else if (base_name == "KKCPoissonIVWC") {
     via = "ourself/Rcpp conditional-Poisson plus negative binomial"
     alg = "weighted logistic IRLS plus L-BFGS"
+    has_analytic_hess = "Y"
   } else if (base_name == "KKCPoissonOneLik") {
     via = "ourself/Rcpp conditional-Poisson combined likelihood"
     alg = "Newton-Raphson"
+    has_analytic_hess = "Y"
   } else if (grepl("KKClogitPlusGLMM", base_name)) {
     via = "ourself/Rcpp conditional-logistic plus GLMM"
     alg = "L-BFGS"
@@ -102,40 +116,47 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (base_name %in% c("LogBinomial", "BinomialIdentityRiskDiff")) {
     via = "ourself/Rcpp identity-binomial"
     alg = "constrained Fisher scoring with step-halving"
+    has_analytic_hess = "Y"
   } else if (base_name == "BetaRegr") {
     via = "ourself/Rcpp beta regression"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (base_name == "FractionalLogit") {
     via = "ourself/Rcpp quasi-binomial-style objective"
     alg = "IRLS"
   } else if (base_name == "ZeroOneInflatedBetaRegr") {
     via = "ourself/Rcpp zero-one-inflated beta"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (base_name == "CoxPHRegr" || grepl("LWACox", base_name) || grepl("StratCox", base_name)) {
     via = "ourself/Rcpp Cox partial likelihood"
     alg = "Newton-Raphson"
+    has_analytic_hess = "Y"
   } else if (base_name == "DepCensTransformRegr") {
     via = "ourself/Rcpp dependent-censoring transformation"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (grepl("ClaytonCopula", base_name)) {
     via = "ourself/Rcpp Clayton copula Weibull AFT"
     alg = "L-BFGS"
   } else if (base_name == "WeibullRegr") {
     via = "ourself/Rcpp Weibull AFT"
     alg = "L-BFGS"
+    has_analytic_hess = "Y"
   } else if (grepl("WeibullFrailty", base_name)) {
-    via = "survival"
+    via = "ourself/Rcpp Weibull frailty"
+    alg = "L-BFGS"
   } else if (grepl("RankRegr", base_name)) {
     via = "none/rank-regression path"
   } else if (base_name %in% c("CauchitRegr", "CloglogRegr", "OrderedProbitRegr", "PropOddsRegr")) {
     via = "ourself/Rcpp cumulative link"
     alg = "Newton-Raphson with finite-difference derivatives and line search"
+    has_analytic_hess = "Y"
   } else if (grepl("PartialProportionalOdds", base_name)) {
     via = "VGAM"
   } else if (grepl("CLMM", base_name)) {
-    via = "ordinal"
-  } else if (grepl("WeibullFrailty", base_name)) {
-    via = "survival"
+    via = "ourself/Rcpp GLMM"
+    alg = "L-BFGS"
   } else if (grepl("GComp", base_name)) {
     via = "ourself/nuisance likelihood"
   } else if (base_name == "MLEorKMSummaryTable") {
@@ -159,7 +180,7 @@ get_opt_metadata = function(res_type, base_name) {
     }
   }
   
-  list(optimization_via = via, optim_alg = alg, irls_avail = irls_avail)
+  list(optimization_via = via, optim_alg = alg, irls_avail = irls_avail, has_analytic_hess = has_analytic_hess)
 }
 
 # Mapping function
@@ -272,9 +293,21 @@ get_info = function(class_name) {
   
   opt = get_opt_metadata(res_type, base_name)
   
+  # has_multi logic: default to Y for regression-like paths, N for others
+  has_multi = "N"
+  if (grepl("ourself", opt$optimization_via) || 
+      opt$optimization_via %in% c("quantreg", "nlme", "geepack", "VGAM", "survival", "glmmTMB", "ordinal")) {
+    has_multi = "Y"
+  }
+  # Special cases for simple tests
+  if (base_name %in% c("SimpleMeanDiff", "SimpleMeanDiffPooledVar", "SimpleWilcox", "PairedSignTest", "KMDiff", "RestrictedMeanDiff", "Azriel", "ExactBinomial", "ExactFisher", "ExactZhang")) {
+    has_multi = "N"
+  }
+
   list(
     response_type = res_type,
     inference_path = base_name,
+    has_multi = has_multi,
     has_likelihood = if (has_likelihood) "Y" else "N",
     has_loglik = if (has_loglik) "Y" else "N",
     has_score = if (has_score) "Y" else "N",
@@ -282,28 +315,22 @@ get_info = function(class_name) {
     uses_wald_test = if (uses_wald) "Y" else "N",
     optimization_via = opt$optimization_via,
     optim_alg = opt$optim_alg,
-    irls_avail = opt$irls_avail
+    irls_avail = opt$irls_avail,
+    has_analytic_hess = opt$has_analytic_hess
   )
 }
 
 results = lapply(concrete_classes, get_info)
 df_new = do.call(rbind, lapply(results, as.data.frame))
 
-# Load existing to preserve manually curated columns if possible
-existing = read.csv("package_metadata/inference_paths_info.csv")
-
-# Merge strategy: keep manual columns if they are not TODO and not NA
-final_df = merge(df_new, existing[, c("response_type", "inference_path", "has_multi")], 
-                 by = c("response_type", "inference_path"), all.x = TRUE)
-
-# Fill NA in has_multi (if missing)
-final_df$has_multi[is.na(final_df$has_multi)] = "N"
-
 # Reorder columns
-final_df = final_df[, c("response_type", "inference_path", "has_multi", "has_likelihood", "has_loglik", "has_score", "uses_wald_ci", "uses_wald_test", "optimization_via", "optim_alg", "irls_avail")]
+final_df = df_new[, c("response_type", "inference_path", "has_multi", "has_likelihood", "has_loglik", "has_score", "uses_wald_ci", "uses_wald_test", "optimization_via", "optim_alg", "irls_avail", "has_analytic_hess")]
 
 # Sort
 final_df = final_df[order(final_df$response_type, final_df$inference_path), ]
 
+# Remove duplicates (e.g. if multiple classes map to same path)
+final_df = final_df[!duplicated(final_df[, c("response_type", "inference_path")]), ]
+
 write.csv(final_df, "package_metadata/inference_paths_info.csv", row.names = FALSE, quote = FALSE)
-cat("Refreshed package_metadata/inference_paths_info.csv with IRLS availability.\n")
+cat("Refreshed package_metadata/inference_paths_info.csv\n")

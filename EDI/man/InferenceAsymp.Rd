@@ -20,6 +20,17 @@ Abstract class for asymptotic inference.
 \itemize{
 \item \href{#method-InferenceAsymp-compute_asymp_confidence_interval}{\code{InferenceAsymp$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAsymp-compute_asymp_two_sided_pval}{\code{InferenceAsymp$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAsymp-set_testing_type}{\code{InferenceAsymp$set_testing_type()}}
+\item \href{#method-InferenceAsymp-set_information_preference}{\code{InferenceAsymp$set_information_preference()}}
+\item \href{#method-InferenceAsymp-get_testing_type}{\code{InferenceAsymp$get_testing_type()}}
+\item \href{#method-InferenceAsymp-get_information_preference}{\code{InferenceAsymp$get_information_preference()}}
+\item \href{#method-InferenceAsymp-get_information_source_used}{\code{InferenceAsymp$get_information_source_used()}}
+\item \href{#method-InferenceAsymp-get_supported_testing_types}{\code{InferenceAsymp$get_supported_testing_types()}}
+\item \href{#method-InferenceAsymp-get_supported_information_preferences}{\code{InferenceAsymp$get_supported_information_preferences()}}
+\item \href{#method-InferenceAsymp-compute_wald_two_sided_pval}{\code{InferenceAsymp$compute_wald_two_sided_pval()}}
+\item \href{#method-InferenceAsymp-compute_score_two_sided_pval}{\code{InferenceAsymp$compute_score_two_sided_pval()}}
+\item \href{#method-InferenceAsymp-compute_lik_ratio_two_sided_pval}{\code{InferenceAsymp$compute_lik_ratio_two_sided_pval()}}
+\item \href{#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval}{\code{InferenceAsymp$compute_likelihood_ratio_two_sided_pval()}}
 \item \href{#method-InferenceAsymp-compute_estimate}{\code{InferenceAsymp$compute_estimate()}}
 \item \href{#method-InferenceAsymp-get_mod}{\code{InferenceAsymp$get_mod()}}
 \item \href{#method-InferenceAsymp-get_summary}{\code{InferenceAsymp$get_summary()}}
@@ -59,7 +70,7 @@ Abstract class for asymptotic inference.
 \if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes an asymptotic confidence interval based on Wald-type tests.
+Computes an asymptotic confidence interval using the configured test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
@@ -94,6 +105,138 @@ Computes an asymptotic two-sided p-value for the treatment effect.
 \subsection{Returns}{
 The asymptotic p-value.
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-set_testing_type"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-set_testing_type}{}}}
+\subsection{Method \code{set_testing_type()}}{
+Sets the asymptotic testing method used by p-values and CIs.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_testing_type(testing_type = c("wald", "score", "lik_ratio"))}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{testing_type}}{One of \code{"wald"}, \code{"score"}, or \code{"lik_ratio"}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The inference object, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-set_information_preference"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-set_information_preference}{}}}
+\subsection{Method \code{set_information_preference()}}{
+Sets the information matrix preference used by score-test dispatch.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_information_preference(
+  information_preference = c("auto", "fisher", "observed")
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{information_preference}}{One of \code{"auto"}, \code{"fisher"}, or \code{"observed"}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The inference object, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_testing_type"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_testing_type}{}}}
+\subsection{Method \code{get_testing_type()}}{
+Gets the asymptotic testing method used by p-values and CIs.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_testing_type()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_information_preference"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_information_preference}{}}}
+\subsection{Method \code{get_information_preference()}}{
+Gets the score-test information matrix preference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_information_preference()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_information_source_used"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_information_source_used}{}}}
+\subsection{Method \code{get_information_source_used()}}{
+Gets the actual information source used by the most recent information-backed computation.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_information_source_used()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_supported_testing_types"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_supported_testing_types}{}}}
+\subsection{Method \code{get_supported_testing_types()}}{
+Gets the asymptotic testing methods supported by this inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_supported_testing_types()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-get_supported_information_preferences"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_supported_information_preferences}{}}}
+\subsection{Method \code{get_supported_information_preferences()}}{
+Gets the score-test information matrix preferences supported by this inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_supported_information_preferences()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-compute_wald_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_wald_two_sided_pval}{}}}
+\subsection{Method \code{compute_wald_two_sided_pval()}}{
+Computes the Wald two-sided p-value regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_wald_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-compute_score_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_score_two_sided_pval}{}}}
+\subsection{Method \code{compute_score_two_sided_pval()}}{
+Computes the score two-sided p-value regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_score_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-compute_lik_ratio_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_lik_ratio_two_sided_pval}{}}}
+\subsection{Method \code{compute_lik_ratio_two_sided_pval()}}{
+Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_lik_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval}{}}}
+\subsection{Method \code{compute_likelihood_ratio_two_sided_pval()}}{
+Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_likelihood_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_estimate"></a>}}

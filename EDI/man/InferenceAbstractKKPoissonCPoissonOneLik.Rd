@@ -11,22 +11,9 @@ Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
 }
 \details{
 Fits a single joint likelihood over all KK design data for count responses.
-The matched-pair component uses the conditional Poisson likelihood; conditioning
-on each pair's total count n_k = yT_k + yC_k reduces it to a weighted binomial
-logistic form: yT_k | n_k ~ Binomial(n_k, p_k) with logit(p_k) = beta_T + X_diff_k' beta_xs.
-The reservoir component uses the marginal Poisson likelihood.
-Both components share beta_T and beta_xs; beta_0 (intercept) is only identified
-from reservoir rows and is profiled out in the pairs-only case.
-
-Because the two components use different link functions (logit vs log), they
-cannot be stacked into a single GLM.  Instead, the combined log-likelihood
-L_total = L_cond_Poisson(pairs) + L_Poisson(reservoir)
-is maximized jointly via BFGS with an analytic gradient.
-The standard error for beta_T is extracted from the numerical Hessian at the MLE.
-
-Degenerate cases:
-Pairs only     : reduces to weighted logistic (glm.fit), no BFGS needed.
-Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
+The matched-pair component uses the conditional Poisson likelihood
+(which simplifies to a binomial contribution per pair), and the reservoir
+uses an ordinary Poisson likelihood.
 }
 \keyword{internal}
 \section{Super classes}{
@@ -39,6 +26,7 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 \item \href{#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_estimate}{\code{InferenceAbstractKKPoissonCPoissonOneLik$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_confidence_interval}{\code{InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKPoissonCPoissonOneLik-duplicate}{\code{InferenceAbstractKKPoissonCPoissonOneLik$duplicate()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonOneLik-clone}{\code{InferenceAbstractKKPoissonCPoissonOneLik$clone()}}
 }
 }
@@ -47,7 +35,6 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
@@ -66,8 +53,19 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_information_preferences'><code>EDI::InferenceAsymp$get_supported_information_preferences()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_testing_type'><code>EDI::InferenceAsymp$get_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_information_preference'><code>EDI::InferenceAsymp$set_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
@@ -76,7 +74,7 @@ Reservoir only : reduces to Poisson regression (glm.fit), no BFGS needed.
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonOneLik-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize combined-likelihood conditional-Poisson inference for KK count data.
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonOneLik$new(
   des_obj,
@@ -88,7 +86,7 @@ Initialize combined-likelihood conditional-Poisson inference for KK count data.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A completed KK design object.}
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
@@ -98,9 +96,6 @@ design's imputed covariates.}
 \item{\code{verbose}}{Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new inference object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -129,7 +124,7 @@ The treatment estimate.
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute an asymptotic confidence interval.
+Computes an asymptotic confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_confidence_interval(
   alpha = 0.05
@@ -139,19 +134,16 @@ Compute an asymptotic confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Significance level.}
+\item{\code{alpha}}{Confidence level.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A confidence interval.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute an asymptotic two-sided p-value for the treatment effect.
+Computes an asymptotic p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_two_sided_pval(
   delta = 0
@@ -165,8 +157,27 @@ Compute an asymptotic two-sided p-value for the treatment effect.
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-A two-sided p-value.
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonOneLik-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonOneLik-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonOneLik$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}

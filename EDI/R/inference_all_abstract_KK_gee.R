@@ -18,10 +18,11 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
 				assertFormula(model_formula, null.ok = TRUE)
+				assertFlag(use_rcpp)
 			}
 			if (should_run_asserts()) {
 				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
@@ -39,9 +40,10 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			if (should_run_asserts()) {
+			private$use_rcpp = use_rcpp
+			if (should_run_asserts() && !use_rcpp) {
 				if (!check_package_installed("geepack")){
-					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
+					stop("Package 'geepack' is required for ", class(self)[1], " when use_rcpp=FALSE. Please install it.")
 				}
 			}
 		},
@@ -50,7 +52,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#' Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-				private$shared(estimate_only = TRUE)
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 
@@ -62,7 +64,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
@@ -77,7 +79,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-			private$shared()
+			private$shared(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
@@ -94,14 +96,13 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 	private = list(
 		m = NULL,
+		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
-		# Extracts the coefficient for "w" directly from the fit.
-		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the coefficient for treatment directly from the fit.
-		compute_treatment_estimate_during_randomization_inference = function(){
-			mod = private$fit_gee_with_fallback(std_err = FALSE, estimate_only = TRUE)
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			mod = private$fit_gee_with_fallback(std_err = FALSE, estimate_only = estimate_only)
 			private$extract_gee_treatment_estimate(mod)
 		},
 
@@ -126,6 +127,15 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 				return(list(predictors_df))
 			}
 
+			normalize_candidate = function(X_fit){
+				if (is.null(X_fit)) return(as.data.frame(predictors_df, check.names = FALSE))
+				X_df = as.data.frame(X_fit, check.names = FALSE)
+				if (ncol(X_df) == 0L || !("w" %in% colnames(X_df))) {
+					return(as.data.frame(predictors_df, check.names = FALSE))
+				}
+				X_df
+			}
+
 			X_full = as.matrix(predictors_df)
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
@@ -133,7 +143,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 				fit_fun = function(X_fit) X_fit,
 				fit_ok = function(mod, X_fit, keep) TRUE
 			)
-			candidates = list(as.data.frame(attempt$X_fit, check.names = FALSE))
+			candidates = list(normalize_candidate(attempt$X_fit))
 			keys = paste(colnames(candidates[[1L]]), collapse = "|")
 
 			other_idx = setdiff(seq_len(ncol(X_full)), 1L)
@@ -148,9 +158,10 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 						fit_fun = function(X_fit) X_fit,
 						fit_ok = function(mod, X_fit, keep) TRUE
 					)
-					key = paste(colnames(attempt_try$X_fit), collapse = "|")
+					X_try_df = normalize_candidate(attempt_try$X_fit)
+					key = paste(colnames(X_try_df), collapse = "|")
 					if (!(key %in% keys)){
-						candidates[[length(candidates) + 1L]] = as.data.frame(attempt_try$X_fit, check.names = FALSE)
+						candidates[[length(candidates) + 1L]] = X_try_df
 						keys = c(keys, key)
 					}
 				}
@@ -178,7 +189,16 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 		extract_gee_treatment_estimate = function(mod){
 			if (is.null(mod)) return(NA_real_)
-			beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+			beta = tryCatch(
+				if (inherits(mod, "geeglm")) {
+					stats::coef(mod)
+				} else if (!is.null(mod$beta)) {
+					mod$beta
+				} else {
+					stats::coef(mod)
+				},
+				error = function(e) NULL
+			)
 			if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(NA_real_)
 			j_treat = private$gee_treatment_index(beta)
 			if (!is.finite(j_treat) || is.na(j_treat) || j_treat < 1L || j_treat > length(beta)) return(NA_real_)
@@ -187,9 +207,27 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 		extract_gee_treatment_se = function(mod, j_treat = NA_integer_, coef_table = NULL){
 			if (is.null(mod)) return(NA_real_)
-			beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+			beta = tryCatch(
+				if (inherits(mod, "geeglm")) {
+					stats::coef(mod)
+				} else if (!is.null(mod$beta)) {
+					mod$beta
+				} else {
+					stats::coef(mod)
+				},
+				error = function(e) NULL
+			)
 			if (is.na(j_treat) || !is.finite(j_treat)) j_treat = private$gee_treatment_index(beta)
 			if (!is.finite(j_treat) || is.na(j_treat) || j_treat < 1L) return(NA_real_)
+
+			if (!inherits(mod, "geeglm")) {
+				vc = mod$vcov
+				if (!is.null(vc) && is.matrix(vc) && j_treat <= nrow(vc) && j_treat <= ncol(vc)) {
+					v = suppressWarnings(as.numeric(vc[j_treat, j_treat]))
+					if (is.finite(v) && v > 0) return(sqrt(v))
+				}
+				return(NA_real_)
+			}
 
 			if (!is.null(coef_table)) {
 				se_col = intersect(c("Std.err", "Std.error", "Robust S.E."), colnames(coef_table))
@@ -212,51 +250,53 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
 			private$clear_nonestimable_state()
 
-			if (estimate_only){
-				mod = private$fit_gee_with_fallback(std_err = FALSE, estimate_only = TRUE)
-				private$cached_values$beta_hat_T = private$extract_gee_treatment_estimate(mod)
-				if (!is.finite(private$cached_values$beta_hat_T)){
-					private$cache_nonestimable_estimate("kk_gee_estimate_unavailable")
-					return(invisible(NULL))
-				}
-				private$clear_nonestimable_state()
-				return(invisible(NULL))
-			}
-
-			mod = private$fit_gee_with_fallback(std_err = TRUE, estimate_only = FALSE)
+			mod = private$fit_gee_with_fallback(std_err = !estimate_only, estimate_only = estimate_only)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("kk_gee_fit_failed")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+			beta = tryCatch(if (inherits(mod, "geeglm")) stats::coef(mod) else mod$beta, error = function(e) NULL)
 			j_treat = private$gee_treatment_index(beta)
 			private$cached_values$beta_hat_T = if (is.finite(j_treat) && !is.na(j_treat) && j_treat >= 1L && j_treat <= length(beta)) as.numeric(beta[[j_treat]]) else NA_real_
+			
 			if (!is.finite(private$cached_values$beta_hat_T)){
 				private$cache_nonestimable_estimate("kk_gee_estimate_unavailable")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
-			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
-			private$cached_values$s_beta_hat_T = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
+			private$cached_values$is_z = TRUE
+			private$cached_values$df   = Inf
+			if (estimate_only) return(invisible(NULL))
+
+			if (inherits(mod, "geeglm")) {
+				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+				private$cached_values$s_beta_hat_T = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
+			} else {
+				# Rcpp result
+				vc = mod$vcov
+				private$cached_values$s_beta_hat_T = if (j_treat <= nrow(vc)) sqrt(as.numeric(vc[j_treat, j_treat])) else NA_real_
+				private$cached_values$quasi_loglik = mod$quasi_loglik
+				private$cached_values$score_stat   = mod$score_stat
+			}
+
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				private$cache_nonestimable_se("kk_gee_standard_error_unavailable")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 			private$clear_nonestimable_state()
-			private$cached_values$is_z = TRUE
 		},
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
 				return(invisible(NULL))
 		},
+
 		gee_has_reservoir = function(){
 			m_vec = private$m
 			if (is.null(m_vec)) return(FALSE)
@@ -264,6 +304,20 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			any(m_vec == 0L)
 		},
 
+		fit_gee_rcpp = function(fit_data, estimate_only = FALSE){
+			family_str = private$gee_family_str()
+			X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
+			tryCatch({
+				fast_kk_gee_cpp(
+					X = X_rcpp,
+					y = as.numeric(fit_data$y_sorted),
+					group_id = as.integer(fit_data$id_sorted),
+					family_str = family_str
+				)
+			}, error = function(e) NULL)
+		},
+		
+		# Sort build_gee_fit_data logic slightly to ensure y matches id_sorted
 		build_gee_fit_data = function(include_reservoir = TRUE, predictors_df = NULL){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -283,22 +337,44 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			pred_df = predictors_df
 			if (is.null(pred_df)) pred_df = private$gee_predictors_df()
 			if (!is.data.frame(pred_df)) pred_df = as.data.frame(pred_df)
-			dat = data.frame(y = private$y[keep], pred_df[keep, drop = FALSE], group_id = group_id)
-			dat = dat[order(dat$group_id), drop = FALSE]
+			
+			y_keep = private$y[keep]
+			# Ensure we keep intercept if not multivariate? No, gee_predictors_df handles intercept.
+			
+			dat = data.frame(y = y_keep, pred_df[keep, , drop = FALSE], group_id = group_id)
+			# Order by group_id for Rcpp block processing
+			dat = dat[order(dat$group_id), , drop = FALSE]
 			id_sorted = dat$group_id
+			y_sorted = dat$y
 			dat$group_id = NULL
-			list(dat = dat, id_sorted = id_sorted)
+			dat$y = NULL
+			list(dat = dat, id_sorted = id_sorted, y_sorted = y_sorted)
 		},
 
-		fit_gee_on_data = function(dat, id_sorted, std_err = TRUE){
+		fit_gee_on_data = function(fit_data, std_err = TRUE, estimate_only = FALSE){
+			if (private$use_rcpp) {
+				X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
+				res = tryCatch({
+					fast_kk_gee_cpp(
+						X = X_rcpp,
+						y = as.numeric(fit_data$y_sorted),
+						group_id = as.integer(fit_data$id_sorted),
+						family_str = private$gee_family_str()
+					)
+				}, error = function(e) NULL)
+				if (!is.null(res) && isTRUE(res$converged)) return(res)
+			}
+
+			# Fallback to geepack
 			std_err_arg = if (is.character(std_err)) std_err[1] else "san.se"
 			tryCatch({
+				dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat)
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					geepack::geeglm(
 						y ~ .,
 						family = private$gee_family(),
-						data   = dat,
-						id     = id_sorted,
+						data   = dat_geepack,
+						id     = fit_data$id_sorted,
 						corstr = "exchangeable",
 						std.err = std_err_arg
 					)
@@ -307,35 +383,52 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			}, error = function(e) NULL)
 		},
 
-		fit_gee = function(std_err = TRUE, include_reservoir = TRUE, predictors_df = NULL){
+		fit_gee = function(std_err = TRUE, include_reservoir = TRUE, predictors_df = NULL, estimate_only = FALSE){
 			fit_data = private$build_gee_fit_data(include_reservoir = include_reservoir, predictors_df = predictors_df)
 			if (is.null(fit_data)) return(NULL)
-			private$fit_gee_on_data(fit_data$dat, fit_data$id_sorted, std_err = std_err)
+			private$fit_gee_on_data(fit_data, std_err = std_err, estimate_only = estimate_only)
 		},
 
 		fit_gee_with_fallback = function(std_err = TRUE, estimate_only = FALSE){
 			gee_fit_ok = function(mod){
 				if (is.null(mod)) return(FALSE)
-				beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+				beta = tryCatch(
+					if (inherits(mod, "geeglm")) {
+						stats::coef(mod)
+					} else if (!is.null(mod$beta)) {
+						mod$beta
+					} else {
+						stats::coef(mod)
+					},
+					error = function(e) NULL
+				)
 				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
 				beta_hat = private$extract_gee_treatment_estimate(mod)
 				if (!is.finite(beta_hat)) return(FALSE)
 				if (estimate_only) return(TRUE)
 				j_treat = private$gee_treatment_index(beta)
-				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
+				coef_table = if (inherits(mod, "geeglm")) tryCatch(summary(mod)$coefficients, error = function(e) NULL) else NULL
 				se_hat = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
 				is.finite(se_hat) && se_hat > 0 && se_hat <= private$max_abs_reasonable_coef
 			}
 
 			for (predictors_df in private$gee_predictors_df_candidates()) {
-				mod = private$fit_gee(std_err = std_err, include_reservoir = TRUE, predictors_df = predictors_df)
+				mod = private$fit_gee(std_err = std_err, include_reservoir = TRUE, predictors_df = predictors_df, estimate_only = estimate_only)
 				if (gee_fit_ok(mod)) return(mod)
 				if (private$gee_has_reservoir()) {
-					mod_fb = private$fit_gee(std_err = std_err, include_reservoir = FALSE, predictors_df = predictors_df)
+					mod_fb = private$fit_gee(std_err = std_err, include_reservoir = FALSE, predictors_df = predictors_df, estimate_only = estimate_only)
 					if (gee_fit_ok(mod_fb)) return(mod_fb)
 				}
 			}
 			NULL
+		},
+
+		gee_family_str = function() {
+			fam = private$gee_family()
+			if (fam$family == "gaussian") return("gaussian")
+			if (fam$family == "binomial") return("binomial")
+			if (fam$family == "poisson") return("poisson")
+			"gaussian"
 		}
 	)
 )

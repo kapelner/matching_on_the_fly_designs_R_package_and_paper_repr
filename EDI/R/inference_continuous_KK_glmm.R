@@ -61,7 +61,7 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 		# ── Rcpp Gaussian LMM path ────────────────────────────────────────────
 		shared_rcpp = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
 			private$clear_nonestimable_state()
 
 			# ── Group IDs (same logic as fit_glmm_on_data) ───────────────────

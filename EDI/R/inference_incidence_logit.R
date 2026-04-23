@@ -72,6 +72,10 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			TRUE
 		},
 
+		supports_fisher_information = function(){
+			TRUE
+		},
+
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -96,6 +100,9 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				},
 				score = function(fit){
 					get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				observed_information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				fisher_information = function(fit){
 					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))

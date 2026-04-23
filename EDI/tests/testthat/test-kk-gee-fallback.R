@@ -5,10 +5,14 @@ MockKKGEEFallback <- R6::R6Class(
 		gee_response_type = function() "incidence",
 		gee_family = function() binomial(link = "logit"),
 		gee_predictors_df = function() data.frame(w = private$w),
-		fit_gee_on_data = function(dat, id_sorted, std_err = TRUE) {
-			cluster_sizes = table(id_sorted)
+		fit_gee_on_data = function(fit_data, std_err = TRUE, estimate_only = FALSE) {
+			cluster_sizes = table(fit_data$id_sorted)
 			if (any(cluster_sizes == 1L)) return(NULL)
-			stats::lm(as.numeric(y) ~ w, data = dat)
+			list(
+				beta = c(`(Intercept)` = 0.25, w = 0.5),
+				vcov = structure(diag(c(0.04, 0.09), nrow = 2L), dimnames = list(c("(Intercept)", "w"), c("(Intercept)", "w"))),
+				converged = TRUE
+			)
 		}
 	)
 )

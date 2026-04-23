@@ -106,7 +106,8 @@ Kapelner and Krieger (2021) with option to use matching parameters of Morrison a
   survival_use_speedup_for_no_censoring = TRUE,
   ordinal_use_speedup = TRUE,
   missingness_method = "impute",
-  model_formula = ~.
+  model_formula = ~.,
+  ...
 )}\if{html}{\out{</div>}}
 }
 

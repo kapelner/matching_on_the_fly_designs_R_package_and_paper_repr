@@ -275,6 +275,10 @@ get_gaussian_lmm_fisher_cpp <- function(y, X, group_id, par, h_rel = 1e-4) {
     .Call(`_EDI_get_gaussian_lmm_fisher_cpp`, y, X, group_id, par, h_rel)
 }
 
+fast_kk_gee_cpp <- function(X, y, group_id, family_str, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_fast_kk_gee_cpp`, X, y, group_id, family_str, maxit, tol)
+}
+
 get_hurdle_negbin_count_score_cpp <- function(Xmm, y, params) {
     .Call(`_EDI_get_hurdle_negbin_count_score_cpp`, Xmm, y, params)
 }

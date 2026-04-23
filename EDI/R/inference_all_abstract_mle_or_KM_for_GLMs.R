@@ -39,6 +39,10 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
+			if (isTRUE(private$supports_information_preference())) {
+				se = private$compute_standard_error_from_information_matrix()
+				if (is.finite(se)) return(se)
+			}
 			private$cached_values$s_beta_hat_T
 		},
 
@@ -76,19 +80,7 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 
 			if (testing_type == "score") {
 				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch({
-					if (!is.null(spec$fisher_information)) {
-						spec$fisher_information(null_fit)
-					} else if (!is.null(null_fit$fisher_information)) {
-						null_fit$fisher_information
-					} else if (!is.null(spec$observed_information)) {
-						spec$observed_information(null_fit)
-					} else if (!is.null(null_fit$observed_information)) {
-						null_fit$observed_information
-					} else {
-						spec$information(null_fit)
-					}
-				}, error = function(e) NULL)
+				information = tryCatch(private$get_information_matrix(spec = spec, fit = null_fit), error = function(e) NULL)
 				if (is.null(score) || is.null(information)) return(NA_real_)
 				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
 				return(as.numeric(res$p_value %||% res))

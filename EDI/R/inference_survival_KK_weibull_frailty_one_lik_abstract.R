@@ -84,6 +84,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
+				se = private$compute_standard_error_from_information_matrix()
+				if (is.finite(se)) return(se)
 				private$cached_values$s_beta_hat_T
 			},
 

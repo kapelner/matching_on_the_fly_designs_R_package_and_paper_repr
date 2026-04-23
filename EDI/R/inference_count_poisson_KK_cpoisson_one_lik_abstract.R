@@ -116,6 +116,8 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
+				se = private$compute_standard_error_from_information_matrix()
+				if (is.finite(se)) return(se)
 				private$cached_values$s_beta_hat_T
 			},
 
@@ -124,6 +126,10 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			},
 
 			supports_likelihood_tests = function(){
+				TRUE
+			},
+
+			supports_fisher_information = function(){
 				TRUE
 			},
 
@@ -155,6 +161,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					score = function(fit){
 						as.numeric(fit$score %||% get_cpoisson_combined_score_cpp(yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v, as.numeric(fit$params %||% fit$b)))
 					},
+					observed_information = function(fit){
+						as.matrix(fit$observed_information %||% fit$information)
+					},
 					fisher_information = function(fit){
 						as.matrix(fit$fisher_information %||% fit$information)
 					},
@@ -177,9 +186,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		reduce_combined_covariates = function(X_diff, X_r, w_r){
 			# Use a heuristic to ensure X_diff and X_r are jointly full-rank when combined
 			# with treatment and reservoir intercept.
-			n_p = nrow(X_diff)
-			n_r = nrow(X_r)
-			p   = ncol(X_diff)
+			n_p = nrow(as.matrix(X_diff))
+			n_r = length(w_r)
+			p   = ncol(as.matrix(private$X))
 			
 			# Layout: [beta_0, beta_T, beta_xs]
 			# Pairs:     [0, 1, X_diff]
@@ -187,17 +196,20 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			
 			# Handle empty components to avoid cbind recycling warnings
 			pairs_part = if (n_p > 0) {
-				cbind(Intercept = rep(0, n_p), treatment = rep(1, n_p), X_diff)
+				cbind(Intercept = rep(0, n_p), treatment = rep(1, n_p), as.matrix(X_diff))
 			} else {
 				matrix(0, nrow = 0, ncol = p + 2)
 			}
 			
 			reservoir_part = if (n_r > 0) {
-				cbind(Intercept = rep(1, n_r), treatment = w_r, X_r)
+				cbind(Intercept = rep(1, n_r), treatment = w_r, as.matrix(X_r))
 			} else {
 				matrix(0, nrow = 0, ncol = p + 2)
 			}
 			
+			# if (ncol(pairs_part) != ncol(reservoir_part)) {
+			# 	print(paste("DEBUG: ncol(pairs_part) =", ncol(pairs_part), "ncol(reservoir_part) =", ncol(reservoir_part), "p =", p, "n_p =", n_p, "n_r =", n_r))
+			# }
 			X_stack = rbind(pairs_part, reservoir_part)
 			
 			if (nrow(X_stack) == 0) return(integer(0))
@@ -294,8 +306,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		# (Newton's method with analytic Fisher-information Hessian).
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))				private$cached_values$likelihood_test_context = NULL
-				private$cached_mod = NULL
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$cached_values$likelihood_test_context = NULL
+			private$cached_mod = NULL
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()

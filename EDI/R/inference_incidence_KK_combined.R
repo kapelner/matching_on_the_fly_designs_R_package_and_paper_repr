@@ -17,13 +17,13 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			if (should_run_asserts()) {
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+			if (should_run_asserts() && !use_rcpp) {
 				if (!check_package_installed("geepack")){
 					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, use_rcpp = use_rcpp)
 		}
 	),
 	private = list(

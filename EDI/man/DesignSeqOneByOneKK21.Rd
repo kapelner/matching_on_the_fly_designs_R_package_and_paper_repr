@@ -105,7 +105,8 @@ option to use matching parameters of Morrison and Owen (2025)
   survival_use_speedup_for_no_censoring = TRUE,
   ordinal_use_speedup = TRUE,
   missingness_method = "impute",
-  model_formula = ~.
+  model_formula = ~.,
+  ...
 )}\if{html}{\out{</div>}}
 }
 

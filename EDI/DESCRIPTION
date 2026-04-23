@@ -137,6 +137,7 @@ Collate:
     'inference_count_poisson_KK_cpoisson_one_lik_abstract.R'
     'inference_count_poisson_KK_cpoisson_ivwc_abstract.R'
     'inference_count_KK_cpoisson.R'
+    'inference_count_KK_gee.R'
     'inference_count_KK_combined.R'
     'inference_count_poisson.R'
     'inference_count_quasipoisson.R'

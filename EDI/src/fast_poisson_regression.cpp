@@ -157,6 +157,17 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 
 } // namespace
 
+ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
+                                             const Eigen::VectorXd& y,
+                                             const Eigen::VectorXd& weights = Eigen::VectorXd(),
+                                             int maxit = 100,
+                                             double tol = 1e-8,
+                                             Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                             Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                             std::string optimization_alg = "lbfgs") {
+    return fast_poisson_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+}
+
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;

@@ -66,15 +66,54 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		},
 
 		#' @description
+		#' Sets the information matrix preference used by score-test dispatch.
+		#'
+		#' @param information_preference One of \code{"auto"}, \code{"fisher"}, or \code{"observed"}.
+		#'
+		#' @return The inference object, invisibly.
+		set_information_preference = function(information_preference = c("auto", "fisher", "observed")){
+			information_preference = private$normalize_information_preference(information_preference)
+			supported = private$get_supported_information_preferences_impl()
+			if (!information_preference %in% supported) {
+				stop(
+					class(self)[1], " does not support information_preference = \"", information_preference,
+					"\". Supported values are: ", paste(supported, collapse = ", "),
+					call. = FALSE
+				)
+			}
+			private$information_preference = information_preference
+			private$information_source_used = NULL
+			invisible(self)
+		},
+
+		#' @description
 		#' Gets the asymptotic testing method used by p-values and CIs.
 		get_testing_type = function(){
 			private$testing_type
 		},
 
 		#' @description
+		#' Gets the score-test information matrix preference.
+		get_information_preference = function(){
+			private$information_preference
+		},
+
+		#' @description
+		#' Gets the actual information source used by the most recent information-backed computation.
+		get_information_source_used = function(){
+			private$information_source_used
+		},
+
+		#' @description
 		#' Gets the asymptotic testing methods supported by this inference object.
 		get_supported_testing_types = function(){
 			private$get_supported_testing_types_impl()
+		},
+
+		#' @description
+		#' Gets the score-test information matrix preferences supported by this inference object.
+		get_supported_information_preferences = function(){
+			private$get_supported_information_preferences_impl()
 		},
 
 		#' @description
@@ -144,6 +183,8 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 	private = list(
 		cached_mod = NULL,
 		testing_type = "wald",
+		information_preference = "auto",
+		information_source_used = NULL,
 		get_standard_error = function() stop("Must be implemented by concrete class or shared helper."),
 		get_degrees_of_freedom = function() NA_real_,
 
@@ -151,8 +192,39 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (isTRUE(private$supports_likelihood_tests())) c("wald", "score", "lik_ratio") else "wald"
 		},
 
+		get_supported_information_preferences_impl = function(){
+			supported = "auto"
+			if (isTRUE(private$supports_information_preference())) {
+				if (isTRUE(private$supports_observed_information())) {
+					supported = c(supported, "observed")
+				}
+				if (isTRUE(private$supports_fisher_information())) {
+					supported = c(supported, "fisher")
+				}
+			}
+			supported
+		},
+
 		supports_likelihood_tests = function(){
 			FALSE
+		},
+
+		supports_information_preference = function(){
+			isTRUE(private$supports_likelihood_tests())
+		},
+
+		supports_observed_information = function(){
+			isTRUE(private$supports_information_preference())
+		},
+
+		supports_fisher_information = function(){
+			FALSE
+		},
+
+		get_default_information_source = function(){
+			if (isTRUE(private$supports_fisher_information())) return("fisher")
+			if (isTRUE(private$supports_observed_information())) return("observed")
+			"legacy"
 		},
 
 		normalize_testing_type = function(testing_type){
@@ -168,6 +240,139 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 				likelihood_ratio = "lik_ratio",
 				stop("testing_type must be one of: wald, score, lik_ratio", call. = FALSE)
 			)
+		},
+
+		normalize_information_preference = function(information_preference){
+			if (length(information_preference) != 1L) information_preference = information_preference[1L]
+			information_preference = tolower(as.character(information_preference))
+			switch(
+				information_preference,
+				auto = "auto",
+				fisher = "fisher",
+				observed = "observed",
+				obs = "observed",
+				stop("information_preference must be one of: auto, fisher, observed", call. = FALSE)
+			)
+		},
+
+		get_information_matrix = function(spec = NULL, fit = NULL){
+			if (is.null(spec)) {
+				spec = private$get_likelihood_test_spec()
+			}
+			if (is.null(spec)) return(NULL)
+			if (is.null(fit)) {
+				fit = spec$full_fit %||% private$cached_mod
+			}
+			if (is.null(fit)) return(NULL)
+
+			extract_fisher = function(){
+				tryCatch({
+					if (!is.null(spec$fisher_information)) {
+						spec$fisher_information(fit)
+					} else if (!is.null(fit$fisher_information)) {
+						fit$fisher_information
+					} else if (identical(fit$information_type %||% "", "fisher") && !is.null(fit$information)) {
+						fit$information
+					} else {
+						NULL
+					}
+				}, error = function(e) NULL)
+			}
+
+			extract_observed = function(){
+				tryCatch({
+					if (!is.null(spec$observed_information)) {
+						spec$observed_information(fit)
+					} else if (!is.null(fit$observed_information)) {
+						fit$observed_information
+					} else if (identical(fit$information_type %||% "", "observed") && !is.null(fit$information)) {
+						fit$information
+					} else {
+						NULL
+					}
+				}, error = function(e) NULL)
+			}
+
+			extract_legacy = function(){
+				tryCatch({
+					if (!is.null(spec$information)) {
+						spec$information(fit)
+					} else {
+						fit$information
+					}
+				}, error = function(e) NULL)
+			}
+
+			preference = private$information_preference
+			if (identical(preference, "auto")) {
+				preference = private$get_default_information_source()
+			}
+			if (identical(preference, "fisher")) {
+				information = extract_fisher()
+				if (is.null(information)) {
+					stop(class(self)[1], " does not expose Fisher information for information-backed inference.", call. = FALSE)
+				}
+				private$information_source_used = "fisher"
+				return(information)
+			}
+
+			if (identical(preference, "observed")) {
+				information = extract_observed()
+				if (is.null(information)) {
+					stop(class(self)[1], " does not expose observed information for information-backed inference.", call. = FALSE)
+				}
+				private$information_source_used = "observed"
+				return(information)
+			}
+
+			information = extract_fisher()
+			if (!is.null(information)) {
+				private$information_source_used = "fisher"
+				return(information)
+			}
+			information = extract_observed()
+			if (!is.null(information)) {
+				private$information_source_used = "observed"
+				return(information)
+			}
+			information = extract_legacy()
+			if (!is.null(information)) {
+				private$information_source_used = "legacy"
+			}
+			information
+		},
+
+		compute_variance_from_information_matrix = function(information, j){
+			information = as.matrix(information)
+			if (!is.matrix(information) || nrow(information) != ncol(information) || length(j) != 1L ||
+				!is.finite(j) || j < 1L || j > nrow(information)) {
+				return(NA_real_)
+			}
+			if (nrow(information) == 1L) {
+				val = as.numeric(information[1L, 1L])
+				return(if (is.finite(val) && val > 0) 1 / val else NA_real_)
+			}
+			vcov = tryCatch(solve(information), error = function(e) NULL)
+			if (is.null(vcov) || any(!is.finite(vcov))) {
+				vcov = tryCatch(qr.solve(information, diag(nrow(information))), error = function(e) NULL)
+			}
+			if (is.null(vcov) || any(!is.finite(vcov))) return(NA_real_)
+			vcov = (vcov + t(vcov)) / 2
+			as.numeric(vcov[j, j])
+		},
+
+		compute_standard_error_from_information_matrix = function(spec = NULL, fit = NULL, j = NULL){
+			if (is.null(spec)) {
+				spec = private$get_likelihood_test_spec()
+			}
+			if (is.null(spec)) return(NA_real_)
+			if (is.null(j)) {
+				j = as.integer(spec$j)
+			}
+			information = tryCatch(private$get_information_matrix(spec = spec, fit = fit), error = function(e) NULL)
+			if (is.null(information)) return(NA_real_)
+			variance = private$compute_variance_from_information_matrix(information, j)
+			if (is.finite(variance) && variance >= 0) sqrt(variance) else NA_real_
 		},
 
 		compute_wald_confidence_interval = function(alpha){
@@ -228,19 +433,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 
 			if (testing_type == "score") {
 				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch({
-					if (!is.null(spec$fisher_information)) {
-						spec$fisher_information(null_fit)
-					} else if (!is.null(null_fit$fisher_information)) {
-						null_fit$fisher_information
-					} else if (!is.null(spec$observed_information)) {
-						spec$observed_information(null_fit)
-					} else if (!is.null(null_fit$observed_information)) {
-						null_fit$observed_information
-					} else {
-						spec$information(null_fit)
-					}
-				}, error = function(e) NULL)
+				information = tryCatch(private$get_information_matrix(spec = spec, fit = null_fit), error = function(e) NULL)
 				if (is.null(score) || is.null(information)) return(NA_real_)
 				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
 				return(as.numeric(res$p_value %||% res))

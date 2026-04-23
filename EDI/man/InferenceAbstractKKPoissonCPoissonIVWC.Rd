@@ -11,10 +11,10 @@ Abstract class for Conditional Poisson / Negative Binomial Compound Inference
 }
 \details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
-count responses. For matched pairs, it uses conditional Poisson regression (implemented
-via binomial logistic regression on the differences of covariates). For reservoir
-subjects, it uses Negative Binomial regression. The two estimates are combined via a
-variance-weighted linear combination.
+count responses. For matched pairs, it uses conditional Poisson regression
+(equivalent to weighted logistic regression) and for the reservoir, it uses
+standard negative binomial regression. The two estimates are combined via
+inverse-variance weighted combination (IVWC).
 }
 \keyword{internal}
 \section{Super classes}{
@@ -27,6 +27,7 @@ variance-weighted linear combination.
 \item \href{#method-InferenceAbstractKKPoissonCPoissonIVWC-compute_estimate}{\code{InferenceAbstractKKPoissonCPoissonIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKPoissonCPoissonIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKPoissonCPoissonIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKPoissonCPoissonIVWC-duplicate}{\code{InferenceAbstractKKPoissonCPoissonIVWC$duplicate()}}
 \item \href{#method-InferenceAbstractKKPoissonCPoissonIVWC-clone}{\code{InferenceAbstractKKPoissonCPoissonIVWC$clone()}}
 }
 }
@@ -35,7 +36,6 @@ variance-weighted linear combination.
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
@@ -54,8 +54,19 @@ variance-weighted linear combination.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_information_preferences'><code>EDI::InferenceAsymp$get_supported_information_preferences()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_testing_type'><code>EDI::InferenceAsymp$get_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_information_preference'><code>EDI::InferenceAsymp$set_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThrough" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThrough.html#method-InferenceKKPassThrough-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThrough$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
@@ -92,7 +103,7 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonIVWC-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonIVWC-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Returns the estimated treatment effect.
+Returns the estimated treatment effect (log-rate ratio).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -137,8 +148,29 @@ Computes the asymptotic p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For
-any treatment effect at all this is set to zero (the default).}
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKPoissonCPoissonIVWC-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKPoissonCPoissonIVWC-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKPoissonCPoissonIVWC$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
 }
 \if{html}{\out{</div>}}
 }
