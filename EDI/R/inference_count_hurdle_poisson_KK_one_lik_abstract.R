@@ -71,6 +71,9 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
@@ -86,6 +89,9 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
+			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
@@ -97,10 +103,65 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 
 	private = list(
 		use_rcpp = TRUE,
-		max_abs_reasonable_coef = 1e4,
+			max_abs_reasonable_coef = 1e4,
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+			get_standard_error = function(){
+				private$shared_combined_hurdle(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$shared_combined_hurdle(estimate_only = FALSE)
+				private$cached_values$df
+			},
+
+			supports_likelihood_tests = function(){
+				isTRUE(private$use_rcpp)
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared_combined_hurdle(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				X_fit = ctx$X
+				y = as.numeric(ctx$y)
+				group_id = as.integer(ctx$group_id)
+				j_treat = as.integer(ctx$j_treat)
+				j_T = as.integer(ctx$j_T)
+				n_gh = as.integer(ctx$n_gh %||% 7L)
+				list(
+					X = X_fit,
+					y = y,
+					group_id = group_id,
+					j = j_treat,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_hurdle_poisson_glmm_cpp(
+							X = X_fit,
+							y = y,
+							group_id = group_id,
+							j_T = j_T,
+							estimate_only = FALSE,
+							n_gh = n_gh,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j_treat,
+							fixed_values = delta
+						)
+					},
+					score = function(fit){
+						as.numeric(fit$score %||% get_hurdle_poisson_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+					},
+					information = function(fit){
+						as.matrix(fit$information)
+					},
+					neg_loglik = function(fit){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_hurdle_poisson_glmm_neg_loglik_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+					}
+				)
+			},
+
+			compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
+				private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
 		# ── Group ID construction (matched pairs + singletons for reservoir) ──────
@@ -116,12 +177,13 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		},
 
 		# ── Rcpp path ────────────────────────────────────────────────────────────
-		shared_rcpp = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
+			shared_rcpp = function(estimate_only = FALSE){
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$clear_nonestimable_state()
+				private$cached_values$likelihood_test_context = NULL
 
-			group_id = private$build_group_ids()
+				group_id = private$build_group_ids()
 
 			if (ncol(as.matrix(private$X)) > 0){
 				X_fit = private$create_design_matrix()
@@ -151,12 +213,21 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
 
-			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				return(private$shared_glmm_tmb(estimate_only = estimate_only))
-			}
+				if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+					return(private$shared_glmm_tmb(estimate_only = estimate_only))
+				}
 
-			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$is_z = TRUE
+				private$cached_mod = fit
+				private$cached_values$likelihood_test_context = list(
+					X = X_fit,
+					y = as.numeric(private$y),
+					group_id = as.integer(group_id),
+					j_T = j_T,
+					j_treat = j_T + 1L,
+					n_gh = 7L
+				)
+				private$cached_values$beta_hat_T = beta_hat_T
+				private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))

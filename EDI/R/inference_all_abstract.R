@@ -718,11 +718,15 @@ Inference = R6::R6Class("Inference",
 				required_cols <= ncol(X_mat)
 			]
 
+			fit_fun_formals = names(formals(fit_fun))
+			fit_fun_accepts_keep = "keep" %in% fit_fun_formals || "..." %in% fit_fun_formals
 			attempt_fit = function(keep){
 				X_try = X_mat[, keep, drop = FALSE]
 				colnames(X_try) = colnames(X_mat)[keep]
 				list(
-					fit = tryCatch(fit_fun(X_try), error = function(e) NULL),
+					fit = tryCatch({
+						if (fit_fun_accepts_keep) fit_fun(X_try, keep) else fit_fun(X_try)
+					}, error = function(e) NULL),
 					X = X_try,
 					keep = keep
 				)

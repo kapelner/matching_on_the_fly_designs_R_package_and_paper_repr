@@ -50,6 +50,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -63,6 +66,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
+			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
 			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
@@ -92,11 +98,61 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			private$compute_treatment_estimate_during_power_simulation_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
+			assert_finite_se = function(){
+				if (!is.finite(private$cached_values$s_beta_hat_T)){
+					return(invisible(NULL))
+				}
+			},
+
+			get_standard_error = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$cached_values$df %||% NA_real_
+			},
+
+			supports_likelihood_tests = function(){
+				!is.null(private$cached_values$likelihood_test_context) || TRUE
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				yT_v = as.numeric(ctx$yT_v)
+				n_k_v = as.numeric(ctx$n_k_v)
+				X_diff_v = as.matrix(ctx$X_diff_v)
+				y_r_v = as.numeric(ctx$y_r_v)
+				w_r_v = as.numeric(ctx$w_r_v)
+				X_r_v = as.matrix(ctx$X_r_v)
+				list(
+					j = 2L,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_cpoisson_combined_with_var_cpp(
+							yT_v = yT_v,
+							n_k_v = n_k_v,
+							X_diff_v = X_diff_v,
+							y_r = y_r_v,
+							w_r = w_r_v,
+							X_r = X_r_v,
+							fixed_idx = 2L,
+							fixed_values = delta
+						)
+					},
+					score = function(fit){
+						as.numeric(fit$score %||% get_cpoisson_combined_score_cpp(yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v, as.numeric(fit$params %||% fit$b)))
+					},
+					information = function(fit){
+						as.matrix(fit$information %||% -get_cpoisson_combined_hessian_cpp(yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v, as.numeric(fit$params %||% fit$b)))
+					},
+					neg_loglik = function(fit){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll)
+					}
+				)
+			},
 
 		set_failed_combined_cache = function(){
 			private$cached_values$beta_hat_T   = NA_real_
@@ -115,10 +171,23 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			# Layout: [beta_0, beta_T, beta_xs]
 			# Pairs:     [0, 1, X_diff]
 			# Reservoir: [1, w_r, X_r]
-			X_stack = rbind(
-				cbind(Intercept = 0, treatment = 1, X_diff),
-				cbind(Intercept = 1, treatment = w_r, X_r)
-			)
+			
+			# Handle empty components to avoid cbind recycling warnings
+			pairs_part = if (n_p > 0) {
+				cbind(Intercept = rep(0, n_p), treatment = rep(1, n_p), X_diff)
+			} else {
+				matrix(0, nrow = 0, ncol = p + 2)
+			}
+			
+			reservoir_part = if (n_r > 0) {
+				cbind(Intercept = rep(1, n_r), treatment = w_r, X_r)
+			} else {
+				matrix(0, nrow = 0, ncol = p + 2)
+			}
+			
+			X_stack = rbind(pairs_part, reservoir_part)
+			
+			if (nrow(X_stack) == 0) return(integer(0))
 			
 			qr_res = qr(X_stack)
 			if (qr_res$rank < ncol(X_stack)){
@@ -134,8 +203,8 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		},
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		try_combined_fit = function(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v){
-			mod = tryCatch(
+			try_combined_fit = function(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v){
+				mod = tryCatch(
 				fast_cpoisson_combined_with_var_cpp(
 					yT_v = as.numeric(yT_v),
 					n_k_v = as.numeric(n_k_v),
@@ -146,14 +215,24 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
-			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
+				if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+				if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
 
-			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
-			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-			private$cached_values$is_z = TRUE
-			TRUE
-		},
+				private$cached_mod = mod
+				private$cached_values$likelihood_test_context = list(
+					yT_v = as.numeric(yT_v),
+					n_k_v = as.numeric(n_k_v),
+					X_diff_v = as.matrix(X_diff_v),
+					y_r_v = as.numeric(y_r_v),
+					w_r_v = as.numeric(w_r_v),
+					X_r_v = as.matrix(X_r_v)
+				)
+				private$cached_values$beta_hat_T = as.numeric(mod$b[2])
+				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
+				private$cached_values$is_z = TRUE
+				private$cached_values$df = NA_real_
+				TRUE
+			},
 
 		try_pairs_only = function(estimate_only, yT_v, n_k_v, X_diff_v){
 			if (length(yT_v) == 0L) return(FALSE)
@@ -201,9 +280,11 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		# The combined case is handled by fast_cpoisson_combined_with_var_cpp
 		# (Newton's method with analytic Fisher-information Hessian).
 		shared_combined_likelihood = function(estimate_only = FALSE){
-			print(paste("DEBUG: Cond Poisson OneLik shared called for", class(self)[1]))
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				print(paste("DEBUG: Cond Poisson OneLik shared called for", class(self)[1]))
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$cached_values$likelihood_test_context = NULL
+				private$cached_mod = NULL
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()

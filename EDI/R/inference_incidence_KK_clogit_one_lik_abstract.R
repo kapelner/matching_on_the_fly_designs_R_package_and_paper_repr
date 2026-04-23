@@ -62,6 +62,9 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -76,6 +79,9 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -85,9 +91,57 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	),
 
 	private = list(
-		max_abs_reasonable_coef = 1e4,
+			max_abs_reasonable_coef = 1e4,
 
-		fit_combined_logistic_candidate = function(X_comb, y_comb, j_beta_T, estimate_only = FALSE){
+			get_standard_error = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$cached_values$df %||% NA_real_
+			},
+
+			supports_likelihood_tests = function(){
+				TRUE
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				X_fit = ctx$X
+				y = as.numeric(ctx$y)
+				j_treat = as.integer(ctx$j_treat)
+				list(
+					X = X_fit,
+					y = y,
+					j = j_treat,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_logistic_regression_with_var_cpp(
+							Xmm = X_fit,
+							y = y,
+							j = j_treat,
+							fixed_idx = j_treat,
+							fixed_values = delta
+						)
+					},
+					score = function(fit){
+						get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+					},
+					information = function(fit){
+						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+					},
+					neg_loglik = function(fit){
+						eta = as.numeric(X_fit %*% as.numeric(fit$b))
+						log_denom = ifelse(eta > 0, eta + log1p(exp(-eta)), log1p(exp(eta)))
+						-sum(y * eta - log_denom)
+					}
+				)
+			},
+
+			fit_combined_logistic_candidate = function(X_comb, y_comb, j_beta_T, estimate_only = FALSE){
 			tryCatch(
 				if (estimate_only) {
 					fast_logistic_regression(X_comb, y_comb)
@@ -107,11 +161,12 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 
 		# Fit the combined logistic likelihood over discordant matched-pair differences
 		# and reservoir observations with SHARED covariate effects beta_xs.
-		shared_combined_likelihood = function(estimate_only = FALSE){
-			print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
+			shared_combined_likelihood = function(estimate_only = FALSE){
+				print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$cached_values$likelihood_test_context = NULL
+				print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -208,8 +263,14 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				return(invisible(NULL))
 			}
 
-			private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
-			if (!estimate_only) {
+				private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
+				private$cached_mod = mod
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					y = y_comb,
+					j_treat = j_beta_T
+				)
+				if (!estimate_only) {
 				se = sqrt(mod$ssq_b_j)
 				private$cached_values$s_beta_hat_T = if (is.finite(se) && se <= private$max_abs_reasonable_coef) se else NA_real_
 				if (!is.finite(private$cached_values$s_beta_hat_T)){
@@ -218,9 +279,10 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					return(invisible(NULL))
 				}
 			}
-			private$clear_nonestimable_state()
-			private$cached_values$is_z         = TRUE
-			invisible(NULL)
-		}
+				private$clear_nonestimable_state()
+				private$cached_values$is_z         = TRUE
+				private$cached_values$df           = NA_real_
+				invisible(NULL)
+			}
 	)
 )

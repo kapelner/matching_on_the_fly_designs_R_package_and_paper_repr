@@ -55,6 +55,12 @@ inline double soft_barrier_hp(double log_sigma, double center = 5.0, double scal
 	return scale * d * d;
 }
 
+inline double soft_barrier_hp_grad(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
+}
+
 inline double soft_barrier_hp_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
 	const double d = std::abs(log_sigma) - center;
 	if (d <= 0.0) return 0.0;
@@ -285,6 +291,95 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_hurdle_poisson_glmm_score_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 7
+) {
+	std::vector<int> pos_idx;
+	pos_idx.reserve(X.rows());
+	for (int i = 0; i < X.rows(); ++i) {
+		if (y[i] > 0.0) pos_idx.push_back(i);
+	}
+	const int n_pos = static_cast<int>(pos_idx.size());
+	Eigen::MatrixXd X_pos(n_pos, X.cols());
+	Eigen::VectorXd y_pos(n_pos);
+	std::vector<int> gid_pos(n_pos);
+	for (int k = 0; k < n_pos; ++k) {
+		const int i = pos_idx[k];
+		X_pos.row(k) = X.row(i);
+		y_pos[k] = y[i];
+		gid_pos[k] = group_id[i];
+	}
+	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
+	HurdlePoissonGLMMObjective obj(dat);
+	Eigen::VectorXd grad(params.size());
+	obj(params, grad);
+	grad[X.cols()] -= soft_barrier_hp_grad(params[X.cols()]);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_hurdle_poisson_glmm_hessian_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 7
+) {
+	std::vector<int> pos_idx;
+	pos_idx.reserve(X.rows());
+	for (int i = 0; i < X.rows(); ++i) {
+		if (y[i] > 0.0) pos_idx.push_back(i);
+	}
+	const int n_pos = static_cast<int>(pos_idx.size());
+	Eigen::MatrixXd X_pos(n_pos, X.cols());
+	Eigen::VectorXd y_pos(n_pos);
+	std::vector<int> gid_pos(n_pos);
+	for (int k = 0; k < n_pos; ++k) {
+		const int i = pos_idx[k];
+		X_pos.row(k) = X.row(i);
+		y_pos[k] = y[i];
+		gid_pos[k] = group_id[i];
+	}
+	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
+	HurdlePoissonGLMMObjective obj(dat);
+	Eigen::MatrixXd information = obj.hessian(params);
+	information(X.cols(), X.cols()) -= soft_barrier_hp_hessian(params[X.cols()]);
+	return -information;
+}
+
+// [[Rcpp::export]]
+double get_hurdle_poisson_glmm_neg_loglik_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 7
+) {
+	std::vector<int> pos_idx;
+	pos_idx.reserve(X.rows());
+	for (int i = 0; i < X.rows(); ++i) {
+		if (y[i] > 0.0) pos_idx.push_back(i);
+	}
+	const int n_pos = static_cast<int>(pos_idx.size());
+	Eigen::MatrixXd X_pos(n_pos, X.cols());
+	Eigen::VectorXd y_pos(n_pos);
+	std::vector<int> gid_pos(n_pos);
+	for (int k = 0; k < n_pos; ++k) {
+		const int i = pos_idx[k];
+		X_pos.row(k) = X.row(i);
+		y_pos[k] = y[i];
+		gid_pos[k] = group_id[i];
+	}
+	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
+	HurdlePoissonGLMMObjective obj(dat);
+	return likelihood_value(obj, params) - soft_barrier_hp(params[X.cols()]);
+}
+
+// [[Rcpp::export]]
 List fast_hurdle_poisson_glmm_cpp(
 	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
@@ -294,7 +389,9 @@ List fast_hurdle_poisson_glmm_cpp(
 	int n_gh = 7,
 	int maxit = 300,
 	double eps_g = 1e-6,
-	std::string optimization_alg = "lbfgs"
+	std::string optimization_alg = "lbfgs",
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
 	const int n_all = X.rows();
 	const int p     = X.cols();
@@ -310,6 +407,7 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	if (n_pos <= p) {
 		return List::create(
+			Named("params")     = Eigen::VectorXd::Constant(total, NA_REAL),
 			Named("b")          = Eigen::VectorXd::Constant(p, NA_REAL),
 			Named("log_sigma")  = NA_REAL,
 			Named("ssq_b_T")    = NA_REAL,
@@ -340,16 +438,18 @@ List fast_hurdle_poisson_glmm_cpp(
 	par[total - 1] = -3.0;
 
 	HurdlePoissonGLMMObjective obj(dat);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	double neg_ll = NA_REAL;
 	bool converged = false;
 	try {
-		LikelihoodFitResult fit = optimize_likelihood(obj, par, maxit, eps_g, optimization_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
 		par       = fit.params;
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
 		return List::create(
+			Named("params")     = par,
 			Named("b")          = par.head(p),
 			Named("log_sigma")  = par[total - 1],
 			Named("ssq_b_T")    = NA_REAL,
@@ -360,22 +460,34 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	const double pen        = soft_barrier_hp(par[total - 1]);
 	const double true_neg_ll = neg_ll - pen;
+	Eigen::VectorXd score(total);
+	obj(par, score);
+	score[total - 1] -= soft_barrier_hp_grad(par[total - 1]);
+	score = -score;
+	Eigen::MatrixXd information = obj.hessian(par);
+	information(total - 1, total - 1) -= soft_barrier_hp_hessian(par[total - 1]);
 
 	double ssq_b_T = NA_REAL;
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
 	if (!estimate_only && converged) {
-		Eigen::MatrixXd H = obj.hessian(par);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
-		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(total, total));
-			if (inv.allFinite() && j_T < p) ssq_b_T = inv(j_T, j_T);
-		}
+		Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::MatrixXd cov_free = covariance_from_information(information_free);
+		vcov = expand_free_covariance(total, fixed_spec, cov_free, true);
+		if (j_T < p) ssq_b_T = vcov(j_T, j_T);
 	}
 
 	return List::create(
+		Named("params")     = par,
 		Named("b")          = par.head(p),
 		Named("log_sigma")  = par[total - 1],
 		Named("ssq_b_T")    = ssq_b_T,
+		Named("vcov")       = vcov,
+		Named("score")      = score,
+		Named("information") = information,
+		Named("hessian")    = -information,
 		Named("converged")  = converged,
-		Named("neg_loglik") = true_neg_ll
+		Named("neg_loglik") = true_neg_ll,
+		Named("neg_ll")     = true_neg_ll,
+		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL
 	);
 }

@@ -212,6 +212,33 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+Eigen::VectorXd get_zinb_score_cpp(const Eigen::VectorXd& y,
+                                   const Eigen::MatrixXd& Xcond,
+                                   const Eigen::MatrixXd& Xzi,
+                                   const Eigen::VectorXd& params) {
+    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    return likelihood_score(fun, params);
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_zinb_hessian_cpp(const Eigen::VectorXd& y,
+                                     const Eigen::MatrixXd& Xcond,
+                                     const Eigen::MatrixXd& Xzi,
+                                     const Eigen::VectorXd& params) {
+    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    return -fun.hessian(params);
+}
+
+// [[Rcpp::export]]
+double get_zinb_neg_loglik_cpp(const Eigen::VectorXd& y,
+                               const Eigen::MatrixXd& Xcond,
+                               const Eigen::MatrixXd& Xzi,
+                               const Eigen::VectorXd& params) {
+    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    return likelihood_value(fun, params);
+}
+
+// [[Rcpp::export]]
 List fast_zinb_cpp(
     const Eigen::VectorXd& y,
     const Eigen::MatrixXd& Xcond,
@@ -220,7 +247,9 @@ List fast_zinb_cpp(
     bool estimate_only = false,
     int maxit = 1000,
     double tol = 1e-6,
-    std::string optimization_alg = "newton_raphson"
+    std::string optimization_alg = "newton_raphson",
+    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
     const int pc = Xcond.cols();
     const int pz = Xzi.cols();
@@ -243,40 +272,46 @@ List fast_zinb_cpp(
     }
 
     ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
     LikelihoodFitResult fit;
     try {
-        fit = optimize_likelihood(fun, par, maxit, tol, optimization_alg, "newton_raphson");
+        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     } catch (...) {
         return List::create(Named("converged") = false);
     }
     par = fit.params;
+    Eigen::VectorXd score = likelihood_score(fun, par);
+    Eigen::MatrixXd information = fun.hessian(par);
 
     if (estimate_only) {
         return List::create(
+            Named("params") = par,
             Named("coefficients") = List::create(
                 Named("cond") = par.head(pc),
                 Named("zi")   = par.segment(pc, pz)
             ),
             Named("converged") = fit.converged,
-            Named("neg_ll")    = fit.value
+            Named("neg_ll")    = fit.value,
+            Named("neg_loglik") = fit.value,
+            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
         );
     }
 
-    Eigen::MatrixXd H = fun.hessian(par);
-    Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
-    Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-    if (ldlt.info() == Eigen::Success) {
-        Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(total, total));
-        if (inv.allFinite()) vcov = inv;
-    }
+    Eigen::MatrixXd vcov = expand_free_covariance(total, fixed_spec, covariance_from_information(subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx)), true);
 
     return List::create(
+        Named("params") = par,
         Named("coefficients") = List::create(
             Named("cond") = par.head(pc),
             Named("zi")   = par.segment(pc, pz)
         ),
         Named("vcov")      = vcov,
+        Named("score")     = score,
+        Named("information") = information,
+        Named("hessian")   = -information,
         Named("converged") = fit.converged,
-        Named("neg_ll")    = fit.value
+        Named("neg_ll")    = fit.value,
+        Named("neg_loglik") = fit.value,
+        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
     );
 }

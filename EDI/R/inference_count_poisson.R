@@ -68,9 +68,55 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			TRUE
 		},
 
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					fast_poisson_regression_with_var_cpp(
+						Xmm = X_fit,
+						y = y,
+						j = j_treat,
+						fixed_idx = j_treat,
+						fixed_values = delta
+					)
+				},
+				score = function(fit){
+					get_poisson_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y * eta - exp(eta) - lgamma(y + 1))
+				}
+			)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
+			X_data = private$get_X()
+			if (is.null(X_data) || ncol(X_data) == 0) {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			}
 			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					if (estimate_only) {
@@ -83,6 +129,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
+					if (is.null(mod)) return(FALSE)
 					j_treat = mod$j_treat
 					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
 					if (estimate_only) return(TRUE)
@@ -91,7 +138,13 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					j_treat = which(attempt$keep == 2L)
+				)
+			} else {
+				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
 		},

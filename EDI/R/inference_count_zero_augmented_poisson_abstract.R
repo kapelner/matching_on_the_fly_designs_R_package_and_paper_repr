@@ -148,6 +148,45 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 		za_description = function() stop(class(self)[1], " must implement za_description()."),
 
+		supports_likelihood_tests = function(){
+			isTRUE(private$use_rcpp) && identical(private$za_description(), "Zero-Inflated Negative Binomial")
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					fast_zinb_cpp(
+						y = y,
+						Xcond = X_fit,
+						Xzi = X_fit,
+						estimate_only = FALSE,
+						optimization_alg = private$optimization_alg,
+						fixed_idx = j_treat,
+						fixed_values = delta
+					)
+				},
+				score = function(fit){
+					as.numeric(fit$score %||% get_zinb_score_cpp(y, X_fit, X_fit, as.numeric(fit$params)))
+				},
+				information = function(fit){
+					as.matrix(fit$information)
+				},
+				neg_loglik = function(fit){
+					as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(y, X_fit, X_fit, as.numeric(fit$params)))
+				}
+			)
+		},
+
 		predictors_df = function(){
 			if (ncol(as.matrix(private$X)) > 0){
 				full_X = private$create_design_matrix()
@@ -209,6 +248,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$cached_values$likelihood_test_context = NULL
 
 			if (is.null(private$best_Xmm_colnames)) {
 				X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
@@ -247,11 +287,15 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zinb_fit_unavailable")
 					return(invisible(NULL))
-				}
-				private$cached_mod = fit
-				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
-				if (!estimate_only) {
-					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
+					}
+					private$cached_mod = fit
+					private$cached_values$likelihood_test_context = list(
+						X = X_fit,
+						j_treat = 2L
+					)
+					private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+					if (!estimate_only) {
+						se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
@@ -264,9 +308,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
 					return(invisible(NULL))
 				}
-				private$cached_mod = fit
+					private$cached_mod = fit
+					private$cached_values$likelihood_test_context = NULL
 
-				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+					private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
@@ -278,9 +323,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
 					return(invisible(NULL))
 				}
-				private$cached_mod = mod
+					private$cached_mod = mod
+					private$cached_values$likelihood_test_context = NULL
 
-				cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+					cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
 				if (is.null(cond_coef) || !("w" %in% names(cond_coef))){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_treatment_missing")
 					return(invisible(NULL))

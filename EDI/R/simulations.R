@@ -646,7 +646,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }, error = function(e) NA_real_)
 
             # ── Asymptotic ────────────────────────────────────────────────────
-            print(paste("DEBUG: inf_name =", inf_name, "is_asymp =", is(inf_obj, "InferenceAsymp"), "want_asymp_pval =", private$want_asymp_pval))
             if (is(inf_obj, "InferenceAsymp") &&
                 (private$want_asymp_ci || private$want_asymp_pval)) {
               pval_a = if (private$want_asymp_pval) {

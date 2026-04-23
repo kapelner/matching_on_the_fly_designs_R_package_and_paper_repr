@@ -43,6 +43,20 @@ Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X,
 }
 
 // [[Rcpp::export]]
+Rcpp::List likelihood_ratio_test_from_negloglik_cpp(double unrestricted_neg_loglik,
+                                                    double null_neg_loglik,
+                                                    int df = 1) {
+	return likelihood_ratio_test_from_negloglik(unrestricted_neg_loglik, null_neg_loglik, df);
+}
+
+// [[Rcpp::export]]
+Rcpp::List score_test_from_score_information_cpp(const Eigen::VectorXd& score,
+                                                 const Eigen::MatrixXd& information,
+                                                 int tested_idx) {
+	return score_test_from_score_information(score, information, tested_idx);
+}
+
+// [[Rcpp::export]]
 double mean_cpp(const Eigen::VectorXd& x) {
 	if (x.size() == 0) {
 	return NA_REAL;

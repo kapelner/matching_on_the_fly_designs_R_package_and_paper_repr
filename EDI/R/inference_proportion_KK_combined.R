@@ -87,12 +87,13 @@ InferencePropKKGLMM = R6::R6Class("InferencePropKKGLMM",
 			}
 		},
 
-		shared_rcpp = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
+			shared_rcpp = function(estimate_only = FALSE){
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$clear_nonestimable_state()
+				private$cached_values$likelihood_test_context = NULL
 
-			m_vec = private$m
+				m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 			group_id = m_vec
@@ -127,12 +128,21 @@ InferencePropKKGLMM = R6::R6Class("InferencePropKKGLMM",
 
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
 
-			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				return(super$shared(estimate_only = estimate_only))
-			}
+				if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+					return(super$shared(estimate_only = estimate_only))
+				}
 
-			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$is_z = TRUE
+				private$cached_mod = fit
+				private$cached_values$likelihood_test_context = list(
+					X = X_fit,
+					y = as.numeric(private$y),
+					group_id = as.integer(group_id),
+					j_T = j_T,
+					j_treat = j_T + 1L,
+					n_gh = 20L
+				)
+				private$cached_values$beta_hat_T = beta_hat_T
+				private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))

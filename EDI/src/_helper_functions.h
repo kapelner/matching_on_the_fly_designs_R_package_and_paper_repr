@@ -8,6 +8,7 @@
 #include <limits>
 #include <cmath>
 #include <string>
+#include <Rmath.h>
 
 // Pure C++ result structure to avoid R List contention
 struct ModelResult {
@@ -156,6 +157,20 @@ inline Eigen::MatrixXd expand_free_covariance(int n_params,
     return cov;
 }
 
+inline Eigen::MatrixXd symmetric_pseudo_inverse(const Eigen::MatrixXd& M, double tol = 1e-10) {
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es((M + M.transpose()) / 2.0);
+    if (es.info() != Eigen::Success) {
+        return Eigen::MatrixXd::Constant(M.rows(), M.cols(), NA_REAL);
+    }
+    const Eigen::VectorXd evals = es.eigenvalues();
+    const double max_abs_eval = evals.cwiseAbs().maxCoeff();
+    Eigen::VectorXd inv_evals(evals.size());
+    for (int i = 0; i < evals.size(); ++i) {
+        inv_evals[i] = (max_abs_eval > 0.0 && std::abs(evals[i]) > tol * max_abs_eval) ? 1.0 / evals[i] : 0.0;
+    }
+    return es.eigenvectors() * inv_evals.asDiagonal() * es.eigenvectors().transpose();
+}
+
 inline double plogis_safe(double x) {
     if (x >= 0.0) { const double z = std::exp(-x); return 1.0 / (1.0 + z); }
     const double z = std::exp(x); return z / (1.0 + z);
@@ -230,6 +245,109 @@ inline double likelihood_value(LikelihoodFunctor& fun,
     return fun(params, grad);
 }
 
+template <typename LikelihoodFunctor>
+inline Eigen::VectorXd likelihood_score(LikelihoodFunctor& fun,
+                                        const Eigen::VectorXd& params) {
+    Eigen::VectorXd grad(params.size());
+    fun(params, grad);
+    return -grad;
+}
+
+template <typename LikelihoodFunctor>
+inline Eigen::MatrixXd likelihood_information(LikelihoodFunctor& fun,
+                                              const Eigen::VectorXd& params) {
+    return fun.hessian(params);
+}
+
+inline Eigen::MatrixXd covariance_from_information(const Eigen::MatrixXd& information) {
+    Eigen::LDLT<Eigen::MatrixXd> ldlt((information + information.transpose()) / 2.0);
+    if (ldlt.info() == Eigen::Success) {
+        Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(information.rows(), information.cols()));
+        if (inv.allFinite()) return (inv + inv.transpose()) / 2.0;
+    }
+    Eigen::MatrixXd pinv = symmetric_pseudo_inverse(information);
+    return (pinv + pinv.transpose()) / 2.0;
+}
+
+inline Rcpp::List make_uniform_likelihood_fit_result(const Eigen::VectorXd& params,
+                                                     double neg_loglik,
+                                                     bool converged,
+                                                     const Eigen::VectorXd& score,
+                                                     const Eigen::MatrixXd& information,
+                                                     bool estimate_only = false) {
+    Rcpp::List out = Rcpp::List::create(
+        Rcpp::Named("params") = params,
+        Rcpp::Named("neg_loglik") = neg_loglik,
+        Rcpp::Named("neg_ll") = neg_loglik,
+        Rcpp::Named("loglik") = R_finite(neg_loglik) ? -neg_loglik : NA_REAL,
+        Rcpp::Named("converged") = converged
+    );
+    if (!estimate_only) {
+        out["score"] = score;
+        out["information"] = information;
+        out["hessian"] = -information;
+        out["vcov"] = covariance_from_information(information);
+    }
+    return out;
+}
+
+inline Rcpp::List likelihood_ratio_test_from_negloglik(double unrestricted_neg_loglik,
+                                                       double null_neg_loglik,
+                                                       int df = 1) {
+    double statistic = NA_REAL;
+    double p_value = NA_REAL;
+    if (R_finite(unrestricted_neg_loglik) && R_finite(null_neg_loglik) && df > 0) {
+        statistic = std::max(0.0, 2.0 * (null_neg_loglik - unrestricted_neg_loglik));
+        p_value = R::pchisq(statistic, static_cast<double>(df), false, false);
+    }
+    return Rcpp::List::create(
+        Rcpp::Named("statistic") = statistic,
+        Rcpp::Named("df") = df,
+        Rcpp::Named("p_value") = p_value
+    );
+}
+
+inline Rcpp::List score_test_from_score_information(const Eigen::VectorXd& score,
+                                                    const Eigen::MatrixXd& information,
+                                                    int tested_idx) {
+    const int idx = tested_idx - 1;
+    if (idx < 0 || idx >= score.size() || information.rows() != score.size() || information.cols() != score.size()) {
+        Rcpp::stop("tested_idx must be a one-based index within the parameter vector");
+    }
+
+    std::vector<int> nuisance_idx_v;
+    nuisance_idx_v.reserve(score.size() - 1);
+    for (int i = 0; i < score.size(); ++i) {
+        if (i != idx) nuisance_idx_v.push_back(i);
+    }
+
+    double info_eff = information(idx, idx);
+    if (!nuisance_idx_v.empty()) {
+        Eigen::VectorXi nuisance_idx(nuisance_idx_v.size());
+        for (int i = 0; i < static_cast<int>(nuisance_idx_v.size()); ++i) nuisance_idx[i] = nuisance_idx_v[i];
+        Eigen::MatrixXd I_nn = subset_matrix(information, nuisance_idx, nuisance_idx);
+        Eigen::VectorXd I_nT = subset_matrix(information, nuisance_idx, Eigen::VectorXi::Constant(1, idx)).col(0);
+        Eigen::VectorXd solved = covariance_from_information(I_nn) * I_nT;
+        info_eff -= I_nT.dot(solved);
+    }
+
+    double statistic = NA_REAL;
+    double p_value = NA_REAL;
+    const double score_t = score[idx];
+    if (R_finite(score_t) && R_finite(info_eff) && info_eff > 0.0) {
+        statistic = score_t * score_t / info_eff;
+        p_value = R::pchisq(statistic, 1.0, false, false);
+    }
+
+    return Rcpp::List::create(
+        Rcpp::Named("statistic") = statistic,
+        Rcpp::Named("df") = 1,
+        Rcpp::Named("p_value") = p_value,
+        Rcpp::Named("score") = score_t,
+        Rcpp::Named("information_effective") = info_eff
+    );
+}
+
 template <typename FullFunctor>
 class FixedParameterFunctor {
 private:
@@ -271,7 +389,7 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
     LBFGSpp::LBFGSParam<double> lbfgs_params;
     lbfgs_params.epsilon = tol;
     lbfgs_params.max_iterations = maxit;
-    if (max_linesearch > 0) lbfgs_params.max_linesearch = max_linesearch;
+    lbfgs_params.max_linesearch = (max_linesearch > 0) ? max_linesearch : 100;
 
     LBFGSpp::LBFGSSolver<double> solver(lbfgs_params);
     LikelihoodFitResult fit;
@@ -374,7 +492,7 @@ inline LikelihoodFitResult optimize_fixed_likelihood_lbfgs(FullFunctor& fun,
     params = apply_fixed_values(params, fixed_spec);
     Eigen::VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
     FixedParameterFunctor<FullFunctor> fixed_fun(fun, fixed_spec, params);
-    LikelihoodFitResult fit = optimize_likelihood_lbfgs(fixed_fun, params_free, maxit, tol, max_linesearch);
+    LikelihoodFitResult fit = optimize_likelihood_lbfgs(fixed_fun, params_free, maxit, tol, (max_linesearch > 0 ? max_linesearch : 100));
     fit.params = fixed_fun.expand(fit.params);
     return fit;
 }

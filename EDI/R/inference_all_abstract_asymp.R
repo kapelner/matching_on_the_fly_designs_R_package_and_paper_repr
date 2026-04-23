@@ -8,7 +8,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 	inherit = InferenceBoot,
 	public = list(
 		#' @description
-		#' Computes an asymptotic confidence interval based on Wald-type tests.
+		#' Computes an asymptotic confidence interval using the configured test.
 		#'
 		#' @param alpha					Significance level 1 - \code{alpha}. Default 0.05.
 		#'
@@ -17,18 +17,13 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			
-			est = self$compute_estimate()
-			se = private$get_standard_error()
-			df = private$get_degrees_of_freedom()
-			
-			if (!is.finite(est) || !is.finite(se) || se <= 0) return(c(NA_real_, NA_real_))
-			
-			critical_val = if (is.finite(df)) stats::qt(1 - alpha / 2, df = df) else stats::qnorm(1 - alpha / 2)
-			
-			ci = c(est - critical_val * se, est + critical_val * se)
-			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-			ci
+			switch(
+				private$testing_type,
+				wald = private$compute_wald_confidence_interval(alpha),
+				score = private$invert_test_pval_confidence_interval(alpha),
+				lik_ratio = private$invert_test_pval_confidence_interval(alpha),
+				stop("Unsupported testing_type: ", private$testing_type)
+			)
 		},
 
 		#' @description
@@ -41,20 +36,69 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-			
-			est = self$compute_estimate()
-			se = private$get_standard_error()
-			df = private$get_degrees_of_freedom()
-			
-			if (!is.finite(est) || !is.finite(se) || se <= 0) return(NA_real_)
-			
-			t_stat = (est - delta) / se
-			
-			if (is.finite(df)) {
-				2 * stats::pt(-abs(t_stat), df = df)
-			} else {
-				2 * stats::pnorm(-abs(t_stat))
+			switch(
+				private$testing_type,
+				wald = private$compute_wald_two_sided_pval_impl(delta),
+				score = private$compute_score_two_sided_pval_impl(delta),
+				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta),
+				stop("Unsupported testing_type: ", private$testing_type)
+			)
+		},
+
+		#' @description
+		#' Sets the asymptotic testing method used by p-values and CIs.
+		#'
+		#' @param testing_type One of \code{"wald"}, \code{"score"}, or \code{"lik_ratio"}.
+		#'
+		#' @return The inference object, invisibly.
+		set_testing_type = function(testing_type = c("wald", "score", "lik_ratio")){
+			testing_type = private$normalize_testing_type(testing_type)
+			supported = private$get_supported_testing_types_impl()
+			if (!testing_type %in% supported) {
+				stop(
+					class(self)[1], " does not support testing_type = \"", testing_type,
+					"\". Supported values are: ", paste(supported, collapse = ", "),
+					call. = FALSE
+				)
 			}
+			private$testing_type = testing_type
+			invisible(self)
+		},
+
+		#' @description
+		#' Gets the asymptotic testing method used by p-values and CIs.
+		get_testing_type = function(){
+			private$testing_type
+		},
+
+		#' @description
+		#' Gets the asymptotic testing methods supported by this inference object.
+		get_supported_testing_types = function(){
+			private$get_supported_testing_types_impl()
+		},
+
+		#' @description
+		#' Computes the Wald two-sided p-value regardless of configured testing type.
+		compute_wald_two_sided_pval = function(delta = 0){
+			private$compute_wald_two_sided_pval_impl(delta)
+		},
+
+		#' @description
+		#' Computes the score two-sided p-value regardless of configured testing type.
+		compute_score_two_sided_pval = function(delta = 0){
+			private$compute_score_two_sided_pval_impl(delta)
+		},
+
+		#' @description
+		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		compute_lik_ratio_two_sided_pval = function(delta = 0){
+			private$compute_lik_ratio_two_sided_pval_impl(delta)
+		},
+
+		#' @description
+		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		compute_likelihood_ratio_two_sided_pval = function(delta = 0){
+			private$compute_lik_ratio_two_sided_pval_impl(delta)
 		},
 
 		#' @description
@@ -99,8 +143,152 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 
 	private = list(
 		cached_mod = NULL,
+		testing_type = "wald",
 		get_standard_error = function() stop("Must be implemented by concrete class or shared helper."),
 		get_degrees_of_freedom = function() NA_real_,
+
+		get_supported_testing_types_impl = function(){
+			if (isTRUE(private$supports_likelihood_tests())) c("wald", "score", "lik_ratio") else "wald"
+		},
+
+		supports_likelihood_tests = function(){
+			FALSE
+		},
+
+		normalize_testing_type = function(testing_type){
+			if (length(testing_type) != 1L) testing_type = testing_type[1L]
+			testing_type = tolower(as.character(testing_type))
+			switch(
+				testing_type,
+				wald = "wald",
+				score = "score",
+				lr = "lik_ratio",
+				lrt = "lik_ratio",
+				lik_ratio = "lik_ratio",
+				likelihood_ratio = "lik_ratio",
+				stop("testing_type must be one of: wald, score, lik_ratio", call. = FALSE)
+			)
+		},
+
+		compute_wald_confidence_interval = function(alpha){
+			est = self$compute_estimate()
+			se = private$get_standard_error()
+			df = private$get_degrees_of_freedom()
+			
+			if (!is.finite(est) || !is.finite(se) || se <= 0) return(c(NA_real_, NA_real_))
+			
+			critical_val = if (is.finite(df)) stats::qt(1 - alpha / 2, df = df) else stats::qnorm(1 - alpha / 2)
+			
+			ci = c(est - critical_val * se, est + critical_val * se)
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
+		},
+
+		compute_wald_two_sided_pval_impl = function(delta){
+			est = self$compute_estimate()
+			se = private$get_standard_error()
+			df = private$get_degrees_of_freedom()
+			
+			if (!is.finite(est) || !is.finite(se) || se <= 0) return(NA_real_)
+			
+			t_stat = (est - delta) / se
+			
+			if (is.finite(df)) {
+				2 * stats::pt(-abs(t_stat), df = df)
+			} else {
+				2 * stats::pnorm(-abs(t_stat))
+			}
+		},
+
+		compute_score_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
+		},
+
+		compute_lik_ratio_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
+		},
+
+		get_likelihood_test_spec = function(){
+			NULL
+		},
+
+		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
+			spec = private$get_likelihood_test_spec()
+			if (is.null(spec)) {
+				stop(class(self)[1], " does not expose a likelihood-test specification.", call. = FALSE)
+			}
+
+			j = as.integer(spec$j)
+			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
+
+			null_fit = tryCatch(spec$fit_null(delta), error = function(e) NULL)
+			if (is.null(null_fit) || is.null(null_fit$b) && is.null(null_fit$params)) {
+				return(NA_real_)
+			}
+
+			if (testing_type == "score") {
+				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
+				information = tryCatch(spec$information(null_fit), error = function(e) NULL)
+				if (is.null(score) || is.null(information)) return(NA_real_)
+				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
+				return(as.numeric(res$p_value %||% res))
+			}
+
+			if (testing_type == "lik_ratio") {
+				full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
+				null_negloglik = tryCatch(spec$neg_loglik(null_fit), error = function(e) NA_real_)
+				if (!is.finite(full_negloglik) || !is.finite(null_negloglik)) return(NA_real_)
+				res = likelihood_ratio_test_from_negloglik_cpp(full_negloglik, null_negloglik, df = 1L)
+				return(as.numeric(res$p_value %||% res))
+			}
+
+			stop("Unsupported testing_type: ", testing_type, call. = FALSE)
+		},
+
+		invert_test_pval_confidence_interval = function(alpha){
+			est = self$compute_estimate()
+			if (!is.finite(est)) return(c(NA_real_, NA_real_))
+
+			target = function(delta){
+				pval = self$compute_asymp_two_sided_pval(delta)
+				if (!is.finite(pval)) return(NA_real_)
+				pval - alpha
+			}
+
+			se = private$get_standard_error()
+			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
+			step = max(step, 1e-4)
+
+			find_bound = function(direction){
+				inner = tryCatch(target(est), error = function(e) NA_real_)
+				if (!is.finite(inner)) return(NA_real_)
+				if (inner < 0) return(est)
+
+				lower = est
+				upper = est
+				outer = NA_real_
+				for (i in seq_len(60L)){
+					candidate = est + direction * step * 2^(i - 1L)
+					outer = tryCatch(target(candidate), error = function(e) NA_real_)
+					if (is.finite(outer) && outer <= 0) {
+						if (direction < 0) {
+							lower = candidate
+							upper = est
+						} else {
+							lower = est
+							upper = candidate
+						}
+						break
+					}
+				}
+				if (!is.finite(outer) || outer > 0) return(NA_real_)
+				tryCatch(stats::uniroot(target, lower = lower, upper = upper, tol = 1e-6)$root, error = function(e) NA_real_)
+			}
+
+			ci = c(find_bound(-1), find_bound(1))
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
+		},
 
 		supports_reusable_bootstrap_worker = function(){
 			TRUE

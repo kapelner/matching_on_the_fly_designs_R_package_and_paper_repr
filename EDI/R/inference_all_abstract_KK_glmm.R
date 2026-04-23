@@ -57,6 +57,9 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared()
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -72,6 +75,9 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
+			}
 			private$shared()
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -84,7 +90,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 		m = NULL,
 		# Subclasses that provide their own fitter (e.g. Rcpp) set this to TRUE
 		# before calling super$initialize() to suppress the glmmTMB package check.
-		skip_glmm_pkg_check = FALSE,
+			skip_glmm_pkg_check = FALSE,
 
 		# Abstract: subclasses must return the expected response type string.
 		glmm_response_type = function() stop(class(self)[1], " must implement glmm_response_type()"),
@@ -131,9 +137,64 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			candidates
 		},
 
-		max_abs_reasonable_coef = 1e4,
+			max_abs_reasonable_coef = 1e4,
 
-		shared = function(estimate_only = FALSE){
+			get_standard_error = function(){
+				private$shared(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$shared(estimate_only = FALSE)
+				private$cached_values$df
+			},
+
+			supports_likelihood_tests = function(){
+				isTRUE(private$use_rcpp)
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				X_fit = ctx$X
+				y = as.numeric(ctx$y)
+				group_id = as.integer(ctx$group_id)
+				j_treat = as.integer(ctx$j_treat)
+				j_T = as.integer(ctx$j_T)
+				n_gh = as.integer(ctx$n_gh %||% 20L)
+				list(
+					X = X_fit,
+					y = y,
+					group_id = group_id,
+					j = j_treat,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_logistic_glmm_cpp(
+							X = X_fit,
+							y = y,
+							group_id = group_id,
+							j_T = j_T,
+							estimate_only = FALSE,
+							n_gh = n_gh,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j_treat,
+							fixed_values = delta
+						)
+					},
+					score = function(fit){
+						as.numeric(fit$score %||% get_logistic_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+					},
+					information = function(fit){
+						as.matrix(fit$information)
+					},
+					neg_loglik = function(fit){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_logistic_glmm_neg_loglik_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+					}
+				)
+			},
+
+			shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()

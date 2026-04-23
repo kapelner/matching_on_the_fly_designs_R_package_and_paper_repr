@@ -68,6 +68,46 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			TRUE
 		},
 
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					fast_logistic_regression_with_var_cpp(
+						Xmm = X_fit,
+						y = y,
+						j = j_treat,
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						optimization_alg = private$optimization_alg
+					)
+				},
+				score = function(fit){
+					get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					log_denom = ifelse(eta > 0, eta + log1p(exp(-eta)), log1p(exp(eta)))
+					-sum(y * eta - log_denom)
+				}
+			)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
 			
@@ -91,6 +131,12 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 
 			if (!is.null(attempt$fit)){
 				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					j_treat = match(2L, attempt$keep)
+				)
+			} else {
+				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
 		},
