@@ -52,6 +52,18 @@ inline double soft_barrier(double log_sigma, double center = 5.0, double scale =
 	return scale * d * d;
 }
 
+inline double soft_barrier_grad(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
+}
+
+inline double soft_barrier_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale;
+}
+
 struct PoissonGLMMData {
 	Eigen::MatrixXd X_s;
 	Eigen::VectorXd y_s;
@@ -168,7 +180,94 @@ public:
 	}
 
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-		return numerical_hessian(*this, par);
+		const int total = dat.p + 1;
+		const double log_sigma = par[dat.p];
+		const double sigma = std::exp(log_sigma);
+		const Eigen::VectorXd beta = par.head(dat.p);
+		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
+		const int n_nodes = (int)b_vals.size();
+
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+		H(dat.p, dat.p) = soft_barrier_hessian(log_sigma);
+
+		for (int gi = 0; gi < dat.G; gi++) {
+			const int start = dat.grp_start[gi];
+			const int sz    = dat.grp_size[gi];
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+			const Eigen::VectorXd eta0 = Xg * beta;
+
+			Eigen::VectorXd log_terms(n_nodes);
+			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
+			for (int k = 0; k < n_nodes; k++) {
+				double ll = dat.gh.log_norm_weights[k];
+				mu_nodes[k].resize(sz);
+				for (int r = 0; r < sz; r++) {
+					const double eta = eta0[r] + b_vals[k];
+					const double mu = std::exp(std::min(eta, 700.0));
+					mu_nodes[k][r] = mu;
+					ll += dat.y_s[start + r] * eta - mu - dat.log_fact_y[start + r];
+				}
+				log_terms[k] = ll;
+			}
+			const double ll_g = log_sum_exp_p(log_terms);
+
+			Eigen::MatrixXd E_Hik = Eigen::MatrixXd::Zero(total, total);
+			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
+			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
+
+			for (int k = 0; k < n_nodes; k++) {
+				const double pk = std::exp(log_terms[k] - ll_g);
+				if (pk < 1e-15) continue;
+
+				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
+				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
+
+				double sum_res = 0.0;
+				double sum_mu = 0.0;
+				Eigen::VectorXd res_k(sz);
+				
+				for (int r = 0; r < sz; r++) {
+					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
+					sum_res += res_k[r];
+					sum_mu += mu_nodes[k][r];
+				}
+
+				// dLL/dbeta
+				for (int j = 0; j < dat.p; j++) {
+					for (int r = 0; r < sz; r++) G_ik[j] += res_k[r] * Xg(r, j);
+				}
+				// dLL/dlogsigma
+				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+				G_ik[dat.p] = sum_res * node_factor * sigma;
+
+				// d2LL/dbeta2 = -X' diag(mu) X
+				for (int j = 0; j < dat.p; j++) {
+					for (int c = 0; c <= j; c++) {
+						double val = 0;
+						for (int r = 0; r < sz; r++) val -= mu_nodes[k][r] * Xg(r, j) * Xg(r, c);
+						H_ik(j, c) = val;
+					}
+				}
+				// d2LL/dlogsigma2 = (d2LL/dsigma2 * sigma + dLL/dsigma) * sigma
+				// d2LL/dsigma2 = -sum(mu) * 2 * nodes^2
+				H_ik(dat.p, dat.p) = (-sum_mu * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
+
+				// d2LL/(dbeta dlogsigma)
+				for (int j = 0; j < dat.p; j++) {
+					double val = 0;
+					for (int r = 0; r < sz; r++) val -= mu_nodes[k][r] * Xg(r, j);
+					H_ik(j, dat.p) = val * node_factor * sigma;
+				}
+
+				for (int r1 = 0; r1 < total; r1++) for (int c1 = 0; r1 > c1; c1++) H_ik(r1, c1) = H_ik(c1, r1);
+
+				E_Hik += pk * H_ik;
+				G_avg += pk * G_ik;
+				E_GiGiT += pk * (G_ik * G_ik.transpose());
+			}
+			H -= (E_Hik + E_GiGiT - G_avg * G_avg.transpose());
+		}
+		return H;
 	}
 };
 

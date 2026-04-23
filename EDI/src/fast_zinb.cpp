@@ -7,7 +7,7 @@
 // Parameter vector: [beta_cond(p_cond), beta_zi(p_zi), log_theta]
 //   mu  = exp(eta_cond),  pi = sigmoid(eta_zi),  theta = exp(log_theta)
 //
-// Analytic gradient; numerical Hessian via numerical_hessian().
+// Analytic gradient; analytic Hessian.
 
 #include "_helper_functions.h"
 #include <RcppEigen.h>

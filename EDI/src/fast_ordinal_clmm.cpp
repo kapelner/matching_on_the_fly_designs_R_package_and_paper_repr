@@ -62,6 +62,23 @@ inline double link_pdf(double x, LinkType lt) {
 	return 0.0;
 }
 
+inline double link_deriv_pdf(double x, LinkType lt) {
+	switch (lt) {
+		case LinkType::LOGIT: {
+			double p = plogis_safe(x);
+			return p * (1.0 - p) * (1.0 - 2.0 * p);
+		}
+		case LinkType::PROBIT:  return -x * R::dnorm(x, 0.0, 1.0, 0);
+		case LinkType::CAUCHIT: return -2.0 * x / (M_PI * std::pow(1.0 + x * x, 2));
+		case LinkType::CLOGLOG: {
+			if (x > 700.0 || x < -700.0) return 0.0;
+			const double ex = std::exp(x);
+			return ex * std::exp(-ex) * (1.0 - ex);
+		}
+	}
+	return 0.0;
+}
+
 // ---- Gauss-Hermite quadrature ----
 
 struct GHRule {
@@ -146,6 +163,18 @@ inline double clmm_sigma_penalty(double log_sigma, double center = 5.0, double s
 	const double d = std::abs(log_sigma) - center;
 	if (d <= 0.0) return 0.0;
 	return scale * d * d;
+}
+
+inline double clmm_sigma_penalty_grad(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
+}
+
+inline double clmm_sigma_penalty_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale;
 }
 
 // ---- Objective ----
@@ -301,22 +330,130 @@ public:
 		return total_nll;
 	}
 
-	// Hessian via finite differences of analytical gradient (more accurate than
-	// double finite-differencing the objective value).
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) const {
-		const int n = par.size();
-		Eigen::MatrixXd H(n, n);
-		OrdinalCLMMObjective* self = const_cast<OrdinalCLMMObjective*>(this);
-		for (int i = 0; i < n; ++i) {
-			double h = 1e-4 * std::max(1.0, std::abs(par[i]));
-			Eigen::VectorXd pp = par, pm = par;
-			pp[i] += h; pm[i] -= h;
-			Eigen::VectorXd gp(n), gm(n);
-			(*self)(pp, gp);
-			(*self)(pm, gm);
-			H.col(i) = (gp - gm) / (2.0 * h);
+		const int na = dat.K - 1;
+		const int total = na + dat.p + 1;
+		const double log_sigma = par[na + dat.p];
+		const double sigma = std::exp(log_sigma);
+		const Eigen::VectorXd beta = par.segment(na, dat.p);
+		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
+		const int nn = (int)b_vals.size();
+
+		std::vector<double> alpha(na);
+		alpha[0] = par[0];
+		for (int k = 1; k < na; ++k) alpha[k] = alpha[k - 1] + std::exp(par[k]);
+
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+		H(total-1, total-1) = clmm_sigma_penalty_hessian(log_sigma);
+
+		for (int gi = 0; gi < dat.G; gi++) {
+			const int start = dat.grp_start[gi];
+			const int sz    = dat.grp_size[gi];
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+			const Eigen::VectorXd eta0 = Xg * beta;
+
+			Eigen::VectorXd log_terms(nn);
+			std::vector<std::vector<double>> p_nodes(nn, std::vector<double>(sz));
+			std::vector<std::vector<double>> Fup_nodes(nn, std::vector<double>(sz));
+			std::vector<std::vector<double>> Flo_nodes(nn, std::vector<double>(sz));
+
+			for (int k = 0; k < nn; k++) {
+				double ll = dat.gh.log_norm_weights[k];
+				for (int r = 0; r < sz; r++) {
+					int y_ir = dat.y_s[start + r];
+					double eta_ijk = eta0[r] + b_vals[k];
+					double Fup = (y_ir >= dat.K) ? 1.0 : link_cdf(alpha[y_ir - 1] - eta_ijk, dat.link);
+					double Flo = (y_ir <= 1)      ? 0.0 : link_cdf(alpha[y_ir - 2] - eta_ijk, dat.link);
+					double prob = std::max(1e-15, Fup - Flo);
+					p_nodes[k][r] = prob;
+					Fup_nodes[k][r] = Fup;
+					Flo_nodes[k][r] = Flo;
+					ll += std::log(prob);
+				}
+				log_terms[k] = ll;
+			}
+			const double ll_g = log_sum_exp_clmm(log_terms);
+
+			Eigen::MatrixXd E_Hik = Eigen::MatrixXd::Zero(total, total);
+			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
+			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
+
+			for (int k = 0; k < nn; k++) {
+				const double pk = std::exp(log_terms[k] - ll_g);
+				if (pk < 1e-15) continue;
+
+				Eigen::VectorXd G_ik_raw = Eigen::VectorXd::Zero(total);
+				Eigen::MatrixXd H_ik_raw = Eigen::MatrixXd::Zero(total, total);
+
+				for (int r = 0; r < sz; r++) {
+					int y_ir = dat.y_s[start + r];
+					double prob = p_nodes[k][r];
+					double Fup = Fup_nodes[k][r], Flo = Flo_nodes[k][r];
+					double eta_ijk = eta0[r] + b_vals[k];
+					double fup = (y_ir >= dat.K) ? 0.0 : link_pdf(alpha[y_ir - 1] - eta_ijk, dat.link);
+					double flo = (y_ir <= 1)      ? 0.0 : link_pdf(alpha[y_ir - 2] - eta_ijk, dat.link);
+					double hup = (y_ir >= dat.K) ? 0.0 : link_deriv_pdf(alpha[y_ir - 1] - eta_ijk, dat.link);
+					double hlo = (y_ir <= 1)      ? 0.0 : link_deriv_pdf(alpha[y_ir - 2] - eta_ijk, dat.link);
+
+					double de = -(fup - flo) / prob;
+					double d2e = -(hup - hlo) / prob + (fup-flo)*(fup-flo)/(prob*prob);
+
+					if (y_ir < dat.K) {
+						G_ik_raw[y_ir-1] += fup/prob;
+						H_ik_raw(y_ir-1, y_ir-1) += hup/prob - (fup*fup)/(prob*prob);
+						const double d2L_da_db = -hup/prob + (fup*(fup-flo))/(prob*prob);
+						for(int j=0; j<dat.p; j++) H_ik_raw(y_ir-1, na+j) += d2L_da_db * Xg(r, j);
+					}
+					if (y_ir > 1) {
+						G_ik_raw[y_ir-2] -= flo/prob;
+						H_ik_raw(y_ir-2, y_ir-2) += -hlo/prob - (flo*flo)/(prob*prob);
+						const double d2L_da_db = hlo/prob - (flo*(fup-flo))/(prob*prob);
+						for(int j=0; j<dat.p; j++) H_ik_raw(y_ir-2, na+j) += d2L_da_db * Xg(r, j);
+					}
+					if (y_ir > 1 && y_ir < dat.K) {
+						double cross = (fup * flo) / (prob * prob);
+						H_ik_raw(y_ir-1, y_ir-2) += cross;
+					}
+
+					for(int i1=0; i1<dat.p; i1++) {
+						G_ik_raw[na + i1] += de * Xg(r, i1);
+						for(int i2=0; i2<=i1; i2++) H_ik_raw(na+i1, na+i2) += d2e * Xg(r, i1) * Xg(r, i2);
+					}
+
+					const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+					G_ik_raw[total-1] += de * node_factor;
+					H_ik_raw(total-1, total-1) += d2e * node_factor * node_factor;
+					for(int j=0; j<dat.p; j++) H_ik_raw(na+j, total-1) += d2e * node_factor * Xg(r, j);
+					if (y_ir < dat.K) H_ik_raw(y_ir-1, total-1) += (-hup/prob + (fup*(fup-flo))/(prob*prob)) * node_factor;
+					if (y_ir > 1)      H_ik_raw(y_ir-2, total-1) += (hlo/prob - (flo*(fup-flo))/(prob*prob)) * node_factor;
+				}
+				G_ik_raw[total-1] *= sigma;
+				H_ik_raw.col(total-1) *= sigma;
+				H_ik_raw.row(total-1) *= sigma;
+				H_ik_raw(total-1, total-1) += G_ik_raw[total-1];
+
+				for(int r1=0; r1<total; r1++) for(int c1=0; r1>c1; c1++) H_ik_raw(r1, c1) = H_ik_raw(c1, r1);
+
+				Eigen::MatrixXd J = Eigen::MatrixXd::Zero(total, total);
+				J(0, 0) = 1.0;
+				for (int r1 = 1; r1 < na; r1++) { J(r1, 0) = 1.0; for (int c1 = 1; c1 <= r1; c1++) J(r1, c1) = std::exp(par[c1]); }
+				for (int i = na; i < total; i++) J(i, i) = 1.0;
+
+				Eigen::VectorXd G_ik = J.transpose() * G_ik_raw;
+				Eigen::MatrixXd H_ik = J.transpose() * H_ik_raw * J;
+				for (int j = 1; j < na; j++) {
+					double sum_dL_da = 0.0;
+					for (int r1 = j; r1 < na; r1++) sum_dL_da += G_ik_raw[r1];
+					H_ik(j, j) += sum_dL_da * std::exp(par[j]);
+				}
+
+				E_Hik += pk * H_ik;
+				G_avg += pk * G_ik;
+				E_GiGiT += pk * (G_ik * G_ik.transpose());
+			}
+			H -= (E_Hik + E_GiGiT - G_avg * G_avg.transpose());
 		}
-		return (H + H.transpose()) / 2.0;
+		return 0.5 * (H + H.transpose());
 	}
 };
 
