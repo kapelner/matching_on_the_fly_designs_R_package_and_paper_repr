@@ -1,10 +1,10 @@
 #' Abstract class for Conditional Poisson / Negative Binomial Compound Inference
 #'
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' count responses. For matched pairs, it uses conditional Poisson regression (implemented
-#' via binomial logistic regression on the differences of covariates). For reservoir
-#' subjects, it uses Negative Binomial regression. The two estimates are combined via a
-#' variance-weighted linear combination.
+#' count responses. For matched pairs, it uses conditional Poisson regression
+#' (equivalent to weighted logistic regression) and for the reservoir, it uses
+#' standard negative binomial regression. The two estimates are combined via
+#' inverse-variance weighted combination (IVWC).
 #'
 #' @keywords internal
 InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoissonCPoissonIVWC",
@@ -36,7 +36,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		},
 
 		#' @description
-		#' Returns the estimated treatment effect.
+		#' Returns the estimated treatment effect (log-rate ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
@@ -60,8 +60,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 
 		#' @description
 		#' Computes the asymptotic p-value.
-		#' @param delta                                   The null difference to test against. For
-		#'   any treatment effect at all this is set to zero (the default).
+		#' @param delta                                   The null difference to test against. Default is 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -70,102 +69,31 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			if (should_run_asserts()) {
 				private$assert_finite_se()
 			}
-			if (delta == 0){
-				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-			} else {
-				if (should_run_asserts()) {
-					stop("Testing non-zero delta is not yet implemented for this class.")
-				}
-				NA_real_
-			}
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+
+		#' @description
+		#' Duplicates the object while preserving caches.
+		#' @param verbose Whether the duplicate should be verbose.
+		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
+		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
+			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
+			inf_obj
 		}
 	),
 
 	private = list(
-		best_Xmm_colnames_matched = NULL,
-		best_Xmm_colnames_reservoir = NULL,
-		best_Xmm_j_treat_reservoir = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
-				private$shared(estimate_only = TRUE)
-			}
-
-			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
-			KKstats = private$cached_values$KKstats
-			m   = KKstats$m
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-
-			# --- Matched pairs component ---
-			beta_m = NA_real_
-			if (m > 0){
-				yT = KKstats$yTs_matched
-				yC = KKstats$yCs_matched
-				y_total = yT + yC
-				valid_idx = which(y_total > 0)
-				if (length(valid_idx) > 0){
-					y_prop = yT[valid_idx] / y_total[valid_idx]
-					weights = y_total[valid_idx]
-					
-					if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_matched)){
-						X_diff = KKstats$X_matched_diffs[valid_idx, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE]
-						Xmm = cbind(1, X_diff)
-					} else {
-						Xmm = matrix(1, nrow = length(valid_idx), ncol = 1)
-					}
-					
-					mod_m = tryCatch(fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights), error = function(e) NULL)
-					if (!is.null(mod_m) && is.finite(mod_m$b[1])) beta_m = as.numeric(mod_m$b[1])
-				}
-			}
-
-			# --- Reservoir component ---
-			beta_r = NA_real_
-			if (nRT > 0 && nRC > 0){
-				y_r = KKstats$y_reservoir
-				w_r = KKstats$w_reservoir
-				
-				if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
-					X_r = as.matrix(KKstats$X_reservoir)
-					X_cov = X_r[, intersect(private$best_Xmm_colnames_reservoir, colnames(X_r)), drop = FALSE]
-					Xmm = cbind(1, w_r, X_cov)
-					j_treat = private$best_Xmm_j_treat_reservoir %||% 2L
-				} else {
-					Xmm = cbind(1, w_r)
-					j_treat = 2L
-				}
-				
-				mod_r = tryCatch(fast_negbin_regression(Xmm, y_r), error = function(e) NULL)
-				if (!is.null(mod_r) && length(mod_r$b) >= j_treat && is.finite(mod_r$b[j_treat])) beta_r = as.numeric(mod_r$b[j_treat])
-			}
-
-			# Inverse-variance weighted pooling (using original variances for weights)
-			m_ok = is.finite(beta_m)
-			r_ok = is.finite(beta_r)
-
-			if (m_ok && r_ok){
-				ssq_m_orig = private$cached_values$ssq_beta_T_matched
-				ssq_r_orig = private$cached_values$ssq_beta_T_reservoir
-				if (is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
-					w_star = ssq_r_orig / (ssq_r_orig + ssq_m_orig)
-					return(w_star * beta_m + (1 - w_star) * beta_r)
-				}
-				return((beta_m + beta_r) / 2)
-			} else if (m_ok){
-				return(beta_m)
-			} else if (r_ok){
-				return(beta_r)
-			}
-			NA_real_
+			# Use the same joint-likelihood logic for the point estimate
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
 		},
 
-		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
-			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
+		compute_treatment_estimate_during_power_simulation = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = 1e-4){
+			private$compute_treatment_estimate_during_power_simulation_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
 
-		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
@@ -175,7 +103,6 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			print("DEBUG: Shared method in IVWC called")
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -228,83 +155,78 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			# Filter pairs where total count is zero (provide no information for the conditional likelihood)
 			y_total = yT + yC
 			valid_idx = which(y_total > 0)
-			print(paste("DEBUG: cpoisson_for_matched_pairs valid pairs:", length(valid_idx)))
 			if (length(valid_idx) == 0) return(invisible(NULL))
 
 			y_prop = yT[valid_idx] / y_total[valid_idx]
 			weights = y_total[valid_idx]
 
-			if (ncol(as.matrix(private$X)) > 0){
-				# Use differences of covariates as predictors
-				X_diff = KKstats$X_matched_diffs[valid_idx, drop = FALSE]
-				# Ensure treatment effect is the intercept (since treatment diff is always 1)
-				Xmm = cbind(1, X_diff)
-			} else {
-				Xmm = matrix(1, nrow = length(valid_idx), ncol = 1)
+			# If no covariates, use weighted intercept-only logistic
+			Xmm = matrix(1, nrow = length(valid_idx), ncol = 1)
+			colnames(Xmm) = "(Intercept)"
+			if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_matched)){
+				Xmm = cbind(1, KKstats$X_matched_diffs[valid_idx, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE])
 			}
 
-			# Fit binomial logistic regression
 			mod = tryCatch({
 				if (estimate_only) {
 					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
 					list(b = res$b, ssq_b_1 = NA_real_, X_fit = Xmm)
 				} else {
-					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
-					vcov = solve(res$XtWX)
-					list(b = res$b, ssq_b_1 = vcov[1, 1], X_fit = Xmm)
+					# The weighted optimizer returns variance for all params
+					res = fast_logistic_regression_weighted_with_var_cpp(X = Xmm, y = y_prop, weights = weights)
+					list(b = res$b, ssq_b_1 = res$vcov[1, 1], X_fit = Xmm)
 				}
 			}, error = function(e) NULL)
 
-			if (is.null(mod)) return(invisible(NULL))
-
-			private$cached_values$beta_T_matched     = as.numeric(mod$b[1])
-			if (ncol(as.matrix(private$X)) > 0){
+			if (!is.null(mod) && is.finite(mod$b[1])){
+				private$cached_values$beta_T_matched = as.numeric(mod$b[1])
 				private$best_Xmm_colnames_matched = setdiff(colnames(mod$X_fit), "(Intercept)")
+				if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
 			}
-			if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
 		},
 
 		negbin_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
-			print(paste("DEBUG: negbin_for_reservoir n_r:", length(y_r)))
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 			j_treat = 2L
 
 			if (ncol(as.matrix(private$X)) > 0){
 				X_full = cbind(1, w_r, X_r)
-				if (!estimate_only) {
-					qr_full = qr(X_full)
-					r_full  = qr_full$rank
-					if (r_full < ncol(X_full)){
-						keep = qr_full$pivot[seq_len(r_full)]
-						if (!(2L %in% keep)) keep[r_full] = 2L
-						keep    = sort(keep)
-						X_full  = X_full[, keep, drop = FALSE]
-						j_treat = which(keep == 2L)
+				attempt = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_full,
+					required_cols = 2L, # intercept and treatment
+					fit_fun = function(X_fit){
+						fast_neg_bin_with_var_cpp(X = X_fit, y = as.integer(y_r))
+					},
+					fit_ok = function(mod, X_fit, keep){
+						if (is.null(mod) || !is.finite(mod$b[2L])) return(FALSE)
+						if (estimate_only) return(TRUE)
+						is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 					}
+				)
+				mod = attempt$fit
+				if (!is.null(mod)){
+					j_treat = which(colnames(attempt$X_fit) == "w_r")
+					if (length(j_treat) == 0) j_treat = 2L
 				}
 			} else {
-				X_full = cbind(1, w_r)
+				Xmm = cbind(1, w_r)
+				mod = tryCatch(fast_neg_bin_with_var_cpp(X = Xmm, y = as.integer(y_r)), error = function(e) NULL)
 			}
 
-			mod = tryCatch({
-				if (estimate_only) {
-					list(b = fast_negbin_regression(X_full, y_r)$b, ssq_b_j = NA_real_, X_fit = X_full)
-				} else {
-					res = fast_negbin_regression_with_var(X_full, y_r, j = j_treat)
-					res$X_fit = X_full
-					res
+			if (!is.null(mod) && is.finite(mod$b[j_treat])){
+				private$cached_values$beta_T_reservoir = as.numeric(mod$b[j_treat])
+				if (ncol(as.matrix(private$X)) > 0 && !is.null(attempt$fit)){
+					private$best_Xmm_colnames_reservoir = setdiff(colnames(mod$X_fit), c("(Intercept)", "w_r"))
+					private$best_Xmm_j_treat_reservoir = j_treat
 				}
-			}, error = function(e) NULL)
-			if (is.null(mod)) return(invisible(NULL))
-
-			private$cached_values$beta_T_reservoir     = as.numeric(mod$b[j_treat])
-			if (ncol(as.matrix(private$X)) > 0){
-				private$best_Xmm_colnames_reservoir = setdiff(colnames(mod$X_fit), c("(Intercept)", "w_r"))
-				private$best_Xmm_j_treat_reservoir = j_treat
 			}
-			if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
-		}
+			if (!estimate_only && !is.null(mod)) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
+		},
+
+		best_Xmm_colnames_matched = NULL,
+		best_Xmm_colnames_reservoir = NULL,
+		best_Xmm_j_treat_reservoir = 2L
 	)
 )

@@ -64,7 +64,10 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 
 // Simple solver using Newton-Raphson as we have a small number of parameters (usually)
 // [[Rcpp::export]]
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6, std::string optimization_alg = "newton_raphson") {
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6,
+                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                  std::string optimization_alg = "newton_raphson") {
     OrdinalRegression model(X, y);
     int p = X.cols();
     int K = OrdinalRegression::init_levels(y).size();
@@ -79,7 +82,8 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     // Initialize beta
     params.tail(p).setZero();
 
-    LikelihoodFitResult fit = optimize_likelihood(model, params, maxit, tol, optimization_alg, "newton_raphson");
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     params = fit.params;
 
     return List::create(
@@ -92,14 +96,21 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 }
 
 // [[Rcpp::export]]
-List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg = "newton_raphson") {
-    List res = fast_ordinal_regression_cpp(X, y, 100, 1e-6, optimization_alg);
+List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
+                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                           std::string optimization_alg = "newton_raphson") {
+    List res = fast_ordinal_regression_cpp(X, y, 100, 1e-6, fixed_idx, fixed_values, optimization_alg);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);
     MatrixXd H = model.hessian(params);
     
-    FullPivLU<MatrixXd> lu(H);
+    int n_params = params.size();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    FullPivLU<MatrixXd> lu(H_free);
+
     List output = List::create(
         Named("b") = res["b"],
         Named("alpha") = res["alpha"],
@@ -107,21 +118,23 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
         Named("converged") = converged
     );
     if (!lu.isInvertible()) {
-        output["ssq_b_2"] = NA_REAL;
+        output["ssq_b_j"] = NA_REAL;
         output["vcov"] = R_NilValue;
         return output;
     }
     
-    MatrixXd vcov_full = lu.inverse();
+    MatrixXd vcov_free = lu.inverse();
+    MatrixXd vcov_full = expand_free_covariance(n_params, fixed_spec, vcov_free, true);
+
     int p = X.cols();
-    int n_alpha = params.size() - p;
+    int n_alpha = n_params - p;
     
     // We want the variance of the first covariate after alphas (which is often the treatment)
     // In our params, it's at index n_alpha
-    double ssq_b_2 = (p >= 1) ? vcov_full(n_alpha, n_alpha) : NA_REAL;
+    double ssq_b_j = (p >= 1) ? vcov_full(n_alpha, n_alpha) : NA_REAL;
 
     output["vcov"] = vcov_full;
-    output["ssq_b_2"] = ssq_b_2;
+    output["ssq_b_j"] = ssq_b_j;
     return output;
 }
 

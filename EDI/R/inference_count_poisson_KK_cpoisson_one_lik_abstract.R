@@ -24,7 +24,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -39,7 +39,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		#' @param estimate_only Whether to skip standard-error calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
-			stop("DEBUG: compute_estimate in OneLik called")
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -202,9 +201,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		# The combined case is handled by fast_cpoisson_combined_with_var_cpp
 		# (Newton's method with analytic Fisher-information Hessian).
 		shared_combined_likelihood = function(estimate_only = FALSE){
+			print(paste("DEBUG: Cond Poisson OneLik shared called for", class(self)[1]))
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			stop("DEBUG: shared_combined_likelihood called")
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()

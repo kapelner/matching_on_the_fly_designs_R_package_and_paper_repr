@@ -194,15 +194,21 @@ get_info = function(class_name) {
   has_likelihood = has_method(obj_gen, "compute_likelihood") || 
                    has_method(obj_gen, "shared_combined_likelihood") ||
                    has_method(obj_gen, "fit_glmm") ||
-                   has_method(obj_gen, "generate_mod")
+                   has_method(obj_gen, "generate_mod") ||
+                   has_method(obj_gen, "shared") ||
+                   has_method(obj_gen, "shared_rcpp")
   has_loglik     = has_method(obj_gen, "compute_log_likelihood") || 
                    has_method(obj_gen, "shared_combined_likelihood") ||
                    has_method(obj_gen, "fit_glmm") ||
-                   has_method(obj_gen, "generate_mod")
+                   has_method(obj_gen, "generate_mod") ||
+                   has_method(obj_gen, "shared") ||
+                   has_method(obj_gen, "shared_rcpp")
   has_score      = has_method(obj_gen, "compute_score") || 
                    has_method(obj_gen, "shared_combined_likelihood") ||
                    has_method(obj_gen, "fit_glmm") ||
-                   has_method(obj_gen, "generate_mod")
+                   has_method(obj_gen, "generate_mod") ||
+                   has_method(obj_gen, "shared") ||
+                   has_method(obj_gen, "shared_rcpp")
   
   # Check inheritance for Wald
   curr = obj_gen

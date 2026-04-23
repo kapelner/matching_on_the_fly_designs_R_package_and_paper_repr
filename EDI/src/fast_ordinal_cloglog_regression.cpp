@@ -38,23 +38,37 @@ public:
 // [[Rcpp::export]]
 Eigen::VectorXd get_ordinal_cloglog_regression_score_cpp(const Eigen::MatrixXd& X,
 														 const Eigen::VectorXd& y,
-														 const Eigen::VectorXd& params) {
+														 const Eigen::VectorXd& params,
+														 Nullable<IntegerVector> fixed_idx = R_NilValue,
+														 Nullable<NumericVector> fixed_values = R_NilValue) {
 	OrdinalCLLRegression model(X, y);
-	Eigen::VectorXd grad(params.size());
-	model(params, grad);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+	Eigen::VectorXd par = apply_fixed_values(params, fixed_spec);
+	Eigen::VectorXd grad(par.size());
+	model(par, grad);
 	return -grad;
 }
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_ordinal_cloglog_regression_hessian_cpp(const Eigen::MatrixXd& X,
 														   const Eigen::VectorXd& y,
-														   const Eigen::VectorXd& params) {
+														   const Eigen::VectorXd& params,
+														   Nullable<IntegerVector> fixed_idx = R_NilValue,
+														   Nullable<NumericVector> fixed_values = R_NilValue) {
 	OrdinalCLLRegression model(X, y);
-	return -model.hessian(params);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+	Eigen::VectorXd par = apply_fixed_values(params, fixed_spec);
+	return -model.hessian(par);
 }
 
 // [[Rcpp::export]]
-List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6, std::string optimization_alg = "newton_raphson") {
+List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, 
+                                          const Eigen::VectorXd& y, 
+                                          int maxit = 100, 
+                                          double tol = 1e-6, 
+                                          std::string optimization_alg = "newton_raphson",
+                                          Nullable<IntegerVector> fixed_idx = R_NilValue,
+                                          Nullable<NumericVector> fixed_values = R_NilValue) {
     OrdinalCLLRegression model(X, y);
     int p = X.cols();
     int K = OrdinalCLLRegression::init_levels(y).size();
@@ -70,7 +84,8 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::
     // Initialize beta
     params.tail(p).setZero();
 
-    LikelihoodFitResult fit = optimize_likelihood(model, params, maxit, tol, optimization_alg, "newton_raphson");
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     params = fit.params;
 
     return List::create(
@@ -83,25 +98,35 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::
 }
 
 // [[Rcpp::export]]
-List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg = "newton_raphson") {
-    List res = fast_ordinal_cloglog_regression_cpp(X, y, 100, 1e-6, optimization_alg);
+List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, 
+                                                   const Eigen::VectorXd& y, 
+                                                   std::string optimization_alg = "newton_raphson",
+                                                   Nullable<IntegerVector> fixed_idx = R_NilValue,
+                                                   Nullable<NumericVector> fixed_values = R_NilValue) {
+    List res = fast_ordinal_cloglog_regression_cpp(X, y, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
     if (res.size() == 0) return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
     
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalCLLRegression model(X, y);
-    MatrixXd H = model.hessian(params);
+    int n_params = params.size();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
-    FullPivLU<MatrixXd> lu(H);
-    if (!lu.isInvertible()) {
-        return List::create(Named("b") = res["b"], Named("ssq_b_2") = NA_REAL, Named("converged") = converged);
+    double ssq_b_2 = NA_REAL;
+    if (converged) {
+        FixedParameterFunctor<OrdinalCLLRegression> fixed_obj(model, fixed_spec, params);
+        VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
+        MatrixXd H_free = fixed_obj.hessian(params_free);
+        
+        FullPivLU<MatrixXd> lu(H_free);
+        if (lu.isInvertible()) {
+            MatrixXd inv_free = lu.inverse();
+            MatrixXd cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
+            int p = X.cols();
+            int n_alpha = n_params - p;
+            if (p >= 1) ssq_b_2 = cov_mat(n_alpha, n_alpha);
+        }
     }
-    
-    MatrixXd cov_mat = lu.inverse();
-    int p = X.cols();
-    int n_alpha = params.size() - p;
-    
-    double ssq_b_2 = (p >= 1) ? cov_mat(n_alpha, n_alpha) : NA_REAL;
 
     return List::create(
         Named("b") = res["b"],

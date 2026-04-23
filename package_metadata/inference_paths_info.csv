@@ -1,98 +1,99 @@
 response_type,inference_path,has_multi,has_likelihood,has_loglik,has_score,uses_wald_ci,uses_wald_test,optimization_via,optim_alg,irls_avail
-all,BaiAdjustedT,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,BaiAdjustedTKK14,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,BaiAdjustedTKK21,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,KKCompoundMeanDiff,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,KKWilcoxIVWC,N,N,N,N,Y,Y,none/rank statistic,NA,NA
+all,BaiAdjustedT,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,BaiAdjustedTKK14,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,BaiAdjustedTKK21,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,KKCompoundMeanDiff,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,KKWilcoxIVWC,N,Y,Y,Y,Y,Y,none/rank statistic,NA,NA
 all,MLEorKMSummaryTable,N,Y,Y,Y,Y,Y,none/summary table,NA,NA
-all,SimpleMeanDiff,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,SimpleMeanDiffPooledVar,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
-all,SimpleWilcox,N,N,N,N,Y,Y,none/rank statistic,NA,NA
+all,SimpleMeanDiff,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,SimpleMeanDiffPooledVar,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
+all,SimpleWilcox,N,Y,Y,Y,Y,Y,none/rank statistic,NA,NA
 continuous,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
-continuous,KKQuantileRegrIVWC,Y,N,N,N,Y,Y,quantreg,NA,NA
+continuous,KKQuantileRegrIVWC,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
 continuous,KKQuantileRegrOneLik,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
-continuous,KKRobustRegrIVWC,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
+continuous,KKRobustRegrIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp robust,IRLS,Y
 continuous,KKRobustRegrOneLik,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
-continuous,Lin,Y,N,N,N,Y,Y,ourself/closed-form linear estimator,closed-form QR solve,Y
-continuous,OLS,Y,N,N,N,Y,Y,ourself/Rcpp OLS,closed-form QR solve,Y
-continuous,QuantileRegr,Y,N,N,N,Y,Y,quantreg,NA,NA
-continuous,RobustRegr,Y,N,N,N,Y,Y,ourself/Rcpp robust,IRLS,Y
-count,HurdleNegBin,Y,N,N,N,Y,Y,ourself/Rcpp hurdle negative binomial,IRLS plus L-BFGS,Y
-count,HurdlePoisson,Y,N,N,N,Y,Y,glmmTMB,NA,NA
-count,KKCPoissonIVWC,Y,N,N,N,Y,Y,ourself/Rcpp conditional-Poisson plus negative binomial,weighted logistic IRLS plus L-BFGS,N
+continuous,Lin,Y,Y,Y,Y,Y,Y,ourself/closed-form linear estimator,closed-form QR solve,Y
+continuous,OLS,Y,Y,Y,Y,Y,Y,ourself/Rcpp OLS,closed-form QR solve,Y
+continuous,QuantileRegr,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
+continuous,RobustRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp robust,IRLS,Y
+count,HurdleNegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp hurdle negative binomial,IRLS plus L-BFGS,Y
+count,HurdlePoisson,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA
+count,KKCPoissonIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-Poisson plus negative binomial,weighted logistic IRLS plus L-BFGS,N
 count,KKCPoissonOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-Poisson combined likelihood,Newton-Raphson,N
 count,KKGLMM,N,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
-count,KKHurdlePoissonIVWC,Y,N,N,N,Y,Y,glmmTMB,NA,NA
-count,KKHurdlePoissonOneLik,Y,N,N,N,Y,Y,glmmTMB,NA,NA
+count,KKHurdlePoissonIVWC,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA
+count,KKHurdlePoissonOneLik,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA
 count,NegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N
 count,Poisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson,IRLS,Y
 count,QuasiPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-Poisson,IRLS,Y
 count,RobustPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson,IRLS,Y
-count,ZeroInflatedNegBin,Y,N,N,N,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N
-count,ZeroInflatedPoisson,Y,N,N,N,Y,Y,glmmTMB,NA,NA
-incidence,Azriel,N,N,N,N,Y,Y,none/design-specific statistic,NA,NA
+count,ZeroInflatedNegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N
+count,ZeroInflatedPoisson,Y,Y,Y,Y,Y,Y,glmmTMB,NA,NA
+incidence,Azriel,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA
 incidence,BinomialIdentityRiskDiff,Y,Y,Y,Y,Y,Y,ourself/Rcpp identity-binomial,constrained Fisher scoring with step-halving,Y
 incidence,ExactBinomial,N,N,N,N,N,N,none/exact enumeration,NA,NA
 incidence,ExactFisher,N,N,N,N,N,N,none/exact enumeration,NA,NA
 incidence,ExactZhang,N,N,N,N,N,N,none/exact enumeration,NA,NA
-incidence,ExtendedRobins,N,N,N,N,Y,Y,none/design-specific statistic,NA,NA
-incidence,GCompRiskDiff,Y,N,N,N,Y,Y,ourself/nuisance likelihood,NA,N
-incidence,GCompRiskRatio,Y,N,N,N,Y,Y,ourself/nuisance likelihood,NA,N
-incidence,KKClaytonCopulaIVWC,N,N,N,N,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
-incidence,KKClaytonCopulaOneLik,N,N,N,N,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
-incidence,KKClogitIVWC,Y,N,N,N,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N
+incidence,ExtendedRobins,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA
+incidence,GCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N
+incidence,GCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N
+incidence,KKClaytonCopulaIVWC,N,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
+incidence,KKClaytonCopulaOneLik,N,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
+incidence,KKClogitIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N
 incidence,KKClogitOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic,L-BFGS,N
-incidence,KKClogitPlusGLMMIVWC,Y,N,N,N,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N
-incidence,KKClogitPlusGLMMOneLik,Y,N,N,N,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N
-incidence,KKGCompRiskDiff,Y,N,N,N,Y,Y,ourself/nuisance likelihood,NA,N
-incidence,KKGCompRiskRatio,Y,N,N,N,Y,Y,ourself/nuisance likelihood,NA,N
-incidence,KKGEE,Y,N,N,N,Y,Y,geepack,NA,NA
+incidence,KKClogitPlusGLMMIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N
+incidence,KKClogitPlusGLMMOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp conditional-logistic plus GLMM,L-BFGS,N
+incidence,KKGCompRiskDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N
+incidence,KKGCompRiskRatio,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N
+incidence,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA
 incidence,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
-incidence,KKModifiedPoisson,Y,N,N,N,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y
+incidence,KKModifiedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y
 incidence,KKNewcombeRiskDiff,Y,N,N,N,Y,Y,none/score or interval equations,NA,NA
 incidence,LogBinomial,Y,Y,Y,Y,Y,Y,ourself/Rcpp identity-binomial,constrained Fisher scoring with step-halving,Y
 incidence,LogRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp logistic,IRLS,Y
-incidence,MiettinenNurminenRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
+incidence,MiettinenNurminenRiskDiff,N,Y,Y,Y,Y,Y,none/score or interval equations,NA,NA
 incidence,ModifiedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson working likelihood,IRLS,Y
-incidence,NewcombeRiskDiff,N,N,N,N,Y,Y,none/score or interval equations,NA,NA
+incidence,NewcombeRiskDiff,N,Y,Y,Y,Y,Y,none/score or interval equations,NA,NA
 incidence,RiskDiff,Y,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
-incidence,Wald,N,N,N,N,Y,Y,none/closed-form statistic,NA,NA
+incidence,Wald,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA
 ordinal,CauchitRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
 ordinal,CloglogRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
-ordinal,JonckheereTerpstraTest,N,N,N,N,Y,Y,none/Jonckheere-Terpstra statistic,NA,NA
-ordinal,KKCLMM,N,N,N,N,Y,Y,ordinal,NA,NA
-ordinal,KKCLMMCauchit,N,N,N,N,Y,Y,ordinal,NA,NA
-ordinal,KKCLMMCloglog,N,N,N,N,Y,Y,ordinal,NA,NA
-ordinal,KKCLMMProbit,N,N,N,N,Y,Y,ordinal,NA,NA
-ordinal,KKGEE,Y,N,N,N,Y,Y,geepack,NA,NA
+ordinal,JonckheereTerpstraTest,N,Y,Y,Y,Y,Y,none/Jonckheere-Terpstra statistic,NA,NA
+ordinal,KKCLMM,N,Y,Y,Y,Y,Y,ordinal,NA,NA
+ordinal,KKCLMMCauchit,N,Y,Y,Y,Y,Y,ordinal,NA,NA
+ordinal,KKCLMMCloglog,N,Y,Y,Y,Y,Y,ordinal,NA,NA
+ordinal,KKCLMMProbit,N,Y,Y,Y,Y,Y,ordinal,NA,NA
+ordinal,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA
 ordinal,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
 ordinal,OrderedProbitRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
-ordinal,PairedSignTest,N,N,N,N,Y,Y,none/sign statistic,NA,NA
+ordinal,PairedSignTest,N,Y,Y,Y,Y,Y,none/sign statistic,NA,NA
 ordinal,PropOddsRegr,N,Y,Y,Y,Y,Y,ourself/Rcpp cumulative link,Newton-Raphson with finite-difference derivatives and line search,N
-ordinal,Ridit,N,N,N,N,Y,Y,none/rank statistic,NA,NA
+ordinal,Ridit,N,Y,Y,Y,Y,Y,none/rank statistic,NA,NA
 proportion,BetaRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp beta regression,L-BFGS,N
 proportion,FractionalLogit,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-binomial-style objective,IRLS,Y
-proportion,GCompMeanDiff,Y,N,N,N,Y,Y,ourself/nuisance likelihood,NA,N
-proportion,KKGEE,Y,N,N,N,Y,Y,geepack,NA,NA
+proportion,GCompMeanDiff,Y,Y,Y,Y,Y,Y,ourself/nuisance likelihood,NA,N
+proportion,KKGEE,Y,Y,Y,Y,Y,Y,geepack,NA,NA
 proportion,KKGLMM,Y,Y,Y,Y,Y,Y,ourself/Rcpp GLMM,L-BFGS,N
-proportion,KKQuantileRegrIVWC,Y,N,N,N,Y,Y,quantreg,NA,NA
+proportion,KKQuantileRegrIVWC,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
 proportion,KKQuantileRegrOneLik,Y,Y,Y,Y,Y,Y,quantreg,NA,NA
 proportion,ZeroOneInflatedBetaRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp zero-one-inflated beta,L-BFGS,N
 survival,CoxPHRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,DepCensTransformRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp dependent-censoring transformation,L-BFGS,N
 survival,GehanWilcox,N,N,N,N,Y,Y,none/rank statistic,NA,NA
-survival,KKClaytonCopulaIVWC,Y,N,N,N,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
-survival,KKClaytonCopulaOneLik,Y,N,N,N,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
-survival,KKLWACoxIVWC,Y,N,N,N,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
+survival,KKClaytonCopulaIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
+survival,KKClaytonCopulaOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Clayton copula Weibull AFT,L-BFGS,N
+survival,KKLWACoxIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,KKLWACoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
-survival,KKRankRegrIVWC,Y,N,N,N,Y,Y,none/rank-regression path,NA,NA
-survival,KKStratCoxIVWC,Y,N,N,N,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
+survival,KKRankRegrIVWC,Y,Y,Y,Y,Y,Y,none/rank-regression path,NA,NA
+survival,KKStratCoxIVWC,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,KKStratCoxOneLik,Y,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
-survival,KKWeibullFrailtyIVWC,N,N,N,N,Y,Y,survival,NA,NA
+survival,KKWeibullFrailtyIVWC,N,Y,Y,Y,Y,Y,survival,NA,NA
 survival,KKWeibullFrailtyOneLik,N,Y,Y,Y,Y,Y,survival,NA,NA
 survival,KMDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA
 survival,LogRank,N,N,N,N,Y,Y,none/rank statistic,NA,NA
 survival,RestrictedMeanDiff,N,N,N,N,Y,Y,none/KM statistic,NA,NA
+survival,StratCoxPHRegr,N,Y,Y,Y,Y,Y,ourself/Rcpp Cox partial likelihood,Newton-Raphson,N
 survival,WeibullRegr,Y,Y,Y,Y,Y,Y,ourself/Rcpp Weibull AFT,L-BFGS,N
 unknown,InferenceCustomAsymp,N,N,N,N,Y,Y,TODO,NA,NA
 unknown,InferenceCustomBoot,N,N,N,N,N,N,TODO,NA,NA

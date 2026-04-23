@@ -21,14 +21,14 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, harden = TRUE){
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")) {
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")) {
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
 				}
 			}
 			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
-					if (is(des_obj, "FixedDesignBinaryMatch")){
+					if (inherits(des_obj, "FixedDesignBinaryMatch")){
 						des_obj$.__enclos_env__$private$ensure_bms_computed()
 					}
 					private$m = des_obj$.__enclos_env__$private$m

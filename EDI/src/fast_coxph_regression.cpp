@@ -186,69 +186,90 @@ struct CoxFitResult {
 CoxFitResult cox_newton_raphson(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> start_beta,
+    const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol)
 {
     const int p = strata_data[0].p;
-    std::vector<double> beta(p, 0.0);
+    Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
     if (start_beta.isNotNull()) {
         NumericVector sb(start_beta);
         for (int q = 0; q < p; ++q) beta[q] = sb[q];
     }
+    beta = apply_fixed_values(beta, fixed_spec);
 
-    std::vector<double> grad(p), hess(p * p);
+    std::vector<double> grad_vec(p), hess_vec(p * p);
 
-    // Per-stratum work buffers (we'll resize per stratum inside the loop)
     double old_ll = 1e300;
     int iter = 0;
 
     for (iter = 0; iter < maxit; ++iter) {
         // Accumulate over strata
-        for (int q = 0; q < p; ++q) grad[q] = 0.0;
-        for (int qq = 0; qq < p * p; ++qq) hess[qq] = 0.0;
+        std::fill(grad_vec.begin(), grad_vec.end(), 0.0);
+        std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
         double ll = 0.0;
+
+        std::vector<double> beta_vec(p);
+        for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
 
         for (const CoxData& sd : strata_data) {
             std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
             std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
-            ll += compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, false,
+            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, g_s, h_s, false,
                                                  exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int q = 0; q < p; ++q) grad[q] += g_s[q];
-            for (int qq = 0; qq < p * p; ++qq) hess[qq] += h_s[qq];
+            for (int q = 0; q < p; ++q) grad_vec[q] += g_s[q];
+            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += h_s[qq];
         }
 
         if (std::abs(old_ll - ll) < tol) break;
         old_ll = ll;
 
-        Eigen::Map<const Eigen::MatrixXd> H(hess.data(), p, p);
-        Eigen::Map<const Eigen::VectorXd> g(grad.data(), p);
+        Eigen::MatrixXd H = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
+        Eigen::VectorXd g = Eigen::Map<const Eigen::VectorXd>(grad_vec.data(), p);
+
+        // Apply fixed parameter constraints to NR step
+        for (int i = 0; i < fixed_spec.fixed_idx.size(); ++i) {
+            int idx = fixed_spec.fixed_idx[i];
+            g[idx] = 0.0;
+            H.row(idx).setZero();
+            H.col(idx).setZero();
+            H(idx, idx) = 1.0;
+        }
+
         Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
         if (ldlt.info() != Eigen::Success) break;
         Eigen::VectorXd delta = ldlt.solve(g);
-        for (int q = 0; q < p; ++q) beta[q] -= delta[q];
+        beta -= delta;
     }
 
     CoxFitResult res;
-    res.beta = beta;
+    res.beta.assign(beta.data(), beta.data() + p);
     res.neg_ll = old_ll;
     res.converged = (iter < maxit);
     res.iterations = iter;
 
     if (!estimate_only) {
-        // Final pass for Hessian at converged beta
-        for (int q = 0; q < p; ++q) grad[q] = 0.0;
-        for (int qq = 0; qq < p * p; ++qq) hess[qq] = 0.0;
+        std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
+        std::vector<double> beta_vec(p);
+        for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
         for (const CoxData& sd : strata_data) {
             std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
             std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
-            compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, false,
+            compute_cox_ll_grad_hess_fast(sd, beta_vec, g_s, h_s, false,
                                            exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int qq = 0; qq < p * p; ++qq) hess[qq] += h_s[qq];
+            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += h_s[qq];
         }
-        Eigen::Map<const Eigen::MatrixXd> H_final(hess.data(), p, p);
+        Eigen::MatrixXd H_final = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
         res.hess_mat = H_final;
-        res.vcov = H_final.inverse();
+        Eigen::MatrixXd H_free = subset_matrix(H_final, fixed_spec.free_idx, fixed_spec.free_idx);
+        Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
+        if (lu.isInvertible()) {
+            Eigen::MatrixXd vcov_free = lu.inverse();
+            res.vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
+        } else {
+            res.vcov = Eigen::MatrixXd::Constant(p, p, NA_REAL);
+        }
     }
 
     return res;
@@ -281,7 +302,7 @@ public:
     // Analytic Hessian (information matrix) — used by Newton-Raphson path.
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
         std::vector<double> beta(par.data(), par.data() + m_p);
-        std::vector<double> g(m_p, 0.0), h(m_p * m_p, 0.0);
+        std::vector<double> h(m_p * m_p, 0.0);
         for (const CoxData& sd : m_strata) {
             std::vector<double> g_s(m_p, 0.0), h_s(m_p * m_p, 0.0);
             std::vector<double> exp_eta(sd.n), r_x_exp(m_p), r_xx_exp(m_p * m_p), sum_x_dk(m_p), e_z(m_p);
@@ -297,6 +318,7 @@ public:
 CoxFitResult cox_lbfgs(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> start_beta,
+    const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol)
@@ -307,9 +329,10 @@ CoxFitResult cox_lbfgs(
         NumericVector sb(start_beta);
         for (int q = 0; q < p; ++q) par[q] = sb[q];
     }
+    par = apply_fixed_values(par, fixed_spec);
 
     StratifiedCoxObjective obj(strata_data, p);
-    LikelihoodFitResult fit = optimize_likelihood_lbfgs(obj, par, maxit, tol);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, "lbfgs", "lbfgs");
 
     CoxFitResult res;
     res.beta.assign(fit.params.data(), fit.params.data() + p);
@@ -320,9 +343,14 @@ CoxFitResult cox_lbfgs(
     if (!estimate_only && fit.converged) {
         Eigen::MatrixXd H = obj.hessian(fit.params);
         res.hess_mat = H;
-        Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
-        if (ldlt.info() == Eigen::Success)
-            res.vcov = ldlt.solve(Eigen::MatrixXd::Identity(p, p));
+        Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+        Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
+        if (lu.isInvertible()) {
+            Eigen::MatrixXd vcov_free = lu.inverse();
+            res.vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
+        } else {
+            res.vcov = Eigen::MatrixXd::Constant(p, p, NA_REAL);
+        }
     }
     return res;
 }
@@ -331,14 +359,15 @@ CoxFitResult cox_lbfgs(
 CoxFitResult cox_fit(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> start_beta,
+    const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol,
     const std::string& optimization_alg)
 {
     if (optimization_alg == "lbfgs")
-        return cox_lbfgs(strata_data, start_beta, estimate_only, maxit, tol);
-    return cox_newton_raphson(strata_data, start_beta, estimate_only, maxit, tol);
+        return cox_lbfgs(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol);
+    return cox_newton_raphson(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol);
 }
 
 // Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
@@ -490,13 +519,16 @@ List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
                                int maxit = 20,
                                double tol = 1e-9,
                                Nullable<IntegerVector> cluster = R_NilValue,
+                               Nullable<IntegerVector> fixed_idx = R_NilValue,
+                               Nullable<NumericVector> fixed_values = R_NilValue,
                                std::string optimization_alg = "newton_raphson") {
     int p = X.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
 
-    CoxFitResult fit = cox_fit(strata_data, start_beta, estimate_only, maxit, tol, optimization_alg);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
@@ -539,10 +571,13 @@ List fast_stratified_coxph_regression_cpp(
     bool estimate_only = false,
     int maxit = 20,
     double tol = 1e-9,
+    Nullable<IntegerVector> fixed_idx = R_NilValue,
+    Nullable<NumericVector> fixed_values = R_NilValue,
     std::string optimization_alg = "newton_raphson")
 {
     const int n = y.size();
     const int p = X.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     std::vector<int> strata(strata_r.begin(), strata_r.end());
     std::vector<int> unique_strata = strata;
@@ -567,7 +602,7 @@ List fast_stratified_coxph_regression_cpp(
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
-    CoxFitResult fit = cox_fit(strata_data, start_beta, estimate_only, maxit, tol, optimization_alg);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];

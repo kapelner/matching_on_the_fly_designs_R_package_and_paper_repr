@@ -336,7 +336,9 @@ List fast_ordinal_clmm_cpp(
 	int maxit = 300,
 	double eps_g = 1e-6,
 	Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
-	std::string optimization_alg = "lbfgs"
+	std::string optimization_alg = "lbfgs",
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
 	const int n  = X.rows();
 	const int p  = X.cols();
@@ -367,15 +369,14 @@ List fast_ordinal_clmm_cpp(
 	}
 
 	OrdinalCLMMObjective obj(dat);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	double neg_ll = NA_REAL;
-	int niter = maxit;
 	bool converged = false;
 	try {
-		LikelihoodFitResult fit = optimize_likelihood(obj, par, maxit, eps_g, optimization_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
 		par       = fit.params;
 		neg_ll    = fit.value;
-		niter     = fit.niter;
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
 		return List::create(
@@ -392,12 +393,17 @@ List fast_ordinal_clmm_cpp(
 
 	double ssq_b_T = NA_REAL;
 	if (!estimate_only && converged) {
-		Eigen::MatrixXd H = obj.hessian(par);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
+		FixedParameterFunctor<OrdinalCLMMObjective> fixed_obj(obj, fixed_spec, par);
+		Eigen::VectorXd params_free = subset_vector(par, fixed_spec.free_idx);
+		Eigen::MatrixXd H_free = fixed_obj.hessian(params_free);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(total, total));
-			if (inv.allFinite() && j_T_full < total) {
-				ssq_b_T = inv(j_T_full, j_T_full);
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
+			if (inv_free.allFinite()) {
+				Eigen::MatrixXd inv = expand_free_covariance(total, fixed_spec, inv_free, true);
+				if (j_T_full < total) {
+					ssq_b_T = inv(j_T_full, j_T_full);
+				}
 			}
 		}
 	}

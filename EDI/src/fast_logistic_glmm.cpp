@@ -63,6 +63,18 @@ inline double log_sigma_penalty(double log_sigma, double center = 5.0, double sc
 	return scale * d * d;
 }
 
+inline double log_sigma_penalty_grad(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
+}
+
+inline double log_sigma_penalty_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale;
+}
+
 struct LogisticGLMMData {
 	Eigen::MatrixXd X_s;        // n x p (includes intercept)
 	std::vector<double> y_s;    // responses in [0,1], length n
@@ -206,7 +218,80 @@ public:
 	}
 
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-		return numerical_hessian(*this, par);
+		const int total = dat.p + 1;
+		const double log_sigma = par[dat.p];
+		const double sigma = std::exp(log_sigma);
+		const Eigen::VectorXd beta = par.head(dat.p);
+		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
+		const int n_nodes = (int)b_vals.size();
+
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+		H(dat.p, dat.p) = log_sigma_penalty_hessian(log_sigma);
+
+		for (int gi = 0; gi < dat.G; gi++) {
+			const int start = dat.grp_start[gi];
+			const int sz    = dat.grp_size[gi];
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+			const Eigen::VectorXd eta0 = Xg * beta;
+
+			Eigen::VectorXd log_terms(n_nodes);
+			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
+			for (int k = 0; k < n_nodes; k++) {
+				double ll = dat.gh.log_norm_weights[k];
+				mu_nodes[k].resize(sz);
+				for (int r = 0; r < sz; r++) {
+					const double eta = eta0[r] + b_vals[k];
+					ll += dat.y_s[start + r] * eta - log1pexp_s(eta);
+					mu_nodes[k][r] = plogis_safe(eta);
+				}
+				log_terms[k] = ll;
+			}
+			const double ll_g = log_sum_exp_v(log_terms);
+
+			Eigen::VectorXd post_weights(n_nodes);
+			for (int k = 0; k < n_nodes; k++) post_weights[k] = std::exp(log_terms[k] - ll_g);
+
+			Eigen::MatrixXd E_Hik = Eigen::MatrixXd::Zero(total, total);
+			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
+			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
+
+			for (int k = 0; k < n_nodes; k++) {
+				const double pk = post_weights[k];
+				if (pk < 1e-15) continue;
+
+				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
+				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
+
+				double sum_res = 0.0;
+				double sum_w = 0.0;
+				Eigen::VectorXd res_k(sz);
+				Eigen::VectorXd w_k(sz);
+
+				for (int r = 0; r < sz; r++) {
+					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
+					w_k[r]   = mu_nodes[k][r] * (1.0 - mu_nodes[k][r]);
+					sum_res += res_k[r];
+					sum_w   += w_k[r];
+				}
+
+				G_ik.head(dat.p) = Xg.transpose() * res_k;
+				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+				G_ik[dat.p] = sum_res * node_factor * sigma;
+
+				H_ik.topLeftCorner(dat.p, dat.p) = -Xg.transpose() * w_k.asDiagonal() * Xg;
+				H_ik(dat.p, dat.p) = (-sum_w * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
+				
+				Eigen::VectorXd d2L_db_dsigma = -Xg.transpose() * w_k * node_factor * sigma;
+				H_ik.block(0, dat.p, dat.p, 1) = d2L_db_dsigma;
+				H_ik.block(dat.p, 0, 1, dat.p) = d2L_db_dsigma.transpose();
+
+				E_Hik += pk * H_ik;
+				G_avg += pk * G_ik;
+				E_GiGiT += pk * (G_ik * G_ik.transpose());
+			}
+			H -= (E_Hik + E_GiGiT - G_avg * G_avg.transpose());
+		}
+		return H;
 	}
 };
 

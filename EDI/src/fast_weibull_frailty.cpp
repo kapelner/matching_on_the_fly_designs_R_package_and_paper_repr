@@ -347,6 +347,8 @@ List fast_weibull_frailty_cpp(
 	double max_abs_log_sigma = 8.0,
 	int maxit = 300,
 	double eps_g = 1e-6,
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	std::string optimization_alg = "lbfgs"
 ) {
 	const int p     = X.cols();
@@ -367,7 +369,7 @@ List fast_weibull_frailty_cpp(
 		par[p + 1] = 0.0;
 	}
 
-	FixedParamSpec fixed_spec = make_fixed_param_spec(n_par);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
 
 	double neg_ll  = NA_REAL;
 	bool converged = false;
@@ -388,12 +390,15 @@ List fast_weibull_frailty_cpp(
 	}
 
 	double ssq_b_T = NA_REAL;
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(n_par, n_par, NA_REAL);
 	if (!estimate_only && converged) {
 		Eigen::MatrixXd info = obj.hessian(par);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(info);
+		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
 		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(info.rows(), info.cols()));
-			if (inv.allFinite()) ssq_b_T = inv(0, 0);  // j_T = 0
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
+			vcov = expand_free_covariance(n_par, fixed_spec, inv_free, true);
+			if (vcov.allFinite()) ssq_b_T = vcov(0, 0);  // j_T = 0 usually
 		}
 	}
 
@@ -402,6 +407,7 @@ List fast_weibull_frailty_cpp(
 		Named("log_sigma_eps") = par[p],
 		Named("log_sigma_u")   = par[p + 1],
 		Named("ssq_b_T")       = ssq_b_T,
+		Named("vcov")          = vcov,
 		Named("converged")     = converged,
 		Named("neg_loglik")    = neg_ll
 	);

@@ -112,7 +112,100 @@ public:
     }
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-        return numerical_hessian(*this, par);
+        const int total = m_pc + m_pz + 1;
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+
+        const Eigen::VectorXd bc  = par.head(m_pc);
+        const Eigen::VectorXd bz  = par.segment(m_pc, m_pz);
+        const double log_theta    = par[m_pc + m_pz];
+        const double theta        = std::exp(std::min(log_theta, 700.0));
+
+        const Eigen::VectorXd eta_c = m_Xc * bc;
+        const Eigen::VectorXd eta_z = m_Xz * bz;
+
+        for (int i = 0; i < m_n; ++i) {
+            const double mu = std::exp(std::min(eta_c[i], 700.0));
+            const double pi = sigmoid_zinb(eta_z[i]);
+            const double A  = theta + mu;
+            const double p0 = std::pow(theta / A, theta);
+
+            const Eigen::VectorXd xc = m_Xc.row(i);
+            const Eigen::VectorXd xz = m_Xz.row(i);
+
+            if (m_y[i] == 0.0) {
+                const double q = std::max(pi + (1.0 - pi) * p0, 1e-300);
+                
+                const double dq_dmu = (1.0 - pi) * p0 * (-theta / A);
+                const double dq_detac = dq_dmu * mu;
+                
+                const double dpi_detaz = pi * (1.0 - pi);
+                const double dq_detaz = (1.0 - p0) * dpi_detaz;
+                
+                const double dp0_dtheta = p0 * (std::log(theta / A) + mu / A);
+                const double dq_dtheta = (1.0 - pi) * dp0_dtheta;
+                const double dq_dlogtheta = dq_dtheta * theta;
+
+                const double d2q_dmu2 = (1.0 - pi) * p0 * (theta / (A * A)) * (theta + 1.0);
+                const double d2q_detac2 = d2q_dmu2 * mu * mu + dq_dmu * mu;
+                
+                const double d2pi_detaz2 = pi * (1.0 - pi) * (1.0 - 2.0 * pi);
+                const double d2q_detaz2 = (1.0 - p0) * d2pi_detaz2;
+                
+                const double d2p0_dtheta2 = p0 * (std::pow(std::log(theta / A) + mu / A, 2) + 
+                                               (1.0 / theta - 2.0 / A + theta / (A * A)));
+                const double d2q_dtheta2 = (1.0 - pi) * d2p0_dtheta2;
+                const double d2q_dlogtheta2 = d2q_dtheta2 * theta * theta + dq_dtheta * theta;
+
+                const double d2q_detac_detaz = -mu * (theta / A) * p0 * dpi_detaz;
+                const double d2q_detac_dlogtheta = (1.0 - pi) * theta * (
+                    dp0_dtheta * (-theta / A) + p0 * (-mu / (A * A))
+                );
+                const double d2q_detaz_dlogtheta = -dpi_detaz * dp0_dtheta * theta;
+
+                const double inv_q = 1.0 / q;
+                const double inv_q2 = inv_q * inv_q;
+
+                const double h_cc = (inv_q2 * dq_detac * dq_detac - inv_q * d2q_detac2);
+                const double h_zz = (inv_q2 * dq_detaz * dq_detaz - inv_q * d2q_detaz2);
+                const double h_tt = (inv_q2 * dq_dlogtheta * dq_dlogtheta - inv_q * d2q_dlogtheta2);
+                const double h_cz = (inv_q2 * dq_detac * dq_detaz - inv_q * d2q_detac_detaz);
+                const double h_ct = (inv_q2 * dq_detac * dq_dlogtheta - inv_q * d2q_detac_dlogtheta);
+                const double h_zt = (inv_q2 * dq_detaz * dq_dlogtheta - inv_q * d2q_detaz_dlogtheta);
+
+                for (int r = 0; r < m_pc; ++r) {
+                    for (int c = 0; r >= c && c < m_pc; ++c) H(r, c) += h_cc * xc[r] * xc[c];
+                    for (int c = 0; c < m_pz; ++c) H(r, m_pc + c) += h_cz * xc[r] * xz[c];
+                    H(r, total - 1) += h_ct * xc[r];
+                }
+                for (int r = 0; r < m_pz; ++r) {
+                    for (int c = 0; r >= c && c < m_pz; ++c) H(m_pc + r, m_pc + c) += h_zz * xz[r] * xz[c];
+                    H(m_pc + r, total - 1) += h_zt * xz[r];
+                }
+                H(total - 1, total - 1) += h_tt;
+
+            } else {
+                const double yi = m_y[i];
+                const double h_zz = pi * (1.0 - pi);
+                const double h_cc = theta * mu * (yi + theta) / (A * A);
+                const double dnb_dtheta = R::digamma(theta) - R::digamma(yi + theta) - std::log(theta / A) + (yi - mu) / A;
+                const double d2nb_dtheta2 = R::trigamma(theta) - R::trigamma(yi + theta) - 1.0 / theta + 2.0 / A - (yi + theta) / (A * A);
+                const double h_tt = (d2nb_dtheta2 * theta * theta + dnb_dtheta * theta);
+                const double h_ct = (-mu * (yi - mu) / (A * A)) * theta;
+
+                for (int r = 0; r < m_pc; ++r) {
+                    for (int c = 0; r >= c && c < m_pc; ++c) H(r, c) += h_cc * xc[r] * xc[c];
+                    H(r, total - 1) += h_ct * xc[r];
+                }
+                for (int r = 0; r < m_pz; ++r) {
+                    for (int c = 0; r >= c && c < m_pz; ++c) H(m_pc + r, m_pc + c) += h_zz * xz[r] * xz[c];
+                }
+                H(total - 1, total - 1) += h_tt;
+            }
+        }
+        for (int r = 0; r < total; ++r) {
+            for (int c = 0; c < r; ++c) H(c, r) = H(r, c);
+        }
+        return H;
     }
 };
 

@@ -202,7 +202,10 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X
 }
 
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8, std::string optimization_alg = "newton_raphson") {
+List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                       std::string optimization_alg = "newton_raphson") {
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -211,8 +214,10 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
     
-    VectorXd params = VectorXd::Zero((K - 1) + X.cols());
-    LikelihoodFitResult fit = optimize_likelihood(fun, params, maxit, tol, optimization_alg, "newton_raphson");
+    int n_par = (K - 1) + X.cols();
+    VectorXd params = VectorXd::Zero(n_par);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
@@ -223,7 +228,10 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
 }
 
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8, std::string optimization_alg = "newton_raphson") {
+List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                                std::string optimization_alg = "newton_raphson") {
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -232,11 +240,14 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
     
-    VectorXd params = VectorXd::Zero((K - 1) + X.cols());
-    LikelihoodFitResult fit = optimize_likelihood(fun, params, maxit, tol, optimization_alg, "newton_raphson");
+    int n_par = (K - 1) + X.cols();
+    VectorXd params = VectorXd::Zero(n_par);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
 
     MatrixXd info = fun.hessian(fit.params);
-    FullPivLU<MatrixXd> lu(info);
+    MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+    FullPivLU<MatrixXd> lu(info_free);
 
     if (!lu.isInvertible()) {
         return List::create(
@@ -246,13 +257,15 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
         );
     }
 
-    MatrixXd cov = lu.inverse();
+    MatrixXd cov_free = lu.inverse();
+    MatrixXd cov = expand_free_covariance(n_par, fixed_spec, cov_free, true);
     int n_alpha = K - 1;
     double ssq_b_1 = (X.cols() >= 1) ? cov(n_alpha, n_alpha) : NA_REAL;
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
         Named("ssq_b_1") = ssq_b_1,
+        Named("vcov") = cov,
         Named("converged") = fit.converged
     );
 }

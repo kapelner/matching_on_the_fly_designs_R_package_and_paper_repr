@@ -184,6 +184,8 @@ List fast_poisson_glmm_cpp(
 	int n_gh = 20,
 	int maxit = 300,
 	double eps_g = 1e-6,
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	std::string optimization_alg = "lbfgs"
 ) {
 	const int n = X.rows();
@@ -205,11 +207,12 @@ List fast_poisson_glmm_cpp(
 	par[total - 1] = -3.0;
 
 	PoissonGLMMObjective obj(dat);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	double neg_ll = NA_REAL;
 	bool converged = false;
 	try {
-		LikelihoodFitResult fit = optimize_likelihood(obj, par, maxit, eps_g, optimization_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
 		par       = fit.params;
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;
@@ -227,12 +230,15 @@ List fast_poisson_glmm_cpp(
 	const double true_neg_ll = neg_ll - pen;
 
 	double ssq_b_T = NA_REAL;
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
 	if (!estimate_only && converged) {
 		Eigen::MatrixXd H = obj.hessian(par);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
+		Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(total, total));
-			if (inv.allFinite() && j_T < p) ssq_b_T = inv(j_T, j_T);
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
+			vcov = expand_free_covariance(total, fixed_spec, inv_free, true);
+			if (vcov.allFinite() && j_T < p) ssq_b_T = vcov(j_T, j_T);
 		}
 	}
 
@@ -240,6 +246,7 @@ List fast_poisson_glmm_cpp(
 		Named("b")          = par.head(p),
 		Named("log_sigma")  = par[total - 1],
 		Named("ssq_b_T")    = ssq_b_T,
+		Named("vcov")       = vcov,
 		Named("converged")  = converged,
 		Named("neg_loglik") = true_neg_ll
 	);

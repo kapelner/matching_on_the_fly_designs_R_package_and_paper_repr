@@ -1,3 +1,4 @@
+#include "_helper_functions.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
@@ -582,6 +583,19 @@ static VectorXd stereotype_newton_fit(
     return params;
 }
 
+struct StereotypeObjective {
+    const StereotypeLogitRegression& model;
+    StereotypeObjective(const StereotypeLogitRegression& m) : model(m) {}
+
+    double operator()(const VectorXd& params, VectorXd& grad) const {
+        return -model.loglik_grad(params, &grad);
+    }
+
+    MatrixXd hessian(const VectorXd& params) const {
+        return -model.loglik_hessian(params);
+    }
+};
+
 // [[Rcpp::export]]
 Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 											   const Eigen::VectorXd& y,
@@ -597,54 +611,78 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 												 const Eigen::VectorXd& y,
 												 const Eigen::VectorXd& params) {
 	StereotypeLogitRegression model(X, y);
-	return numeric_hessian_from_gradient(model, params);
+	return model.loglik_hessian(params);
 }
 
 // [[Rcpp::export]]
-List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
+List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                std::string optimization_alg = "newton_raphson") {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
 
-    bool converged = false;
-    VectorXd params = stereotype_newton_fit(model, maxit, tol, &converged);
+    VectorXd params = model.initialize_params();
+    int n_par = params.size();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    StereotypeObjective obj(model);
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    params = fit.params;
+
     int n_alpha = model.num_alpha();
     int p = X.cols();
 
     return List::create(
         Named("b") = params.segment(n_alpha, p),
         Named("alpha") = params.head(n_alpha),
-        Named("scores_raw") = params.tail(model.num_gamma()),
+        Named("scores_raw") = (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0),
         Named("params") = params,
-        Named("converged") = converged
+        Named("converged") = fit.converged
     );
 }
 
 // [[Rcpp::export]]
-List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8) {
+List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                         std::string optimization_alg = "newton_raphson") {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
 
-    bool converged = false;
-    VectorXd params = stereotype_newton_fit(model, maxit, tol, &converged);
-    MatrixXd H = numeric_hessian_from_gradient(model, params);
+    VectorXd params_init = model.initialize_params();
+    int n_par = params_init.size();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    StereotypeObjective obj(model);
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params_init, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    VectorXd params = fit.params;
+    MatrixXd H = model.loglik_hessian(params);
     MatrixXd info = -H;
-    FullPivLU<MatrixXd> lu(info);
 
     int n_alpha = model.num_alpha();
     int p = X.cols();
 
-    MatrixXd cov;
+    MatrixXd vcov = MatrixXd::Constant(n_par, n_par, NA_REAL);
+    MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+    FullPivLU<MatrixXd> lu(info_free);
+
     if (lu.isInvertible()) {
-        cov = lu.inverse();
+        MatrixXd vcov_free = lu.inverse();
+        vcov = expand_free_covariance(n_par, fixed_spec, vcov_free, true);
     } else {
-        cov = pseudo_inverse_symmetric(info);
+        MatrixXd vcov_pseudo_free = pseudo_inverse_symmetric(info_free);
+        vcov = expand_free_covariance(n_par, fixed_spec, vcov_pseudo_free, true);
     }
-    double ssq_b_1 = (p >= 1) ? cov(n_alpha, n_alpha) : NA_REAL;
-    if ((!R_finite(ssq_b_1) || ssq_b_1 <= 0) && p >= 1) {
+
+    double ssq_b_1 = (p >= 1) ? vcov(n_alpha, n_alpha) : NA_REAL;
+    
+    // Fallback profiling logic for variance if still not finite
+    if (!R_finite(ssq_b_1) && p >= 1 && !fixed_spec.has_fixed) {
         double beta_hat = params[n_alpha];
         double h = std::max(1e-4, 1e-3 * (std::abs(beta_hat) + 1.0));
         double ll_0 = profile_loglik_for_beta(model, params, beta_hat, n_alpha, p, model.num_gamma(), 0);
@@ -655,14 +693,12 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
             ssq_b_1 = 1.0 / info_beta;
         }
     }
-    if (!R_finite(ssq_b_1) || ssq_b_1 <= 0) {
-        ssq_b_1 = NA_REAL;
-    }
 
     return List::create(
         Named("b") = params.segment(n_alpha, p),
         Named("ssq_b_1") = ssq_b_1,
-        Named("converged") = converged
+        Named("vcov") = vcov,
+        Named("converged") = fit.converged
     );
 }
 

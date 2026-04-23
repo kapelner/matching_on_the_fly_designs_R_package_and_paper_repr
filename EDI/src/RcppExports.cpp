@@ -456,8 +456,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_adjacent_category_logit_cpp
-List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_adjacent_category_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_adjacent_category_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -465,14 +465,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_cpp(X, y, maxit, tol, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_adjacent_category_logit_with_var_cpp
-List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_adjacent_category_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_adjacent_category_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -480,8 +482,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_with_var_cpp(X, y, maxit, tol, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_adjacent_category_logit_with_var_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -669,8 +673,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_continuation_ratio_regression_cpp
-List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _EDI_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_continuation_ratio_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -678,25 +682,33 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_cpp(X, y, maxit, tol));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_continuation_ratio_regression_with_var_cpp
-List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y);
-RcppExport SEXP _EDI_fast_continuation_ratio_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP) {
+List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_continuation_ratio_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_with_var_cpp(X, y));
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_continuation_ratio_regression_with_var_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_coxph_regression_cpp
-List fast_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, Nullable<IntegerVector> cluster, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP clusterSEXP, SEXP optimization_algSEXP) {
+List fast_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, Nullable<IntegerVector> cluster, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP clusterSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -708,14 +720,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type cluster(clusterSEXP);
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_coxph_regression_cpp(y, dead, X, start_beta, estimate_only, maxit, tol, cluster, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_coxph_regression_cpp(y, dead, X, start_beta, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_stratified_coxph_regression_cpp
-List fast_stratified_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_stratified_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_stratified_coxph_regression_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, Nullable<NumericVector> start_beta, bool estimate_only, int maxit, double tol, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_stratified_coxph_regression_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP start_betaSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -727,8 +741,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_stratified_coxph_regression_cpp(y, dead, X, strata_r, start_beta, estimate_only, maxit, tol, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_stratified_coxph_regression_cpp(y, dead, X, strata_r, start_beta, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1329,34 +1345,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_ordinal_cauchit_regression_score_cpp
-Eigen::VectorXd get_ordinal_cauchit_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_cauchit_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::VectorXd get_ordinal_cauchit_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_cauchit_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_cauchit_regression_score_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_cauchit_regression_score_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_ordinal_cauchit_regression_hessian_cpp
-Eigen::MatrixXd get_ordinal_cauchit_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_cauchit_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::MatrixXd get_ordinal_cauchit_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_cauchit_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_cauchit_regression_hessian_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_cauchit_regression_hessian_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cauchit_regression_cpp
-List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1365,26 +1385,30 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_cpp(X, y, maxit, tol, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_cpp(X, y, maxit, tol, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cauchit_regression_with_var_cpp
-List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_with_var_cpp(X, y, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_with_var_cpp(X, y, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_clmm_cpp
-List fast_ordinal_clmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y_int, const Eigen::VectorXi& group_id, int K, int j_T, std::string link, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::NumericVector> start, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_clmm_cpp(SEXP XSEXP, SEXP y_intSEXP, SEXP group_idSEXP, SEXP KSEXP, SEXP j_TSEXP, SEXP linkSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP startSEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_clmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y_int, const Eigen::VectorXi& group_id, int K, int j_T, std::string link, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::NumericVector> start, std::string optimization_alg, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_clmm_cpp(SEXP XSEXP, SEXP y_intSEXP, SEXP group_idSEXP, SEXP KSEXP, SEXP j_TSEXP, SEXP linkSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1401,39 +1425,45 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type start(startSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_clmm_cpp(X, y_int, group_id, K, j_T, link, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, start, optimization_alg));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_clmm_cpp(X, y_int, group_id, K, j_T, link, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, start, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_ordinal_cloglog_regression_score_cpp
-Eigen::VectorXd get_ordinal_cloglog_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_cloglog_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::VectorXd get_ordinal_cloglog_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_cloglog_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_cloglog_regression_score_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_cloglog_regression_score_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_ordinal_cloglog_regression_hessian_cpp
-Eigen::MatrixXd get_ordinal_cloglog_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_cloglog_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::MatrixXd get_ordinal_cloglog_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_cloglog_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_cloglog_regression_hessian_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_cloglog_regression_hessian_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cloglog_regression_cpp
-List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1442,20 +1472,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_cpp(X, y, maxit, tol, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_cpp(X, y, maxit, tol, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cloglog_regression_with_var_cpp
-List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1516,34 +1550,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_ordinal_probit_regression_score_cpp
-Eigen::VectorXd get_ordinal_probit_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_probit_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::VectorXd get_ordinal_probit_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_probit_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_probit_regression_score_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_probit_regression_score_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_ordinal_probit_regression_hessian_cpp
-Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params);
-RcppExport SEXP _EDI_get_ordinal_probit_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP) {
+Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_get_ordinal_probit_regression_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP paramsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_ordinal_probit_regression_hessian_cpp(X, y, params));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_ordinal_probit_regression_hessian_cpp(X, y, params, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_probit_regression_cpp
-List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1552,20 +1590,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_cpp(X, y, maxit, tol, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_cpp(X, y, maxit, tol, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_probit_regression_with_var_cpp
-List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_with_var_cpp(X, y, optimization_alg));
+    Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_with_var_cpp(X, y, optimization_alg, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1596,8 +1638,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ordinal_regression_cpp
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1605,21 +1647,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_cpp(X, y, maxit, tol, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_regression_with_var_cpp
-List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP optimization_algSEXP) {
+List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1667,8 +1713,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_poisson_glmm_cpp
-List fast_poisson_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int j_T, bool estimate_only, int n_gh, int maxit, double eps_g, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_poisson_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP j_TSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
+List fast_poisson_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, int j_T, bool estimate_only, int n_gh, int maxit, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_poisson_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP j_TSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1680,8 +1726,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_poisson_glmm_cpp(X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_glmm_cpp(X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1930,8 +1978,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_stereotype_logit_cpp
-List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _EDI_fast_stereotype_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_stereotype_logit_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1939,13 +1987,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_cpp(X, y, maxit, tol));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_stereotype_logit_with_var_cpp
-List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol);
-RcppExport SEXP _EDI_fast_stereotype_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_stereotype_logit_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1953,7 +2004,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_with_var_cpp(X, y, maxit, tol));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_stereotype_logit_with_var_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2191,8 +2245,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_weibull_frailty_cpp
-List fast_weibull_frailty_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, Rcpp::Nullable<Rcpp::NumericVector> start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_weibull_frailty_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
+List fast_weibull_frailty_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, Rcpp::Nullable<Rcpp::NumericVector> start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
+RcppExport SEXP _EDI_fast_weibull_frailty_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2206,8 +2260,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_weibull_frailty_cpp(y, dead, X, group_id, start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, optimization_alg));
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_frailty_cpp(y, dead, X, group_id, start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3656,8 +3712,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_efron_redraw_cpp", (DL_FUNC) &_EDI_efron_redraw_cpp, 3},
     {"_EDI_get_adjacent_category_logit_score_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_score_cpp, 3},
     {"_EDI_get_adjacent_category_logit_hessian_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_hessian_cpp, 3},
-    {"_EDI_fast_adjacent_category_logit_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_cpp, 5},
-    {"_EDI_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_with_var_cpp, 5},
+    {"_EDI_fast_adjacent_category_logit_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_cpp, 7},
+    {"_EDI_fast_adjacent_category_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_adjacent_category_logit_with_var_cpp, 7},
     {"_EDI_compute_adj_cat_logit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_adj_cat_logit_distr_parallel_cpp, 5},
     {"_EDI_compute_bai_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_bai_distr_parallel_cpp, 7},
     {"_EDI_get_beta_regression_score_cpp", (DL_FUNC) &_EDI_get_beta_regression_score_cpp, 3},
@@ -3669,10 +3725,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_clogit_plus_glmm_cpp", (DL_FUNC) &_EDI_fast_clogit_plus_glmm_cpp, 15},
     {"_EDI_get_continuation_ratio_regression_score_cpp", (DL_FUNC) &_EDI_get_continuation_ratio_regression_score_cpp, 3},
     {"_EDI_get_continuation_ratio_regression_hessian_cpp", (DL_FUNC) &_EDI_get_continuation_ratio_regression_hessian_cpp, 3},
-    {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 4},
-    {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 2},
-    {"_EDI_fast_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_coxph_regression_cpp, 9},
-    {"_EDI_fast_stratified_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_stratified_coxph_regression_cpp, 9},
+    {"_EDI_fast_continuation_ratio_regression_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_cpp, 7},
+    {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 7},
+    {"_EDI_fast_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_coxph_regression_cpp, 11},
+    {"_EDI_fast_stratified_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_stratified_coxph_regression_cpp, 11},
     {"_EDI_get_cpoisson_combined_score_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_score_cpp, 7},
     {"_EDI_get_cpoisson_combined_hessian_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_hessian_cpp, 7},
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 8},
@@ -3712,30 +3768,30 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_neg_bin_cpp", (DL_FUNC) &_EDI_fast_neg_bin_cpp, 8},
     {"_EDI_fast_ols_cpp", (DL_FUNC) &_EDI_fast_ols_cpp, 4},
     {"_EDI_fast_ols_with_var_cpp", (DL_FUNC) &_EDI_fast_ols_with_var_cpp, 5},
-    {"_EDI_get_ordinal_cauchit_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_cauchit_regression_score_cpp, 3},
-    {"_EDI_get_ordinal_cauchit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cauchit_regression_hessian_cpp, 3},
-    {"_EDI_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_cpp, 5},
-    {"_EDI_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_with_var_cpp, 3},
-    {"_EDI_fast_ordinal_clmm_cpp", (DL_FUNC) &_EDI_fast_ordinal_clmm_cpp, 13},
-    {"_EDI_get_ordinal_cloglog_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_score_cpp, 3},
-    {"_EDI_get_ordinal_cloglog_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_hessian_cpp, 3},
-    {"_EDI_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_cpp, 5},
-    {"_EDI_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_with_var_cpp, 3},
+    {"_EDI_get_ordinal_cauchit_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_cauchit_regression_score_cpp, 5},
+    {"_EDI_get_ordinal_cauchit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cauchit_regression_hessian_cpp, 5},
+    {"_EDI_fast_ordinal_cauchit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_cpp, 7},
+    {"_EDI_fast_ordinal_cauchit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cauchit_regression_with_var_cpp, 5},
+    {"_EDI_fast_ordinal_clmm_cpp", (DL_FUNC) &_EDI_fast_ordinal_clmm_cpp, 15},
+    {"_EDI_get_ordinal_cloglog_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_score_cpp, 5},
+    {"_EDI_get_ordinal_cloglog_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_cloglog_regression_hessian_cpp, 5},
+    {"_EDI_fast_ordinal_cloglog_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_cpp, 7},
+    {"_EDI_fast_ordinal_cloglog_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_cloglog_regression_with_var_cpp, 5},
     {"_EDI_get_ordinal_glmm_score_cpp", (DL_FUNC) &_EDI_get_ordinal_glmm_score_cpp, 7},
     {"_EDI_get_ordinal_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_glmm_hessian_cpp, 7},
     {"_EDI_fast_ordinal_glmm_cpp", (DL_FUNC) &_EDI_fast_ordinal_glmm_cpp, 12},
-    {"_EDI_get_ordinal_probit_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_score_cpp, 3},
-    {"_EDI_get_ordinal_probit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_hessian_cpp, 3},
-    {"_EDI_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_cpp, 5},
-    {"_EDI_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_with_var_cpp, 3},
+    {"_EDI_get_ordinal_probit_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_score_cpp, 5},
+    {"_EDI_get_ordinal_probit_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_probit_regression_hessian_cpp, 5},
+    {"_EDI_fast_ordinal_probit_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_cpp, 7},
+    {"_EDI_fast_ordinal_probit_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_probit_regression_with_var_cpp, 5},
     {"_EDI_get_ordinal_regression_score_cpp", (DL_FUNC) &_EDI_get_ordinal_regression_score_cpp, 3},
     {"_EDI_get_ordinal_regression_hessian_cpp", (DL_FUNC) &_EDI_get_ordinal_regression_hessian_cpp, 3},
-    {"_EDI_fast_ordinal_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_cpp, 5},
-    {"_EDI_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_with_var_cpp, 3},
+    {"_EDI_fast_ordinal_regression_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_cpp, 7},
+    {"_EDI_fast_ordinal_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_ordinal_regression_with_var_cpp, 5},
     {"_EDI_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_EDI_ordinal_gcomp_post_fit_cpp, 5},
     {"_EDI_expand_continuation_ratio_data_cpp", (DL_FUNC) &_EDI_expand_continuation_ratio_data_cpp, 4},
     {"_EDI_expand_adjacent_category_data_cpp", (DL_FUNC) &_EDI_expand_adjacent_category_data_cpp, 4},
-    {"_EDI_fast_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_poisson_glmm_cpp, 9},
+    {"_EDI_fast_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_poisson_glmm_cpp, 11},
     {"_EDI_get_poisson_regression_score_cpp", (DL_FUNC) &_EDI_get_poisson_regression_score_cpp, 3},
     {"_EDI_get_poisson_regression_hessian_cpp", (DL_FUNC) &_EDI_get_poisson_regression_hessian_cpp, 2},
     {"_EDI_get_poisson_regression_weighted_score_cpp", (DL_FUNC) &_EDI_get_poisson_regression_weighted_score_cpp, 4},
@@ -3753,8 +3809,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_shuffle_cpp", (DL_FUNC) &_EDI_shuffle_cpp, 1},
     {"_EDI_get_stereotype_logit_score_cpp", (DL_FUNC) &_EDI_get_stereotype_logit_score_cpp, 3},
     {"_EDI_get_stereotype_logit_hessian_cpp", (DL_FUNC) &_EDI_get_stereotype_logit_hessian_cpp, 3},
-    {"_EDI_fast_stereotype_logit_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_cpp, 4},
-    {"_EDI_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_with_var_cpp, 4},
+    {"_EDI_fast_stereotype_logit_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_cpp, 7},
+    {"_EDI_fast_stereotype_logit_with_var_cpp", (DL_FUNC) &_EDI_fast_stereotype_logit_with_var_cpp, 7},
     {"_EDI_fast_stereotype_profile_loglik_cpp", (DL_FUNC) &_EDI_fast_stereotype_profile_loglik_cpp, 5},
     {"_EDI_compute_stereotype_logit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_stereotype_logit_distr_parallel_cpp, 5},
     {"_EDI_get_clayton_weibull_aft_score_cpp", (DL_FUNC) &_EDI_get_clayton_weibull_aft_score_cpp, 6},
@@ -3770,7 +3826,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_weibull_frailty_neg_loglik_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_neg_loglik_cpp, 7},
     {"_EDI_get_weibull_frailty_score_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_score_cpp, 7},
     {"_EDI_get_weibull_frailty_hessian_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_hessian_cpp, 7},
-    {"_EDI_fast_weibull_frailty_cpp", (DL_FUNC) &_EDI_fast_weibull_frailty_cpp, 11},
+    {"_EDI_fast_weibull_frailty_cpp", (DL_FUNC) &_EDI_fast_weibull_frailty_cpp, 13},
     {"_EDI_get_weibull_regression_score_cpp", (DL_FUNC) &_EDI_get_weibull_regression_score_cpp, 4},
     {"_EDI_get_weibull_regression_hessian_cpp", (DL_FUNC) &_EDI_get_weibull_regression_hessian_cpp, 4},
     {"_EDI_fast_weibull_regression_cpp", (DL_FUNC) &_EDI_fast_weibull_regression_cpp, 10},

@@ -9,7 +9,7 @@
 #' @keywords internal
 InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceKKPassThrough,
 	public = list(
 		#' @description
 		#' Initialize the inference object.
@@ -23,7 +23,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 				}
 			}
@@ -122,7 +122,6 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 			i_matched = which(m_vec > 0L)
-			if (length(i_matched) == 0L) return(NULL)
 
 			p = ncol(as.matrix(private$X))
 			X_m = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(i_matched), ncol = 0L)
@@ -130,14 +129,16 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			w_m = as.numeric(private$w[i_matched])
 			strata_m = as.integer(m_vec[i_matched])
 
-			pair_rows = split(seq_along(i_matched), strata_m)
 			discordant_rows = integer(0)
 			concordant_rows = integer(0)
-			for (rows in pair_rows){
-				if (length(unique(y_m[rows])) > 1L){
-					discordant_rows = c(discordant_rows, rows)
-				} else {
-					concordant_rows = c(concordant_rows, rows)
+			if (length(i_matched) > 0L){
+				pair_rows = split(seq_along(i_matched), strata_m)
+				for (rows in pair_rows){
+					if (length(unique(y_m[rows])) > 1L){
+						discordant_rows = c(discordant_rows, rows)
+					} else {
+						concordant_rows = c(concordant_rows, rows)
+					}
 				}
 			}
 
@@ -145,11 +146,9 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			has_concordant = length(concordant_rows) > 0L
 
 			# Discordant: Clogit (diff-matrix)
-			X_disc = NULL
-			y_disc = NULL
+			X_disc = matrix(0, 0, 0)
+			y_disc = numeric(0)
 			if (has_discordant){
-				# Clogit expects diff-matrix and 0/1 pair outcomes. 
-				# The C++ helper collect_discordant_pairs_cpp already does this.
 				disc = collect_discordant_pairs_cpp(
 					as.double(y_m[discordant_rows]),
 					as.double(w_m[discordant_rows]),
@@ -157,43 +156,51 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					as.integer(strata_m[discordant_rows])
 				)
 				if (disc$nd > 0L){
-					X_disc = if (p > 0L) cbind(res$t_diffs, res$X_diffs) else matrix(res$t_diffs, ncol = 1L)
-					y_disc = res$y_01
+					X_disc = if (p > 0L) cbind(disc$t_diffs, disc$X_diffs) else matrix(disc$t_diffs, ncol = 1L)
+					y_disc = disc$y_01
 				} else {
 					has_discordant = FALSE
 				}
 			}
 
 			# Concordant (plus optionally Reservoir): GLMM
-			X_conc = NULL
-			y_conc = NULL
-			group_conc = NULL
-			if (has_concordant || (include_reservoir && KKstats$nRT > 0L && KKstats$nRC > 0L)){
-				X_conc = X_m[concordant_rows, , drop = FALSE]
-				y_conc = y_m[concordant_rows]
-				w_conc = w_m[concordant_rows]
-				group_conc = strata_m[concordant_rows]
+			X_conc = matrix(0, 0, 0)
+			y_conc = numeric(0)
+			group_conc = integer(0)
+			
+			curr_y = numeric(0)
+			curr_w = numeric(0)
+			curr_X = matrix(nrow = 0, ncol = p)
+			curr_g = integer(0)
 
-				if (include_reservoir){
-					y_conc = c(y_conc, as.numeric(KKstats$y_reservoir))
-					w_conc = c(w_conc, as.numeric(KKstats$w_reservoir))
-					if (p > 0L) X_conc = rbind(X_conc, as.matrix(KKstats$X_reservoir))
-					# Reservoir subjects are independent → unique group IDs
-					if (KKstats$nRT + KKstats$nRC > 0L){
-						max_g = if (length(group_conc) > 0) max(group_conc) else 0L
-						group_conc = c(group_conc, max_g + seq_len(KKstats$nRT + KKstats$nRC))
-					}
-				}
-				X_conc = cbind(1, w_conc, X_conc)
+			if (has_concordant){
+				curr_y = y_m[concordant_rows]
+				curr_w = w_m[concordant_rows]
+				if (p > 0L) curr_X = X_m[concordant_rows, , drop = FALSE]
+				curr_g = strata_m[concordant_rows]
 			}
 
-			if (!has_discordant && is.null(X_conc)) return(NULL)
+			if (include_reservoir && KKstats$nRT > 0L && KKstats$nRC > 0L){
+				curr_y = c(curr_y, as.numeric(KKstats$y_reservoir))
+				curr_w = c(curr_w, as.numeric(KKstats$w_reservoir))
+				if (p > 0L) curr_X = rbind(curr_X, as.matrix(KKstats$X_reservoir))
+				max_g = if (length(curr_g) > 0) max(curr_g) else 0L
+				curr_g = c(curr_g, max_g + seq_len(KKstats$nRT + KKstats$nRC))
+			}
+
+			if (length(curr_y) > 0L){
+				X_conc = if (p > 0L) cbind(1, curr_w, curr_X) else cbind(1, curr_w)
+				y_conc = curr_y
+				group_conc = curr_g
+			}
+
+			if (!has_discordant && length(y_conc) == 0L) return(NULL)
 
 			list(
 				has_discordant = has_discordant,
 				X_disc         = X_disc,
 				y_disc         = y_disc,
-				has_concordant = !is.null(X_conc),
+				has_concordant = length(y_conc) > 0L,
 				X_conc         = X_conc,
 				y_conc         = y_conc,
 				group_conc     = group_conc
@@ -201,18 +208,15 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		},
 
 		fit_clogit_plus_glmm = function(data_parts, estimate_only = FALSE){
-			# Call the joint likelihood optimizer in C++
-			# Parameters: [beta_T, beta_xs, log_sigma] (discordant part has no intercept)
-			# BUT GLMM part has intercept.  This specific Rcpp backend handles the logic.
 			start = private$get_clogit_plus_glmm_start(data_parts)
 			
 			res = tryCatch(
 				fast_clogit_plus_glmm_cpp(
-					X_disc          = as.matrix(data_parts$X_disc %||% matrix(0, 0, 0)),
-					y_disc          = as.numeric(data_parts$y_disc %||% numeric(0)),
-					X_conc          = as.matrix(data_parts$X_conc %||% matrix(0, 0, 0)),
-					y_conc          = as.numeric(data_parts$y_conc %||% numeric(0)),
-					group_conc      = as.integer(data_parts$group_conc %||% integer(0)),
+					X_disc          = as.matrix(data_parts$X_disc),
+					y_disc          = as.numeric(data_parts$y_disc),
+					X_conc          = as.matrix(data_parts$X_conc),
+					y_conc          = as.numeric(data_parts$y_conc),
+					group_conc      = as.integer(data_parts$group_conc),
 					start           = as.numeric(start),
 					has_discordant  = data_parts$has_discordant,
 					has_concordant  = data_parts$has_concordant,
@@ -220,10 +224,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					max_abs_log_sigma = private$max_abs_log_sigma,
 					optimization_alg = private$optimization_alg
 				),
-				error = function(e) {
-					print(paste("DEBUG: fast_clogit_plus_glmm_cpp error:", e$message))
-					NULL
-				}
+				error = function(e) NULL
 			)
 			if (is.null(res) || !is.finite(res$beta_T)) return(NULL)
 			if (!estimate_only && (!is.finite(res$se_beta_T) || res$se_beta_T <= 0)) return(NULL)
@@ -231,26 +232,75 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			res
 		},
 
+		fit_clogit_plus_glmm_ivwc = function(data_parts, estimate_only = FALSE){
+			# Fit discordant part (Clogit)
+			beta_m = NA_real_
+			se_m = NA_real_
+			if (data_parts$has_discordant){
+				res_m = tryCatch(
+					fast_logistic_regression_with_var(data_parts$X_disc, data_parts$y_disc, j = 1L),
+					error = function(e) NULL
+				)
+				if (!is.null(res_m) && is.finite(res_m$b[1])){
+					beta_m = res_m$b[1]
+					se_m = sqrt(res_m$ssq_b_j)
+				}
+			}
+
+			# Fit concordant/reservoir part (GLMM)
+			beta_r = NA_real_
+			se_r = NA_real_
+			if (data_parts$has_concordant){
+				# Parameters: [Intercept, beta_T, beta_xs, log_sigma]
+				# We want beta_T (index 2)
+				start = private$get_clogit_plus_glmm_start(data_parts)
+				res_r = tryCatch(
+					fast_logistic_glmm_cpp(
+						X = as.matrix(data_parts$X_conc),
+						y = as.numeric(data_parts$y_conc),
+						group_id = as.integer(data_parts$group_conc),
+						j_T = 2L,
+						estimate_only = estimate_only,
+						optimization_alg = private$optimization_alg
+					),
+					error = function(e) NULL
+				)
+				if (!is.null(res_r) && is.finite(res_r$beta_T)){
+					beta_r = res_r$beta_T
+					se_r = res_r$se_beta_T
+				}
+			}
+
+			m_ok = is.finite(beta_m) && (estimate_only || (is.finite(se_m) && se_m > 0))
+			r_ok = is.finite(beta_r) && (estimate_only || (is.finite(se_r) && se_r > 0))
+
+			if (m_ok && r_ok){
+				pooled = private$weighted_average(beta_m, se_m %||% 1, beta_r, se_r %||% 1)
+				list(beta_T = pooled$beta, se_beta_T = if (estimate_only) NA_real_ else pooled$se)
+			} else if (m_ok){
+				list(beta_T = beta_m, se_beta_T = se_m)
+			} else if (r_ok){
+				list(beta_T = beta_r, se_beta_T = se_r)
+			} else {
+				NULL
+			}
+		},
+
 		get_clogit_plus_glmm_start = function(data_parts){
 			if (data_parts$has_concordant){
 				X = data_parts$X_conc
 				y = data_parts$y_conc
-				# Logistic regression to get starting values
-				# Param layout: [Intercept, beta_T, beta_xs]
-				fit = fast_logistic_regression_cpp(X, y)
-				# clogit_plus_glmm_cpp expects [Intercept, beta_T, beta_xs, log_sigma]
-				return(c(fit$b, 0.0))
+				fit = tryCatch(fast_logistic_regression_cpp(X, y), error = function(e) NULL)
+				if (!is.null(fit) && all(is.finite(fit$b))) return(c(fit$b, 0.0))
 			}
-			# fallback
-			p = if (is.null(data_parts$X_disc)) 0L else ncol(data_parts$X_disc)
-			return(rep(0, p + 2))
+			p = if (is.null(data_parts$X_disc)) 0L else max(ncol(data_parts$X_disc) - 1L, 0L)
+			return(rep(0, p + 3)) # [Intercept, beta_T, beta_xs, log_sigma]
 		},
 
 		# Overridden by concrete classes
 		combine_reservoir_into_glmm = function() TRUE,
 
 		compute_basic_match_data = function(){
-			# Standard Zhang-style summary
 			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$get_X())
 		},
 

@@ -108,6 +108,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		# Fit the combined logistic likelihood over discordant matched-pair differences
 		# and reservoir observations with SHARED covariate effects beta_xs.
 		shared_combined_likelihood = function(estimate_only = FALSE){
+			print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))

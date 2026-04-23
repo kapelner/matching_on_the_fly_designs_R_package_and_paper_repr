@@ -55,18 +55,32 @@ inline double soft_barrier_hp(double log_sigma, double center = 5.0, double scal
 	return scale * d * d;
 }
 
+inline double soft_barrier_hp_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
+	const double d = std::abs(log_sigma) - center;
+	if (d <= 0.0) return 0.0;
+	return 2.0 * scale;
+}
+
 // log(1 - exp(-lambda)) with numerical stability
 inline double log_one_minus_exp_neg(double lambda) {
 	if (lambda > 30.0) return std::log1p(-std::exp(-lambda));
-	if (lambda < 1e-10) return std::log(lambda);  // log(1-exp(-lambda)) ≈ log(lambda) for small lambda
+	if (lambda < 1e-10) return std::log(lambda);
 	return std::log1p(-std::exp(-lambda));
 }
 
 // Score d/d(eta) of log TruncPoisson(y; exp(eta)) = y - lambda / (1 - exp(-lambda))
 inline double trunc_poisson_score(double y, double lambda) {
-	if (lambda > 30.0) return y - lambda;          // 1 - exp(-lambda) ≈ 1
-	if (lambda < 1e-8) return y - 1.0;             // lambda / (1 - exp(-lambda)) → 1
+	if (lambda > 30.0) return y - lambda;
+	if (lambda < 1e-8) return y - 1.0;
 	return y - lambda / (1.0 - std::exp(-lambda));
+}
+
+inline double trunc_poisson_hessian(double lambda) {
+	if (lambda > 30.0) return -lambda;
+	if (lambda < 1e-8) return -lambda / 2.0;
+	double exp_neg = std::exp(-lambda);
+	double one_minus = 1.0 - exp_neg;
+	return -lambda * (one_minus - lambda * exp_neg) / (one_minus * one_minus);
 }
 
 struct HurdlePoissonGLMMData {
@@ -182,7 +196,89 @@ public:
 	}
 
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-		return numerical_hessian(*this, par);
+		const int total = dat.p + 1;
+		const double log_sigma = par[dat.p];
+		const double sigma = std::exp(log_sigma);
+		const Eigen::VectorXd beta = par.head(dat.p);
+		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
+		const int n_nodes = (int)b_vals.size();
+
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+		H(dat.p, dat.p) = soft_barrier_hp_hessian(log_sigma);
+
+		for (int gi = 0; gi < dat.G; gi++) {
+			const int start = dat.grp_start[gi];
+			const int sz    = dat.grp_size[gi];
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+			const Eigen::VectorXd eta0 = Xg * beta;
+
+			Eigen::VectorXd log_terms(n_nodes);
+			std::vector<Eigen::VectorXd> lambda_nodes(n_nodes);
+			for (int k = 0; k < n_nodes; k++) {
+				double ll = dat.gh.log_norm_weights[k];
+				lambda_nodes[k].resize(sz);
+				for (int r = 0; r < sz; r++) {
+					const double eta = eta0[r] + b_vals[k];
+					const double lam = std::exp(std::min(eta, 700.0));
+					lambda_nodes[k][r] = lam;
+					ll += dat.y_s[start + r] * eta - lam - dat.log_fact_y[start + r] - log_one_minus_exp_neg(lam);
+				}
+				log_terms[k] = ll;
+			}
+			const double ll_g = log_sum_exp_hp(log_terms);
+
+			Eigen::MatrixXd E_Hik = Eigen::MatrixXd::Zero(total, total);
+			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
+			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
+
+			for (int k = 0; k < n_nodes; k++) {
+				const double pk = std::exp(log_terms[k] - ll_g);
+				if (pk < 1e-15) continue;
+
+				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
+				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
+
+				double sum_res = 0.0;
+				double sum_d2e = 0.0;
+				std::vector<double> res_k(sz);
+				std::vector<double> d2e_k(sz);
+
+				for (int r = 0; r < sz; r++) {
+					res_k[r] = trunc_poisson_score(dat.y_s[start + r], lambda_nodes[k][r]);
+					d2e_k[r] = trunc_poisson_hessian(lambda_nodes[k][r]);
+					sum_res += res_k[r];
+					sum_d2e += d2e_k[r];
+				}
+
+				for (int j = 0; j < dat.p; j++) {
+					for (int r = 0; r < sz; r++) G_ik[j] += res_k[r] * Xg(r, j);
+					for (int c = 0; c <= j; c++) {
+						double val = 0;
+						for (int r = 0; r < sz; r++) val += d2e_k[r] * Xg(r, j) * Xg(r, c);
+						H_ik(j, c) += val;
+					}
+				}
+
+				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+				G_ik[dat.p] = sum_res * node_factor * sigma;
+
+				H_ik(dat.p, dat.p) = (sum_d2e * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
+				
+				for (int j = 0; j < dat.p; j++) {
+					double val = 0;
+					for (int r = 0; r < sz; r++) val += d2e_k[r] * Xg(r, j);
+					H_ik(j, dat.p) = val * node_factor * sigma;
+				}
+
+				for (int r1 = 0; r1 < total; r1++) for (int c1 = 0; r1 > c1; c1++) H_ik(r1, c1) = H_ik(c1, r1);
+
+				E_Hik += pk * H_ik;
+				G_avg += pk * G_ik;
+				E_GiGiT += pk * (G_ik * G_ik.transpose());
+			}
+			H -= (E_Hik + E_GiGiT - G_avg * G_avg.transpose());
+		}
+		return H;
 	}
 };
 
