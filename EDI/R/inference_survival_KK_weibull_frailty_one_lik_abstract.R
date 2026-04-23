@@ -26,7 +26,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -50,6 +50,9 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -64,6 +67,9 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
+			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -74,9 +80,65 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 
 	private = list(
 
-		use_rcpp = TRUE,
+			use_rcpp = TRUE,
 
-		build_design_matrix = function(){
+			get_standard_error = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$cached_values$df %||% NA_real_
+			},
+
+			supports_likelihood_tests = function(){
+				isTRUE(private$use_rcpp)
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared_combined_likelihood(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				X_fit = ctx$X
+				y = as.numeric(ctx$y)
+				dead = as.numeric(ctx$dead)
+				group_id = as.integer(ctx$group_id)
+				n_gh = as.integer(ctx$n_gh %||% 20L)
+				max_abs_log_sigma = as.numeric(ctx$max_abs_log_sigma %||% 8.0)
+				list(
+					j = 1L,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_weibull_frailty_cpp(
+							y = y,
+							dead = dead,
+							X = X_fit,
+							group_id = group_id,
+							start = as.numeric(ctx$start),
+							estimate_only = FALSE,
+							n_gh = n_gh,
+							max_abs_log_sigma = max_abs_log_sigma,
+							fixed_idx = 1L,
+							fixed_values = delta,
+							optimization_alg = private$optimization_alg
+						)
+					},
+					score = function(fit){
+						as.numeric(fit$score %||% get_weibull_frailty_score_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+					},
+					observed_information = function(fit){
+						as.matrix(fit$observed_information %||% fit$information %||% -get_weibull_frailty_hessian_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+					},
+					information = function(fit){
+						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+					},
+					neg_loglik = function(fit){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_weibull_frailty_neg_loglik_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+					}
+				)
+			},
+
+			build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
 			if (ncol(as.matrix(private$X)) > 0){
@@ -93,11 +155,13 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			X_full
 		},
 
-		shared_rcpp = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			shared_rcpp = function(estimate_only = FALSE){
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$cached_values$likelihood_test_context = NULL
+				private$cached_mod = NULL
 
-			if (is.null(private$cached_values$KKstats)){
+				if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
 
@@ -143,17 +207,28 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				return(invisible(NULL))
 			}
 
-			beta = as.numeric(res$b)[1L]
-			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+				beta = as.numeric(res$b)[1L]
+				private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+				private$cached_mod = res
+				private$cached_values$likelihood_test_context = list(
+					X = X_full,
+					y = as.numeric(private$y),
+					dead = as.numeric(private$dead),
+					group_id = as.integer(cluster_id),
+					start = as.numeric(res$params %||% c(as.numeric(res$b), as.numeric(res$log_sigma_eps), as.numeric(res$log_sigma_u))),
+					n_gh = 20L,
+					max_abs_log_sigma = 8.0
+				)
 
-			if (!estimate_only){
+				if (!estimate_only){
 				ssq = as.numeric(res$ssq_b_T)
 				se  = if (is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 				private$cached_values$s_beta_hat_T = se
-			}
-			private$cached_values$is_z = TRUE
-			invisible(NULL)
-		},
+				}
+				private$cached_values$is_z = TRUE
+				private$cached_values$df = NA_real_
+				invisible(NULL)
+			},
 
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (private$use_rcpp) return(private$shared_rcpp(estimate_only = estimate_only))

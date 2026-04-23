@@ -30,7 +30,7 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design.")
 				}
 			}

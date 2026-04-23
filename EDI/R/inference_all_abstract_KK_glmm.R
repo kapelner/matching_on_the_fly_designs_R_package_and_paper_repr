@@ -19,12 +19,12 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
-			if (is(des_obj, "FixedDesignBinaryMatch")){
+			if (inherits(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
 			}
 			private$m = des_obj$.__enclos_env__$private$m
@@ -184,6 +184,9 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 					},
 					score = function(fit){
 						as.numeric(fit$score %||% get_logistic_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+					},
+					observed_information = function(fit){
+						as.matrix(fit$information)
 					},
 					information = function(fit){
 						as.matrix(fit$information)

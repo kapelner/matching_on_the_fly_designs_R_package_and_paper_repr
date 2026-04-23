@@ -301,11 +301,32 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eig
     Eigen::MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
     res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
     res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+    Eigen::VectorXd score = get_logistic_regression_score_cpp(Xmm, y, res.b);
+    Eigen::MatrixXd information = res.XtWX;
+    Eigen::VectorXd eta = Xmm * res.b;
+    double neg_loglik = 0.0;
+    for (int i = 0; i < eta.size(); ++i) {
+        double log_one_plus_exp_eta = (eta[i] > 0.0) ?
+            eta[i] + std::log1p(std::exp(-eta[i])) :
+            std::log1p(std::exp(eta[i]));
+        neg_loglik += log_one_plus_exp_eta - y[i] * eta[i];
+    }
 
     return List::create(
         Named("b") = res.b,
+        Named("params") = res.b,
         Named("ssq_b_j") = res.ssq_b_j,
         Named("ssq_b_2") = res.ssq_b_2,
-        Named("vcov") = vcov
+        Named("vcov") = vcov,
+        Named("score") = score,
+        Named("observed_information") = information,
+        Named("fisher_information") = information,
+        Named("information") = information,
+        Named("information_type") = "fisher",
+        Named("hessian") = -information,
+        Named("neg_loglik") = neg_loglik,
+        Named("neg_ll") = neg_loglik,
+        Named("loglik") = R_finite(neg_loglik) ? -neg_loglik : NA_REAL,
+        Named("converged") = res.converged
     );
 }

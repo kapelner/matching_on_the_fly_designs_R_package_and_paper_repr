@@ -393,7 +393,10 @@ List fast_clogit_plus_glmm_cpp(
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
 		return List::create(
+			Named("params") = par,
 			Named("b") = par,
+			Named("beta_T") = NA_REAL,
+			Named("se_beta_T") = NA_REAL,
 			Named("ssq_b_j") = NA_REAL,
 			Named("converged") = false,
 			Named("neg_loglik") = NA_REAL
@@ -402,21 +405,37 @@ List fast_clogit_plus_glmm_cpp(
 
 	const int j_beta_T = has_concordant ? 1 : 0; // 0-based
 	double ssq_b_j = NA_REAL;
+	Eigen::MatrixXd info = obj.hessian(par);
+	Eigen::VectorXd score(par.size());
+	obj(par, score);
+	score = -score;
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(par.size(), par.size(), NA_REAL);
 	if (!estimate_only && converged) {
-		Eigen::MatrixXd info = obj.hessian(par);
 		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
 		if (ldlt.info() == Eigen::Success) {
 			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
-			Eigen::MatrixXd inv = expand_free_covariance(par.size(), fixed_spec, inv_free, true);
-			if (inv.allFinite()) ssq_b_j = inv(j_beta_T, j_beta_T);
+			vcov = expand_free_covariance(par.size(), fixed_spec, inv_free, true);
+			if (vcov.allFinite()) ssq_b_j = vcov(j_beta_T, j_beta_T);
 		}
 	}
+	double se_beta_T = (std::isfinite(ssq_b_j) && ssq_b_j > 0.0) ? std::sqrt(ssq_b_j) : NA_REAL;
 
 	return List::create(
+		Named("params") = par,
 		Named("b") = par,
+		Named("beta_T") = par[j_beta_T],
+		Named("se_beta_T") = se_beta_T,
 		Named("ssq_b_j") = ssq_b_j,
+		Named("vcov") = vcov,
+		Named("score") = score,
+		Named("observed_information") = info,
+		Named("information") = info,
+		Named("information_type") = "observed",
+		Named("hessian") = -info,
 		Named("converged") = converged,
-		Named("neg_loglik") = neg_ll
+		Named("neg_loglik") = neg_ll,
+		Named("neg_ll") = neg_ll,
+		Named("loglik") = R_finite(neg_ll) ? -neg_ll : NA_REAL
 	);
 }

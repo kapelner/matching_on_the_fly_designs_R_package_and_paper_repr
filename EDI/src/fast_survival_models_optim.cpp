@@ -505,13 +505,26 @@ List fast_clayton_weibull_aft_optim_cpp(
         return List::create(Named("converged") = false, Named("error") = "unknown");
     }
     params = fit.params;
+    Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(y, dead, X, pair_idx, singleton_rows, params);
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
 
     return List::create(
         Named("par") = params,
+        Named("params") = params,
+        Named("b") = params,
         Named("value") = fit.value,
+        Named("neg_loglik") = fit.value,
+        Named("neg_ll") = fit.value,
+        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
         Named("converged") = fit.converged,
-        Named("hessian") = fun.hessian(params)
+        Named("score") = score,
+        Named("observed_information") = observed_information,
+        Named("information") = observed_information,
+        Named("information_type") = "observed",
+        Named("hessian") = -observed_information,
+        Named("vcov") = vcov
     );
 }
 
@@ -540,12 +553,25 @@ List fast_dep_cens_transform_optim_cpp(
         return List::create(Named("converged") = false, Named("error") = "unknown");
     }
     params = fit.params;
+    Eigen::VectorXd score = get_dep_cens_transform_score_cpp(y, dead, X, params);
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
 
     return List::create(
         Named("par") = params,
+        Named("params") = params,
+        Named("b") = params,
         Named("value") = fit.value,
+        Named("neg_loglik") = fit.value,
+        Named("neg_ll") = fit.value,
+        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
         Named("converged") = fit.converged,
-        Named("hessian") = fun.hessian(params)
+        Named("score") = score,
+        Named("observed_information") = observed_information,
+        Named("information") = observed_information,
+        Named("information_type") = "observed",
+        Named("hessian") = -observed_information,
+        Named("vcov") = vcov
     );
 }

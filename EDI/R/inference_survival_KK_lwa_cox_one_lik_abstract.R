@@ -71,6 +71,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 		best_Xmm_colnames = NULL,
+		optimization_alg = "lbfgs",
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
@@ -79,21 +80,30 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		},
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Re-read w, y, dead because they might have been transformed for randomization
+			private$w = private$des_obj_priv_int$w
+			private$y = private$des_obj_priv_int$y
+			private$dead = private$des_obj_priv_int$dead
+			
+			# Recompute basic match data for the new w/y/dead
+			private$compute_basic_match_data()
+			
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_Xmm_colnames)){
 				private$shared_combined_likelihood(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
 			if (is.null(private$best_Xmm_colnames)){
-				return(self$compute_estimate(estimate_only = estimate_only))
-			}
-
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
+				return(NA_real_)
 			}
 
 			X_data = private$get_X()
-			X_full = cbind(w = private$w, X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE])
+			X_full = matrix(private$w, ncol = 1)
+			colnames(X_full) = "w"
+			X_covs_filtered = X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE]
+			if (ncol(X_covs_filtered) > 0){
+				X_full = cbind(X_full, X_covs_filtered)
+			}
 			
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -103,7 +113,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			cluster_ids = m_vec
 			res_idx = which(cluster_ids == 0L)
 			if (length(res_idx) > 0L){
-				max_m = max(cluster_ids)
+				max_m = if (any(cluster_ids > 0)) max(cluster_ids) else 0L
 				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
 
@@ -118,15 +128,16 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				),
 				error = function(e) NULL
 			)
-			if (is.null(fit) || !is.finite(fit$coefficients[1])) return(NA_real_)
+			if (is.null(fit) || length(fit$coefficients) < 1 || !is.finite(fit$coefficients[1])) return(NA_real_)
 			as.numeric(fit$coefficients[1])
 		},
 
 		design_matrix_candidates = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			if (ncol(as.matrix(private$X)) > 0 && ncol(private$get_X()) > 0L){
-				X_full = cbind(X_full, as.matrix(private$get_X()))
+			X_covs = private$get_X()
+			if (ncol(as.matrix(X_covs)) > 0){
+				X_full = cbind(X_full, as.matrix(X_covs))
 			}
 			X_full
 		},

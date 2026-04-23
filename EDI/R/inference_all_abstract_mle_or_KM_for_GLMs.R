@@ -69,13 +69,26 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
 
 			null_fit = tryCatch(spec$fit_null(delta), error = function(e) NULL)
-			if (is.null(null_fit) || is.null(null_fit$b) || length(null_fit$b) < j || !is.finite(null_fit$b[j])) {
+			null_params = null_fit$b %||% null_fit$params
+			if (is.null(null_fit) || is.null(null_params) || length(null_params) < j || !is.finite(null_params[j])) {
 				return(NA_real_)
 			}
 
 			if (testing_type == "score") {
 				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch(spec$information(null_fit), error = function(e) NULL)
+				information = tryCatch({
+					if (!is.null(spec$fisher_information)) {
+						spec$fisher_information(null_fit)
+					} else if (!is.null(null_fit$fisher_information)) {
+						null_fit$fisher_information
+					} else if (!is.null(spec$observed_information)) {
+						spec$observed_information(null_fit)
+					} else if (!is.null(null_fit$observed_information)) {
+						null_fit$observed_information
+					} else {
+						spec$information(null_fit)
+					}
+				}, error = function(e) NULL)
 				if (is.null(score) || is.null(information)) return(NA_real_)
 				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
 				return(as.numeric(res$p_value %||% res))

@@ -30,7 +30,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -88,7 +88,12 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		cox_design_candidates = function(w, X){
-			X_full = cbind(w = w, as.matrix(X))
+			X_full = matrix(w, ncol = 1)
+			colnames(X_full) = "w"
+			X_covs = as.matrix(X)
+			if (ncol(X_covs) > 0L){
+				X_full = cbind(X_full, X_covs)
+			}
 			if (!private$harden || ncol(X_full) <= 1L){
 				return(list(X_full))
 			}
@@ -106,7 +111,11 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			X_cov_orig = X_full[, -1, drop = FALSE]
 			for (thresh in thresholds){
 				X_cov = drop_highly_correlated_cols(X_cov_orig, threshold = thresh)$M
-				X_try = cbind(w = w, X_cov)
+				X_try = matrix(w, ncol = 1)
+				colnames(X_try) = "w"
+				if (ncol(X_cov) > 0){
+					X_try = cbind(X_try, X_cov)
+				}
 				attempt_try = private$fit_with_hardened_qr_column_dropping(
 					X_full = X_try,
 					required_cols = 1L,

@@ -228,7 +228,19 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 
 			if (testing_type == "score") {
 				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch(spec$information(null_fit), error = function(e) NULL)
+				information = tryCatch({
+					if (!is.null(spec$fisher_information)) {
+						spec$fisher_information(null_fit)
+					} else if (!is.null(null_fit$fisher_information)) {
+						null_fit$fisher_information
+					} else if (!is.null(spec$observed_information)) {
+						spec$observed_information(null_fit)
+					} else if (!is.null(null_fit$observed_information)) {
+						null_fit$observed_information
+					} else {
+						spec$information(null_fit)
+					}
+				}, error = function(e) NULL)
 				if (is.null(score) || is.null(information)) return(NA_real_)
 				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
 				return(as.numeric(res$p_value %||% res))

@@ -37,7 +37,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -130,6 +130,9 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					score = function(fit){
 						get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
 					},
+					fisher_information = function(fit){
+						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+					},
 					information = function(fit){
 						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 					},
@@ -162,11 +165,9 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		# Fit the combined logistic likelihood over discordant matched-pair differences
 		# and reservoir observations with SHARED covariate effects beta_xs.
 			shared_combined_likelihood = function(estimate_only = FALSE){
-				print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
 				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 				private$cached_values$likelihood_test_context = NULL
-				print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -178,7 +179,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 
 			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
-			print(paste("DEBUG: Clogit has_reservoir:", has_reservoir, "m:", m))
 
 			# ---- Build combined design matrix ------------------------------------
 			X_comb   = NULL

@@ -178,6 +178,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				score = function(fit){
 					as.numeric(fit$score %||% get_zinb_score_cpp(y, X_fit, X_fit, as.numeric(fit$params)))
 				},
+				observed_information = function(fit){
+					as.matrix(fit$information)
+				},
 				information = function(fit){
 					as.matrix(fit$information)
 				},

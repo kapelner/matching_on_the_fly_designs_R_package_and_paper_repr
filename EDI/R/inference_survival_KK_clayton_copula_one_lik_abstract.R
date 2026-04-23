@@ -90,7 +90,11 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 			X_data = private$get_X()
 			X_cov = X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE]
-			Xmm = cbind(w = private$w, X_cov)
+			Xmm = matrix(private$w, ncol = 1)
+			colnames(Xmm) = "w"
+			if (ncol(X_cov) > 0){
+				Xmm = cbind(Xmm, X_cov)
+			}
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -114,6 +118,20 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		best_Xmm_colnames = NULL,
 		best_par = NULL,
 
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Re-read design variables which might have been transformed during randomization
+			private$w = private$des_obj_priv_int$w
+			private$y = private$des_obj_priv_int$y
+			private$dead = private$des_obj_priv_int$dead
+			
+			# Recompute basic match data for the new w/y/dead
+			private$compute_basic_match_data()
+			
+			# Use the same joint-likelihood logic for the point estimate
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
@@ -127,10 +145,8 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		},
 
 		shared = function(estimate_only = FALSE){
-			print(paste("DEBUG: Clayton Copula OneLik shared called for", class(self)[1], "estimate_only=", estimate_only))
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			print("DEBUG: Proceeding with Clayton OneLik shared logic")
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
@@ -141,7 +157,6 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-			print(paste("DEBUG: Clayton Copula has_reservoir:", nRT > 0 && nRC > 0, "m:", m))
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -160,7 +175,9 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 						M = matrix(private$w, ncol = 1)
 						colnames(M) = "w"
 					} else {
-						M = cbind(w = private$w, X_cov)
+						M = matrix(private$w, ncol = 1)
+						colnames(M) = "w"
+						M = cbind(M, X_cov)
 						qr_M = qr(M)
 						if (qr_M$rank < ncol(M)){
 							keep = qr_M$pivot[seq_len(qr_M$rank)]

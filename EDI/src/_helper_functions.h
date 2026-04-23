@@ -273,8 +273,10 @@ inline Rcpp::List make_uniform_likelihood_fit_result(const Eigen::VectorXd& para
                                                      double neg_loglik,
                                                      bool converged,
                                                      const Eigen::VectorXd& score,
-                                                     const Eigen::MatrixXd& information,
-                                                     bool estimate_only = false) {
+                                                     const Eigen::MatrixXd& observed_information,
+                                                     bool estimate_only = false,
+                                                     const Eigen::MatrixXd* fisher_information = nullptr,
+                                                     const std::string& information_type = "observed") {
     Rcpp::List out = Rcpp::List::create(
         Rcpp::Named("params") = params,
         Rcpp::Named("neg_loglik") = neg_loglik,
@@ -284,9 +286,18 @@ inline Rcpp::List make_uniform_likelihood_fit_result(const Eigen::VectorXd& para
     );
     if (!estimate_only) {
         out["score"] = score;
-        out["information"] = information;
-        out["hessian"] = -information;
-        out["vcov"] = covariance_from_information(information);
+        out["observed_information"] = observed_information;
+        out["hessian"] = -observed_information;
+        if (fisher_information != nullptr) {
+            out["fisher_information"] = *fisher_information;
+            out["information"] = *fisher_information;
+            out["information_type"] = "fisher";
+            out["vcov"] = covariance_from_information(*fisher_information);
+        } else {
+            out["information"] = observed_information;
+            out["information_type"] = information_type;
+            out["vcov"] = covariance_from_information(observed_information);
+        }
     }
     return out;
 }

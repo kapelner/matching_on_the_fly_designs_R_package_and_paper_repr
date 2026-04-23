@@ -30,7 +30,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			if (!private$design_supports_exact_binomial()) {
 				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
 			}
-			if (is(des_obj, "FixedDesignBinaryMatch")) {
+			if (inherits(des_obj, "FixedDesignBinaryMatch")) {
 				private$des_obj_priv_int$ensure_bms_computed()
 			}
 		},

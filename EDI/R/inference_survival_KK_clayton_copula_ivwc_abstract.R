@@ -24,7 +24,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -82,6 +82,17 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		max_abs_reasonable_coef = 1e4,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Re-read design variables which might have been transformed during randomization
+			private$w = private$des_obj_priv_int$w
+			private$y = private$des_obj_priv_int$y
+			private$dead = private$des_obj_priv_int$dead
+			
+			# Recompute basic match data for the new w/y/dead
+			private$compute_basic_match_data()
+			
+			# Clear cached design candidates to allow recalculation if needed
+			private$cached_values$clayton_design_candidates = NULL
+			
 			# Use the same joint-likelihood logic for the point estimate
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -118,7 +129,11 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			} else {
 				cov_candidates = private$filtered_covariate_candidates()
 				for (X in cov_candidates){
-					M = cbind(w = private$w, X)
+					M = matrix(private$w, ncol = 1)
+					colnames(M) = "w"
+					if (ncol(X) > 0){
+						M = cbind(M, X)
+					}
 					# Ensure we drop any additional linear dependencies
 					qr_res = qr(M)
 					if (qr_res$rank < ncol(M)){

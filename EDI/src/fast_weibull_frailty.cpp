@@ -391,9 +391,14 @@ List fast_weibull_frailty_cpp(
 
 	double ssq_b_T = NA_REAL;
 	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(n_par, n_par, NA_REAL);
+	Eigen::VectorXd score = Eigen::VectorXd::Constant(n_par, NA_REAL);
+	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(n_par, n_par, NA_REAL);
 	if (!estimate_only && converged) {
-		Eigen::MatrixXd info = obj.hessian(par);
-		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::VectorXd grad(n_par);
+		obj(par, grad);
+		score = -grad;
+		information = obj.hessian(par);
+		Eigen::MatrixXd info_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
 		if (ldlt.info() == Eigen::Success) {
 			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
@@ -403,12 +408,20 @@ List fast_weibull_frailty_cpp(
 	}
 
 	return List::create(
+		Named("params")        = par,
 		Named("b")             = par.head(p),
 		Named("log_sigma_eps") = par[p],
 		Named("log_sigma_u")   = par[p + 1],
 		Named("ssq_b_T")       = ssq_b_T,
 		Named("vcov")          = vcov,
+		Named("score")         = score,
+		Named("observed_information") = information,
+		Named("information")   = information,
+		Named("information_type") = "observed",
+		Named("hessian")       = -information,
 		Named("converged")     = converged,
-		Named("neg_loglik")    = neg_ll
+		Named("neg_loglik")    = neg_ll,
+		Named("neg_ll")        = neg_ll,
+		Named("loglik")        = R_finite(neg_ll) ? -neg_ll : NA_REAL
 	);
 }

@@ -97,6 +97,9 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				score = function(fit){
 					get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
 				},
+				fisher_information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
 				information = function(fit){
 					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},

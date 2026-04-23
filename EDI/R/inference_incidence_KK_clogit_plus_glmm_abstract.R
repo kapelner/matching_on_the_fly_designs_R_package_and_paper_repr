@@ -50,6 +50,9 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_confidence_interval(alpha = alpha))
+			}
 			private$shared()
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -64,6 +67,9 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
+			if (!identical(self$get_testing_type(), "wald")) {
+				return(super$compute_asymp_two_sided_pval(delta = delta))
+			}
 			private$shared()
 			if (should_run_asserts()) {
 				private$assert_finite_se()
@@ -73,13 +79,83 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 	),
 
 	private = list(
-		max_abs_reasonable_coef = 1e4,
-		max_abs_log_sigma = 8,
+			max_abs_reasonable_coef = 1e4,
+			max_abs_log_sigma = 8,
 
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
+			get_standard_error = function(){
+				private$shared(estimate_only = FALSE)
+				private$cached_values$s_beta_hat_T
+			},
+
+			get_degrees_of_freedom = function(){
+				private$cached_values$df %||% NA_real_
+			},
+
+			supports_likelihood_tests = function(){
+				isTRUE(private$combine_reservoir_into_glmm())
+			},
+
+			get_likelihood_test_spec = function(){
+				private$shared(estimate_only = FALSE)
+				ctx = private$cached_values$likelihood_test_context
+				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+				j_treat = as.integer(ctx$j_treat)
+				list(
+					j = j_treat,
+					full_fit = private$cached_mod,
+					fit_null = function(delta){
+						fast_clogit_plus_glmm_cpp(
+							X_disc = ctx$X_disc,
+							y_disc = ctx$y_disc,
+							X_conc = ctx$X_conc,
+							y_conc = ctx$y_conc,
+							group_conc = ctx$group_conc,
+							start = as.numeric(ctx$start),
+							has_discordant = ctx$has_discordant,
+							has_concordant = ctx$has_concordant,
+							estimate_only = FALSE,
+							max_abs_log_sigma = private$max_abs_log_sigma,
+							fixed_idx = j_treat,
+							fixed_values = delta,
+							optimization_alg = private$optimization_alg
+						)
+					},
+					score = function(fit){
+						get_clogit_plus_glmm_score_cpp(
+							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
+							as.numeric(fit$params %||% fit$b),
+							ctx$has_discordant, ctx$has_concordant,
+							private$max_abs_log_sigma
+						)
+					},
+					observed_information = function(fit){
+						-get_clogit_plus_glmm_hessian_cpp(
+							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
+							as.numeric(fit$params %||% fit$b),
+							ctx$has_discordant, ctx$has_concordant,
+							private$max_abs_log_sigma
+						)
+					},
+					information = function(fit){
+						-get_clogit_plus_glmm_hessian_cpp(
+							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
+							as.numeric(fit$params %||% fit$b),
+							ctx$has_discordant, ctx$has_concordant,
+							private$max_abs_log_sigma
+						)
+					},
+					neg_loglik = function(fit){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll)
+					}
+				)
+			},
+
+			shared = function(estimate_only = FALSE){
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+				private$clear_nonestimable_state()
+				private$cached_values$likelihood_test_context = NULL
+				private$cached_mod = NULL
 
 			data_parts = private$build_clogit_plus_glmm_data()
 			if (is.null(data_parts)){
@@ -94,17 +170,45 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				private$fit_clogit_plus_glmm_ivwc(data_parts, estimate_only = estimate_only)
 			}
 
-			if (is.null(fit)){
+				if (is.null(fit)){
 				private$cache_nonestimable_estimate("clogit_plus_glmm_fit_failed")
 				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
-			}
+				}
 
-			private$cached_values$beta_hat_T = as.numeric(fit$beta_T)
+				if (private$combine_reservoir_into_glmm() && !is.null(fit$mod)) {
+					j_treat = if (isTRUE(data_parts$has_concordant)) 2L else 1L
+					private$cached_mod = fit$mod
+					private$cached_values$likelihood_test_context = list(
+						X_disc = as.matrix(data_parts$X_disc),
+						y_disc = as.numeric(data_parts$y_disc),
+						X_conc = as.matrix(data_parts$X_conc),
+						y_conc = as.numeric(data_parts$y_conc),
+						group_conc = as.integer(data_parts$group_conc),
+						start = as.numeric(fit$mod$b),
+						has_discordant = data_parts$has_discordant,
+						has_concordant = data_parts$has_concordant,
+						j_treat = j_treat
+					)
+				}
+				private$cached_values$beta_hat_T = as.numeric(fit$beta_T)
 			if (!estimate_only) private$cached_values$s_beta_hat_T = as.numeric(fit$se_beta_T)
 			private$cached_values$is_z = TRUE
 			private$cached_values$df = NA_real_
 			invisible(NULL)
+		},
+
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Re-read design variables which might have been transformed during randomization
+			private$w = private$des_obj_priv_int$w
+			private$y = private$des_obj_priv_int$y
+			
+			# Recompute basic match data for the new w/y
+			private$compute_basic_match_data()
+			
+			# Use the same joint-likelihood logic for the point estimate
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
 		},
 
 		assert_finite_se = function(){
@@ -189,7 +293,13 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			}
 
 			if (length(curr_y) > 0L){
-				X_conc = if (p > 0L) cbind(1, curr_w, curr_X) else cbind(1, curr_w)
+				# Ensure consistent n_rows for Intercept and treatment
+				n_conc = length(curr_y)
+				X_conc = if (p > 0L) {
+					cbind(Intercept = rep(1, n_conc), treatment = curr_w, curr_X)
+				} else {
+					cbind(Intercept = rep(1, n_conc), treatment = curr_w)
+				}
 				y_conc = curr_y
 				group_conc = curr_g
 			}
@@ -226,11 +336,12 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				),
 				error = function(e) NULL
 			)
-			if (is.null(res) || !is.finite(res$beta_T)) return(NULL)
-			if (!estimate_only && (!is.finite(res$se_beta_T) || res$se_beta_T <= 0)) return(NULL)
-			
-			res
-		},
+				if (is.null(res) || !is.finite(res$beta_T)) return(NULL)
+				if (!estimate_only && (!is.finite(res$se_beta_T) || res$se_beta_T <= 0)) return(NULL)
+				
+				res$mod = res
+				res
+			},
 
 		fit_clogit_plus_glmm_ivwc = function(data_parts, estimate_only = FALSE){
 			# Fit discordant part (Clogit)

@@ -89,6 +89,16 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 
 	private = list(
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			# Re-read design variables which might have been transformed during randomization
+			private$w = private$des_obj_priv_int$w
+			private$y = private$des_obj_priv_int$y
+			
+			# Recompute basic match data for the new w/y
+			private$compute_basic_match_data()
+			
+			# Clear combined_cov_keep to allow re-reduction if needed
+			private$cached_values$combined_cov_keep = NULL
+			
 			# Use the same joint-likelihood logic for the point estimate
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -114,7 +124,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			},
 
 			supports_likelihood_tests = function(){
-				!is.null(private$cached_values$likelihood_test_context) || TRUE
+				TRUE
 			},
 
 			get_likelihood_test_spec = function(){
@@ -144,6 +154,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					},
 					score = function(fit){
 						as.numeric(fit$score %||% get_cpoisson_combined_score_cpp(yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v, as.numeric(fit$params %||% fit$b)))
+					},
+					fisher_information = function(fit){
+						as.matrix(fit$fisher_information %||% fit$information)
 					},
 					information = function(fit){
 						as.matrix(fit$information %||% -get_cpoisson_combined_hessian_cpp(yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v, as.numeric(fit$params %||% fit$b)))
@@ -280,10 +293,8 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		# The combined case is handled by fast_cpoisson_combined_with_var_cpp
 		# (Newton's method with analytic Fisher-information Hessian).
 		shared_combined_likelihood = function(estimate_only = FALSE){
-				print(paste("DEBUG: Cond Poisson OneLik shared called for", class(self)[1]))
-				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-				private$cached_values$likelihood_test_context = NULL
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))				private$cached_values$likelihood_test_context = NULL
 				private$cached_mod = NULL
 
 			if (is.null(private$cached_values$KKstats)){

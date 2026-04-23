@@ -620,9 +620,9 @@ Design = R6::R6Class("Design",
 		model_formula = NULL,
 		verbose = NULL,
 		design_is_supported_blocking = function(des_obj){
-			is(des_obj, "DesignSeqOneByOneKK14") ||
+			inherits(des_obj, "DesignSeqOneByOneKK14") ||
 				is(des_obj, "FixedDesigniBCRD") ||
-				is(des_obj, "FixedDesignBinaryMatch") ||
+				inherits(des_obj, "FixedDesignBinaryMatch") ||
 				is(des_obj, "FixedDesignBlocking") ||
 				is(des_obj, "FixedDesignOptimalBlocks") ||
 				is(des_obj, "DesignSeqOneByOneSPBR") ||

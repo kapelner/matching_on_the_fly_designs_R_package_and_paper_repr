@@ -242,14 +242,32 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
     MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
 	res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
 	res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+	VectorXd score = get_poisson_regression_score_cpp(Xmm, y, res.b);
+	MatrixXd information = res.XtWX;
+	double neg_loglik = 0.0;
+	for (int i = 0; i < y.size(); ++i) {
+		double eta = clamp_eta_for_exp((Xmm.row(i) * res.b)(0));
+		double mu = std::exp(eta);
+		neg_loglik += mu - y[i] * eta;
+	}
 
 	return List::create(
 		Named("b") = res.b,
+		Named("params") = res.b,
 		Named("ssq_b_j") = res.ssq_b_j,
 		Named("ssq_b_2") = res.ssq_b_2,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
-        Named("vcov") = vcov
+        Named("vcov") = vcov,
+		Named("score") = score,
+		Named("observed_information") = information,
+		Named("fisher_information") = information,
+		Named("information") = information,
+		Named("information_type") = "fisher",
+		Named("hessian") = -information,
+		Named("neg_loglik") = neg_loglik,
+		Named("neg_ll") = neg_loglik,
+		Named("loglik") = R_finite(neg_loglik) ? -neg_loglik : NA_REAL
 	);
 }
 

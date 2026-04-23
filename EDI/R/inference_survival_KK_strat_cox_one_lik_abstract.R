@@ -28,7 +28,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
-				if (!is(des_obj, "DesignSeqOneByOneKK14") && !is(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -101,7 +101,11 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			} else {
 				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
 			}
-			X_fit = if (ncol(X_cov) > 0L) cbind(w = private$w, X_cov) else matrix(private$w, ncol = 1L, dimnames = list(NULL, "w"))
+			X_fit = matrix(private$w, ncol = 1)
+			colnames(X_fit) = "w"
+			if (ncol(X_cov) > 0L){
+				X_fit = cbind(X_fit, X_cov)
+			}
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -121,8 +125,9 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			if (ncol(as.matrix(private$X)) > 0 && ncol(private$get_X()) > 0L){
-				X_full = cbind(X_full, as.matrix(private$get_X()))
+			X_covs = private$get_X()
+			if (ncol(as.matrix(X_covs)) > 0){
+				X_full = cbind(X_full, as.matrix(X_covs))
 			}
 			X_full
 		},
