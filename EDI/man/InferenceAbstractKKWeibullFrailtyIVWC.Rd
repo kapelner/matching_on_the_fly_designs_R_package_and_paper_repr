@@ -11,22 +11,22 @@ Abstract class for Weibull Frailty / Standard Weibull Compound Inference
 }
 \details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
-survival responses using a Gamma-frail Weibull AFT model for matched pairs.
-The matched-pair component uses a shared frailty per pair, fitted using the
-\pkg{parfm} package. The reservoir component uses standard Weibull AFT regression.
+survival responses using a Weibull AFT GLMM for matched pairs.
+The matched-pair component uses a shared log-normal random intercept per pair,
+fitted by the package's native Rcpp likelihood optimizer. The reservoir component uses standard Weibull AFT regression.
 The two treatment-effect estimates are combined by inverse-variance weighting.
 
 
 This compound estimator accounts for the dependence within matched pairs by
 modeling it as a shared frailty.
 
-\strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses \code{parfm::parfm()}
-with \code{formula = survival::Surv(y, dead) ~ w + cluster(pair_id)}.
+\strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses the native
+Rcpp Weibull frailty likelihood with \code{formula = survival::Surv(y, dead) ~ w}
+and a pair-level random intercept.
 
-\strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): \code{parfm} becomes
-unstable with many covariates. We instead fit the multivariate model using
-an all-subject stratified Weibull AFT approach or a reduced set of covariates
-if the full model fails to converge.
+\strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): fits the same
+native Rcpp likelihood with covariate adjustment, dropping rank-deficient
+columns when needed.
 }
 \keyword{internal}
 \section{Super classes}{

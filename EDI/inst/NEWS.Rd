@@ -12,7 +12,7 @@
         }
       \item Support for Zhang (2026) Exact Inference for distribution-free p-values and confidence intervals (Incidence and Quantile Regression).
       \item Standardized all survival-based methodologies to Accelerated Failure Time (AFT) log-time ratios.
-      \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), \pkg{parfm} (Frailty), and \pkg{Rfit} (R-estimation).
+      \item Integrated modern statistical engines: \pkg{glmmTMB} (GLMM), \pkg{fixest} (Fast GLMs), \pkg{aftgee} (Rank AFT), native Rcpp frailty likelihoods, and \pkg{Rfit} (R-estimation).
       \item Support for Stratified Cox and Conditional Poisson regression.
       \item Added LWA-style marginal Cox and Clayton-copula paired-survival inference for KK designs under both IVWC and Combined Likelihood pooling, plus transformation-model survival inference with dependent censoring.
       \item Standalone log-rank inference powered by a new C++ score/variance routine plus automatic covariate-based strata construction.

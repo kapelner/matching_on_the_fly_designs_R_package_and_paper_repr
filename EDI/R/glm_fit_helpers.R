@@ -1,8 +1,154 @@
+#' Fast Logistic Regression (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param	maxit Maximum number of iterations for the algorithm. Defaults to 100.
+#' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"newton_raphson"}, or \code{"irls"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated logistic regression coefficients.}
+#' \item{w}{The weights (mu*(1-mu)) at the final iteration.}
+#' }
+#'
+#' @export
+#' @name fast_logistic_regression_cpp
+NULL
+
 .normalize_optimizer_algorithm = function(optimization_alg, allow_irls = FALSE, default = if (allow_irls) "irls" else "lbfgs"){
 	if (missing(optimization_alg) || is.null(optimization_alg)) optimization_alg = default
 	valid = if (allow_irls) c("irls", "lbfgs", "newton_raphson") else c("lbfgs", "newton_raphson")
 	match.arg(optimization_alg, valid)
 }
+
+#' Fast Cox Proportional Hazards Regression (C++ Backend)
+#'
+#' @param	y Survival times.
+#' @param	dead Event indicator (1 = event, 0 = censored).
+#' @param	X A numeric matrix of predictor variables.
+#' @param start_beta Optional starting values for the coefficients.
+#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
+#'   matrix calculation for speed.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param cluster Optional clustering variable.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{coefficients}{A numeric vector of the estimated regression coefficients.}
+#' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_coxph_regression_cpp
+NULL
+
+#' Fast Weibull Regression (C++ Backend)
+#'
+#' @param	y Survival times.
+#' @param	dead Event indicator (1 = event, 0 = censored).
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
+#'   matrix calculation for speed.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients,
+#' including the intercept.}
+#' \item{log_sigma}{The logarithm of the scale parameter from the Weibull distribution.}
+#' \item{vcov}{The variance-covariance matrix of the estimated coefficients.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_weibull_regression_cpp
+NULL
+
+#' Fast Beta Regression (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
+#' @param	start_phi A numeric value, the starting value for the precision parameter phi.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{coefficients}{A numeric vector of the estimated beta regression coefficients.}
+#' \item{phi}{The estimated precision parameter phi.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_beta_regression_cpp
+NULL
+
+#' Fast Beta Regression with Variance Calculation (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
+#' @param	start_phi A numeric value, the starting value for the precision parameter phi.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{coefficients}{A numeric vector of the obtained Poisson regression coefficients.}
+#' \item{phi}{The estimated precision parameter phi.}
+#' \item{vcov}{The variance-covariance matrix.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_beta_regression_with_var_cpp
+NULL
+
+#' Fast Negative Binomial Regression (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, representing count data.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_neg_bin_cpp
+NULL
+
+#' Fast Negative Binomial Regression with Variance Calculation (C++ Backend)
+#'
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
+#' @param	y A numeric vector of the response variable, representing count data.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+#'
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the obtained Poisson regression coefficients.}
+#' \item{hess_fisher_info_matrix}{The Fisher information matrix.}
+#' \item{neg_ll}{The negative log-likelihood at the final iteration.}
+#' \item{converged}{A logical value indicating whether the algorithm converged.}
+#' }
+#'
+#' @export
+#' @name fast_neg_bin_with_var_cpp
+NULL
 
 #' Fast Ordinary Least Squares (OLS) Regression (C++ Backend)
 #'
@@ -11,11 +157,12 @@
 #' when only the regression coefficients are needed, without variance-covariance matrices
 #' or other statistical inference components.
 #'
-#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param	y A numeric vector of the response variable.
+#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"} or \code{"irls"}.
 #'
-#' @return	A list containing the following components:
+#' @return	A list containing the following component:
 #' \describe{
 #' \item{b}{A numeric vector of the estimated regression coefficients.}
 #' }
@@ -93,6 +240,7 @@ NULL
 #' @param	y A numeric vector of the response variable, expected to be counts.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
 #' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"newton_raphson"}, or \code{"irls"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -114,6 +262,7 @@ NULL
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
 #' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -136,6 +285,7 @@ NULL
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
 #' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -159,6 +309,7 @@ NULL
 #' @param	weights A numeric vector of weights for each observation.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
 #' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -180,6 +331,7 @@ NULL
 #' @param	weights A numeric vector of weights for each observation.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
 #' @param	tol Convergence tolerance. Defaults to 1e-8.
+#' @param optimization_alg Optimization algorithm: \code{"irls"} (default), \code{"newton_raphson"} or \code{"lbfgs"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{
@@ -202,6 +354,7 @@ NULL
 #' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.
 #'
 #' @return	A list containing the following component:
 #' \describe{
@@ -231,33 +384,26 @@ NULL
 #' }
 #'
 #' @export
-fast_logistic_regression = function(Xmm, y, optimization_alg = "irls"){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "irls")
+fast_logistic_regression = function(Xmm, y, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
-	if (optimization_alg != "irls"){
-		return(tryCatch({
-			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(y), optimization_alg = optimization_alg)
+	fit_cpp = function(cpp_alg = optimization_alg){
+		tryCatch({
+			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(y), optimization_alg = cpp_alg)
 			list(b = as.vector(res$b))
-		}, error = function(e) na_b()))
+		}, error = function(e) na_b())
 	}
+	if (!(optimization_alg %in% c("irls", "lbfgs"))) return(fit_cpp())
 	tryCatch({
 	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 		Xmm = Xmm,
 		ybin = as.numeric(y)
 	))
 	b = as.vector(mod$coefficients)
-	if (!all(is.finite(b))) return(na_b())
+	if (!all(is.finite(b))) return(fit_cpp("lbfgs"))
 	list(b = b)
 	}, error = function(e) {
-	mod_canonical = suppressWarnings(
-		stats::glm.fit(x = Xmm, y = as.numeric(y), family = stats::binomial())
-	)
-	# Non-convergence (e.g. complete separation) produces unreliable large-magnitude
-	# coefficients; signal failure with NA so bootstrap callers can discard the sample.
-	if (!isTRUE(mod_canonical$converged)) return(na_b())
-	b = as.vector(mod_canonical$coefficients)
-	if (!all(is.finite(b))) return(na_b())
-	list(b = b)
+		fit_cpp("lbfgs")
 	})
 }
 
@@ -271,6 +417,7 @@ fast_logistic_regression = function(Xmm, y, optimization_alg = "irls"){
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.
 #' @return	A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the obtained logistic regression coefficients.}
@@ -308,8 +455,8 @@ fast_logistic_regression = function(Xmm, y, optimization_alg = "irls"){
 #' }
 #'
 #' @export
-fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "irls"){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "irls")
+fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "lbfgs"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
 	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
 	# but finite value (which passes is.finite() checks and would silently corrupt CIs).
@@ -318,14 +465,15 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 	# Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
 	# 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
 	try_fit = function(X){
-	if (optimization_alg != "irls"){
-		return(tryCatch({
-			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = optimization_alg)
+	fit_cpp = function(cpp_alg = optimization_alg){
+		tryCatch({
+			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = cpp_alg)
 			list(b = as.vector(mod$b), ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = is.null(mod$converged) || isTRUE(mod$converged))
 		}, error = function(e) {
 			list(b = rep(NA_real_, ncol(X)), ssq_b_j = NA_real_, ssq_b_2 = NA_real_, converged = FALSE)
-		}))
+		})
 	}
+	if (!(optimization_alg %in% c("irls", "lbfgs"))) return(fit_cpp())
 	tryCatch({
 		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 			Xmm = X,
@@ -336,13 +484,7 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 		b = as.vector(mod$coefficients)
 		list(b = b, ssq_b_j = mod$se[j]^2, ssq_b_2 = if (length(mod$se) >= 2) mod$se[2]^2 else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
 	}, error = function(e) {
-		# Fallback to standard R glm if fast version fails
-		mod_canonical = stats::glm.fit(x = X, y = as.numeric(y), family = stats::binomial())
-		b = as.vector(mod_canonical$coefficients)
-		R <- qr.R(mod_canonical$qr)
-		Rinv <- backsolve(R, diag(ncol(R)))
-		vcov <- Rinv %*% t(Rinv)
-		list(b = b, ssq_b_j = vcov[j, j], ssq_b_2 = if (ncol(vcov) >= 2) vcov[2, 2] else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+		fit_cpp("lbfgs")
 	})
 	}
 
@@ -375,6 +517,7 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 #'   implementation. If \code{FALSE}, use \pkg{survival::survreg}.
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #' @return	A list containing the following components:
 #' \describe{
 #' \item{coefficients}{A numeric vector of the estimated Weibull regression coefficients,
@@ -516,6 +659,7 @@ sanitize_beta_response = function(y){
 #' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return	A list containing the following component:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
@@ -574,6 +718,7 @@ fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newt
 #' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return	A list containing the following components:
 #' \item{b}{A numeric vector of the estimated beta regression coefficients.}
@@ -630,23 +775,29 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 
 #' Fast Cox Proportional Hazards Regression (R Wrapper)
 #'
-#' This function provides a fast implementation of Cox Proportional Hazards regression
-#' by wrapping the \code{glmnet} package's Cox model with \code{lambda = 0}.
-#' It is designed to efficiently estimate regression coefficients for time-to-event data
-#' without penalization.
+#' This function performs Cox proportional hazards regression using either
+#' \pkg{survival::coxph} or an optimized Rcpp implementation.
+#' It is designed to efficiently estimate regression coefficients for time-to-event data.
 #'
 #' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept term
 #'   is handled implicitly by the Cox model and should not be included in \code{Xmm}.
 #' @param	y A numeric vector representing the observed time (event time or censoring time).
 #' @param	dead A numeric vector (0 or 1) indicating event status (1 for event, 0 for censored).
+#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
+#'   implementation. If \code{FALSE}, use \pkg{glmnet}.
+#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
+#'   matrix calculation for speed.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
-#' @return	A list containing the following component:
-#' \item{b}{A numeric vector of the estimated Cox regression coefficients.}
+#' @return	A list containing the following components:
+#' \describe{
+#' \item{b}{A numeric vector of the estimated regression coefficients.}
+#' \item{vcov}{The variance-covariance matrix of the estimated coefficients (only if \code{estimate_only = FALSE}).}
+#' }
 #'
 #' @details
-#' This function requires the \pkg{glmnet} package, which is listed in Suggests
-#' and is not installed automatically with \pkg{EDI}.
-#' Install \pkg{glmnet} before calling this function.
+#' When \code{use_rcpp = FALSE}, this function requires the \pkg{glmnet} package, 
+#' which is listed in Suggests and is not installed automatically with \pkg{EDI}.
 #'
 #' @export
 #' @examples
@@ -661,29 +812,12 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 #'   dead <- c(1, 1, 0, 1, 0, 1)
 #'   fast_coxph_regression(Xmm, y, dead)
 #' }
-#' Cox PH Regression using survival package or Rcpp (fast)
-#'
-#' This function performs Cox proportional hazards regression using either
-#' \pkg{survival::coxph} or an optimized Rcpp implementation.
-#'
-#' @param	Xmm A numeric matrix of predictor variables.
-#' @param	y Survival times.
-#' @param	dead Event indicator (1 = event, 0 = censored).
-#' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
-#'   implementation. If \code{FALSE}, use \pkg{glmnet}.
-#' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
-#'   matrix calculation for speed.
-#' @return	A list containing the following component:
-#' \describe{
-#' \item{b}{A numeric vector of the estimated regression coefficients.}
-#' \item{vcov}{The variance-covariance matrix of the estimated coefficients (only if \code{estimate_only = FALSE}).}
-#' }
-#' @export
-fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = FALSE){
+fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson"){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	if (use_rcpp) {
 		Xmm = as.matrix(Xmm)
 		res = tryCatch(
-			fast_coxph_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only),
+			fast_coxph_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only, optimization_alg = optimization_alg),
 			error = function(e) stop("Cox PH regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -717,6 +851,7 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 #' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param	y A numeric vector of the response variable, representing count data.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return	A list containing the following component:
 #' \item{b}{A numeric vector of the estimated negative binomial regression coefficients.}
@@ -764,6 +899,7 @@ fast_negbin_regression <- function(Xmm, y, optimization_alg = "newton_raphson") 
 #'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
 #' @param	y A numeric vector of the response variable, representing count data.
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
+#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return	A list containing the following components:
 #' \describe{

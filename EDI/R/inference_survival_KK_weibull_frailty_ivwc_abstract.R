@@ -1,22 +1,22 @@
 #' Abstract class for Weibull Frailty / Standard Weibull Compound Inference
 #'
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' survival responses using a Gamma-frail Weibull AFT model for matched pairs.
-#' The matched-pair component uses a shared frailty per pair, fitted using the
-#' \pkg{parfm} package. The reservoir component uses standard Weibull AFT regression.
+#' survival responses using a Weibull AFT GLMM for matched pairs.
+#' The matched-pair component uses a shared log-normal random intercept per pair,
+#' fitted by the package's native Rcpp likelihood optimizer. The reservoir component uses standard Weibull AFT regression.
 #' The two treatment-effect estimates are combined by inverse-variance weighting.
 #'
 #' @details
 #' This compound estimator accounts for the dependence within matched pairs by
 #' modeling it as a shared frailty.
 #'
-#' \strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses \code{parfm::parfm()}
-#' with \code{formula = survival::Surv(y, dead) ~ w + cluster(pair_id)}.
+#' \strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses the native
+#' Rcpp Weibull frailty likelihood with \code{formula = survival::Surv(y, dead) ~ w}
+#' and a pair-level random intercept.
 #'
-#' \strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): \code{parfm} becomes
-#' unstable with many covariates. We instead fit the multivariate model using
-#' an all-subject stratified Weibull AFT approach or a reduced set of covariates
-#' if the full model fails to converge.
+#' \strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): fits the same
+#' native Rcpp likelihood with covariate adjustment, dropping rank-deficient
+#' columns when needed.
 #'
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
@@ -131,7 +131,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 					dead = private$dead[i_matched],
 					Xmm = Xmm,
 					pair_id = m_vec[i_matched],
-					estimate_only = estimate_only
+					estimate_only = estimate_only,
+					optimization_alg = private$optimization_alg
 				)
 				if (!is.null(fit_m) && is.finite(fit_m$beta)){
 					beta_m = fit_m$beta
@@ -175,7 +176,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				if (estimate_only) {
 					ssq_m_orig = private$cached_values$ssq_beta_T_matched
 					ssq_r_orig = private$cached_values$ssq_beta_T_reservoir
-					if (is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
+					if (!is.null(ssq_m_orig) && !is.null(ssq_r_orig) && is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
 						w_star = ssq_r_orig / (ssq_r_orig + ssq_m_orig)
 						return(w_star * beta_m + (1 - w_star) * beta_r)
 					}
@@ -216,7 +217,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 						dead = private$dead[i_matched],
 						Xmm = X_fit,
 						pair_id = m_vec[i_matched],
-						estimate_only = estimate_only
+						estimate_only = estimate_only,
+						optimization_alg = private$optimization_alg
 					)
 					res
 				},
@@ -305,15 +307,25 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			       (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
 
 			if (m_ok && r_ok){
+				if (estimate_only){
+					if (!is.null(ssq_m) && !is.null(ssq_r) && is.finite(ssq_m) && is.finite(ssq_r)){
+						w_star = ssq_r / (ssq_r + ssq_m)
+						private$cached_values$beta_hat_T = w_star * beta_m + (1 - w_star) * beta_r
+					} else {
+						private$cached_values$beta_hat_T = 0.5 * beta_m + 0.5 * beta_r
+					}
+					return(invisible(NULL))
+				}
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T = beta_m
+				if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T = beta_r
+				if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
 				private$cached_values$beta_hat_T = NA_real_

@@ -17,13 +17,13 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg  Optimization algorithm to use.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "irls"){
+		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "irls")
+			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)

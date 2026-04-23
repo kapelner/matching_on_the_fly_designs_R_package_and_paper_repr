@@ -1,6 +1,4 @@
 test_that("Weibull Frailty Inference works for KK designs", {
-	skip_if_not_installed("parfm")
-	
 	n <- 40
 	# Use KK14 design to ensure we have matches
 	des <- DesignSeqOneByOneKK14$new(n = n, response_type = "survival", verbose = FALSE)

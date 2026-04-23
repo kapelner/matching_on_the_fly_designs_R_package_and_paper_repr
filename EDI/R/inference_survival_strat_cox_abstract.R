@@ -17,14 +17,13 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH
 		#'   optimiser. If \code{FALSE}, use \pkg{survival::coxph}.
-		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default)
-		#'   or \code{"lbfgs"}.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE) {
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFlag(use_rcpp)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$use_rcpp = use_rcpp
 		},
@@ -306,9 +305,10 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
 		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
-		#' @param use_rcpp Logical.
-		#' @param optimization_alg Optimization algorithm.
-		#' @param verbose Logical.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH optimiser. 
+		#'   If \code{FALSE}, use \pkg{survival::coxph}.
+		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE){
 			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose)
 		}

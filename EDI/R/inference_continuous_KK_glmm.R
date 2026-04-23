@@ -24,15 +24,15 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 		#'   Gaussian LMM implementation (no external package required). If \code{FALSE},
 		#'   use \pkg{glmmTMB}.
 		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg The optimization algorithm to use.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"){
+		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			# If using Rcpp, skip glmmTMB package check in the parent initialize.
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 
 			private$use_rcpp = use_rcpp

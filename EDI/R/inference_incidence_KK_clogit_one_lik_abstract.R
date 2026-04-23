@@ -53,6 +53,34 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+
+		#' @description
+		#' Computes an asymptotic confidence interval for the treatment effect.
+		#' @param alpha Significance level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+
+		#' @description
+		#' Computes an asymptotic two-sided p-value for the treatment effect.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 
@@ -82,7 +110,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			private$clear_nonestimable_state()
+			print(paste("DEBUG: Clogit OneLik shared called for", class(self)[1]))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
@@ -94,6 +122,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 
 			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
+			print(paste("DEBUG: Clogit has_reservoir:", has_reservoir, "m:", m))
 
 			# ---- Build combined design matrix ------------------------------------
 			X_comb   = NULL

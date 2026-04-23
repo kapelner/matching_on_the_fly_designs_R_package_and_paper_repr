@@ -114,15 +114,34 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		best_Xmm_colnames = NULL,
 		best_par = NULL,
 
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				return(invisible(NULL))
+			}
+		},
+
+		filtered_covariate_candidates = function(){
+			if (ncol(as.matrix(private$X)) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
+			# Use the helper to get candidates (dropping linearly dependent or high-correlation columns)
+			get_reduced_design_matrix_candidates(as.matrix(private$X))
+		},
+
 		shared = function(estimate_only = FALSE){
+			print(paste("DEBUG: Clayton Copula OneLik shared called for", class(self)[1], "estimate_only=", estimate_only))
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			print("DEBUG: Proceeding with Clayton OneLik shared logic")
 
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
+			KKstats = private$cached_values$KKstats
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			print(paste("DEBUG: Clayton Copula has_reservoir:", nRT > 0 && nRC > 0, "m:", m))
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)

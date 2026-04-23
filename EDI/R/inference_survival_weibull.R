@@ -18,13 +18,13 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg Character scalar specifying the optimization algorithm. 
-		#'   Default \code{"newton_raphson"}.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = "newton_raphson"){
+		#'   Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		}
 	),

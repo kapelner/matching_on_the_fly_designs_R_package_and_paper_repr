@@ -20,9 +20,10 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
 		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
 		#'   the matched-pair component.
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose)
 		}
 	)
 )

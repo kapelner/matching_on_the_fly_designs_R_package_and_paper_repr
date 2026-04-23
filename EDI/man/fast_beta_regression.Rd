@@ -19,6 +19,8 @@ fast_beta_regression(
 
 \item{start_phi}{A numeric value, the starting value for the precision parameter phi.
 Defaults to 10.}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 }
 \value{
 A list containing the following component:

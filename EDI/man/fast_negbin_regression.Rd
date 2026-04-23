@@ -11,6 +11,8 @@ fast_negbin_regression(Xmm, y, optimization_alg = "newton_raphson")
 (e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
 \item{y}{A numeric vector of the response variable, representing count data.}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 }
 \value{
 A list containing the following component:

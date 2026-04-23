@@ -172,6 +172,54 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			}
 		},
 
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			print("DEBUG: Shared method in IVWC called")
+
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+
+			KKstats = private$cached_values$KKstats
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+
+			if (m > 0){
+				private$cpoisson_for_matched_pairs(estimate_only = estimate_only)
+			}
+			beta_m = private$cached_values$beta_T_matched
+			ssq_m = private$cached_values$ssq_beta_T_matched
+			m_ok = !is.null(beta_m) && is.finite(beta_m) && 
+			       (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
+
+			if (nRT > 0 && nRC > 0){
+				private$negbin_for_reservoir(estimate_only = estimate_only)
+			}
+			beta_r = private$cached_values$beta_T_reservoir
+			ssq_r = private$cached_values$ssq_beta_T_reservoir
+			r_ok = !is.null(beta_r) && is.finite(beta_r) && 
+			       (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
+
+			if (m_ok && r_ok){
+				w_star = ssq_r / (ssq_r + ssq_m)
+				private$cached_values$beta_hat_T = w_star * beta_m + (1 - w_star) * beta_r
+				if (estimate_only) return(invisible(NULL))
+				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
+			} else if (m_ok){
+				private$cached_values$beta_hat_T = beta_m
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_m)
+			} else if (r_ok){
+				private$cached_values$beta_hat_T = beta_r
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_r)
+			} else {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+			}
+			private$cached_values$is_z = TRUE
+		},
+
 		cpoisson_for_matched_pairs = function(estimate_only = FALSE){
 			KKstats = private$cached_values$KKstats
 			yT = KKstats$yTs_matched
@@ -180,6 +228,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			# Filter pairs where total count is zero (provide no information for the conditional likelihood)
 			y_total = yT + yC
 			valid_idx = which(y_total > 0)
+			print(paste("DEBUG: cpoisson_for_matched_pairs valid pairs:", length(valid_idx)))
 			if (length(valid_idx) == 0) return(invisible(NULL))
 
 			y_prop = yT[valid_idx] / y_total[valid_idx]
@@ -218,6 +267,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		negbin_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
+			print(paste("DEBUG: negbin_for_reservoir n_r:", length(y_r)))
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
 			j_treat = 2L
 

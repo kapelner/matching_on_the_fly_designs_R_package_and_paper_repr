@@ -20,8 +20,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		#'   design's imputed covariates.
 		#' @param use_rcpp Whether to use the custom Rcpp likelihood optimizer.
 		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg The optimization algorithm to use.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"){
+		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -31,7 +31,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				}
 			}
 			private$use_rcpp = use_rcpp
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
 

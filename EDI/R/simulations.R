@@ -646,6 +646,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }, error = function(e) NA_real_)
 
             # ── Asymptotic ────────────────────────────────────────────────────
+            print(paste("DEBUG: inf_name =", inf_name, "is_asymp =", is(inf_obj, "InferenceAsymp"), "want_asymp_pval =", private$want_asymp_pval))
             if (is(inf_obj, "InferenceAsymp") &&
                 (private$want_asymp_ci || private$want_asymp_pval)) {
               pval_a = if (private$want_asymp_pval) {
@@ -868,11 +869,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
            .SDcols = c("estimate", "ci_lo", "ci_hi", "pval", "true_estimand")]
       } else {
         agg = data.table::data.table(design = character(), inference = character(),
-                                     method = character())
+                                     method = character(), power = numeric(), MSE = numeric(),
+                                     n_est = integer(), n_pow = integer())
       }
 
       # ── Right-join: every valid combo appears, NA for those with no data ──────
       result = agg[ref_grid, on = .(design, inference, method)]
+      
+      # Ensure n_est and n_pow are present and replace NA with 0
+      if (!"n_est" %in% names(result)) result[, n_est := 0L]
+      if (!"n_pow" %in% names(result)) result[, n_pow := 0L]
+      result[is.na(n_est), n_est := 0L]
+      result[is.na(n_pow), n_pow := 0L]
+      
       result[order(design, inference, method)]
     },
 

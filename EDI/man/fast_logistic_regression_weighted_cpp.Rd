@@ -14,6 +14,8 @@
 \item{maxit}{Maximum number of iterations for the IRLS algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.}
 }
 \value{
 A list containing the following components:

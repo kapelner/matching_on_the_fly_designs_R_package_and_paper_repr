@@ -19,13 +19,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "newton_raphson"){
+		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)

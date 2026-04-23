@@ -4,13 +4,15 @@
 \alias{fast_ols_cpp}
 \title{Fast Ordinary Least Squares (OLS) Regression (C++ Backend)}
 \arguments{
-\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{X} if desired.}
+\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
-\item{y}{A numeric vector of the response variable.}
+\item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"} or \code{"irls"}.}
 }
 \value{
-A list containing the following components:
+A list containing the following component:
 \describe{
 \item{b}{A numeric vector of the estimated regression coefficients.}
 }

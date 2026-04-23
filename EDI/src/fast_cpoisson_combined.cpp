@@ -219,6 +219,9 @@ List fast_cpoisson_combined_with_var_cpp(
 
 	// ---- Extract Var(beta_T) from H^{-1}[1,1] (1-based index 2) ---------
 	double ssq_b_j = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(H, 2);
+	if (!converged || !std::isfinite(ssq_b_j)) {
+		Rcout << "DEBUG C++: converged=" << converged << " ssq_b_j=" << ssq_b_j << std::endl;
+	}
 
 	return List::create(
 		Named("b")         = params,

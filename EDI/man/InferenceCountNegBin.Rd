@@ -65,7 +65,7 @@ Initialize a negative binomial regression inference object.
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
-  optimization_alg = "newton_raphson"
+  optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -81,7 +81,7 @@ design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{Optimization algorithm to use.}
+\item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
 }
 \if{html}{\out{</div>}}
 }

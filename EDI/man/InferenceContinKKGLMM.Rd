@@ -71,7 +71,7 @@ Initialize a KK GLMM inference object.
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
-  optimization_alg = "lbfgs"
+  optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -91,7 +91,7 @@ use \pkg{glmmTMB}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{The optimization algorithm to use.}
+\item{\code{optimization_alg}}{The optimization algorithm to use. Default is dispatched via policy.}
 }
 \if{html}{\out{</div>}}
 }

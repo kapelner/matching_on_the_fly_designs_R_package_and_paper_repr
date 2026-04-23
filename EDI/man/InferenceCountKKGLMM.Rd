@@ -68,7 +68,7 @@ Initialize a KK Poisson GLMM inference object.
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
-  optimization_alg = "lbfgs",
+  optimization_alg = NULL,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -82,7 +82,7 @@ Initialize a KK Poisson GLMM inference object.
 
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use the internal Rcpp Poisson GLMM.}
 
-\item{\code{optimization_alg}}{Optimization algorithm: "lbfgs" (default) or "newton_raphson".}
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

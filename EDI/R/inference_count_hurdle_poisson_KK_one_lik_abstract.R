@@ -26,9 +26,9 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param optimization_alg Optimization algorithm: "lbfgs" (default) or "newton_raphson".
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -38,7 +38,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()

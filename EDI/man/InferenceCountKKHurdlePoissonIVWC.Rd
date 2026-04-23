@@ -67,6 +67,7 @@ Initialize the inference object.
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
+  optimization_alg = NULL,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -84,6 +85,8 @@ design's imputed covariates.}
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
 implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
 the matched-pair component.}
+
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

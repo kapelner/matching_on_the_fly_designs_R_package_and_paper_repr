@@ -266,6 +266,9 @@ Inference = R6::R6Class("Inference",
 		#' @return Invisibly returns \code{self}.
 		set_optimization_alg = function(optimization_alg = NULL, allow_irls = private$optimization_alg_allow_irls, default = private$optimization_alg_default){
 			private$optimization_alg_allow_irls = allow_irls
+			if (missing(default) || is.null(default)) {
+				default = edi_optimization_dispatch_policy(class(self)[1])
+			}
 			private$optimization_alg_default = default
 			new_optimization_alg = .normalize_optimizer_algorithm(
 				optimization_alg,

@@ -1,187 +1,251 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 using namespace Rcpp;
 
 namespace {
 
-inline double log1pexp_logistic(double x) {
-    if (x > 0.0) return x + std::log1p(std::exp(-x));
-    return std::log1p(std::exp(x));
+inline double plogis_manual(double x) {
+    if (x > 20.0) return 1.0;
+    if (x < -20.0) return 0.0;
+    return 1.0 / (1.0 + std::exp(-x));
 }
 
-class LogisticNegLogLik {
-private:
-    const Eigen::MatrixXd& m_X;
-    const Eigen::VectorXd& m_y;
-    const Eigen::VectorXd& m_weights;
-    const bool m_use_weights;
-    const int m_n;
-
-public:
-    LogisticNegLogLik(const Eigen::MatrixXd& X,
-                      const Eigen::VectorXd& y,
-                      const Eigen::VectorXd& weights) :
-        m_X(X), m_y(y), m_weights(weights), m_use_weights(weights.size() == X.rows()), m_n(X.rows()) {}
-
-    double operator()(const Eigen::VectorXd& beta, Eigen::VectorXd& grad) {
-        Eigen::VectorXd eta = m_X * beta;
-        Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
-        Eigen::VectorXd wt = m_use_weights ? m_weights : Eigen::VectorXd::Ones(m_n);
-
-        double neg_ll = 0.0;
-        for (int i = 0; i < m_n; ++i) {
-            neg_ll += wt[i] * (log1pexp_logistic(eta[i]) - m_y[i] * eta[i]);
+// Manual LLT (Cholesky) decomposition and solver to avoid Eigen templates
+// A is p*p symmetric, positive definite. b is p*1.
+bool solve_llt_raw(double* x, const double* A, const double* b, int p) {
+    std::vector<double> L(p * p, 0.0);
+    for (int i = 0; i < p; i++) {
+        for (int j = 0; j <= i; j++) {
+            double s = 0;
+            for (int k = 0; k < j; k++) s += L[i * p + k] * L[j * p + k];
+            if (i == j) {
+                double val = A[i * p + i] - s;
+                if (val <= 1e-15) return false;
+                L[i * p + j] = std::sqrt(val);
+            } else {
+                L[i * p + j] = (A[i * p + j] - s) / L[j * p + j];
+            }
         }
-        grad = m_X.transpose() * wt.cwiseProduct(mu - m_y);
-        return neg_ll;
     }
-
-    Eigen::MatrixXd hessian(const Eigen::VectorXd& beta) {
-        Eigen::VectorXd eta = m_X * beta;
-        Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
-        Eigen::VectorXd w = mu.array() * (1.0 - mu.array());
-        if (m_use_weights) w = w.cwiseProduct(m_weights);
-        return m_X.transpose() * w.asDiagonal() * m_X;
+    std::vector<double> y_tmp(p);
+    for (int i = 0; i < p; i++) {
+        double s = 0;
+        for (int k = 0; k < i; k++) s += L[i * p + k] * y_tmp[k];
+        y_tmp[i] = (b[i] - s) / L[i * p + i];
     }
-};
+    for (int i = p - 1; i >= 0; i--) {
+        double s = 0;
+        for (int k = i + 1; k < p; k++) s += L[k * p + i] * x[k];
+        x[i] = (y_tmp[i] - s) / L[i * p + i];
+    }
+    return true;
+}
 
 } // namespace
 
 // Internal pure C++ logic
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, 
-                                              const Eigen::VectorXd& y, 
-                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
+ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen, 
+                                              const Eigen::VectorXd& y_eigen, 
+                                              const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                               std::string optimization_alg = "irls") {
-    int n = X.rows();
-    int p = X.cols();
-    bool use_weights = (weights.size() == n);
+    int n = X_eigen.rows();
+    int p = X_eigen.cols();
+    bool use_weights = (weights_eigen.size() == n);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
-    std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
-    if (alg != "irls") {
-        Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
-        beta = apply_fixed_values(beta, fixed_spec);
-        LogisticNegLogLik fun(X, y, weights);
-        LikelihoodFitResult fit = (alg == "lbfgs") ?
-            optimize_fixed_likelihood_lbfgs(fun, beta, fixed_spec, maxit, tol) :
-            optimize_fixed_likelihood_newton(fun, beta, fixed_spec, maxit, tol);
-
-        ModelResult res;
-        res.b = fit.params;
-        Eigen::VectorXd eta = X * res.b;
-        res.mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
-        Eigen::MatrixXd info_full = fun.hessian(res.b);
-        res.XtWX = info_full;
-        res.converged = fit.converged;
-        return res;
-    }
-
-    const int p_free = fixed_spec.free_idx.size();
-    Eigen::MatrixXd X_free(n, p_free);
-    for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
-    Eigen::VectorXd beta_free = Eigen::VectorXd::Zero(p_free);
-    Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
-    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
-        eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
-    }
+    int p_free = fixed_spec.free_idx.size();
+    std::vector<double> beta_full(p, 0.0);
+    for(size_t j=0; j<fixed_spec.fixed_idx.size(); j++) beta_full[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
     
-    ModelResult res;
-    res.b = Eigen::VectorXd::Zero(p);
-    res.mu = Eigen::VectorXd::Zero(n);
-    Eigen::VectorXd w(n);
-    Eigen::VectorXd z(n);
+    std::vector<double> beta_free(p_free, 0.0);
+    for(int j=0; j<p_free; j++) beta_free[j] = beta_full[fixed_spec.free_idx[j]];
+
+    std::vector<double> eta_fixed(n, 0.0);
+    for(size_t k=0; k<fixed_spec.fixed_idx.size(); k++) {
+        int idx = fixed_spec.fixed_idx[k];
+        double val = fixed_spec.fixed_values[k];
+        for(int i=0; i<n; i++) eta_fixed[i] += X_eigen(i, idx) * val;
+    }
+
+    std::vector<double> X_free_raw(n * p_free);
+    for (int j = 0; j < p_free; ++j) {
+        int col_idx = fixed_spec.free_idx[j];
+        for(int i=0; i<n; i++) X_free_raw[i * p_free + j] = X_eigen(i, col_idx);
+    }
+
+    std::vector<double> mu(n);
+    std::vector<double> w_diag(n);
+    bool converged = false;
+
+    int n_threads = 1;
+    #ifdef _OPENMP
+    n_threads = omp_get_max_threads();
+    #endif
+
+    std::vector<double> score_free(p_free);
+    std::vector<double> final_XtWX(p_free * p_free);
+
+    // Pre-allocate thread-local storage once
+    std::vector<double> XtWX_threads(n_threads * p_free * p_free, 0.0);
+    std::vector<double> score_threads(n_threads * p_free, 0.0);
 
     for (int iter = 0; iter < maxit; iter++) {
-        Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
+        #pragma omp parallel for
         for(int i=0; i<n; i++) {
-            double val = 1.0 / (1.0 + std::exp(-eta[i]));
-            res.mu[i] = val;
-            double base_w = std::max(val * (1.0 - val), 1e-10);
-            w[i] = use_weights ? weights[i] * base_w : base_w;
+            double eta_i = eta_fixed[i];
+            const double* x_ptr = &X_free_raw[i * p_free];
+            for(int j=0; j<p_free; j++) eta_i += x_ptr[j] * beta_free[j];
+            mu[i] = plogis_manual(eta_i);
+            double base_w = std::max(mu[i] * (1.0 - mu[i]), 1e-10);
+            w_diag[i] = use_weights ? weights_eigen[i] * base_w : base_w;
         }
 
-        z = eta + (y - res.mu).cwiseQuotient((res.mu.array() * (1.0 - res.mu.array())).matrix());
-        // Note: The adjusted dependent variable z in IRLS for binomial is eta + (y - mu) / [mu(1-mu)]
-        // The weights in W are weights_i * mu_i * (1-mu_i)
+        std::fill(XtWX_threads.begin(), XtWX_threads.end(), 0.0);
+        std::fill(score_threads.begin(), score_threads.end(), 0.0);
+
+        #pragma omp parallel
+        {
+            int tid = 0;
+            #ifdef _OPENMP
+            tid = omp_get_thread_num();
+            #endif
+            double* t_xtwx = &XtWX_threads[tid * p_free * p_free];
+            double* t_score = &score_threads[tid * p_free];
+
+            #pragma omp for
+            for(int i=0; i<n; i++) {
+                double diff = y_eigen[i] - mu[i];
+                if (use_weights) diff *= weights_eigen[i];
+                double wi = w_diag[i];
+                const double* x_ptr = &X_free_raw[i * p_free];
+                for(int r=0; r<p_free; r++) {
+                    double x_ir = x_ptr[r];
+                    t_score[r] += x_ir * diff;
+                    double xirwi = x_ir * wi;
+                    for(int c=0; c<=r; c++) {
+                        t_xtwx[r * p_free + c] += xirwi * x_ptr[c];
+                    }
+                }
+            }
+        }
+
+        std::fill(final_XtWX.begin(), final_XtWX.end(), 0.0);
+        std::fill(score_free.begin(), score_free.end(), 0.0);
+        for (int t = 0; t < n_threads; ++t) {
+            for(int r=0; r<p_free; r++) {
+                score_free[r] += score_threads[t * p_free + r];
+                for(int c=0; c<=r; c++) final_XtWX[r * p_free + c] += XtWX_threads[t * p_free * p_free + r * p_free + c];
+            }
+        }
+        for (int r = 0; r < p_free; ++r) {
+            for (int c = r + 1; c < p_free; ++c) final_XtWX[r * p_free + c] = final_XtWX[c * p_free + r];
+        }
+
+        std::vector<double> delta(p_free);
+        if (!solve_llt_raw(delta.data(), final_XtWX.data(), score_free.data(), p_free)) break;
         
-        Eigen::VectorXd z_adj = z - eta_fixed;
-        Eigen::MatrixXd XtW = X_free.transpose() * w.asDiagonal();
-        Eigen::MatrixXd XtWX_free = XtW * X_free;
-        Eigen::VectorXd XtWz = XtW * z_adj;
-
-        Eigen::VectorXd beta_new = XtWX_free.ldlt().solve(XtWz);
-
-        if ((beta_free - beta_new).norm() < tol) {
-            beta_free = beta_new;
-            res.converged = true;
-            break;
+        double norm_delta_sq = 0.0;
+        for(int j=0; j<p_free; j++) {
+            beta_free[j] += delta[j];
+            norm_delta_sq += delta[j] * delta[j];
         }
-        beta_free = beta_new;
+        if (std::sqrt(norm_delta_sq) < tol) { converged = true; break; }
     }
 
-    for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = beta_free[j];
-    for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) res.b[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
-
-    // Final update of mu and XtWX
-    Eigen::VectorXd eta = X * res.b;
-    for(int i=0; i<n; i++) {
-        double val = 1.0 / (1.0 + std::exp(-eta[i]));
-        res.mu[i] = val;
-        double base_w = std::max(val * (1.0 - val), 1e-10);
-        w[i] = use_weights ? weights[i] * base_w : base_w;
+    ModelResult res;
+    res.b.resize(p);
+    for(int j=0; j<p; j++) res.b[j] = beta_full[j];
+    for(int j=0; j<p_free; j++) res.b[fixed_spec.free_idx[j]] = beta_free[j];
+    res.mu.resize(n);
+    for(int i=0; i<n; i++) res.mu[i] = mu[i];
+    
+    Eigen::MatrixXd info_free_eigen = Eigen::MatrixXd::Zero(p_free, p_free);
+    for(int r=0; r<p_free; r++) {
+        for(int c=0; c<p_free; c++) info_free_eigen(r, c) = final_XtWX[r * p_free + c];
     }
-    Eigen::MatrixXd info_free = X_free.transpose() * w.asDiagonal() * X_free;
-    res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
-
+    res.XtWX = expand_free_covariance(p, fixed_spec, info_free_eigen, false);
+    res.converged = converged;
     return res;
 }
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
-    Eigen::VectorXd eta = X * beta;
-    Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
-    return X.transpose() * (y - mu);
+    int n = X.rows();
+    int p = X.cols();
+    Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
+    for(int i=0; i<n; i++) {
+        double eta_i = 0.0;
+        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
+        double mu_i = plogis_manual(eta_i);
+        double diff = y[i] - mu_i;
+        for(int j=0; j<p; j++) res[j] += X(i, j) * diff;
+    }
+    return res;
 }
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     int n = X.rows();
-    Eigen::VectorXd eta = X * beta;
-    Eigen::VectorXd w(n);
+    int p = X.cols();
+    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
     for(int i=0; i<n; i++) {
-        double mu_i = 1.0 / (1.0 + std::exp(-eta[i]));
-        w[i] = mu_i * (1.0 - mu_i);
+        double eta_i = 0.0;
+        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
+        double mu_i = plogis_manual(eta_i);
+        double wi = mu_i * (1.0 - mu_i);
+        for(int r=0; r<p; r++) {
+            double xirwi = X(i, r) * wi;
+            for(int c=0; c<=r; c++) res(r, c) += xirwi * X(i, c);
+        }
     }
-    return - (X.transpose() * w.asDiagonal() * X);
+    for (int r = 0; r < p; ++r) {
+        for (int c = r + 1; c < p; ++c) res(r, c) = res(c, r);
+    }
+    return -res;
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
-                                                           const Eigen::VectorXd& y,
-                                                           const Eigen::VectorXd& weights,
-                                                           const Eigen::VectorXd& beta) {
-    Eigen::VectorXd eta = X * beta;
-    Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
-    return X.transpose() * weights.cwiseProduct(y - mu);
-}
-
-// [[Rcpp::export]]
-Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
-                                                             const Eigen::VectorXd& weights,
-                                                             const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
     int n = X.rows();
-    Eigen::VectorXd eta = X * beta;
-    Eigen::VectorXd w(n);
+    int p = X.cols();
+    Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
     for(int i=0; i<n; i++) {
-        double mu_i = 1.0 / (1.0 + std::exp(-eta[i]));
-        w[i] = weights[i] * mu_i * (1.0 - mu_i);
+        double eta_i = 0.0;
+        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
+        double mu_i = plogis_manual(eta_i);
+        double diff = weights[i] * (y[i] - mu_i);
+        for(int j=0; j<p; j++) res[j] += X(i, j) * diff;
     }
-    return - (X.transpose() * w.asDiagonal() * X);
+    return res;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
+    int n = X.rows();
+    int p = X.cols();
+    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
+    for(int i=0; i<n; i++) {
+        double eta_i = 0.0;
+        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
+        double mu_i = plogis_manual(eta_i);
+        double wi = weights[i] * mu_i * (1.0 - mu_i);
+        for(int r=0; r<p; r++) {
+            double xirwi = X(i, r) * wi;
+            for(int c=0; c<=r; c++) res(r, c) += xirwi * X(i, c);
+        }
+    }
+    for (int r = 0; r < p; ++r) {
+        for (int c = r + 1; c < p; ++c) res(r, c) = res(c, r);
+    }
+    return -res;
 }
 
 // [[Rcpp::export]]
@@ -190,9 +254,11 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "irls") {
     ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    Eigen::VectorXd weights_vec(X.rows());
+    for(int i=0; i<X.rows(); i++) weights_vec[i] = res.mu[i] * (1.0 - res.mu[i]);
     return List::create(
         Named("b") = res.b,
-        Named("w") = res.mu.array() * (1.0 - res.mu.array()) // return weights as expected by old code
+        Named("w") = weights_vec
     );
 }
 
@@ -217,8 +283,21 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eig
                                            std::string optimization_alg = "irls") {
     ModelResult res = fast_logistic_regression_internal(Xmm, y, Eigen::VectorXd(), 100, 1e-8, fixed_idx, fixed_values, optimization_alg);
     FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+    
+    int p_free = fixed_spec.free_idx.size();
     Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
-    Eigen::MatrixXd cov_free = info_free.inverse();
+    std::vector<double> info_free_v(p_free * p_free);
+    for(int r=0; r<p_free; r++) for(int c=0; c<p_free; c++) info_free_v[r * p_free + c] = info_free(r, c);
+
+    Eigen::MatrixXd cov_free = Eigen::MatrixXd::Zero(p_free, p_free);
+    for(int col=0; col<p_free; col++) {
+        std::vector<double> b(p_free, 0.0);
+        b[col] = 1.0;
+        std::vector<double> x_sol(p_free);
+        solve_llt_raw(x_sol.data(), info_free_v.data(), b.data(), p_free);
+        for(int r=0; r<p_free; r++) cov_free(r, col) = x_sol[r];
+    }
+    
     Eigen::MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
     res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
     res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;

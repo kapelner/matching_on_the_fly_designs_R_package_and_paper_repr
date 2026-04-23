@@ -70,7 +70,7 @@ Initialize the inference object.
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
-  optimization_alg = "lbfgs",
+  optimization_alg = NULL,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -87,7 +87,7 @@ design's imputed covariates.}
 
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp.}
 
-\item{\code{optimization_alg}}{Optimization algorithm: "lbfgs" (default) or "newton_raphson".}
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

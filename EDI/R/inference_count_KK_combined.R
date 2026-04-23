@@ -16,15 +16,15 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp Poisson GLMM.
-		#' @param optimization_alg Optimization algorithm: "lbfgs" (default) or "newton_raphson".
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$use_rcpp = use_rcpp
 		}

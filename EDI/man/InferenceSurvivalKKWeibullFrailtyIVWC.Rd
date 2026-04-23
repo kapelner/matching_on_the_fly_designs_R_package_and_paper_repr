@@ -10,8 +10,9 @@ Weibull Frailty IVWC Inference for KK Designs
 }
 \details{
 This class implements a compound estimator for KK matching-on-the-fly designs with
-survival responses using a Gamma-frail Weibull AFT model for matched pairs
-and a standard Weibull AFT model for the reservoir. The estimates are combined via IVWC.
+survival responses using a native Rcpp Weibull AFT frailty model for matched
+pairs and a standard Weibull AFT model for the reservoir. The estimates are
+combined via IVWC.
 }
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyIVWC]{EDI::InferenceAbstractKKWeibullFrailtyIVWC}} -> \code{InferenceSurvivalKKWeibullFrailtyIVWC}
@@ -65,7 +66,8 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKWeibullFrailtyIVWC$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -78,6 +80,8 @@ Initialize the inference object.
 covariates from the design object are included. Use \code{~ 1} for univariate.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
 }
 \if{html}{\out{</div>}}
 }

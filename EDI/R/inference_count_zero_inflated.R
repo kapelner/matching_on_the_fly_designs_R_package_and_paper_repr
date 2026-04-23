@@ -32,9 +32,8 @@ InferenceCountZeroInflatedNegBin = R6::R6Class("InferenceCountZeroInflatedNegBin
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
 		#'   implementation. If \code{FALSE}, use \pkg{glmmTMB}.
 		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg Optimization algorithm. Default \code{"lbfgs"} for
-		#'   consistency with the \pkg{glmmTMB} fallback.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"){
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, optimization_alg = optimization_alg)
 		}
 	),

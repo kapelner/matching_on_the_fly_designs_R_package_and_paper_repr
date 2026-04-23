@@ -122,6 +122,15 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			candidates
 		},
 
+		rcpp_cox_fit_is_usable = function(res, estimate_only = FALSE){
+			if (is.null(res) || !isTRUE(res$converged)) return(FALSE)
+			beta = res$coefficients[1L]
+			if (!is.finite(beta) || abs(beta) > private$max_abs_reasonable_coef) return(FALSE)
+			if (estimate_only) return(TRUE)
+			se = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
+			is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -141,34 +150,34 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 
 			# --- Matched pairs: Stratified Cox ---
 			if (m > 0){
-				private$strat_cox_for_matched_pairs()
+				private$strat_cox_for_matched_pairs(estimate_only = estimate_only)
 			}
 			beta_m   = private$cached_values$beta_T_matched
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
-			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+			           (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
 
 			# --- Reservoir: Standard Cox ---
 			if (nRT > 0 && nRC > 0){
-				private$cox_for_reservoir()
+				private$cox_for_reservoir(estimate_only = estimate_only)
 			}
 			beta_r   = private$cached_values$beta_T_reservoir
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
-			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
+			           (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
 
 			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
+				if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T   = beta_m
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T   = beta_r
-				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_r)
 			} else {
 				private$cache_nonestimable_estimate("kk_strat_cox_ivwc_no_usable_component")
 				private$cached_values$is_z = TRUE
@@ -197,7 +206,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 		},
 
-		strat_cox_for_matched_pairs = function(){
+		strat_cox_for_matched_pairs = function(estimate_only = FALSE){
 			private$cached_values$beta_T_matched = NULL
 			private$cached_values$ssq_beta_T_matched = NULL
 
@@ -226,10 +235,10 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_m = as.matrix(private$get_X()[i_matched[i_valid], drop = FALSE])
 				for (X_candidate in private$cox_design_candidates(w_v, X_m)){
 					res_try = tryCatch(
-						fast_stratified_coxph_regression_cpp(y_v, dead_v, X_candidate, strata_v),
+						fast_stratified_coxph_regression_cpp(y_v, dead_v, X_candidate, strata_v, estimate_only = estimate_only),
 						error = function(e) NULL
 					)
-					if (private$rcpp_cox_fit_is_usable(res_try)){
+					if (private$rcpp_cox_fit_is_usable(res_try, estimate_only = estimate_only)){
 						res = res_try
 						break
 					}
@@ -238,22 +247,23 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_mat = matrix(w_v, ncol = 1L)
 				colnames(X_mat) = "w"
 				res = tryCatch(
-					fast_stratified_coxph_regression_cpp(y_v, dead_v, X_mat, strata_v),
+					fast_stratified_coxph_regression_cpp(y_v, dead_v, X_mat, strata_v, estimate_only = estimate_only),
 					error = function(e) NULL
 				)
 			}
 			if (is.null(res)) return(invisible(NULL))
 
 			beta = res$coefficients[1L]
-			se   = sqrt(res$vcov[1L, 1L])
-
-			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
-
-			private$cached_values$beta_T_matched     = beta
-			private$cached_values$ssq_beta_T_matched = se^2
+			private$cached_values$beta_T_matched = beta
+			
+			if (!estimate_only) {
+				se   = sqrt(res$vcov[1L, 1L])
+				if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
+				private$cached_values$ssq_beta_T_matched = se^2
+			}
 		},
 
-		cox_for_reservoir = function(){
+		cox_for_reservoir = function(estimate_only = FALSE){
 			private$cached_values$beta_T_reservoir = NULL
 			private$cached_values$ssq_beta_T_reservoir = NULL
 
@@ -269,10 +279,10 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			if (ncol(as.matrix(private$X)) > 0){
 				for (X_candidate in private$cox_design_candidates(w_r, X_r)){
 					res_try = tryCatch(
-						fast_coxph_regression_cpp(y_r, dead_r, X_candidate),
+						fast_coxph_regression_cpp(y_r, dead_r, X_candidate, estimate_only = estimate_only),
 						error = function(e) NULL
 					)
-					if (private$rcpp_cox_fit_is_usable(res_try)){
+					if (private$rcpp_cox_fit_is_usable(res_try, estimate_only = estimate_only)){
 						res = res_try
 						break
 					}
@@ -282,7 +292,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_mat = matrix(w_r, ncol = 1L)
 				colnames(X_mat) = "w"
 				res = tryCatch(
-					fast_coxph_regression_cpp(y_r, dead_r, X_mat),
+					fast_coxph_regression_cpp(y_r, dead_r, X_mat, estimate_only = estimate_only),
 					error = function(e) NULL
 				)
 			}
@@ -290,12 +300,13 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			if (is.null(res)) return(invisible(NULL))
 
 			beta = res$coefficients[1L]
-			se   = sqrt(res$vcov[1L, 1L])
-
-			if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
-
-			private$cached_values$beta_T_reservoir     = beta
-			private$cached_values$ssq_beta_T_reservoir = se^2
+			private$cached_values$beta_T_reservoir = beta
+			
+			if (!estimate_only) {
+				se   = sqrt(res$vcov[1L, 1L])
+				if (!is.finite(beta) || !is.finite(se) || se <= 0 || se > private$max_abs_reasonable_coef || abs(beta) > private$max_abs_reasonable_coef) return(invisible(NULL))
+				private$cached_values$ssq_beta_T_reservoir = se^2
+			}
 		}
 	)
 )

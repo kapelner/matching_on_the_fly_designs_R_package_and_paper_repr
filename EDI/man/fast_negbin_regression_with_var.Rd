@@ -18,6 +18,8 @@ fast_negbin_regression_with_var(
 \item{y}{A numeric vector of the response variable, representing count data.}
 
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 }
 \value{
 A list containing the following components:

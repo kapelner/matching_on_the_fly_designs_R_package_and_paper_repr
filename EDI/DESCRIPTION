@@ -45,7 +45,6 @@ Suggests:
     nbpMatching,
     nlme,
     ordinal,
-    parfm,
     quantreg,
     Rfit,
     knitr,

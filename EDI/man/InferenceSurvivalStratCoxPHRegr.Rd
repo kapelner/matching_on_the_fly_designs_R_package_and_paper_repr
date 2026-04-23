@@ -77,11 +77,12 @@ Initialize
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default), 
 covariates from the design object are included. Use \code{~ 1} for univariate.}
 
-\item{\code{use_rcpp}}{Logical.}
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use internal Rcpp Cox PH optimiser. 
+If \code{FALSE}, use \pkg{survival::coxph}.}
 
-\item{\code{optimization_alg}}{Optimization algorithm.}
+\item{\code{optimization_alg}}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 
-\item{\code{verbose}}{Logical.}
+\item{\code{verbose}}{Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}
 }

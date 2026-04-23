@@ -275,11 +275,11 @@ get_hurdle_negbin_count_hessian_cpp <- function(Xmm, y, params) {
     .Call(`_EDI_get_hurdle_negbin_count_hessian_cpp`, Xmm, y, params)
 }
 
-fast_hurdle_negbin_cpp <- function(Xmm, y, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
+fast_hurdle_negbin_cpp <- function(Xmm, y, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_hurdle_negbin_cpp`, Xmm, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
-fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
+fast_hurdle_negbin_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
@@ -522,7 +522,7 @@ get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X, weights, beta)
 }
 
-fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
+fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
@@ -530,11 +530,11 @@ fast_poisson_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, to
     .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
-fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
+fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
-fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
+fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
@@ -681,6 +681,18 @@ get_restricted_mean_se_for_group <- function(y, dead) {
 #' @keywords internal
 get_restricted_mean_se_diff <- function(y, dead, w) {
     .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
+}
+
+get_weibull_frailty_neg_loglik_cpp <- function(y, dead, X, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_neg_loglik_cpp`, y, dead, X, group_id, params, n_gh, max_abs_log_sigma)
+}
+
+get_weibull_frailty_score_cpp <- function(y, dead, X, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_score_cpp`, y, dead, X, group_id, params, n_gh, max_abs_log_sigma)
+}
+
+get_weibull_frailty_hessian_cpp <- function(y, dead, X, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_hessian_cpp`, y, dead, X, group_id, params, n_gh, max_abs_log_sigma)
 }
 
 fast_weibull_frailty_cpp <- function(y, dead, X, group_id, start = NULL, estimate_only = FALSE, n_gh = 20L, max_abs_log_sigma = 8.0, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs") {

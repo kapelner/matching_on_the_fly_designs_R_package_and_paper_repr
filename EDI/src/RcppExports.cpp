@@ -2139,6 +2139,57 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_weibull_frailty_neg_loglik_cpp
+double get_weibull_frailty_neg_loglik_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int n_gh, double max_abs_log_sigma);
+RcppExport SEXP _EDI_get_weibull_frailty_neg_loglik_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_weibull_frailty_neg_loglik_cpp(y, dead, X, group_id, params, n_gh, max_abs_log_sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_weibull_frailty_score_cpp
+Eigen::VectorXd get_weibull_frailty_score_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int n_gh, double max_abs_log_sigma);
+RcppExport SEXP _EDI_get_weibull_frailty_score_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_weibull_frailty_score_cpp(y, dead, X, group_id, params, n_gh, max_abs_log_sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_weibull_frailty_hessian_cpp
+Eigen::MatrixXd get_weibull_frailty_hessian_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, const Eigen::VectorXd& params, int n_gh, double max_abs_log_sigma);
+RcppExport SEXP _EDI_get_weibull_frailty_hessian_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP paramsSEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
+    Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_weibull_frailty_hessian_cpp(y, dead, X, group_id, params, n_gh, max_abs_log_sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_weibull_frailty_cpp
 List fast_weibull_frailty_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXi& group_id, Rcpp::Nullable<Rcpp::NumericVector> start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, std::string optimization_alg);
 RcppExport SEXP _EDI_fast_weibull_frailty_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP group_idSEXP, SEXP startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP optimization_algSEXP) {
@@ -3716,6 +3767,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_survival_stat_diff", (DL_FUNC) &_EDI_get_survival_stat_diff, 4},
     {"_EDI_get_restricted_mean_se_for_group", (DL_FUNC) &_EDI_get_restricted_mean_se_for_group, 2},
     {"_EDI_get_restricted_mean_se_diff", (DL_FUNC) &_EDI_get_restricted_mean_se_diff, 3},
+    {"_EDI_get_weibull_frailty_neg_loglik_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_neg_loglik_cpp, 7},
+    {"_EDI_get_weibull_frailty_score_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_score_cpp, 7},
+    {"_EDI_get_weibull_frailty_hessian_cpp", (DL_FUNC) &_EDI_get_weibull_frailty_hessian_cpp, 7},
     {"_EDI_fast_weibull_frailty_cpp", (DL_FUNC) &_EDI_fast_weibull_frailty_cpp, 11},
     {"_EDI_get_weibull_regression_score_cpp", (DL_FUNC) &_EDI_get_weibull_regression_score_cpp, 4},
     {"_EDI_get_weibull_regression_hessian_cpp", (DL_FUNC) &_EDI_get_weibull_regression_hessian_cpp, 4},

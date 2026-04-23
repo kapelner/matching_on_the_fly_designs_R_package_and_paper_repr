@@ -11,6 +11,8 @@ fast_logistic_regression(Xmm, y, optimization_alg = "irls")
 (e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
+
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.}
 }
 \value{
 A list containing the following component:

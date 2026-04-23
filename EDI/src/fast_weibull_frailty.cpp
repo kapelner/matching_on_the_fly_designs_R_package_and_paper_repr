@@ -291,6 +291,51 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
+double get_weibull_frailty_neg_loglik_cpp(
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXd& dead,
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0
+) {
+	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
+	Eigen::VectorXd grad(params.size());
+	return obj(params, grad);
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd get_weibull_frailty_score_cpp(
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXd& dead,
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0
+) {
+	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
+	Eigen::VectorXd grad(params.size());
+	obj(params, grad);
+	return -grad;
+}
+
+// [[Rcpp::export]]
+Eigen::MatrixXd get_weibull_frailty_hessian_cpp(
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXd& dead,
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& params,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0
+) {
+	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
+	return -obj.hessian(params);
+}
+
+// [[Rcpp::export]]
 List fast_weibull_frailty_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& dead,

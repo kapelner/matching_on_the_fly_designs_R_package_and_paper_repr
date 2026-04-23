@@ -226,6 +226,40 @@ get_bootstrap_dispatch_policy = function() {
 
 edi_env$bootstrap_dispatch_policy_config = get_bootstrap_dispatch_policy()
 
+#' Get the default optimization dispatch policy
+#'
+#' Returns EDI's built-in policy for choosing a default optimization algorithm.
+#' Each inference class can override the standard \code{"newton_raphson"} default
+#' via a regular expression pattern.
+#'
+#' @details
+#' The built-in overrides are empirical. Regression models generally default to
+#' \code{"newton_raphson"}, while GLMM and frailty models (which integrate out
+#' random effects) default to \code{"lbfgs"}.
+#'
+#' @return A named list describing the default optimization algorithm configuration.
+#' @export
+get_optimization_dispatch_policy = function() {
+  list(
+    default_alg = "newton_raphson",
+    inference_class_overrides = c(
+      "KKGLMM$"                 = "lbfgs",
+      "KKWeibullFrailtyIVWC$"   = "lbfgs",
+      "KKWeibullFrailtyOneLik$" = "lbfgs",
+      "KKHurdlePoissonIVWC$"    = "lbfgs",
+      "KKHurdlePoissonOneLik$"  = "lbfgs",
+      "KKCPoissonOneLik$"       = "lbfgs",
+      "InferenceCountPoisson$"  = "lbfgs",
+      "InferenceCountQuasiPoisson$" = "lbfgs",
+      "InferenceIncidModifiedPoisson$" = "lbfgs",
+      "InferenceSurvivalKKClaytonCopulaOneLik$" = "lbfgs",
+      "InferenceIncidKKClogitPlusGLMMOneLik$"   = "lbfgs"
+    )
+  )
+}
+
+edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
+
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an
@@ -291,6 +325,32 @@ set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
   edi_env$parallel_dispatch_policy_override = NULL
   invisible(NULL)
 }
+
+#' Update the optimization dispatch policy
+#'
+#' EDI uses an empirical policy to decide the default optimization algorithm
+#' for likelihood-based inference. This function lets the user update that
+#' default policy without editing package internals.
+#'
+#' @param policy Either \code{NULL} or a named list of policy overrides.
+#' @param reset If \code{TRUE}, restore the built-in default policy.
+#'
+#' @return Invisible \code{NULL} or the current policy configuration.
+#' @export
+set_optimization_dispatch_policy = function(policy = NULL, reset = FALSE) {
+  checkmate::assertFlag(reset)
+  if (isTRUE(reset)) {
+    edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
+    return(invisible(edi_env$optimization_dispatch_policy_config))
+  }
+  if (is.null(policy)) {
+    return(invisible(edi_env$optimization_dispatch_policy_config))
+  }
+  checkmate::assertList(policy, names = "named")
+  edi_env$optimization_dispatch_policy_config = utils::modifyList(edi_env$optimization_dispatch_policy_config, policy)
+  invisible(NULL)
+}
+
 
 # Internal helper to get the global fork cluster
 get_global_fork_cluster = function() {
@@ -389,6 +449,25 @@ edi_bootstrap_dispatch_policy = function(inference_class, object = NULL) {
   }
   tolower(default_type)
 }
+
+edi_optimization_dispatch_policy = function(inference_class) {
+  config = edi_env$optimization_dispatch_policy_config
+  inference_class = as.character(inference_class[[1]])
+  overrides = config$inference_class_overrides
+  default_alg = config$default_alg
+  if (is.null(default_alg)) default_alg = "newton_raphson"
+  
+  if (!is.null(overrides) && length(overrides) > 0L) {
+    for (pattern in names(overrides)) {
+      if (is.na(pattern) || pattern == "") next
+      if (grepl(pattern, inference_class, perl = TRUE)) {
+        return(tolower(overrides[[pattern]]))
+      }
+    }
+  }
+  tolower(default_alg)
+}
+
 
 # Internal helper
 set_package_threads = function(num_cores) {

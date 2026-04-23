@@ -1,16 +1,21 @@
 #' Abstract class for Conditional Logistic Compound Inference for KK Designs
 #'
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' binary (incidence) responses using conditional logistic regression for matched pairs.
-#' The matched-pair component uses the conditional likelihood to account for pair-level
-#' fixed effects. The reservoir component uses standard logistic regression.
-#' The two treatment-effect estimates are combined by inverse-variance weighting.
+#' binary (incidence) responses using conditional logistic regression for matched
+#' pairs and ordinary logistic regression for the reservoir. The two treatment-effect
+#' estimates (on the log-odds scale) are combined by inverse-variance weighting.
+#'
+#' @details
+#' The matched-pair component uses the conditional logistic likelihood, which
+#' implicitly accounts for pair-level effects. For the reservoir, standard logistic
+#' regression is used. Both are combined via inverse-variance combination (IVWC).
 #'
 #' @keywords internal
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
+
 		#' @description
 		#' Initialize the inference object.
 		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
@@ -29,6 +34,9 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				}
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			if (should_run_asserts()) {
+				assertNoCensoring(private$any_censoring)
+			}
 		},
 
 		#' @description
@@ -48,18 +56,23 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
 			private$shared()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
 		#' @description
 		#' Computes the asymptotic p-value.
-		#' @param delta                                   The null difference to test against. For
-		#'   any treatment effect at all this is set to zero (the default).
+		#' @param delta                                   The null difference to test against. Default is 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
 			private$shared()
+			if (should_run_asserts()) {
+				private$assert_finite_se()
+			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 
@@ -105,34 +118,19 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				m_vec[is.na(m_vec)] = 0L
 				i_matched = which(m_vec > 0L)
 
-				# Discordant pairs check
-				y_matched = private$y[i_matched]
-				pair_ids_matched = m_vec[i_matched]
-				
-				# Only discordant pairs contribute to clogit
-				disc_pair_ids = integer(0)
-				for (pid in unique(pair_ids_matched)){
-					if (length(unique(y_matched[pair_ids_matched == pid])) > 1L){
-						disc_pair_ids = c(disc_pair_ids, pid)
-					}
-				}
-				
-				if (length(disc_pair_ids) > 0L){
-					i_disc = which(pair_ids_matched %in% disc_pair_ids)
-					X_cov = X_data[i_matched[i_disc], intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
-					Xmm = cbind(w = private$w[i_matched[i_disc]], X_cov)
+				X_cov = X_data[i_matched, intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
+				Xmm = cbind(w = private$w[i_matched], X_cov)
 
-					fit_m = .fit_clogit(
-						y = y_matched[i_disc],
-						Xmm = Xmm,
-						pair_id = pair_ids_matched[i_disc],
-						estimate_only = estimate_only
-					)
-					if (!is.null(fit_m) && is.finite(fit_m$beta)){
-						beta_m = fit_m$beta
-						if (!estimate_only && !is.null(fit_m$ssq) && is.finite(fit_m$ssq) && fit_m$ssq > 0){
-							ssq_m = fit_m$ssq
-						}
+				fit_m = clogit_helper(
+					y_m = private$y[i_matched],
+					X_m = X_cov,
+					w_m = private$w[i_matched],
+					strata_m = m_vec[i_matched]
+				)
+				if (!is.null(fit_m) && is.finite(fit_m$b[2L])){
+					beta_m = fit_m$b[2L]
+					if (!estimate_only && !is.null(fit_m$ssq_b_2) && is.finite(fit_m$ssq_b_2) && fit_m$ssq_b_2 > 0){
+						ssq_m = fit_m$ssq_b_2
 					}
 				}
 			}
@@ -149,22 +147,23 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				X_cov = X_data[i_reservoir, intersect(private$best_Xmm_colnames_reservoir, colnames(X_data)), drop = FALSE]
 				Xmm = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_cov)
 
-				fit_r = .fit_logistic_from_matrix(
-					y = private$y[i_reservoir],
+				fit_r = fast_logistic_regression_with_var(
 					Xmm = Xmm,
-					estimate_only = estimate_only
+					y = private$y[i_reservoir],
+					j = 2L,
+					optimization_alg = private$optimization_alg
 				)
-				if (!is.null(fit_r) && is.finite(fit_r$beta)){
-					beta_r = fit_r$beta
-					if (!estimate_only && !is.null(fit_r$ssq) && is.finite(fit_r$ssq) && fit_r$ssq > 0){
-						ssq_r = fit_r$ssq
+				if (!is.null(fit_r) && is.finite(fit_r$b[2L])){
+					beta_r = fit_r$b[2L]
+					if (!estimate_only && !is.null(fit_r$ssq_b_2) && is.finite(fit_r$ssq_b_2) && fit_r$ssq_b_2 > 0){
+						ssq_r = fit_r$ssq_b_2
 					}
 				}
 			}
 
-			# Pooling
-			m_ok = is.finite(beta_m) && (estimate_only || is.finite(ssq_m))
-			r_ok = is.finite(beta_r) && (estimate_only || is.finite(ssq_r))
+			# Inverse-variance weighted pooling
+			m_ok = is.finite(beta_m) && (!estimate_only && is.finite(ssq_m) || estimate_only)
+			r_ok = is.finite(beta_r) && (!estimate_only && is.finite(ssq_r) || estimate_only)
 
 			if (m_ok && r_ok){
 				if (estimate_only) {
@@ -209,7 +208,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m = private$cached_values$ssq_beta_T_matched
-			m_ok = !is.null(beta_m) && is.finite(beta_m) &&
+			m_ok = !is.null(beta_m) && is.finite(beta_m) && 
 			       (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
 
 			if (nRT > 0 && nRC > 0){
@@ -218,7 +217,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
 			r_ok = !is.null(beta_r) && is.finite(beta_r) &&
-			       !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0
+			       (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
 
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
@@ -227,15 +226,21 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
 				private$cached_values$beta_hat_T = beta_m
-				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_m)
 			} else if (r_ok){
 				private$cached_values$beta_hat_T = beta_r
-				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_r)
 			} else {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 			private$cached_values$is_z = TRUE
+		},
+
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				return(invisible(NULL))
+			}
 		},
 
 		clogit_for_matched_pairs = function(estimate_only = FALSE){
@@ -246,50 +251,20 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			i_matched = which(m_vec > 0L)
 			if (length(i_matched) == 0L) return(invisible(NULL))
 
-			if (ncol(as.matrix(private$X)) == 0L){
-				Xmm = matrix(private$w[i_matched], ncol = 1L)
-				colnames(Xmm) = "w"
-				fit = .fit_clogit(
-					y = private$y[i_matched],
-					Xmm = Xmm,
-					pair_id = m_vec[i_matched],
-					estimate_only = estimate_only
-				)
-				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
-					private$cached_values$beta_T_matched = fit$beta
-					private$cached_values$ssq_beta_T_matched = fit$ssq
-					private$best_Xmm_colnames_matched = "w"
-					return(invisible(NULL))
-				}
-			} else {
-				X_data = private$get_X()
-				X_matched = X_data[i_matched, , drop = FALSE]
-				X_full = cbind(w = private$w[i_matched], X_matched)
-				
-				attempt = private$fit_with_hardened_qr_column_dropping(
-					X_full = X_full,
-					required_cols = 1L, # treatment only
-					fit_fun = function(X_fit){
-						.fit_clogit(
-							y = private$y[i_matched],
-							Xmm = X_fit,
-							pair_id = m_vec[i_matched],
-							estimate_only = estimate_only
-						)
-					},
-					fit_ok = function(mod, X_fit, keep){
-						if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
-						if (estimate_only) return(TRUE)
-						is.finite(mod$ssq) && mod$ssq > 0
-					}
-				)
-				
-				if (!is.null(attempt$fit)){
-					private$cached_values$beta_T_matched = attempt$fit$beta
-					private$cached_values$ssq_beta_T_matched = attempt$fit$ssq
-					private$best_Xmm_colnames_matched = colnames(attempt$X)
-					return(invisible(NULL))
-				}
+			X_data = private$get_X()
+			X_matched = X_data[i_matched, , drop = FALSE]
+
+			fit = clogit_helper(
+				y_m = private$y[i_matched],
+				X_m = X_matched,
+				w_m = private$w[i_matched],
+				strata_m = m_vec[i_matched]
+			)
+			
+			if (!is.null(fit) && is.finite(fit$b[2L])){
+				private$cached_values$beta_T_matched = fit$b[2L]
+				private$cached_values$ssq_beta_T_matched = if (estimate_only) NA_real_ else fit$ssq_b_2
+				private$best_Xmm_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
 			}
 		},
 
@@ -309,23 +284,24 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				X_full = X_full,
 				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit){
-					.fit_logistic_from_matrix(
-						y = private$y[i_reservoir],
+					fast_logistic_regression_with_var(
 						Xmm = X_fit,
-						estimate_only = estimate_only
+						y = private$y[i_reservoir],
+						j = 2L,
+						optimization_alg = private$optimization_alg
 					)
 				},
 				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || !is.finite(mod$beta)) return(FALSE)
+					if (is.null(mod) || !is.finite(mod$b[2L])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq) && mod$ssq > 0
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
 			
 			if (!is.null(attempt$fit)){
-				private$cached_values$beta_T_reservoir = attempt$fit$beta
-				private$cached_values$ssq_beta_T_reservoir = attempt$fit$ssq
-				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X), c("(Intercept)", "w"))
+				private$cached_values$beta_T_reservoir = attempt$fit$b[2L]
+				private$cached_values$ssq_beta_T_reservoir = if (estimate_only) NA_real_ else attempt$fit$ssq_b_2
+				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X_fit), c("(Intercept)", "w"))
 				return(invisible(NULL))
 			}
 		}

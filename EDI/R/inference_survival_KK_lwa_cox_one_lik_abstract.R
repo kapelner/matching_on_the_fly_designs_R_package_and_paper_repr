@@ -2,13 +2,8 @@
 #'
 #' Fits a single joint marginal Cox model over all KK design data for survival
 #' responses. Matched subjects share their pair ID as a cluster, and reservoir
-#' subjects are assigned singleton cluster IDs. The treatment effect is estimated by
-#' the Cox partial likelihood on all data, with Lee-Wei-Amato style cluster-robust
-#' variance treating within-pair correlation as a nuisance.
-#'
-#' Under \code{harden = TRUE}, the multivariate fit preserves the treatment column
-#' and retries reduced covariate sets after QR-based rank reduction. Extreme finite
-#' coefficients / standard errors are rejected and treated as non-estimable.
+#' subjects are treated as independent (unique clusters). Standard errors are
+#' obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 #'
 #' @keywords internal
 InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
@@ -17,15 +12,14 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 	public = list(
 
 		#' @description
-		#' Initialize LWA-style combined-likelihood Cox inference for KK survival data.
-		#' @param des_obj A completed KK design object.
+		#' Initialize the inference object.
+		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose Whether to print progress messages.
-		#' @return A new inference object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		#' @param verbose			Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -38,9 +32,8 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		},
 
 		#' @description
-		#' Compute the treatment estimate.
-		#' @param estimate_only Whether to skip standard-error calculations.
-		#' @return The treatment estimate.
+		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -49,7 +42,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		#' @description
 		#' Compute an asymptotic confidence interval.
 		#' @param alpha Significance level.
-		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -62,9 +54,8 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		},
 
 		#' @description
-		#' Compute an asymptotic two-sided p-value for the treatment effect.
+		#' Compute an asymptotic two-sided p-value.
 		#' @param delta Null treatment effect value.
-		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -81,6 +72,12 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		max_abs_reasonable_coef = 1e4,
 		best_Xmm_colnames = NULL,
 
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				return(invisible(NULL))
+			}
+		},
+
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_Xmm_colnames)){
@@ -91,36 +88,41 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
-			X_data = private$get_X()
-
-			X_cov = if (length(Xmm_cols) == 0L){
-				matrix(0, nrow = private$n, ncol = 0)
-			} else {
-				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
 			}
-			X_fit = if (ncol(X_cov) > 0L) cbind(w = private$w, X_cov) else matrix(private$w, ncol = 1L, dimnames = list(NULL, "w"))
 
+			X_data = private$get_X()
+			X_full = cbind(w = private$w, X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE])
+			
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-			cluster_id = m_vec
-			reservoir_idx = which(cluster_id == 0L)
-			if (length(reservoir_idx) > 0L){
-				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
+
+			# Clusters: pairs + reservoir
+			cluster_ids = m_vec
+			res_idx = which(cluster_ids == 0L)
+			if (length(res_idx) > 0L){
+				max_m = max(cluster_ids)
+				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
 
-			# For estimate_only we skip the sandwich — just need beta
-			res = tryCatch(
-				fast_coxph_regression_cpp(private$y, private$dead, X_fit, estimate_only = TRUE),
+			fit = tryCatch(
+				fast_coxph_regression_cpp(
+					y = private$y,
+					dead = private$dead,
+					X = as.matrix(X_full),
+					cluster = as.integer(cluster_ids),
+					estimate_only = estimate_only,
+					optimization_alg = private$optimization_alg
+				),
 				error = function(e) NULL
 			)
-			if (is.null(res)) return(NA_real_)
-			res$coefficients[1L]
+			if (is.null(fit) || !is.finite(fit$coefficients[1])) return(NA_real_)
+			as.numeric(fit$coefficients[1])
 		},
 
-		build_design_matrix = function(){
+		design_matrix_candidates = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
 			if (ncol(as.matrix(private$X)) > 0 && ncol(private$get_X()) > 0L){
@@ -142,62 +144,51 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 
-			cluster_id = m_vec
-			reservoir_idx = which(cluster_id == 0L)
-			if (length(reservoir_idx) > 0L){
-				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
-			}
-			cl_int = as.integer(cluster_id)
-
-			if (sum(private$dead) == 0L){
-				private$cache_nonestimable_estimate("kk_lwa_cox_combined_no_events")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
+			# Clusters: pairs + reservoir
+			cluster_ids = m_vec
+			res_idx = which(cluster_ids == 0L)
+			if (length(res_idx) > 0L){
+				max_m = max(cluster_ids)
+				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
 
-			X_full = private$build_design_matrix()
+			X_full = private$design_matrix_candidates()
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
-				fit_fun = function(X_fit, keep){
-					res = fast_coxph_regression_cpp(private$y, private$dead, X_fit, cluster = cl_int)
-					res$j_treat = 1L
-					res
+				X_full = X_full,
+				required_cols = 1L, # treatment
+				fit_fun = function(X_fit){
+					fast_coxph_regression_cpp(
+						y = private$y,
+						dead = private$dead,
+						X = as.matrix(X_fit),
+						cluster = as.integer(cluster_ids),
+						estimate_only = estimate_only,
+						optimization_alg = private$optimization_alg
+					)
 				},
 				fit_ok = function(res, X_fit, keep){
-					if (is.null(res)) return(FALSE)
-					beta = tryCatch(res$coefficients[1L], error = function(e) NA_real_)
+					if (is.null(res) || !isTRUE(res$converged)) return(FALSE)
+					beta = res$coefficients[1L]
+					if (!is.finite(beta) || abs(beta) > private$max_abs_reasonable_coef) return(FALSE)
+					if (estimate_only) return(TRUE)
 					se   = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
-					is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef &&
-						is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
+					is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 				}
 			)
 			res = attempt$fit
 			if (!is.null(res)){
 				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "w")
-			}
-			if (is.null(res)){
-				private$cache_nonestimable_estimate("kk_lwa_cox_combined_fit_failed")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			beta = tryCatch(res$coefficients[1L], error = function(e) NA_real_)
-			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-			if (!is.finite(private$cached_values$beta_hat_T) || abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
-				private$cache_nonestimable_estimate("kk_lwa_cox_combined_extreme_estimate")
-				private$cached_values$is_z = TRUE
-				return(invisible(NULL))
-			}
-
-			if (!estimate_only) {
-				se = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
-				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
-				if (!is.finite(private$cached_values$s_beta_hat_T)){
-					private$cache_nonestimable_se("kk_lwa_cox_combined_standard_error_unavailable")
-					private$cached_values$is_z = TRUE
-					return(invisible(NULL))
+				private$cached_values$beta_hat_T = as.numeric(res$coefficients[1])
+				if (!estimate_only) {
+					se = sqrt(res$vcov[1L, 1L])
+					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
+				private$cached_values$is_z = TRUE
+				return(invisible(NULL))
 			}
-			private$clear_nonestimable_state()
+
+			private$cache_nonestimable_estimate("kk_lwa_cox_combined_fit_failed")
 			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		}

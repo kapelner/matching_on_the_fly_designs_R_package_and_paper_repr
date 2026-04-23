@@ -23,8 +23,9 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -34,6 +35,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
 				}
 			}
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (is(des_obj, "FixedDesignBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_bms_computed()
@@ -97,6 +99,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 	private = list(
 		use_rcpp = TRUE,
+		max_abs_reasonable_coef = 1e4,
 
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the fixed-effect coefficient for "w" directly from the fit.
@@ -234,25 +237,76 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		},
 
 		fit_hurdle_for_matched_pairs = function(Xmm, matched_idx, m_vec, se = TRUE){
-			if (private$use_rcpp) {
-				# Use glmmTMB as the engine for our "ourself" path for now, 
-				# but it is managed via the internal dispatch.
-				# In the future, this can be replaced with a pure Rcpp GLMM.
+			X_matched = Xmm[matched_idx, , drop = FALSE]
+			if (is.null(dim(X_matched)) || ncol(X_matched) < 2L) {
+				return(list(beta_hat = NA_real_, se = NA_real_))
 			}
-			
-			X_matched = Xmm[matched_idx, drop = FALSE]
 			reduced = private$reduce_design_matrix_preserving_treatment(X_matched)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				return(list(beta_hat = NA_real_, se = NA_real_))
 			}
 
+			if (private$use_rcpp) {
+				res = private$fit_hurdle_for_matched_pairs_rcpp(
+					X_fit = X_fit,
+					y_fit = private$y[matched_idx],
+					group_id = m_vec[matched_idx],
+					j_treat = reduced$j_treat,
+					se = se
+				)
+				if (is.finite(res$beta_hat) && (!se || (is.finite(res$se) && res$se > 0))) {
+					return(res)
+				}
+			}
+
+			private$fit_hurdle_for_matched_pairs_glmm_tmb(
+				X_fit = X_fit,
+				y_fit = private$y[matched_idx],
+				group_id = m_vec[matched_idx],
+				se = se
+			)
+		},
+
+		fit_hurdle_for_matched_pairs_rcpp = function(X_fit, y_fit, group_id, j_treat, se = TRUE){
+			fit = tryCatch(
+				fast_hurdle_poisson_glmm_cpp(
+					X = as.matrix(X_fit),
+					y = as.numeric(y_fit),
+					group_id = as.integer(group_id),
+					j_T = as.integer(j_treat - 1L),
+					estimate_only = !se,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !isTRUE(fit$converged)) return(list(beta_hat = NA_real_, se = NA_real_))
+
+			beta_hat = as.numeric(fit$b[j_treat])
+			if (!is.finite(beta_hat) || abs(beta_hat) > private$max_abs_reasonable_coef) {
+				return(list(beta_hat = NA_real_, se = NA_real_))
+			}
+			if (!se) return(list(beta_hat = beta_hat, se = 1.0))
+
+			ssq = as.numeric(fit$ssq_b_T)
+			if (!is.finite(ssq) || ssq <= 0) return(list(beta_hat = NA_real_, se = NA_real_))
+			se_val = sqrt(ssq)
+			if (!is.finite(se_val) || se_val <= 0 || se_val > private$max_abs_reasonable_coef) {
+				return(list(beta_hat = NA_real_, se = NA_real_))
+			}
+
+			list(beta_hat = beta_hat, se = se_val)
+		},
+
+		fit_hurdle_for_matched_pairs_glmm_tmb = function(X_fit, y_fit, group_id, se = TRUE){
+			if (!check_package_installed("glmmTMB")) return(list(beta_hat = NA_real_, se = NA_real_))
+
 			pred_df = as.data.frame(X_fit[, -1, drop = FALSE])
 			colnames(pred_df)[1] = "w"
 			dat = data.frame(
-				y = private$y[matched_idx],
+				y = y_fit,
 				pred_df,
-				pair_group = factor(m_vec[matched_idx])
+				pair_group = factor(group_id)
 			)
 
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
@@ -308,7 +362,10 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		},
 
 		fit_poisson_for_reservoir = function(Xmm, reservoir_idx, estimate_only = FALSE){
-			X_res = Xmm[reservoir_idx, drop = FALSE]
+			X_res = Xmm[reservoir_idx, , drop = FALSE]
+			if (is.null(dim(X_res)) || ncol(X_res) < 2L) {
+				return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
+			}
 			reduced = private$reduce_design_matrix_preserving_treatment(X_res)
 			X_fit = reduced$X
 			if (is.null(X_fit) || !is.finite(reduced$j_treat) || nrow(X_fit) <= ncol(X_fit)){

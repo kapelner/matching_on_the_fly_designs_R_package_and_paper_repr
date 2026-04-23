@@ -68,7 +68,7 @@ Initialize a zero-inflated negative binomial inference object.
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
-  optimization_alg = "lbfgs"
+  optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -84,8 +84,7 @@ implementation. If \code{FALSE}, use \pkg{glmmTMB}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{Optimization algorithm. Default \code{"lbfgs"} for
-consistency with the \pkg{glmmTMB} fallback.}
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
 }
 \if{html}{\out{</div>}}
 }

@@ -66,7 +66,7 @@ Initialize the inference object.
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
-  optimization_alg = "lbfgs"
+  optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -82,7 +82,7 @@ covariates from the design object are included. Use \code{~ 1} for univariate.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{The optimization algorithm to use.}
+\item{\code{optimization_alg}}{The optimization algorithm to use. Default is dispatched via policy.}
 }
 \if{html}{\out{</div>}}
 }

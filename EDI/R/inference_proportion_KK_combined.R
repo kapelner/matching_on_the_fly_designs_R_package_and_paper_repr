@@ -61,15 +61,15 @@ InferencePropKKGLMM = R6::R6Class("InferencePropKKGLMM",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp.
-		#' @param optimization_alg Optimization algorithm: "lbfgs" (default) or "newton_raphson".
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "lbfgs")
+			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
 			private$use_rcpp = use_rcpp
 		}

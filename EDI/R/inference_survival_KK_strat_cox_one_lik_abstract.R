@@ -76,6 +76,12 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 		max_abs_reasonable_coef = 1e4,
 		best_Xmm_colnames = NULL,
 
+		assert_finite_se = function(){
+			if (!is.finite(private$cached_values$s_beta_hat_T)){
+				return(invisible(NULL))
+			}
+		},
+
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_Xmm_colnames)){

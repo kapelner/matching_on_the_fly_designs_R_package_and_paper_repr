@@ -14,7 +14,7 @@ ModelResult fast_logistic_regression_internal(
 	double tol = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-	std::string optimization_alg = "irls");
+	std::string optimization_alg = "lbfgs");
 
 namespace {
 
@@ -195,10 +195,10 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 						   double tol = 1e-8,
 						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 						   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-						   std::string optimization_alg = "irls") {
+						   std::string optimization_alg = "lbfgs") {
 	const int n = Xmm.rows();
 	const int p = Xmm.cols();
-	std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
+	std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
 	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 	IntegerVector hurdle_fixed_idx;
 	NumericVector hurdle_fixed_values;
@@ -253,8 +253,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 	double neg_ll = NA_REAL;
 	bool converged = false;
 	try {
-		std::string count_alg = (alg == "irls") ? "lbfgs" : alg;
-		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, count_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, alg, "lbfgs");
 		params = fit.params;
 		neg_ll = fit.value;
         converged = fit.converged;
@@ -282,7 +281,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 									 double tol = 1e-8,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-									 std::string optimization_alg = "irls") {
+									 std::string optimization_alg = "lbfgs") {
 	List fit = fast_hurdle_negbin_cpp(Xmm, y, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);

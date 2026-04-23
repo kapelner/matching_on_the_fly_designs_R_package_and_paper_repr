@@ -192,6 +192,27 @@ simulations/azriel_exact_sims_results.csv
 Rplots.pdf
 simulations/*.pdf
 simulations/*.png
+benchmark_beta_regression.R
+benchmark_glmm.R
+benchmark_hurdle_poisson_glmm.R
+benchmark_ivwc_vs_onelik.R
+benchmark_ivwc_vs_onelik_final.R
+benchmark_stratified_coxph.R
+benchmark_weibull_frailty.R
+benchmark_zinb.R
+check_iterations.R
+check_misalignment.py
+csv_inferences.txt
+csv_inferences_normalized.txt
+exported_inferences.txt
+exported_inferences_normalized.txt
+fix_docs.py
+fix_indentation.py
+ivwc_vs_onelik_power_benchmark.csv
+list_inferences.R
+package_metadata/.~lock.inference_paths_info.csv#
+test_fast_coxph_regression.R
+
 
 
 

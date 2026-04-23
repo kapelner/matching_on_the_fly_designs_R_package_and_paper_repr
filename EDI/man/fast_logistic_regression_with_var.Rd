@@ -4,7 +4,7 @@
 \alias{fast_logistic_regression_with_var}
 \title{Fast Logistic Regression with Variance Calculation (R Wrapper)}
 \usage{
-fast_logistic_regression_with_var(Xmm, y, j = 2, optimization_alg = "irls")
+fast_logistic_regression_with_var(Xmm, y, j = 2, optimization_alg = "lbfgs")
 }
 \arguments{
 \item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
@@ -13,6 +13,8 @@ fast_logistic_regression_with_var(Xmm, y, j = 2, optimization_alg = "irls")
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
 
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
+
+\item{optimization_alg}{Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.}
 }
 \value{
 A list containing the following components:

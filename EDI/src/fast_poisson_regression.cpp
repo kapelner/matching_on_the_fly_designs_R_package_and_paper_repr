@@ -59,12 +59,12 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 double tol = 1e-8,
                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                             std::string optimization_alg = "irls") {
+                             std::string optimization_alg = "lbfgs") {
 	const int n = X.rows();
 	const int p = X.cols();
     bool use_weights = (weights.size() == n);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
-    std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
+    std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", true);
 
     if (alg != "irls") {
         VectorXd beta = VectorXd::Zero(p);
@@ -198,7 +198,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 double tol = 1e-8,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "irls") {
+                                     std::string optimization_alg = "lbfgs") {
 	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
     return List::create(
 		Named("b") = res.b,
@@ -234,7 +234,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 											  double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                              std::string optimization_alg = "irls") {
+                                              std::string optimization_alg = "lbfgs") {
 	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
     FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -261,7 +261,7 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 												   double tol = 1e-8,
                                                    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                   std::string optimization_alg = "irls") {
+                                                   std::string optimization_alg = "lbfgs") {
 	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
     FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
