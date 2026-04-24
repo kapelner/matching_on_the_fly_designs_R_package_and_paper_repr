@@ -84,7 +84,7 @@ test_that("fast KK GEE direct solver matches geepack for binomial and Poisson", 
 			corstr = "exchangeable",
 			std.err = "san.se"
 		)
-		mod_fast <- EDI:::fast_kk_gee_cpp(dat$X, dat$y, dat$group_id, family_str = family)
+		mod_fast <- EDI:::gee_pairs_singletons_cpp(dat$X, dat$y, dat$group_id, family_str = family)
 
 		beta_tol <- if (family == "binomial") 1e-4 else 6e-3
 		se_tol <- if (family == "binomial") 1e-5 else 6e-4

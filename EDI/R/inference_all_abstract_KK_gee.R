@@ -308,7 +308,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			family_str = private$gee_family_str()
 			X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
 			tryCatch({
-				fast_kk_gee_cpp(
+				gee_pairs_singletons_cpp(
 					X = X_rcpp,
 					y = as.numeric(fit_data$y_sorted),
 					group_id = as.integer(fit_data$id_sorted),
@@ -355,7 +355,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			if (private$use_rcpp) {
 				X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
 				res = tryCatch({
-					fast_kk_gee_cpp(
+					gee_pairs_singletons_cpp(
 						X = X_rcpp,
 						y = as.numeric(fit_data$y_sorted),
 						group_id = as.integer(fit_data$id_sorted),

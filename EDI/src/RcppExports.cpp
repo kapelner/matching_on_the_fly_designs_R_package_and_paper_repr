@@ -877,9 +877,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fast_kk_gee_cpp
-List fast_kk_gee_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit, double tol);
-RcppExport SEXP _EDI_fast_kk_gee_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP family_strSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+// gee_pairs_singletons_cpp
+List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit, double tol);
+RcppExport SEXP _EDI_gee_pairs_singletons_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP family_strSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -889,7 +889,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type family_str(family_strSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_kk_gee_cpp(X, y, group_id, family_str, maxit, tol));
+    rcpp_result_gen = Rcpp::wrap(gee_pairs_singletons_cpp(X, y, group_id, family_str, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -3890,7 +3890,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_gaussian_lmm_cpp", (DL_FUNC) &_EDI_fast_gaussian_lmm_cpp, 10},
     {"_EDI_get_gaussian_lmm_score_cpp", (DL_FUNC) &_EDI_get_gaussian_lmm_score_cpp, 4},
     {"_EDI_get_gaussian_lmm_fisher_cpp", (DL_FUNC) &_EDI_get_gaussian_lmm_fisher_cpp, 5},
-    {"_EDI_fast_kk_gee_cpp", (DL_FUNC) &_EDI_fast_kk_gee_cpp, 6},
+    {"_EDI_gee_pairs_singletons_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_cpp, 6},
     {"_EDI_get_hurdle_negbin_count_score_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_score_cpp, 3},
     {"_EDI_get_hurdle_negbin_count_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_hessian_cpp, 3},
     {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 7},

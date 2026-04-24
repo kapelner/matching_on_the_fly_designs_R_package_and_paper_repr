@@ -194,9 +194,6 @@ simulations/*.pdf
 simulations/*.png
 benchmark_beta_regression.R
 benchmark_glmm.R
-benchmark_hurdle_poisson_glmm.R
-benchmark_ivwc_vs_onelik.R
-benchmark_ivwc_vs_onelik_final.R
 benchmark_stratified_coxph.R
 benchmark_weibull_frailty.R
 benchmark_zinb.R

@@ -108,8 +108,11 @@ inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, G
     return beta;
 }
 
-GEEResult fast_gee_cpp_impl(const MatrixXd& X, const VectorXd& y, const std::vector<int>& grp_start, const std::vector<int>& grp_size, GEEFamily family, int maxit = 100, double tol = 1e-8) {
+GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, const std::vector<int>& grp_start, const std::vector<int>& grp_size, GEEFamily family, int maxit = 100, double tol = 1e-8) {
     const int n = X.rows(), p = X.cols(), G = grp_start.size();
+    for (int gi = 0; gi < G; ++gi) {
+        if (grp_size[gi] > 2) stop("gee_pairs_singletons_cpp: cluster %d has size %d (only singletons and pairs are supported)", gi, grp_size[gi]);
+    }
     VectorXd beta = VectorXd::Zero(p);
     if (family == GEEFamily::GAUSSIAN) {
         MatrixXd XtX = X.transpose() * X;
@@ -197,7 +200,7 @@ GEEResult fast_gee_cpp_impl(const MatrixXd& X, const VectorXd& y, const std::vec
 }
 
 // [[Rcpp::export]]
-List fast_kk_gee_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit = 100, double tol = 1e-8) {
+List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit = 100, double tol = 1e-8) {
     GEEFamily family = GEEFamily::GAUSSIAN;
     if (family_str == "binomial") family = GEEFamily::BINOMIAL;
     else if (family_str == "poisson") family = GEEFamily::POISSON;
@@ -211,6 +214,6 @@ List fast_kk_gee_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const E
         if (g != prev) { grp_start.push_back(i); grp_size.push_back(1); prev = g; }
         else grp_size.back()++;
     }
-    GEEResult res = fast_gee_cpp_impl(X_s, y_s, grp_start, grp_size, family, maxit, tol);
+    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, maxit, tol);
     return List::create(Named("beta")=res.beta, Named("alpha")=res.alpha, Named("vcov")=res.vcov, Named("quasi_loglik")=res.quasi_loglik, Named("converged")=res.converged, Named("niter")=res.niter);
 }
