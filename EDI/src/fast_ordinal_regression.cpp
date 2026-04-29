@@ -48,6 +48,13 @@ public:
 
 } // namespace
 
+//' @title Compute Ordinal Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for an ordinal regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (ordinal categories 1, 2, ...).
+//' @param params A numeric vector of parameters [alpha, beta].
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
     OrdinalRegression model(X, y);
@@ -56,6 +63,13 @@ Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const
     return -grad;
 }
 
+//' @title Compute Ordinal Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for an ordinal regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param params A numeric vector of parameters [alpha, beta].
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
     OrdinalRegression model(X, y);
@@ -63,6 +77,17 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 }
 
 // Simple solver using Newton-Raphson as we have a small number of parameters (usually)
+//' @title Fast Ordinal Regression (C++)
+//' @description High-performance ordinal regression fitting using Newton-Raphson.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -91,10 +116,20 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
         Named("params") = params,
+        Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged
     );
 }
 
+//' @title Fast Ordinal Regression with Variance (C++)
+//' @description Ordinal regression fitting with full variance-covariance matrix.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, thresholds, vcov, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -138,6 +173,15 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     return output;
 }
 
+//' @title Ordinal G-Computation Post-Fit (C++)
+//' @description Performs G-computation for ordinal outcomes using a fitted model's parameters.
+//' @param X_fit Matrix of predictors used in fit.
+//' @param y Vector of responses.
+//' @param coef_hat Estimated coefficients (beta).
+//' @param alpha_hat Estimated thresholds (alpha).
+//' @param j_treat 1-based index of treatment column.
+//' @return A list containing G-computation results (means, difference, SE).
+//' @export
 // [[Rcpp::export]]
 List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
                                 const Eigen::VectorXd& y,
@@ -274,6 +318,14 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     );
 }
 
+//' @title Expand Continuation Ratio Data (C++)
+//' @description Utility to expand ordinal data for continuation ratio regression.
+//' @param y Vector of responses.
+//' @param w Vector of treatment indicators.
+//' @param strata Vector of strata.
+//' @param K Number of categories.
+//' @return A list with expanded y, w, and strata.
+//' @export
 // [[Rcpp::export]]
 List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
     int n = y.size();
@@ -303,6 +355,14 @@ List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::V
     );
 }
 
+//' @title Expand Adjacent Category Data (C++)
+//' @description Utility to expand ordinal data for adjacent category logit regression.
+//' @param y Vector of responses.
+//' @param w Vector of treatment indicators.
+//' @param strata Vector of strata.
+//' @param K Number of categories.
+//' @return A list with expanded y, w, and strata.
+//' @export
 // [[Rcpp::export]]
 List expand_adjacent_category_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
     int n = y.size();

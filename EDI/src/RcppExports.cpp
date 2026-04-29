@@ -774,6 +774,64 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_coxph_score_cpp
+Eigen::VectorXd get_coxph_score_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_coxph_score_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_coxph_score_cpp(y, dead, X, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_coxph_hessian_cpp
+Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_coxph_hessian_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_coxph_hessian_cpp(y, dead, X, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_stratified_coxph_score_cpp
+Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_stratified_coxph_score_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type strata_r(strata_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_stratified_coxph_score_cpp(y, dead, X, strata_r, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_stratified_coxph_hessian_cpp
+Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::MatrixXd& X, const Rcpp::IntegerVector& strata_r, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_stratified_coxph_hessian_cpp(SEXP ySEXP, SEXP deadSEXP, SEXP XSEXP, SEXP strata_rSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type strata_r(strata_rSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_stratified_coxph_hessian_cpp(y, dead, X, strata_r, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_cpoisson_combined_score_cpp
 Eigen::VectorXd get_cpoisson_combined_score_cpp(const Eigen::VectorXd& yT_v, const Eigen::VectorXd& n_k_v, const Eigen::MatrixXd& X_diff_v, const Eigen::VectorXd& y_r, const Eigen::VectorXd& w_r, const Eigen::MatrixXd& X_r, const Eigen::VectorXd& params);
 RcppExport SEXP _EDI_get_cpoisson_combined_score_cpp(SEXP yT_vSEXP, SEXP n_k_vSEXP, SEXP X_diff_vSEXP, SEXP y_rSEXP, SEXP w_rSEXP, SEXP X_rSEXP, SEXP paramsSEXP) {
@@ -3884,6 +3942,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_continuation_ratio_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_continuation_ratio_regression_with_var_cpp, 7},
     {"_EDI_fast_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_coxph_regression_cpp, 11},
     {"_EDI_fast_stratified_coxph_regression_cpp", (DL_FUNC) &_EDI_fast_stratified_coxph_regression_cpp, 11},
+    {"_EDI_get_coxph_score_cpp", (DL_FUNC) &_EDI_get_coxph_score_cpp, 4},
+    {"_EDI_get_coxph_hessian_cpp", (DL_FUNC) &_EDI_get_coxph_hessian_cpp, 4},
+    {"_EDI_get_stratified_coxph_score_cpp", (DL_FUNC) &_EDI_get_stratified_coxph_score_cpp, 5},
+    {"_EDI_get_stratified_coxph_hessian_cpp", (DL_FUNC) &_EDI_get_stratified_coxph_hessian_cpp, 5},
     {"_EDI_get_cpoisson_combined_score_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_score_cpp, 7},
     {"_EDI_get_cpoisson_combined_hessian_cpp", (DL_FUNC) &_EDI_get_cpoisson_combined_hessian_cpp, 7},
     {"_EDI_fast_cpoisson_combined_with_var_cpp", (DL_FUNC) &_EDI_fast_cpoisson_combined_with_var_cpp, 10},

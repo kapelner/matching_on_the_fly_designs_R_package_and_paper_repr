@@ -7,15 +7,20 @@
 #   devtools::load_all("EDI")
 #   source("simulations.R")
 #
-#   design_cls = list(DesignSeqOneByOneKK21, DesignSeqOneByOneUrn)
-#   inf_cls    = list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)
+#   designs = list(
+#     DesignSeqOneByOneKK21 = list(lambda = 0.5),
+#     DesignSeqOneByOneUrn  = list(alpha = 2, beta = 2)
+#   )
+#   inf_cls = list(
+#     InferenceContinMultOLS = list(max_resample_attempts = 25L),
+#     InferenceContinMultOLSKKIVWC
+#   )
 #   sim = SimulationFramework$new(
 #     response_type    = "continuous",
-#     design_classes   = design_cls,
-#     inference_classes = inf_cls,
+#     design_classes_and_params = designs,
+#     inference_classes_and_params = inf_cls,
 #     n = 100, p = 5, data_type = "linear", Nrep = 50, betaT = 1,
-#     design_params    = list(list(lambda = 0.5), list(alpha = 2, beta = 2)),
-#     inference_params = list(list(harden = FALSE), list())
+#     inference_types_and_params = list(asymp_pval = list(delta = 0))
 #   )
 #   sim$run()
 #   sim$summarize()
@@ -188,7 +193,7 @@ transform_cont_y_based_on_response_type = function(
 #'   \item \strong{MSE}: \eqn{\overline{(\hat\beta_T - \beta_T)^2}} over reps
 #'     with a finite point estimate.
 #'   \item \strong{coverage}: proportion of reps where \eqn{\beta_T} lies
-#'     inside the CI (\code{NA} when no CI is available for that method).
+#'     inside the CI (\code{NA} when no CI is available for that inference type).
 #'   \item \strong{power}: proportion of p-values \eqn{< \alpha}; equals the
 #'     empirical type-I error rate when \code{betaT = 0}.
 #' }
@@ -208,19 +213,52 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \code{"proportion"}, \code{"count"}, \code{"survival"},
     #'   \code{"ordinal"}.
     #'
-    #' @param design_classes List of R6 class generators, for example
-    #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Each
-    #'   generator must be constructable with only \code{response_type} and
-    #'   \code{n} (plus any extra params supplied via \code{design_params}).
-    #'   \code{NULL} (default) uses the package's standard design set.
+    #' @param design_classes_and_params \code{NULL} (default) or a list
+    #'   describing design classes and optional constructor parameters.
+    #'   Unnamed R6 class generators use default parameters, for example
+    #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Named
+    #'   entries use the entry name as the design class and the value as the
+    #'   parameter list, for example
+    #'   \code{list(DesignSeqOneByOneUrn = list(alpha = 2, beta = 2))}.
+    #'   Duplicate named entries are allowed for repeated designs with
+    #'   different parameters.
+    #'   Each generator must be constructable with only \code{response_type} and
+    #'   \code{n} plus any extra params supplied in this list.
+    #'   \code{NULL} uses the package's standard design set.
     #'   Designs requiring \code{strata_cols}, \code{cluster_col}, or
     #'   \code{factors} have sensible defaults auto-injected (first covariate
     #'   column; second for \code{cluster_col}; \code{list(treatment=2)} for
-    #'   \code{factors}) when not supplied via \code{design_params}.
+    #'   \code{factors}) when not supplied in the parameter list.
+    #'   Example:
+    #'   \preformatted{design_classes_and_params = list(
+    #'   DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
+    #'   DesignSeqOneByOneUrn  = list(alpha  = 2,   beta    = 2),
+    #'   FixedDesignBernoulli  # default params
+    #' )}
+    #'   Commonly useful design constructor parameters:
+    #'   \describe{
+    #'     \item{\code{lambda}}{Matching-weight decay for
+    #'       \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+    #'     \item{\code{t_0_pct}}{Burn-in fraction for
+    #'       \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+    #'     \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
+    #'     \item{\code{alpha}, \code{beta}}{Shape parameters for
+    #'       \code{DesignSeqOneByOneUrn}.}
+    #'     \item{\code{num_bins_for_continuous_covariate}}{Bin count for
+    #'       \code{FixedDesignBlocking}.}
+    #'   }
     #'
-    #' @param inference_classes List of R6 class generators, for example
+    #' @param inference_classes_and_params \code{NULL} (default) or a list
+    #'   describing inference classes and optional constructor parameters.
+    #'   Unnamed R6 class generators use default parameters, for example
     #'   \code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}.
-    #'   \code{NULL} (default) selects a curated set for the given
+    #'   Named entries use the entry name as the inference class and the value
+    #'   as the constructor parameter list, for example
+    #'   \code{list(InferenceContinMultOLS = list(max_resample_attempts = 25L))}.
+    #'   Duplicate named entries are allowed for repeated inference classes with
+    #'   different parameters. Supplied parameters must be accepted by the
+    #'   inference class constructor.
+    #'   \code{NULL} selects a curated set for the given
     #'   \code{response_type}: several universal classes that work with any
     #'   design, plus representative KK-specific classes (silently skipped for
     #'   non-KK designs at runtime).
@@ -319,72 +357,28 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   all \pkg{checkmate} assertions across the package are globally
     #'   disabled during the simulation run to improve performance.
     #'
-    #' @param design_params \code{NULL} (default) or a list of lists of the same
-    #'   length as \code{design_classes}.  Each element is a named list of
-    #'   additional constructor arguments passed to the corresponding design's
-    #'   \code{$new()} call (matched positionally).  Use an empty \code{list()}
-    #'   for a design that needs no extra arguments.  Example:
-    #'   \preformatted{design_classes = list(DesignSeqOneByOneKK21,
-    #'                         DesignSeqOneByOneUrn)
-    #' design_params  = list(
-    #'   list(lambda = 0.5, t_0_pct = 0.1),   # for KK21
-    #'   list(alpha  = 2,   beta    = 2)        # for Urn
-    #' )}
-    #'   Commonly useful design constructor parameters:
-    #'   \describe{
-    #'     \item{\code{lambda}}{Matching-weight decay for
-    #'       \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-    #'     \item{\code{t_0_pct}}{Burn-in fraction for
-    #'       \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-    #'     \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
-    #'     \item{\code{alpha}, \code{beta}}{Shape parameters for
-    #'       \code{DesignSeqOneByOneUrn}.}
-    #'     \item{\code{num_bins_for_continuous_covariate}}{Bin count for
-    #'       \code{FixedDesignBlocking}.}
-    #'   }
-    #'
-    #' @param inference_params \code{NULL} (default) or a list of lists of the
-    #'   same length as \code{inference_classes}.  Each element is a named list
-    #'   of arguments for the corresponding inference class (matched
-    #'   positionally).  Use an empty \code{list()} for a class that needs no
-    #'   extra arguments.
-    #'
-    #'   Arguments are routed automatically to the appropriate call site based
-    #'   on argument name (see \code{.INF_ARG_ROUTES}):
-    #'   \itemize{
-    #'     \item constructor arguments such as \code{harden} and
-    #'       \code{max_resample_attempts}
-    #'     \item asymptotic p-value arguments such as \code{delta}
-    #'     \item bootstrap arguments such as \code{na.rm} and \code{type}
-    #'     \item randomization p-value arguments such as \code{delta},
-    #'       \code{transform_responses}, and \code{permutations}
-    #'     \item randomization CI arguments such as \code{ci_search_control}
-    #'     \item shared randomization arguments such as \code{args_for_type}
-    #'   }
-    #'   Example:
-    #'   \preformatted{inference_classes = list(InferenceContinMultOLS,
-    #'                            InferenceContinMultOLSKKIVWC)
-    #' inference_params = lapply(
-    #'   list(
-    #'     list(harden = FALSE), 
-    #'     list()
-    #'   ),
-    #'   append, 
-    #'   list(delta = 0)
-    #' )}
-    #'
-    #' @param inf_types Character vector controlling which inference outputs are
-    #'   computed and recorded.  \code{NULL} (default) runs all eight types.
-    #'   Valid elements are \code{"asymp_ci"}, \code{"asymp_pval"},
+    #' @param inference_types_and_params \code{NULL} (default) or a named list
+    #'   from inference type to a named list of arguments for that type's function
+    #'   invocation.  The list names control which inference outputs are computed.
+    #'   Valid names are \code{"asymp_ci"}, \code{"asymp_pval"},
     #'   \code{"exact_ci"}, \code{"exact_pval"}, \code{"boot_ci"},
     #'   \code{"boot_pval"}, \code{"rand_ci"}, and \code{"rand_pval"}.
+    #'   Each value must be a named list whose names are accepted by the
+    #'   corresponding inference function.  \code{NULL} runs all eight types with
+    #'   default invocation arguments.
+    #'   Example:
+    #'   \preformatted{inference_types_and_params = list(
+    #'   asymp_pval = list(delta = 0),
+    #'   boot_ci    = list(B = 99, type = "perc"),
+    #'   rand_pval  = list(r = 999, transform_responses = TRUE)
+    #' )}
     #'   When no \code{*_ci} type is requested, \code{coverage} is omitted from
     #'   \code{$summarize()}.  When no \code{*_pval} type is requested,
     #'   \code{power} is omitted.
     initialize = function(
       response_type,
-      design_classes    = NULL,
-      inference_classes = NULL,
+      design_classes_and_params = NULL,
+      inference_classes_and_params = NULL,
       n                 = 100L,
       p                 = 5L,
       data_type         = "linear",
@@ -408,9 +402,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       verbose                    = FALSE,
       keep_all_intermediate_data = FALSE,
       turn_off_asserts_for_speed = TRUE,
-      design_params              = NULL,
-      inference_params           = NULL,
-      inf_types                  = NULL
+      inference_types_and_params = NULL
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
@@ -423,15 +415,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
       valid_inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval",
                           "boot_ci",  "boot_pval",  "rand_ci",  "rand_pval")
-      if (is.null(inf_types)) {
-        inf_types = valid_inf_types
-      } else {
-        bad = setdiff(inf_types, valid_inf_types)
-        if (length(bad))
-          stop("Invalid inf_types: ", paste(bad, collapse = ", "),
-               ".  Valid values: ", paste(valid_inf_types, collapse = ", "))
-        inf_types = unique(inf_types)
-      }
+      inf_type_spec = private$.parse_inference_types_and_params(
+        inference_types_and_params,
+        valid_inf_types
+      )
+      inf_types = names(inf_type_spec)
 
       private$response_type    = response_type
       private$n                = as.integer(n)
@@ -458,52 +446,27 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$turn_off_asserts_for_speed = turn_off_asserts_for_speed
       private$keep_all_intermediate_data = keep_all_intermediate_data
       private$inf_types        = inf_types
+      private$inference_type_params = inf_type_spec
 
-      private$want_asymp_ci   = "asymp_ci"   %in% inf_types
-      private$want_asymp_pval = "asymp_pval" %in% inf_types
-      private$want_exact_ci   = "exact_ci"   %in% inf_types
-      private$want_exact_pval = "exact_pval" %in% inf_types
-      private$want_boot_ci    = "boot_ci"    %in% inf_types
-      private$want_boot_pval  = "boot_pval"  %in% inf_types
-      private$want_rand_ci    = "rand_ci"    %in% inf_types
-      private$want_rand_pval  = "rand_pval"  %in% inf_types
+      design_spec = private$.parse_design_classes_and_params(
+        design_classes_and_params,
+        parent.frame()
+      )
+      private$design_classes = design_spec$classes
+      private$design_params  = design_spec$params
 
-      private$design_classes = if (is.null(design_classes)) {
-        private$.default_design_classes()
-      } else {
-        design_classes
-      }
-
-      private$inference_classes = if (is.null(inference_classes)) {
-        private$.default_inference_classes()
-      } else {
-        inference_classes
-      }
+      inference_spec = private$.parse_inference_classes_and_params(
+        inference_classes_and_params,
+        parent.frame()
+      )
+      private$inference_classes = inference_spec$classes
+      private$inference_constructor_params = inference_spec$params
 
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
 
-      if (!is.null(design_params)) {
-        if (!is.list(design_params) || length(design_params) != n_des)
-          stop("design_params must be a list of lists of length ", n_des,
-               " (one per design class)")
-        for (i in seq_len(n_des))
-          if (!is.list(design_params[[i]]))
-            stop("design_params[[", i, "]] must be a named list")
-      }
-
-      if (!is.null(inference_params)) {
-        if (!is.list(inference_params) || length(inference_params) != n_inf)
-          stop("inference_params must be a list of lists of length ", n_inf,
-               " (one per inference class)")
-        for (i in seq_len(n_inf))
-          if (!is.list(inference_params[[i]]))
-            stop("inference_params[[", i, "]] must be a named list")
-      }
-
-      private$design_params    = design_params
-      private$inference_params = inference_params
       private$design_labels    = private$.compute_design_labels()
+      private$inference_labels = private$.compute_inference_labels()
 
       private$raw_results = list()
       private$has_run     = FALSE
@@ -593,15 +556,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
           for (ii in seq_along(private$inference_classes)) {
             inf_gen  = private$inference_classes[[ii]]
-            inf_name = inf_gen$classname
+            inf_name = private$inference_labels[[ii]]
 
-            # Route per-class params to their call-site destinations
-            class_p = if (!is.null(private$inference_params)) private$inference_params[[ii]] else list()
-            routed  = private$.route_inference_args(class_p)
+            inf_ctor_extra = private$inference_constructor_params[[ii]]
 
             inf_obj = tryCatch({
-              inf_extra = private$.filter_by_formals(inf_gen, routed$inf_init)
-              do.call(inf_gen$new, c(list(des_obj), inf_extra))
+              do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
             }, error = function(e) {
               if (private$verbose)
                 message(sprintf("    [SKIP %s / %s]: %s",
@@ -621,22 +581,45 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                  else
                    private$betaT
 
-            # Track valid (design, inference, method) combos — once per unique pair
+            # Track valid (design, inference, inference_type) combos — once per unique pair
             combo_key = paste0(design_name, "|||", inf_name)
             if (!combo_key %in% private$seen_combo_keys) {
               private$seen_combo_keys = c(private$seen_combo_keys, combo_key)
-              valid_methods = character(0L)
-              if (is(inf_obj, "InferenceAsymp") && (private$want_asymp_ci || private$want_asymp_pval))
-                valid_methods = c(valid_methods, "asymp")
-              if (is(inf_obj, "InferenceExact") && (private$want_exact_ci || private$want_exact_pval))
-                valid_methods = c(valid_methods, "exact")
-              if (is(inf_obj, "InferenceBoot") && (private$want_boot_ci || private$want_boot_pval))
-                valid_methods = c(valid_methods, "boot")
-              if (is(inf_obj, "InferenceRand") && (private$want_rand_ci || private$want_rand_pval))
-                valid_methods = c(valid_methods, "rand")
-              for (m in valid_methods)
+              valid_inference_types = character(0L)
+              if (is(inf_obj, "InferenceAsymp")) {
+                valid_inference_types = c(
+                  valid_inference_types,
+                  intersect(private$inf_types, c("asymp_ci", "asymp_pval"))
+                )
+              }
+              if (is(inf_obj, "InferenceExact")) {
+                valid_inference_types = c(
+                  valid_inference_types,
+                  intersect(private$inf_types, c("exact_ci", "exact_pval"))
+                )
+              }
+              if (is(inf_obj, "InferenceBoot")) {
+                valid_inference_types = c(
+                  valid_inference_types,
+                  intersect(private$inf_types, c("boot_ci", "boot_pval"))
+                )
+              }
+              if (is(inf_obj, "InferenceRand")) {
+                valid_inference_types = c(
+                  valid_inference_types,
+                  intersect(private$inf_types, "rand_pval")
+                )
+                if (is(inf_obj, "InferenceRandCI") &&
+                    private$response_type %in% c("continuous", "proportion", "count")) {
+                  valid_inference_types = c(
+                    valid_inference_types,
+                    intersect(private$inf_types, "rand_ci")
+                  )
+                }
+              }
+              for (it in valid_inference_types)
                 private$valid_combos[[length(private$valid_combos) + 1L]] =
-                  list(design = design_name, inference = inf_name, method = m)
+                  list(design = design_name, inference = inf_name, inference_type = it)
             }
 
             # Point estimate (shared across inference methods)
@@ -646,26 +629,32 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }, error = function(e) NA_real_)
 
             # ── Asymptotic ────────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceAsymp") &&
-                (private$want_asymp_ci || private$want_asymp_pval)) {
-              pval_a = if (private$want_asymp_pval) {
-                tryCatch(
+            if (is(inf_obj, "InferenceAsymp") && private$.any_inf_type(c("asymp_ci", "asymp_pval"))) {
+              if (private$.has_inf_type("asymp_pval")) {
+                asymp_pval_args = private$.args_for_inf_type(inf_obj, "asymp_pval")
+                pval_a = tryCatch(
                   do.call(inf_obj$compute_asymp_two_sided_pval,
-                          routed$asymp_pval),
+                          asymp_pval_args),
                   error = function(e) NA_real_
                 )
-              } else NA_real_
-              ci_a = if (private$want_asymp_ci) {
-                tryCatch(
-                  inf_obj$compute_asymp_confidence_interval(alpha = private$alpha),
+                private$.record(rep, design_name, inf_name, "asymp_pval",
+                                est, c(NA_real_, NA_real_), pval_a, te)
+              }
+              if (private$.has_inf_type("asymp_ci")) {
+                asymp_ci_args = private$.args_for_inf_type(inf_obj, "asymp_ci",
+                                                           list(alpha = private$alpha))
+                ci_a = tryCatch(
+                  do.call(inf_obj$compute_asymp_confidence_interval,
+                          asymp_ci_args),
                   error = function(e) c(NA_real_, NA_real_)
                 )
-              } else c(NA_real_, NA_real_)
-              private$.record(rep, design_name, inf_name, "asymp", est, ci_a, pval_a, te)
+                private$.record(rep, design_name, inf_name, "asymp_ci",
+                                est, ci_a, NA_real_, te)
+              }
             }
 
             # ── Exact ─────────────────────────────────────────────────────────
-            if (private$want_exact_ci || private$want_exact_pval) {
+            if (private$.any_inf_type(c("exact_ci", "exact_pval"))) {
               if (!is(inf_obj, "InferenceExact")) {
                 if (!inf_name %in% private$exact_warned_classes) {
                   warning(sprintf(
@@ -675,78 +664,92 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                     c(private$exact_warned_classes, inf_name)
                 }
               } else {
-                pval_e = if (private$want_exact_pval) {
-                  tryCatch(
-                    inf_obj$compute_exact_two_sided_pval_for_treatment_effect(),
+                if (private$.has_inf_type("exact_pval")) {
+                  exact_pval_args = private$.args_for_inf_type(inf_obj, "exact_pval")
+                  pval_e = tryCatch(
+                    do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect,
+                            exact_pval_args),
                     error = function(e) NA_real_
                   )
-                } else NA_real_
-                ci_e = if (private$want_exact_ci) {
-                  tryCatch(
-                    inf_obj$compute_exact_confidence_interval(alpha = private$alpha),
+                  private$.record(rep, design_name, inf_name, "exact_pval",
+                                  est, c(NA_real_, NA_real_), pval_e, te)
+                }
+                if (private$.has_inf_type("exact_ci")) {
+                  exact_ci_args = private$.args_for_inf_type(inf_obj, "exact_ci",
+                                                             list(alpha = private$alpha))
+                  ci_e = tryCatch(
+                    do.call(inf_obj$compute_exact_confidence_interval,
+                            exact_ci_args),
                     error = function(e) c(NA_real_, NA_real_)
                   )
-                } else c(NA_real_, NA_real_)
-                private$.record(rep, design_name, inf_name, "exact", est, ci_e, pval_e, te)
+                  private$.record(rep, design_name, inf_name, "exact_ci",
+                                  est, ci_e, NA_real_, te)
+                }
               }
             }
 
             # ── Bootstrap ─────────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceBoot") &&
-                (private$want_boot_ci || private$want_boot_pval)) {
-              pval_b = if (private$want_boot_pval) {
-                tryCatch(
+            if (is(inf_obj, "InferenceBoot") && private$.any_inf_type(c("boot_ci", "boot_pval"))) {
+              if (private$.has_inf_type("boot_pval")) {
+                boot_pval_args = private$.args_for_inf_type(
+                  inf_obj, "boot_pval", list(B = private$B_boot, na.rm = TRUE))
+                pval_b = tryCatch(
                   do.call(inf_obj$compute_bootstrap_two_sided_pval,
-                          modifyList(list(B = private$B_boot, na.rm = TRUE),
-                                     routed$boot_pval)),
+                          boot_pval_args),
                   error = function(e) NA_real_
                 )
-              } else NA_real_
-              ci_b = if (private$want_boot_ci) {
-                tryCatch(
+                private$.record(rep, design_name, inf_name, "boot_pval",
+                                est, c(NA_real_, NA_real_), pval_b, te)
+              }
+              if (private$.has_inf_type("boot_ci")) {
+                boot_ci_args = private$.args_for_inf_type(
+                  inf_obj, "boot_ci", list(B = private$B_boot,
+                                           alpha = private$alpha,
+                                           na.rm = TRUE,
+                                           show_progress = FALSE))
+                ci_b = tryCatch(
                   do.call(inf_obj$compute_bootstrap_confidence_interval,
-                          modifyList(list(B     = private$B_boot,
-                                          alpha = private$alpha,
-                                          na.rm = TRUE,
-                                          show_progress = FALSE),
-                                     routed$boot_ci)),
+                          boot_ci_args),
                   error = function(e) c(NA_real_, NA_real_)
                 )
-              } else c(NA_real_, NA_real_)
-              private$.record(rep, design_name, inf_name, "boot", est, ci_b, pval_b, te)
+                private$.record(rep, design_name, inf_name, "boot_ci",
+                                est, ci_b, NA_real_, te)
+              }
             }
 
             # ── Randomisation ─────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceRand") &&
-                (private$want_rand_ci || private$want_rand_pval)) {
-              pval_r = if (private$want_rand_pval) {
-                tryCatch(
+            if (is(inf_obj, "InferenceRand") && private$.any_inf_type(c("rand_ci", "rand_pval"))) {
+              if (private$.has_inf_type("rand_pval")) {
+                rand_pval_args = private$.args_for_inf_type(
+                  inf_obj, "rand_pval", list(r = private$r_rand,
+                                             na.rm = TRUE,
+                                             show_progress = FALSE))
+                pval_r = tryCatch(
                   do.call(inf_obj$compute_rand_two_sided_pval,
-                          modifyList(list(r             = private$r_rand,
-                                          na.rm         = TRUE,
-                                          show_progress = FALSE),
-                                     routed$rand_pval)),
+                          rand_pval_args),
                   error = function(e) NA_real_
                 )
-              } else NA_real_
-              ci_r = if (
-                private$want_rand_ci &&
+                private$.record(rep, design_name, inf_name, "rand_pval",
+                                est, c(NA_real_, NA_real_), pval_r, te)
+              }
+              if (
+                private$.has_inf_type("rand_ci") &&
                 is(inf_obj, "InferenceRandCI") &&
                 private$response_type %in% c("continuous", "proportion", "count")
               ) {
-                tryCatch(
+                rand_ci_args = private$.args_for_inf_type(
+                  inf_obj, "rand_ci", list(r = private$r_rand,
+                                           alpha = private$alpha,
+                                           pval_epsilon = private$pval_epsilon,
+                                           show_progress = FALSE))
+                ci_r = tryCatch(
                   do.call(inf_obj$compute_rand_confidence_interval,
-                          modifyList(list(r             = private$r_rand,
-                                          alpha         = private$alpha,
-                                          pval_epsilon  = private$pval_epsilon,
-                                          show_progress = FALSE),
-                                     routed$rand_ci)),
+                          rand_ci_args),
                   error = function(e) c(NA_real_, NA_real_)
                 )
-              } else {
-                c(NA_real_, NA_real_)
+                private$.record(rep, design_name, inf_name, "rand_ci",
+                                est, ci_r, NA_real_, te)
               }
-              private$.record(rep, design_name, inf_name, "rand", est, ci_r, pval_r, te)
             }
           }
         }
@@ -797,13 +800,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' Get the raw results of the simulation.
     #'
     #' @return A \code{data.table} containing one row per (replication, design,
-    #'   inference class, inference method).
+    #'   inference class, and inference type.
     get_results = function() {
       if (!private$has_run) stop("Call $run() first.")
       if (private$results_idx == 0L)
         return(data.table::data.table(
           rep = integer(), design = character(), inference = character(),
-          method = character(), estimate = numeric(),
+          inference_type = character(), estimate = numeric(),
           ci_lo = numeric(), ci_hi = numeric(), pval = numeric()
         ))
       # Prune pre-allocated list to only include what was actually recorded
@@ -815,29 +818,30 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' Aggregate and summarize simulation results.
     #'
     #' @return A \code{data.table} with aggregated metrics (MSE, coverage,
-    #'   power) grouped by design, inference class, and inference method.
+    #'   power) grouped by design, inference class, and inference type.
     summarize = function() {
       if (!private$has_run) stop("Call $run() first.")
 
-      # ── Reference grid of all valid (design, inference, method) combos ────────
+      # ── Reference grid of all valid (design, inference, inference_type) combos ────────
       if (length(private$valid_combos) == 0L) {
         message("No results."); return(invisible(NULL))
       }
       ref_grid = data.table::rbindlist(lapply(private$valid_combos, as.list))
 
       # ── Per-class params strings ───────────────────────────────────────────────
-      inf_names = vapply(private$inference_classes, function(g) g$classname, "")
+      inf_names = private$inference_labels
       design_params_map = stats::setNames(
         lapply(seq_along(private$design_classes), function(di)
           private$.params_to_str(if (!is.null(private$design_params)) private$design_params[[di]] else NULL)),
         private$design_labels)
       inf_params_map = stats::setNames(
         lapply(seq_along(private$inference_classes), function(ii)
-          private$.params_to_str(if (!is.null(private$inference_params)) private$inference_params[[ii]] else NULL)),
+          private$.params_to_str(private$inference_constructor_params[[ii]])),
         inf_names)
 
       ref_grid[, design_params    := unlist(design_params_map[design])]
       ref_grid[, inference_params := unlist(inf_params_map[inference])]
+      ref_grid[, inference_type_params := vapply(inference_type, private$.params_for_inference_type_to_str, "")]
 
       # ── Aggregate raw results ─────────────────────────────────────────────────
       dt         = self$get_results()
@@ -864,16 +868,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             row$n_pow = length(pv_ok)
           }
           row
-        }, by = .(design, inference, method),
+        }, by = .(design, inference, inference_type),
            .SDcols = c("estimate", "ci_lo", "ci_hi", "pval", "true_estimand")]
       } else {
         agg = data.table::data.table(design = character(), inference = character(),
-                                     method = character(), power = numeric(), MSE = numeric(),
+                                     inference_type = character(), power = numeric(), MSE = numeric(),
                                      n_est = integer(), n_pow = integer())
       }
 
       # ── Right-join: every valid combo appears, NA for those with no data ──────
-      result = agg[ref_grid, on = .(design, inference, method)]
+      result = agg[ref_grid, on = .(design, inference, inference_type)]
       
       # Ensure n_est and n_pow are present and replace NA with 0
       if (!"n_est" %in% names(result)) result[, n_est := 0L]
@@ -881,7 +885,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       result[is.na(n_est), n_est := 0L]
       result[is.na(n_pow), n_pow := 0L]
       
-      result[order(design, inference, method)]
+      result[order(design, inference, inference_type)]
     },
 
     # ── print() ───────────────────────────────────────────────────────────────
@@ -895,13 +899,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cat("  Nrep / betaT  :", private$Nrep, "/", private$betaT, "\n")
       cat("  alpha / B_boot / r_rand :",
           private$alpha, "/", private$B_boot, "/", private$r_rand, "\n")
-      cat("  inf_types     :", paste(private$inf_types, collapse = ", "), "\n")
-      if (!is.null(private$design_params))
-        cat("  design_params : (positional list of length", length(private$design_params), ")\n")
-      if (!is.null(private$inference_params))
-        cat("  inference_params: (positional list of length", length(private$inference_params), ")\n")
+      cat("  inference_types:", paste(private$inf_types, collapse = ", "), "\n")
+      if (any(vapply(private$design_params, length, integer(1L)) > 0L))
+        cat("  design_classes_and_params: (", length(private$design_params), " designs)\n", sep = "")
+      if (any(vapply(private$inference_constructor_params, length, integer(1L)) > 0L))
+        cat("  inference_classes_and_params: (", length(private$inference_constructor_params), " inference classes)\n", sep = "")
+      if (any(vapply(private$inference_type_params, length, integer(1L)) > 0L))
+        cat("  inference_types_and_params: (", length(private$inference_type_params), " inference types)\n", sep = "")
       design_names = vapply(private$design_classes,  function(g) g$classname, "")
-      inf_names    = vapply(private$inference_classes, function(g) g$classname, "")
+      inf_names    = private$inference_labels
       cat("  Designs (", length(design_names), "):",
           paste(design_names, collapse = ", "), "\n")
       cat("  Inference (", length(inf_names), "):",
@@ -946,19 +952,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     prob_censoring       = NULL,
     verbose          = NULL,
     design_params    = NULL,
-    inference_params = NULL,
+    inference_constructor_params = NULL,
+    inference_type_params = NULL,
     inf_types        = NULL,
-    want_asymp_ci    = NULL,
-    want_asymp_pval  = NULL,
-    want_exact_ci    = NULL,
-    want_exact_pval  = NULL,
-    want_boot_ci     = NULL,
-    want_boot_pval   = NULL,
-    want_rand_ci     = NULL,
-    want_rand_pval   = NULL,
     design_classes   = NULL,
     inference_classes = NULL,
     design_labels    = NULL,
+    inference_labels = NULL,
     turn_off_asserts_for_speed = NULL,
     raw_results               = NULL,
     results_idx               = 0L,
@@ -969,56 +969,228 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     valid_combos              = NULL,
     seen_combo_keys  = NULL,
 
-    # ── Inference arg routing ─────────────────────────────────────────────────
-    #
-    # Maps argument names found in inference_params to the call site(s) that
-    # accept them.  Destinations:
-    #   inf_init   → inf_gen$new()                          (filtered by formals)
-    #   asymp_pval → compute_asymp_two_sided_pval()
-    #   boot_ci    → compute_bootstrap_confidence_interval()
-    #   boot_pval  → compute_bootstrap_two_sided_pval()
-    #   rand_pval  → compute_rand_two_sided_pval()
-    #   rand_ci    → compute_rand_confidence_interval()
-    .INF_ARG_ROUTES = list(
-      # constructor
-      harden                = c("inf_init"),
-      max_resample_attempts = c("inf_init"),
-      # p-value null hypothesis — all three methods
-      delta                 = c("asymp_pval", "boot_pval", "rand_pval"),
-      # bootstrap
-      na.rm                 = c("boot_ci", "boot_pval", "rand_pval"),
-      type                  = c("boot_ci", "boot_pval", "rand_pval", "rand_ci"),
-      # randomisation p-value
-      transform_responses   = c("rand_pval"),
-      permutations          = c("rand_pval"),
-      zero_one_logit_clamp  = c("rand_pval"),
-      # shared rand
-      args_for_type         = c("rand_pval", "rand_ci"),
-      # randomisation CI
-      ci_search_control     = c("rand_ci")
-    ),
+    # ── Design spec parsing ───────────────────────────────────────────────────
 
-    # Route a merged inference-params list to per-destination sub-lists.
-    # Unknown arg names produce a warning; known args fan out to all their
-    # destinations.
-    .route_inference_args = function(params) {
-      dest_keys = c("inf_init", "asymp_pval", "boot_ci",
-                    "boot_pval", "rand_pval", "rand_ci")
-      out = stats::setNames(
-        lapply(seq_along(dest_keys), function(...) list()),
-        dest_keys
-      )
-      if (length(params) == 0L) return(out)
-      for (nm in names(params)) {
-        dests = private$.INF_ARG_ROUTES[[nm]]
-        if (is.null(dests)) {
-          warning(sprintf(
-            "SimulationFramework: unrecognised inference_params arg '%s'; ignored.", nm))
+    .parse_design_classes_and_params = function(spec, eval_env) {
+      if (is.null(spec)) {
+        classes = private$.default_design_classes()
+        return(list(classes = classes, params = lapply(classes, function(...) list())))
+      }
+      if (!is.list(spec))
+        stop("design_classes_and_params must be NULL or a list")
+
+      nm = names(spec)
+      if (is.null(nm)) nm = rep("", length(spec))
+
+      classes = vector("list", length(spec))
+      params  = vector("list", length(spec))
+
+      for (i in seq_along(spec)) {
+        entry_name = nm[[i]]
+        entry      = spec[[i]]
+
+        if (inherits(entry, "R6ClassGenerator")) {
+          classes[[i]] = entry
+          params[[i]]  = list()
           next
         }
-        for (d in dests) out[[d]][[nm]] = params[[nm]]
+
+        if (!nzchar(entry_name)) {
+          stop(
+            "design_classes_and_params[[", i, "]] must be an R6 class generator ",
+            "or a named parameter list whose name is the design class"
+          )
+        }
+
+        cls = private$.resolve_design_class(entry_name, eval_env)
+        if (!inherits(cls, "R6ClassGenerator"))
+          stop("design class '", entry_name, "' is not an R6 class generator")
+
+        if (is.null(entry)) {
+          entry = list()
+        } else if (!is.list(entry)) {
+          stop("design_classes_and_params[['", entry_name, "']] must be a list of parameters")
+        }
+
+        classes[[i]] = cls
+        params[[i]]  = entry
       }
-      out
+
+      list(classes = classes, params = params)
+    },
+
+    .resolve_design_class = function(class_name, eval_env) {
+      if (exists(class_name, envir = eval_env, inherits = TRUE))
+        return(get(class_name, envir = eval_env, inherits = TRUE))
+      ns = asNamespace("EDI")
+      if (exists(class_name, envir = ns, inherits = FALSE))
+        return(get(class_name, envir = ns, inherits = FALSE))
+      stop("could not find design class '", class_name, "'")
+    },
+
+    # ── Inference spec parsing ────────────────────────────────────────────────
+
+    .parse_inference_classes_and_params = function(spec, eval_env) {
+      if (is.null(spec)) {
+        classes = private$.default_inference_classes()
+        return(list(classes = classes, params = lapply(classes, function(...) list())))
+      }
+      if (!is.list(spec))
+        stop("inference_classes_and_params must be NULL or a list")
+
+      nm = names(spec)
+      if (is.null(nm)) nm = rep("", length(spec))
+
+      classes = vector("list", length(spec))
+      params  = vector("list", length(spec))
+
+      for (i in seq_along(spec)) {
+        entry_name = nm[[i]]
+        entry      = spec[[i]]
+
+        if (inherits(entry, "R6ClassGenerator")) {
+          classes[[i]] = entry
+          params[[i]]  = list()
+          next
+        }
+
+        if (!nzchar(entry_name)) {
+          stop(
+            "inference_classes_and_params[[", i, "]] must be an R6 class generator ",
+            "or a named parameter list whose name is the inference class"
+          )
+        }
+
+        cls = private$.resolve_inference_class(entry_name, eval_env)
+        if (!inherits(cls, "R6ClassGenerator"))
+          stop("inference class '", entry_name, "' is not an R6 class generator")
+
+        if (is.null(entry)) {
+          entry = list()
+        } else if (!is.list(entry)) {
+          stop("inference_classes_and_params[['", entry_name, "']] must be a list of parameters")
+        }
+
+        private$.validate_r6_init_args(cls, entry, "inference_classes_and_params")
+        classes[[i]] = cls
+        params[[i]]  = entry
+      }
+
+      list(classes = classes, params = params)
+    },
+
+    .resolve_inference_class = function(class_name, eval_env) {
+      if (exists(class_name, envir = eval_env, inherits = TRUE))
+        return(get(class_name, envir = eval_env, inherits = TRUE))
+      ns = asNamespace("EDI")
+      if (exists(class_name, envir = ns, inherits = FALSE))
+        return(get(class_name, envir = ns, inherits = FALSE))
+      stop("could not find inference class '", class_name, "'")
+    },
+
+    .validate_r6_init_args = function(r6gen, args, arg_name) {
+      if (length(args) == 0L) return(invisible(TRUE))
+      if (is.null(names(args)) || any(!nzchar(names(args)))) {
+        stop(arg_name, " for ", r6gen$classname,
+             " must be a named list of constructor arguments")
+      }
+      init_fn = private$.get_r6_init_fn(r6gen)
+      if (is.null(init_fn)) {
+        stop(r6gen$classname, " has no discoverable initialize() constructor; ",
+             arg_name, " parameters cannot be validated")
+      }
+      fn_formals = names(formals(init_fn))
+      if ("..." %in% fn_formals) return(invisible(TRUE))
+      bad = setdiff(names(args), fn_formals)
+      if (length(bad)) {
+        stop(
+          arg_name, " for ", r6gen$classname,
+          " contains constructor argument(s) not accepted by initialize(): ",
+          paste(bad, collapse = ", ")
+        )
+      }
+      invisible(TRUE)
+    },
+
+    # ── Inference type parsing and invocation args ────────────────────────────
+
+    .parse_inference_types_and_params = function(spec, valid_inf_types) {
+      if (is.null(spec)) {
+        return(stats::setNames(lapply(valid_inf_types, function(...) list()),
+                               valid_inf_types))
+      }
+      if (!is.list(spec) || is.null(names(spec)) || any(!nzchar(names(spec)))) {
+        stop("inference_types_and_params must be NULL or a named list")
+      }
+      bad = setdiff(names(spec), valid_inf_types)
+      if (length(bad)) {
+        stop("Invalid inference_types_and_params names: ", paste(bad, collapse = ", "),
+             ".  Valid values: ", paste(valid_inf_types, collapse = ", "))
+      }
+      spec = spec[!duplicated(names(spec))]
+      for (inf_type in names(spec)) {
+        if (is.null(spec[[inf_type]])) {
+          spec[[inf_type]] = list()
+        } else if (!is.list(spec[[inf_type]])) {
+          stop("inference_types_and_params[['", inf_type, "']] must be a named list")
+        } else if (length(spec[[inf_type]]) > 0L &&
+                   (is.null(names(spec[[inf_type]])) || any(!nzchar(names(spec[[inf_type]]))))) {
+          stop("inference_types_and_params[['", inf_type, "']] must be a named list")
+        }
+      }
+      spec
+    },
+
+    .has_inf_type = function(inf_type) {
+      inf_type %in% private$inf_types
+    },
+
+    .any_inf_type = function(inf_types) {
+      any(inf_types %in% private$inf_types)
+    },
+
+    .inf_type_method_name = function(inf_type) {
+      switch(inf_type,
+        asymp_ci   = "compute_asymp_confidence_interval",
+        asymp_pval = "compute_asymp_two_sided_pval",
+        exact_ci   = "compute_exact_confidence_interval",
+        exact_pval = "compute_exact_two_sided_pval_for_treatment_effect",
+        boot_ci    = "compute_bootstrap_confidence_interval",
+        boot_pval  = "compute_bootstrap_two_sided_pval",
+        rand_ci    = "compute_rand_confidence_interval",
+        rand_pval  = "compute_rand_two_sided_pval",
+        stop("Unknown inference type: ", inf_type)
+      )
+    },
+
+    .args_for_inf_type = function(inf_obj, inf_type, defaults = list()) {
+      user_args = private$inference_type_params[[inf_type]]
+      if (is.null(user_args)) user_args = list()
+      method_name = private$.inf_type_method_name(inf_type)
+      private$.validate_method_args(inf_obj, method_name, user_args, inf_type)
+      modifyList(defaults, user_args)
+    },
+
+    .validate_method_args = function(inf_obj, method_name, args, inf_type) {
+      if (length(args) == 0L) return(invisible(TRUE))
+      fn = tryCatch(inf_obj[[method_name]], error = function(e) NULL)
+      if (!is.function(fn)) {
+        stop("Cannot validate parameters for ", inf_type, ": function ",
+             method_name, "() is not available on ", class(inf_obj)[1L])
+      }
+      fn_formals = names(formals(fn))
+      if ("..." %in% fn_formals) return(invisible(TRUE))
+      bad = setdiff(names(args), fn_formals)
+      if (length(bad)) {
+        stop("inference_types_and_params[['", inf_type, "']] contains argument(s) ",
+             "not accepted by ", method_name, "(): ", paste(bad, collapse = ", "))
+      }
+      invisible(TRUE)
+    },
+
+    .params_for_inference_type_to_str = function(inference_type) {
+      ps = private$.params_to_str(private$inference_type_params[[inference_type]])
+      if (nchar(ps) > 0L) paste0(inference_type, "(", ps, ")") else ""
     },
 
     # ── R6 formals helpers ────────────────────────────────────────────────────
@@ -1071,6 +1243,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       labels
     },
 
+    .compute_inference_labels = function() {
+      labels = vapply(seq_along(private$inference_classes), function(ii) {
+        cls = private$inference_classes[[ii]]$classname
+        ps  = private$.params_to_str(private$inference_constructor_params[[ii]])
+        if (nchar(ps) > 0L) paste0(cls, " (", ps, ")") else cls
+      }, "")
+      for (lbl in unique(labels[duplicated(labels)])) {
+        idx = which(labels == lbl)
+        for (k in seq_along(idx)) labels[idx[k]] = paste0(lbl, " [", k, "]")
+      }
+      labels
+    },
+
     # ── Data generation ───────────────────────────────────────────────────────
 
     .generate_data = function() {
@@ -1101,7 +1286,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n       = private$n
 
       # Auto-inject required args that depend on the covariate matrix when the
-      # user has not already supplied them via design_params.
+      # user has not already supplied them via design_classes_and_params.
       init_fn = private$.get_r6_init_fn(design_gen)
       if (!is.null(init_fn)) {
         fn_formals = names(formals(init_fn))
@@ -1149,7 +1334,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
     # Append one row to raw_results as a plain list (no data.table allocation).
     # rbindlist() in get_results() converts the whole list at once.
-    .record = function(rep, design, inf_name, method, est, ci, pval, true_estimand) {
+    .record = function(rep, design, inf_name, inference_type, est, ci, pval, true_estimand) {
       ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
       if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
       
@@ -1158,7 +1343,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         rep           = as.integer(rep),
         design        = design,
         inference     = inf_name,
-        method        = method,
+        inference_type = inference_type,
         estimate      = if (is.null(est) || !is.finite(est)) NA_real_ else as.numeric(est),
         ci_lo         = ci2[1L],
         ci_hi         = ci2[2L],

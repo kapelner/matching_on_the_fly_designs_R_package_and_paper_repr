@@ -168,6 +168,13 @@ ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
     return fast_poisson_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 }
 
+//' @title Compute Poisson Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a Poisson regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;
@@ -175,6 +182,12 @@ Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const
     return X.transpose() * (y - mu);
 }
 
+//' @title Compute Poisson Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Poisson regression model.
+//' @param X A numeric matrix of predictors.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;
@@ -182,6 +195,14 @@ Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, con
     return - (X.transpose() * mu.asDiagonal() * X);
 }
 
+//' @title Compute Weighted Poisson Regression Score
+//' @description Calculates the score vector for a weighted Poisson regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param weights A numeric vector of weights.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the weighted score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
                                                           const Eigen::VectorXd& y,
@@ -192,6 +213,13 @@ Eigen::VectorXd get_poisson_regression_weighted_score_cpp(const Eigen::MatrixXd&
     return X.transpose() * weights.cwiseProduct(y - mu);
 }
 
+//' @title Compute Weighted Poisson Regression Hessian
+//' @description Calculates the Hessian matrix for a weighted Poisson regression model.
+//' @param X A numeric matrix of predictors.
+//' @param weights A numeric vector of weights.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the weighted Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
                                                             const Eigen::VectorXd& weights,
@@ -202,6 +230,17 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
     return - (X.transpose() * w.asDiagonal() * X);
 }
 
+//' @title Fast Poisson Regression (C++)
+//' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
+//' @return A list containing coefficients, fitted values, and information matrix.
+//' @export
 // [[Rcpp::export]]
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
@@ -219,6 +258,18 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 	);
 }
 
+//' @title Fast Weighted Poisson Regression (C++)
+//' @description High-performance weighted Poisson regression fitting.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param weights A numeric vector of weights.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, fitted values, and information matrix.
+//' @export
 // [[Rcpp::export]]
 List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y,
@@ -237,6 +288,18 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 	);
 }
 
+//' @title Fast Poisson Regression with Variance (C++)
+//' @description Poisson regression with variance-covariance matrix and score calculation.
+//' @param Xmm A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, vcov, score, and likelihood statistics.
+//' @export
 // [[Rcpp::export]]
 List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 											  const Eigen::VectorXd& y,
@@ -282,6 +345,18 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	);
 }
 
+//' @title Fast Quasi-Poisson Regression with Variance (C++)
+//' @description Quasi-Poisson regression with dispersion-adjusted variance-covariance matrix.
+//' @param Xmm A numeric matrix of predictors.
+//' @param y A numeric vector of responses (counts).
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, vcov, and dispersion estimate.
+//' @export
 // [[Rcpp::export]]
 List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 												   const Eigen::VectorXd& y,

@@ -93,6 +93,7 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
         Named("params") = params,
+        Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged
     );
 }
@@ -130,6 +131,9 @@ List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X,
 
     return List::create(
         Named("b") = res["b"],
+        Named("alpha") = res["alpha"],
+        Named("params") = params,
+        Named("neg_loglik") = res["neg_loglik"],
         Named("ssq_b_2") = ssq_b_2,
         Named("converged") = converged
     );

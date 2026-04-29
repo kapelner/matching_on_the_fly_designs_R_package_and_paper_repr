@@ -1,7 +1,6 @@
 library(EDI)
 suppressPackageStartupMessages(library(data.table))
 
-#fix true tau
 #compute the variance estimate in each nrep. Calculate true variance once.
 # compute prop (variance estimate > true variance)
 # average variance estimate - true variance
@@ -16,36 +15,22 @@ keep_all_intermediate_data = FALSE
 data_types = c("linear", "nonlinear")
 out_file   = sprintf("simulations/azriel_exact_sims_results_Nrep_%d.csv", Nrep)
 
-# ── Fixed: design classes ───────────────────────────────────────
-design_classes = list(
+# ── Fixed: design classes and params ─────────────────────────────
+design_classes_and_params = list(
   FixedDesigniBCRD,
   FixedDesignBinaryMatch,
-  FixedDesignOptimalBlocks,
-  FixedDesignOptimalBlocks,
-  FixedDesignOptimalBlocks,
-  FixedDesignOptimalBlocks,
-  FixedDesignBlocking,
-  FixedDesignBlocking,
-  FixedDesignBlocking,
-  FixedDesignBlocking
-)
-design_params = list(
-  list(),
-  list(),
-  #FixedDesignOptimalBlocks
-  list(B = 4),
-  list(B = 8),
-  list(B = 16),
-  list(B = 32),
-  #FixedDesignBlocking
-  list(B_preferred = 4),
-  list(B_preferred = 8),
-  list(B_preferred = 16),
-  list(B_preferred = 32)
+  FixedDesignOptimalBlocks = list(B = 4),
+  FixedDesignOptimalBlocks = list(B = 8),
+  FixedDesignOptimalBlocks = list(B = 16),
+  FixedDesignOptimalBlocks = list(B = 32),
+  FixedDesignBlocking = list(B_preferred = 4),
+  FixedDesignBlocking = list(B_preferred = 8),
+  FixedDesignBlocking = list(B_preferred = 16),
+  FixedDesignBlocking = list(B_preferred = 32)
 )
 
 # ── Fixed: inference classes ───────────────────────────────────────
-inference_classes = list(
+inference_classes_and_params = list(
   InferenceIncidenceWald,
   InferenceIncidAzriel,
   InferenceIncidExtendedRobins,
@@ -55,7 +40,12 @@ inference_classes = list(
 # Only asymptotic (Azriel / Robins) and exact (ExactBinomial) types needed.
 # Warnings about InferenceIncidAzriel / InferenceIncidExtendedRobins not
 # inheriting InferenceExact are expected and suppressed below.
-inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval")
+inference_types_and_params = list(
+  asymp_ci   = list(),
+  asymp_pval = list(),
+  exact_ci   = list(),
+  exact_pval = list()
+)
 
 # ── Load existing results ─────────────────────────────────────────────────────
 existing_dt = if (file.exists(out_file)) fread(out_file) else NULL
@@ -90,16 +80,15 @@ for (betaT in betaTs) {
         sim = suppressWarnings(
           SimulationFramework$new(
             response_type     = "incidence",
-            design_classes    = design_classes,
-            inference_classes = inference_classes,
+            design_classes_and_params = design_classes_and_params,
+            inference_classes_and_params = inference_classes_and_params,
             n                 = n,
             p                 = p,
             data_type         = data_type,
             Nrep              = Nrep,
             betaT             = betaT,
             alpha             = alpha,
-            inf_types         = inf_types,
-            design_params     = design_params,
+            inference_types_and_params = inference_types_and_params,
             keep_all_intermediate_data = keep_all_intermediate_data
           )
         )
@@ -139,8 +128,8 @@ for (betaT in betaTs) {
           }
 
           # Re-order columns for readability
-          setcolorder(results_dt, c("betaT", "n", "p", "data_type", "design", "inference", "method"))
-          setorder(results_dt, betaT, n, p, data_type, design, inference, method)   
+          setcolorder(results_dt, c("betaT", "n", "p", "data_type", "design", "inference", "inference_type"))
+          setorder(results_dt, betaT, n, p, data_type, design, inference, inference_type)   
           
           fwrite(results_dt, out_file)
           message(sprintf("\nSaved to %s", out_file))
@@ -171,6 +160,3 @@ for (betaT in betaTs) {
 #     }
 #   }
 # }
-
-
-

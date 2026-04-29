@@ -199,18 +199,56 @@ compute_bai_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, halves_idx, c
     .Call(`_EDI_compute_bai_distr_parallel_cpp`, y, w_mat, m_mat, delta, halves_idx, convex_flag, num_cores)
 }
 
+#' @title Compute Beta Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a beta regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (in (0, 1)).
+#' @param params A numeric vector of parameters [beta, log_phi].
+#' @return A numeric vector representing the score.
+#' @export
 get_beta_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_beta_regression_score_cpp`, X, y, params)
 }
 
+#' @title Compute Beta Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a beta regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param params A numeric vector of parameters [beta, log_phi].
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_beta_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_beta_regression_hessian_cpp`, X, y, params)
 }
 
+#' @title Fast Beta Regression (C++)
+#' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (in (0, 1)).
+#' @param start_beta Optional starting values for coefficients.
+#' @param start_phi Optional starting value for precision parameter phi.
+#' @param compute_std_errs Deprecated.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, phi, and convergence status.
+#' @export
 fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Beta Regression with Variance (C++)
+#' @description Beta regression with full variance-covariance matrix and standard error estimation.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (in (0, 1)).
+#' @param start_beta Optional starting values for coefficients.
+#' @param start_phi Optional starting value for precision parameter phi.
+#' @param compute_std_errs Deprecated.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, phi, vcov, standard errors, and convergence status.
+#' @export
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg)
 }
@@ -243,22 +281,138 @@ fast_continuation_ratio_regression_with_var_cpp <- function(X, y, maxit = 100L, 
     .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Cox Proportional Hazards Regression (C++)
+#' @description High-performance Cox regression fitting using Breslow's method for ties.
+#' @param y A numeric vector of survival times.
+#' @param dead A numeric vector of event indicators (1=event, 0=censored).
+#' @param X A numeric matrix of predictors.
+#' @param start_beta Optional starting values for coefficients.
+#' @param estimate_only If TRUE, only return coefficients and likelihood.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param cluster Optional vector of cluster IDs for robust variance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm ("newton_raphson" or "lbfgs").
+#' @return A list containing coefficients, vcov (optional), and convergence status.
+#' @export
 fast_coxph_regression_cpp <- function(y, dead, X, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_coxph_regression_cpp`, y, dead, X, start_beta, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Stratified Cox Proportional Hazards Regression (C++)
+#' @description High-performance stratified Cox regression fitting.
+#' @param y A numeric vector of survival times.
+#' @param dead A numeric vector of event indicators.
+#' @param X A numeric matrix of predictors.
+#' @param strata_r An integer vector of strata IDs.
+#' @param start_beta Optional starting values for coefficients.
+#' @param estimate_only If TRUE, only return coefficients and likelihood.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, vcov, and convergence status.
+#' @export
 fast_stratified_coxph_regression_cpp <- function(y, dead, X, strata_r, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stratified_coxph_regression_cpp`, y, dead, X, strata_r, start_beta, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Compute Cox PH Score (C++)
+#' @description Calculates the score vector (gradient of log partial likelihood) for unstratified Cox regression.
+#' @param y Survival times.
+#' @param dead Event indicators.
+#' @param X Predictor matrix.
+#' @param beta Coefficient vector.
+#' @return Score vector.
+#' @export
+get_coxph_score_cpp <- function(y, dead, X, beta) {
+    .Call(`_EDI_get_coxph_score_cpp`, y, dead, X, beta)
+}
+
+#' @title Compute Cox PH Hessian (C++)
+#' @description Calculates the Hessian of log partial likelihood for unstratified Cox regression.
+#' @param y Survival times.
+#' @param dead Event indicators.
+#' @param X Predictor matrix.
+#' @param beta Coefficient vector.
+#' @return Hessian matrix.
+#' @export
+get_coxph_hessian_cpp <- function(y, dead, X, beta) {
+    .Call(`_EDI_get_coxph_hessian_cpp`, y, dead, X, beta)
+}
+
+#' @title Compute Stratified Cox PH Score (C++)
+#' @description Calculates the score vector (gradient of log partial likelihood) for stratified Cox regression.
+#' @param y Survival times.
+#' @param dead Event indicators.
+#' @param X Predictor matrix.
+#' @param strata_r Integer vector of strata IDs.
+#' @param beta Coefficient vector.
+#' @return Score vector.
+#' @export
+get_stratified_coxph_score_cpp <- function(y, dead, X, strata_r, beta) {
+    .Call(`_EDI_get_stratified_coxph_score_cpp`, y, dead, X, strata_r, beta)
+}
+
+#' @title Compute Stratified Cox PH Hessian (C++)
+#' @description Calculates the Hessian of log partial likelihood for stratified Cox regression.
+#' @param y Survival times.
+#' @param dead Event indicators.
+#' @param X Predictor matrix.
+#' @param strata_r Integer vector of strata IDs.
+#' @param beta Coefficient vector.
+#' @return Hessian matrix.
+#' @export
+get_stratified_coxph_hessian_cpp <- function(y, dead, X, strata_r, beta) {
+    .Call(`_EDI_get_stratified_coxph_hessian_cpp`, y, dead, X, strata_r, beta)
+}
+
+#' @title Compute Combined Conditional-Poisson Score
+#' @description Calculates the score vector for the combined conditional-Poisson and Poisson log-likelihood.
+#' @param yT_v Treated counts per pair.
+#' @param n_k_v Total counts per pair.
+#' @param X_diff_v Covariate differences between pairs.
+#' @param y_r Reservoir outcomes.
+#' @param w_r Reservoir treatment indicators.
+#' @param X_r Reservoir covariates.
+#' @param params Current parameter estimates.
+#' @return A numeric vector representing the score.
+#' @export
 get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
     .Call(`_EDI_get_cpoisson_combined_score_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
 }
 
+#' @title Compute Combined Conditional-Poisson Hessian
+#' @description Calculates the Hessian matrix for the combined conditional-Poisson and Poisson model.
+#' @param yT_v Treated counts per pair.
+#' @param n_k_v Total counts per pair.
+#' @param X_diff_v Covariate differences between pairs.
+#' @param y_r Reservoir outcomes.
+#' @param w_r Reservoir treatment indicators.
+#' @param X_r Reservoir covariates.
+#' @param params Current parameter estimates.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_cpoisson_combined_hessian_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
     .Call(`_EDI_get_cpoisson_combined_hessian_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
 }
 
+#' @title Fast Combined Conditional-Poisson Regression (C++)
+#' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
+#' @param yT_v Treated counts per pair.
+#' @param n_k_v Total counts per pair.
+#' @param X_diff_v Covariate differences.
+#' @param y_r Reservoir outcomes.
+#' @param w_r Reservoir treatment indicators.
+#' @param X_r Reservoir covariates.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients, variance estimates, and likelihood statistics.
+#' @export
 fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol, fixed_idx, fixed_values)
 }
@@ -330,34 +484,104 @@ compute_kk_wilcox_distr_parallel_cpp <- function(y, w_mat, m_mat, delta, transfo
     .Call(`_EDI_compute_kk_wilcox_distr_parallel_cpp`, y, w_mat, m_mat, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
 }
 
+#' @title Compute Log-Binomial Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a log-binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the score.
+#' @export
 get_log_binomial_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_log_binomial_regression_score_cpp`, X, y, beta)
 }
 
+#' @title Compute Log-Binomial Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a log-binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_log_binomial_regression_hessian_cpp`, X, y, beta)
 }
 
+#' @title Compute Identity-Binomial Regression Score
+#' @description Calculates the score vector for a binomial regression model with an identity link.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the score.
+#' @export
 get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_identity_binomial_regression_score_cpp`, X, y, beta)
 }
 
+#' @title Compute Identity-Binomial Regression Hessian
+#' @description Calculates the Hessian matrix for a binomial regression model with an identity link.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_identity_binomial_regression_hessian_cpp`, X, y, beta)
 }
 
+#' @title Fast Log-Binomial Regression (C++)
+#' @description High-performance log-binomial regression fitting using Fisher scoring.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients and fitted values.
+#' @export
 fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_log_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values)
 }
 
+#' @title Fast Log-Binomial Regression with Variance (C++)
+#' @description Log-binomial regression with variance-covariance matrix and standard errors.
+#' @param Xmm A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param j 1-based index of the parameter for which to return specific variance.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients, vcov, and standard errors.
+#' @export
 fast_log_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values)
 }
 
+#' @title Fast Identity-Binomial Regression (C++)
+#' @description High-performance binomial regression with identity link using Fisher scoring.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients and fitted values.
+#' @export
 fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values)
 }
 
+#' @title Fast Identity-Binomial Regression with Variance (C++)
+#' @description Binomial regression with identity link, providing variance-covariance matrix and standard errors.
+#' @param Xmm A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param j 1-based index of the parameter for which to return specific variance.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients, vcov, and standard errors.
+#' @export
 fast_identity_binomial_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values)
 }
@@ -378,30 +602,91 @@ fast_logistic_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n
     .Call(`_EDI_fast_logistic_glmm_cpp`, X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values)
 }
 
+#' @title Compute Logistic Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a logistic regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the score.
+#' @export
 get_logistic_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_logistic_regression_score_cpp`, X, y, beta)
 }
 
+#' @title Compute Logistic Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a logistic regression model.
+#' @param X A numeric matrix of predictors.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_logistic_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_logistic_regression_hessian_cpp`, X, beta)
 }
 
+#' @title Compute Weighted Logistic Regression Score
+#' @description Calculates the score vector for a weighted logistic regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A numeric vector of weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the weighted score.
+#' @export
 get_logistic_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_score_cpp`, X, y, weights, beta)
 }
 
+#' @title Compute Weighted Logistic Regression Hessian
+#' @description Calculates the Hessian matrix for a weighted logistic regression model.
+#' @param X A numeric matrix of predictors.
+#' @param weights A numeric vector of weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the weighted Hessian.
+#' @export
 get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_hessian_cpp`, X, weights, beta)
 }
 
+#' @title Fast Logistic Regression (C++)
+#' @description High-performance logistic regression fitting using IRLS.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm (e.g., "irls").
+#' @return A list containing coefficients and weights.
+#' @export
 fast_logistic_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Weighted Logistic Regression (C++)
+#' @description High-performance weighted logistic regression fitting using IRLS.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A numeric vector of weights.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, fitted values, and information matrix.
+#' @export
 fast_logistic_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Logistic Regression with Variance (C++)
+#' @description Logistic regression with full variance-covariance matrix and score calculation.
+#' @param Xmm A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param j The 1-based index of the parameter for which to return specific variance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, vcov, score, and likelihood statistics.
+#' @export
 fast_logistic_regression_with_var_cpp <- function(Xmm, y, j = 2L, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_with_var_cpp`, Xmm, y, j, fixed_idx, fixed_values, optimization_alg)
 }
@@ -414,26 +699,81 @@ matrix_rank_cpp <- function(A, tol = 1e-7) {
     .Call(`_EDI_matrix_rank_cpp`, A, tol)
 }
 
+#' @title Compute Negative Binomial Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (non-negative integers).
+#' @param params A numeric vector of parameters [beta, log_theta].
+#' @return A numeric vector representing the score.
+#' @export
 get_negbin_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_negbin_regression_score_cpp`, X, y, params)
 }
 
+#' @title Compute Negative Binomial Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a negative binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param params A numeric vector of parameters [beta, log_theta].
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_negbin_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_negbin_regression_hessian_cpp`, X, y, params)
 }
 
+#' @title Fast Negative Binomial Regression with Variance (C++)
+#' @description Negative binomial regression fitting with full variance-covariance matrix.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (non-negative integers).
+#' @param maxit Maximum number of iterations.
+#' @param eps_f Convergence tolerance for function value.
+#' @param eps_g Convergence tolerance for gradient.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, theta, vcov, and convergence status.
+#' @export
 fast_neg_bin_with_var_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_neg_bin_with_var_cpp`, X, y, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Negative Binomial Regression (C++)
+#' @description High-performance negative binomial regression fitting.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param eps_f Convergence tolerance for function value.
+#' @param eps_g Convergence tolerance for gradient.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, theta, and convergence status.
+#' @export
 fast_neg_bin_cpp <- function(X, y, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_neg_bin_cpp`, X, y, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Ordinary Least Squares (C++)
+#' @description High-performance OLS fitting using Eigen's Complete Orthogonal Decomposition.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients and the XtX matrix.
+#' @export
 fast_ols_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_cpp`, X, y, fixed_idx, fixed_values)
 }
 
+#' @title Fast OLS with Variance (C++)
+#' @description OLS fitting with variance-covariance matrix and error variance estimation.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param j 1-based index of the parameter for which to return specific variance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
+#' @export
 fast_ols_with_var_cpp <- function(X, y, j = 2L, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_with_var_cpp`, X, y, j, fixed_idx, fixed_values)
 }
@@ -502,30 +842,89 @@ fast_ordinal_probit_regression_with_var_cpp <- function(X, y, optimization_alg =
     .Call(`_EDI_fast_ordinal_probit_regression_with_var_cpp`, X, y, optimization_alg, fixed_idx, fixed_values)
 }
 
+#' @title Compute Ordinal Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for an ordinal regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (ordinal categories 1, 2, ...).
+#' @param params A numeric vector of parameters [alpha, beta].
+#' @return A numeric vector representing the score.
+#' @export
 get_ordinal_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_ordinal_regression_score_cpp`, X, y, params)
 }
 
+#' @title Compute Ordinal Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for an ordinal regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param params A numeric vector of parameters [alpha, beta].
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_ordinal_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_ordinal_regression_hessian_cpp`, X, y, params)
 }
 
+#' @title Fast Ordinal Regression (C++)
+#' @description High-performance ordinal regression fitting using Newton-Raphson.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
+#' @export
 fast_ordinal_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_ordinal_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Ordinal Regression with Variance (C++)
+#' @description Ordinal regression fitting with full variance-covariance matrix.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, thresholds, vcov, and convergence status.
+#' @export
 fast_ordinal_regression_with_var_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_ordinal_regression_with_var_cpp`, X, y, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Ordinal G-Computation Post-Fit (C++)
+#' @description Performs G-computation for ordinal outcomes using a fitted model's parameters.
+#' @param X_fit Matrix of predictors used in fit.
+#' @param y Vector of responses.
+#' @param coef_hat Estimated coefficients (beta).
+#' @param alpha_hat Estimated thresholds (alpha).
+#' @param j_treat 1-based index of treatment column.
+#' @return A list containing G-computation results (means, difference, SE).
+#' @export
 ordinal_gcomp_post_fit_cpp <- function(X_fit, y, coef_hat, alpha_hat, j_treat) {
     .Call(`_EDI_ordinal_gcomp_post_fit_cpp`, X_fit, y, coef_hat, alpha_hat, j_treat)
 }
 
+#' @title Expand Continuation Ratio Data (C++)
+#' @description Utility to expand ordinal data for continuation ratio regression.
+#' @param y Vector of responses.
+#' @param w Vector of treatment indicators.
+#' @param strata Vector of strata.
+#' @param K Number of categories.
+#' @return A list with expanded y, w, and strata.
+#' @export
 expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_continuation_ratio_data_cpp`, y, w, strata, K)
 }
 
+#' @title Expand Adjacent Category Data (C++)
+#' @description Utility to expand ordinal data for adjacent category logit regression.
+#' @param y Vector of responses.
+#' @param w Vector of treatment indicators.
+#' @param strata Vector of strata.
+#' @param K Number of categories.
+#' @return A list with expanded y, w, and strata.
+#' @export
 expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
 }
@@ -534,34 +933,109 @@ fast_poisson_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n_
     .Call(`_EDI_fast_poisson_glmm_cpp`, X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Compute Poisson Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a Poisson regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the score.
+#' @export
 get_poisson_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_poisson_regression_score_cpp`, X, y, beta)
 }
 
+#' @title Compute Poisson Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Poisson regression model.
+#' @param X A numeric matrix of predictors.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_poisson_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_poisson_regression_hessian_cpp`, X, beta)
 }
 
+#' @title Compute Weighted Poisson Regression Score
+#' @description Calculates the score vector for a weighted Poisson regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param weights A numeric vector of weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the weighted score.
+#' @export
 get_poisson_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_score_cpp`, X, y, weights, beta)
 }
 
+#' @title Compute Weighted Poisson Regression Hessian
+#' @description Calculates the Hessian matrix for a weighted Poisson regression model.
+#' @param X A numeric matrix of predictors.
+#' @param weights A numeric vector of weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the weighted Hessian.
+#' @export
 get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X, weights, beta)
 }
 
+#' @title Fast Poisson Regression (C++)
+#' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
+#' @return A list containing coefficients, fitted values, and information matrix.
+#' @export
 fast_poisson_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Weighted Poisson Regression (C++)
+#' @description High-performance weighted Poisson regression fitting.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param weights A numeric vector of weights.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, fitted values, and information matrix.
+#' @export
 fast_poisson_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Poisson Regression with Variance (C++)
+#' @description Poisson regression with variance-covariance matrix and score calculation.
+#' @param Xmm A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param j 1-based index of the parameter for which to return specific variance.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, vcov, score, and likelihood statistics.
+#' @export
 fast_poisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Quasi-Poisson Regression with Variance (C++)
+#' @description Quasi-Poisson regression with dispersion-adjusted variance-covariance matrix.
+#' @param Xmm A numeric matrix of predictors.
+#' @param y A numeric vector of responses (counts).
+#' @param j 1-based index of the parameter for which to return specific variance.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, vcov, and dispersion estimate.
+#' @export
 fast_quasipoisson_regression_with_var_cpp <- function(Xmm, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, Xmm, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -603,22 +1077,67 @@ shuffle_cpp <- function(w) {
     .Call(`_EDI_shuffle_cpp`, w)
 }
 
+#' @title Compute Stereotype Logit Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a stereotype logit model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param params A numeric vector of parameters.
+#' @return A numeric vector representing the score.
+#' @export
 get_stereotype_logit_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_stereotype_logit_score_cpp`, X, y, params)
 }
 
+#' @title Compute Stereotype Logit Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a stereotype logit model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param params A numeric vector of parameters.
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_stereotype_logit_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_stereotype_logit_hessian_cpp`, X, y, params)
 }
 
+#' @title Fast Stereotype Logit Regression (C++)
+#' @description High-performance stereotype logit regression fitting using Newton-Raphson.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, thresholds, scores, and convergence status.
+#' @export
 fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stereotype_logit_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Fast Stereotype Logit Regression with Variance (C++)
+#' @description Stereotype logit regression fitting with full variance-covariance matrix.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, variance estimates, vcov, and convergence status.
+#' @export
 fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stereotype_logit_with_var_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Compute Stereotype Profile Log-Likelihood (C++)
+#' @description Calculates the profile log-likelihood for a fixed beta in a stereotype logit model.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param beta_fixed The fixed value for the first beta parameter.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @return The profile log-likelihood value.
+#' @export
 fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
 }
@@ -727,14 +1246,44 @@ fast_weibull_frailty_cpp <- function(y, dead, X, group_id, start = NULL, estimat
     .Call(`_EDI_fast_weibull_frailty_cpp`, y, dead, X, group_id, start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
 
+#' @title Compute Weibull Regression Score
+#' @description Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
+#' @param y A numeric vector of survival times.
+#' @param dead A numeric vector of event indicators.
+#' @param X A numeric matrix of predictors.
+#' @param params A numeric vector of parameters [beta, log_sigma].
+#' @return A numeric vector representing the score.
+#' @export
 get_weibull_regression_score_cpp <- function(y, dead, X, params) {
     .Call(`_EDI_get_weibull_regression_score_cpp`, y, dead, X, params)
 }
 
+#' @title Compute Weibull Regression Hessian
+#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Weibull AFT regression model.
+#' @param y A numeric vector of survival times.
+#' @param dead A numeric vector of event indicators.
+#' @param X A numeric matrix of predictors.
+#' @param params A numeric vector of parameters [beta, log_sigma].
+#' @return A numeric matrix representing the Hessian.
+#' @export
 get_weibull_regression_hessian_cpp <- function(y, dead, X, params) {
     .Call(`_EDI_get_weibull_regression_hessian_cpp`, y, dead, X, params)
 }
 
+#' @title Fast Weibull Regression (C++)
+#' @description High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
+#' @param y A numeric vector of survival times.
+#' @param dead A numeric vector of event indicators.
+#' @param X A numeric matrix of predictors.
+#' @param start_params Optional starting values for [beta, log_sigma].
+#' @param estimate_only If TRUE, only return coefficients and likelihood.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @return A list containing coefficients, log_sigma, vcov, and convergence status.
+#' @export
 fast_weibull_regression_cpp <- function(y, dead, X, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_weibull_regression_cpp`, y, dead, X, start_params, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }

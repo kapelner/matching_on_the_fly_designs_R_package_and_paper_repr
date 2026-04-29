@@ -8,7 +8,7 @@ Fits a Poisson GEE model using the treatment indicator and all recorded
 covariates as predictors.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAbstractKKGEE]{EDI::InferenceAbstractKKGEE}} -> \code{EDI::InferenceCountPoissonKKGEE} -> \code{InferenceCountPoissonMultiKKGEE}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAbstractKKGEE]{EDI::InferenceAbstractKKGEE}} -> \code{\link[EDI:InferenceCountPoissonKKGEE]{EDI::InferenceCountPoissonKKGEE}} -> \code{InferenceCountPoissonMultiKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{

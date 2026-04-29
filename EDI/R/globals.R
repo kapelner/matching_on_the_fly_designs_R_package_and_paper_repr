@@ -94,6 +94,23 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
     # Initialize mirai daemons
     mirai::daemons(num_cores)
     edi_env$global_mirai_num_cores = num_cores
+    # Each daemon inherited OMP_NUM_THREADS=N from the parent; cap them at 1 so
+    # N daemons don't each spawn N OMP threads.  Main-process Rcpp OMP functions
+    # use omp_set_num_threads() explicitly and are unaffected by this reset.
+    tryCatch(
+      mirai::everywhere({
+        Sys.setenv(
+          OMP_NUM_THREADS        = 1L,
+          MKL_NUM_THREADS        = 1L,
+          OPENBLAS_NUM_THREADS   = 1L,
+          VECLIB_MAXIMUM_THREADS = 1L,
+          NUMEXPR_NUM_THREADS    = 1L
+        )
+        if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
+        if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
+      }),
+      error = function(e) invisible(NULL)
+    )
   } else {
     if (isTRUE(edi_env$mirai_has_been_used)) {
       stop(
@@ -102,7 +119,26 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
       )
     }
     # Unix-like system, use forking
-    edi_env$global_fork_cluster = parallel::makeForkCluster(num_cores)
+    cl = parallel::makeForkCluster(num_cores)
+    # Workers inherited OMP_NUM_THREADS=N; cap them at 1 to prevent N×N oversubscription.
+    # Fork workers run R-level bootstrap code; main-process Rcpp OMP functions bypass
+    # this via explicit omp_set_num_threads() and are unaffected.
+    tryCatch(
+      parallel::clusterCall(cl, function() {
+        Sys.setenv(
+          OMP_NUM_THREADS        = 1L,
+          MKL_NUM_THREADS        = 1L,
+          OPENBLAS_NUM_THREADS   = 1L,
+          VECLIB_MAXIMUM_THREADS = 1L,
+          NUMEXPR_NUM_THREADS    = 1L
+        )
+        if (check_package_installed("data.table")) data.table::setDTthreads(1L)
+        if (check_package_installed("fixest")) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
+        invisible(NULL)
+      }),
+      error = function(e) invisible(NULL)
+    )
+    edi_env$global_fork_cluster = cl
   }
   
   invisible(NULL)

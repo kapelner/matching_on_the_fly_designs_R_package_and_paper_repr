@@ -158,6 +158,13 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
 
 } // namespace
 
+//' @title Compute Beta Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a beta regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (in (0, 1)).
+//' @param params A numeric vector of parameters [beta, log_phi].
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
                                               const Eigen::VectorXd& y,
@@ -168,6 +175,13 @@ Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
     return -grad; // Return the actual score (gradient of log-likelihood)
 }
 
+//' @title Compute Beta Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a beta regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param params A numeric vector of parameters [beta, log_phi].
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
@@ -176,6 +190,18 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
     return -fun.hessian(params); // Return the actual Hessian of log-likelihood (Fisher Information is -Hessian)
 }
 
+//' @title Fast Beta Regression (C++)
+//' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (in (0, 1)).
+//' @param start_beta Optional starting values for coefficients.
+//' @param start_phi Optional starting value for precision parameter phi.
+//' @param compute_std_errs Deprecated.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, phi, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 								const NumericVector& y,
@@ -196,13 +222,33 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 
     ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg);
 
+    Eigen::VectorXd params_full(fit.b.size() + 1);
+    params_full.head(fit.b.size()) = fit.b;
+    params_full[fit.b.size()] = std::log(fit.dispersion);
+    BetaRegression fun_neg_ll(y_eigen, X);
+    Eigen::VectorXd dummy_grad(params_full.size());
+    double neg_loglik = fun_neg_ll(params_full, dummy_grad);
+
 	return List::create(
 		Named("coefficients") = fit.b,
 		Named("phi") = fit.dispersion,
+		Named("neg_loglik") = neg_loglik,
 		Named("converged") = fit.converged
 	);
 }
 
+//' @title Fast Beta Regression with Variance (C++)
+//' @description Beta regression with full variance-covariance matrix and standard error estimation.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (in (0, 1)).
+//' @param start_beta Optional starting values for coefficients.
+//' @param start_phi Optional starting value for precision parameter phi.
+//' @param compute_std_errs Deprecated.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, phi, vcov, standard errors, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 									 const NumericVector& y,
@@ -228,9 +274,17 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
     Eigen::MatrixXd cov_mat = expand_free_covariance(X.cols() + 1, fixed_spec, cov_free, true);
     Eigen::VectorXd se = cov_mat.diagonal().array().sqrt();
 
+    Eigen::VectorXd params_full(fit.b.size() + 1);
+    params_full.head(fit.b.size()) = fit.b;
+    params_full[fit.b.size()] = std::log(fit.dispersion);
+    BetaRegression fun_neg_ll(y_eigen, X);
+    Eigen::VectorXd dummy_grad(params_full.size());
+    double neg_loglik = fun_neg_ll(params_full, dummy_grad);
+
 	return List::create(
 		Named("coefficients") = fit.b,
 		Named("phi") = fit.dispersion,
+		Named("neg_loglik") = neg_loglik,
 		Named("vcov") = cov_mat,
 		Named("std_errs") = se,
         Named("converged") = fit.converged

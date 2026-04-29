@@ -16,42 +16,43 @@ cat("Using N_REP =", N_REP, "\n")
 SAMPLE_SIZE = 100
 EFFECT_SIZE = 0.5 
 
-run_path_benchmark = function(label, resp_type, ivwc_cls, onelik_cls) {
+run_path_benchmark = function(label, resp_type, ivwc_cls, onelik_cls, betaT) {
   cat("\n", rep("-", 80), sep = "")
-  cat("\nPATH: ", label, " [", resp_type, "]\n", sep = "")
+  cat("\nPATH: ", label, " [", resp_type, "] betaT=", betaT, "\n", sep = "")
   cat(rep("-", 80), "\n", sep = "")
-  
+
   sim = SimulationFramework$new(
     response_type     = resp_type,
-    design_classes    = list(DesignSeqOneByOneKK21),
-    inference_classes = list(ivwc_cls, onelik_cls),
+    design_classes_and_params = list(DesignSeqOneByOneKK21),
+    inference_classes_and_params = list(ivwc_cls, onelik_cls),
     n = SAMPLE_SIZE,
     p = 5,
     Nrep = N_REP,
-    betaT = EFFECT_SIZE,
+    betaT = betaT,
     verbose = TRUE,
-    inf_types = c("asymp_pval")
+    inference_types_and_params = list(asymp_pval = list())
   )
-  
+
   # Run and capture results
   res = tryCatch({
     sim$run()
     # SimulationFramework$summarize() returns a data.table with:
-    # design, inference, method, MSE, n_est, coverage, n_cov, ci_length, power, n_pow, design_params, inference_params
+    # design, inference, inference_type, MSE, n_est, coverage, n_cov, ci_length, power, n_pow,
+    # design_params, inference_params, inference_type_params
     sim$summarize()
   }, error = function(e) {
     message("Error in simulation for ", label, ": ", e$message)
     return(NULL)
   })
-  
+
   if (!is.null(res)) {
     res$Path = label
     res$response_type = resp_type # Manually add since it's missing from summarize()
     res$Variant = ifelse(grepl("IVWC", res$inference), "IVWC", "OneLik")
     return(res %>% select(Path, response_type, Variant, power, MSE, n_est, n_pow))
-    }
-    return(NULL)
-    }
+  }
+  return(NULL)
+}
 
 # Define all comparison pairs
 paths = list(
@@ -67,16 +68,22 @@ paths = list(
   list("Stratified Cox",    "survival",   InferenceSurvivalKKStratCoxIVWC,    InferenceSurvivalKKStratCoxOneLik)
 )
 
-results_list = list()
+power_list = list()
+size_list  = list()
 for (p in paths) {
-  results_list[[length(results_list) + 1]] = run_path_benchmark(p[[1]], p[[2]], p[[3]], p[[4]])
+  power_list[[length(power_list) + 1]] = run_path_benchmark(p[[1]], p[[2]], p[[3]], p[[4]], betaT = EFFECT_SIZE)
+  size_list[[length(size_list)   + 1]] = run_path_benchmark(p[[1]], p[[2]], p[[3]], p[[4]], betaT = 0)
 }
 
-# Combine and Report
-final_results = do.call(rbind, results_list)
+# Combine power and size results
+power_df = do.call(rbind, power_list)
+size_df  = do.call(rbind, size_list) %>% select(Path, response_type, Variant, size = power)
+
+final_results = merge(power_df, size_df, by = c("Path", "response_type", "Variant")) %>%
+  select(Path, response_type, Variant, size, power, MSE, n_est, n_pow)
 
 cat("\n\n" , rep("=", 40), sep = "")
-cat("\nSUMMARY OF POWER COMPARISON (IVWC vs OneLik)\n")
+cat("\nSUMMARY OF SIZE & POWER COMPARISON (IVWC vs OneLik)\n")
 cat(rep("=", 40), "\n", sep = "")
 print(as.data.frame(final_results), row.names = FALSE)
 

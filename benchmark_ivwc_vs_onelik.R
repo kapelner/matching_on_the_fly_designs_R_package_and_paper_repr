@@ -21,8 +21,8 @@ run_comparison = function(response_type, ivwc_class, onelik_class, label, n = 10
   
   sim = SimulationFramework$new(
     response_type = response_type,
-    design_classes = list(DesignSeqOneByOneKK21),
-    inference_classes = list(ivwc_class, onelik_class),
+    design_classes_and_params = list(DesignSeqOneByOneKK21),
+    inference_classes_and_params = list(ivwc_class, onelik_class),
     n = n,
     p = 5,
     data_type = "linear",

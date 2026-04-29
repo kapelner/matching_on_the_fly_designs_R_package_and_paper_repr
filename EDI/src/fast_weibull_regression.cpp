@@ -92,6 +92,14 @@ public:
 
 } // namespace
 
+//' @title Compute Weibull Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
+//' @param y A numeric vector of survival times.
+//' @param dead A numeric vector of event indicators.
+//' @param X A numeric matrix of predictors.
+//' @param params A numeric vector of parameters [beta, log_sigma].
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::VectorXd& y,
                                                  const Eigen::VectorXd& dead,
@@ -103,6 +111,14 @@ Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::VectorXd& y,
     return -grad;
 }
 
+//' @title Compute Weibull Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Weibull AFT regression model.
+//' @param y A numeric vector of survival times.
+//' @param dead A numeric vector of event indicators.
+//' @param X A numeric matrix of predictors.
+//' @param params A numeric vector of parameters [beta, log_sigma].
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
                                                    const Eigen::VectorXd& dead,
@@ -112,6 +128,20 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
     return -fun.hessian(params);
 }
 
+//' @title Fast Weibull Regression (C++)
+//' @description High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
+//' @param y A numeric vector of survival times.
+//' @param dead A numeric vector of event indicators.
+//' @param X A numeric matrix of predictors.
+//' @param start_params Optional starting values for [beta, log_sigma].
+//' @param estimate_only If TRUE, only return coefficients and likelihood.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, log_sigma, vcov, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_weibull_regression_cpp(const Eigen::VectorXd& y, 
                                  const Eigen::VectorXd& dead, 

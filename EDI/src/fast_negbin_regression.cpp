@@ -110,6 +110,13 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
 
 } // namespace
 
+//' @title Compute Negative Binomial Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (non-negative integers).
+//' @param params A numeric vector of parameters [beta, log_theta].
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXi& y,
@@ -120,6 +127,13 @@ Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
     return -grad;
 }
 
+//' @title Compute Negative Binomial Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a negative binomial regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param params A numeric vector of parameters [beta, log_theta].
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
                                                   const Eigen::VectorXi& y,
@@ -128,6 +142,18 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
     return -fun.hessian(params);
 }
 
+//' @title Fast Negative Binomial Regression with Variance (C++)
+//' @description Negative binomial regression fitting with full variance-covariance matrix.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (non-negative integers).
+//' @param maxit Maximum number of iterations.
+//' @param eps_f Convergence tolerance for function value.
+//' @param eps_g Convergence tolerance for gradient.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, theta, vcov, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 Eigen::VectorXi y,
@@ -152,6 +178,18 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
     );
 }
 
+//' @title Fast Negative Binomial Regression (C++)
+//' @description High-performance negative binomial regression fitting.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param eps_f Convergence tolerance for function value.
+//' @param eps_g Convergence tolerance for gradient.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, theta, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Eigen::VectorXi y,

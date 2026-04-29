@@ -43,7 +43,7 @@ Reported summary metrics include:
   \item \strong{MSE}: \eqn{\overline{(\hat\beta_T - \beta_T)^2}} over reps
     with a finite point estimate.
   \item \strong{coverage}: proportion of reps where \eqn{\beta_T} lies
-    inside the CI (\code{NA} when no CI is available for that method).
+    inside the CI (\code{NA} when no CI is available for that inference type).
   \item \strong{power}: proportion of p-values \eqn{< \alpha}; equals the
     empirical type-I error rate when \code{betaT = 0}.
 }
@@ -69,8 +69,8 @@ Create a new \code{SimulationFramework}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$new(
   response_type,
-  design_classes = NULL,
-  inference_classes = NULL,
+  design_classes_and_params = NULL,
+  inference_classes_and_params = NULL,
   n = 100L,
   p = 5L,
   data_type = "linear",
@@ -94,9 +94,7 @@ Create a new \code{SimulationFramework}.
   verbose = FALSE,
   keep_all_intermediate_data = FALSE,
   turn_off_asserts_for_speed = TRUE,
-  design_params = NULL,
-  inference_params = NULL,
-  inf_types = NULL
+  inference_types_and_params = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -108,19 +106,52 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \code{"proportion"}, \code{"count"}, \code{"survival"},
 \code{"ordinal"}.}
 
-\item{\code{design_classes}}{List of R6 class generators, for example
-\code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Each
-generator must be constructable with only \code{response_type} and
-\code{n} (plus any extra params supplied via \code{design_params}).
-\code{NULL} (default) uses the package's standard design set.
+\item{\code{design_classes_and_params}}{\code{NULL} (default) or a list
+describing design classes and optional constructor parameters.
+Unnamed R6 class generators use default parameters, for example
+\code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}. Named
+entries use the entry name as the design class and the value as the
+parameter list, for example
+\code{list(DesignSeqOneByOneUrn = list(alpha = 2, beta = 2))}.
+Duplicate named entries are allowed for repeated designs with
+different parameters. Each generator must be constructable with only
+\code{response_type} and \code{n} plus any extra params supplied in
+this list. \code{NULL} uses the package's standard design set.
 Designs requiring \code{strata_cols}, \code{cluster_col}, or
 \code{factors} have sensible defaults auto-injected (first covariate
 column; second for \code{cluster_col}; \code{list(treatment=2)} for
-\code{factors}) when not supplied via \code{design_params}.}
+\code{factors}) when not supplied in the parameter list.
 
-\item{\code{inference_classes}}{List of R6 class generators, for example
+Example:
+\preformatted{design_classes_and_params = list(
+  DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
+  DesignSeqOneByOneUrn  = list(alpha  = 2,   beta    = 2),
+  FixedDesignBernoulli  # default params
+)}
+Commonly useful design constructor parameters:
+\describe{
+  \item{\code{lambda}}{Matching-weight decay for
+    \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+  \item{\code{t_0_pct}}{Burn-in fraction for
+    \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
+  \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
+  \item{\code{alpha}, \code{beta}}{Shape parameters for
+    \code{DesignSeqOneByOneUrn}.}
+  \item{\code{num_bins_for_continuous_covariate}}{Bin count for
+    \code{FixedDesignBlocking}.}
+}}
+
+\item{\code{inference_classes_and_params}}{\code{NULL} (default) or a list
+describing inference classes and optional constructor parameters.
+Unnamed R6 class generators use default parameters, for example
 \code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}.
-\code{NULL} (default) selects a curated set for the given
+Named entries use the entry name as the inference class and the value
+as the constructor parameter list, for example
+\code{list(InferenceContinMultOLS = list(max_resample_attempts = 25L))}.
+Duplicate named entries are allowed for repeated inference classes with
+different parameters. Supplied parameters must be accepted by the
+inference class constructor.
+\code{NULL} selects a curated set for the given
 \code{response_type}: several universal classes that work with any
 design, plus representative KK-specific classes (silently skipped for
 non-KK designs at runtime).}
@@ -219,65 +250,21 @@ Default \code{FALSE}.}
 all \pkg{checkmate} assertions across the package are globally
 disabled during the simulation run to improve performance.}
 
-\item{\code{design_params}}{\code{NULL} (default) or a list of lists of the same
-  length as \code{design_classes}.  Each element is a named list of
-  additional constructor arguments passed to the corresponding design's
-  \code{$new()} call (matched positionally).  Use an empty \code{list()}
-  for a design that needs no extra arguments.  Example:
-  \preformatted{design_classes = list(DesignSeqOneByOneKK21,
-                        DesignSeqOneByOneUrn)
-design_params  = list(
-  list(lambda = 0.5, t_0_pct = 0.1),   # for KK21
-  list(alpha  = 2,   beta    = 2)        # for Urn
-)}
-  Commonly useful design constructor parameters:
-  \describe{
-    \item{\code{lambda}}{Matching-weight decay for
-      \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-    \item{\code{t_0_pct}}{Burn-in fraction for
-      \code{KK14} / \code{KK21} / \code{KK21stepwise}.}
-    \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
-    \item{\code{alpha}, \code{beta}}{Shape parameters for
-      \code{DesignSeqOneByOneUrn}.}
-    \item{\code{num_bins_for_continuous_covariate}}{Bin count for
-      \code{FixedDesignBlocking}.}
-  }}
-
-\item{\code{inference_params}}{\code{NULL} (default) or a list of lists of the
-  same length as \code{inference_classes}.  Each element is a named list
-  of arguments for the corresponding inference class (matched
-  positionally).  Use an empty \code{list()} for a class that needs no
-  extra arguments.
-
-  Arguments are routed automatically to the appropriate call site based
-  on argument name (see \code{.INF_ARG_ROUTES}):
-  \itemize{
-    \item constructor arguments such as \code{harden} and
-      \code{max_resample_attempts}
-    \item asymptotic p-value arguments such as \code{delta}
-    \item bootstrap arguments such as \code{na.rm} and \code{type}
-    \item randomization p-value arguments such as \code{delta},
-      \code{transform_responses}, and \code{permutations}
-    \item randomization CI arguments such as \code{ci_search_control}
-    \item shared randomization arguments such as \code{args_for_type}
-  }
-  Example:
-  \preformatted{inference_classes = list(InferenceContinMultOLS,
-                           InferenceContinMultOLSKKIVWC)
-inference_params = lapply(
-  list(
-    list(harden = FALSE), 
-    list()
-  ),
-  append, 
-  list(delta = 0)
-)}}
-
-\item{\code{inf_types}}{Character vector controlling which inference outputs are
-computed and recorded.  \code{NULL} (default) runs all eight types.
-Valid elements are \code{"asymp_ci"}, \code{"asymp_pval"},
+\item{\code{inference_types_and_params}}{\code{NULL} (default) or a named list
+from inference type to a named list of arguments for that type's function
+invocation. The list names control which inference outputs are computed.
+Valid names are \code{"asymp_ci"}, \code{"asymp_pval"},
 \code{"exact_ci"}, \code{"exact_pval"}, \code{"boot_ci"},
 \code{"boot_pval"}, \code{"rand_ci"}, and \code{"rand_pval"}.
+Each value must be a named list whose names are accepted by the
+corresponding inference function. \code{NULL} runs all eight types with
+default invocation arguments.
+Example:
+\preformatted{inference_types_and_params = list(
+  asymp_pval = list(delta = 0),
+  boot_ci    = list(B = 99, type = "perc"),
+  rand_pval  = list(r = 999, transform_responses = TRUE)
+)}
 When no \code{*_ci} type is requested, \code{coverage} is omitted from
 \code{$summarize()}.  When no \code{*_pval} type is requested,
 \code{power} is omitted.}
@@ -349,7 +336,7 @@ Get the raw results of the simulation.
 
 \subsection{Returns}{
 A \code{data.table} containing one row per (replication, design,
-  inference class, inference method).
+  inference class, and inference type).
 }
 }
 \if{html}{\out{<hr>}}
@@ -363,7 +350,7 @@ Aggregate and summarize simulation results.
 
 \subsection{Returns}{
 A \code{data.table} with aggregated metrics (MSE, coverage,
-  power) grouped by design, inference class, and inference method.
+  power) grouped by design, inference class, and inference type.
 }
 }
 \if{html}{\out{<hr>}}

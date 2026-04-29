@@ -596,6 +596,13 @@ struct StereotypeObjective {
     }
 };
 
+//' @title Compute Stereotype Logit Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a stereotype logit model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param params A numeric vector of parameters.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 											   const Eigen::VectorXd& y,
@@ -606,6 +613,13 @@ Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 	return grad;
 }
 
+//' @title Compute Stereotype Logit Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a stereotype logit model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param params A numeric vector of parameters.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 												 const Eigen::VectorXd& y,
@@ -614,6 +628,17 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 	return model.loglik_hessian(params);
 }
 
+//' @title Fast Stereotype Logit Regression (C++)
+//' @description High-performance stereotype logit regression fitting using Newton-Raphson.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, thresholds, scores, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -644,6 +669,17 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     );
 }
 
+//' @title Fast Stereotype Logit Regression with Variance (C++)
+//' @description Stereotype logit regression fitting with full variance-covariance matrix.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, variance estimates, vcov, and convergence status.
+//' @export
 // [[Rcpp::export]]
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -702,6 +738,15 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
     );
 }
 
+//' @title Compute Stereotype Profile Log-Likelihood (C++)
+//' @description Calculates the profile log-likelihood for a fixed beta in a stereotype logit model.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param beta_fixed The fixed value for the first beta parameter.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @return The profile log-likelihood value.
+//' @export
 // [[Rcpp::export]]
 double fast_stereotype_profile_loglik_cpp(
     const Eigen::MatrixXd& X,

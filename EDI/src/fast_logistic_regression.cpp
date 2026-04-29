@@ -176,6 +176,13 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
     return res;
 }
 
+//' @title Compute Logistic Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a logistic regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
     int n = X.rows();
@@ -191,6 +198,12 @@ Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, cons
     return res;
 }
 
+//' @title Compute Logistic Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a logistic regression model.
+//' @param X A numeric matrix of predictors.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     int n = X.rows();
@@ -212,6 +225,14 @@ Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, co
     return -res;
 }
 
+//' @title Compute Weighted Logistic Regression Score
+//' @description Calculates the score vector for a weighted logistic regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param weights A numeric vector of weights.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the weighted score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
     int n = X.rows();
@@ -227,6 +248,13 @@ Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd
     return res;
 }
 
+//' @title Compute Weighted Logistic Regression Hessian
+//' @description Calculates the Hessian matrix for a weighted logistic regression model.
+//' @param X A numeric matrix of predictors.
+//' @param weights A numeric vector of weights.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the weighted Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
     int n = X.rows();
@@ -248,6 +276,17 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
     return -res;
 }
 
+//' @title Fast Logistic Regression (C++)
+//' @description High-performance logistic regression fitting using IRLS.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm (e.g., "irls").
+//' @return A list containing coefficients and weights.
+//' @export
 // [[Rcpp::export]]
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -262,6 +301,18 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
     );
 }
 
+//' @title Fast Weighted Logistic Regression (C++)
+//' @description High-performance weighted logistic regression fitting using IRLS.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param weights A numeric vector of weights.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, fitted values, and information matrix.
+//' @export
 // [[Rcpp::export]]
 List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit = 100, double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -276,6 +327,16 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
     );
 }
 
+//' @title Fast Logistic Regression with Variance (C++)
+//' @description Logistic regression with full variance-covariance matrix and score calculation.
+//' @param Xmm A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param j The 1-based index of the parameter for which to return specific variance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @return A list containing coefficients, vcov, score, and likelihood statistics.
+//' @export
 // [[Rcpp::export]]
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j = 2,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,

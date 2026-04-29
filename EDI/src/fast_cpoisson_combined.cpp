@@ -125,6 +125,17 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 	return -loglik;
 }
 
+//' @title Compute Combined Conditional-Poisson Score
+//' @description Calculates the score vector for the combined conditional-Poisson and Poisson log-likelihood.
+//' @param yT_v Treated counts per pair.
+//' @param n_k_v Total counts per pair.
+//' @param X_diff_v Covariate differences between pairs.
+//' @param y_r Reservoir outcomes.
+//' @param w_r Reservoir treatment indicators.
+//' @param X_r Reservoir covariates.
+//' @param params Current parameter estimates.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_cpoisson_combined_score_cpp(
 	const Eigen::VectorXd& yT_v,
@@ -139,6 +150,17 @@ Eigen::VectorXd get_cpoisson_combined_score_cpp(
 	return Rcpp::as<Eigen::VectorXd>(out["score"]);
 }
 
+//' @title Compute Combined Conditional-Poisson Hessian
+//' @description Calculates the Hessian matrix for the combined conditional-Poisson and Poisson model.
+//' @param yT_v Treated counts per pair.
+//' @param n_k_v Total counts per pair.
+//' @param X_diff_v Covariate differences between pairs.
+//' @param y_r Reservoir outcomes.
+//' @param w_r Reservoir treatment indicators.
+//' @param X_r Reservoir covariates.
+//' @param params Current parameter estimates.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
 	const Eigen::VectorXd& yT_v,
@@ -154,6 +176,20 @@ Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
 	return -info;
 }
 
+//' @title Fast Combined Conditional-Poisson Regression (C++)
+//' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
+//' @param yT_v Treated counts per pair.
+//' @param n_k_v Total counts per pair.
+//' @param X_diff_v Covariate differences.
+//' @param y_r Reservoir outcomes.
+//' @param w_r Reservoir treatment indicators.
+//' @param X_r Reservoir covariates.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients, variance estimates, and likelihood statistics.
+//' @export
 // [[Rcpp::export]]
 List fast_cpoisson_combined_with_var_cpp(
 	const Eigen::VectorXd& yT_v,       // treated count per valid pair (nd)

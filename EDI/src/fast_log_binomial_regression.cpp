@@ -302,6 +302,13 @@ Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::MatrixXd& X,
 
 }  // namespace
 
+//' @title Compute Log-Binomial Regression Score
+//' @description Calculates the score vector (gradient of the log-likelihood) for a log-binomial regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 													  const Eigen::VectorXd& y,
@@ -309,6 +316,13 @@ Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
 }
 
+//' @title Compute Log-Binomial Regression Hessian
+//' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a log-binomial regression model.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
 														const Eigen::VectorXd& y,
@@ -316,6 +330,13 @@ Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X
 	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
 }
 
+//' @title Compute Identity-Binomial Regression Score
+//' @description Calculates the score vector for a binomial regression model with an identity link.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric vector representing the score.
+//' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 														   const Eigen::VectorXd& y,
@@ -323,6 +344,13 @@ Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd
 	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
 }
 
+//' @title Compute Identity-Binomial Regression Hessian
+//' @description Calculates the Hessian matrix for a binomial regression model with an identity link.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param beta A numeric vector of coefficients.
+//' @return A numeric matrix representing the Hessian.
+//' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
 															 const Eigen::VectorXd& y,
@@ -330,6 +358,16 @@ Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::Matrix
 	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
 }
 
+//' @title Fast Log-Binomial Regression (C++)
+//' @description High-performance log-binomial regression fitting using Fisher scoring.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients and fitted values.
+//' @export
 // [[Rcpp::export]]
 List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                       const Eigen::VectorXd& y,
@@ -340,6 +378,17 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
   return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values);
 }
 
+//' @title Fast Log-Binomial Regression with Variance (C++)
+//' @description Log-binomial regression with variance-covariance matrix and standard errors.
+//' @param Xmm A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients, vcov, and standard errors.
+//' @export
 // [[Rcpp::export]]
 List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
                                                const Eigen::VectorXd& y,
@@ -351,6 +400,16 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
   return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values);
 }
 
+//' @title Fast Identity-Binomial Regression (C++)
+//' @description High-performance binomial regression with identity link using Fisher scoring.
+//' @param X A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients and fitted values.
+//' @export
 // [[Rcpp::export]]
 List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                            const Eigen::VectorXd& y,
@@ -361,6 +420,17 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
   return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values);
 }
 
+//' @title Fast Identity-Binomial Regression with Variance (C++)
+//' @description Binomial regression with identity link, providing variance-covariance matrix and standard errors.
+//' @param Xmm A numeric matrix of predictors.
+//' @param y A binary numeric vector of responses.
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients, vcov, and standard errors.
+//' @export
 // [[Rcpp::export]]
 List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
                                                     const Eigen::VectorXd& y,

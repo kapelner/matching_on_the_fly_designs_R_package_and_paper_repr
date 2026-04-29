@@ -285,9 +285,13 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull,
 		}
 	}
 
-	NumericVector coeff = wrap(params);
+	int p = Xfull.cols();
 	return List::create(
-		Named("coefficients") = coeff,
+		Named("b") = params.head(p),
+		Named("log_phi") = params[p],
+		Named("logit_alpha0") = params[p + 1],
+		Named("logit_alpha1") = params[p + 2],
+		Named("params") = params,
 		Named("vcov") = vcov_mat,
 		Named("neg_loglik") = fit.value
 	);

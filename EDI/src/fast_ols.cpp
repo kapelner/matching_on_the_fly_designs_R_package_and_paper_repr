@@ -32,6 +32,14 @@ ModelResult fast_ols_internal(const Eigen::MatrixXd& X,
     return res;
 }
 
+//' @title Fast Ordinary Least Squares (C++)
+//' @description High-performance OLS fitting using Eigen's Complete Orthogonal Decomposition.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients and the XtX matrix.
+//' @export
 // [[Rcpp::export]]
 List fast_ols_cpp(const Eigen::MatrixXd& X,
                   const Eigen::VectorXd& y,
@@ -44,6 +52,15 @@ List fast_ols_cpp(const Eigen::MatrixXd& X,
     );
 }
 
+//' @title Fast OLS with Variance (C++)
+//' @description OLS fitting with variance-covariance matrix and error variance estimation.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
+//' @export
 // [[Rcpp::export]]
 List fast_ols_with_var_cpp(const Eigen::MatrixXd& X,
                            const Eigen::VectorXd& y,
