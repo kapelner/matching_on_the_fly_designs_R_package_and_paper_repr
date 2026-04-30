@@ -97,6 +97,8 @@ the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
+\item{\code{use_rcpp}}{Whether to use the internal Rcpp solver (TRUE) or fallback to geepack (FALSE).}
+
 \item{\code{verbose}}{Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}

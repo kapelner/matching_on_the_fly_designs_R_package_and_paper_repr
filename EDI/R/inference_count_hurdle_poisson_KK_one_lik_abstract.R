@@ -232,7 +232,6 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					n_gh = 7L
 				)
 				private$cached_values$beta_hat_T = beta_hat_T
-				private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))
@@ -267,7 +266,6 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			}
 
 			private$cached_values$beta_hat_T = as.numeric(cond_fixef[["w"]])
-			private$cached_values$is_z = TRUE
 
 			if (!estimate_only) {
 				coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)

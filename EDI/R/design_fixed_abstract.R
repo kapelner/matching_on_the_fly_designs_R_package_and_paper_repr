@@ -141,8 +141,9 @@ FixedDesign = R6::R6Class("FixedDesign",
 	),
 	private = list(
 		strata_cols = NULL,
-		num_bins_for_continuous_covariate = NULL,
-		B_preferred = NULL,
+		preferred_num_bins_for_continuous_covariate = NULL,
+		B_target = NULL,
+		exact_num_blocks = FALSE,
 
 		get_strata_keys = function(){
 			n = private$t
@@ -152,7 +153,7 @@ FixedDesign = R6::R6Class("FixedDesign",
 			col_to_str = function(col) {
 				vec = private$Xraw[[col]]
 				if (is.numeric(vec)) {
-					probs = seq(0, 1, length.out = private$num_bins_for_continuous_covariate + 1)
+					probs = seq(0, 1, length.out = private$preferred_num_bins_for_continuous_covariate + 1)
 					breaks = unique(stats::quantile(vec, probs = probs, na.rm = TRUE))
 					s = if (length(breaks) > 1) as.character(cut(vec, breaks = breaks, include.lowest = TRUE)) else as.character(vec)
 				} else {
@@ -168,8 +169,8 @@ FixedDesign = R6::R6Class("FixedDesign",
 
 			keys = rep("", n)
 
-			if (!is.null(private$B_preferred)) {
-				target = if (is.na(private$B_preferred)) floor(sqrt(n)) else as.integer(private$B_preferred)
+			if (!is.null(private$B_target)) {
+				target = if (is.na(private$B_target)) floor(sqrt(n)) else as.integer(private$B_target)
 				for (col in strata_cols) {
 					new_keys = append_key(keys, col_to_str(col))
 					if (length(unique(new_keys)) <= target) {
@@ -183,6 +184,16 @@ FixedDesign = R6::R6Class("FixedDesign",
 			}
 
 			num_blocks = length(unique(keys))
+			if (isTRUE(private$exact_num_blocks)) {
+				if (is.null(private$B_target)) {
+					stop("exact_num_blocks requires B_target.")
+				}
+				target = if (is.na(private$B_target)) floor(sqrt(n)) else as.integer(private$B_target)
+				if (num_blocks != target) {
+					stop("exact_num_blocks = TRUE but the greedy blocking key construction produced ", num_blocks,
+						" blocks instead of the requested ", target, ".")
+				}
+			}
 			if (should_run_asserts()) {
 				if (num_blocks > n) {
 					stop("Number of blocks (", num_blocks, ") exceeds sample size (", n, "). Reduce the number of strata columns or use fewer bins.")

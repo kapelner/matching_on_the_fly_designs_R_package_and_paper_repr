@@ -234,7 +234,6 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-			private$cached_values$is_z = TRUE
 		},
 
 		assert_finite_se = function(){

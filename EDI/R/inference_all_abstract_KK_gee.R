@@ -18,6 +18,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
+		#' @param use_rcpp Whether to use the internal Rcpp solver (TRUE) or fallback to geepack (FALSE).
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
@@ -256,7 +257,6 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			mod = private$fit_gee_with_fallback(std_err = !estimate_only, estimate_only = estimate_only)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("kk_gee_fit_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -266,11 +266,8 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			
 			if (!is.finite(private$cached_values$beta_hat_T)){
 				private$cache_nonestimable_estimate("kk_gee_estimate_unavailable")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
-
-			private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 			if (estimate_only) return(invisible(NULL))
 

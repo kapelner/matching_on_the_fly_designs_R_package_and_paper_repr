@@ -1746,8 +1746,8 @@ compute_simple_mean_diff_parallel_cpp <- function(y, w_mat, delta, num_cores) {
     .Call(`_EDI_compute_simple_mean_diff_parallel_cpp`, y, w_mat, delta, num_cores)
 }
 
-apply_treatment_and_noise_cpp <- function(y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels) {
-    .Call(`_EDI_apply_treatment_and_noise_cpp`, y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels)
+apply_treatment_and_noise_cpp <- function(y_linear_model, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels, phi_proportion, k_survival, incidence_clamp = 1e-9, proportion_clamp = 1e-9, count_clamp = 1e-9, survival_clamp = 1e-9) {
+    .Call(`_EDI_apply_treatment_and_noise_cpp`, y_linear_model, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels, phi_proportion, k_survival, incidence_clamp, proportion_clamp, count_clamp, survival_clamp)
 }
 
 spbr_redraw_w_cpp <- function(strata_keys_sexp, block_size_sexp, prob_T_sexp) {

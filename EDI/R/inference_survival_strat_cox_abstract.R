@@ -84,7 +84,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (estimate_only) return(invisible(NULL))
 			se = if (is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
 			private$cached_values$s_beta_hat_T = se
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = NA_real_
 		},
 

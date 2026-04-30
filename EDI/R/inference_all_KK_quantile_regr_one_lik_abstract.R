@@ -187,7 +187,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			if (is.null(X_stack)){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -201,7 +200,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			if (n_total <= n_params){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -218,7 +216,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -228,7 +225,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				se = private$extract_se_from_rq(fit, "trt__")
 				private$cached_values$s_beta_hat_T = if (!is.na(se)) se else NA_real_
 			}
-			private$cached_values$is_z         = TRUE
 			invisible(NULL)
 		},
 

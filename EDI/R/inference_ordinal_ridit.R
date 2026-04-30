@@ -130,7 +130,6 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			private$cached_values$beta_hat_T   = res$estimate
 			private$cached_values$s_beta_hat_T = res$se
 			private$cached_values$scores       = res$scores
-			private$cached_values$is_z         = TRUE
 		},
 
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){

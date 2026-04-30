@@ -99,7 +99,6 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
-			private$cached_values$is_z = TRUE
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -225,7 +224,6 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 
 			private$cached_values$beta_hat_T   = beta_hat
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z         = TRUE
 		}
 	)
 )

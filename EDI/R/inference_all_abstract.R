@@ -374,7 +374,6 @@ Inference = R6::R6Class("Inference",
 			private$cached_values$nonestimable = TRUE
 			private$cached_values$nonestimable_reason = as.character(reason)[1L]
 			private$cached_values$nonestimable_stage = "estimate"
-			if (is.null(private$cached_values$is_z)) private$cached_values$is_z = TRUE
 			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
 			invisible(NULL)
 		},
@@ -385,7 +384,6 @@ Inference = R6::R6Class("Inference",
 			private$cached_values$nonestimable = TRUE
 			private$cached_values$nonestimable_reason = as.character(reason)[1L]
 			private$cached_values$nonestimable_stage = "se"
-			if (is.null(private$cached_values$is_z)) private$cached_values$is_z = TRUE
 			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
 			invisible(NULL)
 		},

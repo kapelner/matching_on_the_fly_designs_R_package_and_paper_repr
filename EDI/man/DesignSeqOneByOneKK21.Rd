@@ -131,9 +131,7 @@ that all added responses via the \code{add_one_subject_response} method will be
 imputing its value? If the feature is type factor, instead of creating
                                 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.
-randomization-based inference and bootstrap resampling. The default is 1 for serial
-computation.}
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
@@ -185,6 +183,8 @@ model each time? This is at the expense of the weights being less accurate. Defa
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.}
 }
 \if{html}{\out{</div>}}
 }

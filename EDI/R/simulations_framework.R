@@ -244,9 +244,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'     \item{\code{morrison}}{Logical; Morrison correction for \code{KK14}.}
     #'     \item{\code{alpha}, \code{beta}}{Shape parameters for
     #'       \code{DesignSeqOneByOneUrn}.}
-    #'     \item{\code{num_bins_for_continuous_covariate}}{Bin count for
-    #'       \code{FixedDesignBlocking}.}
-    #'   }
+    #'     \item{\code{preferred_num_bins_for_continuous_covariate}}{Bin count for
+    #'       \code{FixedDesignBlocking} and \code{FixedDesignBlockedCluster}.}
+    #'     \item{\code{B_target}}{Target number of blocks for \code{FixedDesignBlocking}.}
+   #'   }
     #'
     #' @param inference_classes_and_params \code{NULL} (default) or a list
     #'   describing inference classes and optional constructor parameters.
@@ -310,10 +311,30 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param n_ordinal_levels Positive integer. Number of ordinal categories when
     #'   \code{response_type = "ordinal"}. Default \code{4L}.
     #'
-    #' @param proportion_epsilon Numeric scalar. Small value added to proportion
-    #'   base responses to avoid 0 and 1. Default \code{1e-6}.
-    #'
-    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
+	    #' @param proportion_epsilon Numeric scalar. Small value added to proportion
+	    #'   base responses to avoid 0 and 1. Default \code{1e-6}.
+	    #'
+	    #' @param phi_proportion Positive numeric scalar. Precision parameter for
+	    #'   beta-distributed observed proportion outcomes. The beta mean is
+	    #'   \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.
+	    #'
+	    #' @param k_survival Positive numeric scalar. Scale parameter passed to
+	    #'   the Weibull draw for observed survival outcomes. Default \code{1}.
+	    #'
+	    #' @param incidence_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+	    #'   to the Bernoulli probability for observed incidence outcomes.
+	    #'   Default \code{1e-9}.
+	    #'
+	    #' @param proportion_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+	    #'   to the beta mean for observed proportion outcomes. Default \code{1e-9}.
+	    #'
+	    #' @param count_clamp Positive numeric scalar. Minimum Poisson mean for
+	    #'   observed count outcomes. Default \code{1e-9}.
+	    #'
+	    #' @param survival_clamp Positive numeric scalar. Minimum Weibull scale for
+	    #'   observed survival outcomes. Default \code{1e-9}.
+	    #'
+	    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
     #'   for base responses. Default \code{0.1}.
     #'
     #' @param count_min_rate Integer scalar. Minimum baseline rate for count
@@ -379,26 +400,32 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       response_type,
       design_classes_and_params = NULL,
       inference_classes_and_params = NULL,
-      n                 = 100L,
-      p                 = 5L,
-      data_type         = "linear",
-      Nrep              = 100L,
-      betaT             = 1,
-      alpha             = 0.05,
-      B_boot            = 201L,
-      r_rand            = 201L,
-      pval_epsilon      = 0.02,
+      n                     = 100L,
+      p                     = 5L,
+      data_type             = "linear",
+      Nrep                  = 100L,
+      betaT                 = 1,
+      alpha                 = 0.05,
+      B_boot                = 201L,
+      r_rand                = 201L,
+      pval_epsilon          = 0.02,
       sd_noise              = 1,
       n_ordinal_levels      = 4L,
       proportion_epsilon    = 1e-6,
+      phi_proportion        = 100,
+      k_survival            = 2,
+      incidence_clamp       = 1e-9,
+      proportion_clamp      = 1e-9,
+      count_clamp           = 1e-9,
+      survival_clamp        = 1e-9,
       survival_min_time     = 0.1,
       count_min_rate        = 0L,
       count_shift           = 0,
       norm_sq_beta_vec      = 1,
       X_mat                 = NULL,
-      cov_draw_method       = stats::runif,
-      cov_draw_method_args  = list(min = -1, max = +1),
-      prob_censoring        = 0.2,
+      cov_draw_method       = stats::rnorm,
+      cov_draw_method_args  = list(mean = 0, sd = 1),
+      prob_censoring        = 0.25,
       verbose                    = FALSE,
       keep_all_intermediate_data = FALSE,
       turn_off_asserts_for_speed = TRUE,
@@ -410,8 +437,20 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         stop("response_type must be one of: ", paste(valid_rt, collapse = ", "))
       if (!data_type %in% c("linear", "nonlinear"))
         stop("data_type must be 'linear' or 'nonlinear'")
-      if (data_type == "nonlinear" && p < 5L)
-        stop("nonlinear Friedman function requires p >= 5")
+	      if (data_type == "nonlinear" && p < 5L)
+	        stop("nonlinear Friedman function requires p >= 5")
+	      if (!is.finite(phi_proportion) || phi_proportion <= 0)
+	        stop("phi_proportion must be finite and > 0")
+	      if (!is.finite(k_survival) || k_survival <= 0)
+	        stop("k_survival must be finite and > 0")
+	      if (!is.finite(incidence_clamp) || incidence_clamp <= 0 || incidence_clamp >= 0.5)
+	        stop("incidence_clamp must be finite and in (0, 0.5)")
+	      if (!is.finite(proportion_clamp) || proportion_clamp <= 0 || proportion_clamp >= 0.5)
+	        stop("proportion_clamp must be finite and in (0, 0.5)")
+	      if (!is.finite(count_clamp) || count_clamp <= 0)
+	        stop("count_clamp must be finite and > 0")
+	      if (!is.finite(survival_clamp) || survival_clamp <= 0)
+	        stop("survival_clamp must be finite and > 0")
 
       valid_inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval",
                           "boot_ci",  "boot_pval",  "rand_ci",  "rand_pval")
@@ -431,10 +470,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$B_boot           = as.integer(B_boot)
       private$r_rand           = as.integer(r_rand)
       private$pval_epsilon     = pval_epsilon
-      private$sd_noise             = sd_noise
-      private$n_ordinal_levels     = as.integer(n_ordinal_levels)
-      private$proportion_epsilon    = proportion_epsilon
-      private$survival_min_time     = survival_min_time
+	      private$sd_noise             = sd_noise
+	      private$n_ordinal_levels     = as.integer(n_ordinal_levels)
+	      private$proportion_epsilon    = proportion_epsilon
+	      private$phi_proportion        = phi_proportion
+	      private$k_survival            = k_survival
+	      private$incidence_clamp       = incidence_clamp
+	      private$proportion_clamp      = proportion_clamp
+	      private$count_clamp           = count_clamp
+	      private$survival_clamp        = survival_clamp
+	      private$survival_min_time     = survival_min_time
       private$count_min_rate        = as.integer(count_min_rate)
       private$count_shift           = count_shift
       private$norm_sq_beta_vec     = norm_sq_beta_vec
@@ -515,25 +560,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
         rep_data = private$.generate_data()
         X      = rep_data$X
-        y_base = rep_data$y_base
+        y_linear_model = rep_data$y_linear_model
 
         # Per-replication true estimand for InferenceAllSimpleMeanDiff.
-        # The DGP applies betaT on a scale that may differ from the mean-difference
-        # scale that InferenceAllSimpleMeanDiff estimates, so we derive the correct
-        # comparison target analytically from y_base for each response type.
-        #
-        #   incidence : logit-shift  -> E[plogis(qlogis(p_b)+betaT) - p_b]
-        #   count     : log-mult.    -> mean(y_base)*exp(sd^2/2)*(exp(betaT)-1)
-        #   survival  : log-mult.    -> same as count, then scaled by (1-pc/2)
-        #                              to account for uniform censoring of observed times
-        #   otherwise : additive DGP -> betaT
-        true_mean_diff_ate = switch(private$response_type,
-          incidence = mean(stats::plogis(stats::qlogis(y_base) + private$betaT) - y_base),
-          count     = mean(y_base) * exp(private$sd_noise^2 / 2) * (exp(private$betaT) - 1),
-          survival  = mean(y_base) * exp(private$sd_noise^2 / 2) * (exp(private$betaT) - 1) *
-                        (1 - private$prob_censoring / 2),
-          private$betaT   # continuous, proportion, ordinal: additive DGP
-        )
+        # The DGP applies betaT on the y_linear_model scale, then maps to the
+        # observed response distribution in simulation_dgp.cpp.
+        true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model)
 
         for (di in seq_along(private$design_classes)) {
           design_gen   = private$design_classes[[di]]
@@ -541,7 +573,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
 
           des_obj = tryCatch(
-            private$.build_design(design_gen, X, y_base, design_extra),
+            private$.build_design(design_gen, X, y_linear_model, design_extra),
             error = function(e) {
               if (private$verbose)
                 message(sprintf("    [SKIP design %s]: %s", design_name, e$message))
@@ -549,7 +581,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
           )
           if (private$keep_all_intermediate_data) {
-            private$all_intermediate_data[[rep]]$y_base                    = y_base
+            private$all_intermediate_data[[rep]]$y_linear_model            = y_linear_model
             private$all_intermediate_data[[rep]]$designs[[design_name]]    = des_obj
           }
           if (is.null(des_obj)) next
@@ -768,7 +800,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @return A list of length \code{Nrep}.  Each element is a named list with
     #'   three entries:
     #'   \describe{
-    #'     \item{\code{y_base}}{Numeric vector of base responses for that replication.}
+    #'     \item{\code{y_linear_model}}{Numeric vector of base responses for that replication.}
     #'     \item{\code{designs}}{Named list of instantiated design objects, one per
     #'       configured design class.}
     #'     \item{\code{inferences}}{Named list of lists of instantiated inference
@@ -855,16 +887,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           ci_ok  = .SD[is.finite(ci_lo) & is.finite(ci_hi)]
           pv_ok  = pval[is.finite(pval)]
           row = list(
-            MSE   = if (nrow(est_ok)) round(mean((est_ok$estimate - est_ok$true_estimand)^2), 5L) else NA_real_,
+            MSE   = if (nrow(est_ok)) mean((est_ok$estimate - est_ok$true_estimand)^2) else NA_real_,
             n_est = nrow(est_ok)
           )
           if (report_cov) {
-            row$coverage  = if (nrow(ci_ok)) round(mean(ci_ok$ci_lo <= ci_ok$true_estimand & ci_ok$true_estimand <= ci_ok$ci_hi), 3L) else NA_real_
+            row$coverage  = if (nrow(ci_ok)) mean(ci_ok$ci_lo <= ci_ok$true_estimand & ci_ok$true_estimand <= ci_ok$ci_hi) else NA_real_
             row$n_cov     = nrow(ci_ok)
-            row$ci_length = if (nrow(ci_ok)) round(mean(ci_ok$ci_hi - ci_ok$ci_lo), 5L) else NA_real_
+            row$ci_length = if (nrow(ci_ok)) mean(ci_ok$ci_hi - ci_ok$ci_lo) else NA_real_
           }
           if (report_pow) {
-            row$power = if (length(pv_ok)) round(mean(pv_ok < alpha), 3L) else NA_real_
+            row$power = if (length(pv_ok)) mean(pv_ok < alpha) else NA_real_
             row$n_pow = length(pv_ok)
           }
           row
@@ -940,9 +972,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     r_rand           = NULL,
     pval_epsilon     = NULL,
     sd_noise             = NULL,
-    n_ordinal_levels     = NULL,
-    proportion_epsilon   = NULL,
-    survival_min_time    = NULL,
+	    n_ordinal_levels     = NULL,
+	    proportion_epsilon   = NULL,
+	    phi_proportion       = NULL,
+	    k_survival           = NULL,
+	    incidence_clamp      = NULL,
+	    proportion_clamp     = NULL,
+	    count_clamp          = NULL,
+	    survival_clamp       = NULL,
+	    survival_min_time    = NULL,
     count_min_rate       = NULL,
     count_shift          = NULL,
     norm_sq_beta_vec     = NULL,
@@ -1268,7 +1306,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cov_draw_method      = private$cov_draw_method,
         cov_draw_method_args = private$cov_draw_method_args
       )
-      data$y_base = transform_cont_y_based_on_response_type(
+      data$y_linear_model = transform_cont_y_based_on_response_type(
         y_cont             = data$y_cont,
         response_type      = private$response_type,
         n_ordinal_levels   = private$n_ordinal_levels,
@@ -1281,8 +1319,71 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data
     },
 
+    compute_true_mean_diff_ate = function(y_linear_model) {
+      eta_c = y_linear_model
+      eta_t = y_linear_model + private$betaT
+
+      clamp = function(x, lo, hi) {
+        pmin(hi, pmax(lo, x))
+      }
+
+      switch(private$response_type,
+        continuous = private$betaT,
+        incidence = {
+          p_t = clamp(stats::plogis(eta_t), private$incidence_clamp, 1 - private$incidence_clamp)
+          p_c = clamp(stats::plogis(eta_c), private$incidence_clamp, 1 - private$incidence_clamp)
+          mean(p_t - p_c)
+        },
+        proportion = {
+          mu_t = clamp(stats::plogis(eta_t), private$proportion_clamp, 1 - private$proportion_clamp)
+          mu_c = clamp(stats::plogis(eta_c), private$proportion_clamp, 1 - private$proportion_clamp)
+          mean(mu_t - mu_c)
+        },
+        count = {
+          mu_t = pmax(private$count_clamp, exp(eta_t))
+          mu_c = pmax(private$count_clamp, exp(eta_c))
+          mean(mu_t - mu_c)
+        },
+        survival = {
+          shape_t = pmax(private$survival_clamp, exp(eta_t))
+          shape_c = pmax(private$survival_clamp, exp(eta_c))
+          mean_t = private$k_survival * gamma(1 + 1 / shape_t)
+          mean_c = private$k_survival * gamma(1 + 1 / shape_c)
+          (1 - private$prob_censoring / 2) * mean(mean_t - mean_c)
+        },
+        ordinal = private$compute_true_ordinal_mean_diff(eta_c, eta_t),
+        private$betaT
+      )
+    },
+
+    compute_true_ordinal_mean_diff = function(eta_c, eta_t) {
+      expected_ordinal = function(eta) {
+        K = private$n_ordinal_levels
+        if (private$sd_noise <= 0) {
+          return(pmin(K, pmax(1, round(eta))))
+        }
+
+        sigma = private$sd_noise
+        probs = matrix(0, nrow = length(eta), ncol = K)
+        probs[, 1L] = stats::pnorm((1.5 - eta) / sigma)
+        if (K > 2L) {
+          for (k in 2L:(K - 1L)) {
+            lo = (k - 0.5 - eta) / sigma
+            hi = (k + 0.5 - eta) / sigma
+            probs[, k] = stats::pnorm(hi) - stats::pnorm(lo)
+          }
+        }
+        if (K > 1L) {
+          probs[, K] = 1 - stats::pnorm((K - 0.5 - eta) / sigma)
+        }
+        as.numeric(probs %*% seq_len(K))
+      }
+
+      mean(expected_ordinal(eta_t) - expected_ordinal(eta_c))
+    },
+
     # Instantiate design and run the full experiment (assign + observe all n).
-    .build_design = function(design_gen, X, y_base, design_extra) {
+    .build_design = function(design_gen, X, y_linear_model, design_extra) {
       n       = private$n
 
       # Auto-inject required args that depend on the covariate matrix when the
@@ -1311,10 +1412,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           w_t = des_obj$add_one_subject_to_experiment_and_assign(
             X[t, , drop = FALSE])
           out = apply_treatment_and_noise_cpp(
-            y_base[t], w_t,
-            private$response_type, private$betaT,
-            private$sd_noise, private$prob_censoring,
-            private$n_ordinal_levels)
+            y_linear_model[t], w_t,
+	            private$response_type, private$betaT,
+	            private$sd_noise, private$prob_censoring,
+	            private$n_ordinal_levels,
+	            phi_proportion = private$phi_proportion,
+	            k_survival = private$k_survival,
+	            incidence_clamp = private$incidence_clamp,
+	            proportion_clamp = private$proportion_clamp,
+	            count_clamp = private$count_clamp,
+	            survival_clamp = private$survival_clamp)
           des_obj$add_one_subject_response(t, out$y, out$dead)
         }
       } else {
@@ -1323,10 +1430,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         des_obj$assign_w_to_all_subjects()
         w   = des_obj$get_w()
         out = apply_treatment_and_noise_cpp(
-          y_base, w,
-          private$response_type, private$betaT,
-          private$sd_noise, private$prob_censoring,
-          private$n_ordinal_levels)
+          y_linear_model, w,
+	          private$response_type, private$betaT,
+	          private$sd_noise, private$prob_censoring,
+	          private$n_ordinal_levels,
+	          phi_proportion = private$phi_proportion,
+	          k_survival = private$k_survival,
+	          incidence_clamp = private$incidence_clamp,
+	          proportion_clamp = private$proportion_clamp,
+	          count_clamp = private$count_clamp,
+	          survival_clamp = private$survival_clamp)
         des_obj$add_all_subject_responses(out$y, out$dead)
       }
       des_obj

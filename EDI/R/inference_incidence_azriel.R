@@ -27,7 +27,6 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			private$cached_values$is_z = TRUE
 		}
 	),
 
@@ -42,6 +41,10 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 				private$des_obj_priv_int$n
 			)
 			private$cached_values$azriel_s_beta_hat_T
+		},
+
+		get_degrees_of_freedom = function(){
+			NA_real_
 		}
 	)
 )

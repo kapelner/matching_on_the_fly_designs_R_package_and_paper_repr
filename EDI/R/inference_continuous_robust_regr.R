@@ -161,7 +161,6 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		set_failed_fit_cache = function(){
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = FALSE
 			private$cached_values$df = NA_real_
 		},
 
@@ -263,7 +262,6 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 				private$cached_values$s_beta_hat_T = as.numeric(st$coefficients[j_treat, "Std. Error"])
 			}
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
-			private$cached_values$is_z = FALSE # rlm uses t-distribution by default
 		}
 	)
 )

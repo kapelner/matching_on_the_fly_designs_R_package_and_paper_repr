@@ -113,7 +113,6 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			se = sqrt(p_hat * (1 - p_hat) / n_eff)
 			
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

@@ -206,7 +206,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$cached_values$beta_hat_T = fit$beta_hat
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = fit$se
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
 			private$cached_values$full_coefficients = fit$coefficients
 			private$cached_values$full_vcov = fit$vcov

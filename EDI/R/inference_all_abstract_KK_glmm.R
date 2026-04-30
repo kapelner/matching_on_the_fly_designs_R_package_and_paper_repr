@@ -207,7 +207,6 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			mod = private$fit_glmm(se = !estimate_only)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("kk_glmm_fit_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -227,8 +226,6 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			} else {
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = coef_table
 		},

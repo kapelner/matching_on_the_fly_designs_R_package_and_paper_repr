@@ -144,7 +144,6 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-			private$cached_values$is_z = TRUE
 		},
 
 		cpoisson_for_matched_pairs = function(estimate_only = FALSE){

@@ -108,7 +108,6 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			}
 
 			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))

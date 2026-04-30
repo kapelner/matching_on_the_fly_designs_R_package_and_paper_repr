@@ -166,7 +166,6 @@ InferenceIncidBinomialIdentityAbstract = R6::R6Class("InferenceIncidBinomialIden
 			private$cached_values$beta_hat_T = as.numeric(result$mod$b[result$j_treat])
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(as.numeric(result$mod$ssq_b_j))
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(result$X_fit) - ncol(result$X_fit)
 		}
 	)

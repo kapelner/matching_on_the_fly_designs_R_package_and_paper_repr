@@ -153,7 +153,6 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 			private$cached_values$beta_hat_T = est
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = counts$n_t + counts$n_c - 2
 			private$cached_values$full_coefficients = c("(Intercept)" = counts$p_c, "treatment" = est)
 			private$cached_values$full_vcov = matrix(

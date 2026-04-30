@@ -63,7 +63,6 @@ ordinal_cond_clogit_shared_univ = function(private_env, expand_fun){
 
 	private_env$cached_values$beta_hat_T   = as.numeric(mod$b[1])
 	private_env$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-	private_env$cached_values$is_z         = TRUE
 }
 
 
@@ -119,5 +118,4 @@ ordinal_cond_clogit_shared_multi = function(private_env, expand_fun, trials_fun)
 
 	private_env$cached_values$beta_hat_T   = as.numeric(mod$b[1])
 	private_env$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-	private_env$cached_values$is_z         = TRUE
 }

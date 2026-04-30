@@ -123,7 +123,6 @@ InferenceCountHurdleNegBinAbstract = R6::R6Class("InferenceCountHurdleNegBinAbst
 
 			private$cached_values$beta_hat_T = fit$b[fit$j]
 			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
-			private$cached_values$is_z = TRUE
 			private$cached_values$full_coefficients = b_full
 			private$cached_values$theta_hat = as.numeric(fit$mod$theta_hat)
 			private$cached_values$hurdle_coefficients = fit$mod$hurdle_b

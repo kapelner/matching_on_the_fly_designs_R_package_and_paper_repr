@@ -195,12 +195,10 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 					se = sqrt(res$vcov[1L, 1L])
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cache_nonestimable_estimate("kk_lwa_cox_combined_fit_failed")
-			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		}
 	)

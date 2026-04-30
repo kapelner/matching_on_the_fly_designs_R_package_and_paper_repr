@@ -216,7 +216,6 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 
 			private$cached_values$beta_hat_T   = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$s_beta_hat_T = if (length(se)   == 1L && is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z         = TRUE
 		},
 
 		assert_finite_se = function(){

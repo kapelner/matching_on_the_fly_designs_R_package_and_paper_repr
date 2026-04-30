@@ -118,24 +118,28 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 
 		#' @description
 		#' Computes the Wald two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
 		compute_wald_two_sided_pval = function(delta = 0){
 			private$compute_wald_two_sided_pval_impl(delta)
 		},
 
 		#' @description
 		#' Computes the score two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
 		compute_score_two_sided_pval = function(delta = 0){
 			private$compute_score_two_sided_pval_impl(delta)
 		},
 
 		#' @description
 		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
 		compute_lik_ratio_two_sided_pval = function(delta = 0){
 			private$compute_lik_ratio_two_sided_pval_impl(delta)
 		},
 
 		#' @description
 		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
 		compute_likelihood_ratio_two_sided_pval = function(delta = 0){
 			private$compute_lik_ratio_two_sided_pval_impl(delta)
 		},
@@ -511,17 +515,16 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
 		},
 		
-		# Shared helpers for z/t tests
+		# Shared helpers for normal/t tests
 		compute_z_or_t_ci_from_s_and_df = function(alpha){
 			beta_hat_T = private$cached_values$beta_hat_T
 			s_beta_hat_T = private$cached_values$s_beta_hat_T
-			is_z = private$cached_values$is_z
 			df = private$cached_values$df
 			
 			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(c(NA_real_, NA_real_))
 			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(c(NA_real_, NA_real_))
 			
-			mult = if (isTRUE(is_z) || !is.finite(df)) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
+			mult = if (!is.finite(df)) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
 			ci = c(beta_hat_T - mult * s_beta_hat_T, beta_hat_T + mult * s_beta_hat_T)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
@@ -530,14 +533,13 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		compute_z_or_t_two_sided_pval_from_s_and_df = function(delta){
 			beta_hat_T = private$cached_values$beta_hat_T
 			s_beta_hat_T = private$cached_values$s_beta_hat_T
-			is_z = private$cached_values$is_z
 			df = private$cached_values$df
 			
 			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(NA_real_)
 			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(NA_real_)
 			
 			val = (beta_hat_T - delta) / s_beta_hat_T
-			if (isTRUE(is_z) || !is.finite(df)) 2 * stats::pnorm(-abs(val)) else 2 * stats::pt(-abs(val), df = df)
+			if (!is.finite(df)) 2 * stats::pnorm(-abs(val)) else 2 * stats::pt(-abs(val), df = df)
 		},
 
 		invert_ci_to_find_two_sided_pval_for_treatment_effect = function(delta = 0){

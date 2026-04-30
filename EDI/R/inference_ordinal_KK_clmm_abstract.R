@@ -237,7 +237,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				private$cache_nonestimable_estimate("kk_clmm_rcpp_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -245,12 +244,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 				private$cache_nonestimable_estimate("kk_clmm_rcpp_nonestimable")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$is_z       = TRUE
 			private$cached_values$df         = Inf
 
 			if (estimate_only) return(invisible(NULL))
@@ -297,13 +294,11 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				private$cached_values$beta_hat_T   = NA_real_
 			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T = as.numeric(stats::coef(mod)["w"])
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z = TRUE
 		},
 
 		assert_finite_se = function(){

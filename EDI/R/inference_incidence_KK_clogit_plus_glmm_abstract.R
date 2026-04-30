@@ -162,7 +162,6 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			data_parts = private$build_clogit_plus_glmm_data()
 			if (is.null(data_parts)){
 				private$cache_nonestimable_estimate("clogit_plus_glmm_no_data")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -174,7 +173,6 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 
 				if (is.null(fit)){
 				private$cache_nonestimable_estimate("clogit_plus_glmm_fit_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 				}
 
@@ -195,7 +193,6 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				}
 				private$cached_values$beta_hat_T = as.numeric(fit$beta_T)
 			if (!estimate_only) private$cached_values$s_beta_hat_T = as.numeric(fit$se_beta_T)
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = NA_real_
 			invisible(NULL)
 		},

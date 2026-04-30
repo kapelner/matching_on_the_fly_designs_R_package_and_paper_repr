@@ -112,7 +112,6 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 		set_failed_fit_cache = function(){
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = NA_real_
 		},
 
@@ -212,7 +211,6 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 
 			se = .extract_se_from_rq_fit(fit, "treatment")
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
 		}
 	)

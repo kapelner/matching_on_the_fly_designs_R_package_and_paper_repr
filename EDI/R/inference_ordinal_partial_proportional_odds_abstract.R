@@ -135,7 +135,6 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 			t1 = proc.time()[["elapsed"]]
 			private$cached_values$beta_hat_T = fit$beta
 			private$cached_values$s_beta_hat_T = fit$se
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = private$n - 1
 			cache_time = round(proc.time()[["elapsed"]] - t1, 6)
 
@@ -200,14 +199,12 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 				private$cached_values$beta_hat_T = NA_real_
 			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
 				private$cached_values$df = private$n - 1
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T = fit$beta
 			private$cached_values$s_beta_hat_T = fit$se
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = private$n - 1
 		},
 

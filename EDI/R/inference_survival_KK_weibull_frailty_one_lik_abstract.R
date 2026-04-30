@@ -180,7 +180,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (sum(private$dead) == 0L){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -205,7 +204,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (is.null(res) || !isTRUE(res$converged)){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -227,7 +225,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				se  = if (is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 				private$cached_values$s_beta_hat_T = se
 				}
-				private$cached_values$is_z = TRUE
 				private$cached_values$df = NA_real_
 				invisible(NULL)
 			},
@@ -254,7 +251,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (sum(private$dead) == 0L){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -278,7 +274,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (is.null(mod)){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -286,7 +281,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (is.null(coefs) || !("w" %in% names(coefs))){
 				private$cached_values$beta_hat_T = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -302,7 +296,6 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
 			}
-			private$cached_values$is_z         = TRUE
 			invisible(NULL)
 		},
 

@@ -66,7 +66,6 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("ordinal_kk_gee_fit_unavailable")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -82,7 +81,6 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			} else {
 				private$cached_values$s_beta_hat_T = sqrt(as.numeric(vcov_robust[j_treat, j_treat]))
 			}
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = summary(mod)$coefficients
 		}
@@ -198,7 +196,6 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				private$cache_nonestimable_estimate("kk_glmm_rcpp_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -207,12 +204,10 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 				private$cache_nonestimable_estimate("kk_glmm_rcpp_nonestimable")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))

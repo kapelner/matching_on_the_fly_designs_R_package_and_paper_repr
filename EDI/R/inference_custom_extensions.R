@@ -13,8 +13,6 @@
 #'     is \code{TRUE}.}
 #'   \item{\code{df}}{Optional numeric scalar degrees of freedom. Use
 #'     \code{NA_real_} for z inference.}
-#'   \item{\code{is_z}}{Optional logical scalar. \code{TRUE} uses normal
-#'     reference inference; \code{FALSE} uses \code{df} with t inference.}
 #'   \item{\code{model}}{Optional fitted model object retained for
 #'     \code{get_mod()} and \code{get_summary()}.}
 #'   \item{\code{nonestimable_reason}}{Optional character scalar. When supplied
@@ -105,11 +103,9 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 
 			se = if (is.null(result$se)) NA_real_ else as.numeric(result$se)[1L]
 			df = if (is.null(result$df)) NA_real_ else as.numeric(result$df)[1L]
-			is_z = if (is.null(result$is_z)) !is.finite(df) else isTRUE(result$is_z)
 
 			private$cached_values$s_beta_hat_T = se
 			private$cached_values$df = df
-			private$cached_values$is_z = is_z
 
 			if (!is.finite(se) || se <= 0) {
 				private$cache_nonestimable_se(if (is.null(reason)) "custom_standard_error_unavailable" else reason)

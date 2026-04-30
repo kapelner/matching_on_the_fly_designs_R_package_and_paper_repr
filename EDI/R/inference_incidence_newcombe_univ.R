@@ -112,7 +112,6 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 			private$cached_values$counts = counts
 			private$cached_values$beta_hat_T = counts$p_t - counts$p_c
 			if (estimate_only) return(invisible(NULL))
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

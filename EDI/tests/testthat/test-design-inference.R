@@ -105,8 +105,8 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 		diag(Sigma_m) <- 1
 		var_cmh <- var_cmh + as.numeric(t(y_m) %*% Sigma_m %*% y_m)
 	}
-	expected_ci <- c(-0.4989475801457, 1.4989475801457)
-	expected_pval <- 0.2665697
+	expected_ci <- c(-0.300151946059218, 1.300151946059218)
+	expected_pval <- 0.2206713619198468
 
 	expect_equal(est, expected_est, tolerance = 1e-12)
 	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
@@ -194,6 +194,28 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 	}, numeric(2)))
 
 	expect_equal(se_pairs, expected, tolerance = 1e-12)
+})
+
+test_that("Azriel and Extended Robins confidence intervals use normal critical values", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+
+	for (inf in list(
+		InferenceIncidAzriel$new(des, verbose = FALSE),
+		InferenceIncidExtendedRobins$new(des, verbose = FALSE)
+	)) {
+		est <- inf$compute_estimate()
+		se <- inf$.__enclos_env__$private$get_standard_error()
+		ci <- inf$compute_asymp_confidence_interval(alpha = 0.05)
+		expect_equal(unname(ci), est + c(-1, 1) * qnorm(0.975) * se, tolerance = 1e-12)
+	}
 })
 
 test_that("Extended Robins standard error matches the blockwise formula", {

@@ -344,7 +344,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
 			}
-			private$cached_values$is_z = TRUE
 		},
 
 		assert_finite_se = function(){

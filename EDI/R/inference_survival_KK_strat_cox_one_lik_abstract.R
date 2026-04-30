@@ -151,7 +151,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 
 			if (sum(private$dead) == 0L){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_no_events")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -179,7 +178,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			}
 			if (is.null(res)){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_fit_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -187,7 +185,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
 			if (!is.finite(private$cached_values$beta_hat_T) || abs(private$cached_values$beta_hat_T) > private$max_abs_reasonable_coef){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_extreme_estimate")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -196,12 +193,10 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se else NA_real_
 				if (!is.finite(private$cached_values$s_beta_hat_T)){
 					private$cache_nonestimable_se("kk_strat_cox_combined_standard_error_unavailable")
-					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
 				}
 			}
 			private$clear_nonestimable_state()
-			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		}
 	)

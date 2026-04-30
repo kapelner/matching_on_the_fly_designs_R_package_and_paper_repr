@@ -79,7 +79,8 @@ Initialize a blocked and cluster randomized fixed experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  num_bins_for_continuous_covariate = 2,
+  preferred_num_bins_for_continuous_covariate = 2,
+  num_bins_for_continuous_covariate = NULL,
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.
@@ -101,7 +102,10 @@ Initialize a blocked and cluster randomized fixed experimental design
 
 \item{\code{n}}{The sample size.}
 
-\item{\code{num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
+\item{\code{preferred_num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
+
+\item{\code{num_bins_for_continuous_covariate}}{Deprecated alias for
+`preferred_num_bins_for_continuous_covariate`.}
 
 \item{\code{verbose}}{Flag for verbosity.}
 

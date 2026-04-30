@@ -185,14 +185,12 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 					private$cached_values$theta = fit$theta
 					private$best_par = fit$best_par
 					private$best_Xmm_colnames = colnames(Xmm)
-					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
 				}
 			}
 
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

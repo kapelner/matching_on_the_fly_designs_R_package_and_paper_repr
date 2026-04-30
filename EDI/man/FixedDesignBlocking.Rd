@@ -77,8 +77,10 @@ Initialize a fixed stratified blocking experimental design
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
-  num_bins_for_continuous_covariate = 2,
-  B_preferred = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
+  preferred_num_bins_for_continuous_covariate = 2,
+  B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
+  exact_num_blocks = FALSE,
+  num_bins_for_continuous_covariate = NULL,
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.
@@ -100,17 +102,24 @@ If `NULL` (the default), all available covariate columns are used.}
 
 \item{\code{n}}{The sample size.}
 
-\item{\code{num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
+\item{\code{preferred_num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
 
-\item{\code{B_preferred}}{The desired number of blocks. Columns from `strata_cols`
+\item{\code{B_target}}{The target number of blocks. Columns from `strata_cols`
 are added greedily in order, each column being included only if it does not push
 the total number of unique blocks beyond this target. For categorical covariates
 their natural levels are used; for continuous covariates
-`num_bins_for_continuous_covariate` quantile bins are used. Earlier columns
+`preferred_num_bins_for_continuous_covariate` quantile bins are used. Earlier columns
 are always preferred over later ones. The default is `floor(sqrt(n))` when `n`
 is known at construction time, or is resolved to `floor(sqrt(n))` when subjects
-are added. Set to `NULL` to disable the target and use all `strata_cols` columns
-unconditionally (the original behaviour).}
+are added. Set `B_target = NULL` to use all columns unconditionally.
+Set `exact_num_blocks = TRUE` to hard fail if the final key construction
+does not produce exactly `B_target` blocks.}
+
+\item{\code{exact_num_blocks}}{Whether to require the greedy key construction to produce
+exactly `B_target` blocks. Default `FALSE`.}
+
+\item{\code{num_bins_for_continuous_covariate}}{Deprecated alias for
+`preferred_num_bins_for_continuous_covariate`.}
 
 \item{\code{verbose}}{A flag for verbosity.}
 

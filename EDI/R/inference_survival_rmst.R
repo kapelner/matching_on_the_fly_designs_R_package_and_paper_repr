@@ -102,7 +102,6 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			if (is.na(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0) {
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
-			private$cached_values$is_z = TRUE
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 

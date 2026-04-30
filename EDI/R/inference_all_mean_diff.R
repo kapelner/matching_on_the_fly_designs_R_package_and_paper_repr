@@ -189,7 +189,6 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	                if (nT <= 1 || nC <= 1) { # Need at least 2 samples for variance
 	                    private$cached_values$s_beta_hat_T = NA_real_
 	                    private$cached_values$df = NA_real_
-	                    private$cached_values$is_z = FALSE
 	                    return() # Exit early
 	                }
 
@@ -199,6 +198,5 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 					private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
 													s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)
 												) #Welch-Satterthwaite formula
-					private$cached_values$is_z = FALSE
 				}
 			))

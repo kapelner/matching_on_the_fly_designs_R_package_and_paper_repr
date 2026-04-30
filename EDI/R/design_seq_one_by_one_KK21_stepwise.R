@@ -30,8 +30,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
-		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
@@ -47,7 +45,7 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#' @param p                       The number of covariate features. Must be specified when
 		#'   \code{morrison = TRUE} otherwise do not specify this argument.
 		#' @param num_boot the number of bootstrap samples taken to approximate the subject-distance
-		#'   distribution. Default is \code{NULL} for not 500.
+		#'   distribution. Default is 500.
 		#' @param count_use_speedup               Should we speed up the estimation of the weights in
 		#'   the response = count case via a continuous regression on log(y + 1).
 		#'                                                         instead of a negative binomial
@@ -71,6 +69,7 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		#' \code{TRUE}.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param ... Extra arguments passed to the \code{DesignSeqOneByOneKK21} superclass.
 		#' @return	A new `DesignSeqOneByOneKK21stepwise` object
 		#'
 		#' @examples

@@ -178,7 +178,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			has_cached_se = !is.null(private$cached_values$s_beta_hat_T) &&
 				length(private$cached_values$s_beta_hat_T) == 1L &&
 				is.finite(private$cached_values$s_beta_hat_T)
-			if (!is.null(private$cached_values$is_z) && (estimate_only || has_cached_se)) return(invisible(NULL))
+			if (estimate_only || has_cached_se) return(invisible(NULL))
 			model_output = private$generate_mod(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T = model_output$b[2]
 			if (estimate_only) return(invisible(NULL))
@@ -189,7 +189,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			} else {
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = Inf
 		}
 	)

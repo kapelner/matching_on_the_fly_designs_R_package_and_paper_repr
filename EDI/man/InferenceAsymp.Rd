@@ -207,6 +207,13 @@ Computes the Wald two-sided p-value regardless of configured testing type.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_wald_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_score_two_sided_pval"></a>}}
@@ -217,6 +224,13 @@ Computes the score two-sided p-value regardless of configured testing type.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_score_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_lik_ratio_two_sided_pval"></a>}}
@@ -227,6 +241,13 @@ Computes the likelihood-ratio two-sided p-value regardless of configured testing
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_lik_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval"></a>}}
@@ -237,6 +258,13 @@ Computes the likelihood-ratio two-sided p-value regardless of configured testing
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_likelihood_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_estimate"></a>}}

@@ -77,7 +77,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
-			private$cached_values$is_z = TRUE
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
@@ -154,7 +153,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$logrank_score = NA_real_
 				private$cached_values$logrank_var = NA_real_
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -162,7 +160,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			private$cached_values$s_beta_hat_T = as.numeric(logrank_stats$se_beta_hat)
 			private$cached_values$logrank_score = as.numeric(logrank_stats$score)
 			private$cached_values$logrank_var = as.numeric(logrank_stats$var_score)
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

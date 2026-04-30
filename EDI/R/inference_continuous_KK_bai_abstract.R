@@ -136,7 +136,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		if (is.null(private$cached_values$s_beta_hat_T)){
 		private$shared()
 		}
-		private$cached_values$is_z = TRUE
 		private$compute_z_or_t_ci_from_s_and_df(alpha)
 	},
 

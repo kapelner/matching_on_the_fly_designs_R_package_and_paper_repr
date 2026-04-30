@@ -234,7 +234,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 
 			if (is.null(X_comb)){
 				private$cache_nonestimable_estimate("kk_clogit_combined_no_informative_data")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -263,12 +262,10 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			j_beta_T = if (!is.null(attempt$X)) match("beta_T", colnames(attempt$X)) else NA_integer_
 			if (is.null(mod) || !is.finite(j_beta_T) || is.na(j_beta_T) || !is.finite(mod$b[j_beta_T])){
 				private$cache_nonestimable_estimate("kk_clogit_combined_fit_failed")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 			if (max(abs(mod$b), na.rm = TRUE) > private$max_abs_reasonable_coef){
 				private$cache_nonestimable_estimate("kk_clogit_combined_extreme_coefficients")
-				private$cached_values$is_z = TRUE
 				return(invisible(NULL))
 			}
 
@@ -284,12 +281,10 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				private$cached_values$s_beta_hat_T = if (is.finite(se) && se <= private$max_abs_reasonable_coef) se else NA_real_
 				if (!is.finite(private$cached_values$s_beta_hat_T)){
 					private$cache_nonestimable_se("kk_clogit_combined_standard_error_unavailable")
-					private$cached_values$is_z = TRUE
 					return(invisible(NULL))
 				}
 			}
 				private$clear_nonestimable_state()
-				private$cached_values$is_z         = TRUE
 				private$cached_values$df           = NA_real_
 				invisible(NULL)
 			}

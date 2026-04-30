@@ -34,7 +34,6 @@ named list with:
 - `estimate`: required numeric scalar treatment-effect estimate.
 - `se`: optional numeric scalar standard error.
 - `df`: optional degrees of freedom. Use `NA_real_` for z inference.
-- `is_z`: optional logical. `TRUE` uses normal reference inference.
 - `model`: optional fitted model object retained by `get_mod()`.
 - `nonestimable_reason`: optional character scalar used when the estimate or
   standard error is unavailable.
@@ -69,7 +68,6 @@ InferenceMedianDiff <- R6Class(
         estimate = est,
         se = sqrt(stats::var(y_t) / length(y_t) + stats::var(y_c) / length(y_c)),
         df = length(y_t) + length(y_c) - 2,
-        is_z = FALSE,
         model = NULL
       )
     }

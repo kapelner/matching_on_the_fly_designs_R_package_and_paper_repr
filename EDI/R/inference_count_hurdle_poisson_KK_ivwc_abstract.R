@@ -226,7 +226,6 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			} else {
 				private$cache_nonestimable_estimate("kk_hurdle_poisson_ivwc_no_usable_component")
 			}
-			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		},
 

@@ -17,7 +17,9 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#' @param prob_T	The probability of the treatment assignment for each cluster.
 		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
 		#' @param n			The sample size.
-		#' @param num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
+		#' @param preferred_num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
+		#' @param num_bins_for_continuous_covariate Deprecated alias for
+		#'   `preferred_num_bins_for_continuous_covariate`.
 		#' @param verbose	Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
@@ -31,20 +33,24 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				num_bins_for_continuous_covariate = 2,
+				preferred_num_bins_for_continuous_covariate = 2,
+				num_bins_for_continuous_covariate = NULL,
 				verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .
 			) {
+			if (!is.null(num_bins_for_continuous_covariate)) {
+				preferred_num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
+			}
 			if (should_run_asserts()) {
 				assertCharacter(strata_cols, min.len = 1)
 				assertCharacter(cluster_col, len = 1)
-				assertCount(num_bins_for_continuous_covariate, positive = TRUE)
+				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$strata_cols = strata_cols
 			private$cluster_col = cluster_col
-			private$num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
+			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
 			private$uses_covariates = TRUE
 		},
 

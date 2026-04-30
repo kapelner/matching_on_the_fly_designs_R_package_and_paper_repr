@@ -22,8 +22,6 @@ return a named list with the custom-fit result contract:
     is \code{TRUE}.}
   \item{\code{df}}{Optional numeric scalar degrees of freedom. Use
     \code{NA_real_} for z inference.}
-  \item{\code{is_z}}{Optional logical scalar. \code{TRUE} uses normal
-    reference inference; \code{FALSE} uses \code{df} with t inference.}
   \item{\code{model}}{Optional fitted model object retained for
     \code{get_mod()} and \code{get_summary()}.}
   \item{\code{nonestimable_reason}}{Optional character scalar. When supplied

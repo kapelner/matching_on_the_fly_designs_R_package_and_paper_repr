@@ -86,7 +86,6 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			if (is.null(fit) || !is.finite(stats::coef(fit)[2])){
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = FALSE
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
@@ -105,7 +104,6 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			
 			private$cached_values$s_beta_hat_T = sqrt(v_cov[2, 2])
 			private$cached_values$df = df
-			private$cached_values$is_z = FALSE
 		}
 	)
 )

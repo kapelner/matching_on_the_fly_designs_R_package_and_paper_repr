@@ -179,7 +179,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		set_failed_combined_cache = function(){
 			private$cached_values$beta_hat_T   = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$is_z         = TRUE
 			private$cache_nonestimable_estimate("kk_cpoisson_combined_fit_failed")
 		},
 
@@ -254,7 +253,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				)
 				private$cached_values$beta_hat_T = as.numeric(mod$b[2])
 				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-				private$cached_values$is_z = TRUE
 				private$cached_values$df = NA_real_
 				TRUE
 			},
@@ -269,8 +267,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			}, error = function(e) NULL)
 			if (is.null(mod) || length(mod$b) < 1L || !is.finite(mod$b[1])) return(FALSE)
 			private$cached_values$beta_hat_T = as.numeric(mod$b[1])
-			private$cached_values$is_z = TRUE
-			# Standard error remains NA for now as it requires specific Rcpp implementation
 			TRUE
 		},
 
@@ -298,7 +294,6 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
 			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat])
 			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
-			private$cached_values$is_z = TRUE
 			TRUE
 		},
 

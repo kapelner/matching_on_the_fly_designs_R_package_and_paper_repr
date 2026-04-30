@@ -120,7 +120,6 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			private$cached_values$full_vcov = full_vcov
 
 			private$cached_values$s_beta_hat_T = as.numeric(full_std_errs[treatment_coef_name])
-			private$cached_values$is_z = TRUE
 		}
 	)
 )

@@ -36,7 +36,6 @@ test_that("custom asymptotic inference works from an external-package-like envir
 						estimate = est,
 						se = se,
 						df = df,
-						is_z = FALSE,
 						model = list(n_t = length(y_t), n_c = length(y_c))
 					)
 				}

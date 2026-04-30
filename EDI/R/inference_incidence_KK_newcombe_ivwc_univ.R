@@ -134,7 +134,6 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			
 			private$cached_values$beta_hat_T = res$estimate
 			private$cached_values$s_beta_hat_T = sqrt(res$variance)
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = NA_real_
 		}
 	)

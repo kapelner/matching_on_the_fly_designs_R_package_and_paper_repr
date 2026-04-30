@@ -285,7 +285,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			} else {
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
@@ -301,12 +300,10 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z         = TRUE
 				return(invisible(NULL))
 			}
 
 			private$cached_values$beta_hat_T   = fit$beta
-			private$cached_values$is_z         = TRUE
 			if (!estimate_only) {
 				private$cached_values$s_beta_hat_T = fit$se
 				if (!is.null(fit$mod)) {

@@ -114,7 +114,6 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			if (is.null(model_output)) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$is_z = TRUE
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
@@ -127,7 +126,6 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			} else {
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-			private$cached_values$is_z = TRUE # This remains true for asymptotic inference
 			private$cached_values$df = model_output$df %||% NA_real_
 		}
 	)

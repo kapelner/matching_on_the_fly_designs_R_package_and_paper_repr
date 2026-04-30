@@ -3770,19 +3770,25 @@ BEGIN_RCPP
 END_RCPP
 }
 // apply_treatment_and_noise_cpp
-List apply_treatment_and_noise_cpp(const NumericVector& y_base, const IntegerVector& w, const std::string& response_type, double betaT, double sd_noise, double prob_censoring, int n_ordinal_levels);
-RcppExport SEXP _EDI_apply_treatment_and_noise_cpp(SEXP y_baseSEXP, SEXP wSEXP, SEXP response_typeSEXP, SEXP betaTSEXP, SEXP sd_noiseSEXP, SEXP prob_censoringSEXP, SEXP n_ordinal_levelsSEXP) {
+List apply_treatment_and_noise_cpp(const NumericVector& y_linear_model, const IntegerVector& w, const std::string& response_type, double betaT, double sd_noise, double prob_censoring, int n_ordinal_levels, double phi_proportion, double k_survival, double incidence_clamp, double proportion_clamp, double count_clamp, double survival_clamp);
+RcppExport SEXP _EDI_apply_treatment_and_noise_cpp(SEXP y_linear_modelSEXP, SEXP wSEXP, SEXP response_typeSEXP, SEXP betaTSEXP, SEXP sd_noiseSEXP, SEXP prob_censoringSEXP, SEXP n_ordinal_levelsSEXP, SEXP phi_proportionSEXP, SEXP k_survivalSEXP, SEXP incidence_clampSEXP, SEXP proportion_clampSEXP, SEXP count_clampSEXP, SEXP survival_clampSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type y_base(y_baseSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y_linear_model(y_linear_modelSEXP);
     Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type response_type(response_typeSEXP);
     Rcpp::traits::input_parameter< double >::type betaT(betaTSEXP);
     Rcpp::traits::input_parameter< double >::type sd_noise(sd_noiseSEXP);
     Rcpp::traits::input_parameter< double >::type prob_censoring(prob_censoringSEXP);
     Rcpp::traits::input_parameter< int >::type n_ordinal_levels(n_ordinal_levelsSEXP);
-    rcpp_result_gen = Rcpp::wrap(apply_treatment_and_noise_cpp(y_base, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels));
+    Rcpp::traits::input_parameter< double >::type phi_proportion(phi_proportionSEXP);
+    Rcpp::traits::input_parameter< double >::type k_survival(k_survivalSEXP);
+    Rcpp::traits::input_parameter< double >::type incidence_clamp(incidence_clampSEXP);
+    Rcpp::traits::input_parameter< double >::type proportion_clamp(proportion_clampSEXP);
+    Rcpp::traits::input_parameter< double >::type count_clamp(count_clampSEXP);
+    Rcpp::traits::input_parameter< double >::type survival_clamp(survival_clampSEXP);
+    rcpp_result_gen = Rcpp::wrap(apply_treatment_and_noise_cpp(y_linear_model, w, response_type, betaT, sd_noise, prob_censoring, n_ordinal_levels, phi_proportion, k_survival, incidence_clamp, proportion_clamp, count_clamp, survival_clamp));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4145,7 +4151,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_bootstrapped_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_bootstrapped_weighted_sqd_distances_cpp, 4},
     {"_EDI_sample_mode_cpp", (DL_FUNC) &_EDI_sample_mode_cpp, 1},
     {"_EDI_compute_simple_mean_diff_parallel_cpp", (DL_FUNC) &_EDI_compute_simple_mean_diff_parallel_cpp, 4},
-    {"_EDI_apply_treatment_and_noise_cpp", (DL_FUNC) &_EDI_apply_treatment_and_noise_cpp, 7},
+    {"_EDI_apply_treatment_and_noise_cpp", (DL_FUNC) &_EDI_apply_treatment_and_noise_cpp, 13},
     {"_EDI_spbr_redraw_w_cpp", (DL_FUNC) &_EDI_spbr_redraw_w_cpp, 3},
     {"_EDI_stratified_bootstrap_indices_cpp", (DL_FUNC) &_EDI_stratified_bootstrap_indices_cpp, 1},
     {"_EDI_compute_survival_strata_ids_cpp", (DL_FUNC) &_EDI_compute_survival_strata_ids_cpp, 4},

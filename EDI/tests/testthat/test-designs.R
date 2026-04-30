@@ -129,6 +129,21 @@ test_that("Design asserts equal block sizes", {
 	expect_error(des_bad$assert_equal_block_sizes(), "same number of subjects")
 })
 
+test_that("FixedDesignBlocking exact_num_blocks hard-fails when the greedy builder misses the target", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		n = 8,
+		response_type = "incidence",
+		B_target = 3L,
+		exact_num_blocks = TRUE,
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(stratum = rep(c("A", "B", "C", "D"), each = 2)))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(0, 1, 0, 1, 0, 1, 0, 1))
+	expect_error(des$get_block_ids(), "exact_num_blocks = TRUE")
+})
+
 test_that("DesignSeqOneByOneRandomBlockSize works", {
 	des <- DesignSeqOneByOneRandomBlockSize$new(
 		response_type = "continuous",

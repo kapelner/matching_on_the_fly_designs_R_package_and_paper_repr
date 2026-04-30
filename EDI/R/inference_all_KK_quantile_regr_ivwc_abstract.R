@@ -208,7 +208,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
-			private$cached_values$is_z = TRUE
 			invisible(NULL)
 		},
 

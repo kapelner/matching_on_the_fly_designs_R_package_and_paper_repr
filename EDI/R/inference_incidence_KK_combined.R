@@ -17,6 +17,7 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param use_rcpp Whether to use the internal Rcpp solver (TRUE) or fallback to geepack (FALSE).
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts() && !use_rcpp) {
 				if (!check_package_installed("geepack")){
@@ -138,7 +139,6 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 					n_gh = 20L
 				)
 				private$cached_values$beta_hat_T = beta_hat_T
-				private$cached_values$is_z = TRUE
 			private$cached_values$df   = Inf
 
 			if (estimate_only) return(invisible(NULL))

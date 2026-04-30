@@ -214,6 +214,6 @@ Collate:
     'inference_survival_strat_cox_abstract.R'
     'inference_survival_weibull.R'
     'inference_suite.R'
-    'simulations.R'
+	    'simulations_framework.R'
     'zzz.R'
 RoxygenNote: 7.3.3

@@ -26,7 +26,6 @@ InferenceIncidenceWald = R6::R6Class("InferenceIncidenceWald",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			private$cached_values$is_z = TRUE
 		}
 	),
 

@@ -23,10 +23,10 @@ design_classes_and_params = list(
   FixedDesignOptimalBlocks = list(B = 8),
   FixedDesignOptimalBlocks = list(B = 16),
   FixedDesignOptimalBlocks = list(B = 32),
-  FixedDesignBlocking = list(B_preferred = 4),
-  FixedDesignBlocking = list(B_preferred = 8),
-  FixedDesignBlocking = list(B_preferred = 16),
-  FixedDesignBlocking = list(B_preferred = 32)
+  FixedDesignBlocking =      list(B_target = 4),
+  FixedDesignBlocking =      list(B_target = 8),
+  FixedDesignBlocking =      list(B_target = 16),
+  FixedDesignBlocking =      list(B_target = 32)
 )
 
 # ── Fixed: inference classes ───────────────────────────────────────

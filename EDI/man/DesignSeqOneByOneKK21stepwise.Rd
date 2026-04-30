@@ -132,9 +132,7 @@ that all added responses via the \code{add_one_subject_response} method will be
 imputing its value? If the feature is type factor, instead of creating
                                 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
 
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.
-randomization-based inference and bootstrap resampling. The default is 1 for serial
-computation.}
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{TRUE}.}
@@ -156,7 +154,7 @@ with no wait for a certain reservoir size like in KK14.}
 \code{morrison = TRUE} otherwise do not specify this argument.}
 
 \item{\code{num_boot}}{the number of bootstrap samples taken to approximate the subject-distance
-distribution. Default is \code{NULL} for not 500.}
+distribution. Default is 500.}
 
 \item{\code{count_use_speedup}}{Should we speed up the estimation of the weights in
   the response = count case via a continuous regression on log(y + 1).
@@ -186,6 +184,8 @@ model each time? This is at the expense of the weights being less accurate. Defa
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK21} superclass.}
 }
 \if{html}{\out{</div>}}
 }

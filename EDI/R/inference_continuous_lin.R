@@ -188,7 +188,6 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 
 			private$cached_values$beta_hat_T = beta_hat
 			private$cached_values$s_beta_hat_T = if (is.finite(ssq_hat)) sqrt(ssq_hat) else NA_real_
-			private$cached_values$is_z = TRUE
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)
 			private$cached_values$full_coefficients = coef_hat
 			private$cached_values$full_vcov = vcov_hc2

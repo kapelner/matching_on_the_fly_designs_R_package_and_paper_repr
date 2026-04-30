@@ -30,8 +30,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
 		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#'   randomization-based inference and bootstrap resampling. The default is 1 for serial
-		#'   computation.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{TRUE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
@@ -71,6 +69,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' \code{TRUE}.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param ... Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.
 		#'
 		#' @return	A new `DesignSeqOneByOneKK21` object
 		#'

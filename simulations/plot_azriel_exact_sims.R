@@ -19,7 +19,7 @@ results_dt[, inference_short := inference]
 results_dt[, inference_short := gsub("InferenceIncidence", "", inference_short)]
 results_dt[, inference_short := gsub("InferenceIncid",     "", inference_short)]
 
-# Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_preferred=4/8/16/32
+# Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_target=4/8/16/32
 design_levels = c(
   "iBCRD",                    
   "OptimalBlocks (B=4)",     
@@ -27,10 +27,10 @@ design_levels = c(
   "OptimalBlocks (B=16)",  
   "OptimalBlocks (B=32)",   
   "BinaryMatch",  
-  "Blocking (B_preferred=4)",  
-  "Blocking (B_preferred=8)",  
-  "Blocking (B_preferred=16)",    
-  "Blocking (B_preferred=32)"
+  "Blocking (B_target=4)",  
+  "Blocking (B_target=8)",  
+  "Blocking (B_target=16)",    
+  "Blocking (B_target=32)"
 )
 results_dt[, design_short := factor(design_short, levels = design_levels)]
 
