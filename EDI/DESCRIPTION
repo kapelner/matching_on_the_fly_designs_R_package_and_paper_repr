@@ -145,7 +145,7 @@ Collate:
     'inference_count_zero_augmented_poisson_abstract.R'
     'inference_count_zero_inflated.R'
     'inference_incidence_wald.R'
-    'inference_incidence_azriel.R'
+    'inference_incidence_cmh.R'
     'inference_incidence_extended_robins.R'
     'inference_incidence_binomial_identity_abstract.R'
     'inference_incidence_binomial_identity.R'

@@ -76,7 +76,7 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	expect_true(is.finite(inf_cont$compute_asymp_two_sided_pval()))
 })
 
-test_that("Azriel inference is gated to blocked incidence designs", {
+test_that("CMH inference is gated to blocked incidence designs", {
 	des <- FixedDesignBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
@@ -87,7 +87,7 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
-	inf <- InferenceIncidAzriel$new(des, verbose = FALSE)
+	inf <- InferenceIncidCMH$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 	ci <- inf$compute_asymp_confidence_interval()
 	pval <- inf$compute_asymp_two_sided_pval()
@@ -117,10 +117,10 @@ test_that("Azriel inference is gated to blocked incidence designs", {
 		des_bad$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
 	add_all_subject_responses_seq(des_bad, rbinom(8, 1, 0.5))
-	expect_error(InferenceIncidAzriel$new(des_bad, verbose = FALSE), "blocking design")
+	expect_error(InferenceIncidCMH$new(des_bad, verbose = FALSE), "blocking design")
 })
 
-test_that("Azriel inference requires even treatment allocation", {
+test_that("CMH inference requires even treatment allocation", {
 	des <- FixedDesignBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
@@ -133,12 +133,12 @@ test_that("Azriel inference requires even treatment allocation", {
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_error(
-		InferenceIncidAzriel$new(des, verbose = FALSE),
+		InferenceIncidCMH$new(des, verbose = FALSE),
 		"even treatment allocation"
 	)
 })
 
-test_that("Azriel inference requires equal block sizes", {
+test_that("CMH inference requires equal block sizes", {
 	des <- FixedDesignBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
@@ -150,12 +150,12 @@ test_that("Azriel inference requires equal block sizes", {
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_error(
-		InferenceIncidAzriel$new(des, verbose = FALSE),
+		InferenceIncidCMH$new(des, verbose = FALSE),
 		"same number of subjects"
 	)
 })
 
-test_that("Azriel and Extended Robins standard errors match a fixed blocked simulation", {
+test_that("CMH and Extended Robins standard errors match a fixed blocked simulation", {
 	set.seed(20260405)
 	expected <- matrix(
 		c(
@@ -169,7 +169,7 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 		byrow = TRUE,
 		dimnames = list(
 			NULL,
-			c("azriel", "robins")
+			c("cmh", "robins")
 		)
 	)
 
@@ -185,10 +185,10 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 		des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 		des$add_all_subject_responses(y)
 
-		inf_azriel <- InferenceIncidAzriel$new(des, verbose = FALSE)
+		inf_cmh <- InferenceIncidCMH$new(des, verbose = FALSE)
 		inf_robins <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
 		c(
-			azriel = inf_azriel$.__enclos_env__$private$get_standard_error(),
+			cmh = inf_cmh$.__enclos_env__$private$get_standard_error(),
 			robins = inf_robins$.__enclos_env__$private$get_standard_error()
 		)
 	}, numeric(2)))
@@ -196,7 +196,7 @@ test_that("Azriel and Extended Robins standard errors match a fixed blocked simu
 	expect_equal(se_pairs, expected, tolerance = 1e-12)
 })
 
-test_that("Azriel and Extended Robins confidence intervals use normal critical values", {
+test_that("CMH and Extended Robins confidence intervals use normal critical values", {
 	des <- FixedDesignBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
@@ -208,7 +208,7 @@ test_that("Azriel and Extended Robins confidence intervals use normal critical v
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	for (inf in list(
-		InferenceIncidAzriel$new(des, verbose = FALSE),
+		InferenceIncidCMH$new(des, verbose = FALSE),
 		InferenceIncidExtendedRobins$new(des, verbose = FALSE)
 	)) {
 		est <- inf$compute_estimate()

@@ -30,7 +30,7 @@ count,QuasiPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp quasi-Poisson,IRLS,Y,Y
 count,RobustPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp Poisson,IRLS,Y,Y
 count,ZeroInflatedNegBin,Y,Y,Y,Y,Y,Y,ourself/Rcpp negative binomial,L-BFGS,N,Y
 count,ZeroInflatedPoisson,Y,Y,Y,Y,Y,Y,ourself/Rcpp zero-augmented Poisson,L-BFGS,N,N
-incidence,Azriel,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA,N
+incidence,CMH,N,Y,Y,Y,Y,Y,none/design-specific statistic,NA,NA,N
 incidence,BinomialIdentityRiskDiff,Y,Y,Y,Y,Y,Y,ourself/Rcpp identity-binomial,constrained Fisher scoring with step-halving,Y,Y
 incidence,ExactBinomial,N,N,N,N,N,N,none/exact enumeration,NA,NA,N
 incidence,ExactFisher,N,N,N,N,N,N,none/exact enumeration,NA,NA,N

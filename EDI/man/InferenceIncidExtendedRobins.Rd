@@ -8,7 +8,7 @@ Unadjusted blocked-design incidence inference using the simple mean-difference
 point estimate with a block-stratified standard error.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{\link[EDI:InferenceIncidAzriel]{EDI::InferenceIncidAzriel}} -> \code{InferenceIncidExtendedRobins}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{\link[EDI:InferenceIncidCMH]{EDI::InferenceIncidCMH}} -> \code{InferenceIncidExtendedRobins}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -57,7 +57,7 @@ point estimate with a block-stratified standard error.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_estimate'><code>EDI::InferenceAllSimpleMeanDiff$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_rand_confidence_interval'><code>EDI::InferenceAllSimpleMeanDiff$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidAzriel" data-id="initialize"><a href='../../EDI/html/InferenceIncidAzriel.html#method-InferenceIncidAzriel-initialize'><code>EDI::InferenceIncidAzriel$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidCMH" data-id="initialize"><a href='../../EDI/html/InferenceIncidCMH.html#method-InferenceIncidCMH-initialize'><code>EDI::InferenceIncidCMH$initialize()</code></a></span></li>
 </ul>
 </details>
 }}

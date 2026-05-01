@@ -37,14 +37,6 @@ atkinson_redraw_batch_cpp <- function(X, n, p_raw, prob_T = 0.5) {
     .Call(`_EDI_atkinson_redraw_batch_cpp`, X, n, p_raw, prob_T)
 }
 
-compute_azriel_block_se_cpp <- function(y, m_vec, n_total) {
-    .Call(`_EDI_compute_azriel_block_se_cpp`, y, m_vec, n_total)
-}
-
-compute_extended_robins_block_se_cpp <- function(y, w, m_vec, n_total) {
-    .Call(`_EDI_compute_extended_robins_block_se_cpp`, y, w, m_vec, n_total)
-}
-
 base_bootstrap_loop_cpp <- function(indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
     .Call(`_EDI_base_bootstrap_loop_cpp`, indices, y, dead, X, w, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
@@ -147,6 +139,14 @@ build_kk_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_
 
 build_kk_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
     .Call(`_EDI_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
+}
+
+compute_cmh_block_se_cpp <- function(y, m_vec, n_total) {
+    .Call(`_EDI_compute_cmh_block_se_cpp`, y, m_vec, n_total)
+}
+
+compute_extended_robins_block_se_cpp <- function(y, w, m_vec, n_total) {
+    .Call(`_EDI_compute_extended_robins_block_se_cpp`, y, w, m_vec, n_total)
 }
 
 compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {

@@ -1,22 +1,22 @@
-#' Azriel Blocked Incidence Inference
+#' CMH Blocked Incidence Inference
 #'
 #' Unadjusted blocked-design incidence inference using the simple mean-difference
 #' point estimate with a block-stratified standard error.
 #'
 #' @export
-InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
+InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
 		#' @description
-		#' Initialize Azriel blocked-design incidence inference.
+		#' Initialize CMH blocked-design incidence inference.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @return A new \code{InferenceIncidAzriel} object.
+		#' @return A new \code{InferenceIncidCMH} object.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
@@ -32,15 +32,15 @@ InferenceIncidAzriel = R6::R6Class("InferenceIncidAzriel",
 
 	private = list(
 		get_standard_error = function(){
-			if (!is.null(private$cached_values$azriel_s_beta_hat_T)) {
-				return(private$cached_values$azriel_s_beta_hat_T)
+			if (!is.null(private$cached_values$cmh_s_beta_hat_T)) {
+				return(private$cached_values$cmh_s_beta_hat_T)
 			}
-			private$cached_values$azriel_s_beta_hat_T = compute_azriel_block_se_cpp(
+			private$cached_values$cmh_s_beta_hat_T = compute_cmh_block_se_cpp(
 				private$des_obj_priv_int$y,
 				private$des_obj$get_block_ids(),
 				private$des_obj_priv_int$n
 			)
-			private$cached_values$azriel_s_beta_hat_T
+			private$cached_values$cmh_s_beta_hat_T
 		},
 
 		get_degrees_of_freedom = function(){

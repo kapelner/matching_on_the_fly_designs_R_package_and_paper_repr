@@ -13,6 +13,9 @@ test_that("SimulationFramework accepts merged design classes and params", {
 		p = 2L,
 		Nrep = 1L,
 		betaT = 0,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
 		inference_types_and_params = list(asymp_pval = list(delta = 0)),
 		turn_off_asserts_for_speed = FALSE
 	)
@@ -44,7 +47,10 @@ test_that("SimulationFramework validates merged inference constructor params", {
 			design_classes_and_params = list(FixedDesignBernoulli),
 			inference_classes_and_params = list(
 				InferenceAllSimpleMeanDiff = list(not_a_constructor_arg = TRUE)
-			)
+			),
+			results_filename = tempfile(fileext = ".csv"),
+			continue_from_last_result_row = FALSE,
+			verbose = FALSE
 		),
 		"not accepted by initialize"
 	)
@@ -59,7 +65,10 @@ test_that("SimulationFramework validates inference type params against function 
 		n = 8L,
 		p = 2L,
 		Nrep = 1L,
-		betaT = 0
+		betaT = 0,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE
 	)
 
 	expect_error(sim$run(), "not accepted by compute_asymp_two_sided_pval")
@@ -77,6 +86,9 @@ test_that("SimulationFramework true mean-difference estimands match DGP scale", 
 			Nrep = 1L,
 			betaT = betaT,
 			X_mat = matrix(y_linear_model, ncol = 1L),
+			results_filename = tempfile(fileext = ".csv"),
+			continue_from_last_result_row = FALSE,
+			verbose = FALSE,
 			turn_off_asserts_for_speed = FALSE,
 			...
 		)
@@ -111,6 +123,33 @@ test_that("SimulationFramework true mean-difference estimands match DGP scale", 
 	)
 })
 
+test_that("SimulationFramework accepts vector grids for n, p, betaT, and cond_exp_func_model", {
+	sim <- suppressWarnings(SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list(delta = 0)),
+		n = c(6L, 8L),
+		p = c(2L, 5L),
+		Nrep = 1L,
+		betaT = c(0, 1),
+		cond_exp_func_model = c("linear", "nonlinear"),
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		turn_off_asserts_for_speed = FALSE
+	))
+
+	sim$run()
+	raw <- sim$get_results()
+	sm <- sim$summarize()
+
+	expect_true(all(c("cond_exp_func_model", "n", "p", "betaT") %in% names(raw)))
+	expect_true(all(c("cond_exp_func_model", "n", "p", "betaT") %in% names(sm)))
+	expect_equal(data.table::uniqueN(sm[, .(cond_exp_func_model, n, p, betaT)]), 12L)
+	expect_false(any(sm$cond_exp_func_model == "nonlinear" & sm$p < 5L))
+})
+
 test_that("SimulationFramework summarize preserves raw metric precision", {
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
@@ -123,11 +162,18 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 		n = 4L,
 		p = 1L,
 		Nrep = 1L,
-		betaT = 0
+		betaT = 0,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE
 	)
 	priv <- sim$.__enclos_env__$private
 	priv$has_run <- TRUE
 	priv$valid_combos <- list(list(
+		cond_exp_func_model = "linear",
+		n = 4L,
+		p = 1L,
+		betaT = 0,
 		design = "FixedDesignBernoulli",
 		inference = "InferenceAllSimpleMeanDiff",
 		inference_type = "asymp_pval"
@@ -135,6 +181,10 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 	priv$raw_results <- list(
 		list(
 			rep = 1L,
+			cond_exp_func_model = "linear",
+			n = 4L,
+			p = 1L,
+			betaT = 0,
 			design = "FixedDesignBernoulli",
 			inference = "InferenceAllSimpleMeanDiff",
 			inference_type = "asymp_pval",
@@ -146,6 +196,10 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 		),
 		list(
 			rep = 2L,
+			cond_exp_func_model = "linear",
+			n = 4L,
+			p = 1L,
+			betaT = 0,
 			design = "FixedDesignBernoulli",
 			inference = "InferenceAllSimpleMeanDiff",
 			inference_type = "asymp_pval",
@@ -157,6 +211,10 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 		),
 		list(
 			rep = 3L,
+			cond_exp_func_model = "linear",
+			n = 4L,
+			p = 1L,
+			betaT = 0,
 			design = "FixedDesignBernoulli",
 			inference = "InferenceAllSimpleMeanDiff",
 			inference_type = "asymp_pval",

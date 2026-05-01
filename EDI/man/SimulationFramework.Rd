@@ -13,9 +13,9 @@ available from \code{$summarize()}.
 \details{
 Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
 \itemize{
-  \item \code{data_type = "linear"}: the base continuous signal is
+  \item \code{cond_exp_func_model = "linear"}: the base continuous signal is
     \eqn{y = X\beta} where \eqn{\beta} is evenly spaced from 1 to \eqn{-1}.
-  \item \code{data_type = "nonlinear"}: the Friedman (1991) function
+  \item \code{cond_exp_func_model = "nonlinear"}: the Friedman (1991) function
     \eqn{10\sin(\pi x_1 x_2) + 20(x_3-0.5)^2 + 10x_4 + 5x_5};
     requires \eqn{p \ge 5}.
 }
@@ -73,7 +73,7 @@ Create a new \code{SimulationFramework}.
   inference_classes_and_params = NULL,
   n = 100L,
   p = 5L,
-  data_type = "linear",
+  cond_exp_func_model = "linear",
   Nrep = 100L,
   betaT = 1,
   alpha = 0.05,
@@ -94,13 +94,17 @@ Create a new \code{SimulationFramework}.
   count_shift = 0,
   norm_sq_beta_vec = 1,
   X_mat = NULL,
+  seed = NULL,
   cov_draw_method = stats::rnorm,
   cov_draw_method_args = list(mean = 0, sd = 1),
+  random_X_draws = TRUE,
   prob_censoring = 0.25,
-  verbose = FALSE,
+  verbose = TRUE,
   keep_all_intermediate_data = FALSE,
   turn_off_asserts_for_speed = TRUE,
-  inference_types_and_params = NULL
+  inference_types_and_params = NULL,
+  results_filename = "simulation_framework_results.csv",
+  continue_from_last_result_row = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -167,9 +171,9 @@ non-KK designs at runtime).}
 \code{100}.}
 
 \item{\code{p}}{Integer.  Number of covariates.  Must be \eqn{\ge 5} when
-\code{data_type = "nonlinear"}.  Default \code{5}.}
+\code{cond_exp_func_model = "nonlinear"}.  Default \code{5}.}
 
-\item{\code{data_type}}{Character scalar.  How the latent continuous signal is
+\item{\code{cond_exp_func_model}}{Character scalar or vector.  How the latent continuous signal is
 constructed before transformation to the \code{response_type} scale.
 \describe{
   \item{\code{"linear"}}{Linear combination \eqn{X\beta} with
@@ -218,7 +222,7 @@ beta-distributed observed proportion outcomes. The beta mean is
 \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.}
 
 \item{\code{k_survival}}{Positive numeric scalar. Scale parameter passed to
-the Weibull draw for observed survival outcomes. Default \code{1}.}
+the Weibull draw for observed survival outcomes. Default \code{2}.}
 
 \item{\code{incidence_clamp}}{Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
 to the Bernoulli probability for observed incidence outcomes.
@@ -230,7 +234,7 @@ to the beta mean for observed proportion outcomes. Default \code{1e-9}.}
 \item{\code{count_clamp}}{Positive numeric scalar. Minimum Poisson mean for
 observed count outcomes. Default \code{1e-9}.}
 
-\item{\code{survival_clamp}}{Positive numeric scalar. Minimum Weibull scale for
+\item{\code{survival_clamp}}{Positive numeric scalar. Minimum Weibull shape for
 observed survival outcomes. Default \code{1e-9}.}
 
 \item{\code{survival_min_time}}{Numeric scalar. Minimum survival time and shift
@@ -250,14 +254,23 @@ The generated vector is scaled to match this norm. Default \code{1}.}
 If provided, these fixed covariates are used for every replication.
 In this case, \code{cov_draw_method} must be \code{NULL}.}
 
+\item{\code{seed}}{Integer or \code{NULL} (default).  Random seed for the
+entire simulation run.}
+
 \item{\code{cov_draw_method}}{A function used to draw \code{n * p} i.i.d. covariate
 values for every replication. The function must accept the total number
 of values as its first argument, followed by arguments in
-\code{cov_draw_method_args}.  Default \code{stats::runif}.
+\code{cov_draw_method_args}.  Default \code{stats::rnorm}.
 Must be \code{NULL} when \code{X_mat} is supplied.}
 
 \item{\code{cov_draw_method_args}}{Named list of additional arguments forwarded to
-\code{cov_draw_method} beyond the sample-size first argument.}
+\code{cov_draw_method} beyond the sample-size first argument. Default is
+\code{list(mean = 0, sd = 1)}.}
+
+\item{\code{random_X_draws}}{Logical. If \code{TRUE} (default), a new set of
+covariates is drawn for every single replication. If \code{FALSE},
+one set is drawn per \code{(n, p)} cell and shared across its
+replications.}
 
 \item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
 censoring probability; applied only when
@@ -295,6 +308,13 @@ disabled during the simulation run to improve performance.}
   When no \code{*_ci} type is requested, \code{coverage} is omitted from
   \code{$summarize()}.  When no \code{*_pval} type is requested,
   \code{power} is omitted.}
+
+\item{\code{results_filename}}{Character scalar.  The filename for the CSV results
+file.  Default \code{"simulation_framework_results.csv"}.}
+
+\item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
+the framework loads existing results from \code{results_filename} and
+skips previously completed replications.}
 }
 \if{html}{\out{</div>}}
 }

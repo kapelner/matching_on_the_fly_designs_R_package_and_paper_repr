@@ -6,7 +6,7 @@
 #' @export
 InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 	lock_objects = FALSE,
-	inherit = InferenceIncidAzriel,
+	inherit = InferenceIncidCMH,
 
 	private = list(
 		get_standard_error = function(){

@@ -89,7 +89,7 @@ List apply_treatment_and_noise_cpp(
       const double bt_i = (w[i] == 1) ? betaT : 0.0;
       double mu_i = std::exp(y_linear_model[i] + bt_i);
       if (!std::isfinite(mu_i))
-        stop("apply_treatment_and_noise_cpp: survival Weibull scale must be finite.");
+        stop("apply_treatment_and_noise_cpp: survival Weibull shape must be finite.");
       mu_i = std::max(survival_clamp, mu_i);
       double t_i = R::rweibull(mu_i, k_survival); //no epsilon necessary as we draw from the uniform to generate randomness
       if (u_cens[i] < prob_censoring) {

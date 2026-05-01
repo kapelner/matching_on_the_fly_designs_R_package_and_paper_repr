@@ -7,11 +7,11 @@
 generate_covariate_dataset(
   n,
   p,
-  data_type = c("linear", "nonlinear"),
+  cond_exp_func_model = c("linear", "nonlinear"),
   norm_sq_beta_vec = 1,
   X_mat = NULL,
-  cov_draw_method = stats::runif,
-  cov_draw_method_args = list(min = -1, max = +1)
+  cov_draw_method = stats::rnorm,
+  cov_draw_method_args = list(mean = 0, sd = 1)
 )
 }
 \arguments{
@@ -19,7 +19,7 @@ generate_covariate_dataset(
 
 \item{p}{Integer. Number of covariates (number of columns).}
 
-\item{data_type}{Character scalar. Either \code{"linear"} (latent response is a
+\item{cond_exp_func_model}{Character scalar. Either \code{"linear"} (latent response is a
 weighted linear combination of covariates) or \code{"nonlinear"} (Friedman 1991
 function applied to the first five covariates; requires \code{p >= 5}).}
 
@@ -35,12 +35,12 @@ When supplied, this matrix is used directly as the covariate matrix and
 \item{cov_draw_method}{A function used to draw \code{n * p} i.i.d. covariate
 values, or \code{NULL}.  The function must accept the number of draws as its
 first positional argument followed by any named arguments in
-\code{cov_draw_method_args}.  Default \code{stats::runif}.
+\code{cov_draw_method_args}.  Default \code{stats::rnorm}.
 Must be \code{NULL} when \code{X_mat} is supplied.}
 
 \item{cov_draw_method_args}{Named list of additional arguments forwarded to
 \code{cov_draw_method} beyond the sample-size first argument.
-Default \code{list(min = -1, max = +1)}.}
+Default is \code{list(mean = 0, sd = 1)}.}
 }
 \value{
 A list with two elements: \code{X} (a data frame of covariates) and

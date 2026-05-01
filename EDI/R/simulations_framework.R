@@ -19,7 +19,7 @@
 #     response_type    = "continuous",
 #     design_classes_and_params = designs,
 #     inference_classes_and_params = inf_cls,
-#     n = 100, p = 5, data_type = "linear", Nrep = 50, betaT = 1,
+#     n = 100, p = 5, cond_exp_func_model = "linear", Nrep = 50, betaT = 1,
 #     inference_types_and_params = list(asymp_pval = list(delta = 0))
 #   )
 #   sim$run()
@@ -35,7 +35,7 @@
 #'
 #' @param n Integer. Sample size (number of rows).
 #' @param p Integer. Number of covariates (number of columns).
-#' @param data_type Character scalar. Either \code{"linear"} (latent response is a
+#' @param cond_exp_func_model Character scalar. Either \code{"linear"} (latent response is a
 #'   weighted linear combination of covariates) or \code{"nonlinear"} (Friedman 1991
 #'   function applied to the first five covariates; requires \code{p >= 5}).
 #' @param norm_sq_beta_vec Positive numeric scalar. The desired squared Euclidean norm
@@ -48,23 +48,23 @@
 #' @param cov_draw_method A function used to draw \code{n * p} i.i.d. covariate
 #'   values, or \code{NULL}.  The function must accept the number of draws as its
 #'   first positional argument followed by any named arguments in
-#'   \code{cov_draw_method_args}.  Default \code{stats::runif}.
+#'   \code{cov_draw_method_args}.  Default \code{stats::rnorm}.
 #'   Must be \code{NULL} when \code{X_mat} is supplied.
 #' @param cov_draw_method_args Named list of additional arguments forwarded to
 #'   \code{cov_draw_method} beyond the sample-size first argument.
-#'   Default \code{list(min = -1, max = +1)}.
+#'   Default is \code{list(mean = 0, sd = 1)}.
 #'
 #' @return A list with two elements: \code{X} (a data frame of covariates) and
 #'   \code{y_cont} (a numeric vector of the latent continuous response).
 #'
 #' @export
 generate_covariate_dataset = function(n, p,
-                                      data_type            = c("linear", "nonlinear"),
+                                      cond_exp_func_model  = c("linear", "nonlinear"),
                                       norm_sq_beta_vec     = 1,
                                       X_mat                = NULL,
-                                      cov_draw_method      = stats::runif,
-                                      cov_draw_method_args = list(min = -1, max = +1)) {
-  data_type = match.arg(data_type)
+                                      cov_draw_method      = stats::rnorm,
+                                      cov_draw_method_args = list(mean = 0, sd = 1)) {
+  cond_exp_func_model = match.arg(cond_exp_func_model)
 
   user_supplied_X   = !is.null(X_mat)
   user_supplied_cov = !is.null(cov_draw_method)
@@ -83,12 +83,12 @@ generate_covariate_dataset = function(n, p,
   colnames(X_mat) = paste0("x", seq_len(p))
   X = as.data.frame(X_mat)
 
-  if (data_type == "linear") {
+  if (cond_exp_func_model == "linear") {
     beta_x = seq(1, -1, length.out = p)
     beta_x = beta_x * sqrt(norm_sq_beta_vec / sum(beta_x^2))
     y_cont = as.numeric(X_mat %*% beta_x)
   } else {
-    if (p < 5L) stop("Friedman nonlinear data_type requires p >= 5.")
+    if (p < 5L) stop("Friedman nonlinear cond_exp_func_model requires p >= 5.")
     # Friedman (1991) function — first five covariates, x in [-1,1]
     beta_friedman = c(10, 20, 10, 5)
     scale_factor  = sqrt(norm_sq_beta_vec / sum(beta_friedman^2))
@@ -163,9 +163,9 @@ transform_cont_y_based_on_response_type = function(
 #' @details
 #' Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
 #' \itemize{
-#'   \item \code{data_type = "linear"}: the base continuous signal is
+#'   \item \code{cond_exp_func_model = "linear"}: the base continuous signal is
 #'     \eqn{y = X\beta} where \eqn{\beta} is evenly spaced from 1 to \eqn{-1}.
-#'   \item \code{data_type = "nonlinear"}: the Friedman (1991) function
+#'   \item \code{cond_exp_func_model = "nonlinear"}: the Friedman (1991) function
 #'     \eqn{10\sin(\pi x_1 x_2) + 20(x_3-0.5)^2 + 10x_4 + 5x_5};
 #'     requires \eqn{p \ge 5}.
 #' }
@@ -268,9 +268,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \code{100}.
     #'
     #' @param p Integer.  Number of covariates.  Must be \eqn{\ge 5} when
-    #'   \code{data_type = "nonlinear"}.  Default \code{5}.
+    #'   \code{cond_exp_func_model = "nonlinear"}.  Default \code{5}.
     #'
-    #' @param data_type Character scalar.  How the latent continuous signal is
+    #' @param cond_exp_func_model Character scalar or vector.  How the latent continuous signal is
     #'   constructed before transformation to the \code{response_type} scale.
     #'   \describe{
     #'     \item{\code{"linear"}}{Linear combination \eqn{X\beta} with
@@ -319,7 +319,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 	    #'   \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.
 	    #'
 	    #' @param k_survival Positive numeric scalar. Scale parameter passed to
-	    #'   the Weibull draw for observed survival outcomes. Default \code{1}.
+	    #'   the Weibull draw for observed survival outcomes. Default \code{2}.
 	    #'
 	    #' @param incidence_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
 	    #'   to the Bernoulli probability for observed incidence outcomes.
@@ -331,7 +331,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 	    #' @param count_clamp Positive numeric scalar. Minimum Poisson mean for
 	    #'   observed count outcomes. Default \code{1e-9}.
 	    #'
-	    #' @param survival_clamp Positive numeric scalar. Minimum Weibull scale for
+	    #' @param survival_clamp Positive numeric scalar. Minimum Weibull shape for
 	    #'   observed survival outcomes. Default \code{1e-9}.
 	    #'
 	    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
@@ -351,14 +351,23 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   If provided, these fixed covariates are used for every replication.
     #'   In this case, \code{cov_draw_method} must be \code{NULL}.
     #'
+    #' @param seed Integer or \code{NULL} (default).  Random seed for the
+    #'   entire simulation run.
+    #'
     #' @param cov_draw_method A function used to draw \code{n * p} i.i.d. covariate
     #'   values for every replication. The function must accept the total number
     #'   of values as its first argument, followed by arguments in
-    #'   \code{cov_draw_method_args}.  Default \code{stats::runif}.
+    #'   \code{cov_draw_method_args}.  Default \code{stats::rnorm}.
     #'   Must be \code{NULL} when \code{X_mat} is supplied.
     #'
     #' @param cov_draw_method_args Named list of additional arguments forwarded to
-    #'   \code{cov_draw_method} beyond the sample-size first argument.
+    #'   \code{cov_draw_method} beyond the sample-size first argument. Default is
+    #'   \code{list(mean = 0, sd = 1)}.
+    #'
+    #' @param random_X_draws Logical. If \code{TRUE} (default), a new set of
+    #'   covariates is drawn for every single replication. If \code{FALSE},
+    #'   one set is drawn per \code{(n, p)} cell and shared across its
+    #'   replications.
     #'
     #' @param prob_censoring Numeric in \eqn{[0,1]}.  Per-subject independent
     #'   censoring probability; applied only when
@@ -377,6 +386,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param turn_off_asserts_for_speed Logical. If \code{TRUE} (default),
     #'   all \pkg{checkmate} assertions across the package are globally
     #'   disabled during the simulation run to improve performance.
+    #'
+    #' @param results_filename Character scalar.  The filename for the CSV results
+    #'   file.  Default \code{"simulation_framework_results.csv"}.
+    #'
+    #' @param continue_from_last_result_row Logical. If \code{TRUE} (default),
+    #'   the framework loads existing results from \code{results_filename} and
+    #'   skips previously completed replications.
     #'
     #' @param inference_types_and_params \code{NULL} (default) or a named list
     #'   from inference type to a named list of arguments for that type's function
@@ -402,7 +418,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       inference_classes_and_params = NULL,
       n                     = 100L,
       p                     = 5L,
-      data_type             = "linear",
+      cond_exp_func_model   = "linear",
       Nrep                  = 100L,
       betaT                 = 1,
       alpha                 = 0.05,
@@ -423,22 +439,43 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       count_shift           = 0,
       norm_sq_beta_vec      = 1,
       X_mat                 = NULL,
+      seed                  = NULL,
       cov_draw_method       = stats::rnorm,
       cov_draw_method_args  = list(mean = 0, sd = 1),
+      random_X_draws        = TRUE,
       prob_censoring        = 0.25,
-      verbose                    = FALSE,
+      verbose                    = TRUE,
       keep_all_intermediate_data = FALSE,
       turn_off_asserts_for_speed = TRUE,
-      inference_types_and_params = NULL
+      inference_types_and_params = NULL,
+      results_filename      = "simulation_framework_results.csv",
+      continue_from_last_result_row = TRUE
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
       if (!response_type %in% valid_rt)
         stop("response_type must be one of: ", paste(valid_rt, collapse = ", "))
-      if (!data_type %in% c("linear", "nonlinear"))
-        stop("data_type must be 'linear' or 'nonlinear'")
-	      if (data_type == "nonlinear" && p < 5L)
-	        stop("nonlinear Friedman function requires p >= 5")
+
+      n_values = unique(as.integer(n))
+      p_values = unique(as.integer(p))
+      betaT_values = unique(as.numeric(betaT))
+      cond_exp_func_model_values = unique(as.character(cond_exp_func_model))
+
+      if (length(n_values) == 0L || any(!is.finite(n_values)) || any(n_values <= 1L))
+        stop("n must contain finite integers greater than 1")
+      if (length(p_values) == 0L || any(!is.finite(p_values)) || any(p_values < 1L))
+        stop("p must contain finite positive integers")
+      if (length(betaT_values) == 0L || any(!is.finite(betaT_values)))
+        stop("betaT must contain finite numeric values")
+      if (length(cond_exp_func_model_values) == 0L ||
+          any(!cond_exp_func_model_values %in% c("linear", "nonlinear")))
+        stop("cond_exp_func_model must contain only 'linear' and/or 'nonlinear'")
+      if (!is.null(seed) && (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed)))
+        stop("seed must be NULL or one finite numeric value")
+      if (!is.null(X_mat) && (length(n_values) > 1L || length(p_values) > 1L))
+        stop("X_mat can only be used when n and p are scalar")
+      if (!isTRUE(random_X_draws) && is.null(seed))
+        stop("random_X_draws = FALSE requires seed to be non-NULL")
 	      if (!is.finite(phi_proportion) || phi_proportion <= 0)
 	        stop("phi_proportion must be finite and > 0")
 	      if (!is.finite(k_survival) || k_survival <= 0)
@@ -461,11 +498,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       inf_types = names(inf_type_spec)
 
       private$response_type    = response_type
-      private$n                = as.integer(n)
-      private$p                = as.integer(p)
-      private$data_type        = data_type
+      private$n_values         = n_values
+      private$p_values         = p_values
+      private$cond_exp_func_model_values = cond_exp_func_model_values
       private$Nrep             = as.integer(Nrep)
-      private$betaT            = betaT
+      private$betaT_values     = betaT_values
       private$alpha            = alpha
       private$B_boot           = as.integer(B_boot)
       private$r_rand           = as.integer(r_rand)
@@ -484,14 +521,28 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$count_shift           = count_shift
       private$norm_sq_beta_vec     = norm_sq_beta_vec
       private$X_mat                = X_mat
+      private$seed                 = if (is.null(seed)) NULL else as.integer(seed)
       private$cov_draw_method      = cov_draw_method
       private$cov_draw_method_args = cov_draw_method_args
+      private$random_X_draws       = random_X_draws
       private$prob_censoring       = prob_censoring
       private$verbose                    = verbose
       private$turn_off_asserts_for_speed = turn_off_asserts_for_speed
       private$keep_all_intermediate_data = keep_all_intermediate_data
+      private$results_filename     = results_filename
+      private$continue_from_last_result_row = continue_from_last_result_row
       private$inf_types        = inf_types
       private$inference_type_params = inf_type_spec
+      private$param_grid       = private$.build_param_grid(
+        n_values,
+        p_values,
+        betaT_values,
+        cond_exp_func_model_values
+      )
+      private$current_n        = private$param_grid$n[[1L]]
+      private$current_p        = private$param_grid$p[[1L]]
+      private$current_betaT    = private$param_grid$betaT[[1L]]
+      private$current_cond_exp_func_model = private$param_grid$cond_exp_func_model[[1L]]
 
       design_spec = private$.parse_design_classes_and_params(
         design_classes_and_params,
@@ -523,6 +574,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'
     #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {
+      if (!is.null(private$seed)) {
+        had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+        if (had_seed) {
+          old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+          on.exit(assign(".Random.seed", old_seed, envir = .GlobalEnv), add = TRUE)
+        } else {
+          on.exit(rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+        }
+        set.seed(private$seed)
+      }
+
       # Disable assertions for the duration of the simulation for speed
       if (private$turn_off_asserts_for_speed){
         toggle_asserts(FALSE)
@@ -532,12 +594,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
       n_met = length(private$inf_types)
+      n_cells = nrow(private$param_grid)
+      existing_results = private$.load_existing_results()
+      n_existing = nrow(existing_results)
       
       # Pre-allocate results list to maximum possible size to avoid re-allocations
-      private$raw_results = vector("list", private$Nrep * n_des * n_inf * n_met)
+      private$raw_results = vector("list", n_existing + private$Nrep * n_des * n_inf * n_met * n_cells)
       private$results_idx = 0L
+      private$seen_result_keys = character(0L)
+      if (n_existing > 0L) {
+        existing_rows = lapply(seq_len(n_existing), function(i) as.list(existing_results[i]))
+        private$raw_results[seq_len(n_existing)] = existing_rows
+        private$results_idx = n_existing
+        private$seen_result_keys = vapply(existing_rows, private$.result_key_from_row, "", USE.NAMES = FALSE)
+      }
 
-      private$all_intermediate_data = vector("list", private$Nrep)
+      private$all_intermediate_data = vector("list", private$Nrep * n_cells)
       private$valid_combos          = list()
       private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
@@ -545,245 +617,316 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
 
-      message(sprintf(
-        "SimulationFramework: response_type=%s  data_type=%s  n=%d  p=%d  Nrep=%d  betaT=%g",
-        private$response_type, private$data_type,
-        private$n, private$p, private$Nrep, private$betaT
-      ))
-      message(sprintf("  Designs: %d   Inference classes: %d", n_des, n_inf))
+      if (isTRUE(private$verbose)) {
+        message(sprintf(
+          "simulations: CEF_mod=%s  n=%s  p=%s  Nrep=%d  betaT=%s designs=%d inferences=%d",
+          private$.format_values(private$cond_exp_func_model_values),
+          private$.format_values(private$n_values),
+          private$.format_values(private$p_values),
+          private$Nrep,
+          private$.format_values(private$betaT_values), 
+          n_des, 
+          n_inf
+        ))
+      }
 
       log_interval = max(1L, private$Nrep %/% 10L)
-
-      for (rep in seq_len(private$Nrep)) {
-        if (rep %% log_interval == 0L || private$verbose)
-          message(sprintf("  Rep %d / %d", rep, private$Nrep))
-
-        rep_data = private$.generate_data()
-        X      = rep_data$X
-        y_linear_model = rep_data$y_linear_model
-
-        # Per-replication true estimand for InferenceAllSimpleMeanDiff.
-        # The DGP applies betaT on the y_linear_model scale, then maps to the
-        # observed response distribution in simulation_dgp.cpp.
-        true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model)
-
-        for (di in seq_along(private$design_classes)) {
-          design_gen   = private$design_classes[[di]]
-          design_name  = private$design_labels[[di]]
-          design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
-
-          des_obj = tryCatch(
-            private$.build_design(design_gen, X, y_linear_model, design_extra),
-            error = function(e) {
-              if (private$verbose)
-                message(sprintf("    [SKIP design %s]: %s", design_name, e$message))
-              NULL
-            }
-          )
-          if (private$keep_all_intermediate_data) {
-            private$all_intermediate_data[[rep]]$y_linear_model            = y_linear_model
-            private$all_intermediate_data[[rep]]$designs[[design_name]]    = des_obj
+      shared_X_draws = list()
+      if (!isTRUE(private$random_X_draws)) {
+        np_grid = unique(private$param_grid[, .(n, p)])
+        for (np_idx in seq_len(nrow(np_grid))) {
+          n_i = np_grid$n[[np_idx]]
+          p_i = np_grid$p[[np_idx]]
+          X_i = if (is.null(private$X_mat)) {
+            matrix(
+              do.call(private$cov_draw_method, c(list(n_i * p_i), private$cov_draw_method_args)),
+              nrow = n_i,
+              ncol = p_i
+            )
+          } else {
+            as.matrix(private$X_mat)
           }
-          if (is.null(des_obj)) next
+          colnames(X_i) = paste0("x", seq_len(p_i))
+          shared_X_draws[[paste(n_i, p_i, sep = "|||")]] = X_i
+        }
+      }
 
-          for (ii in seq_along(private$inference_classes)) {
-            inf_gen  = private$inference_classes[[ii]]
-            inf_name = private$inference_labels[[ii]]
+      had_seed_plan = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+      if (had_seed_plan) {
+        old_seed_plan = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+      }
+      planned_combos = list()
+      for (cell_idx in seq_len(n_cells)) {
+        private$current_n = private$param_grid$n[[cell_idx]]
+        private$current_p = private$param_grid$p[[cell_idx]]
+        private$current_betaT = private$param_grid$betaT[[cell_idx]]
+        private$current_cond_exp_func_model = private$param_grid$cond_exp_func_model[[cell_idx]]
+        rep_data = if (isTRUE(private$random_X_draws)) {
+          private$.generate_data()
+        } else {
+          private$.generate_data_from_X(
+            shared_X_draws[[paste(private$current_n, private$current_p, sep = "|||")]]
+          )
+        }
+        cell_combos = private$.build_valid_combos_for_current_cell(rep_data)
+        if (length(cell_combos) > 0L)
+          planned_combos = c(planned_combos, cell_combos)
+      }
+      if (had_seed_plan) {
+        assign(".Random.seed", old_seed_plan, envir = .GlobalEnv)
+      } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+        rm(".Random.seed", envir = .GlobalEnv)
+      }
+      private$valid_combos = planned_combos
+      private$seen_combo_keys = unique(vapply(
+        planned_combos,
+        function(combo) paste(combo$cond_exp_func_model, combo$n, combo$p, format(combo$betaT, digits = 17L), combo$design, combo$inference, sep = "|||"),
+        ""
+      ))
+      private$progress_total = length(planned_combos) * private$Nrep
+      planned_result_keys = unlist(lapply(seq_len(private$Nrep), function(rep_i) {
+        vapply(planned_combos, function(combo) {
+          private$.result_key_for_values(
+            private$response_type,
+            combo$cond_exp_func_model,
+            combo$n,
+            combo$p,
+            combo$betaT,
+            rep_i,
+            combo$design,
+            combo$inference,
+            combo$inference_type
+          )
+        }, "")
+      }), use.names = FALSE)
+      private$progress_count = sum(private$seen_result_keys %in% planned_result_keys)
+      private$progress_log_interval = max(1L, private$progress_total %/% 20L)
+      private$progress_bar = NULL
+      private$use_progress_bar = FALSE
+      private$total_cells = n_cells
+      if (isTRUE(private$verbose)) {
+        message(sprintf("%d / %d runs skipped", private$progress_count, private$progress_total))
+        private$use_progress_bar = TRUE
+        if (private$progress_total > 0L) {
+           # We don't use txtProgressBar anymore, just our dual bar
+           # But we need a newline at the end
+           on.exit(cat("\n"), add = TRUE)
+        }
+      }
 
-            inf_ctor_extra = private$inference_constructor_params[[ii]]
+      for (cell_idx in seq_len(n_cells)) {
+        private$current_cell_idx = cell_idx
+        private$current_n = private$param_grid$n[[cell_idx]]
+        private$current_p = private$param_grid$p[[cell_idx]]
+        private$current_betaT = private$param_grid$betaT[[cell_idx]]
+        private$current_cond_exp_func_model = private$param_grid$cond_exp_func_model[[cell_idx]]
 
-            inf_obj = tryCatch({
-              do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
-            }, error = function(e) {
-              if (private$verbose)
-                message(sprintf("    [SKIP %s / %s]: %s",
-                                inf_name, design_name, e$message))
-              NULL
-            })
-            if (is.null(inf_obj)) next
-            if (private$keep_all_intermediate_data)
-              private$all_intermediate_data[[rep]]$inferences[[design_name]][[inf_name]] = inf_obj
+        # Pre-calculate tasks per rep for this cell
+        private$tasks_per_rep = sum(vapply(private$valid_combos, function(c) {
+          c$n == private$current_n && c$p == private$current_p && 
+          format(c$betaT, digits = 17L) == format(private$current_betaT, digits = 17L) && 
+          c$cond_exp_func_model == private$current_cond_exp_func_model
+        }, logical(1L)))
 
-            # True estimand on the scale this inference class estimates.
-            # InferenceAllSimpleMeanDiff targets the mean-difference ATE, whose
-            # true value must be derived analytically for non-additive DGPs
-            # (incidence, count, survival).  All other classes target betaT directly.
-            te = if (is(inf_obj, "InferenceAllSimpleMeanDiff"))
-                   true_mean_diff_ate
-                 else
-                   private$betaT
+        if (isTRUE(private$verbose) && !private$use_progress_bar)
+          message(sprintf(
+            "  Cell %d / %d: cond_exp_func_model=%s  n=%d  p=%d  betaT=%g",
+            cell_idx, n_cells, private$current_cond_exp_func_model,
+            private$current_n, private$current_p, private$current_betaT
+          ))
 
-            # Track valid (design, inference, inference_type) combos — once per unique pair
-            combo_key = paste0(design_name, "|||", inf_name)
-            if (!combo_key %in% private$seen_combo_keys) {
-              private$seen_combo_keys = c(private$seen_combo_keys, combo_key)
-              valid_inference_types = character(0L)
-              if (is(inf_obj, "InferenceAsymp")) {
-                valid_inference_types = c(
-                  valid_inference_types,
-                  intersect(private$inf_types, c("asymp_ci", "asymp_pval"))
-                )
+        for (rep in seq_len(private$Nrep)) {
+          private$current_rep_idx = rep
+          private$current_task_in_rep_idx = 0L
+          if (isTRUE(private$use_progress_bar)) {
+            private$.draw_triple_progress_bar()
+          } else if (isTRUE(private$verbose) && (rep %% log_interval == 0L || private$Nrep == 1L)) {
+            message(sprintf("    Rep %d / %d", rep, private$Nrep))
+          }
+
+          rep_data = if (isTRUE(private$random_X_draws)) {
+            private$.generate_data()
+          } else {
+            private$.generate_data_from_X(
+              shared_X_draws[[paste(private$current_n, private$current_p, sep = "|||")]]
+            )
+          }
+          X = rep_data$X
+          y_linear_model = rep_data$y_linear_model
+          true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model)
+          rep_slot = (cell_idx - 1L) * private$Nrep + rep
+
+          for (di in seq_along(private$design_classes)) {
+            design_gen   = private$design_classes[[di]]
+            design_name  = private$design_labels[[di]]
+            design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
+
+            des_obj = tryCatch(
+              private$.build_design(design_gen, X, y_linear_model, design_extra),
+              error = function(e) {
+                NULL
               }
-              if (is(inf_obj, "InferenceExact")) {
-                valid_inference_types = c(
-                  valid_inference_types,
-                  intersect(private$inf_types, c("exact_ci", "exact_pval"))
-                )
-              }
-              if (is(inf_obj, "InferenceBoot")) {
-                valid_inference_types = c(
-                  valid_inference_types,
-                  intersect(private$inf_types, c("boot_ci", "boot_pval"))
-                )
-              }
-              if (is(inf_obj, "InferenceRand")) {
-                valid_inference_types = c(
-                  valid_inference_types,
-                  intersect(private$inf_types, "rand_pval")
-                )
-                if (is(inf_obj, "InferenceRandCI") &&
-                    private$response_type %in% c("continuous", "proportion", "count")) {
-                  valid_inference_types = c(
-                    valid_inference_types,
-                    intersect(private$inf_types, "rand_ci")
-                  )
-                }
-              }
-              for (it in valid_inference_types)
-                private$valid_combos[[length(private$valid_combos) + 1L]] =
-                  list(design = design_name, inference = inf_name, inference_type = it)
+            )
+            if (private$keep_all_intermediate_data) {
+              private$all_intermediate_data[[rep_slot]]$n = private$current_n
+              private$all_intermediate_data[[rep_slot]]$p = private$current_p
+              private$all_intermediate_data[[rep_slot]]$betaT = private$current_betaT
+              private$all_intermediate_data[[rep_slot]]$cond_exp_func_model = private$current_cond_exp_func_model
+              private$all_intermediate_data[[rep_slot]]$y_linear_model = y_linear_model
+              private$all_intermediate_data[[rep_slot]]$designs[[design_name]] = des_obj
             }
+            if (is.null(des_obj)) next
 
-            # Point estimate (shared across inference methods)
-            est = tryCatch({
-              v = inf_obj$compute_estimate()
-              if (is.null(v) || length(v) == 0L) NA_real_ else as.numeric(v)[1L]
-            }, error = function(e) NA_real_)
+            for (ii in seq_along(private$inference_classes)) {
+              inf_gen  = private$inference_classes[[ii]]
+              inf_name = private$inference_labels[[ii]]
+              inf_ctor_extra = private$inference_constructor_params[[ii]]
 
-            # ── Asymptotic ────────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceAsymp") && private$.any_inf_type(c("asymp_ci", "asymp_pval"))) {
-              if (private$.has_inf_type("asymp_pval")) {
-                asymp_pval_args = private$.args_for_inf_type(inf_obj, "asymp_pval")
-                pval_a = tryCatch(
-                  do.call(inf_obj$compute_asymp_two_sided_pval,
-                          asymp_pval_args),
-                  error = function(e) NA_real_
-                )
-                private$.record(rep, design_name, inf_name, "asymp_pval",
-                                est, c(NA_real_, NA_real_), pval_a, te)
-              }
-              if (private$.has_inf_type("asymp_ci")) {
-                asymp_ci_args = private$.args_for_inf_type(inf_obj, "asymp_ci",
-                                                           list(alpha = private$alpha))
-                ci_a = tryCatch(
-                  do.call(inf_obj$compute_asymp_confidence_interval,
-                          asymp_ci_args),
-                  error = function(e) c(NA_real_, NA_real_)
-                )
-                private$.record(rep, design_name, inf_name, "asymp_ci",
-                                est, ci_a, NA_real_, te)
-              }
-            }
+              inf_obj = tryCatch({
+                do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
+              }, error = function(e) {
+                NULL
+              })
+              if (is.null(inf_obj)) next
+              if (private$keep_all_intermediate_data)
+                private$all_intermediate_data[[rep_slot]]$inferences[[design_name]][[inf_name]] = inf_obj
 
-            # ── Exact ─────────────────────────────────────────────────────────
-            if (private$.any_inf_type(c("exact_ci", "exact_pval"))) {
-              if (!is(inf_obj, "InferenceExact")) {
-                if (!inf_name %in% private$exact_warned_classes) {
-                  warning(sprintf(
-                    "'%s' does not inherit InferenceExact; exact_* inference will be skipped for this class.",
-                    inf_name))
-                  private$exact_warned_classes =
-                    c(private$exact_warned_classes, inf_name)
+              te = if (is(inf_obj, "InferenceAllSimpleMeanDiff")) true_mean_diff_ate else private$current_betaT
+
+              valid_inference_types = private$.valid_inference_types(inf_obj)
+
+              combo_key = paste(
+                private$current_cond_exp_func_model,
+                private$current_n,
+                private$current_p,
+                format(private$current_betaT, digits = 17L),
+                design_name,
+                inf_name,
+                sep = "|||"
+              )
+              pending_inference_types = valid_inference_types[!vapply(
+                valid_inference_types,
+                function(it) private$.result_key(rep, design_name, inf_name, it) %in% private$seen_result_keys,
+                logical(1L)
+              )]
+              skipped_inference_types = setdiff(valid_inference_types, pending_inference_types)
+              if (length(skipped_inference_types) > 0L) {
+                for (it in skipped_inference_types) {
+                  private$.log_skip(rep, design_name, inf_name, it)
+                  private$current_task_in_rep_idx = private$current_task_in_rep_idx + 1L
                 }
-              } else {
-                if (private$.has_inf_type("exact_pval")) {
-                  exact_pval_args = private$.args_for_inf_type(inf_obj, "exact_pval")
-                  pval_e = tryCatch(
-                    do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect,
-                            exact_pval_args),
+                if (isTRUE(private$use_progress_bar)) private$.draw_triple_progress_bar()
+              }
+              if (length(pending_inference_types) == 0L) next
+
+              est = tryCatch({
+                v = inf_obj$compute_estimate()
+                if (is.null(v) || length(v) == 0L) NA_real_ else as.numeric(v)[1L]
+              }, error = function(e) NA_real_)
+
+              if (is(inf_obj, "InferenceAsymp") && private$.any_inf_type(c("asymp_ci", "asymp_pval"))) {
+                if ("asymp_pval" %in% pending_inference_types) {
+                  asymp_pval_args = private$.args_for_inf_type(inf_obj, "asymp_pval")
+                  pval_a = tryCatch(
+                    do.call(inf_obj$compute_asymp_two_sided_pval, asymp_pval_args),
                     error = function(e) NA_real_
                   )
-                  private$.record(rep, design_name, inf_name, "exact_pval",
-                                  est, c(NA_real_, NA_real_), pval_e, te)
+                  private$.record(rep, design_name, inf_name, "asymp_pval", est, c(NA_real_, NA_real_), pval_a, te)
                 }
-                if (private$.has_inf_type("exact_ci")) {
-                  exact_ci_args = private$.args_for_inf_type(inf_obj, "exact_ci",
-                                                             list(alpha = private$alpha))
-                  ci_e = tryCatch(
-                    do.call(inf_obj$compute_exact_confidence_interval,
-                            exact_ci_args),
+                if ("asymp_ci" %in% pending_inference_types) {
+                  asymp_ci_args = private$.args_for_inf_type(inf_obj, "asymp_ci", list(alpha = private$alpha))
+                  ci_a = tryCatch(
+                    do.call(inf_obj$compute_asymp_confidence_interval, asymp_ci_args),
                     error = function(e) c(NA_real_, NA_real_)
                   )
-                  private$.record(rep, design_name, inf_name, "exact_ci",
-                                  est, ci_e, NA_real_, te)
+                  private$.record(rep, design_name, inf_name, "asymp_ci", est, ci_a, NA_real_, te)
                 }
               }
-            }
 
-            # ── Bootstrap ─────────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceBoot") && private$.any_inf_type(c("boot_ci", "boot_pval"))) {
-              if (private$.has_inf_type("boot_pval")) {
-                boot_pval_args = private$.args_for_inf_type(
-                  inf_obj, "boot_pval", list(B = private$B_boot, na.rm = TRUE))
-                pval_b = tryCatch(
-                  do.call(inf_obj$compute_bootstrap_two_sided_pval,
-                          boot_pval_args),
-                  error = function(e) NA_real_
-                )
-                private$.record(rep, design_name, inf_name, "boot_pval",
-                                est, c(NA_real_, NA_real_), pval_b, te)
+              if (private$.any_inf_type(c("exact_ci", "exact_pval"))) {
+                if (!is(inf_obj, "InferenceExact")) {
+                  if (isTRUE(private$verbose) && !inf_name %in% private$exact_warned_classes) {
+                    warning(sprintf(
+                      "'%s' does not inherit InferenceExact; exact_* inference will be skipped for this class.",
+                      inf_name))
+                    private$exact_warned_classes = c(private$exact_warned_classes, inf_name)
+                  }
+                } else {
+                  if ("exact_pval" %in% pending_inference_types) {
+                    exact_pval_args = private$.args_for_inf_type(inf_obj, "exact_pval")
+                    pval_e = tryCatch(
+                      do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect, exact_pval_args),
+                      error = function(e) NA_real_
+                    )
+                    private$.record(rep, design_name, inf_name, "exact_pval", est, c(NA_real_, NA_real_), pval_e, te)
+                  }
+                  if ("exact_ci" %in% pending_inference_types) {
+                    exact_ci_args = private$.args_for_inf_type(inf_obj, "exact_ci", list(alpha = private$alpha))
+                    ci_e = tryCatch(
+                      do.call(inf_obj$compute_exact_confidence_interval, exact_ci_args),
+                      error = function(e) c(NA_real_, NA_real_)
+                    )
+                    private$.record(rep, design_name, inf_name, "exact_ci", est, ci_e, NA_real_, te)
+                  }
+                }
               }
-              if (private$.has_inf_type("boot_ci")) {
-                boot_ci_args = private$.args_for_inf_type(
-                  inf_obj, "boot_ci", list(B = private$B_boot,
-                                           alpha = private$alpha,
-                                           na.rm = TRUE,
-                                           show_progress = FALSE))
-                ci_b = tryCatch(
-                  do.call(inf_obj$compute_bootstrap_confidence_interval,
-                          boot_ci_args),
-                  error = function(e) c(NA_real_, NA_real_)
-                )
-                private$.record(rep, design_name, inf_name, "boot_ci",
-                                est, ci_b, NA_real_, te)
-              }
-            }
 
-            # ── Randomisation ─────────────────────────────────────────────────
-            if (is(inf_obj, "InferenceRand") && private$.any_inf_type(c("rand_ci", "rand_pval"))) {
-              if (private$.has_inf_type("rand_pval")) {
-                rand_pval_args = private$.args_for_inf_type(
-                  inf_obj, "rand_pval", list(r = private$r_rand,
-                                             na.rm = TRUE,
-                                             show_progress = FALSE))
-                pval_r = tryCatch(
-                  do.call(inf_obj$compute_rand_two_sided_pval,
-                          rand_pval_args),
-                  error = function(e) NA_real_
-                )
-                private$.record(rep, design_name, inf_name, "rand_pval",
-                                est, c(NA_real_, NA_real_), pval_r, te)
+              if (is(inf_obj, "InferenceBoot") && private$.any_inf_type(c("boot_ci", "boot_pval"))) {
+                if ("boot_pval" %in% pending_inference_types) {
+                  boot_pval_args = private$.args_for_inf_type(inf_obj, "boot_pval", list(B = private$B_boot, na.rm = TRUE))
+                  pval_b = tryCatch(
+                    do.call(inf_obj$compute_bootstrap_two_sided_pval, boot_pval_args),
+                    error = function(e) NA_real_
+                  )
+                  private$.record(rep, design_name, inf_name, "boot_pval", est, c(NA_real_, NA_real_), pval_b, te)
+                }
+                if ("boot_ci" %in% pending_inference_types) {
+                  boot_ci_args = private$.args_for_inf_type(
+                    inf_obj,
+                    "boot_ci",
+                    list(B = private$B_boot, alpha = private$alpha, na.rm = TRUE, show_progress = FALSE)
+                  )
+                  ci_b = tryCatch(
+                    do.call(inf_obj$compute_bootstrap_confidence_interval, boot_ci_args),
+                    error = function(e) c(NA_real_, NA_real_)
+                  )
+                  private$.record(rep, design_name, inf_name, "boot_ci", est, ci_b, NA_real_, te)
+                }
               }
-              if (
-                private$.has_inf_type("rand_ci") &&
-                is(inf_obj, "InferenceRandCI") &&
-                private$response_type %in% c("continuous", "proportion", "count")
-              ) {
-                rand_ci_args = private$.args_for_inf_type(
-                  inf_obj, "rand_ci", list(r = private$r_rand,
-                                           alpha = private$alpha,
-                                           pval_epsilon = private$pval_epsilon,
-                                           show_progress = FALSE))
-                ci_r = tryCatch(
-                  do.call(inf_obj$compute_rand_confidence_interval,
-                          rand_ci_args),
-                  error = function(e) c(NA_real_, NA_real_)
-                )
-                private$.record(rep, design_name, inf_name, "rand_ci",
-                                est, ci_r, NA_real_, te)
+
+              if (is(inf_obj, "InferenceRand") && private$.any_inf_type(c("rand_ci", "rand_pval"))) {
+                if ("rand_pval" %in% pending_inference_types) {
+                  rand_pval_args = private$.args_for_inf_type(
+                    inf_obj,
+                    "rand_pval",
+                    list(r = private$r_rand, na.rm = TRUE, show_progress = FALSE)
+                  )
+                  pval_r = tryCatch(
+                    do.call(inf_obj$compute_rand_two_sided_pval, rand_pval_args),
+                    error = function(e) NA_real_
+                  )
+                  private$.record(rep, design_name, inf_name, "rand_pval", est, c(NA_real_, NA_real_), pval_r, te)
+                }
+                if (
+                  "rand_ci" %in% pending_inference_types &&
+                  is(inf_obj, "InferenceRandCI") &&
+                  private$response_type %in% c("continuous", "proportion", "count")
+                ) {
+                  rand_ci_args = private$.args_for_inf_type(
+                    inf_obj,
+                    "rand_ci",
+                    list(r = private$r_rand, alpha = private$alpha, pval_epsilon = private$pval_epsilon, show_progress = FALSE)
+                  )
+                  ci_r = tryCatch(
+                    do.call(inf_obj$compute_rand_confidence_interval, rand_ci_args),
+                    error = function(e) c(NA_real_, NA_real_)
+                  )
+                  private$.record(rep, design_name, inf_name, "rand_ci", est, ci_r, NA_real_, te)
+                }
               }
             }
           }
+
         }
       }
 
@@ -837,7 +980,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!private$has_run) stop("Call $run() first.")
       if (private$results_idx == 0L)
         return(data.table::data.table(
-          rep = integer(), design = character(), inference = character(),
+          rep = integer(), cond_exp_func_model = character(), n = integer(),
+          p = integer(), betaT = numeric(), design = character(), inference = character(),
           inference_type = character(), estimate = numeric(),
           ci_lo = numeric(), ci_hi = numeric(), pval = numeric()
         ))
@@ -900,16 +1044,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             row$n_pow = length(pv_ok)
           }
           row
-        }, by = .(design, inference, inference_type),
+        }, by = .(cond_exp_func_model, n, p, betaT, design, inference, inference_type),
            .SDcols = c("estimate", "ci_lo", "ci_hi", "pval", "true_estimand")]
       } else {
-        agg = data.table::data.table(design = character(), inference = character(),
+        agg = data.table::data.table(cond_exp_func_model = character(), n = integer(), p = integer(),
+                                     betaT = numeric(), design = character(), inference = character(),
                                      inference_type = character(), power = numeric(), MSE = numeric(),
                                      n_est = integer(), n_pow = integer())
       }
 
       # ── Right-join: every valid combo appears, NA for those with no data ──────
-      result = agg[ref_grid, on = .(design, inference, inference_type)]
+      result = agg[ref_grid, on = .(cond_exp_func_model, n, p, betaT, design, inference, inference_type)]
       
       # Ensure n_est and n_pow are present and replace NA with 0
       if (!"n_est" %in% names(result)) result[, n_est := 0L]
@@ -917,7 +1062,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       result[is.na(n_est), n_est := 0L]
       result[is.na(n_pow), n_pow := 0L]
       
-      result[order(design, inference, inference_type)]
+      result[order(cond_exp_func_model, betaT, n, p, design, inference, inference_type)]
     },
 
     # ── print() ───────────────────────────────────────────────────────────────
@@ -926,9 +1071,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     print = function() {
       cat("SimulationFramework\n")
       cat("  response_type :", private$response_type, "\n")
-      cat("  data_type     :", private$data_type, "\n")
-      cat("  n / p         :", private$n, "/", private$p, "\n")
-      cat("  Nrep / betaT  :", private$Nrep, "/", private$betaT, "\n")
+      cat("  cond_exp_func_model :", private$.format_values(private$cond_exp_func_model_values), "\n")
+      cat("  n / p         :", private$.format_values(private$n_values), "/", private$.format_values(private$p_values), "\n")
+      cat("  Nrep / betaT  :", private$Nrep, "/", private$.format_values(private$betaT_values), "\n")
       cat("  alpha / B_boot / r_rand :",
           private$alpha, "/", private$B_boot, "/", private$r_rand, "\n")
       cat("  inference_types:", paste(private$inf_types, collapse = ", "), "\n")
@@ -948,8 +1093,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cat("  Status : completed\n")
         sm = self$summarize()
         if (!is.null(sm) && nrow(sm) > 0L) {
-          cat(sprintf("\nSummary  (betaT = %g,  alpha = %g):\n",
-                      private$betaT, private$alpha))
+          cat(sprintf("\nSummary  (alpha = %g):\n", private$alpha))
           print(sm)
         }
       } else {
@@ -962,11 +1106,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
   # ── private ────────────────────────────────────────────────────────────────
   private = list(
     response_type    = NULL,
-    n                = NULL,
-    p                = NULL,
-    data_type        = NULL,
+    n_values         = NULL,
+    p_values         = NULL,
+    cond_exp_func_model_values = NULL,
     Nrep             = NULL,
-    betaT            = NULL,
+    betaT_values     = NULL,
+    param_grid       = NULL,
+    current_n        = NULL,
+    current_p        = NULL,
+    current_cond_exp_func_model = NULL,
+    current_betaT    = NULL,
     alpha            = NULL,
     B_boot           = NULL,
     r_rand           = NULL,
@@ -985,10 +1134,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     count_shift          = NULL,
     norm_sq_beta_vec     = NULL,
     X_mat                = NULL,
+    seed                 = NULL,
     cov_draw_method      = NULL,
     cov_draw_method_args = NULL,
+    random_X_draws       = NULL,
     prob_censoring       = NULL,
     verbose          = NULL,
+    results_filename = NULL,
+    continue_from_last_result_row = NULL,
     design_params    = NULL,
     inference_constructor_params = NULL,
     inference_type_params = NULL,
@@ -1006,6 +1159,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     exact_warned_classes      = NULL,
     valid_combos              = NULL,
     seen_combo_keys  = NULL,
+    seen_result_keys = NULL,
+    total_cells              = 0L,
+    current_cell_idx         = 0L,
+    current_rep_idx          = 0L,
+    current_task_in_rep_idx  = 0L,
+    tasks_per_rep            = 0L,
+    progress_total           = 0L,
+    progress_count           = 0L,
+    progress_bar             = NULL,
+    use_progress_bar         = FALSE,
+    progress_log_interval    = 0L,
 
     # ── Design spec parsing ───────────────────────────────────────────────────
 
@@ -1264,6 +1428,279 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       paste(kv, collapse = ", ")
     },
 
+    .build_param_grid = function(n_values, p_values, betaT_values, cond_exp_func_model_values) {
+      grid = data.table::as.data.table(expand.grid(
+        cond_exp_func_model = cond_exp_func_model_values,
+        n = n_values,
+        p = p_values,
+        betaT = betaT_values,
+        KEEP.OUT.ATTRS = FALSE,
+        stringsAsFactors = FALSE
+      ))
+      grid = grid[!(cond_exp_func_model == "nonlinear" & p < 5L)]
+      if (nrow(grid) == 0L)
+        stop("No valid simulation cells remain after filtering cond_exp_func_model / p combinations")
+      grid
+    },
+
+    .format_values = function(x) {
+      if (length(x) == 1L) as.character(x) else paste0("c(", paste(x, collapse = ", "), ")")
+    },
+
+    .load_existing_results = function() {
+      empty_dt = data.table::data.table(
+        response_type = character(),
+        cond_exp_func_model = character(),
+        n = integer(),
+        p = integer(),
+        betaT = numeric(),
+        rep = integer(),
+        design = character(),
+        inference = character(),
+        inference_type = character(),
+        estimate = numeric(),
+        ci_lo = numeric(),
+        ci_hi = numeric(),
+        pval = numeric(),
+        true_estimand = numeric()
+      )
+      if (!isTRUE(private$continue_from_last_result_row) || !file.exists(private$results_filename))
+        return(empty_dt)
+
+      dt = data.table::fread(private$results_filename)
+      if (!"response_type" %in% names(dt))
+        dt[, response_type := private$response_type]
+      dt = dt[response_type == private$response_type]
+
+      for (nm in names(empty_dt)) {
+        if (!nm %in% names(dt))
+          dt[, (nm) := empty_dt[[nm]]]
+      }
+      dt[, response_type := as.character(response_type)]
+      dt[, cond_exp_func_model := as.character(cond_exp_func_model)]
+      dt[, design := as.character(design)]
+      dt[, inference := as.character(inference)]
+      dt[, inference_type := as.character(inference_type)]
+      dt[, n := as.integer(n)]
+      dt[, p := as.integer(p)]
+      dt[, rep := as.integer(rep)]
+      dt[, betaT := as.numeric(betaT)]
+      dt[, estimate := as.numeric(estimate)]
+      dt[, ci_lo := as.numeric(ci_lo)]
+      dt[, ci_hi := as.numeric(ci_hi)]
+      dt[, pval := as.numeric(pval)]
+      dt[, true_estimand := as.numeric(true_estimand)]
+      dt[, names(empty_dt), with = FALSE]
+    },
+
+    .result_key_for_values = function(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type) {
+      paste(
+        response_type,
+        cond_exp_func_model,
+        n,
+        p,
+        format(betaT, digits = 17L),
+        rep,
+        design,
+        inference,
+        inference_type,
+        sep = "|||"
+      )
+    },
+
+    .result_key = function(rep, design, inference, inference_type) {
+      private$.result_key_for_values(
+        private$response_type,
+        private$current_cond_exp_func_model,
+        private$current_n,
+        private$current_p,
+        private$current_betaT,
+        rep,
+        design,
+        inference,
+        inference_type
+      )
+    },
+
+    .result_key_from_row = function(row) {
+      private$.result_key_for_values(
+        row$response_type,
+        row$cond_exp_func_model,
+        row$n,
+        row$p,
+        row$betaT,
+        row$rep,
+        row$design,
+        row$inference,
+        row$inference_type
+      )
+    },
+
+    .result_metadata_dt = function(rep, design, inference, inference_type) {
+      data.table::data.table(
+        response_type = private$response_type,
+        cond_exp_func_model = private$current_cond_exp_func_model,
+        n = as.integer(private$current_n),
+        p = as.integer(private$current_p),
+        betaT = as.numeric(private$current_betaT),
+        rep = as.integer(rep),
+        design = design,
+        inference = inference,
+        inference_type = inference_type
+      )
+    },
+
+    .log_skip = function(rep, design, inference, inference_type) {
+      invisible(NULL)
+    },
+
+    .valid_inference_types = function(inf_obj) {
+      valid_inference_types = character(0L)
+      if (is(inf_obj, "InferenceAsymp")) {
+        valid_inference_types = c(
+          valid_inference_types,
+          intersect(private$inf_types, c("asymp_ci", "asymp_pval"))
+        )
+      }
+      if (is(inf_obj, "InferenceExact")) {
+        valid_inference_types = c(
+          valid_inference_types,
+          intersect(private$inf_types, c("exact_ci", "exact_pval"))
+        )
+      }
+      if (is(inf_obj, "InferenceBoot")) {
+        valid_inference_types = c(
+          valid_inference_types,
+          intersect(private$inf_types, c("boot_ci", "boot_pval"))
+        )
+      }
+      if (is(inf_obj, "InferenceRand")) {
+        valid_inference_types = c(
+          valid_inference_types,
+          intersect(private$inf_types, "rand_pval")
+        )
+        if (is(inf_obj, "InferenceRandCI") &&
+            private$response_type %in% c("continuous", "proportion", "count")) {
+          valid_inference_types = c(
+            valid_inference_types,
+            intersect(private$inf_types, "rand_ci")
+          )
+        }
+      }
+      valid_inference_types
+    },
+
+    .build_valid_combos_for_current_cell = function(rep_data) {
+      X = rep_data$X
+      y_linear_model = rep_data$y_linear_model
+      combos = list()
+      for (di in seq_along(private$design_classes)) {
+        design_gen   = private$design_classes[[di]]
+        design_name  = private$design_labels[[di]]
+        design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
+        des_obj = tryCatch(
+          private$.build_design(design_gen, X, y_linear_model, design_extra),
+          error = function(e) NULL
+        )
+        if (is.null(des_obj)) next
+        for (ii in seq_along(private$inference_classes)) {
+          inf_gen  = private$inference_classes[[ii]]
+          inf_name = private$inference_labels[[ii]]
+          inf_ctor_extra = private$inference_constructor_params[[ii]]
+          inf_obj = tryCatch(
+            do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra)),
+            error = function(e) NULL
+          )
+          if (is.null(inf_obj)) next
+          valid_inference_types = private$.valid_inference_types(inf_obj)
+          if (length(valid_inference_types) == 0L) next
+          for (it in valid_inference_types) {
+            combos[[length(combos) + 1L]] = list(
+              cond_exp_func_model = private$current_cond_exp_func_model,
+              n = private$current_n,
+              p = private$current_p,
+              betaT = private$current_betaT,
+              design = design_name,
+              inference = inf_name,
+              inference_type = it
+            )
+          }
+        }
+      }
+      combos
+    },
+
+    .advance_progress = function() {
+      private$progress_count = private$progress_count + 1L
+      private$current_task_in_rep_idx = private$current_task_in_rep_idx + 1L
+      if (!isTRUE(private$verbose)) return(invisible(NULL))
+      
+      if (isTRUE(private$use_progress_bar)) {
+        private$.draw_triple_progress_bar()
+      } else if (private$progress_log_interval > 0L &&
+                 (private$progress_count %% private$progress_log_interval == 0L ||
+                  private$progress_count == private$progress_total)) {
+        message(sprintf("Completed %d / %d runs", private$progress_count, private$progress_total))
+      }
+      invisible(NULL)
+    },
+
+    .draw_triple_progress_bar = function() {
+      width = getOption("width", 80L)
+      if (is.null(width) || width < 80L) width = 80L
+      
+      # Proportions
+      cell_prop = if (private$total_cells > 0) (private$current_cell_idx - 1) / private$total_cells else 0
+      rep_prop  = if (private$Nrep > 0) (private$current_rep_idx - 1) / private$Nrep else 0
+      task_prop = if (private$tasks_per_rep > 0) private$current_task_in_rep_idx / private$tasks_per_rep else 0
+      
+      # Labels
+      label_cell = sprintf("DGP:%d/%d", private$current_cell_idx, private$total_cells)
+      label_rep  = sprintf("Rep:%d/%d", private$current_rep_idx, private$Nrep)
+      label_task = sprintf("Des/Inf:%d/%d", private$current_task_in_rep_idx, private$tasks_per_rep)
+      
+      # Total label width
+      total_label_width = nchar(label_cell) + nchar(label_rep) + nchar(label_task)
+      
+      # Available width for 3 bars and separators
+      # Separators: 5 spaces + 6 brackets = 11 spaces. Plus \r = 12 total overhead.
+      overhead = 11L
+      bar_space = width - total_label_width - overhead
+      if (bar_space < 15L) {
+        bar_width1 = bar_width2 = bar_width3 = 5L
+      } else {
+        bar_width1 = bar_space %/% 3L
+        bar_width2 = bar_space %/% 3L
+        bar_width3 = bar_space - bar_width1 - bar_width2
+      }
+      
+      make_bar = function(prop, b_width) {
+        pct_str = sprintf(" %3d%% ", floor(prop * 100))
+        n_pct = nchar(pct_str)
+        fill = floor(prop * b_width)
+        
+        full_bar = paste0(strrep("=", fill), strrep(" ", b_width - fill))
+        if (b_width >= n_pct) {
+          start_pos = (b_width - n_pct) %/% 2 + 1
+          substr(full_bar, start_pos, start_pos + n_pct - 1) = pct_str
+        }
+        sprintf("[%s]", full_bar)
+      }
+      
+      msg = sprintf("\r%s %s %s %s %s %s", 
+                    label_cell, make_bar(cell_prop, bar_width1),
+                    label_rep,  make_bar(rep_prop,  bar_width2),
+                    label_task, make_bar(task_prop, bar_width3))
+      
+      message(substr(msg, 1, width), appendLF = FALSE)
+      if (exists("flush.console")) utils::flush.console()
+    },
+
+    .append_result_row_to_file = function(row) {
+      file_exists = file.exists(private$results_filename)
+      data.table::fwrite(row, private$results_filename, append = file_exists, col.names = !file_exists)
+    },
+
     # Build unique per-instance design labels: "ClassName (params)" with
     # " [k]" suffix when two instances would otherwise share the same label.
     .compute_design_labels = function() {
@@ -1298,9 +1735,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
     .generate_data = function() {
       data = generate_covariate_dataset(
-        n                    = private$n,
-        p                    = private$p,
-        data_type            = private$data_type,
+        n                    = private$current_n,
+        p                    = private$current_p,
+        cond_exp_func_model  = private$current_cond_exp_func_model,
         norm_sq_beta_vec     = private$norm_sq_beta_vec,
         X_mat                = private$X_mat,
         cov_draw_method      = private$cov_draw_method,
@@ -1319,16 +1756,39 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data
     },
 
+    .generate_data_from_X = function(X_mat) {
+      data = generate_covariate_dataset(
+        n                    = private$current_n,
+        p                    = private$current_p,
+        cond_exp_func_model  = private$current_cond_exp_func_model,
+        norm_sq_beta_vec     = private$norm_sq_beta_vec,
+        X_mat                = X_mat,
+        cov_draw_method      = NULL,
+        cov_draw_method_args = private$cov_draw_method_args
+      )
+      data$y_linear_model = transform_cont_y_based_on_response_type(
+        y_cont             = data$y_cont,
+        response_type      = private$response_type,
+        n_ordinal_levels   = private$n_ordinal_levels,
+        proportion_epsilon = private$proportion_epsilon,
+        survival_min_time  = private$survival_min_time,
+        count_min_rate     = private$count_min_rate,
+        count_shift        = private$count_shift
+      )
+      data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
+      data
+    },
+
     compute_true_mean_diff_ate = function(y_linear_model) {
       eta_c = y_linear_model
-      eta_t = y_linear_model + private$betaT
+      eta_t = y_linear_model + private$current_betaT
 
       clamp = function(x, lo, hi) {
         pmin(hi, pmax(lo, x))
       }
 
       switch(private$response_type,
-        continuous = private$betaT,
+        continuous = private$current_betaT,
         incidence = {
           p_t = clamp(stats::plogis(eta_t), private$incidence_clamp, 1 - private$incidence_clamp)
           p_c = clamp(stats::plogis(eta_c), private$incidence_clamp, 1 - private$incidence_clamp)
@@ -1352,7 +1812,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           (1 - private$prob_censoring / 2) * mean(mean_t - mean_c)
         },
         ordinal = private$compute_true_ordinal_mean_diff(eta_c, eta_t),
-        private$betaT
+        private$current_betaT
       )
     },
 
@@ -1360,7 +1820,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       expected_ordinal = function(eta) {
         K = private$n_ordinal_levels
         if (private$sd_noise <= 0) {
-          return(pmin(K, pmax(1, round(eta))))
+          rounded_eta = sign(eta) * floor(abs(eta) + 0.5)
+          return(pmin(K, pmax(1, rounded_eta)))
         }
 
         sigma = private$sd_noise
@@ -1384,7 +1845,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
     # Instantiate design and run the full experiment (assign + observe all n).
     .build_design = function(design_gen, X, y_linear_model, design_extra) {
-      n       = private$n
+      n       = private$current_n
 
       # Auto-inject required args that depend on the covariate matrix when the
       # user has not already supplied them via design_classes_and_params.
@@ -1413,7 +1874,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             X[t, , drop = FALSE])
           out = apply_treatment_and_noise_cpp(
             y_linear_model[t], w_t,
-	            private$response_type, private$betaT,
+	            private$response_type, private$current_betaT,
 	            private$sd_noise, private$prob_censoring,
 	            private$n_ordinal_levels,
 	            phi_proportion = private$phi_proportion,
@@ -1431,7 +1892,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         w   = des_obj$get_w()
         out = apply_treatment_and_noise_cpp(
           y_linear_model, w,
-	          private$response_type, private$betaT,
+	          private$response_type, private$current_betaT,
 	          private$sd_noise, private$prob_censoring,
 	          private$n_ordinal_levels,
 	          phi_proportion = private$phi_proportion,
@@ -1452,8 +1913,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
       
       private$results_idx = private$results_idx + 1L
-      private$raw_results[[private$results_idx]] = list(
+      row = list(
+        response_type = private$response_type,
         rep           = as.integer(rep),
+        cond_exp_func_model = private$current_cond_exp_func_model,
+        n             = as.integer(private$current_n),
+        p             = as.integer(private$current_p),
+        betaT         = as.numeric(private$current_betaT),
         design        = design,
         inference     = inf_name,
         inference_type = inference_type,
@@ -1464,6 +1930,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                           NA_real_ else as.numeric(pval[1L]),
         true_estimand = as.numeric(true_estimand)
       )
+      private$raw_results[[private$results_idx]] = row
+      private$seen_result_keys = c(
+        private$seen_result_keys,
+        private$.result_key(rep, design, inf_name, inference_type)
+      )
+      row_dt = data.table::as.data.table(row)
+      private$.append_result_row_to_file(row_dt)
+      private$.advance_progress()
     },
 
     # ── Defaults ──────────────────────────────────────────────────────────────
@@ -1521,7 +1995,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceIncidMultiModifiedPoisson,
           InferenceIncidUnivKKClogitIVWC,
           InferenceIncidMultiKKClogitOneLik,
-          InferenceIncidAzriel,
+          InferenceIncidCMH,
           InferenceIncidExtendedRobins,
           InferenceIncidExactZhang,
           InferenceIncidExactFisher,

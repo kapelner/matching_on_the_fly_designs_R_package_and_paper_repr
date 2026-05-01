@@ -47,7 +47,7 @@ get_opt_metadata = function(res_type, base_name) {
     via = "nlme"
   } else if (grepl("Exact", base_name)) {
     via = "none/exact enumeration"
-  } else if (base_name %in% c("Azriel", "ExtendedRobins")) {
+  } else if (base_name %in% c("CMH", "ExtendedRobins")) {
     via = "none/design-specific statistic"
   } else if (base_name == "KMDiff" || base_name == "RestrictedMeanDiff") {
     via = "none/KM statistic"
@@ -300,7 +300,7 @@ get_info = function(class_name) {
     has_multi = "Y"
   }
   # Special cases for simple tests
-  if (base_name %in% c("SimpleMeanDiff", "SimpleMeanDiffPooledVar", "SimpleWilcox", "PairedSignTest", "KMDiff", "RestrictedMeanDiff", "Azriel", "ExactBinomial", "ExactFisher", "ExactZhang")) {
+  if (base_name %in% c("SimpleMeanDiff", "SimpleMeanDiffPooledVar", "SimpleWilcox", "PairedSignTest", "KMDiff", "RestrictedMeanDiff", "CMH", "ExactBinomial", "ExactFisher", "ExactZhang")) {
     has_multi = "N"
   }
 

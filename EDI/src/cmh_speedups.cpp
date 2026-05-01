@@ -6,11 +6,11 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-double compute_azriel_block_se_cpp(const NumericVector& y,
+double compute_cmh_block_se_cpp(const NumericVector& y,
                                    const IntegerVector& m_vec,
                                    int n_total) {
   if (y.size() != m_vec.size()) {
-    stop("compute_azriel_block_se_cpp: y and m_vec must have the same length.");
+    stop("compute_cmh_block_se_cpp: y and m_vec must have the same length.");
   }
   if (n_total <= 0) {
     return NA_REAL;
