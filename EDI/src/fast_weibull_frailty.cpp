@@ -16,6 +16,10 @@ inline double log_sum_exp_wf(const Eigen::VectorXd& x) {
 	return m + std::log((x.array() - m).exp().sum());
 }
 
+inline Eigen::ArrayXd clamp_weibull_wf(const Eigen::ArrayXd& w) {
+	return w.min(700.0);
+}
+
 struct GHRuleWF {
 	Eigen::VectorXd nodes;
 	Eigen::VectorXd log_norm_weights;
@@ -135,27 +139,21 @@ public:
 			const int i_start = m_group_start[g];
 			const int sz      = m_group_end[g] - i_start;
 			const Eigen::MatrixXd Xg = m_X.middleRows(i_start, sz);
+			const Eigen::ArrayXd log_y_g = m_log_y.segment(i_start, sz).array();
+			const Eigen::ArrayXd dead_g = m_dead.segment(i_start, sz).array();
+			const Eigen::ArrayXd eta_g = eta.segment(i_start, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			Eigen::MatrixXd w_mat(sz, n_nodes);
 			Eigen::MatrixXd ew_mat(sz, n_nodes);
 
 			for (int k = 0; k < n_nodes; ++k) {
-				double ll = m_gh.log_norm_weights[k];
-				for (int r = 0; r < sz; ++r) {
-					const int i = i_start + r;
-					double wik = (m_log_y[i] - eta[i] - u_vals[k]) / sigma_eps;
-					if (wik > 700.0) wik = 700.0;
-					const double ewik = std::exp(wik);
-					w_mat(r, k)  = wik;
-					ew_mat(r, k) = ewik;
-					if (m_dead[i] > 0.5) {
-						ll += wik - log_sigma_eps - m_log_y[i] - ewik;
-					} else {
-						ll -= ewik;
-					}
-				}
-				log_terms[k] = ll;
+				const Eigen::ArrayXd wik = clamp_weibull_wf((log_y_g - eta_g - u_vals[k]) / sigma_eps);
+				const Eigen::ArrayXd ewik = wik.exp();
+				w_mat.col(k) = wik.matrix();
+				ew_mat.col(k) = ewik.matrix();
+				log_terms[k] = m_gh.log_norm_weights[k] +
+					(dead_g > 0.5).select(wik - log_sigma_eps - log_y_g - ewik, -ewik).sum();
 			}
 
 			const double ll_g = log_sum_exp_wf(log_terms);
@@ -166,16 +164,9 @@ public:
 				const double post_k = std::exp(log_terms[k] - ll_g);
 				if (post_k < 1e-15) continue;
 
-				Eigen::VectorXd r_k(sz);
-				double r_k_sum  = 0.0;
-				double dll_dlse = 0.0;  // sum_i [w_ik*(exp(w_ik)-dead_i) - dead_i]
-
-				for (int r = 0; r < sz; ++r) {
-					const int i  = i_start + r;
-					r_k[r]    = ew_mat(r, k) - m_dead[i];
-					r_k_sum  += r_k[r];
-					dll_dlse += w_mat(r, k) * r_k[r] - m_dead[i];
-				}
+				const Eigen::VectorXd r_k = ew_mat.col(k) - dead_g.matrix();
+				const double r_k_sum = r_k.sum();
+				const double dll_dlse = (w_mat.col(k).array() * r_k.array() - dead_g).sum();
 
 				// d(neg_ll)/d(beta)
 				grad.head(m_p) -= post_k * (Xg.transpose() * r_k) / sigma_eps;
@@ -218,6 +209,9 @@ public:
 			const int i_start = m_group_start[g];
 			const int sz = m_group_end[g] - i_start;
 			const Eigen::MatrixXd Xg = m_X.middleRows(i_start, sz);
+			const Eigen::ArrayXd log_y_g = m_log_y.segment(i_start, sz).array();
+			const Eigen::ArrayXd dead_g = m_dead.segment(i_start, sz).array();
+			const Eigen::ArrayXd eta_g = eta.segment(i_start, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> node_score(n_nodes, Eigen::VectorXd::Zero(n_par));
@@ -229,37 +223,31 @@ public:
 				const double v = u / sigma_eps;
 				Eigen::VectorXd& a = node_score[k];
 				Eigen::MatrixXd& B = node_hess[k];
+				const Eigen::ArrayXd wik = clamp_weibull_wf((log_y_g - eta_g - u) / sigma_eps);
+				const Eigen::ArrayXd ewik = wik.exp();
+				const Eigen::ArrayXd resid = ewik - dead_g;
+				ll += (dead_g > 0.5).select(wik - log_sigma_eps - log_y_g - ewik, -ewik).sum();
 
 				for (int r = 0; r < sz; ++r) {
-					const int i = i_start + r;
-					double wik = (m_log_y[i] - eta[i] - u) / sigma_eps;
-					if (wik > 700.0) wik = 700.0;
-					const double ewik = std::exp(wik);
-					const double dead_i = m_dead[i];
-					const double resid = ewik - dead_i;
-
-					if (dead_i > 0.5) {
-						ll += wik - log_sigma_eps - m_log_y[i] - ewik;
-					} else {
-						ll -= ewik;
-					}
+					const double dead_i = dead_g[r];
+					const double resid_i = resid[r];
 
 					Eigen::VectorXd w_grad = Eigen::VectorXd::Zero(n_par);
 					w_grad.head(m_p).noalias() = -Xg.row(r).transpose() / sigma_eps;
-					w_grad[m_p] = -wik;
+					w_grad[m_p] = -wik[r];
 					w_grad[m_p + 1] = -v;
 
 					Eigen::MatrixXd w_hess = Eigen::MatrixXd::Zero(n_par, n_par);
 					w_hess.block(0, m_p, m_p, 1).noalias() = Xg.row(r).transpose() / sigma_eps;
 					w_hess.block(m_p, 0, 1, m_p) = w_hess.block(0, m_p, m_p, 1).transpose();
-					w_hess(m_p, m_p) = wik;
+					w_hess(m_p, m_p) = wik[r];
 					w_hess(m_p, m_p + 1) = v;
 					w_hess(m_p + 1, m_p) = v;
 					w_hess(m_p + 1, m_p + 1) = -v;
 
-					a.noalias() -= resid * w_grad;
+					a.noalias() -= resid_i * w_grad;
 					a[m_p] -= dead_i;
-					B.noalias() -= ewik * (w_grad * w_grad.transpose()) + resid * w_hess;
+					B.noalias() -= ewik[r] * (w_grad * w_grad.transpose()) + resid_i * w_hess;
 				}
 				log_terms[k] = ll;
 			}

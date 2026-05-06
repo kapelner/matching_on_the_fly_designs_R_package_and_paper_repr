@@ -371,7 +371,8 @@ Design = R6::R6Class("Design",
 			if (is.null(block_ids) && is(self, "FixedDesignOptimalBlocks")) {
 				block_ids = private$get_or_compute_block_ids()
 			}
-			if (is.null(block_ids) && !is.null(strata_cols) && length(strata_cols) > 0L &&
+			if (is.null(block_ids) &&
+					(is(self, "FixedDesignBlocking") || (!is.null(strata_cols) && length(strata_cols) > 0L)) &&
 					nrow(Xraw) == length(private$y)) {
 				strata_keys = private$get_strata_keys()
 				if (length(strata_keys) == length(private$y)) {

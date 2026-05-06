@@ -80,6 +80,7 @@ Initialize a fixed stratified blocking experimental design
   preferred_num_bins_for_continuous_covariate = 2,
   B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
   exact_num_blocks = FALSE,
+  equal_block_sizes = TRUE,
   num_bins_for_continuous_covariate = NULL,
   verbose = FALSE,
   missingness_method = "impute",
@@ -117,6 +118,14 @@ does not produce exactly `B_target` blocks.}
 
 \item{\code{exact_num_blocks}}{Whether to require the greedy key construction to produce
 exactly `B_target` blocks. Default `FALSE`.}
+
+\item{\code{equal_block_sizes}}{Whether to require all blocks to have the same number of
+subjects. Default `TRUE`. When `TRUE` and both `n` and `B_target` are known at
+construction time, an error is raised immediately if `n` is not divisible by
+`B_target`. A second check fires when subjects are added: if the covariate-based
+strata produce unequal block counts the design errors at that point. Set to
+`FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
+`InferenceIncidExtendedRobins` still require equal block sizes regardless).}
 
 \item{\code{num_bins_for_continuous_covariate}}{Deprecated alias for
 `preferred_num_bins_for_continuous_covariate`.}

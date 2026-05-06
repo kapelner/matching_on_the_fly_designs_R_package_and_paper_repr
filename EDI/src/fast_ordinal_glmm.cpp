@@ -219,15 +219,13 @@ public:
 				if (post_k < 1e-15) continue;
 
 				Eigen::VectorXd dLi_dalpha = Eigen::VectorXd::Zero(n_alpha);
-				double dLi_deta_sum = 0.0;
-				Eigen::VectorXd dLi_dbeta = Eigen::VectorXd::Zero(dat.p);
+				const Eigen::VectorXd& dLi_deta = dlogp_deta_nodes[k];
 
 				for (int r = 0; r < sz; ++r) {
 					dLi_dalpha += dlogp_dalpha_nodes[k][r];
-					double de = dlogp_deta_nodes[k][r];
-					dLi_deta_sum += de;
-					dLi_dbeta += de * Xg.row(r).transpose();
 				}
+				const double dLi_deta_sum = dLi_deta.sum();
+				const Eigen::VectorXd dLi_dbeta = Xg.transpose() * dLi_deta;
 
 				// dLL/dalpha_k (preliminary, still need chain rule for log-diff parameterization)
 				for (int j = 0; j < n_alpha; ++j) {
@@ -313,6 +311,8 @@ public:
 
 				Eigen::VectorXd G_ik_raw = Eigen::VectorXd::Zero(total);
 				Eigen::MatrixXd H_ik_raw = Eigen::MatrixXd::Zero(total, total);
+				Eigen::VectorXd de_vec(sz);
+				Eigen::VectorXd d2e_vec(sz);
 
 				for (int r = 0; r < sz; r++) {
 					int y_ir = dat.y_s[start + r];
@@ -325,6 +325,8 @@ public:
 
 					double de = -(fup - flo) / prob;
 					double d2e = -(hup - hlo) / prob + (fup-flo)*(fup-flo)/(prob*prob);
+					de_vec[r] = de;
+					d2e_vec[r] = d2e;
 
 					if (y_ir < dat.K) {
 						G_ik_raw[y_ir-1] += fup/prob;
@@ -343,18 +345,16 @@ public:
 						H_ik_raw(y_ir-1, y_ir-2) += cross;
 					}
 
-					for(int i1=0; i1<dat.p; i1++) {
-						G_ik_raw[n_alpha + i1] += de * Xg(r, i1);
-						for(int i2=0; i2<dat.p; i2++) H_ik_raw(n_alpha+i1, n_alpha+i2) += d2e * Xg(r, i1) * Xg(r, i2);
-					}
-
 					const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 					G_ik_raw[total-1] += de * node_factor;
 					H_ik_raw(total-1, total-1) += d2e * node_factor * node_factor;
-					for(int j=0; j<dat.p; j++) H_ik_raw(n_alpha+j, total-1) += d2e * node_factor * Xg(r, j);
 					if (y_ir < dat.K) H_ik_raw(y_ir-1, total-1) += (-hup/prob + (fup*(fup-flo))/(prob*prob)) * node_factor;
 					if (y_ir > 1)      H_ik_raw(y_ir-2, total-1) += (hlo/prob - (flo*(fup-flo))/(prob*prob)) * node_factor;
 				}
+				G_ik_raw.segment(n_alpha, dat.p).noalias() = Xg.transpose() * de_vec;
+				H_ik_raw.block(n_alpha, n_alpha, dat.p, dat.p).noalias() = weighted_crossprod(Xg, d2e_vec);
+				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+				H_ik_raw.block(n_alpha, total - 1, dat.p, 1).noalias() = (Xg.transpose() * d2e_vec) * node_factor;
 				G_ik_raw[total-1] *= sigma;
 				H_ik_raw.col(total-1) *= sigma;
 				H_ik_raw.row(total-1) *= sigma;

@@ -39,7 +39,7 @@ double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::Matri
 
 // [[Rcpp::export]]
 Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::VectorXd> w) {
-	return X.transpose() * w.asDiagonal() * X;
+	return weighted_crossprod(X, w);
 }
 
 // [[Rcpp::export]]

@@ -1,6 +1,5 @@
 // [[Rcpp::depends(RcppEigen)]]
-#include <RcppEigen.h>
-#include <cmath>
+#include "_helper_functions.h"
 #include <unordered_map>
 
 using namespace Rcpp;
@@ -16,6 +15,14 @@ inline double plogis_stable(double x) {
   return z / (1.0 + z);
 }
 
+inline Eigen::ArrayXd plogis_array(const Eigen::ArrayXd& eta) {
+  const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (eta >= 0.0);
+  const Eigen::ArrayXd pos = 1.0 / (1.0 + (-eta).exp());
+  const Eigen::ArrayXd neg_exp = eta.exp();
+  const Eigen::ArrayXd neg = neg_exp / (1.0 + neg_exp);
+  return nonnegative.select(pos, neg);
+}
+
 Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
                              const Eigen::VectorXd& resid,
                              const IntegerVector& cluster_id) {
@@ -25,26 +32,19 @@ Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
     stop("dimension mismatch in cluster_meat");
   }
 
-  std::unordered_map<int, int> cluster_lookup;
-  std::vector<Eigen::VectorXd> cluster_scores;
+  Eigen::MatrixXd meat = Eigen::MatrixXd::Zero(p, p);
+  std::unordered_map<int, Eigen::VectorXd> cluster_scores;
   cluster_scores.reserve(static_cast<std::size_t>(n));
-
   for (int i = 0; i < n; ++i) {
     const int id = cluster_id[i];
-    auto it = cluster_lookup.find(id);
-    int pos;
-    if (it == cluster_lookup.end()) {
-      pos = static_cast<int>(cluster_scores.size());
-      cluster_lookup.emplace(id, pos);
-      cluster_scores.push_back(Eigen::VectorXd::Zero(p));
-    } else {
-      pos = it->second;
+    auto it = cluster_scores.find(id);
+    if (it == cluster_scores.end()) {
+      it = cluster_scores.emplace(id, Eigen::VectorXd::Zero(p)).first;
     }
-    cluster_scores[static_cast<std::size_t>(pos)].noalias() += X_fit.row(i).transpose() * resid[i];
+    it->second.noalias() += X_fit.row(i).transpose() * resid[i];
   }
-
-  Eigen::MatrixXd meat = Eigen::MatrixXd::Zero(p, p);
-  for (const auto& score_g : cluster_scores) {
+  for (const auto& entry : cluster_scores) {
+    const auto& score_g = entry.second;
     meat.noalias() += score_g * score_g.transpose();
   }
   return meat;
@@ -69,16 +69,15 @@ List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     stop("dimension mismatch in gcomp_logistic_post_fit_cpp");
   }
 
-  Eigen::VectorXd W(n);
   for (int i = 0; i < n; ++i) {
     const double mu_i = mu_hat[i];
     if (!R_finite(mu_i) || mu_i <= 0.0 || mu_i >= 1.0) {
       stop("non-finite or boundary fitted values");
     }
-    W[i] = mu_i * (1.0 - mu_i);
   }
+  const Eigen::VectorXd W = (mu_hat.array() * (1.0 - mu_hat.array())).matrix();
 
-  const Eigen::MatrixXd XtWX = X_fit.transpose() * W.asDiagonal() * X_fit;
+  const Eigen::MatrixXd XtWX = weighted_crossprod(X_fit, W);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     stop("failed to factorize X'WX");
@@ -91,7 +90,7 @@ List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit,
 
   const Eigen::VectorXd score_resid = y - mu_hat;
   const Eigen::VectorXd resid_sq = score_resid.array().square().matrix();
-  Eigen::MatrixXd meat = X_fit.transpose() * resid_sq.asDiagonal() * X_fit;
+  Eigen::MatrixXd meat = weighted_crossprod(X_fit, resid_sq);
   Eigen::MatrixXd vcov_robust = bread * meat * bread;
   vcov_robust = 0.5 * (vcov_robust + vcov_robust.transpose());
 
@@ -111,32 +110,26 @@ List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit,
   const Eigen::VectorXd eta = X_fit * coef_hat;
   const Eigen::VectorXd eta_base = eta - coef_hat[j_treat0] * X_fit.col(j_treat0);
 
-  Eigen::VectorXd risk1_i(n);
-  Eigen::VectorXd risk0_i(n);
-  for (int i = 0; i < n; ++i) {
-    risk1_i[i] = plogis_stable(eta_base[i] + coef_hat[j_treat0]);
-    risk0_i[i] = plogis_stable(eta_base[i]);
-  }
+  const Eigen::ArrayXd risk1_arr = plogis_array(eta_base.array() + coef_hat[j_treat0]);
+  const Eigen::ArrayXd risk0_arr = plogis_array(eta_base.array());
+  const Eigen::VectorXd risk1_i = risk1_arr.matrix();
+  const Eigen::VectorXd risk0_i = risk0_arr.matrix();
 
   const double risk1 = risk1_i.mean();
   const double risk0 = risk0_i.mean();
 
-  Eigen::VectorXd grad1 = Eigen::VectorXd::Zero(p);
-  Eigen::VectorXd grad0 = Eigen::VectorXd::Zero(p);
   const double inv_n = 1.0 / static_cast<double>(n);
-  for (int i = 0; i < n; ++i) {
-    const double wt1 = risk1_i[i] * (1.0 - risk1_i[i]) * inv_n;
-    const double wt0 = risk0_i[i] * (1.0 - risk0_i[i]) * inv_n;
-    for (int j = 0; j < p; ++j) {
-      const double x_ij = X_fit(i, j);
-      grad1[j] += (j == j_treat0 ? 1.0 : x_ij) * wt1;
-      grad0[j] += (j == j_treat0 ? 0.0 : x_ij) * wt0;
-    }
-  }
+  const Eigen::VectorXd wt1 = (risk1_arr * (1.0 - risk1_arr) * inv_n).matrix();
+  const Eigen::VectorXd wt0 = (risk0_arr * (1.0 - risk0_arr) * inv_n).matrix();
+  Eigen::VectorXd grad1 = X_fit.transpose() * wt1;
+  Eigen::VectorXd grad0 = X_fit.transpose() * wt0;
+  grad1[j_treat0] = wt1.sum();
+  grad0[j_treat0] = 0.0;
 
   const double rd = risk1 - risk0;
   const Eigen::VectorXd grad_rd = grad1 - grad0;
-  const double var_rd = (grad_rd.transpose() * vcov_robust * grad_rd)(0, 0);
+  const Eigen::VectorXd bread_grad_rd = ldlt.solve(grad_rd);
+  const double var_rd = (bread_grad_rd.transpose() * meat * bread_grad_rd)(0, 0);
   const double se_rd = (R_finite(var_rd) && var_rd >= 0.0) ? std::sqrt(var_rd) : NA_REAL;
 
   double log_rr = NA_REAL;
@@ -146,7 +139,8 @@ List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     log_rr = std::log(risk1) - std::log(risk0);
     rr = std::exp(log_rr);
     const Eigen::VectorXd grad_log_rr = grad1 / risk1 - grad0 / risk0;
-    const double var_log_rr = (grad_log_rr.transpose() * vcov_robust * grad_log_rr)(0, 0);
+    const Eigen::VectorXd bread_grad_log_rr = ldlt.solve(grad_log_rr);
+    const double var_log_rr = (bread_grad_log_rr.transpose() * meat * bread_grad_log_rr)(0, 0);
     if (R_finite(var_log_rr) && var_log_rr >= 0.0) {
       se_log_rr = std::sqrt(var_log_rr);
     }
@@ -210,16 +204,15 @@ List gcomp_logistic_cluster_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     stop("dimension mismatch in gcomp_logistic_cluster_post_fit_cpp");
   }
 
-  Eigen::VectorXd W(n);
   for (int i = 0; i < n; ++i) {
     const double mu_i = mu_hat[i];
     if (!R_finite(mu_i) || mu_i <= 0.0 || mu_i >= 1.0) {
       stop("non-finite or boundary fitted values");
     }
-    W[i] = mu_i * (1.0 - mu_i);
   }
+  const Eigen::VectorXd W = (mu_hat.array() * (1.0 - mu_hat.array())).matrix();
 
-  const Eigen::MatrixXd XtWX = X_fit.transpose() * W.asDiagonal() * X_fit;
+  const Eigen::MatrixXd XtWX = weighted_crossprod(X_fit, W);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     stop("failed to factorize X'WX");
@@ -251,32 +244,26 @@ List gcomp_logistic_cluster_post_fit_cpp(const Eigen::MatrixXd& X_fit,
   const Eigen::VectorXd eta = X_fit * coef_hat;
   const Eigen::VectorXd eta_base = eta - coef_hat[j_treat0] * X_fit.col(j_treat0);
 
-  Eigen::VectorXd risk1_i(n);
-  Eigen::VectorXd risk0_i(n);
-  for (int i = 0; i < n; ++i) {
-    risk1_i[i] = plogis_stable(eta_base[i] + coef_hat[j_treat0]);
-    risk0_i[i] = plogis_stable(eta_base[i]);
-  }
+  const Eigen::ArrayXd risk1_arr = plogis_array(eta_base.array() + coef_hat[j_treat0]);
+  const Eigen::ArrayXd risk0_arr = plogis_array(eta_base.array());
+  const Eigen::VectorXd risk1_i = risk1_arr.matrix();
+  const Eigen::VectorXd risk0_i = risk0_arr.matrix();
 
   const double risk1 = risk1_i.mean();
   const double risk0 = risk0_i.mean();
 
-  Eigen::VectorXd grad1 = Eigen::VectorXd::Zero(p);
-  Eigen::VectorXd grad0 = Eigen::VectorXd::Zero(p);
   const double inv_n = 1.0 / static_cast<double>(n);
-  for (int i = 0; i < n; ++i) {
-    const double wt1 = risk1_i[i] * (1.0 - risk1_i[i]) * inv_n;
-    const double wt0 = risk0_i[i] * (1.0 - risk0_i[i]) * inv_n;
-    for (int j = 0; j < p; ++j) {
-      const double x_ij = X_fit(i, j);
-      grad1[j] += (j == j_treat0 ? 1.0 : x_ij) * wt1;
-      grad0[j] += (j == j_treat0 ? 0.0 : x_ij) * wt0;
-    }
-  }
+  const Eigen::VectorXd wt1 = (risk1_arr * (1.0 - risk1_arr) * inv_n).matrix();
+  const Eigen::VectorXd wt0 = (risk0_arr * (1.0 - risk0_arr) * inv_n).matrix();
+  Eigen::VectorXd grad1 = X_fit.transpose() * wt1;
+  Eigen::VectorXd grad0 = X_fit.transpose() * wt0;
+  grad1[j_treat0] = wt1.sum();
+  grad0[j_treat0] = 0.0;
 
   const double rd = risk1 - risk0;
   const Eigen::VectorXd grad_rd = grad1 - grad0;
-  const double var_rd = (grad_rd.transpose() * vcov_robust * grad_rd)(0, 0);
+  const Eigen::VectorXd bread_grad_rd = ldlt.solve(grad_rd);
+  const double var_rd = (bread_grad_rd.transpose() * meat * bread_grad_rd)(0, 0);
   const double se_rd = (R_finite(var_rd) && var_rd >= 0.0) ? std::sqrt(var_rd) : NA_REAL;
 
   double log_rr = NA_REAL;
@@ -286,7 +273,8 @@ List gcomp_logistic_cluster_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     log_rr = std::log(risk1) - std::log(risk0);
     rr = std::exp(log_rr);
     const Eigen::VectorXd grad_log_rr = grad1 / risk1 - grad0 / risk0;
-    const double var_log_rr = (grad_log_rr.transpose() * vcov_robust * grad_log_rr)(0, 0);
+    const Eigen::VectorXd bread_grad_log_rr = ldlt.solve(grad_log_rr);
+    const double var_log_rr = (bread_grad_log_rr.transpose() * meat * bread_grad_log_rr)(0, 0);
     if (R_finite(var_log_rr) && var_log_rr >= 0.0) {
       se_log_rr = std::sqrt(var_log_rr);
     }
@@ -328,15 +316,11 @@ List gcomp_ordinal_proportional_odds_post_fit_cpp(const Eigen::MatrixXd& X_fit,
   Eigen::VectorXd eta0 = eta_base;
 
   auto compute_mean = [&](const Eigen::VectorXd& eta_vec) {
-    double total_mean = 0.0;
-    for (int i = 0; i < n; ++i) {
-      double mean_i = 1.0;
-      for (int k = 0; k < K_minus_1; ++k) {
-        mean_i += (1.0 - plogis_stable(alpha_hat[k] - eta_vec[i]));
-      }
-      total_mean += mean_i;
+    Eigen::ArrayXd mean = Eigen::ArrayXd::Ones(n);
+    for (int k = 0; k < K_minus_1; ++k) {
+      mean += 1.0 - plogis_array(Eigen::ArrayXd::Constant(n, alpha_hat[k]) - eta_vec.array());
     }
-    return total_mean / static_cast<double>(n);
+    return mean.mean();
   };
 
   double mean1 = compute_mean(eta1);

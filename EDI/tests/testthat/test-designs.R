@@ -120,6 +120,7 @@ test_that("Design asserts equal block sizes", {
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
+		equal_block_sizes = FALSE,
 		verbose = FALSE
 	)
 	des_bad$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3), rep("B", 5))))
@@ -136,6 +137,7 @@ test_that("FixedDesignBlocking exact_num_blocks hard-fails when the greedy build
 		response_type = "incidence",
 		B_target = 3L,
 		exact_num_blocks = TRUE,
+		equal_block_sizes = FALSE,
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = rep(c("A", "B", "C", "D"), each = 2)))
@@ -190,6 +192,105 @@ test_that("Response types work", {
 	}
 	expect_equal(des$get_y()[1], val)
 	}
+})
+
+test_that("FixedDesignBlocking equal_block_sizes = TRUE (default) enforces divisibility at init", {
+	expect_error(
+		FixedDesignBlocking$new(
+			response_type = "incidence",
+			n = 10L,
+			B_target = 3L,
+			verbose = FALSE
+		),
+		"not divisible by B_target"
+	)
+	# n=12, B_target=4 divides evenly — no error
+	expect_no_error(
+		FixedDesignBlocking$new(
+			response_type = "incidence",
+			n = 12L,
+			B_target = 4L,
+			verbose = FALSE
+		)
+	)
+})
+
+test_that("FixedDesignBlocking equal_block_sizes = FALSE skips divisibility check", {
+	expect_no_error(
+		FixedDesignBlocking$new(
+			response_type = "incidence",
+			n = 10L,
+			B_target = 3L,
+			equal_block_sizes = FALSE,
+			verbose = FALSE
+		)
+	)
+})
+
+test_that("FixedDesignBlocking equal_block_sizes = TRUE errors when strata produce unequal blocks", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		response_type = "incidence",
+		n = 8L,
+		B_target = 2L,
+		equal_block_sizes = TRUE,
+		verbose = FALSE
+	)
+	# 3 in stratum A, 5 in stratum B — unequal; error fires lazily on first block-ID query
+	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3L), rep("B", 5L))))
+	expect_error(des$get_block_ids(), "unequal block sizes")
+})
+
+test_that("FixedDesignBlocking equal_block_sizes = FALSE allows unequal blocks", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "stratum",
+		response_type = "incidence",
+		n = 8L,
+		B_target = 2L,
+		equal_block_sizes = FALSE,
+		verbose = FALSE
+	)
+	expect_no_error(
+		des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3L), rep("B", 5L))))
+	)
+	block_ids <- des$get_block_ids()
+	expect_equal(as.integer(table(block_ids)), c(3L, 5L))
+})
+
+test_that("FixedDesignBlocking with NULL strata_cols returns block IDs via all covariates", {
+	set.seed(42)
+	n <- 8L
+	des <- FixedDesignBlocking$new(
+		response_type = "incidence",
+		n = n,
+		B_target = 2L,
+		verbose = FALSE
+	)
+	# strata_cols = NULL → all columns used; single numeric column gets 2 equal quantile bins
+	des$add_all_subjects_to_experiment(data.frame(x = c(1, 2, 3, 4, 5, 6, 7, 8)))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
+	block_ids <- des$get_block_ids()
+	expect_equal(length(block_ids), n)
+	expect_equal(sort(unique(block_ids)), c(1L, 2L))
+	expect_equal(as.integer(table(block_ids)), c(4L, 4L))
+})
+
+test_that("CMH and ExtendedRobins work with FixedDesignBlocking NULL strata_cols when blocks are equal", {
+	set.seed(7)
+	n <- 8L
+	des <- FixedDesignBlocking$new(
+		response_type = "incidence",
+		n = n,
+		B_target = 2L,
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(x = c(1, 2, 3, 4, 5, 6, 7, 8)))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(rbinom(n, 1L, 0.5))
+
+	expect_no_error(InferenceIncidCMH$new(des, verbose = FALSE))
+	expect_no_error(InferenceIncidExtendedRobins$new(des, verbose = FALSE))
 })
 
 test_that("m is only populated for blocking and KK designs", {

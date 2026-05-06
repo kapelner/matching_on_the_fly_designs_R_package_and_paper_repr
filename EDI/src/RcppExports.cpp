@@ -3627,6 +3627,76 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// clear_result_key_store_cpp
+void clear_result_key_store_cpp();
+RcppExport SEXP _EDI_clear_result_key_store_cpp() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    clear_result_key_store_cpp();
+    return R_NilValue;
+END_RCPP
+}
+// init_result_key_store_cpp
+void init_result_key_store_cpp(int expected_size);
+RcppExport SEXP _EDI_init_result_key_store_cpp(SEXP expected_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type expected_size(expected_sizeSEXP);
+    init_result_key_store_cpp(expected_size);
+    return R_NilValue;
+END_RCPP
+}
+// add_to_result_key_store_cpp
+void add_to_result_key_store_cpp(CharacterVector response_type, CharacterVector cond_exp_func_model, IntegerVector n, IntegerVector p, NumericVector betaT, IntegerVector rep, CharacterVector design, CharacterVector inference, CharacterVector inference_type, int start, int end);
+RcppExport SEXP _EDI_add_to_result_key_store_cpp(SEXP response_typeSEXP, SEXP cond_exp_func_modelSEXP, SEXP nSEXP, SEXP pSEXP, SEXP betaTSEXP, SEXP repSEXP, SEXP designSEXP, SEXP inferenceSEXP, SEXP inference_typeSEXP, SEXP startSEXP, SEXP endSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< CharacterVector >::type response_type(response_typeSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type cond_exp_func_model(cond_exp_func_modelSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type n(nSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type betaT(betaTSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type rep(repSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type design(designSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type inference(inferenceSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type inference_type(inference_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type start(startSEXP);
+    Rcpp::traits::input_parameter< int >::type end(endSEXP);
+    add_to_result_key_store_cpp(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start, end);
+    return R_NilValue;
+END_RCPP
+}
+// check_in_result_key_store_cpp
+LogicalVector check_in_result_key_store_cpp(CharacterVector response_type, CharacterVector cond_exp_func_model, IntegerVector n, IntegerVector p, NumericVector betaT, IntegerVector rep, CharacterVector design, CharacterVector inference, CharacterVector inference_type, int start, int end);
+RcppExport SEXP _EDI_check_in_result_key_store_cpp(SEXP response_typeSEXP, SEXP cond_exp_func_modelSEXP, SEXP nSEXP, SEXP pSEXP, SEXP betaTSEXP, SEXP repSEXP, SEXP designSEXP, SEXP inferenceSEXP, SEXP inference_typeSEXP, SEXP startSEXP, SEXP endSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< CharacterVector >::type response_type(response_typeSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type cond_exp_func_model(cond_exp_func_modelSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type n(nSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type p(pSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type betaT(betaTSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type rep(repSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type design(designSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type inference(inferenceSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type inference_type(inference_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type start(startSEXP);
+    Rcpp::traits::input_parameter< int >::type end(endSEXP);
+    rcpp_result_gen = Rcpp::wrap(check_in_result_key_store_cpp(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start, end));
+    return rcpp_result_gen;
+END_RCPP
+}
+// result_key_store_size_cpp
+int result_key_store_size_cpp();
+RcppExport SEXP _EDI_result_key_store_size_cpp() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(result_key_store_size_cpp());
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_ridit_distr_parallel_cpp
 NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y, const IntegerMatrix& w_mat, std::string reference, int num_cores);
 RcppExport SEXP _EDI_compute_ridit_distr_parallel_cpp(SEXP ySEXP, SEXP w_matSEXP, SEXP referenceSEXP, SEXP num_coresSEXP) {
@@ -4141,6 +4211,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_qr_reduce_preserve_cols_cpp", (DL_FUNC) &_EDI_qr_reduce_preserve_cols_cpp, 2},
     {"_EDI_random_block_size_redraw_w_cpp", (DL_FUNC) &_EDI_random_block_size_redraw_w_cpp, 3},
     {"_EDI_randomization_loop_cpp", (DL_FUNC) &_EDI_randomization_loop_cpp, 5},
+    {"_EDI_clear_result_key_store_cpp", (DL_FUNC) &_EDI_clear_result_key_store_cpp, 0},
+    {"_EDI_init_result_key_store_cpp", (DL_FUNC) &_EDI_init_result_key_store_cpp, 1},
+    {"_EDI_add_to_result_key_store_cpp", (DL_FUNC) &_EDI_add_to_result_key_store_cpp, 11},
+    {"_EDI_check_in_result_key_store_cpp", (DL_FUNC) &_EDI_check_in_result_key_store_cpp, 11},
+    {"_EDI_result_key_store_size_cpp", (DL_FUNC) &_EDI_result_key_store_size_cpp, 0},
     {"_EDI_compute_ridit_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_distr_parallel_cpp, 4},
     {"_EDI_compute_ridit_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ridit_bootstrap_parallel_cpp, 5},
     {"_EDI_ols_hc2_setup_cpp", (DL_FUNC) &_EDI_ols_hc2_setup_cpp, 1},

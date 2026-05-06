@@ -1706,6 +1706,26 @@ randomization_loop_cpp <- function(r, duplicate_design_fn, duplicate_inference_f
     .Call(`_EDI_randomization_loop_cpp`, r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
 }
 
+clear_result_key_store_cpp <- function() {
+    invisible(.Call(`_EDI_clear_result_key_store_cpp`))
+}
+
+init_result_key_store_cpp <- function(expected_size) {
+    invisible(.Call(`_EDI_init_result_key_store_cpp`, expected_size))
+}
+
+add_to_result_key_store_cpp <- function(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start = 1L, end = -1L) {
+    invisible(.Call(`_EDI_add_to_result_key_store_cpp`, response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start, end))
+}
+
+check_in_result_key_store_cpp <- function(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start = 1L, end = -1L) {
+    .Call(`_EDI_check_in_result_key_store_cpp`, response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type, start, end)
+}
+
+result_key_store_size_cpp <- function() {
+    .Call(`_EDI_result_key_store_size_cpp`)
+}
+
 compute_ridit_distr_parallel_cpp <- function(y, w_mat, reference, num_cores) {
     .Call(`_EDI_compute_ridit_distr_parallel_cpp`, y, w_mat, reference, num_cores)
 }

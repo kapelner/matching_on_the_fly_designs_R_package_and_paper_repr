@@ -144,6 +144,7 @@ FixedDesign = R6::R6Class("FixedDesign",
 		preferred_num_bins_for_continuous_covariate = NULL,
 		B_target = NULL,
 		exact_num_blocks = FALSE,
+		equal_block_sizes = TRUE,
 
 		get_strata_keys = function(){
 			n = private$t
@@ -184,6 +185,14 @@ FixedDesign = R6::R6Class("FixedDesign",
 			}
 
 			num_blocks = length(unique(keys))
+			if (isTRUE(private$equal_block_sizes)) {
+				block_counts = as.integer(table(keys))
+				if (length(block_counts) > 1L && any(block_counts != block_counts[1L])) {
+					stop("equal_block_sizes = TRUE but the strata produced unequal block sizes (",
+						paste(sort(unique(block_counts)), collapse = ", "),
+						"). Set equal_block_sizes = FALSE or adjust your covariate binning.")
+				}
+			}
 			if (isTRUE(private$exact_num_blocks)) {
 				if (is.null(private$B_target)) {
 					stop("exact_num_blocks requires B_target.")

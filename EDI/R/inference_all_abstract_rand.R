@@ -56,6 +56,22 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (!is.null(fast_distr)) return(fast_distr)
 			}
 
+			if (!isTRUE(debug) && !is.null(permutations) &&
+				private$has_private_method("supports_reusable_bootstrap_worker") &&
+				isTRUE(tryCatch(private$supports_reusable_bootstrap_worker(), error = function(e) FALSE)) &&
+				is.null(private[["custom_randomization_statistic_function"]])) {
+				actual_rand_cores = private$effective_parallel_cores("rand_pval", self$num_cores)
+				return(private$compute_randomization_distr_via_reused_worker_states(
+					permutations = permutations,
+					delta = delta,
+					transform_responses = transform_responses,
+					actual_rand_cores = actual_rand_cores,
+					show_progress = show_progress,
+					setup = setup,
+					zero_one_logit_clamp = zero_one_logit_clamp
+				))
+			}
+
 			custom_stat_analysis = private$analyze_custom_randomization_statistic()
 			use_lightweight_custom_stat = isTRUE(custom_stat_analysis$can_use_lightweight_yw_only)
 			use_perms = !is.null(permutations) && (!is.null(permutations$w_mat) || length(permutations) >= r)
@@ -189,9 +205,24 @@ InferenceRand = R6::R6Class("InferenceRand",
 					actual_rand_cores = 1L
 				}
 			} else if (actual_rand_cores > 1L && !need_thread_objs) {
-				# Lightweight stats (yw only) are so fast that fork overhead usually dominates
-				# unless r is very large. Default to serial for lightweight unless num_cores is small.
-				if (r < 2000) actual_rand_cores = 1L
+				# Use warmup timing for the lightweight path, same guard as the thread-obj path above.
+				do_warmup_iter_lw = function() {
+					private$run_randomization_iteration(
+						NULL, NULL,
+						if (use_perms) 1L else NULL,
+						permutations, delta, transform_responses,
+						setup$y_delta, setup$base_template_y, setup$base_template_dead,
+						custom_stat_analysis, setup$lightweight_custom_context,
+						zero_one_logit_clamp = zero_one_logit_clamp
+					)
+				}
+				system.time(do_warmup_iter_lw())
+				t_lw_warmup = system.time(do_warmup_iter_lw())[[3]]
+				fork_cl = get_global_fork_cluster()
+				fork_overhead_estimate = if (!is.null(fork_cl)) 0.01 else 0.5
+				if (t_lw_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0) {
+					actual_rand_cores = 1L
+				}
 			}
 
 			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
@@ -300,6 +331,52 @@ InferenceRand = R6::R6Class("InferenceRand",
 				delta = round(as.numeric(delta) / resolution) * resolution
 			}
 			format(as.numeric(delta), scientific = TRUE, digits = 17)
+		},
+
+		compute_randomization_distr_via_reused_worker_states = function(permutations, delta, transform_responses, actual_rand_cores, show_progress, setup, zero_one_logit_clamp) {
+			nsim = if (!is.null(permutations$w_mat)) ncol(permutations$w_mat) else length(permutations)
+			if (!isTRUE(nsim > 0L)) return(numeric(0))
+
+			get_perm_w = if (!is.null(permutations$w_mat)) {
+				w_mat_local = permutations$w_mat
+				function(i) w_mat_local[, i]
+			} else {
+				function(i) {
+					p = permutations[[i]]
+					if (is.list(p) && !is.null(p$w)) p$w else p
+				}
+			}
+
+			chunk_n = max(1L, min(as.integer(actual_rand_cores), nsim))
+			chunk_id = ceiling(seq_len(nsim) / ceiling(nsim / chunk_n))
+			chunks = split(seq_len(nsim), chunk_id)
+
+			run_chunk = function(idxs) {
+				worker_state = private$create_bootstrap_worker_state()
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) {
+					perm_w = get_perm_w(idxs[k])
+					out[k] = tryCatch({
+						private$load_randomization_perm_into_worker(
+							worker_state, perm_w, delta, transform_responses,
+							setup$y_delta, setup$base_template_y, setup$base_template_dead,
+							zero_one_logit_clamp
+						)
+						as.numeric(private$compute_bootstrap_worker_estimate(worker_state))[1L]
+					}, error = function(e) NA_real_)
+				}
+				out
+			}
+
+			if (actual_rand_cores <= 1L) return(as.numeric(run_chunk(seq_len(nsim))))
+
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_rand_cores,
+				budget = 1L,
+				show_progress = show_progress
+			), use.names = FALSE))
 		},
 
 		build_fast_randomization_worker_cache = function(prev_cache = NULL, preserve_cache_keys = character()){

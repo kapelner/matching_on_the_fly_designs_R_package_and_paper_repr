@@ -30,6 +30,13 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'   does not produce exactly `B_target` blocks.
 		#' @param exact_num_blocks Whether to require the greedy key construction to produce
 		#'   exactly `B_target` blocks. Default `FALSE`.
+		#' @param equal_block_sizes Whether to require all blocks to have the same number of
+		#'   subjects. Default `TRUE`. When `TRUE` and both `n` and `B_target` are known at
+		#'   construction time, an error is raised immediately if `n` is not divisible by
+		#'   `B_target`. A second check fires when subjects are added: if the covariate-based
+		#'   strata produce unequal block counts the design errors at that point. Set to
+		#'   `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
+		#'   `InferenceIncidExtendedRobins` still require equal block sizes regardless).
 		#' @param num_bins_for_continuous_covariate Deprecated alias for
 		#'   `preferred_num_bins_for_continuous_covariate`.
 		#' @param verbose A flag for verbosity.
@@ -46,6 +53,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						preferred_num_bins_for_continuous_covariate = 2,
 						B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
 						exact_num_blocks = FALSE,
+						equal_block_sizes = TRUE,
 						num_bins_for_continuous_covariate = NULL,
 						verbose = FALSE,
 				missingness_method = "impute",
@@ -58,12 +66,20 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
 				if (!is.null(B_target) && !is.na(B_target)) assertCount(B_target, positive = TRUE)
 				assertLogical(exact_num_blocks, len = 1)
+				assertLogical(equal_block_sizes, len = 1)
+				if (isTRUE(equal_block_sizes) && !is.null(n) && !is.null(B_target) && !is.na(B_target)) {
+					if (n %% B_target != 0L) {
+						stop("equal_block_sizes = TRUE requires n to be divisible by B_target, but n = ",
+							n, " is not divisible by B_target = ", B_target, ".")
+					}
+				}
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$strata_cols = strata_cols
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
 			private$B_target = B_target
 			private$exact_num_blocks = exact_num_blocks
+			private$equal_block_sizes = equal_block_sizes
 			private$uses_covariates = TRUE
 		},
 

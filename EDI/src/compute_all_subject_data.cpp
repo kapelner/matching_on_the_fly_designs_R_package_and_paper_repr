@@ -127,14 +127,18 @@ static SubsetResult process_subset(
 
 	int n_subset = row_indices.size();
 
-	// Extract subset rows
-	MatrixXd Xsub(n_subset, p);
-	for (int i = 0; i < n_subset; ++i) {
-		Xsub.row(i) = X.row(row_indices[i]);
+	// Find varying columns directly from the source rows to avoid building a full subset copy first.
+	std::vector<int> var_cols;
+	var_cols.reserve(p);
+	for (int j = 0; j < p; ++j) {
+		const double first_val = X(row_indices[0], j);
+		for (int i = 1; i < n_subset; ++i) {
+			if (X(row_indices[i], j) != first_val) {
+				var_cols.push_back(j);
+				break;
+			}
+		}
 	}
-
-	// Find columns with variation in this subset
-	std::vector<int> var_cols = which_cols_vary(Xsub);
 
 	if (var_cols.empty()) {
 		// No varying columns
@@ -144,25 +148,28 @@ static SubsetResult process_subset(
 		return result;
 	}
 
-	// Extract only varying columns
-	MatrixXd Xvar = extract_cols(Xsub, var_cols);
-	VectorXd xt_var = extract_row_cols(X, t - 1, var_cols);
+	VectorXd xt_var(var_cols.size());
+	for (size_t j = 0; j < var_cols.size(); ++j) {
+		xt_var(j) = X(t - 1, var_cols[j]);
+	}
 
 	std::vector<int> indep_cols;
 
 	if (scaled && n_subset > 1) {
 		// Append current subject's row for scaling
 		MatrixXd Xvar_with_t(n_subset + 1, var_cols.size());
-		Xvar_with_t.topRows(n_subset) = Xvar;
+		for (int i = 0; i < n_subset; ++i) {
+			for (size_t j = 0; j < var_cols.size(); ++j) {
+				Xvar_with_t(i, j) = X(row_indices[i], var_cols[j]);
+			}
+		}
 		Xvar_with_t.row(n_subset) = xt_var.transpose();
 
 		// Scale all together
 		Xvar_with_t = scale_columns(Xvar_with_t);
 
 		// Handle NaN from constant columns (set to 0)
-		Xvar_with_t = Xvar_with_t.unaryExpr([](double v) {
-			return std::isnan(v) ? 0.0 : v;
-		});
+		Xvar_with_t = Xvar_with_t.array().isNaN().select(0.0, Xvar_with_t.array()).matrix();
 
 		// Find independent columns after scaling
 		indep_cols = find_independent_cols(Xvar_with_t, tol);
@@ -183,6 +190,12 @@ static SubsetResult process_subset(
 		result.xt = Xfinal.row(n_subset).transpose();
 	} else {
 		// Not scaled: find independent columns directly
+		MatrixXd Xvar(n_subset, var_cols.size());
+		for (int i = 0; i < n_subset; ++i) {
+			for (size_t j = 0; j < var_cols.size(); ++j) {
+				Xvar(i, j) = X(row_indices[i], var_cols[j]);
+			}
+		}
 		indep_cols = find_independent_cols(Xvar, tol);
 
 		if (indep_cols.empty()) {

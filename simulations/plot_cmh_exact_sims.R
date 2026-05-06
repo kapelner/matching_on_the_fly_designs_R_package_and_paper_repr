@@ -1,9 +1,13 @@
-library(data.table)
-library(ggplot2)
+pacman::p_load(data.table, R.utils, ggplot2)
 
-Nrep = 30
-results_file = sprintf("simulations/cmh_exact_sims_results_Nrep_%d.csv", Nrep)
-raw_results_dt = fread(results_file)
+Nrep = 3000
+tmpdir = tempfile()
+dir.create(tmpdir)
+results_file = sprintf("cmh_exact_sims_results_Nrep_%d.tar.bz2", Nrep)
+utils::untar(results_file, exdir = tmpdir)
+
+csv_file = file.path(tmpdir, sprintf("cmh_exact_sims_results_Nrep_%d.csv", Nrep))
+raw_results_dt = data.table::fread(csv_file)
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
 raw_results_dt[, ci_length := ci_hi - ci_lo]
@@ -120,3 +124,4 @@ for (p_ in unique(results_dt$p)) {
               sprintf("Size (betaT=0) | p=%s, log_odds_model=%s",     p_, dt_val), stem_size, save_PDF = TRUE, plot = FALSE, hline_linetype = "dotted")
   }
 }
+

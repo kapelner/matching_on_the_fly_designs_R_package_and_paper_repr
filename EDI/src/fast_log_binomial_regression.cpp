@@ -103,18 +103,14 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
 
   for (int iter = 0; iter < maxit; ++iter) {
     Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
-    for (int i = 0; i < n; ++i) {
-      if (link_type == BinomialConstrainedLink::kLog) {
-        if (eta[i] >= kMaxEtaLog) eta[i] = kMaxEtaLog;
-      } else {
-        eta[i] = clamp_prob(eta[i]);
-      }
-      mu[i] = safe_mu_from_eta(eta[i], link_type);
-      if (link_type == BinomialConstrainedLink::kLog) {
-        w[i] = std::max(mu[i] / std::max(1.0 - mu[i], kEps), kEps);
-      } else {
-        w[i] = std::max(1.0 / std::max(mu[i] * (1.0 - mu[i]), kEps), kEps);
-      }
+    if (link_type == BinomialConstrainedLink::kLog) {
+      eta = eta.array().min(kMaxEtaLog).matrix();
+      mu = eta.array().exp().matrix();
+      w = (mu.array() / (1.0 - mu.array()).max(kEps)).max(kEps).matrix();
+    } else {
+      eta = eta.array().max(kMinMu).min(kMaxMu).matrix();
+      mu = eta;
+      w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
     }
 
     Eigen::VectorXd z = (link_type == BinomialConstrainedLink::kLog) ?
@@ -122,9 +118,8 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
       y;
     Eigen::VectorXd z_adj = z - eta_fixed;
 
-    Eigen::MatrixXd XtW = X_free.transpose() * w.asDiagonal();
-    Eigen::MatrixXd XtWX = XtW * X_free;
-    Eigen::VectorXd XtWz = XtW * z_adj;
+    Eigen::MatrixXd XtWX = weighted_crossprod(X_free, w);
+    Eigen::VectorXd XtWz = weighted_crossprod_rhs(X_free, w, z_adj);
 
     Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
     if (ldlt.info() != Eigen::Success) {
@@ -163,18 +158,14 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   }
 
   Eigen::VectorXd eta = X * beta;
-  for (int i = 0; i < n; ++i) {
-    if (link_type == BinomialConstrainedLink::kLog) {
-      if (eta[i] >= kMaxEtaLog) eta[i] = kMaxEtaLog;
-    } else {
-      eta[i] = clamp_prob(eta[i]);
-    }
-    mu[i] = safe_mu_from_eta(eta[i], link_type);
-    if (link_type == BinomialConstrainedLink::kLog) {
-      w[i] = std::max(mu[i] / std::max(1.0 - mu[i], kEps), kEps);
-    } else {
-      w[i] = std::max(1.0 / std::max(mu[i] * (1.0 - mu[i]), kEps), kEps);
-    }
+  if (link_type == BinomialConstrainedLink::kLog) {
+    eta = eta.array().min(kMaxEtaLog).matrix();
+    mu = eta.array().exp().matrix();
+    w = (mu.array() / (1.0 - mu.array()).max(kEps)).max(kEps).matrix();
+  } else {
+    eta = eta.array().max(kMinMu).min(kMaxMu).matrix();
+    mu = eta;
+    w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
   }
 
   return List::create(
@@ -212,7 +203,7 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
   FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
   Eigen::MatrixXd X_free(Xmm.rows(), fixed_spec.free_idx.size());
   for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = Xmm.col(fixed_spec.free_idx[col]);
-  Eigen::MatrixXd XtWX = X_free.transpose() * w.asDiagonal() * X_free;
+  Eigen::MatrixXd XtWX = weighted_crossprod(X_free, w);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     return List::create(

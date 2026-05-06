@@ -11,6 +11,11 @@ using namespace Eigen;
 
 namespace {
 
+inline Eigen::ArrayXd plogis_array_clamped(const Eigen::ArrayXd& eta) {
+    const Eigen::ArrayXd eta_clamped = eta.max(-20.0).min(20.0);
+    return 1.0 / (1.0 + (-eta_clamped).exp());
+}
+
 struct ContinuationRatioObjective {
     const MatrixXd& X_aug;
     const VectorXd& z;
@@ -20,33 +25,20 @@ struct ContinuationRatioObjective {
 
     double operator()(const VectorXd& beta, VectorXd& grad) const {
         VectorXd eta = X_aug * beta;
-        VectorXd mu = eta.unaryExpr([](double x) {
-            if (x > 20) return 1.0;
-            if (x < -20) return 0.0;
-            return 1.0 / (1.0 + std::exp(-x));
-        });
+        VectorXd mu = plogis_array_clamped(eta.array()).matrix();
         grad = X_aug.transpose() * (mu - z); // Negative log-likelihood gradient
-        
-        double nll = 0.0;
-        for (int i = 0; i < z.size(); ++i) {
-            if (z[i] > 0.5) {
-                nll -= std::log(std::max(1e-12, mu[i]));
-            } else {
-                nll -= std::log(std::max(1e-12, 1.0 - mu[i]));
-            }
-        }
-        return nll;
+
+        const Eigen::ArrayXd mu_arr = mu.array();
+        const Eigen::ArrayXd log_mu = mu_arr.max(1e-12).log();
+        const Eigen::ArrayXd log_one_minus_mu = (1.0 - mu_arr).max(1e-12).log();
+        return -(z.array() * log_mu + (1.0 - z.array()) * log_one_minus_mu).sum();
     }
 
     MatrixXd hessian(const VectorXd& beta) const {
         VectorXd eta = X_aug * beta;
-        VectorXd mu = eta.unaryExpr([](double x) {
-            if (x > 20) return 1.0;
-            if (x < -20) return 0.0;
-            return 1.0 / (1.0 + std::exp(-x));
-        });
+        VectorXd mu = plogis_array_clamped(eta.array()).matrix();
         VectorXd w = mu.array() * (1.0 - mu.array());
-        return X_aug.transpose() * w.asDiagonal() * X_aug;
+        return weighted_crossprod(X_aug, w);
     }
 };
 
@@ -108,11 +100,7 @@ Eigen::VectorXd get_continuation_ratio_regression_score_cpp(const Eigen::MatrixX
 	VectorXd z = aug["z"];
 	if (X_aug.rows() == 0) return VectorXd::Zero(params.size());
 	VectorXd eta = X_aug * params;
-	VectorXd mu = eta.unaryExpr([](double x) {
-		if (x > 20) return 1.0;
-		if (x < -20) return 0.0;
-		return 1.0 / (1.0 + std::exp(-x));
-	});
+	VectorXd mu = plogis_array_clamped(eta.array()).matrix();
 	return X_aug.transpose() * (z - mu);
 }
 
@@ -124,13 +112,9 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::Matri
 	MatrixXd X_aug = aug["X_aug"];
 	if (X_aug.rows() == 0) return MatrixXd::Zero(params.size(), params.size());
 	VectorXd eta = X_aug * params;
-	VectorXd mu = eta.unaryExpr([](double x) {
-		if (x > 20) return 1.0;
-		if (x < -20) return 0.0;
-		return 1.0 / (1.0 + std::exp(-x));
-	});
+	VectorXd mu = plogis_array_clamped(eta.array()).matrix();
 	VectorXd w = mu.array() * (1.0 - mu.array());
-	return -(X_aug.transpose() * w.asDiagonal() * X_aug);
+	return -weighted_crossprod(X_aug, w);
 }
 
 // [[Rcpp::export]]

@@ -411,7 +411,17 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		combine_reservoir_into_glmm = function() TRUE,
 
 		compute_basic_match_data = function(){
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$get_X())
+			m_vec = private$m
+			if (is.null(m_vec)) {
+				m_vec = rep(NA_integer_, private$n)
+			}
+			m_vec[is.na(m_vec)] = 0L
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(
+				as.integer(private$w),
+				as.integer(m_vec),
+				as.numeric(private$y),
+				as.matrix(private$get_X())
+			)
 		},
 
 		clear_nonestimable_state = function(){

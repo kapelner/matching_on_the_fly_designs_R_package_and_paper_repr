@@ -2,6 +2,25 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+namespace {
+
+inline Eigen::ArrayXd plogis_array(const Eigen::ArrayXd& eta) {
+	const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (eta >= 0.0);
+	const Eigen::ArrayXd pos = 1.0 / (1.0 + (-eta).exp());
+	const Eigen::ArrayXd neg_exp = eta.exp();
+	const Eigen::ArrayXd neg = neg_exp / (1.0 + neg_exp);
+	return nonnegative.select(pos, neg);
+}
+
+inline Eigen::ArrayXd log1pexp_array(const Eigen::ArrayXd& eta) {
+	const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (eta >= 0.0);
+	const Eigen::ArrayXd pos = eta + (1.0 + (-eta).exp()).log();
+	const Eigen::ArrayXd neg = (1.0 + eta.exp()).log();
+	return nonnegative.select(pos, neg);
+}
+
+}  // namespace
+
 // Fast optimizer for the combined conditional-Poisson + Poisson log-likelihood:
 //   L_total = L_cond_Poisson(pairs) + L_Poisson(reservoir)
 //
@@ -49,7 +68,7 @@ static List cpoisson_combined_score_info_cpp_impl(
 
 	VectorXd eta_p = VectorXd::Constant(nd, beta_T);
 	if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
-	ArrayXd p_k_arr = 1.0 / (1.0 + (-eta_p.array()).exp());
+	ArrayXd p_k_arr = plogis_array(eta_p.array());
 	ArrayXd w_p_arr = n_k_v.array() * p_k_arr * (1.0 - p_k_arr);
 	VectorXd score_p = (yT_v.array() - n_k_v.array() * p_k_arr).matrix();
 	score[1] += score_p.sum();
@@ -61,7 +80,7 @@ static List cpoisson_combined_score_info_cpp_impl(
 		VectorXd Xdw = X_diff_v.transpose() * w_p_vec;
 		info.block(1, 2, 1, p).noalias() += Xdw.transpose();
 		info.block(2, 1, p, 1).noalias() += Xdw;
-		info.block(2, 2, p, p).noalias() += X_diff_v.transpose() * w_p_vec.asDiagonal() * X_diff_v;
+		info.block(2, 2, p, p).noalias() += weighted_crossprod(X_diff_v, w_p_vec);
 	}
 
 	VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
@@ -85,7 +104,7 @@ static List cpoisson_combined_score_info_cpp_impl(
 		info.block(2, 0, p, 1).noalias() += Xrmu;
 		info.block(1, 2, 1, p).noalias() += Xrwmu.transpose();
 		info.block(2, 1, p, 1).noalias() += Xrwmu;
-		info.block(2, 2, p, p).noalias() += X_r.transpose() * mu_r.asDiagonal() * X_r;
+		info.block(2, 2, p, p).noalias() += weighted_crossprod(X_r, mu_r);
 	}
 
 	return List::create(Named("score") = score, Named("info") = info);
@@ -108,19 +127,16 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 	const double beta_T = params[1];
 	const VectorXd beta_xs = params.tail(p);
 
-	double loglik = 0.0;
 	VectorXd eta_p = VectorXd::Constant(nd, beta_T);
 	if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
-	for (int i = 0; i < nd; ++i) {
-		const double eta = eta_p[i];
-		const double log_denom = eta > 0.0 ? eta + std::log1p(std::exp(-eta)) : std::log1p(std::exp(eta));
-		loglik += yT_v[i] * eta - n_k_v[i] * log_denom;
-	}
+	double loglik =
+		(yT_v.array() * eta_p.array() - n_k_v.array() * log1pexp_array(eta_p.array())).sum();
 
 	VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
 	if (p > 0) eta_r.noalias() += X_r * beta_xs;
+	loglik += (y_r.array() * eta_r.array() - eta_r.array().exp()).sum();
 	for (int i = 0; i < nR; ++i) {
-		loglik += y_r[i] * eta_r[i] - std::exp(eta_r[i]) - R::lgammafn(y_r[i] + 1.0);
+		loglik -= R::lgammafn(y_r[i] + 1.0);
 	}
 	return -loglik;
 }
@@ -234,7 +250,7 @@ List fast_cpoisson_combined_with_var_cpp(
 		if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
 
 		// Logistic probabilities and Fisher weights
-		ArrayXd  p_k_arr  = 1.0 / (1.0 + (-eta_p.array()).exp());
+		ArrayXd  p_k_arr  = plogis_array(eta_p.array());
 		ArrayXd  w_p_arr  = n_k_v.array() * p_k_arr * (1.0 - p_k_arr);
 		VectorXd resid_p  = (n_k_v.array() * p_k_arr - yT_v.array()).matrix();
 
@@ -250,7 +266,7 @@ List fast_cpoisson_combined_with_var_cpp(
 			VectorXd Xdw = X_diff_v.transpose() * w_p_vec;        // p-vector
 			H.block(1, 2, 1, p).noalias() += Xdw.transpose();
 			H.block(2, 1, p, 1).noalias() += Xdw;
-			H.block(2, 2, p, p).noalias() += X_diff_v.transpose() * w_p_vec.asDiagonal() * X_diff_v;
+			H.block(2, 2, p, p).noalias() += weighted_crossprod(X_diff_v, w_p_vec);
 		}
 
 		// ---- Reservoir component (marginal Poisson) -----------------------
@@ -280,7 +296,7 @@ List fast_cpoisson_combined_with_var_cpp(
 			H.block(2, 0, p, 1).noalias() += Xrmu;
 			H.block(1, 2, 1, p).noalias() += Xrwmu.transpose();
 			H.block(2, 1, p, 1).noalias() += Xrwmu;
-			H.block(2, 2, p, p).noalias() += X_r.transpose() * mu_r.asDiagonal() * X_r;
+			H.block(2, 2, p, p).noalias() += weighted_crossprod(X_r, mu_r);
 		}
 
 		// ---- Newton step over free parameters ----------------------------

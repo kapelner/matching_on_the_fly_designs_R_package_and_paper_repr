@@ -162,29 +162,25 @@ public:
         std::vector<double> score_vals;
         MatrixXd dscore_dgamma;
         compute_scores(gamma, score_vals, dscore_dgamma);
+        const Map<const VectorXd> score_vec(score_vals.data(), m_K);
 
-        std::vector<double> logits(m_K, 0.0);
-        std::vector<double> probs(m_K, 0.0);
+        VectorXd logits = VectorXd::Zero(m_K);
+        VectorXd probs = VectorXd::Zero(m_K);
         double ll = 0.0;
 
         for (int i = 0; i < m_n; ++i) {
-            double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
-            logits[0] = 0.0;
+            const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+            logits.setZero();
             for (int j = 2; j <= m_K; ++j) {
-                logits[j - 1] = alpha[j - 2] + score_vals[j - 1] * eta;
+                logits[j - 1] = alpha[j - 2] + score_vec[j - 1] * eta;
             }
 
-            double max_logit = *std::max_element(logits.begin(), logits.end());
-            double denom = 0.0;
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] = std::exp(logits[j] - max_logit);
-                denom += probs[j];
-            }
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] /= denom;
-            }
+            const double max_logit = logits.maxCoeff();
+            probs = (logits.array() - max_logit).exp().matrix();
+            const double denom = probs.sum();
+            probs /= denom;
 
-            int yi = m_y[i] - 1;
+            const int yi = m_y[i] - 1;
             ll += logits[yi] - max_logit - std::log(denom);
 
             if (grad != NULL) {
@@ -193,23 +189,14 @@ public:
                 }
 
                 if (m_p > 0) {
-                    double observed_score = score_vals[yi];
-                    double expected_score = 0.0;
-                    for (int j = 0; j < m_K; ++j) {
-                        expected_score += probs[j] * score_vals[j];
-                    }
+                    const double observed_score = score_vec[yi];
+                    const double expected_score = probs.dot(score_vec);
                     grad->segment(n_alpha, m_p).noalias() += m_X.row(i).transpose() * (observed_score - expected_score);
                 }
 
                 if (n_gamma > 0) {
-                    for (int r = 0; r < n_gamma; ++r) {
-                        double observed_dscore = dscore_dgamma(yi, r);
-                        double expected_dscore = 0.0;
-                        for (int j = 0; j < m_K; ++j) {
-                            expected_dscore += probs[j] * dscore_dgamma(j, r);
-                        }
-                        (*grad)[n_alpha + m_p + r] += eta * (observed_dscore - expected_dscore);
-                    }
+                    const VectorXd expected_dscore = dscore_dgamma.transpose() * probs;
+                    grad->tail(n_gamma).noalias() += eta * (dscore_dgamma.row(yi).transpose() - expected_dscore);
                 }
             }
         }
@@ -229,22 +216,23 @@ public:
         MatrixXd dscore_dgamma;
         std::vector<MatrixXd> d2score_dgamma2;
         compute_scores_with_second_derivatives(gamma, score_vals, dscore_dgamma, d2score_dgamma2);
+        const Map<const VectorXd> score_vec(score_vals.data(), m_K);
 
         MatrixXd H = MatrixXd::Zero(d, d);
-        std::vector<double> logits(m_K, 0.0);
-        std::vector<double> probs(m_K, 0.0);
+        VectorXd logits = VectorXd::Zero(m_K);
+        VectorXd probs = VectorXd::Zero(m_K);
         std::vector<VectorXd> logit_grad(m_K, VectorXd::Zero(d));
         std::vector<MatrixXd> logit_hess(m_K, MatrixXd::Zero(d, d));
 
         for (int i = 0; i < m_n; ++i) {
             const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
-            logits[0] = 0.0;
+            logits.setZero();
             logit_grad[0].setZero();
             logit_hess[0].setZero();
 
             for (int j = 2; j <= m_K; ++j) {
                 const int cat = j - 1;
-                logits[cat] = params[j - 2] + score_vals[cat] * eta;
+                logits[cat] = params[j - 2] + score_vec[cat] * eta;
 
                 VectorXd& zj = logit_grad[cat];
                 MatrixXd& Bj = logit_hess[cat];
@@ -253,7 +241,7 @@ public:
 
                 zj[j - 2] = 1.0;
                 if (m_p > 0) {
-                    zj.segment(n_alpha, m_p).noalias() = score_vals[cat] * m_X.row(i).transpose();
+                    zj.segment(n_alpha, m_p).noalias() = score_vec[cat] * m_X.row(i).transpose();
                 }
                 if (n_gamma > 0) {
                     zj.tail(n_gamma).noalias() = eta * dscore_dgamma.row(cat).transpose();
@@ -272,15 +260,9 @@ public:
                 }
             }
 
-            double max_logit = *std::max_element(logits.begin(), logits.end());
-            double denom = 0.0;
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] = std::exp(logits[j] - max_logit);
-                denom += probs[j];
-            }
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] /= denom;
-            }
+            const double max_logit = logits.maxCoeff();
+            probs = (logits.array() - max_logit).exp().matrix();
+            probs /= probs.sum();
 
             VectorXd mean_grad = VectorXd::Zero(d);
             MatrixXd mean_hess = MatrixXd::Zero(d, d);

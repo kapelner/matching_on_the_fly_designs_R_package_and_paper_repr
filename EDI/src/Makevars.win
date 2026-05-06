@@ -18,17 +18,37 @@
 PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DNDEBUG -DEIGEN_NO_DEBUG
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -ltbb12 -fstack-protector
 
-# Optional local-only speed build.
+# SIMD: enabled by default via -march=native so the compiler uses every
+# instruction set the build machine supports (SSE4.2, AVX2, FMA, AVX-512, ...).
+# Disable for portable/cross-compiled builds: EDI_PORTABLE=1 R CMD INSTALL EDI
+EDI_PORTABLE ?= 0
+ifeq ($(EDI_PORTABLE),0)
+PKG_CXXFLAGS += -march=native -mtune=native
+endif
+
+# Disable vectorization/autovectorization for benchmark comparisons.
+# Enable with: EDI_DISABLE_VECTORIZATION=1 R CMD INSTALL EDI
+EDI_DISABLE_VECTORIZATION ?= 0
+ifeq ($(EDI_DISABLE_VECTORIZATION),1)
+PKG_CPPFLAGS += -DEIGEN_DONT_VECTORIZE -DEIGEN_UNALIGNED_VECTORIZE=0
+PKG_CXXFLAGS += -fno-tree-vectorize
+endif
+
+# Optional O3 optimisation (separate from SIMD above).
 # Enable with: EDI_NATIVE_SPEED=1 R CMD INSTALL EDI
 EDI_NATIVE_SPEED ?= 0
 ifeq ($(EDI_NATIVE_SPEED),1)
-PKG_CXXFLAGS += -O3 -march=native -mtune=native
+PKG_CXXFLAGS += -O3
 endif
 
-# Optional local-only link-time optimization.
-# Enable with: EDI_NATIVE_LTO=1 R CMD INSTALL EDI
+# LTO is disabled by default with -fno-lto to guard against system-level -flto
+# flags and a known GCC 15 LTO internal compiler error.
+# Enable explicitly with: EDI_NATIVE_LTO=1 R CMD INSTALL EDI
 EDI_NATIVE_LTO ?= 0
 ifeq ($(EDI_NATIVE_LTO),1)
 PKG_CXXFLAGS += -flto
 PKG_LIBS += -flto
+else
+PKG_CXXFLAGS += -fno-lto
+PKG_LIBS += -fno-lto
 endif

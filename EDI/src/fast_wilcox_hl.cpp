@@ -57,12 +57,13 @@ double hl_from_groups(const std::vector<double>& y_t, const std::vector<double>&
         return NA_REAL;
     }
 
-    std::vector<double> diffs;
-    diffs.reserve(y_t.size() * y_c.size());
-    for (double yt : y_t) {
-        for (double yc : y_c) {
-            diffs.push_back(yt - yc);
-        }
+    const size_t n_t = y_t.size();
+    const size_t n_c = y_c.size();
+    std::vector<double> diffs(n_t * n_c);
+    for (size_t i = 0; i < n_t; ++i) {
+        double* p = diffs.data() + i * n_c;
+        const double yt = y_t[i];
+        for (size_t j = 0; j < n_c; ++j) p[j] = yt - y_c[j];
     }
 
     return median_in_place(diffs);
@@ -73,13 +74,15 @@ double hl_signed_rank(const std::vector<double>& pair_diffs) {
         return NA_REAL;
     }
 
-    size_t m = pair_diffs.size();
-    std::vector<double> walsh_avgs;
-    walsh_avgs.reserve(m * (m + 1) / 2);
+    const size_t m = pair_diffs.size();
+    std::vector<double> walsh_avgs(m * (m + 1) / 2);
+    size_t k = 0;
     for (size_t i = 0; i < m; ++i) {
-        for (size_t j = i; j < m; ++j) {
-            walsh_avgs.push_back(0.5 * (pair_diffs[i] + pair_diffs[j]));
-        }
+        const double half_di = 0.5 * pair_diffs[i];
+        double* p = walsh_avgs.data() + k;
+        const size_t len = m - i;
+        for (size_t j = 0; j < len; ++j) p[j] = half_di + 0.5 * pair_diffs[i + j];
+        k += len;
     }
 
     return median_in_place(walsh_avgs);
@@ -89,15 +92,16 @@ double estimate_hl_ssq_rank_sum(const std::vector<double>& y_t, const std::vecto
     if (y_t.size() < 2 || y_c.size() < 2) return NA_REAL;
     double sum = 0;
     double sum_sq = 0;
-    int count = 0;
-    for (double yt : y_t) {
-        for (double yc : y_c) {
-            double d = yt - yc;
+    const size_t n_c = y_c.size();
+    for (size_t i = 0; i < y_t.size(); ++i) {
+        const double yt = y_t[i];
+        for (size_t j = 0; j < n_c; ++j) {
+            const double d = yt - y_c[j];
             sum += d;
             sum_sq += d * d;
-            count++;
         }
     }
+    const int count = static_cast<int>(y_t.size() * n_c);
     double var_diffs = (sum_sq - (sum * sum) / count) / (count - 1);
     return var_diffs / (y_t.size() + y_c.size());
 }
@@ -107,16 +111,18 @@ double estimate_hl_ssq_signed_rank(const std::vector<double>& pair_diffs) {
     double sum = 0;
     double sum_sq = 0;
     int count = 0;
-    for (size_t i = 0; i < pair_diffs.size(); ++i) {
-        for (size_t j = i; j < pair_diffs.size(); ++j) {
-            double a = 0.5 * (pair_diffs[i] + pair_diffs[j]);
+    const size_t m = pair_diffs.size();
+    for (size_t i = 0; i < m; ++i) {
+        const double half_di = 0.5 * pair_diffs[i];
+        for (size_t j = i; j < m; ++j) {
+            const double a = half_di + 0.5 * pair_diffs[j];
             sum += a;
             sum_sq += a * a;
-            count++;
         }
+        count += static_cast<int>(m - i);
     }
     double var_walsh = (sum_sq - (sum * sum) / count) / (count - 1);
-    return var_walsh / pair_diffs.size();
+    return var_walsh / m;
 }
 
 double apply_shift(double y_val, double delta, int transform_code, double zero_one_logit_clamp) {

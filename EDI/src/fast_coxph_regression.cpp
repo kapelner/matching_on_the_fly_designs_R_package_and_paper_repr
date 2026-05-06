@@ -10,6 +10,9 @@ using namespace Rcpp;
 
 namespace {
 
+using RowMajorMatrixMap =
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
+
 struct CoxData {
     const Eigen::VectorXd y;
     const Eigen::VectorXd dead;
@@ -57,6 +60,39 @@ struct CoxData {
     }
 
     inline const double* row(int i) const { return X_rowmaj.data() + i * p; }
+    inline RowMajorMatrixMap matrix_map() const { return RowMajorMatrixMap(X_rowmaj.data(), n, p); }
+};
+
+struct CoxWorkspace {
+    Eigen::VectorXd eta;
+    std::vector<double> exp_eta;
+    std::vector<double> r_x_exp;
+    std::vector<double> r_xx_exp;
+    std::vector<double> sum_x_dk;
+    std::vector<double> e_z;
+    std::vector<double> grad;
+    std::vector<double> hess;
+
+    CoxWorkspace() = default;
+
+    CoxWorkspace(int n, int p) :
+        eta(n),
+        exp_eta(n),
+        r_x_exp(p),
+        r_xx_exp(p * p),
+        sum_x_dk(p),
+        e_z(p),
+        grad(p),
+        hess(p * p) {}
+};
+
+std::vector<CoxWorkspace> make_cox_workspaces(const std::vector<CoxData>& strata_data) {
+    std::vector<CoxWorkspace> workspaces;
+    workspaces.reserve(strata_data.size());
+    for (const CoxData& sd : strata_data) {
+        workspaces.emplace_back(sd.n, sd.p);
+    }
+    return workspaces;
 };
 
 // Compute Cox partial log-likelihood, gradient, and Hessian.
@@ -67,48 +103,45 @@ double compute_cox_ll_grad_hess_fast(
         std::vector<double>& grad,   // length p, reset inside
         std::vector<double>& hess,   // length p*p, reset inside
         bool estimate_only,
-        // Pre-allocated work buffers (passed in to avoid re-allocating each Newton step)
-        std::vector<double>& exp_eta,   // length n
-        std::vector<double>& r_x_exp,   // length p
-        std::vector<double>& r_xx_exp,  // length p*p
-        std::vector<double>& sum_x_dk,  // length p
-        std::vector<double>& e_z        // length p
+        CoxWorkspace& workspace
 ) {
     const int n = data.n;
     const int p = data.p;
+    std::vector<double>& exp_eta = workspace.exp_eta;
+    std::vector<double>& r_x_exp = workspace.r_x_exp;
+    std::vector<double>& r_xx_exp = workspace.r_xx_exp;
+    std::vector<double>& sum_x_dk = workspace.sum_x_dk;
+    std::vector<double>& e_z = workspace.e_z;
+    Eigen::Map<Eigen::VectorXd> r_x_exp_map(r_x_exp.data(), p);
+    Eigen::Map<Eigen::MatrixXd> r_xx_exp_map(r_xx_exp.data(), p, p);
+    Eigen::Map<Eigen::VectorXd> sum_x_dk_map(sum_x_dk.data(), p);
+    Eigen::Map<Eigen::VectorXd> e_z_map(e_z.data(), p);
+    Eigen::Map<Eigen::VectorXd> grad_map(grad.data(), p);
+    Eigen::Map<Eigen::MatrixXd> hess_map(hess.data(), p, p);
 
     // --- Compute eta = X * beta and exp_eta ---
-    double max_eta = -1e300;
-    for (int i = 0; i < n; ++i) {
-        const double* xi = data.row(i);
-        double eta_i = 0.0;
-        for (int q = 0; q < p; ++q) eta_i += xi[q] * beta[q];
-        exp_eta[i] = eta_i;  // store eta first; will exp in next pass
-        if (eta_i > max_eta) max_eta = eta_i;
-    }
-    for (int i = 0; i < n; ++i) exp_eta[i] = std::exp(exp_eta[i] - max_eta);
+    Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
+    workspace.eta.noalias() = data.matrix_map() * beta_map;
+    const double max_eta = workspace.eta.maxCoeff();
+    Eigen::Map<Eigen::VectorXd>(exp_eta.data(), n) =
+        (workspace.eta.array() - max_eta).exp().matrix();
 
     // --- Initialise running risk-set accumulators (full risk set) ---
     double r_exp = 0.0;
-    for (int q = 0; q < p; ++q) r_x_exp[q] = 0.0;
-    if (!estimate_only)
-        for (int qq = 0; qq < p * p; ++qq) r_xx_exp[qq] = 0.0;
+    r_x_exp_map.setZero();
+    if (!estimate_only) r_xx_exp_map.setZero();
 
     for (int i = 0; i < n; ++i) {
-        const double* xi = data.row(i);
-        double wi = exp_eta[i];
+        Eigen::Map<const Eigen::VectorXd> xi(data.row(i), p);
+        const double wi = exp_eta[i];
         r_exp += wi;
-        for (int q = 0; q < p; ++q) r_x_exp[q] += xi[q] * wi;
-        if (!estimate_only)
-            for (int q = 0; q < p; ++q)
-                for (int r = 0; r < p; ++r)
-                    r_xx_exp[q * p + r] += xi[q] * xi[r] * wi;
+        r_x_exp_map.noalias() += wi * xi;
+        if (!estimate_only) r_xx_exp_map.noalias() += wi * (xi * xi.transpose());
     }
 
     // --- Reset output grad / hess ---
-    for (int q = 0; q < p; ++q) grad[q] = 0.0;
-    if (!estimate_only)
-        for (int qq = 0; qq < p * p; ++qq) hess[qq] = 0.0;
+    grad_map.setZero();
+    if (!estimate_only) hess_map.setZero();
 
     double neg_ll = 0.0;
     int j = 0;  // pointer into sorted observations
@@ -119,30 +152,26 @@ double compute_cox_ll_grad_hess_fast(
         // Remove observations whose time < tk from the risk set
         while (j < n && data.y[data.idx_asc[j]] < tk) {
             int id = data.idx_asc[j];
-            const double* xi = data.row(id);
-            double wi = exp_eta[id];
+            Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
+            const double wi = exp_eta[id];
             r_exp -= wi;
-            for (int q = 0; q < p; ++q) r_x_exp[q] -= xi[q] * wi;
-            if (!estimate_only)
-                for (int q = 0; q < p; ++q)
-                    for (int r = 0; r < p; ++r)
-                        r_xx_exp[q * p + r] -= xi[q] * xi[r] * wi;
+            r_x_exp_map.noalias() -= wi * xi;
+            if (!estimate_only) r_xx_exp_map.noalias() -= wi * (xi * xi.transpose());
             ++j;
         }
 
         // Accumulate sum over deaths at this event time
         double sum_eta_dk = 0.0;
-        for (int q = 0; q < p; ++q) sum_x_dk[q] = 0.0;
+        sum_x_dk_map.setZero();
         int count_dk = data.event_counts[k];
 
         int m = j;
         while (m < n && data.y[data.idx_asc[m]] == tk) {
             int id = data.idx_asc[m];
             if (data.dead[id] > 0.5) {
-                const double* xi = data.row(id);
-                // eta[id] = log(exp_eta[id]) + max_eta  (recover original eta)
-                sum_eta_dk += std::log(std::max(exp_eta[id], 1e-300)) + max_eta;
-                for (int q = 0; q < p; ++q) sum_x_dk[q] += xi[q];
+                Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
+                sum_eta_dk += workspace.eta[id];
+                sum_x_dk_map.noalias() += xi;
             }
             ++m;
         }
@@ -153,17 +182,14 @@ double compute_cox_ll_grad_hess_fast(
             neg_ll -= (sum_eta_dk - count_dk * (std::log(safe_r) + max_eta));
 
             // e_z = r_x_exp / r_exp
-            for (int q = 0; q < p; ++q) e_z[q] = r_x_exp[q] * inv_r;
+            e_z_map.noalias() = r_x_exp_map * inv_r;
 
             // grad -= (sum_x_dk - count_dk * e_z)
-            for (int q = 0; q < p; ++q)
-                grad[q] -= sum_x_dk[q] - count_dk * e_z[q];
+            grad_map.noalias() -= sum_x_dk_map - count_dk * e_z_map;
 
             if (!estimate_only) {
                 // hess += count_dk * (r_xx_exp * inv_r - e_z * e_z^T)
-                for (int q = 0; q < p; ++q)
-                    for (int r = 0; r < p; ++r)
-                        hess[q * p + r] += count_dk * (r_xx_exp[q * p + r] * inv_r - e_z[q] * e_z[r]);
+                hess_map.noalias() += count_dk * (r_xx_exp_map * inv_r - e_z_map * e_z_map.transpose());
             }
         }
     }
@@ -200,6 +226,7 @@ CoxFitResult cox_newton_raphson(
     beta = apply_fixed_values(beta, fixed_spec);
 
     std::vector<double> grad_vec(p), hess_vec(p * p);
+    std::vector<CoxWorkspace> workspaces = make_cox_workspaces(strata_data);
 
     double old_ll = 1e300;
     int iter = 0;
@@ -213,13 +240,12 @@ CoxFitResult cox_newton_raphson(
         std::vector<double> beta_vec(p);
         for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
 
-        for (const CoxData& sd : strata_data) {
-            std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
-            std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
-            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, g_s, h_s, false,
-                                                 exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int q = 0; q < p; ++q) grad_vec[q] += g_s[q];
-            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += h_s[qq];
+        for (std::size_t s = 0; s < strata_data.size(); ++s) {
+            const CoxData& sd = strata_data[s];
+            CoxWorkspace& ws = workspaces[s];
+            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
+            for (int q = 0; q < p; ++q) grad_vec[q] += ws.grad[q];
+            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
         }
 
         if (std::abs(old_ll - ll) < tol) break;
@@ -253,12 +279,11 @@ CoxFitResult cox_newton_raphson(
         std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
         std::vector<double> beta_vec(p);
         for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
-        for (const CoxData& sd : strata_data) {
-            std::vector<double> g_s(p, 0.0), h_s(p * p, 0.0);
-            std::vector<double> exp_eta(sd.n), r_x_exp(p), r_xx_exp(p * p), sum_x_dk(p), e_z(p);
-            compute_cox_ll_grad_hess_fast(sd, beta_vec, g_s, h_s, false,
-                                           exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += h_s[qq];
+        for (std::size_t s = 0; s < strata_data.size(); ++s) {
+            const CoxData& sd = strata_data[s];
+            CoxWorkspace& ws = workspaces[s];
+            compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
+            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
         }
         Eigen::MatrixXd H_final = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
         res.hess_mat = H_final;
@@ -279,21 +304,21 @@ CoxFitResult cox_newton_raphson(
 class StratifiedCoxObjective {
     const std::vector<CoxData>& m_strata;
     const int m_p;
+    mutable std::vector<CoxWorkspace> m_workspaces;
 public:
     StratifiedCoxObjective(const std::vector<CoxData>& strata, int p)
-        : m_strata(strata), m_p(p) {}
+        : m_strata(strata), m_p(p), m_workspaces(make_cox_workspaces(strata)) {}
 
     // Returns negative partial log-likelihood; fills analytic gradient.
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
         std::vector<double> beta(par.data(), par.data() + m_p);
         std::vector<double> g(m_p, 0.0), h_dummy(m_p * m_p, 0.0);
         double nll = 0.0;
-        for (const CoxData& sd : m_strata) {
-            std::vector<double> g_s(m_p, 0.0), h_s(m_p * m_p, 0.0);
-            std::vector<double> exp_eta(sd.n), r_x_exp(m_p), r_xx_exp(m_p * m_p), sum_x_dk(m_p), e_z(m_p);
-            nll += compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, /*estimate_only=*/true,
-                                                  exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int q = 0; q < m_p; ++q) g[q] += g_s[q];
+        for (std::size_t s = 0; s < m_strata.size(); ++s) {
+            const CoxData& sd = m_strata[s];
+            CoxWorkspace& ws = m_workspaces[s];
+            nll += compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, /*estimate_only=*/true, ws);
+            for (int q = 0; q < m_p; ++q) g[q] += ws.grad[q];
         }
         grad = Eigen::Map<Eigen::VectorXd>(g.data(), m_p);
         return nll;
@@ -303,12 +328,11 @@ public:
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
         std::vector<double> beta(par.data(), par.data() + m_p);
         std::vector<double> h(m_p * m_p, 0.0);
-        for (const CoxData& sd : m_strata) {
-            std::vector<double> g_s(m_p, 0.0), h_s(m_p * m_p, 0.0);
-            std::vector<double> exp_eta(sd.n), r_x_exp(m_p), r_xx_exp(m_p * m_p), sum_x_dk(m_p), e_z(m_p);
-            compute_cox_ll_grad_hess_fast(sd, beta, g_s, h_s, /*estimate_only=*/false,
-                                           exp_eta, r_x_exp, r_xx_exp, sum_x_dk, e_z);
-            for (int qq = 0; qq < m_p * m_p; ++qq) h[qq] += h_s[qq];
+        for (std::size_t s = 0; s < m_strata.size(); ++s) {
+            const CoxData& sd = m_strata[s];
+            CoxWorkspace& ws = m_workspaces[s];
+            compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, /*estimate_only=*/false, ws);
+            for (int qq = 0; qq < m_p * m_p; ++qq) h[qq] += ws.hess[qq];
         }
         return Eigen::Map<Eigen::MatrixXd>(h.data(), m_p, m_p);
     }
@@ -386,6 +410,7 @@ Eigen::MatrixXd compute_robust_vcov(
     int n_total = 0;
     for (const CoxData& sd : strata_data) n_total += sd.n;
     const int p = beta.size();
+    Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
 
     Eigen::MatrixXd U(n_total, p);
     U.setZero();
@@ -394,16 +419,10 @@ Eigen::MatrixXd compute_robust_vcov(
     for (const CoxData& sd : strata_data) {
         const int ns = sd.n;
 
-        double max_eta = -1e300;
+        Eigen::VectorXd eta = sd.matrix_map() * beta_map;
         std::vector<double> exp_eta(ns);
-        for (int i = 0; i < ns; ++i) {
-            const double* xi = sd.row(i);
-            double eta_i = 0.0;
-            for (int q = 0; q < p; ++q) eta_i += xi[q] * beta[q];
-            exp_eta[i] = eta_i;
-            if (eta_i > max_eta) max_eta = eta_i;
-        }
-        for (int i = 0; i < ns; ++i) exp_eta[i] = std::exp(exp_eta[i] - max_eta);
+        Eigen::Map<Eigen::VectorXd>(exp_eta.data(), ns) =
+            (eta.array() - eta.maxCoeff()).exp().matrix();
 
         double r_exp = 0.0;
         std::vector<double> r_x_exp(p, 0.0);

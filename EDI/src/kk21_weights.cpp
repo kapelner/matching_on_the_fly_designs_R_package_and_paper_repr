@@ -6,6 +6,18 @@
 using namespace Rcpp;
 using namespace Eigen;
 
+inline Eigen::ArrayXd clamp_weibull_z_kk(const Eigen::ArrayXd& z) {
+	return z.max(-20.0).min(20.0);
+}
+
+inline Eigen::ArrayXd plogis_array_kk(const Eigen::ArrayXd& eta) {
+	const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (eta >= 0.0);
+	const Eigen::ArrayXd pos = 1.0 / (1.0 + (-eta).exp());
+	const Eigen::ArrayXd neg_exp = eta.exp();
+	const Eigen::ArrayXd neg = neg_exp / (1.0 + neg_exp);
+	return nonnegative.select(pos, neg);
+}
+
 // [[Rcpp::export]]
 NumericVector kk21_continuous_weights_cpp(const NumericMatrix& X,
 											const NumericVector& y) {
@@ -82,34 +94,26 @@ NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X,
 	return weights;
 	}
 
+	const auto X_map = as<Eigen::Map<Eigen::MatrixXd>>(X);
+	const auto y_vec = as<Eigen::Map<Eigen::VectorXd>>(y);
+
 	for (int j = 0; j < p; ++j) {
 	double b0 = 0.0;
 	double b1 = 0.0;
 	bool singular = false;
+	const Eigen::ArrayXd x = X_map.col(j).array();
 
 	for (int iter = 0; iter < maxit; ++iter) {
-		double S0 = 0.0;
-		double S1 = 0.0;
-		double S2 = 0.0;
-		double Sz0 = 0.0;
-		double Sz1 = 0.0;
+		const Eigen::ArrayXd eta = b0 + b1 * x;
+		const Eigen::ArrayXd p_i = plogis_array_kk(eta);
+		const Eigen::ArrayXd w = (p_i * (1.0 - p_i)).max(1e-10);
+		const Eigen::ArrayXd z = eta + (y_vec.array() - p_i) / w;
 
-		for (int i = 0; i < n; ++i) {
-		double x = X(i, j);
-		double eta = b0 + b1 * x;
-		double p_i = 1.0 / (1.0 + std::exp(-eta));
-		double w = p_i * (1.0 - p_i);
-		if (w < 1e-10) {
-			w = 1e-10;
-		}
-		double z = eta + (y[i] - p_i) / w;
-
-		S0 += w;
-		S1 += w * x;
-		S2 += w * x * x;
-		Sz0 += w * z;
-		Sz1 += w * x * z;
-		}
+		double S0 = w.sum();
+		double S1 = (w * x).sum();
+		double S2 = (w * x.square()).sum();
+		double Sz0 = (w * z).sum();
+		double Sz1 = (w * x * z).sum();
 
 		double det = S0 * S2 - S1 * S1;
 		if (det <= eps) {
@@ -134,21 +138,12 @@ NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X,
 		continue;
 	}
 
-	double S0 = 0.0;
-	double S1 = 0.0;
-	double S2 = 0.0;
-	for (int i = 0; i < n; ++i) {
-		double x = X(i, j);
-		double eta = b0 + b1 * x;
-		double p_i = 1.0 / (1.0 + std::exp(-eta));
-		double w = p_i * (1.0 - p_i);
-		if (w < 1e-10) {
-		w = 1e-10;
-		}
-		S0 += w;
-		S1 += w * x;
-		S2 += w * x * x;
-	}
+	const Eigen::ArrayXd eta = b0 + b1 * x;
+	const Eigen::ArrayXd p_i = plogis_array_kk(eta);
+	const Eigen::ArrayXd w = (p_i * (1.0 - p_i)).max(1e-10);
+	double S0 = w.sum();
+	double S1 = (w * x).sum();
+	double S2 = (w * x.square()).sum();
 
 	double det = S0 * S2 - S1 * S1;
 	if (det <= eps || S0 <= 0.0) {
@@ -300,15 +295,11 @@ static bool logistic_reduced_fit_for_score_test(
 
 	for (int iter = 0; iter < maxit; ++iter) {
 	Eigen::VectorXd eta = XS * beta;
-	for (int i = 0; i < n; ++i) {
-		double val = 1.0 / (1.0 + std::exp(-eta[i]));
-		p_hat[i] = val;
-		W_diag[i] = std::max(val * (1.0 - val), 1e-10);
-	}
+	p_hat = (1.0 / (1.0 + (-eta.array()).exp())).matrix();
+	W_diag = (p_hat.array() * (1.0 - p_hat.array())).max(1e-10).matrix();
 	Eigen::VectorXd z = eta + (y - p_hat).cwiseQuotient(W_diag);
-	Eigen::MatrixXd XtW = XS.transpose() * W_diag.asDiagonal();
-	Eigen::MatrixXd XtWX = XtW * XS;
-	Eigen::VectorXd beta_new = XtWX.ldlt().solve(XtW * z);
+	Eigen::MatrixXd XtWX = weighted_crossprod(XS, W_diag);
+	Eigen::VectorXd beta_new = XtWX.ldlt().solve(weighted_crossprod_rhs(XS, W_diag, z));
 	if ((beta - beta_new).norm() < tol) {
 		beta = beta_new;
 		break;
@@ -318,13 +309,10 @@ static bool logistic_reduced_fit_for_score_test(
 
 	// Final quantities for score test
 	Eigen::VectorXd eta = XS * beta;
-	for (int i = 0; i < n; ++i) {
-	double val = 1.0 / (1.0 + std::exp(-eta[i]));
-	p_hat[i] = val;
-	W_diag[i] = std::max(val * (1.0 - val), 1e-10);
-	}
+	p_hat = (1.0 / (1.0 + (-eta.array()).exp())).matrix();
+	W_diag = (p_hat.array() * (1.0 - p_hat.array())).max(1e-10).matrix();
 	resid = y - p_hat;
-	Eigen::MatrixXd XtWX = XS.transpose() * W_diag.asDiagonal() * XS;
+	Eigen::MatrixXd XtWX = weighted_crossprod(XS, W_diag);
 	XtWX_ldlt = XtWX.ldlt();
 	return XtWX_ldlt.info() == Eigen::Success;
 }
@@ -368,8 +356,8 @@ NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X,
 	for (int step = 0; step < p; ++step) {
 	if (!fit_ok) break;
 
-	// Precompute diag(W) * X_S once per step (used for each candidate's information)
-	Eigen::MatrixXd WXS = W_diag.asDiagonal() * XS; // n x m
+	// Precompute W * X_S once per step (used for each candidate's information)
+	Eigen::MatrixXd WXS = (XS.array().colwise() * W_diag.array()).matrix(); // n x m
 
 	double best_stat = -1.0;
 	int best_j = -1;
@@ -444,17 +432,12 @@ static double univariate_beta_tstat(
 
 	for (int iter = 0; iter < maxit; ++iter) {
 		Eigen::VectorXd eta = X * beta;
-		for (int i = 0; i < n; ++i) {
-			double val = 1.0 / (1.0 + std::exp(-eta[i]));
-			val = std::max(1e-10, std::min(1.0 - 1e-10, val));
-			prob[i] = val;
-			w[i] = std::max(val * (1.0 - val), 1e-10);
-		}
+		prob = (1.0 / (1.0 + (-eta.array()).exp())).min(1.0 - 1e-10).max(1e-10).matrix();
+		w = (prob.array() * (1.0 - prob.array())).max(1e-10).matrix();
 
 		Eigen::VectorXd z = eta + (y - prob).cwiseQuotient(w);
-		Eigen::MatrixXd XtW = X.transpose() * w.asDiagonal();
-		Eigen::MatrixXd XtWX = XtW * X;
-		Eigen::VectorXd XtWz = XtW * z;
+		Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
+		Eigen::VectorXd XtWz = weighted_crossprod_rhs(X, w, z);
 
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
 		if (ldlt.info() != Eigen::Success) return -1.0;
@@ -469,12 +452,8 @@ static double univariate_beta_tstat(
 
 	// Compute final mu and weights
 	Eigen::VectorXd eta = X * beta;
-	for (int i = 0; i < n; ++i) {
-		double val = 1.0 / (1.0 + std::exp(-eta[i]));
-		val = std::max(1e-12, std::min(1.0 - 1e-12, val));
-		prob[i] = val;
-		w[i] = std::max(val * (1.0 - val), 1e-10);
-	}
+	prob = (1.0 / (1.0 + (-eta.array()).exp())).min(1.0 - 1e-12).max(1e-12).matrix();
+	w = (prob.array() * (1.0 - prob.array())).max(1e-10).matrix();
 
 	// Profile likelihood optimization for phi
 	// Grid search over log(phi) from log(0.01) to log(1000)
@@ -503,13 +482,10 @@ static double univariate_beta_tstat(
 	}
 
 	// Final weights for variance computation: w_final = (1+phi) * mu * (1-mu)
-	Eigen::VectorXd w_final(n);
-	for (int i = 0; i < n; ++i) {
-		w_final[i] = (1.0 + best_phi) * w[i];
-	}
+	Eigen::VectorXd w_final = ((1.0 + best_phi) * w.array()).matrix();
 
 	// Compute XtWX and get variance of beta[1]
-	Eigen::MatrixXd XtWX = X.transpose() * w_final.asDiagonal() * X;
+	Eigen::MatrixXd XtWX = weighted_crossprod(X, w_final);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
 	if (!lu.isInvertible()) return -1.0;
 
@@ -554,16 +530,12 @@ static double univariate_negbin_tstat(
 		// E-step / IRLS for beta given theta
 		for (int iter = 0; iter < 25; ++iter) {
 			Eigen::VectorXd eta = X * beta;
-			for (int i = 0; i < n; ++i) {
-				mu[i] = std::exp(std::min(eta[i], 20.0)); // prevent overflow
-				w[i] = mu[i] / (1.0 + mu[i] / theta);
-				w[i] = std::max(w[i], 1e-10);
-			}
+			mu = eta.array().min(20.0).exp().matrix();
+			w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
 			Eigen::VectorXd z = eta + (y - mu).cwiseQuotient(mu);
-			Eigen::MatrixXd XtW = X.transpose() * w.asDiagonal();
-			Eigen::MatrixXd XtWX = XtW * X;
-			Eigen::VectorXd XtWz = XtW * z;
+			Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
+			Eigen::VectorXd XtWz = weighted_crossprod_rhs(X, w, z);
 
 			Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
 			if (ldlt.info() != Eigen::Success) return -1.0;
@@ -578,9 +550,7 @@ static double univariate_negbin_tstat(
 
 		// Update mu with final beta
 		Eigen::VectorXd eta = X * beta;
-		for (int i = 0; i < n; ++i) {
-			mu[i] = std::exp(std::min(eta[i], 20.0));
-		}
+		mu = eta.array().min(20.0).exp().matrix();
 
 		// M-step: update theta using one-step Newton-Raphson
 		double score = 0.0;
@@ -609,13 +579,10 @@ static double univariate_negbin_tstat(
 
 	// Compute final weights and information matrix
 	Eigen::VectorXd eta = X * beta;
-	for (int i = 0; i < n; ++i) {
-		mu[i] = std::exp(std::min(eta[i], 20.0));
-		w[i] = mu[i] / (1.0 + mu[i] / theta);
-		w[i] = std::max(w[i], 1e-10);
-	}
+	mu = eta.array().min(20.0).exp().matrix();
+	w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
-	Eigen::MatrixXd XtWX = X.transpose() * w.asDiagonal() * X;
+	Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
 	if (!lu.isInvertible()) return -1.0;
 
@@ -814,25 +781,14 @@ static double univariate_weibull_tstat(
 
 	// Newton-Raphson for Weibull AFT
 	for (int iter = 0; iter < maxit; ++iter) {
-		Eigen::VectorXd z = resid / scale;
-		Eigen::VectorXd w(n);
-		Eigen::VectorXd adj(n);
-
-		for (int i = 0; i < n; ++i) {
-			double exp_z = std::exp(z(i));
-			if (delta(i) > 0.5) {
-				w(i) = exp_z;
-				adj(i) = z(i) - 1.0 + exp_z;
-			} else {
-				w(i) = exp_z;
-				adj(i) = exp_z;
-			}
-		}
+		Eigen::ArrayXd z = clamp_weibull_z_kk((resid / scale).array());
+		Eigen::VectorXd w = z.exp().matrix();
+		Eigen::ArrayXd adj = (delta.array() > 0.5).select(z - 1.0 + w.array(), w.array());
 
 		// Weighted least squares update
 		Eigen::VectorXd sqrt_w = w.array().sqrt();
 		Eigen::MatrixXd Xw = X.array().colwise() * sqrt_w.array();
-		Eigen::VectorXd yw = (log_y.array() - scale * adj.array() / w.array()) * sqrt_w.array();
+		Eigen::VectorXd yw = ((log_y.array() - scale * adj / w.array()) * sqrt_w.array()).matrix();
 
 		Eigen::MatrixXd XwXw = Xw.transpose() * Xw;
 		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr_w(XwXw);
@@ -848,17 +804,11 @@ static double univariate_weibull_tstat(
 			if (delta(i) > 0.5) sum_d += 1.0;
 		}
 		if (sum_d > 0) {
-			double score = 0.0, info = 0.0;
-			for (int i = 0; i < n; ++i) {
-				double z_i = resid_new(i) / scale;
-				double exp_z_i = std::exp(z_i);
-				if (delta(i) > 0.5) {
-					score += -1.0/scale + z_i/scale - z_i*exp_z_i/scale;
-					info += 1.0/(scale*scale);
-				} else {
-					score += -z_i*exp_z_i/scale;
-				}
-			}
+			const Eigen::ArrayXd z_new = clamp_weibull_z_kk((resid_new / scale).array());
+			const Eigen::ArrayXd exp_z_new = z_new.exp();
+			double score =
+				(delta.array() * (z_new - 1.0) - z_new * exp_z_new).sum() / scale;
+			double info = sum_d / (scale * scale);
 			if (std::fabs(info) > 1e-10) {
 				scale_new = scale - score / info;
 				scale_new = std::max(0.01, std::min(10.0, scale_new));
@@ -874,14 +824,8 @@ static double univariate_weibull_tstat(
 	}
 
 	// Compute standard error of beta[1]
-	Eigen::VectorXd z = resid / scale;
-	Eigen::VectorXd w(n);
-	for (int i = 0; i < n; ++i) {
-		w(i) = std::exp(z(i)) / (scale * scale);
-	}
-
-	Eigen::MatrixXd Xw = X.array().colwise() * w.array().sqrt();
-	Eigen::MatrixXd info_mat = Xw.transpose() * Xw;
+	Eigen::VectorXd w = (clamp_weibull_z_kk((resid / scale).array()).exp() / (scale * scale)).matrix();
+	Eigen::MatrixXd info_mat = weighted_crossprod(X, w);
 
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(info_mat);
 	if (!lu.isInvertible()) return -1.0;
@@ -993,17 +937,12 @@ static double multivariate_beta_tstat(
 
 	for (int iter = 0; iter < maxit; ++iter) {
 		Eigen::VectorXd eta = X * beta;
-		for (int i = 0; i < n; ++i) {
-			double val = 1.0 / (1.0 + std::exp(-eta[i]));
-			val = std::max(1e-10, std::min(1.0 - 1e-10, val));
-			prob[i] = val;
-			w[i] = std::max(val * (1.0 - val), 1e-10);
-		}
+		prob = (1.0 / (1.0 + (-eta.array()).exp())).min(1.0 - 1e-10).max(1e-10).matrix();
+		w = (prob.array() * (1.0 - prob.array())).max(1e-10).matrix();
 
 		Eigen::VectorXd z = eta + (y - prob).cwiseQuotient(w);
-		Eigen::MatrixXd XtW = X.transpose() * w.asDiagonal();
-		Eigen::MatrixXd XtWX = XtW * X;
-		Eigen::VectorXd XtWz = XtW * z;
+		Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
+		Eigen::VectorXd XtWz = weighted_crossprod_rhs(X, w, z);
 
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
 		if (ldlt.info() != Eigen::Success) return -1.0;
@@ -1018,12 +957,8 @@ static double multivariate_beta_tstat(
 
 	// Compute final mu and weights
 	Eigen::VectorXd eta = X * beta;
-	for (int i = 0; i < n; ++i) {
-		double val = 1.0 / (1.0 + std::exp(-eta[i]));
-		val = std::max(1e-12, std::min(1.0 - 1e-12, val));
-		prob[i] = val;
-		w[i] = std::max(val * (1.0 - val), 1e-10);
-	}
+	prob = (1.0 / (1.0 + (-eta.array()).exp())).min(1.0 - 1e-12).max(1e-12).matrix();
+	w = (prob.array() * (1.0 - prob.array())).max(1e-10).matrix();
 
 	// Profile likelihood optimization for phi (grid search)
 	double best_phi = 10.0;
@@ -1051,13 +986,10 @@ static double multivariate_beta_tstat(
 	}
 
 	// Final weights for variance computation
-	Eigen::VectorXd w_final(n);
-	for (int i = 0; i < n; ++i) {
-		w_final[i] = (1.0 + best_phi) * w[i];
-	}
+	Eigen::VectorXd w_final = ((1.0 + best_phi) * w.array()).matrix();
 
 	// Compute XtWX and get variance of beta[coef_idx]
-	Eigen::MatrixXd XtWX = X.transpose() * w_final.asDiagonal() * X;
+	Eigen::MatrixXd XtWX = weighted_crossprod(X, w_final);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
 	if (!lu.isInvertible()) return -1.0;
 
@@ -1098,16 +1030,12 @@ static double multivariate_negbin_tstat(
 		// IRLS for beta given theta
 		for (int iter = 0; iter < 25; ++iter) {
 			Eigen::VectorXd eta = X * beta;
-			for (int i = 0; i < n; ++i) {
-				mu[i] = std::exp(std::min(eta[i], 20.0));
-				w[i] = mu[i] / (1.0 + mu[i] / theta);
-				w[i] = std::max(w[i], 1e-10);
-			}
+			mu = eta.array().min(20.0).exp().matrix();
+			w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
 			Eigen::VectorXd z = eta + (y - mu).cwiseQuotient(mu);
-			Eigen::MatrixXd XtW = X.transpose() * w.asDiagonal();
-			Eigen::MatrixXd XtWX = XtW * X;
-			Eigen::VectorXd XtWz = XtW * z;
+			Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
+			Eigen::VectorXd XtWz = weighted_crossprod_rhs(X, w, z);
 
 			Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
 			if (ldlt.info() != Eigen::Success) return -1.0;
@@ -1122,9 +1050,7 @@ static double multivariate_negbin_tstat(
 
 		// Update mu
 		Eigen::VectorXd eta = X * beta;
-		for (int i = 0; i < n; ++i) {
-			mu[i] = std::exp(std::min(eta[i], 20.0));
-		}
+		mu = eta.array().min(20.0).exp().matrix();
 
 		// Update theta using Newton-Raphson
 		double score = 0.0;
@@ -1153,13 +1079,10 @@ static double multivariate_negbin_tstat(
 
 	// Compute final weights
 	Eigen::VectorXd eta = X * beta;
-	for (int i = 0; i < n; ++i) {
-		mu[i] = std::exp(std::min(eta[i], 20.0));
-		w[i] = mu[i] / (1.0 + mu[i] / theta);
-		w[i] = std::max(w[i], 1e-10);
-	}
+	mu = eta.array().min(20.0).exp().matrix();
+	w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
-	Eigen::MatrixXd XtWX = X.transpose() * w.asDiagonal() * X;
+	Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
 	if (!lu.isInvertible()) return -1.0;
 

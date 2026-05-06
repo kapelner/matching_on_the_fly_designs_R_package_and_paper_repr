@@ -1,118 +1,98 @@
-library(EDI)
-library(dplyr)
-library(tidyr)
+suppressPackageStartupMessages(library(EDI))
+suppressPackageStartupMessages(library(data.table))
 
-# Parse command line arguments
 args = commandArgs(trailingOnly = TRUE)
 N_REP = 20
 if (length(args) > 0) {
   N_REP = as.integer(args[1])
-  if (is.na(N_REP)) {
-    stop("Nrep must be an integer")
-  }
+  if (is.na(N_REP)) stop("Nrep must be an integer")
 }
 cat("Using N_REP =", N_REP, "\n")
 
-# Helper function to run a single comparison
-run_comparison = function(response_type, ivwc_class, onelik_class, label, n = 100, Nrep = N_REP, betaT = 0.5) {
-  cat("\n========================================================================\n")
-  cat("Benchmarking:", label, "(", response_type, ")\n")
-  cat("========================================================================\n")
-  
-  sim = SimulationFramework$new(
-    response_type = response_type,
-    design_classes_and_params = list(DesignSeqOneByOneKK21),
-    inference_classes_and_params = list(ivwc_class, onelik_class),
-    n = n,
-    p = 5,
-    data_type = "linear",
-    Nrep = Nrep,
-    betaT = betaT,
-    verbose = FALSE
+set_num_cores(2L)
+on.exit(unset_num_cores(), add = TRUE)
+
+inference_path_labels = c(
+  InferenceContinKKQuantileRegrIVWC = "Quantile (Contin)",
+  InferenceContinKKQuantileRegrOneLik = "Quantile (Contin)",
+  InferenceContinKKRobustRegrIVWC = "Robust Regr",
+  InferenceContinKKRobustRegrOneLik = "Robust Regr",
+  InferenceCountKKCPoissonIVWC = "Cond Poisson",
+  InferenceCountKKCPoissonOneLik = "Cond Poisson",
+  InferenceCountKKHurdlePoissonIVWC = "Hurdle Poisson",
+  InferenceCountKKHurdlePoissonOneLik = "Hurdle Poisson",
+  InferenceIncidKKClogitIVWC = "Clogit",
+  InferenceIncidKKClogitOneLik = "Clogit",
+  InferenceIncidKKClogitPlusGLMMIVWC = "Clogit + GLMM",
+  InferenceIncidKKClogitPlusGLMMOneLik = "Clogit + GLMM",
+  InferencePropKKQuantileRegrIVWC = "Quantile (Prop)",
+  InferencePropKKQuantileRegrOneLik = "Quantile (Prop)",
+  InferenceSurvivalKKClaytonCopulaIVWC = "Clayton Copula",
+  InferenceSurvivalKKClaytonCopulaOneLik = "Clayton Copula",
+  InferenceSurvivalKKLWACoxIVWC = "LWA Cox",
+  InferenceSurvivalKKLWACoxOneLik = "LWA Cox",
+  InferenceSurvivalKKStratCoxIVWC = "Stratified Cox",
+  InferenceSurvivalKKStratCoxOneLik = "Stratified Cox"
+)
+
+sim = SimulationFramework$new(
+  response_type = c("continuous", "count", "incidence", "proportion", "survival"),
+  design_classes_and_params = list(
+    DesignSeqOneByOneKK21
+  ),
+  inference_classes_and_params = list(
+    InferenceContinKKQuantileRegrIVWC,
+    InferenceContinKKQuantileRegrOneLik,
+    InferenceContinKKRobustRegrIVWC,
+    InferenceContinKKRobustRegrOneLik,
+    InferenceCountKKCPoissonIVWC,
+    InferenceCountKKCPoissonOneLik,
+    InferenceCountKKHurdlePoissonIVWC,
+    InferenceCountKKHurdlePoissonOneLik,
+    InferenceIncidKKClogitIVWC,
+    InferenceIncidKKClogitOneLik,
+    InferenceIncidKKClogitPlusGLMMIVWC,
+    InferenceIncidKKClogitPlusGLMMOneLik,
+    InferencePropKKQuantileRegrIVWC,
+    InferencePropKKQuantileRegrOneLik,
+    InferenceSurvivalKKClaytonCopulaIVWC,
+    InferenceSurvivalKKClaytonCopulaOneLik,
+    InferenceSurvivalKKLWACoxIVWC,
+    InferenceSurvivalKKLWACoxOneLik,
+    InferenceSurvivalKKStratCoxIVWC,
+    InferenceSurvivalKKStratCoxOneLik
+  ),
+  n = 100,
+  p = 5,
+  cond_exp_func_model = "linear",
+  Nrep = N_REP,
+  betaT = 0.5,
+  num_cores = 1L,
+  inference_types_and_params = list(
+    asymp_pval = list()
+  ),
+  verbose = TRUE,
+  turn_off_asserts_for_speed = FALSE,
+  results_filename = "benchmark_ivwc_vs_onelik.csv",
+  continue_from_last_result_row = TRUE
+)
+
+sim$run()
+summary_res = sim$summarize()
+benchmark_table = as.data.table(summary_res)[
+  inference_type == "asymp_pval" & (n_pow > 0L | n_est > 0L)
+][
+  , `:=`(
+    Path = unname(inference_path_labels[inference]),
+    type = fifelse(grepl("IVWC", inference), "IVWC", "OneLik")
   )
-  
-  sim$run()
-  summary_res = sim$summarize()
-  
-  # Add label and response_type for identification
-  summary_res$path_label = label
-  summary_res$response_type = response_type
-  return(summary_res)
-}
-
-# Define the paths to benchmark
-# Note: Some classes have different names for univariate vs multivariate or continuous vs proportion.
-# We use representative ones here.
-
-all_results = list()
-
-# 1. Quantile Regression (Continuous)
-all_results[[1]] = run_comparison("continuous", 
-                                  InferenceContinKKQuantileRegrIVWC, 
-                                  InferenceContinKKQuantileRegrOneLik, 
-                                  "Quantile Regression")
-
-# 2. Robust Regression (Continuous)
-all_results[[2]] = run_comparison("continuous", 
-                                  InferenceContinKKRobustRegrIVWC, 
-                                  InferenceContinKKRobustRegrOneLik, 
-                                  "Robust Regression")
-
-# 3. Conditional Poisson (Count)
-all_results[[3]] = run_comparison("count", 
-                                  InferenceCountKKCPoissonIVWC, 
-                                  InferenceCountKKCPoissonOneLik, 
-                                  "Conditional Poisson")
-
-# 4. Hurdle Poisson (Count)
-all_results[[4]] = run_comparison("count", 
-                                  InferenceCountKKHurdlePoissonIVWC, 
-                                  InferenceCountKKHurdlePoissonOneLik, 
-                                  "Hurdle Poisson")
-
-# 5. Conditional Logistic (Incidence)
-all_results[[5]] = run_comparison("incidence", 
-                                  InferenceIncidKKClogitIVWC, 
-                                  InferenceIncidKKClogitOneLik, 
-                                  "Conditional Logistic")
-
-# 6. Conditional Logistic Plus GLMM (Incidence)
-all_results[[6]] = run_comparison("incidence", 
-                                  InferenceIncidKKClogitPlusGLMMIVWC, 
-                                  InferenceIncidKKClogitPlusGLMMOneLik, 
-                                  "Clogit + GLMM")
-
-# 7. Clayton Copula Weibull AFT (Survival)
-all_results[[7]] = run_comparison("survival", 
-                                  InferenceSurvivalKKClaytonCopulaIVWC, 
-                                  InferenceSurvivalKKClaytonCopulaOneLik, 
-                                  "Clayton Copula")
-
-# 8. LWA Cox Partial Likelihood (Survival)
-all_results[[8]] = run_comparison("survival", 
-                                  InferenceSurvivalKKLWACoxIVWC, 
-                                  InferenceSurvivalKKLWACoxOneLik, 
-                                  "LWA Cox")
-
-# 9. Stratified Cox Partial Likelihood (Survival)
-all_results[[9]] = run_comparison("survival", 
-                                  InferenceSurvivalKKStratCoxIVWC, 
-                                  InferenceSurvivalKKStratCoxOneLik, 
-                                  "Stratified Cox")
-
-# Combine all results
-final_res = do.call(rbind, all_results)
-
-# Format and display the results focused on Power
-# Note: simulate results uses 'inference' column name for the class name
-benchmark_table = final_res %>%
-  mutate(type = ifelse(grepl("IVWC", inference), "IVWC", "OneLik")) %>%
-  select(path_label, response_type, type, power, MSE, n_est, n_pow) %>%
-  arrange(path_label, type)
+][
+  order(response_type, Path, type),
+  .(Path, response_type, inference, type, power, MSE, n_est, n_pow)
+]
 
 cat("\n\nFINAL BENCHMARK RESULTS (Power and MSE):\n")
-print(as.data.frame(benchmark_table))
+print(as.data.frame(benchmark_table), row.names = FALSE)
 
-# Save to file
 write.csv(benchmark_table, "benchmark_ivwc_vs_onelik_results.csv", row.names = FALSE)
 cat("\nResults saved to benchmark_ivwc_vs_onelik_results.csv\n")

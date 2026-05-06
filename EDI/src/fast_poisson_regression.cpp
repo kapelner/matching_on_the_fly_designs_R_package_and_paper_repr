@@ -35,20 +35,21 @@ public:
 
     double operator()(const VectorXd& beta, VectorXd& grad) {
         VectorXd eta = m_X * beta;
-        for (int i = 0; i < m_n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        eta = eta.cwiseMin(700.0);
         VectorXd mu = eta.array().exp().matrix();
-        VectorXd wt = m_use_weights ? m_weights : VectorXd::Ones(m_n);
-        double neg_ll = (wt.array() * (mu.array() - m_y.array() * eta.array())).sum();
-        grad = m_X.transpose() * wt.cwiseProduct(mu - m_y);
+        ArrayXd wt = ArrayXd::Ones(m_n);
+        if (m_use_weights) wt = m_weights.array();
+        double neg_ll = (wt * (mu.array() - m_y.array() * eta.array())).sum();
+        grad = m_X.transpose() * (wt * (mu - m_y).array()).matrix();
         return neg_ll;
     }
 
     MatrixXd hessian(const VectorXd& beta) {
         VectorXd eta = m_X * beta;
-        for (int i = 0; i < m_n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        eta = eta.cwiseMin(700.0);
         VectorXd w = eta.array().exp().matrix();
         if (m_use_weights) w = w.cwiseProduct(m_weights);
-        return m_X.transpose() * w.asDiagonal() * m_X;
+        return weighted_crossprod(m_X, w);
     }
 };
 
@@ -77,7 +78,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
         ModelResult res;
         res.b = fit.params;
         VectorXd eta = X * res.b;
-        for (int i = 0; i < n; ++i) eta[i] = clamp_eta_for_exp(eta[i]);
+        eta = eta.cwiseMin(700.0);
         res.mu = eta.array().exp().matrix();
         res.XtWX = fun.hessian(res.b);
         res.converged = fit.converged;
@@ -85,7 +86,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     }
 
     const int p_free = fixed_spec.free_idx.size();
-    MatrixXd X_free(n, p_free);
+    RowMajorMatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
     VectorXd beta_free = VectorXd::Zero(p_free);
     VectorXd eta_fixed = VectorXd::Zero(n);
@@ -95,32 +96,37 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     ModelResult res;
 
 	res.b = VectorXd::Zero(p);
-	VectorXd mu = (y.array() + 0.1).matrix();
-	VectorXd eta = eta_fixed + X_free * beta_free;
-
+    VectorXd mu = (y.array() + 0.1).matrix();
+    VectorXd eta = VectorXd::Zero(n);
 	VectorXd XtWz(p_free);
     VectorXd w(n);
+    VectorXd z(n);
+    VectorXd z_adj(n);
+    VectorXd beta_new(p_free);
+    MatrixXd XtWX_free(p_free, p_free);
 
 	for (int iter = 0; iter < maxit; ++iter) {
-        eta = eta_fixed + X_free * beta_free;
-		for (int i = 0; i < n; ++i) {
-			eta[i] = clamp_eta_for_exp(eta[i]);
-		}
+        eta.noalias() = X_free * beta_free;
+        eta += eta_fixed;
+		eta = eta.cwiseMin(700.0);
 		mu = eta.array().exp().matrix();
 		mu = mu.array().max(1e-10);
         
         if (use_weights) {
-            w = mu.cwiseProduct(weights);
+            w.array() = mu.array() * weights.array();
         } else {
             w = mu;
 		}
 
-		VectorXd z = eta + (y - mu).cwiseQuotient(mu);
-        VectorXd z_adj = z - eta_fixed;
-        MatrixXd XtWX_free = X_free.transpose() * w.asDiagonal() * X_free;
-		XtWz.noalias() = X_free.transpose() * (w.cwiseProduct(z_adj));
+		z.noalias() = y - mu;
+        z.array() /= mu.array();
+        z += eta;
+        z_adj = z;
+        z_adj -= eta_fixed;
+		XtWX_free = weighted_crossprod(X_free, w);
+		XtWz.noalias() = weighted_crossprod_rhs(X_free, w, z_adj);
 
-		VectorXd beta_new = XtWX_free.ldlt().solve(XtWz);
+		beta_new = XtWX_free.ldlt().solve(XtWz);
 		if (!beta_new.allFinite()) {
 			break;
 		}
@@ -138,9 +144,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) res.b[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
 
 	eta.noalias() = X * res.b;
-	for (int i = 0; i < n; ++i) {
-		eta[i] = clamp_eta_for_exp(eta[i]);
-	}
+	eta = eta.cwiseMin(700.0);
 	res.mu = eta.array().exp().matrix();
 	res.mu = res.mu.array().max(1e-10);
     
@@ -149,7 +153,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     } else {
         w = res.mu;
     }
-    MatrixXd info_free = X_free.transpose() * w.asDiagonal() * X_free;
+    MatrixXd info_free = weighted_crossprod(X_free, w);
 	res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
 
 	return res;
@@ -192,7 +196,7 @@ Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const
 Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd mu = eta.array().exp().matrix();
-    return - (X.transpose() * mu.asDiagonal() * X);
+    return -weighted_crossprod(X, mu);
 }
 
 //' @title Compute Weighted Poisson Regression Score
@@ -227,7 +231,7 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd mu = eta.array().exp().matrix();
     Eigen::VectorXd w = weights.cwiseProduct(mu);
-    return - (X.transpose() * w.asDiagonal() * X);
+    return -weighted_crossprod(X, w);
 }
 
 //' @title Fast Poisson Regression (C++)
@@ -318,12 +322,8 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 	res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
 	VectorXd score = get_poisson_regression_score_cpp(Xmm, y, res.b);
 	MatrixXd information = res.XtWX;
-	double neg_loglik = 0.0;
-	for (int i = 0; i < y.size(); ++i) {
-		double eta = clamp_eta_for_exp((Xmm.row(i) * res.b)(0));
-		double mu = std::exp(eta);
-		neg_loglik += mu - y[i] * eta;
-	}
+	Eigen::ArrayXd eta = (Xmm * res.b).array().max(-30.0).min(30.0);
+	double neg_loglik = (eta.exp() - y.array() * eta).sum();
 
 	return List::create(
 		Named("b") = res.b,
@@ -426,28 +426,38 @@ NumericVector compute_poisson_distr_parallel_cpp(
 
 	const double exp_delta = std::exp(delta);
 
+	// Pre-allocate one workspace per thread; fill invariant columns (intercept
+	// and covariates) once so the inner loop only overwrites the treatment column.
+	struct PoissonWorkspace {
+		Eigen::MatrixXd X_full;
+		Eigen::VectorXd y_shifted;
+	};
+	std::vector<PoissonWorkspace> ws(num_cores);
+	for (int t = 0; t < num_cores; ++t) {
+		ws[t].X_full.resize(n, p_full);
+		ws[t].y_shifted.resize(n);
+		ws[t].X_full.col(0).setOnes();
+		for (int k = 0; k < p_covars; ++k) {
+			ws[t].X_full.col(2 + k) = X_covars.col(k);
+		}
+	}
+
 #pragma omp parallel for schedule(static)
 	for (int b = 0; b < nsim; ++b) {
+		int tid = 0;
+#ifdef _OPENMP
+		tid = omp_get_thread_num();
+#endif
 		const int* w_col = w_ptr + (size_t)b * n;
-
-		Eigen::MatrixXd X_full(n, p_full);
-		Eigen::VectorXd y_shifted(n);
+		PoissonWorkspace& W = ws[tid];
 
 		for (int i = 0; i < n; ++i) {
-			X_full(i, 0) = 1.0;
-			X_full(i, 1) = (double)w_col[i];
-			for (int k = 0; k < p_covars; ++k) {
-				X_full(i, 2 + k) = X_covars(i, k);
-			}
-			bool treated = (w_col[i] == 1);
-			if (log_transform) {
-				y_shifted[i] = treated ? y[i] * exp_delta : y[i];
-			} else {
-				y_shifted[i] = treated ? y[i] + delta : y[i];
-			}
+			W.X_full(i, 1) = (double)w_col[i];
+			const bool treated = (w_col[i] == 1);
+			W.y_shifted[i] = treated ? (log_transform ? y[i] * exp_delta : y[i] + delta) : y[i];
 		}
 
-		ModelResult res = fast_poisson_internal(X_full, y_shifted, Eigen::VectorXd());
+		ModelResult res = fast_poisson_internal(W.X_full, W.y_shifted, Eigen::VectorXd());
 		if (res.converged && p_full >= 2 && std::isfinite(res.b[1])) {
 			results[b] = res.b[1];
 		}

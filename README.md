@@ -28,6 +28,17 @@ To benchmark the three builds back-to-back, run:
 bash scripts/benchmark_build_modes.sh
 ```
 
+To compare the current working tree, the current tree with vectorization
+disabled, and the last committed `HEAD` snapshot across several hot C++ kernels,
+run:
+
+```sh
+bash scripts/benchmark_simd_matrix.sh
+```
+
+This uses `EDI_DISABLE_VECTORIZATION=1` to add `-DEIGEN_DONT_VECTORIZE` and
+`-fno-tree-vectorize` for the no-vectorization build.
+
 To benchmark a randomization CI workload at `num_cores = 3` across the same
 three build modes, run:
 

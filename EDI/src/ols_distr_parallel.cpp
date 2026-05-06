@@ -1,3 +1,4 @@
+#include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <vector>
 
@@ -41,9 +42,10 @@ NumericVector compute_ols_distr_parallel_cpp(
 	const double* y_ptr = y.begin();
 	const int* w_ptr = w_mat.begin();
 	double* res_ptr = results_vec.data();
+	const bool use_parallel = should_parallelize_replicates(nsim, n, num_cores);
 
 #ifdef _OPENMP
-	omp_set_num_threads(num_cores);
+	if (use_parallel) omp_set_num_threads(num_cores);
 #endif
 
 	// MEMOIZATION
@@ -51,7 +53,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 	Eigen::VectorXd Xt_1 = X_covars.colwise().sum();
 	Eigen::MatrixXd XtX_c = X_covars.transpose() * X_covars;
 	
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) if(use_parallel)
 	for (int b = 0; b < nsim; ++b) {
 		const int* w_col = w_ptr + (size_t)b * n;
 		
@@ -90,8 +92,8 @@ NumericVector compute_ols_distr_parallel_cpp(
 		Xty[1] = w_d.dot(y_sim);
 		Xty.tail(p_covars) = X_covars.transpose() * y_sim;
 
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(XtX);
-		Eigen::VectorXd beta = cod.solve(Xty);
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
+		Eigen::VectorXd beta = qr.solve(Xty);
 		res_ptr[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
 	}
 
@@ -131,12 +133,13 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 	const double* y_ptr = y.begin();
 	const int* w_ptr = w.begin();
 	const int* idx_ptr = indices_mat.begin();
+	const bool use_parallel = should_parallelize_replicates(B, n_boot, num_cores);
 
 #ifdef _OPENMP
-	omp_set_num_threads(num_cores);
+	if (use_parallel) omp_set_num_threads(num_cores);
 #endif
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) if(use_parallel)
 	for (int b = 0; b < B; ++b) {
 		const int* idx_col = idx_ptr + (size_t)b * n_boot;
 		if (idx_col[0] < 0) { results_vec[b] = NA_REAL; continue; }
@@ -181,8 +184,8 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 		Xty[1] = w_b.dot(y_b);
 		Xty.tail(p_covars) = X_b.transpose() * y_b;
 
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(XtX);
-		Eigen::VectorXd beta = cod.solve(Xty);
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
+		Eigen::VectorXd beta = qr.solve(Xty);
 		results_vec[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
 	}
 

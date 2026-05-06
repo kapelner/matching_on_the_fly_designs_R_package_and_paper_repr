@@ -520,6 +520,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			beta_hat_T = private$cached_values$beta_hat_T
 			s_beta_hat_T = private$cached_values$s_beta_hat_T
 			df = private$cached_values$df
+			if (is.null(df)) df = NA_real_
 			
 			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(c(NA_real_, NA_real_))
 			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(c(NA_real_, NA_real_))
@@ -534,6 +535,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			beta_hat_T = private$cached_values$beta_hat_T
 			s_beta_hat_T = private$cached_values$s_beta_hat_T
 			df = private$cached_values$df
+			if (is.null(df)) df = NA_real_
 			
 			if (length(beta_hat_T) != 1L || length(s_beta_hat_T) != 1L) return(NA_real_)
 			if (!is.finite(beta_hat_T) || !is.finite(s_beta_hat_T) || s_beta_hat_T <= 0) return(NA_real_)

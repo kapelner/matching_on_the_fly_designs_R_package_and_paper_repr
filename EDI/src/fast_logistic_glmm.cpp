@@ -177,19 +177,16 @@ public:
 			const int sz    = dat.grp_size[gi];
 			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
+			const Eigen::Map<const Eigen::VectorXd> y_g(dat.y_s.data() + start, sz);
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
 
 			for (int k = 0; k < n_nodes; ++k) {
-				double ll = dat.gh.log_norm_weights[k];
-				mu_nodes[k].resize(sz);
-				for (int r = 0; r < sz; ++r) {
-					const double eta = eta0[r] + b_vals[k];
-					ll += dat.y_s[start + r] * eta - log1pexp_s(eta);
-					mu_nodes[k][r] = plogis_safe(eta);
-				}
-				log_terms[k] = ll;
+				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
+				mu_nodes[k] = plogis_array_safe(eta_k).matrix();
+				log_terms[k] = dat.gh.log_norm_weights[k] +
+				               (y_g.array() * eta_k - log1pexp_array_safe(eta_k)).sum();
 			}
 
 			const double ll_g = log_sum_exp_v(log_terms);
@@ -200,10 +197,7 @@ public:
 				double post_k = std::exp(log_terms[k] - ll_g);
 				if (post_k < 1e-15) continue;
 
-				Eigen::VectorXd res_k(sz);
-				for (int r = 0; r < sz; ++r) {
-					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
-				}
+				Eigen::VectorXd res_k = y_g - mu_nodes[k];
 
 				// dLL/dbeta
 				grad.head(dat.p) -= post_k * (Xg.transpose() * res_k);
@@ -233,18 +227,15 @@ public:
 			const int sz    = dat.grp_size[gi];
 			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
+			const Eigen::Map<const Eigen::VectorXd> y_g(dat.y_s.data() + start, sz);
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
 			for (int k = 0; k < n_nodes; k++) {
-				double ll = dat.gh.log_norm_weights[k];
-				mu_nodes[k].resize(sz);
-				for (int r = 0; r < sz; r++) {
-					const double eta = eta0[r] + b_vals[k];
-					ll += dat.y_s[start + r] * eta - log1pexp_s(eta);
-					mu_nodes[k][r] = plogis_safe(eta);
-				}
-				log_terms[k] = ll;
+				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
+				mu_nodes[k] = plogis_array_safe(eta_k).matrix();
+				log_terms[k] = dat.gh.log_norm_weights[k] +
+				               (y_g.array() * eta_k - log1pexp_array_safe(eta_k)).sum();
 			}
 			const double ll_g = log_sum_exp_v(log_terms);
 
@@ -262,23 +253,16 @@ public:
 				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
 				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
 
-				double sum_res = 0.0;
-				double sum_w = 0.0;
-				Eigen::VectorXd res_k(sz);
-				Eigen::VectorXd w_k(sz);
-
-				for (int r = 0; r < sz; r++) {
-					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
-					w_k[r]   = mu_nodes[k][r] * (1.0 - mu_nodes[k][r]);
-					sum_res += res_k[r];
-					sum_w   += w_k[r];
-				}
+				Eigen::VectorXd res_k = y_g - mu_nodes[k];
+				Eigen::VectorXd w_k = (mu_nodes[k].array() * (1.0 - mu_nodes[k].array())).matrix();
+				const double sum_res = res_k.sum();
+				const double sum_w = w_k.sum();
 
 				G_ik.head(dat.p) = Xg.transpose() * res_k;
 				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 				G_ik[dat.p] = sum_res * node_factor * sigma;
 
-				H_ik.topLeftCorner(dat.p, dat.p) = -Xg.transpose() * w_k.asDiagonal() * Xg;
+				H_ik.topLeftCorner(dat.p, dat.p).noalias() = -weighted_crossprod(Xg, w_k);
 				H_ik(dat.p, dat.p) = (-sum_w * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
 				
 				Eigen::VectorXd d2L_db_dsigma = -Xg.transpose() * w_k * node_factor * sigma;

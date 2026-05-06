@@ -29,32 +29,14 @@ public:
         double sigma = std::exp(log_sigma);
 
         Eigen::VectorXd eta = m_X * beta;
-        Eigen::VectorXd w = (m_log_y - eta) / sigma;
-        Eigen::VectorXd exp_w(m_n);
-        
-        double loglik = 0.0;
+        const Eigen::ArrayXd w = ((m_log_y - eta) / sigma).array().min(700.0);
+        const Eigen::ArrayXd exp_w = w.exp();
+        const Eigen::ArrayXd dead = m_dead.array();
+        const double loglik = (dead * (w - log_sigma - m_log_y.array()) - exp_w).sum();
+        const Eigen::VectorXd d_ll_d_eta = ((exp_w - dead) / sigma).matrix();
+        const double d_ll_d_log_sigma = (exp_w * w - dead * (w + 1.0)).sum();
+
         grad.setZero();
-        Eigen::VectorXd d_ll_d_eta = Eigen::VectorXd::Zero(m_n);
-        double d_ll_d_log_sigma = 0.0;
-
-        for (int i = 0; i < m_n; ++i) {
-            double wi = w[i];
-            if (wi > 700.0) wi = 700.0;
-            double ewi = std::exp(wi);
-            exp_w[i] = ewi;
-
-            if (m_dead[i] > 0.5) {
-                // Event: log(f(y)) = w - log(sigma) - log(y) - exp(w)
-                loglik += wi - log_sigma - m_log_y[i] - ewi;
-                d_ll_d_eta[i] += (ewi - 1.0) / sigma;
-                d_ll_d_log_sigma += (ewi - 1.0) * wi - 1.0;
-            } else {
-                // Censored: log(S(y)) = -exp(w)
-                loglik -= ewi;
-                d_ll_d_eta[i] += ewi / sigma;
-                d_ll_d_log_sigma += ewi * wi;
-            }
-        }
 
         grad.head(m_p) = - m_X.transpose() * d_ll_d_eta;
         grad[m_p] = - d_ll_d_log_sigma;
@@ -66,25 +48,17 @@ public:
         int total_p = params.size();
         Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
         Eigen::VectorXd beta = params.head(m_p);
-        double log_sigma = params[m_p];
-        double sigma = std::exp(log_sigma);
+        double sigma = std::exp(params[m_p]);
         Eigen::VectorXd eta = m_X * beta;
+        const Eigen::ArrayXd w = ((m_log_y - eta) / sigma).array().min(700.0);
+        const Eigen::ArrayXd exp_w = w.exp();
+        const Eigen::VectorXd beta_weights = (exp_w / (sigma * sigma)).matrix();
+        const Eigen::VectorXd cross_weights =
+            ((exp_w * (w + 1.0) - m_dead.array()) / sigma).matrix();
 
-        for (int i = 0; i < m_n; ++i) {
-            double wi = (m_log_y[i] - eta[i]) / sigma;
-            if (wi > 700.0) wi = 700.0;
-            double ewi = std::exp(wi);
-            double delta = (m_dead[i] > 0.5) ? 1.0 : 0.0;
-            Eigen::VectorXd x = m_X.row(i).transpose();
-
-            double w_beta = ewi / (sigma * sigma);
-            H.topLeftCorner(m_p, m_p).noalias() += w_beta * (x * x.transpose());
-
-            double cross = (ewi * (wi + 1.0) - delta) / sigma;
-            H.topRightCorner(m_p, 1).noalias() += cross * x;
-
-            H(m_p, m_p) += ewi * (wi * wi + wi) - delta * wi;
-        }
+        H.topLeftCorner(m_p, m_p).noalias() = weighted_crossprod(m_X, beta_weights);
+        H.topRightCorner(m_p, 1).noalias() = m_X.transpose() * cross_weights;
+        H(m_p, m_p) = (exp_w * (w.square() + w) - m_dead.array() * w).sum();
         H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
         return H;
     }

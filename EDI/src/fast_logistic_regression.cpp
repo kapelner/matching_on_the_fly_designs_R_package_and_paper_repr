@@ -14,6 +14,11 @@ inline double plogis_manual(double x) {
     return 1.0 / (1.0 + std::exp(-x));
 }
 
+inline Eigen::ArrayXd plogis_array_manual(const Eigen::ArrayXd& x) {
+    const Eigen::ArrayXd x_clamped = x.max(-20.0).min(20.0);
+    return 1.0 / (1.0 + (-x_clamped).exp());
+}
+
 // Manual LLT (Cholesky) decomposition and solver to avoid Eigen templates
 // A is p*p symmetric, positive definite. b is p*1.
 bool solve_llt_raw(double* x, const double* A, const double* b, int p) {
@@ -130,7 +135,10 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                     double x_ir = x_ptr[r];
                     t_score[r] += x_ir * diff;
                     double xirwi = x_ir * wi;
-                    for(int c=0; c<=r; c++) {
+                    // Full row (not triangular) so the inner loop has a fixed bound
+                    // the compiler can auto-vectorize. The matrix is symmetric by
+                    // construction so no explicit symmetrization is needed afterward.
+                    for(int c=0; c<p_free; c++) {
                         t_xtwx[r * p_free + c] += xirwi * x_ptr[c];
                     }
                 }
@@ -142,11 +150,8 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         for (int t = 0; t < n_threads; ++t) {
             for(int r=0; r<p_free; r++) {
                 score_free[r] += score_threads[t * p_free + r];
-                for(int c=0; c<=r; c++) final_XtWX[r * p_free + c] += XtWX_threads[t * p_free * p_free + r * p_free + c];
+                for(int c=0; c<p_free; c++) final_XtWX[r * p_free + c] += XtWX_threads[t * p_free * p_free + r * p_free + c];
             }
-        }
-        for (int r = 0; r < p_free; ++r) {
-            for (int c = r + 1; c < p_free; ++c) final_XtWX[r * p_free + c] = final_XtWX[c * p_free + r];
         }
 
         std::vector<double> delta(p_free);
@@ -185,17 +190,8 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
 //' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
-    int n = X.rows();
-    int p = X.cols();
-    Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
-    for(int i=0; i<n; i++) {
-        double eta_i = 0.0;
-        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
-        double mu_i = plogis_manual(eta_i);
-        double diff = y[i] - mu_i;
-        for(int j=0; j<p; j++) res[j] += X(i, j) * diff;
-    }
-    return res;
+    Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
+    return X.transpose() * (y - mu);
 }
 
 //' @title Compute Logistic Regression Hessian
@@ -206,23 +202,9 @@ Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, cons
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
-    int n = X.rows();
-    int p = X.cols();
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
-    for(int i=0; i<n; i++) {
-        double eta_i = 0.0;
-        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
-        double mu_i = plogis_manual(eta_i);
-        double wi = mu_i * (1.0 - mu_i);
-        for(int r=0; r<p; r++) {
-            double xirwi = X(i, r) * wi;
-            for(int c=0; c<=r; c++) res(r, c) += xirwi * X(i, c);
-        }
-    }
-    for (int r = 0; r < p; ++r) {
-        for (int c = r + 1; c < p; ++c) res(r, c) = res(c, r);
-    }
-    return -res;
+    Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
+    Eigen::VectorXd w = mu.array() * (1.0 - mu.array());
+    return -weighted_crossprod(X, w);
 }
 
 //' @title Compute Weighted Logistic Regression Score
@@ -235,17 +217,8 @@ Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, co
 //' @export
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
-    int n = X.rows();
-    int p = X.cols();
-    Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
-    for(int i=0; i<n; i++) {
-        double eta_i = 0.0;
-        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
-        double mu_i = plogis_manual(eta_i);
-        double diff = weights[i] * (y[i] - mu_i);
-        for(int j=0; j<p; j++) res[j] += X(i, j) * diff;
-    }
-    return res;
+    Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
+    return X.transpose() * weights.cwiseProduct(y - mu);
 }
 
 //' @title Compute Weighted Logistic Regression Hessian
@@ -257,23 +230,9 @@ Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
-    int n = X.rows();
-    int p = X.cols();
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
-    for(int i=0; i<n; i++) {
-        double eta_i = 0.0;
-        for(int j=0; j<p; j++) eta_i += X(i, j) * beta[j];
-        double mu_i = plogis_manual(eta_i);
-        double wi = weights[i] * mu_i * (1.0 - mu_i);
-        for(int r=0; r<p; r++) {
-            double xirwi = X(i, r) * wi;
-            for(int c=0; c<=r; c++) res(r, c) += xirwi * X(i, c);
-        }
-    }
-    for (int r = 0; r < p; ++r) {
-        for (int c = r + 1; c < p; ++c) res(r, c) = res(c, r);
-    }
-    return -res;
+    Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
+    Eigen::VectorXd w = weights.array() * mu.array() * (1.0 - mu.array());
+    return -weighted_crossprod(X, w);
 }
 
 //' @title Fast Logistic Regression (C++)

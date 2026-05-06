@@ -64,6 +64,10 @@ inline double soft_barrier_hessian(double log_sigma, double center = 5.0, double
 	return 2.0 * scale;
 }
 
+inline Eigen::ArrayXd clamp_eta_pg(const Eigen::ArrayXd& eta) {
+	return eta.min(700.0);
+}
+
 struct PoissonGLMMData {
 	Eigen::MatrixXd X_s;
 	Eigen::VectorXd y_s;
@@ -133,23 +137,18 @@ public:
 			const int sz    = dat.grp_size[gi];
 			const Eigen::MatrixXd Xg   = dat.X_s.middleRows(start, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
+			const Eigen::ArrayXd y_g = dat.y_s.segment(start, sz).array();
+			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(start, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			// mu_nodes[k][r] = exp(eta0[r] + b_vals[k])
 			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
 
 			for (int k = 0; k < n_nodes; ++k) {
-				double ll = dat.gh.log_norm_weights[k];
-				mu_nodes[k].resize(sz);
-				for (int r = 0; r < sz; ++r) {
-					const double eta_rk = eta0[r] + b_vals[k];
-					// Cap exp to avoid overflow; Poisson log-lik: y*eta - exp(eta) - log(y!)
-					const double cap_eta = std::min(eta_rk, 700.0);
-					const double mu_rk   = std::exp(cap_eta);
-					mu_nodes[k][r] = mu_rk;
-					ll += dat.y_s[start + r] * eta_rk - mu_rk - dat.log_fact_y[start + r];
-				}
-				log_terms[k] = ll;
+				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
+				mu_nodes[k] = clamp_eta_pg(eta_k).exp().matrix();
+				log_terms[k] = dat.gh.log_norm_weights[k] +
+				               (y_g * eta_k - mu_nodes[k].array() - log_fact_g).sum();
 			}
 
 			const double ll_g = log_sum_exp_p(log_terms);
@@ -160,13 +159,8 @@ public:
 				const double post_k = std::exp(log_terms[k] - ll_g);
 				if (post_k < 1e-15) continue;
 
-				// residual = y - mu at this GH node
-				Eigen::VectorXd res_k(sz);
-				double res_sum = 0.0;
-				for (int r = 0; r < sz; ++r) {
-					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
-					res_sum += res_k[r];
-				}
+				Eigen::VectorXd res_k = (y_g - mu_nodes[k].array()).matrix();
+				double res_sum = res_k.sum();
 
 				// d(neg_ll)/d(beta)
 				grad.head(dat.p) -= post_k * (Xg.transpose() * res_k);
@@ -195,19 +189,16 @@ public:
 			const int sz    = dat.grp_size[gi];
 			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
+			const Eigen::ArrayXd y_g = dat.y_s.segment(start, sz).array();
+			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(start, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
 			for (int k = 0; k < n_nodes; k++) {
-				double ll = dat.gh.log_norm_weights[k];
-				mu_nodes[k].resize(sz);
-				for (int r = 0; r < sz; r++) {
-					const double eta = eta0[r] + b_vals[k];
-					const double mu = std::exp(std::min(eta, 700.0));
-					mu_nodes[k][r] = mu;
-					ll += dat.y_s[start + r] * eta - mu - dat.log_fact_y[start + r];
-				}
-				log_terms[k] = ll;
+				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
+				mu_nodes[k] = clamp_eta_pg(eta_k).exp().matrix();
+				log_terms[k] = dat.gh.log_norm_weights[k] +
+				               (y_g * eta_k - mu_nodes[k].array() - log_fact_g).sum();
 			}
 			const double ll_g = log_sum_exp_p(log_terms);
 
@@ -221,43 +212,21 @@ public:
 
 				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
 				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
+				Eigen::VectorXd res_k = (y_g - mu_nodes[k].array()).matrix();
+				const double sum_res = res_k.sum();
+				const double sum_mu = mu_nodes[k].sum();
 
-				double sum_res = 0.0;
-				double sum_mu = 0.0;
-				Eigen::VectorXd res_k(sz);
-				
-				for (int r = 0; r < sz; r++) {
-					res_k[r] = dat.y_s[start + r] - mu_nodes[k][r];
-					sum_res += res_k[r];
-					sum_mu += mu_nodes[k][r];
-				}
-
-				// dLL/dbeta
-				for (int j = 0; j < dat.p; j++) {
-					for (int r = 0; r < sz; r++) G_ik[j] += res_k[r] * Xg(r, j);
-				}
+				G_ik.head(dat.p).noalias() = Xg.transpose() * res_k;
 				// dLL/dlogsigma
 				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 				G_ik[dat.p] = sum_res * node_factor * sigma;
 
-				// d2LL/dbeta2 = -X' diag(mu) X
-				for (int j = 0; j < dat.p; j++) {
-					for (int c = 0; c <= j; c++) {
-						double val = 0;
-						for (int r = 0; r < sz; r++) val -= mu_nodes[k][r] * Xg(r, j) * Xg(r, c);
-						H_ik(j, c) = val;
-					}
-				}
+				H_ik.topLeftCorner(dat.p, dat.p).noalias() = -weighted_crossprod(Xg, mu_nodes[k]);
 				// d2LL/dlogsigma2 = (d2LL/dsigma2 * sigma + dLL/dsigma) * sigma
 				// d2LL/dsigma2 = -sum(mu) * 2 * nodes^2
 				H_ik(dat.p, dat.p) = (-sum_mu * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
 
-				// d2LL/(dbeta dlogsigma)
-				for (int j = 0; j < dat.p; j++) {
-					double val = 0;
-					for (int r = 0; r < sz; r++) val -= mu_nodes[k][r] * Xg(r, j);
-					H_ik(j, dat.p) = val * node_factor * sigma;
-				}
+				H_ik.block(0, dat.p, dat.p, 1).noalias() = -(Xg.transpose() * mu_nodes[k]) * (node_factor * sigma);
 
 				for (int r1 = 0; r1 < total; r1++) for (int c1 = 0; r1 > c1; c1++) H_ik(r1, c1) = H_ik(c1, r1);
 

@@ -94,6 +94,7 @@ Create a new \code{SimulationFramework}.
   count_shift = 0,
   norm_sq_beta_vec = 1,
   X_mat = NULL,
+  num_cores = 1L,
   seed = NULL,
   cov_draw_method = stats::rnorm,
   cov_draw_method_args = list(mean = 0, sd = 1),
@@ -103,7 +104,7 @@ Create a new \code{SimulationFramework}.
   keep_all_intermediate_data = FALSE,
   turn_off_asserts_for_speed = TRUE,
   inference_types_and_params = NULL,
-  results_filename = "simulation_framework_results.csv",
+  results_filename = "simulation_framework_results.csv.bz2",
   continue_from_last_result_row = TRUE
 )}\if{html}{\out{</div>}}
 }
@@ -254,6 +255,12 @@ The generated vector is scaled to match this norm. Default \code{1}.}
 If provided, these fixed covariates are used for every replication.
 In this case, \code{cov_draw_method} must be \code{NULL}.}
 
+\item{\code{num_cores}}{Positive integer.  Number of worker processes for
+parallel execution of Monte Carlo replications.  Note that when
+\code{num_cores > 1}, parallelization *within* individual inference
+routines (e.g. bootstrap, randomization) is automatically disabled
+to prevent thread oversubscription.  Default \code{1}.}
+
 \item{\code{seed}}{Integer or \code{NULL} (default).  Random seed for the
 entire simulation run.}
 
@@ -309,8 +316,9 @@ disabled during the simulation run to improve performance.}
   \code{$summarize()}.  When no \code{*_pval} type is requested,
   \code{power} is omitted.}
 
-\item{\code{results_filename}}{Character scalar.  The filename for the CSV results
-file.  Default \code{"simulation_framework_results.csv"}.}
+\item{\code{results_filename}}{Character scalar. The filename for the results
+file. Supported extensions are \code{.csv} and \code{.csv.bz2}. Default
+\code{"simulation_framework_results.csv.bz2"}.}
 
 \item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
 the framework loads existing results from \code{results_filename} and

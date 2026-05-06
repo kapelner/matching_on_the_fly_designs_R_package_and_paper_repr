@@ -30,6 +30,7 @@ struct RobustModelResult {
     Eigen::VectorXd b;
     Eigen::VectorXd w;
     Eigen::MatrixXd XtWX;
+    Eigen::MatrixXd X_free;
     double scale;
     int iterations;
     bool converged;
@@ -55,13 +56,14 @@ RobustModelResult fast_robust_regression_internal(
     int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     const int p_free = fixed_spec.free_idx.size();
-    Eigen::MatrixXd X_free(n, p_free);
+    RowMajorMatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
     Eigen::VectorXd y_adj = y;
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
         y_adj.noalias() -= X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
     }
     RobustModelResult res;
+    res.X_free = X_free;
 
     // 1. Initial estimate
     Eigen::VectorXd b_free;
@@ -70,8 +72,8 @@ RobustModelResult fast_robust_regression_internal(
         b_start = apply_fixed_values(b_start, fixed_spec);
         b_free = subset_vector(b_start, fixed_spec.free_idx);
     } else {
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
-        b_free = cod.solve(y_adj);
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
+        b_free = qr.solve(y_adj);
     }
     res.b = Eigen::VectorXd::Zero(p);
     for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = b_free[j];
@@ -100,18 +102,19 @@ RobustModelResult fast_robust_regression_internal(
         res.iterations = iter;
         
         // Update weights
-        for (int i = 0; i < n; ++i) {
-            double u = r[i] / res.scale;
-            if (method == "M") {
-                res.w[i] = huber_w(u, c);
-            } else {
-                res.w[i] = bisquare_w(u, c_bisquare);
-            }
+        const Eigen::ArrayXd u = r.array() / res.scale;
+        if (method == "M") {
+            const Eigen::ArrayXd abs_u = u.abs();
+            res.w = (abs_u <= c).select(1.0, c / abs_u).matrix();
+        } else {
+            const Eigen::ArrayXd abs_u = u.abs();
+            const Eigen::ArrayXd tmp = 1.0 - (u / c_bisquare).square();
+            res.w = (abs_u <= c_bisquare).select(tmp.square(), 0.0).matrix();
         }
 
         // Solve Weighted Least Squares
-        Eigen::MatrixXd XtWX = X_free.transpose() * res.w.asDiagonal() * X_free;
-        Eigen::VectorXd XtWy = X_free.transpose() * res.w.asDiagonal() * y_adj;
+        Eigen::MatrixXd XtWX = weighted_crossprod(X_free, res.w);
+        Eigen::VectorXd XtWy = weighted_crossprod_rhs(X_free, res.w, y_adj);
         
         Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
         if (ldlt.info() != Eigen::Success) break; // Numerical failure
@@ -149,9 +152,7 @@ List fast_robust_regression_cpp(
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     if (!res.converged && res.XtWX.rows() == 0) {
-        Eigen::MatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
-        for (int jj = 0; jj < fixed_spec.free_idx.size(); ++jj) X_free.col(jj) = X.col(fixed_spec.free_idx[jj]);
-        Eigen::MatrixXd XtWX_free = X_free.transpose() * res.w.asDiagonal() * X_free;
+        Eigen::MatrixXd XtWX_free = weighted_crossprod(res.X_free, res.w);
         res.XtWX = expand_free_covariance(X.cols(), fixed_spec, XtWX_free, false);
     }
 
@@ -163,45 +164,44 @@ List fast_robust_regression_cpp(
     if (res.converged || res.iterations == maxit) {
         Eigen::VectorXd psi_r(n);
         double sum_psi_prime = 0;
-        
-        for (int i = 0; i < n; ++i) {
-            double u = r[i] / res.scale;
-            double abs_u = std::abs(u);
-            if (method == "M") {
-                if (abs_u <= c) {
-                    psi_r[i] = r[i];
-                    sum_psi_prime += 1.0;
-                } else {
-                    psi_r[i] = c * res.scale * (u > 0 ? 1.0 : -1.0);
-                    sum_psi_prime += 0.0;
-                }
-            } else {
-                double c_b = 4.685;
-                if (abs_u <= c_b) {
-                    double tmp = 1.0 - (u/c_b)*(u/c_b);
-                    psi_r[i] = r[i] * tmp * tmp;
-                    sum_psi_prime += tmp * (1.0 - 5.0 * (u/c_b)*(u/c_b));
-                } else {
-                    psi_r[i] = 0;
-                    sum_psi_prime += 0;
-                }
-            }
+        const Eigen::ArrayXd u = r.array() / res.scale;
+        if (method == "M") {
+            const Eigen::ArrayXd abs_u = u.abs();
+            const Eigen::ArrayXd sign_u = (u > 0.0).select(
+                Eigen::ArrayXd::Ones(n),
+                -Eigen::ArrayXd::Ones(n)
+            );
+            psi_r = (abs_u <= c).select(r.array(), c * res.scale * sign_u).matrix();
+            sum_psi_prime = (abs_u <= c).template cast<double>().sum();
+        } else {
+            const double c_b = 4.685;
+            const Eigen::ArrayXd abs_u = u.abs();
+            const Eigen::ArrayXd u_scaled_sq = (u / c_b).square();
+            const Eigen::ArrayXd tmp = 1.0 - u_scaled_sq;
+            psi_r = (abs_u <= c_b).select(r.array() * tmp.square(), 0.0).matrix();
+            sum_psi_prime = (abs_u <= c_b).select(tmp * (1.0 - 5.0 * u_scaled_sq), 0.0).sum();
         }
         
         double m = sum_psi_prime / n;
-        Eigen::MatrixXd X_free(n, fixed_spec.free_idx.size());
-        for (int jj = 0; jj < fixed_spec.free_idx.size(); ++jj) X_free.col(jj) = X.col(fixed_spec.free_idx[jj]);
-        Eigen::MatrixXd XtX = X_free.transpose() * X_free;
-        Eigen::MatrixXd invXtX_free = XtX.inverse();
-        Eigen::MatrixXd vcov_free;
-        
         double sum_psi_sq = psi_r.squaredNorm();
         double factor = (n / (double(n - fixed_spec.free_idx.size()))) * sum_psi_sq / (n * m * m);
-        vcov_free = factor * invXtX_free;
-        Eigen::MatrixXd vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
-        
+
         if (j > 0 && j <= p) {
-            ssq_j = vcov(j-1, j-1);
+            const int j0 = j - 1;
+            int free_j = -1;
+            for (int jj = 0; jj < fixed_spec.free_idx.size(); ++jj) {
+                if (fixed_spec.free_idx[jj] == j0) {
+                    free_j = jj;
+                    break;
+                }
+            }
+            if (free_j >= 0) {
+                Eigen::MatrixXd XtX = res.X_free.transpose() * res.X_free;
+                const double inv_diag = compute_diagonal_inverse_entry(XtX, free_j + 1);
+                if (R_finite(inv_diag)) {
+                    ssq_j = factor * inv_diag;
+                }
+            }
         }
     }
 

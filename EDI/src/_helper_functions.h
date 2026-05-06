@@ -31,6 +31,71 @@ double compute_diagonal_inverse_entry(const Eigen::MatrixXd& M, int j);
 double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j);
 Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::VectorXd> w);
 
+using RowMajorMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+inline bool should_parallelize_replicates(int n_work_items,
+                                          int item_size,
+                                          int num_cores,
+                                          int min_items = 128,
+                                          long long min_total_work = 20000) {
+    return num_cores > 1 &&
+           n_work_items >= min_items &&
+           static_cast<long long>(n_work_items) * static_cast<long long>(item_size) >= min_total_work;
+}
+
+template <typename XDerived, typename WDerived>
+inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
+                                          const Eigen::MatrixBase<WDerived>& w) {
+    const int n = X.rows();
+    const int p = X.cols();
+    if (w.rows() != n || w.cols() != 1) {
+        Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
+    }
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(p, p);
+    if (p <= 8 || n <= 32) {
+        for (int i = 0; i < n; ++i) {
+            const double wi = w(i);
+            if (wi == 0.0) continue;
+            for (int r = 0; r < p; ++r) {
+                const double xir_w = X(i, r) * wi;
+                for (int c = 0; c <= r; ++c) {
+                    out(r, c) += xir_w * X(i, c);
+                }
+            }
+        }
+        out.template triangularView<Eigen::StrictlyUpper>() =
+            out.transpose().template triangularView<Eigen::StrictlyUpper>();
+        return out;
+    }
+
+    auto out_lower = out.selfadjointView<Eigen::Lower>();
+    for (int i = 0; i < n; ++i) {
+        const double wi = w(i);
+        if (wi == 0.0) continue;
+        out_lower.rankUpdate(X.row(i).transpose(), wi);
+    }
+    out.template triangularView<Eigen::StrictlyUpper>() =
+        out.transpose().template triangularView<Eigen::StrictlyUpper>();
+    return out;
+}
+
+template <typename XDerived, typename WDerived, typename YDerived>
+inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<XDerived>& X,
+                                              const Eigen::MatrixBase<WDerived>& w,
+                                              const Eigen::MatrixBase<YDerived>& y) {
+    const int n = X.rows();
+    const int p = X.cols();
+    if (w.rows() != n || w.cols() != 1 || y.rows() != n || y.cols() != 1) {
+        Rcpp::stop("weighted_crossprod_rhs: vectors have incompatible dimensions");
+    }
+
+    // X^T * (w .* y) as a single GEMV: column-major X means each column is
+    // contiguous, so this vectorizes fully. The old row-by-row loop accessed
+    // X with stride-n (non-contiguous) and could not be auto-vectorized.
+    return X.transpose() * w.cwiseProduct(y);
+}
+
 struct FixedParamSpec {
     Eigen::VectorXi fixed_idx;
     Eigen::VectorXi free_idx;
@@ -174,6 +239,26 @@ inline Eigen::MatrixXd symmetric_pseudo_inverse(const Eigen::MatrixXd& M, double
 inline double plogis_safe(double x) {
     if (x >= 0.0) { const double z = std::exp(-x); return 1.0 / (1.0 + z); }
     const double z = std::exp(x); return z / (1.0 + z);
+}
+
+inline Eigen::ArrayXd plogis_array_safe(const Eigen::ArrayXd& x) {
+    const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (x >= 0.0);
+    const Eigen::ArrayXd pos = 1.0 / (1.0 + (-x).exp());
+    const Eigen::ArrayXd neg_exp = x.exp();
+    const Eigen::ArrayXd neg = neg_exp / (1.0 + neg_exp);
+    return nonnegative.select(pos, neg);
+}
+
+inline double log1pexp_safe(double x) {
+    if (x > 0.0) return x + std::log1p(std::exp(-x));
+    return std::log1p(std::exp(x));
+}
+
+inline Eigen::ArrayXd log1pexp_array_safe(const Eigen::ArrayXd& x) {
+    const Eigen::Array<bool, Eigen::Dynamic, 1> positive = (x > 0.0);
+    const Eigen::ArrayXd pos = x + (-x).exp().log1p();
+    const Eigen::ArrayXd neg = x.exp().log1p();
+    return positive.select(pos, neg);
 }
 
 template <typename Functor>

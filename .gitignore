@@ -192,6 +192,7 @@ simulations/cmh_exact_sims_results.csv
 Rplots.pdf
 simulations/*.pdf
 simulations/*.png
+simulations/*.csv*
 benchmark_beta_regression.R
 benchmark_glmm.R
 benchmark_stratified_coxph.R
@@ -209,7 +210,10 @@ ivwc_vs_onelik_power_benchmark.csv
 list_inferences.R
 package_metadata/.~lock.inference_paths_info.csv#
 test_fast_coxph_regression.R
-
+simulation_framework_results.csv
+verify_progress.R
+benchmark_ivwc_vs_onelik.csv
+benchmark_ivwc_vs_onelik_results.csv
 
 
 

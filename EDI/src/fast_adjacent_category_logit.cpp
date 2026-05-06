@@ -36,36 +36,34 @@ public:
             alpha_suffix[j] = alpha_suffix[j + 1] + alpha[j];
         }
 
-        std::vector<double> scores(m_K, 0.0);
-        std::vector<double> probs(m_K, 0.0);
-        std::vector<double> cdf(m_K - 1, 0.0);
+        VectorXd score_offsets(m_K);
+        for (int j = 0; j < m_K - 1; ++j) {
+            score_offsets[j] = -static_cast<double>(m_K - 1 - j);
+        }
+        score_offsets[m_K - 1] = 0.0;
+        VectorXd scores = VectorXd::Zero(m_K);
+        VectorXd probs = VectorXd::Zero(m_K);
+        VectorXd cdf = VectorXd::Zero(m_K - 1);
 
         for (int i = 0; i < m_n; ++i) {
-            double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+            const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
             
             for (int j = 0; j < m_K - 1; ++j) {
                 scores[j] = alpha_suffix[j] - static_cast<double>(m_K - 1 - j) * eta;
             }
             scores[m_K - 1] = 0.0;
             
-            double max_score = *std::max_element(scores.begin(), scores.end());
-            double denom = 0.0;
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] = std::exp(scores[j] - max_score);
-                denom += probs[j];
-            }
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] /= denom;
-            }
+            const double max_score = scores.maxCoeff();
+            probs = (scores.array() - max_score).exp().matrix();
+            const double denom = probs.sum();
+            probs /= denom;
 
-            int y_i = m_y[i];
+            const int y_i = m_y[i];
             neg_ll -= (scores[y_i - 1] - max_score - std::log(denom));
 
             double running_cdf = 0.0;
-            double ey = 0.0;
+            double ey = probs.dot(VectorXd::LinSpaced(m_K, 1.0, static_cast<double>(m_K)));
             for (int j = 0; j < m_K; ++j) {
-                double y_val = static_cast<double>(j + 1);
-                ey += y_val * probs[j];
                 if (j < m_K - 1) {
                     running_cdf += probs[j];
                     cdf[j] = running_cdf;
@@ -94,40 +92,32 @@ public:
             alpha_suffix[j] = alpha_suffix[j + 1] + params[j];
         }
 
-        std::vector<double> scores(m_K, 0.0);
-        std::vector<double> probs(m_K, 0.0);
-        std::vector<double> cdf(m_K - 1, 0.0);
-        std::vector<double> prefix_first_moment(m_K - 1, 0.0);
+        VectorXd y_levels = VectorXd::LinSpaced(m_K, 1.0, static_cast<double>(m_K));
+        VectorXd scores = VectorXd::Zero(m_K);
+        VectorXd probs = VectorXd::Zero(m_K);
+        VectorXd cdf = VectorXd::Zero(m_K - 1);
+        VectorXd prefix_first_moment = VectorXd::Zero(m_K - 1);
 
         for (int i = 0; i < m_n; ++i) {
-            double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+            const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
 
             for (int j = 0; j < m_K - 1; ++j) {
                 scores[j] = alpha_suffix[j] - static_cast<double>(m_K - 1 - j) * eta;
             }
             scores[m_K - 1] = 0.0;
 
-            double max_score = *std::max_element(scores.begin(), scores.end());
-            double denom = 0.0;
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] = std::exp(scores[j] - max_score);
-                denom += probs[j];
-            }
-            for (int j = 0; j < m_K; ++j) {
-                probs[j] /= denom;
-            }
+            const double max_score = scores.maxCoeff();
+            probs = (scores.array() - max_score).exp().matrix();
+            probs /= probs.sum();
 
-            double ey = 0.0;
-            double ey2 = 0.0;
+            const double ey = probs.dot(y_levels);
+            const double ey2 = probs.dot(y_levels.array().square().matrix());
             double running_cdf = 0.0;
             double running_first_moment = 0.0;
             for (int j = 0; j < m_K; ++j) {
-                double y_val = static_cast<double>(j + 1);
-                ey += y_val * probs[j];
-                ey2 += y_val * y_val * probs[j];
                 if (j < m_K - 1) {
                     running_cdf += probs[j];
-                    running_first_moment += y_val * probs[j];
+                    running_first_moment += y_levels[j] * probs[j];
                     cdf[j] = running_cdf;
                     prefix_first_moment[j] = running_first_moment;
                 }

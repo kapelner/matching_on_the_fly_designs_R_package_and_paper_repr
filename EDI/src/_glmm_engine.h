@@ -162,7 +162,7 @@ public:
             const Eigen::VectorXd eta0 = Xg * beta;
 
             Eigen::VectorXd log_terms(nn);
-            std::vector<std::vector<Eigen::VectorXd>> dL_dp_nodes(nn, std::vector<Eigen::VectorXd>(sz, Eigen::VectorXd::Zero(nm)));
+            std::vector<Eigen::VectorXd> dL_dp_sum_nodes(nn, Eigen::VectorXd::Zero(nm));
             std::vector<Eigen::VectorXd> dL_de_nodes(nn, Eigen::VectorXd::Zero(sz));
 
             for (int k = 0; k < nn; ++k) {
@@ -172,7 +172,7 @@ public:
                     Eigen::VectorXd dp(nm);
                     double lp = model.log_prob_derivs(dat.y_s[start + r], eta0[r] + b_vals[k], par, de, dp);
                     ll += lp;
-                    dL_dp_nodes[k][r] = dp;
+                    dL_dp_sum_nodes[k] += dp;
                     dL_de_nodes[k][r] = de;
                 }
                 log_terms[k] = ll;
@@ -185,20 +185,10 @@ public:
                 double pk = std::exp(log_terms[k] - ll_g);
                 if (pk < 1e-15) continue;
 
-                Eigen::VectorXd dLi_dp = Eigen::VectorXd::Zero(nm);
-                Eigen::VectorXd dLi_db = Eigen::VectorXd::Zero(dat.p);
-                double dLi_de_sum = 0.0;
-
-                for (int r = 0; r < sz; ++r) {
-                    dLi_dp += dL_dp_nodes[k][r];
-                    double de = dL_de_nodes[k][r];
-                    dLi_de_sum += de;
-                    dLi_db += de * Xg.row(r).transpose();
-                }
-
-                grad.head(nm) -= pk * dLi_dp;
+                const Eigen::VectorXd dLi_db = Xg.transpose() * dL_de_nodes[k];
+                grad.head(nm) -= pk * dL_dp_sum_nodes[k];
                 grad.segment(nm, dat.p) -= pk * dLi_db;
-                grad[nm + dat.p] -= pk * dLi_de_sum * std::sqrt(2.0) * dat.gh.nodes[k] * sigma;
+                grad[nm + dat.p] -= pk * dL_de_nodes[k].sum() * std::sqrt(2.0) * dat.gh.nodes[k] * sigma;
             }
         }
         return total_nll;

@@ -1,6 +1,5 @@
 // [[Rcpp::depends(RcppEigen)]]
-#include <RcppEigen.h>
-#include <cmath>
+#include "_helper_functions.h"
 #include <limits>
 #include <unordered_map>
 
@@ -153,7 +152,7 @@ List ols_hc2_post_fit_precomputed_cpp(const Eigen::MatrixXd& X_fit,
     omega[i] = resid[i] * resid[i] / std::max(1.0 - hat[i], std::numeric_limits<double>::epsilon());
   }
 
-  Eigen::MatrixXd meat = X_fit.transpose() * omega.asDiagonal() * X_fit;
+  Eigen::MatrixXd meat = weighted_crossprod(X_fit, omega);
   Eigen::MatrixXd vcov = bread * meat * bread;
   vcov = 0.5 * (vcov + vcov.transpose());
   return summarize_with_vcov(coef_hat, vcov, j_treat);
@@ -197,7 +196,7 @@ List glm_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     }
   }
 
-  const Eigen::MatrixXd XtWX = X_fit.transpose() * working_weights.asDiagonal() * X_fit;
+  const Eigen::MatrixXd XtWX = weighted_crossprod(X_fit, working_weights);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     stop("failed to factorize X'WX");
@@ -209,7 +208,7 @@ List glm_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
 
   const Eigen::VectorXd resid = y - mu_hat;
   const Eigen::VectorXd resid_sq = resid.array().square().matrix();
-  Eigen::MatrixXd meat = X_fit.transpose() * resid_sq.asDiagonal() * X_fit;
+  Eigen::MatrixXd meat = weighted_crossprod(X_fit, resid_sq);
   Eigen::MatrixXd vcov = bread * meat * bread;
   vcov = 0.5 * (vcov + vcov.transpose());
   return summarize_with_vcov(coef_hat, vcov, j_treat);
@@ -238,7 +237,7 @@ List glm_cluster_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     }
   }
 
-  const Eigen::MatrixXd XtWX = X_fit.transpose() * working_weights.asDiagonal() * X_fit;
+  const Eigen::MatrixXd XtWX = weighted_crossprod(X_fit, working_weights);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
     stop("failed to factorize X'WX");

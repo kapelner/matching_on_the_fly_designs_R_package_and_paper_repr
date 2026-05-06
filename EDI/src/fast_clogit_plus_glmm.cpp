@@ -136,12 +136,8 @@ public:
 				has_concordant ? par.segment(1, q) : par.head(q);
 			
 			const Eigen::VectorXd eta_d = X_disc * beta_no_intercept;
-			Eigen::VectorXd mu_d(eta_d.size());
-			for (int i = 0; i < eta_d.size(); ++i) {
-				double ed = eta_d[i];
-				total_nll += log1pexp_cpp(ed) - y_disc[i] * ed;
-				mu_d[i] = plogis_safe(ed);
-			}
+			const Eigen::VectorXd mu_d = plogis_array_safe(eta_d.array()).matrix();
+			total_nll += (log1pexp_array_safe(eta_d.array()) - y_disc.array() * eta_d.array()).sum();
 
 			Eigen::VectorXd grad_clogit = X_disc.transpose() * (mu_d - y_disc);
 			if (has_concordant) {
@@ -167,19 +163,16 @@ public:
 				const int sz = j - i;
 				const Eigen::MatrixXd Xg = X_conc.middleRows(i, sz);
 				const Eigen::VectorXd eta0 = Xg * beta;
+				const Eigen::VectorXd yg = y_conc.segment(i, sz);
 
 				Eigen::VectorXd log_terms(n_nodes);
 				std::vector<Eigen::VectorXd> mu_nodes(n_nodes);
 
 				for (int k = 0; k < n_nodes; ++k) {
-					double ll = gh.log_norm_weights[k];
-					mu_nodes[k].resize(sz);
-					for (int r = 0; r < sz; ++r) {
-						const double eta = eta0[r] + b_vals[k];
-						ll += y_conc[i + r] * eta - log1pexp_cpp(eta);
-						mu_nodes[k][r] = plogis_safe(eta);
-					}
-					log_terms[k] = ll;
+					const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
+					mu_nodes[k] = plogis_array_safe(eta_k).matrix();
+					log_terms[k] = gh.log_norm_weights[k] +
+					               (yg.array() * eta_k - log1pexp_array_safe(eta_k)).sum();
 				}
 
 				const double ll_g = log_sum_exp_cpp(log_terms);
@@ -189,10 +182,7 @@ public:
 					double post_k = std::exp(log_terms[k] - ll_g);
 					if (post_k < 1e-15) continue;
 
-					Eigen::VectorXd res_k(sz);
-					for (int r = 0; r < sz; ++r) {
-						res_k[r] = y_conc[i + r] - mu_nodes[k][r];
-					}
+					Eigen::VectorXd res_k = yg - mu_nodes[k];
 
 					// dLL/dbeta
 					grad.head(p_full - 1) -= post_k * (Xg.transpose() * res_k);
@@ -217,12 +207,9 @@ public:
 			const Eigen::VectorXd beta_no_intercept =
 				has_concordant ? par.segment(1, q) : par.head(q);
 			const Eigen::VectorXd eta_d = X_disc * beta_no_intercept;
-			Eigen::VectorXd w_d(eta_d.size());
-			for (int i = 0; i < eta_d.size(); ++i) {
-				const double mu = plogis_safe(eta_d[i]);
-				w_d[i] = mu * (1.0 - mu);
-			}
-			const Eigen::MatrixXd H_clogit = X_disc.transpose() * w_d.asDiagonal() * X_disc;
+			const Eigen::VectorXd mu_d = plogis_array_safe(eta_d.array()).matrix();
+			Eigen::VectorXd w_d = (mu_d.array() * (1.0 - mu_d.array())).matrix();
+			const Eigen::MatrixXd H_clogit = weighted_crossprod(X_disc, w_d);
 			if (has_concordant) {
 				H.block(1, 1, q, q).noalias() += H_clogit;
 			} else {
@@ -261,24 +248,18 @@ public:
 				for (int k = 0; k < n_nodes; ++k) {
 					double ll = gh.log_norm_weights[k];
 					const double b = b_vals[k];
-					Eigen::VectorXd mu(sz);
-					Eigen::VectorXd res(sz);
-					Eigen::VectorXd weight(sz);
-
-					for (int r = 0; r < sz; ++r) {
-						const double eta = eta0[r] + b;
-						ll += yg[r] * eta - log1pexp_cpp(eta);
-						mu[r] = plogis_safe(eta);
-						res[r] = yg[r] - mu[r];
-						weight[r] = mu[r] * (1.0 - mu[r]);
-					}
+					const Eigen::ArrayXd eta_k = eta0.array() + b;
+					Eigen::VectorXd mu = plogis_array_safe(eta_k).matrix();
+					Eigen::VectorXd res = yg - mu;
+					Eigen::VectorXd weight = (mu.array() * (1.0 - mu.array())).matrix();
+					ll += (yg.array() * eta_k - log1pexp_array_safe(eta_k)).sum();
 
 					Eigen::VectorXd& a = node_score[k];
 					Eigen::MatrixXd& B = node_hess[k];
 					a.head(n_beta).noalias() = Xg.transpose() * res;
 					a[p_full - 1] = b * res.sum();
 					B.topLeftCorner(n_beta, n_beta).noalias() =
-						-Xg.transpose() * weight.asDiagonal() * Xg;
+						-weighted_crossprod(Xg, weight);
 					B.block(0, p_full - 1, n_beta, 1).noalias() =
 						-b * (Xg.transpose() * weight);
 					B.block(p_full - 1, 0, 1, n_beta) =

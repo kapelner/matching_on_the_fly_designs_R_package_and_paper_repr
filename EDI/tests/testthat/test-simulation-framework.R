@@ -24,10 +24,10 @@ test_that("SimulationFramework accepts merged design classes and params", {
 	raw <- sim$get_results()
 	sm <- sim$summarize()
 
-	expect_true("inference_type" %in% names(raw))
-	expect_false("method" %in% names(raw))
-	expect_true("inference_type" %in% names(sm))
-	expect_false("method" %in% names(sm))
+	expect_true("ci_lo" %in% names(raw))
+	expect_true("ci_hi" %in% names(raw))
+	expect_false("ci_a" %in% names(raw))
+	expect_false("ci_b" %in% names(raw))
 	expect_true("asymp_pval" %in% raw$inference_type)
 	expect_true("asymp_pval" %in% sm$inference_type)
 	expect_equal(sort(sm$design), sort(c(
@@ -38,6 +38,30 @@ test_that("SimulationFramework accepts merged design classes and params", {
 	expect_true("B_target=2L" %in% sm$design_params)
 	expect_true("max_resample_attempts=10L" %in% sm$inference_params)
 	expect_true("asymp_pval(delta=0)" %in% sm$inference_type_params)
+})
+
+test_that("SimulationFramework defaults to csv.bz2 results and rejects unsupported extensions", {
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		verbose = FALSE,
+		continue_from_last_result_row = FALSE
+	)
+
+	expect_equal(sim$.__enclos_env__$private$results_filename, "simulation_framework_results.csv.bz2")
+
+	expect_error(
+		SimulationFramework$new(
+			response_type = "continuous",
+			design_classes_and_params = list(FixedDesignBernoulli),
+			inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+			results_filename = tempfile(fileext = ".txt"),
+			verbose = FALSE,
+			continue_from_last_result_row = FALSE
+		),
+		"results_filename must end in either '.csv' or '.csv.bz2'"
+	)
 })
 
 test_that("SimulationFramework validates merged inference constructor params", {
@@ -148,6 +172,52 @@ test_that("SimulationFramework accepts vector grids for n, p, betaT, and cond_ex
 	expect_true(all(c("cond_exp_func_model", "n", "p", "betaT") %in% names(sm)))
 	expect_equal(data.table::uniqueN(sm[, .(cond_exp_func_model, n, p, betaT)]), 12L)
 	expect_false(any(sm$cond_exp_func_model == "nonlinear" & sm$p < 5L))
+})
+
+test_that("SimulationFramework can write and reload csv.bz2 results", {
+	results_file <- tempfile(fileext = ".csv.bz2")
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list(delta = 0)),
+		n = 8L,
+		p = 2L,
+		Nrep = 1L,
+		betaT = 0,
+		results_filename = results_file,
+		continue_from_last_result_row = TRUE,
+		verbose = FALSE,
+		turn_off_asserts_for_speed = FALSE
+	)
+	sim$run()
+	raw_first <- sim$get_results()
+
+	expect_true(file.exists(results_file))
+	expect_false(file.exists(file.path(
+		dirname(results_file),
+		paste0(".", sub("\\.csv\\.bz2$", "", basename(results_file)), "__staging.csv")
+	)))
+
+	sim_resume <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list(delta = 0)),
+		n = 8L,
+		p = 2L,
+		Nrep = 1L,
+		betaT = 0,
+		results_filename = results_file,
+		continue_from_last_result_row = TRUE,
+		verbose = FALSE,
+		turn_off_asserts_for_speed = FALSE
+	)
+	sim_resume$run()
+	raw_second <- sim_resume$get_results()
+
+	expect_equal(nrow(raw_second), nrow(raw_first))
+	expect_equal(raw_second$estimate, raw_first$estimate)
 })
 
 test_that("SimulationFramework summarize preserves raw metric precision", {

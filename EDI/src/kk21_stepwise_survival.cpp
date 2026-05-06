@@ -1,11 +1,19 @@
 // [[Rcpp::depends(RcppEigen)]]
-#include <RcppEigen.h>
+#include "_helper_functions.h"
 #include <cmath>
 #include <limits>
 #include <vector>
 
 using namespace Rcpp;
 using namespace Eigen;
+
+namespace {
+
+inline Eigen::ArrayXd clamp_weibull_z(const Eigen::ArrayXd& z) {
+	return z.max(-20.0).min(20.0);
+}
+
+}  // namespace
 
 // Helper: Fit Weibull AFT on the reduced design matrix XS (intercept in col 0)
 // using alternating IRLS (beta) and Newton-Raphson (scale). beta and scale are warm-started.
@@ -34,20 +42,15 @@ static bool weibull_reduced_fit_for_score_test(
 	for (int iter = 0; iter < maxit; ++iter) {
 		// Standardized log-residuals z_i = (log(t_i) - XS*beta) / scale
 		Eigen::VectorXd z = (log_y - XS * beta) / scale;
-		Eigen::VectorXd w(n), adj(n);
-		for (int i = 0; i < n; ++i) {
-			double zi    = std::max(-20.0, std::min(20.0, z(i)));
-			double exp_z = std::exp(zi);
-			w(i)   = exp_z;
-			adj(i) = (delta(i) > 0.5) ? (zi - 1.0 + exp_z) : exp_z;
-		}
+		const Eigen::ArrayXd z_clamped = clamp_weibull_z(z.array());
+		Eigen::VectorXd w = z_clamped.exp().matrix();
+		const Eigen::ArrayXd adj = (delta.array() > 0.5).select(z_clamped - 1.0 + w.array(), w.array());
 
 		// IRLS: weighted least squares update for beta
 		Eigen::VectorXd sqrt_w = w.array().sqrt();
 		Eigen::MatrixXd Xw = XS.array().colwise() * sqrt_w.array();
-		Eigen::VectorXd yw(n);
-		for (int i = 0; i < n; ++i)
-			yw(i) = (log_y(i) - scale * adj(i) / w(i)) * sqrt_w(i);
+		Eigen::VectorXd yw =
+			((log_y.array() - scale * adj / w.array()) * sqrt_w.array()).matrix();
 
 		Eigen::LDLT<Eigen::MatrixXd> ldlt_inner((Xw.transpose() * Xw).eval());
 		if (ldlt_inner.info() != Eigen::Success) return false;
@@ -55,17 +58,11 @@ static bool weibull_reduced_fit_for_score_test(
 
 		// Newton-Raphson step for scale
 		Eigen::VectorXd z_new = (log_y - XS * beta_new) / scale;
-		double score_s = 0.0, info_s = 0.0;
-		for (int i = 0; i < n; ++i) {
-			double zi     = std::max(-20.0, std::min(20.0, z_new(i)));
-			double exp_zi = std::exp(zi);
-			if (delta(i) > 0.5) {
-				score_s += -1.0/scale + zi/scale - zi*exp_zi/scale;
-				info_s  +=  1.0/(scale*scale);
-			} else {
-				score_s += -zi*exp_zi/scale;
-			}
-		}
+		const Eigen::ArrayXd z_new_clamped = clamp_weibull_z(z_new.array());
+		const Eigen::ArrayXd exp_z_new = z_new_clamped.exp();
+		const double score_s =
+			(delta.array() * (z_new_clamped - 1.0) - z_new_clamped * exp_z_new).sum() / scale;
+		const double info_s = delta.sum() / (scale * scale);
 		double scale_new = scale;
 		if (info_s > 1e-10) {
 			scale_new = scale - score_s / info_s;
@@ -80,13 +77,10 @@ static bool weibull_reduced_fit_for_score_test(
 
 	// Final W and score-test residuals
 	Eigen::VectorXd z_fin = (log_y - XS * beta) / scale;
-	for (int i = 0; i < n; ++i) {
-		double zi = std::max(-20.0, std::min(20.0, z_fin(i)));
-		W_diag(i) = std::exp(zi);
-	}
+	W_diag = clamp_weibull_z(z_fin.array()).exp().matrix();
 	resid = delta - W_diag;
 
-	Eigen::MatrixXd XtWX = XS.transpose() * W_diag.asDiagonal() * XS;
+	Eigen::MatrixXd XtWX = weighted_crossprod(XS, W_diag);
 	XtWX_ldlt = XtWX.ldlt();
 	return XtWX_ldlt.info() == Eigen::Success;
 }
@@ -167,7 +161,7 @@ NumericVector kk21_stepwise_survival_weights_cpp(
 
 		if (fit_ok) {
 			// ---- Weibull score test ----
-			Eigen::MatrixXd WXS = W_diag.asDiagonal() * XS;  // n x m
+			Eigen::MatrixXd WXS = (XS.array().colwise() * W_diag.array()).matrix();  // n x m
 
 			double best_stat = -1.0;
 			int best_j = -1;

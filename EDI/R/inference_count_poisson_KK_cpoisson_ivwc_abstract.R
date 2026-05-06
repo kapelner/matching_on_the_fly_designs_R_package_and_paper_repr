@@ -167,14 +167,12 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			}
 
 			mod = tryCatch({
-				if (estimate_only) {
-					res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
-					list(b = res$b, ssq_b_1 = NA_real_, X_fit = Xmm)
-				} else {
-					# The weighted optimizer returns variance for all params
-					res = fast_logistic_regression_weighted_with_var_cpp(X = Xmm, y = y_prop, weights = weights)
-					list(b = res$b, ssq_b_1 = res$vcov[1, 1], X_fit = Xmm)
+				res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
+				ssq_b_1 = if (estimate_only) NA_real_ else {
+					vcov_mat = tryCatch(solve(res$XtWX), error = function(e) NULL)
+					if (!is.null(vcov_mat)) vcov_mat[1L, 1L] else NA_real_
 				}
+				list(b = res$b, ssq_b_1 = ssq_b_1, X_fit = Xmm)
 			}, error = function(e) NULL)
 
 			if (!is.null(mod) && is.finite(mod$b[1])){
@@ -201,12 +199,15 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 					fit_ok = function(mod, X_fit, keep){
 						if (is.null(mod) || !is.finite(mod$b[2L])) return(FALSE)
 						if (estimate_only) return(TRUE)
-						is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+						j_col = which(colnames(X_fit) == "w_r")
+						if (length(j_col) == 0L) j_col = 2L
+						ssq = mod$vcov[j_col, j_col]
+						is.finite(ssq) && ssq > 0
 					}
 				)
 				mod = attempt$fit
 				if (!is.null(mod)){
-					j_treat = which(colnames(attempt$X_fit) == "w_r")
+					j_treat = which(colnames(attempt$X) == "w_r")
 					if (length(j_treat) == 0) j_treat = 2L
 				}
 			} else {
@@ -217,11 +218,11 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			if (!is.null(mod) && is.finite(mod$b[j_treat])){
 				private$cached_values$beta_T_reservoir = as.numeric(mod$b[j_treat])
 				if (ncol(as.matrix(private$X)) > 0 && !is.null(attempt$fit)){
-					private$best_Xmm_colnames_reservoir = setdiff(colnames(mod$X_fit), c("(Intercept)", "w_r"))
+					private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X), c("(Intercept)", "w_r"))
 					private$best_Xmm_j_treat_reservoir = j_treat
 				}
 			}
-			if (!estimate_only && !is.null(mod)) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$ssq_b_j)
+			if (!estimate_only && !is.null(mod)) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$vcov[j_treat, j_treat])
 		},
 
 		best_Xmm_colnames_matched = NULL,

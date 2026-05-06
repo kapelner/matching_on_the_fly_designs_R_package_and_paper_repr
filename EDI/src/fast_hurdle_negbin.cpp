@@ -38,15 +38,11 @@ public:
 		const double log_theta = params[m_p];
 		const double theta = std::exp(log_theta);
 
-		VectorXd eta = m_X * beta;
-		for (int i = 0; i < m_n; ++i) {
-			eta[i] = clamp_exp_arg_hnb(eta[i]);
-		}
-		VectorXd mu = eta.array().exp().matrix();
-		mu = mu.array().max(1e-10);
+		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
+		VectorXd mu = eta.array().exp().max(1e-10).matrix();
 
 		double neg_ll = 0.0;
-		VectorXd score_beta = VectorXd::Zero(m_p);
+		VectorXd eta_score = VectorXd::Zero(m_n);
 		double score_log_theta = 0.0;
 
 		for (int i = 0; i < m_n; ++i) {
@@ -63,8 +59,7 @@ public:
 
 			const double standard_eta_score = yi - mu_i * (yi + r) / (r + mu_i);
 			const double trunc_eta_corr = -mu_i * p0 * r / (trunc_denom * (r + mu_i));
-			const double eta_score = standard_eta_score + trunc_eta_corr;
-			score_beta.noalias() += eta_score * m_X.row(i).transpose();
+			eta_score[i] = standard_eta_score + trunc_eta_corr;
 
 			const double dlogf_dr =
 				R::digamma(yi + r) - R::digamma(r) +
@@ -77,7 +72,7 @@ public:
 		}
 
 		grad.resize(m_p + 1);
-		grad.head(m_p) = -score_beta;
+		grad.head(m_p) = -(m_X.transpose() * eta_score);
 		grad[m_p] = -score_log_theta;
 
 		return neg_ll;
@@ -88,15 +83,15 @@ public:
 		MatrixXd H = MatrixXd::Zero(total_p, total_p);
 		const VectorXd beta = params.head(m_p);
 		const double r = std::exp(params[m_p]);
-		VectorXd eta = m_X * beta;
+		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
+		VectorXd beta_weights = VectorXd::Zero(m_n);
+		VectorXd cross_weights = VectorXd::Zero(m_n);
 
 		for (int i = 0; i < m_n; ++i) {
-			const double eta_i = clamp_exp_arg_hnb(eta[i]);
-			const double mu_i = std::max(std::exp(eta_i), 1e-10);
+			const double mu_i = std::max(std::exp(eta[i]), 1e-10);
 			const double yi = static_cast<double>(m_y[i]);
 			const double denom = r + mu_i;
 			const double denom_sq = denom * denom;
-			const VectorXd x = m_X.row(i).transpose();
 
 			double log_p0 = r * (std::log(r) - std::log(denom));
 			double p0 = std::exp(log_p0);
@@ -111,13 +106,13 @@ public:
 				- (yi + r) * r * mu_i / denom_sq
 				- r * r * mu_i * p0 / (denom_sq * q0)
 				+ c_eta * c_eta * p0 / (q0 * q0);
-			H.topLeftCorner(m_p, m_p).noalias() -= d_score_eta_d_eta * (x * x.transpose());
+			beta_weights[i] = -d_score_eta_d_eta;
 
 			const double d_score_eta_d_log_r =
 				r * mu_i * (yi - mu_i) / denom_sq
 				- r * mu_i * mu_i * p0 / (denom_sq * q0)
 				- r * r * mu_i * p0 * dlogp0_dr / (denom * q0 * q0);
-			H.topRightCorner(m_p, 1).noalias() -= d_score_eta_d_log_r * x;
+			cross_weights[i] = -d_score_eta_d_log_r;
 
 			const double dlogf_dr =
 				R::digamma(yi + r) - R::digamma(r) +
@@ -139,6 +134,8 @@ public:
 			H(m_p, m_p) -= d_score_log_r_d_log_r;
 		}
 
+		H.topLeftCorner(m_p, m_p).noalias() = weighted_crossprod(m_X, beta_weights);
+		H.topRightCorner(m_p, 1).noalias() = m_X.transpose() * cross_weights;
 		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
 		return H;
 	}
