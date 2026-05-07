@@ -21,7 +21,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 				private$testing_type,
 				wald = private$compute_wald_confidence_interval(alpha),
 				score = private$invert_test_pval_confidence_interval(alpha),
-				lik_ratio = private$invert_test_pval_confidence_interval(alpha),
+				lik_ratio = private$invert_lik_ratio_ci_newton(alpha),
 				stop("Unsupported testing_type: ", private$testing_type)
 			)
 		},
@@ -421,6 +421,30 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			NULL
 		},
 
+		make_warm_fit_null_wrapper = function(spec, cache_key){
+			last_start = NULL
+			last_delta = NULL
+			fit_null_formals = tryCatch(names(formals(spec$fit_null)), error = function(e) character())
+			accepts_start = "start" %in% fit_null_formals
+			function(delta){
+				warm_enabled = isTRUE(private$null_fit_warm_start_enabled)
+				cache_state = if (warm_enabled) private$get_likelihood_null_warm_state(cache_key) else NULL
+				start = if (warm_enabled) last_start else NULL
+				if (warm_enabled && is.null(start) && !is.null(cache_state)) start = cache_state$start
+				fit = tryCatch(
+					if (accepts_start) spec$fit_null(delta, start = start) else spec$fit_null(delta),
+					error = function(e) NULL
+				)
+				extract_start = spec$extract_start %||% function(fit_obj) NULL
+				last_start <<- if (warm_enabled && accepts_start) tryCatch(extract_start(fit), error = function(e) NULL) else NULL
+				last_delta <<- delta
+				if (warm_enabled && accepts_start) {
+					private$set_likelihood_null_warm_state(cache_key, delta = delta, start = last_start)
+				}
+				fit
+			}
+		},
+
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
 			spec = private$get_likelihood_test_spec()
 			if (is.null(spec)) {
@@ -430,7 +454,8 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			j = as.integer(spec$j)
 			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
 
-			null_fit = tryCatch(spec$fit_null(delta), error = function(e) NULL)
+			fit_null = private$make_warm_fit_null_wrapper(spec, cache_key = paste0("likelihood_test:", testing_type))
+			null_fit = tryCatch(fit_null(delta), error = function(e) NULL)
 			if (is.null(null_fit) || is.null(null_fit$b) && is.null(null_fit$params)) {
 				return(NA_real_)
 			}
@@ -458,43 +483,63 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			est = self$compute_estimate()
 			if (!is.finite(est)) return(c(NA_real_, NA_real_))
 
-			target = function(delta){
-				pval = self$compute_asymp_two_sided_pval(delta)
-				if (!is.finite(pval)) return(NA_real_)
-				pval - alpha
-			}
+			se = private$get_standard_error()
+			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
+			step = max(step, 1e-4)
+			wald_ci = private$compute_wald_confidence_interval(alpha)
+			lower_seed = if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else NA_real_
+			upper_seed = if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else NA_real_
+
+			pval_fn = function(delta) self$compute_asymp_two_sided_pval(delta)
+
+			ci_vals = pval_invert_ci_cpp(
+				pval_fn    = pval_fn,
+				est        = est,
+				alpha      = alpha,
+				step       = step,
+				lower_seed = lower_seed,
+				upper_seed = upper_seed
+			)
+
+			ci = c(ci_vals[1L], ci_vals[2L])
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
+		},
+
+		invert_lik_ratio_ci_newton = function(alpha){
+			spec = private$get_likelihood_test_spec()
+			if (is.null(spec)) return(private$invert_test_pval_confidence_interval(alpha))
+
+			est = self$compute_estimate()
+			if (!is.finite(est)) return(c(NA_real_, NA_real_))
+
+			full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
+			if (!is.finite(full_negloglik)) return(private$invert_test_pval_confidence_interval(alpha))
 
 			se = private$get_standard_error()
 			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
 			step = max(step, 1e-4)
+			wald_ci = private$compute_wald_confidence_interval(alpha)
+			lower_seed = if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else est - step
+			upper_seed = if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else est + step
 
-			find_bound = function(direction){
-				inner = tryCatch(target(est), error = function(e) NA_real_)
-				if (!is.finite(inner)) return(NA_real_)
-				if (inner < 0) return(est)
+			j = as.integer(spec$j)
+			fit_null_fn = private$make_warm_fit_null_wrapper(spec, cache_key = "lik_ratio_ci")
 
-				lower = est
-				upper = est
-				outer = NA_real_
-				for (i in seq_len(60L)){
-					candidate = est + direction * step * 2^(i - 1L)
-					outer = tryCatch(target(candidate), error = function(e) NA_real_)
-					if (is.finite(outer) && outer <= 0) {
-						if (direction < 0) {
-							lower = candidate
-							upper = est
-						} else {
-							lower = est
-							upper = candidate
-						}
-						break
-					}
-				}
-				if (!is.finite(outer) || outer > 0) return(NA_real_)
-				tryCatch(stats::uniroot(target, lower = lower, upper = upper, tol = 1e-6)$root, error = function(e) NA_real_)
-			}
+			ci_vals = lrt_ci_nr_cpp(
+				fit_null_fn    = fit_null_fn,
+				neg_loglik_fn  = spec$neg_loglik,
+				score_fn       = spec$score,
+				est            = est,
+				full_negloglik = full_negloglik,
+				alpha          = alpha,
+				step           = step,
+				lower_seed     = lower_seed,
+				upper_seed     = upper_seed,
+				j              = j
+			)
 
-			ci = c(find_bound(-1), find_bound(1))
+			ci = c(ci_vals[1L], ci_vals[2L])
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},

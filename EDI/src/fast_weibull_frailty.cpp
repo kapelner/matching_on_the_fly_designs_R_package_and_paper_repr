@@ -280,9 +280,9 @@ public:
 
 // [[Rcpp::export]]
 double get_weibull_frailty_neg_loglik_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& dead,
-	const Eigen::MatrixXd& X,
 	const Eigen::VectorXi& group_id,
 	const Eigen::VectorXd& params,
 	int n_gh = 20,
@@ -295,9 +295,9 @@ double get_weibull_frailty_neg_loglik_cpp(
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_weibull_frailty_score_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& dead,
-	const Eigen::MatrixXd& X,
 	const Eigen::VectorXi& group_id,
 	const Eigen::VectorXd& params,
 	int n_gh = 20,
@@ -311,9 +311,9 @@ Eigen::VectorXd get_weibull_frailty_score_cpp(
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_weibull_frailty_hessian_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& dead,
-	const Eigen::MatrixXd& X,
 	const Eigen::VectorXi& group_id,
 	const Eigen::VectorXd& params,
 	int n_gh = 20,
@@ -325,9 +325,9 @@ Eigen::MatrixXd get_weibull_frailty_hessian_cpp(
 
 // [[Rcpp::export]]
 List fast_weibull_frailty_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& dead,
-	const Eigen::MatrixXd& X,
 	const Eigen::VectorXi& group_id,
 	Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
 	bool estimate_only = false,

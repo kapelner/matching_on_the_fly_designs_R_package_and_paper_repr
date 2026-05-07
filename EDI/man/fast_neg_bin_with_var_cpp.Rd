@@ -7,6 +7,8 @@
 fast_neg_bin_with_var_cpp(
   X,
   y,
+  start_params = NULL,
+  smart_start = FALSE,
   maxit = 1000L,
   eps_f = 1e-08,
   eps_g = 1e-05,

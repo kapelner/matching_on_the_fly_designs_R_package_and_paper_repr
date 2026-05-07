@@ -55,6 +55,7 @@ blocking experimental design.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y_original"><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>EDI::Design$get_y_original()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="set_m"><a href='../../EDI/html/Design.html#method-Design-set_m'><code>EDI::Design$set_m()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="summarize_blocks"><a href='../../EDI/html/Design.html#method-Design-summarize_blocks'><code>EDI::Design$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="transform_y"><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>EDI::Design$transform_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="FixedDesign" data-id="add_all_subject_responses"><a href='../../EDI/html/FixedDesign.html#method-FixedDesign-add_all_subject_responses'><code>EDI::FixedDesign$add_all_subject_responses()</code></a></span></li>
@@ -81,7 +82,6 @@ Initialize a fixed stratified blocking experimental design
   B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
   exact_num_blocks = FALSE,
   equal_block_sizes = TRUE,
-  num_bins_for_continuous_covariate = NULL,
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.
@@ -126,9 +126,6 @@ construction time, an error is raised immediately if `n` is not divisible by
 strata produce unequal block counts the design errors at that point. Set to
 `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
 `InferenceIncidExtendedRobins` still require equal block sizes regardless).}
-
-\item{\code{num_bins_for_continuous_covariate}}{Deprecated alias for
-`preferred_num_bins_for_continuous_covariate`.}
 
 \item{\code{verbose}}{A flag for verbosity.}
 

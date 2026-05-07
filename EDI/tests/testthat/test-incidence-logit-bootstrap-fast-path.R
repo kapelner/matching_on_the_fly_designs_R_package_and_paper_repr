@@ -1,7 +1,7 @@
 test_that("univariate logit reusable bootstrap worker matches generic bootstrap path", {
-	SlowInferenceIncidUnivLogRegr = R6::R6Class(
-		"SlowInferenceIncidUnivLogRegr",
-		inherit = InferenceIncidUnivLogRegr,
+	SlowInferenceIncidLogRegr = R6::R6Class(
+		"SlowInferenceIncidLogRegr",
+		inherit = InferenceIncidLogRegr,
 		private = list(
 			supports_reusable_bootstrap_worker = function(){
 				FALSE
@@ -20,8 +20,8 @@ test_that("univariate logit reusable bootstrap worker matches generic bootstrap 
 	y = stats::rbinom(n, 1, stats::plogis(-0.4 + 0.8 * w))
 	des$add_all_subject_responses(y)
 
-	fast_inf = InferenceIncidUnivLogRegr$new(des, verbose = FALSE)
-	slow_inf = SlowInferenceIncidUnivLogRegr$new(des, verbose = FALSE)
+	fast_inf = InferenceIncidLogRegr$new(des, verbose = FALSE)
+	slow_inf = SlowInferenceIncidLogRegr$new(des, verbose = FALSE)
 	fast_inf$num_cores = 1L
 	slow_inf$num_cores = 1L
 
@@ -34,9 +34,9 @@ test_that("univariate logit reusable bootstrap worker matches generic bootstrap 
 })
 
 test_that("multivariate logit reusable bootstrap worker matches generic bootstrap path", {
-	SlowInferenceIncidMultiLogRegr = R6::R6Class(
-		"SlowInferenceIncidMultiLogRegr",
-		inherit = InferenceIncidMultiLogRegr,
+	SlowInferenceIncidLogRegr = R6::R6Class(
+		"SlowInferenceIncidLogRegr",
+		inherit = InferenceIncidLogRegr,
 		private = list(
 			supports_reusable_bootstrap_worker = function(){
 				FALSE
@@ -58,8 +58,8 @@ test_that("multivariate logit reusable bootstrap worker matches generic bootstra
 	y = stats::rbinom(n, 1, stats::plogis(linpred))
 	des$add_all_subject_responses(y)
 
-	fast_inf = InferenceIncidMultiLogRegr$new(des, verbose = FALSE)
-	slow_inf = SlowInferenceIncidMultiLogRegr$new(des, verbose = FALSE)
+	fast_inf = InferenceIncidLogRegr$new(des, verbose = FALSE)
+	slow_inf = SlowInferenceIncidLogRegr$new(des, verbose = FALSE)
 	fast_inf$num_cores = 1L
 	slow_inf$num_cores = 1L
 

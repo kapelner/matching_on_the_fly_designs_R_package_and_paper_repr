@@ -4,14 +4,14 @@
 \alias{get_coxph_hessian_cpp}
 \title{Compute Cox PH Hessian (C++)}
 \usage{
-get_coxph_hessian_cpp(y, dead, X, beta)
+get_coxph_hessian_cpp(X, y, dead, beta)
 }
 \arguments{
+\item{X}{Predictor matrix.}
+
 \item{y}{Survival times.}
 
 \item{dead}{Event indicators.}
-
-\item{X}{Predictor matrix.}
 
 \item{beta}{Coefficient vector.}
 }

@@ -43,18 +43,28 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			des_template = private$des_obj$duplicate()
 			has_match_structure_local = private$has_match_structure
 
+			# Determine sampling strategy based on bootstrap type
+			is_assignment_resampling = identical(tolower(private$get_bootstrap_type(bootstrap_type)), "assignment")
+
 			run_one_boot_iter = function(worker_des, worker_inf) {
-				worker_des$.__enclos_env__$private$resample_assignment()
-				worker_inf$.__enclos_env__$private$cached_values = list()
-				worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
-				worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-				worker_inf$.__enclos_env__$private$y_temp = worker_des$.__enclos_env__$private$y
-				worker_inf$.__enclos_env__$private$dead = worker_des$.__enclos_env__$private$dead
-				if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
-					worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
-					worker_inf$.__enclos_env__$private$compute_basic_match_data()
+				if (is_assignment_resampling) {
+					worker_des$.__enclos_env__$private$resample_assignment()
+					worker_inf$.__enclos_env__$private$cached_values = list()
+					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
+					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
+					worker_inf$.__enclos_env__$private$y_temp = worker_des$.__enclos_env__$private$y
+					worker_inf$.__enclos_env__$private$dead = worker_des$.__enclos_env__$private$dead
+					if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
+						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
+						worker_inf$.__enclos_env__$private$compute_basic_match_data()
+					}
+					worker_inf$compute_estimate(estimate_only = TRUE)
+				} else {
+					boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+					sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+					if (is.null(sub_inf)) return(NA_real_)
+					as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 				}
-				worker_inf$compute_estimate(estimate_only = TRUE)
 			}
 
 			if (isTRUE(debug)) {
@@ -85,7 +95,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 					chunks = split(seq_len(B), chunk_id)
 
-					run_debug_chunk = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+					run_debug_chunk = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 						function(idxs) {
 							worker_state = private$create_bootstrap_worker_state()
 							lapply(idxs, function(idx) run_debug_boot_iter(worker_state = worker_state))
@@ -166,7 +176,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			# wrongly choose parallel for small B values like r = 19.
 			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 			if (actual_cores > 1L) {
-				do_warmup_iter = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+				do_warmup_iter = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
 						boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
@@ -190,7 +200,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					actual_cores = 1L
 			}
 
-			boot_distr = if (isTRUE(private$supports_reusable_bootstrap_worker())) {
+			boot_distr = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 				private$compute_bootstrap_distribution_with_reused_workers(
 					B = B,
 					actual_cores = actual_cores,
@@ -243,7 +253,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 50L){
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 				assertCount(B, positive = TRUE)
@@ -369,7 +379,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @param show_progress			Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
-		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 50L){
+		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Bootstrap inference")
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -546,39 +556,39 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 
 		load_bootstrap_sample_into_design_backed_worker = function(worker_state, indices){
 			indices = as.integer(indices)
-			use_resampled_covariates =
-				length(indices) != worker_state$n ||
-				is(worker_state$worker_priv$des_obj, "FixedDesignBlockedCluster")
 			w_priv = worker_state$worker_priv
-			w_priv$X = if (use_resampled_covariates && !is.null(worker_state$base_X)) {
+			w_priv$X = if (!is.null(worker_state$base_X)) {
 				worker_state$base_X[indices, , drop = FALSE]
 			} else {
-				worker_state$base_X
+				NULL
 			}
 			w_priv$w = if (!is.null(worker_state$base_w)) as.numeric(worker_state$base_w[indices]) else NULL
 			w_priv$y = if (!is.null(worker_state$base_y)) as.numeric(worker_state$base_y[indices]) else NULL
 			w_priv$dead = if (!is.null(worker_state$base_dead)) as.numeric(worker_state$base_dead[indices]) else NULL
+			w_priv$any_censoring = !is.null(w_priv$dead) && any(w_priv$dead == 0)
 			w_priv$y_temp = w_priv$y
 			if (!is.null(worker_state$base_m)) w_priv$m = worker_state$base_m[indices]
-			w_priv$n = if (use_resampled_covariates) length(indices) else worker_state$n
+			w_priv$n = length(indices)
 			w_priv$cached_values = list()
+			w_priv$likelihood_null_warm_cache = list()
 			w_priv$reduced_design_keep_cache = NULL
 			w_priv$fixed_covariate_keep_cache = NULL
+			w_priv$best_X_colnames = NULL
+			w_priv$best_Xmm_colnames = NULL
+			w_priv$fit_warm_coefficients = NULL
 			w_priv$cached_mod = NULL
 
 			des_priv = worker_state$worker_des_priv
 			if (!is.null(des_priv)) {
-				if (use_resampled_covariates) {
-					des_priv$X = w_priv$X
-					des_priv$t = length(indices)
-					des_priv$n = length(indices)
-				}
+				des_priv$X = w_priv$X
+				des_priv$t = length(indices)
+				des_priv$n = length(indices)
 				des_priv$w = w_priv$w
 				des_priv$y = w_priv$y
 				des_priv$dead = w_priv$dead
 				if (!is.null(worker_state$base_m)) des_priv$m = w_priv$m
 				des_priv$all_subject_data_cache = list()
-				if (use_resampled_covariates) des_priv$lin_centered_covariates = NULL
+				des_priv$lin_centered_covariates = NULL
 			}
 		},
 

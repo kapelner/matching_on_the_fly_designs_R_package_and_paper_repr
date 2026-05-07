@@ -5,9 +5,11 @@
 \title{Fast Quasi-Poisson Regression with Variance (C++)}
 \usage{
 fast_quasipoisson_regression_with_var_cpp(
-  Xmm,
+  X,
   y,
   j = 2L,
+  start_beta = NULL,
+  smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
@@ -16,8 +18,8 @@ fast_quasipoisson_regression_with_var_cpp(
 )
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{Xmm} if desired.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable, expected to be counts.}
 

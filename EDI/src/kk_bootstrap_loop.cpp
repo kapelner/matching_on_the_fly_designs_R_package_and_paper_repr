@@ -10,21 +10,21 @@ using namespace Rcpp;
 
 // Forward declaration
 List match_stats_from_indices_cpp(
+	const NumericMatrix& X,
 	const NumericVector& y,
 	const NumericVector& w,
-	const NumericMatrix& X,
-	const IntegerVector& original_m_vec, // Changed name
+	const IntegerVector& original_m_vec,
 	const IntegerVector& i_b,
 	int m
 );
 
 // [[Rcpp::export]]
 NumericVector kk_bootstrap_loop_cpp(
-	const IntegerMatrix& indices,
+	const NumericMatrix& X,
 	const NumericVector& y,
 	const NumericVector& w,
-	const NumericMatrix& X,
-	const IntegerVector& original_m_vec, // Added this argument
+	const IntegerVector& original_m_vec,
+	const IntegerMatrix& indices,
 	int m,
 	Function duplicate_inference_fn,
 	Function compute_estimate_fn,
@@ -48,7 +48,7 @@ NumericVector kk_bootstrap_loop_cpp(
 	IntegerVector i_b = indices(b, _);
 
 	// Compute match statistics for this bootstrap sample
-	List kk_stats = match_stats_from_indices_cpp(y, w, X, original_m_vec, i_b, m); // Changed this line
+	List kk_stats = match_stats_from_indices_cpp(X, y, w, original_m_vec, i_b, m); // Changed this line
 
 	// Add thread-local inference object to the stats
 	kk_stats["inf_obj"] = thread_inf_obj_sexp;

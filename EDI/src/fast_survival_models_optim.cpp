@@ -428,9 +428,9 @@ public:
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_clayton_weibull_aft_score_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::MatrixXi& pair_idx,
     const Eigen::VectorXi& singleton_rows,
     const Eigen::VectorXd& params
@@ -443,9 +443,9 @@ Eigen::VectorXd get_clayton_weibull_aft_score_cpp(
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_clayton_weibull_aft_hessian_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::MatrixXi& pair_idx,
     const Eigen::VectorXi& singleton_rows,
     const Eigen::VectorXd& params
@@ -456,9 +456,9 @@ Eigen::MatrixXd get_clayton_weibull_aft_hessian_cpp(
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_dep_cens_transform_score_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& params
 ) {
     DepCensTransformLikelihood fun(y, dead, X);
@@ -469,9 +469,9 @@ Eigen::VectorXd get_dep_cens_transform_score_cpp(
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_dep_cens_transform_hessian_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& params
 ) {
     DepCensTransformLikelihood fun(y, dead, X);
@@ -480,9 +480,9 @@ Eigen::MatrixXd get_dep_cens_transform_hessian_cpp(
 
 // [[Rcpp::export]]
 List fast_clayton_weibull_aft_optim_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::MatrixXi& pair_idx,
     const Eigen::VectorXi& singleton_rows,
     const Eigen::VectorXd& start_params,
@@ -505,7 +505,7 @@ List fast_clayton_weibull_aft_optim_cpp(
         return List::create(Named("converged") = false, Named("error") = "unknown");
     }
     params = fit.params;
-    Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(y, dead, X, pair_idx, singleton_rows, params);
+    Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(X, y, dead, pair_idx, singleton_rows, params);
     Eigen::MatrixXd observed_information = fun.hessian(params);
     Eigen::MatrixXd vcov = covariance_from_information(observed_information);
 
@@ -530,9 +530,9 @@ List fast_clayton_weibull_aft_optim_cpp(
 
 // [[Rcpp::export]]
 List fast_dep_cens_transform_optim_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& start_params,
     int maxit = 2000,
     double reltol = 1e-9,
@@ -553,7 +553,7 @@ List fast_dep_cens_transform_optim_cpp(
         return List::create(Named("converged") = false, Named("error") = "unknown");
     }
     params = fit.params;
-    Eigen::VectorXd score = get_dep_cens_transform_score_cpp(y, dead, X, params);
+    Eigen::VectorXd score = get_dep_cens_transform_score_cpp(X, y, dead, params);
     Eigen::MatrixXd observed_information = fun.hessian(params);
     Eigen::MatrixXd vcov = covariance_from_information(observed_information);
 

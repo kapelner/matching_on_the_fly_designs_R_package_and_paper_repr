@@ -75,8 +75,7 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 	private = list(
 		compute_basic_match_data = function(){
 			# Use the optimized Zhang helper to get counts
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, private$m, private$y, private$get_X())
-		},
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, private$m)		},
 
 		pool_estimates_ivwc = function(est1, var1, est2, var2){
 			ok1 = is.finite(est1) && is.finite(var1) && var1 > 0

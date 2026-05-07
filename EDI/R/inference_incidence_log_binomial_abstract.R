@@ -40,28 +40,28 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 		}
 	),
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-			# Filter columns that are in Xmm_cols (excluding treatment which we provide separately)
-			X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-			Xmm = cbind(treatment = private$w, X_cov)
+			# Filter columns that are in X_cols (excluding treatment which we provide separately)
+			X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+			X = cbind(treatment = private$w, X_cov)
 			# Add intercept
-			Xmm = cbind("(Intercept)" = 1, Xmm)
+			X = cbind("(Intercept)" = 1, X)
 
-			mod = tryCatch(private$fit_constrained_binomial(Xmm, j_treat = 2L), error = function(e) NULL)
+			mod = tryCatch(private$fit_constrained_binomial(X, j_treat = 2L), error = function(e) NULL)
 			if (is.null(mod) || !is.finite(mod$b[2])){
 				return(NA_real_)
 			}
@@ -157,7 +157,7 @@ InferenceIncidLogBinomialAbstract = R6::R6Class("InferenceIncidLogBinomialAbstra
 				return(invisible(NULL))
 			}
 
-			private$best_Xmm_colnames = setdiff(colnames(result$X_fit), c("(Intercept)", "treatment"))
+			private$best_X_colnames = setdiff(colnames(result$X_fit), c("(Intercept)", "treatment"))
 			private$cached_values$beta_hat_T = as.numeric(result$mod$b[result$j_treat])
 			if (estimate_only) return(invisible(NULL))
 			private$cached_values$s_beta_hat_T = sqrt(as.numeric(result$mod$ssq_b_j))

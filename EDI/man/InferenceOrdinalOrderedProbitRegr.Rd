@@ -75,7 +75,8 @@ Initialize an ordered-probit inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalOrderedProbitRegr$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -90,6 +91,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
 }
 \if{html}{\out{</div>}}
 }

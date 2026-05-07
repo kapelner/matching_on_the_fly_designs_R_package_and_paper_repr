@@ -1,6 +1,7 @@
 #ifndef EDI_HELPERS_H
 #define EDI_HELPERS_H
 
+#include "ordinal_fixed_link_helpers.h"
 #include <RcppEigen.h>
 #include <optimization/LBFGS.h>
 #include <vector>
@@ -19,13 +20,26 @@ struct ModelResult {
     double ssq_b_2;
     double dispersion;
     double sigma2_hat;
+    int iterations;
     bool converged;
 
-    ModelResult() : ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), converged(false) {}
+    ModelResult() : ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), iterations(0), converged(false) {}
 };
 
 // Pure C++ internal helpers
 double compute_diagonal_inverse_entry(const Eigen::MatrixXd& M, int j);
+
+struct WeibullStart {
+    Eigen::VectorXd beta;
+    double log_sigma;
+
+    WeibullStart() : log_sigma(0.0) {}
+};
+
+struct OrdinalStart {
+    Eigen::VectorXd alpha;
+    Eigen::VectorXd beta;
+};
 
 // R-facing exports
 double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::MatrixXd M, int j);
@@ -259,6 +273,255 @@ inline Eigen::ArrayXd log1pexp_array_safe(const Eigen::ArrayXd& x) {
     const Eigen::ArrayXd pos = x + (-x).exp().log1p();
     const Eigen::ArrayXd neg = x.exp().log1p();
     return positive.select(pos, neg);
+}
+
+inline bool try_safe_ols_solve(const Eigen::MatrixXd& X,
+                               const Eigen::VectorXd& y,
+                               Eigen::VectorXd& beta_out) {
+    const int p = X.cols();
+    if (X.rows() == 0 || p == 0 || y.size() != X.rows() ||
+        !X.allFinite() || !y.allFinite()) {
+        beta_out = Eigen::VectorXd::Zero(p);
+        return false;
+    }
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
+    beta_out = cod.solve(y);
+    if (!beta_out.allFinite()) {
+        beta_out = Eigen::VectorXd::Zero(p);
+        return false;
+    }
+    return true;
+}
+
+inline Eigen::VectorXd safe_ols_solve(const Eigen::MatrixXd& X,
+                                      const Eigen::VectorXd& y) {
+    Eigen::VectorXd beta_out;
+    try_safe_ols_solve(X, y, beta_out);
+    return beta_out;
+}
+
+inline bool vector_is_usable_start(const Eigen::VectorXd& x, int expected_size = -1) {
+    return x.allFinite() && (expected_size < 0 || x.size() == expected_size);
+}
+
+inline Eigen::VectorXd finalize_start_beta(const Eigen::VectorXd& smart_start,
+                                           const Eigen::VectorXd& legacy_start,
+                                           const FixedParamSpec& fixed_spec,
+                                           bool use_smart) {
+    Eigen::VectorXd out = use_smart && vector_is_usable_start(smart_start, legacy_start.size()) ?
+        smart_start : legacy_start;
+    return apply_fixed_values(out, fixed_spec);
+}
+
+inline Eigen::VectorXd ols_start_beta(const Eigen::MatrixXd& X,
+                                      const Eigen::VectorXd& y) {
+    return safe_ols_solve(X, y);
+}
+
+inline Eigen::VectorXd ols_start_beta_on_log1p(const Eigen::MatrixXd& X,
+                                               const Eigen::VectorXd& y) {
+    const int p = X.cols();
+    if (y.size() != X.rows() || !y.allFinite()) return Eigen::VectorXd::Zero(p);
+    if ((y.array() <= -1.0).any()) return Eigen::VectorXd::Zero(p);
+    return safe_ols_solve(X, y.array().log1p().matrix());
+}
+
+inline Eigen::VectorXd ols_start_beta_or_legacy(const Eigen::MatrixXd& X,
+                                                const Eigen::VectorXd& y,
+                                                const Eigen::VectorXd& legacy_start,
+                                                const FixedParamSpec& fixed_spec) {
+    Eigen::VectorXd beta_out;
+    const bool ok = try_safe_ols_solve(X, y, beta_out);
+    return finalize_start_beta(beta_out, legacy_start, fixed_spec, ok);
+}
+
+inline Eigen::VectorXd ols_start_beta_on_log1p_or_legacy(const Eigen::MatrixXd& X,
+                                                         const Eigen::VectorXd& y,
+                                                         const Eigen::VectorXd& legacy_start,
+                                                         const FixedParamSpec& fixed_spec) {
+    Eigen::VectorXd beta_out = Eigen::VectorXd::Zero(X.cols());
+    const bool ok = y.size() == X.rows() && y.allFinite() && !(y.array() <= -1.0).any() &&
+        try_safe_ols_solve(X, y.array().log1p().matrix(), beta_out);
+    return finalize_start_beta(beta_out, legacy_start, fixed_spec, ok);
+}
+
+inline Eigen::VectorXd weibull_start_to_params(const WeibullStart& start) {
+    Eigen::VectorXd params(start.beta.size() + 1);
+    params.head(start.beta.size()) = start.beta;
+    params[start.beta.size()] = start.log_sigma;
+    return params;
+}
+
+inline WeibullStart weibull_start_from_params(const Eigen::VectorXd& params) {
+    WeibullStart out;
+    if (params.size() == 0) return out;
+    out.beta = params.head(params.size() - 1);
+    out.log_sigma = params[params.size() - 1];
+    return out;
+}
+
+inline bool weibull_start_is_usable(const WeibullStart& start, int p) {
+    return start.beta.size() == p && start.beta.allFinite() && std::isfinite(start.log_sigma);
+}
+
+inline WeibullStart weibull_aft_start(const Eigen::MatrixXd& X,
+                                      const Eigen::VectorXd& y,
+                                      const Eigen::VectorXd& dead) {
+    WeibullStart out;
+    const int n = X.rows();
+    const int p = X.cols();
+    out.beta = Eigen::VectorXd::Zero(p);
+    if (y.size() != n || dead.size() != n || n == 0 || p == 0 ||
+        !X.allFinite() || !y.allFinite() || !dead.allFinite()) {
+        return out;
+    }
+
+    std::vector<int> uncensored_rows;
+    std::vector<int> positive_rows;
+    uncensored_rows.reserve(n);
+    positive_rows.reserve(n);
+    for (int i = 0; i < n; ++i) {
+        if (y[i] > 0.0) {
+            positive_rows.push_back(i);
+            if (dead[i] > 0.0) uncensored_rows.push_back(i);
+        }
+    }
+
+    const std::vector<int>& rows_used =
+        static_cast<int>(uncensored_rows.size()) > p ? uncensored_rows : positive_rows;
+    if (rows_used.empty()) return out;
+
+    Eigen::MatrixXd X_sub(rows_used.size(), p);
+    Eigen::VectorXd log_y(rows_used.size());
+    for (int i = 0; i < static_cast<int>(rows_used.size()); ++i) {
+        const int row = rows_used[i];
+        X_sub.row(i) = X.row(row);
+        log_y[i] = std::log(y[row]);
+    }
+
+    out.beta = safe_ols_solve(X_sub, log_y);
+    if (!out.beta.allFinite()) {
+        out.beta = Eigen::VectorXd::Zero(p);
+        return out;
+    }
+
+    Eigen::VectorXd resid = log_y - X_sub * out.beta;
+    const double denom = std::max(1.0, static_cast<double>(rows_used.size() - p));
+    const double std_resid = std::sqrt(std::max(0.0, resid.squaredNorm() / denom));
+    if (std::isfinite(std_resid) && std_resid > 0.0) {
+        out.log_sigma = std::log(std_resid * 0.7797);
+    }
+    return out;
+}
+
+inline WeibullStart weibull_aft_start_or_legacy(const Eigen::MatrixXd& X,
+                                                const Eigen::VectorXd& y,
+                                                const Eigen::VectorXd& dead,
+                                                const WeibullStart& legacy_start,
+                                                const FixedParamSpec& fixed_spec) {
+    WeibullStart smart = weibull_aft_start(X, y, dead);
+    Eigen::VectorXd params = weibull_start_to_params(
+        weibull_start_is_usable(smart, X.cols()) ? smart : legacy_start
+    );
+    params = apply_fixed_values(params, fixed_spec);
+    return weibull_start_from_params(params);
+}
+
+inline double ordinal_link_quantile(edi_ordinal::Link link, double p) {
+    const double pp = std::min(1.0 - 1e-8, std::max(1e-8, p));
+    switch (link) {
+    case edi_ordinal::Link::Logit:
+        return std::log(pp / (1.0 - pp));
+    case edi_ordinal::Link::Probit:
+        return R::qnorm5(pp, 0.0, 1.0, 1, 0);
+    case edi_ordinal::Link::Cloglog:
+        return std::log(-std::log(1.0 - pp));
+    case edi_ordinal::Link::Cauchit:
+        return std::tan(M_PI * (pp - 0.5));
+    }
+    return 0.0;
+}
+
+inline double ordinal_eta_sign(edi_ordinal::Link link) {
+    return link == edi_ordinal::Link::Cloglog ? 1.0 : -1.0;
+}
+
+inline Eigen::VectorXd ordinal_start_to_params(const OrdinalStart& start) {
+    Eigen::VectorXd params(start.alpha.size() + start.beta.size());
+    params.head(start.alpha.size()) = start.alpha;
+    params.tail(start.beta.size()) = start.beta;
+    return params;
+}
+
+inline OrdinalStart ordinal_start_from_params(const Eigen::VectorXd& params, int p) {
+    OrdinalStart out;
+    const int n_alpha = std::max(0, static_cast<int>(params.size()) - p);
+    out.alpha = params.head(n_alpha);
+    out.beta = params.tail(p);
+    return out;
+}
+
+inline bool ordinal_start_is_usable(const OrdinalStart& start, int p, int n_alpha) {
+    if (start.beta.size() != p || start.alpha.size() != n_alpha ||
+        !start.beta.allFinite() || !start.alpha.allFinite()) {
+        return false;
+    }
+    for (int k = 1; k < n_alpha; ++k) {
+        if (!(start.alpha[k] > start.alpha[k - 1])) return false;
+    }
+    return true;
+}
+
+inline OrdinalStart ordinal_start_from_ols(const Eigen::MatrixXd& X,
+                                           const Eigen::VectorXd& y,
+                                           edi_ordinal::Link link) {
+    OrdinalStart out;
+    const int n = X.rows();
+    const int p = X.cols();
+    out.beta = Eigen::VectorXd::Zero(p);
+    if (y.size() != n || n == 0 || !X.allFinite() || !y.allFinite()) return out;
+
+    const std::vector<double> levels = edi_ordinal::init_levels(y);
+    const int K = static_cast<int>(levels.size());
+    const int n_alpha = std::max(0, K - 1);
+    out.alpha = Eigen::VectorXd::Zero(n_alpha);
+    if (n_alpha == 0) return out;
+
+    out.beta = safe_ols_solve(X, y);
+    if (!out.beta.allFinite()) out.beta = Eigen::VectorXd::Zero(p);
+
+    const Eigen::VectorXd eta = X * out.beta;
+    const double eta_location = (eta.size() > 0 && eta.allFinite()) ? eta.mean() : 0.0;
+    const double eta_sign = ordinal_eta_sign(link);
+
+    for (int k = 0; k < n_alpha; ++k) {
+        int count = 0;
+        for (int i = 0; i < n; ++i) {
+            if (y[i] <= levels[k]) ++count;
+        }
+        const double p_k = static_cast<double>(count) / static_cast<double>(n);
+        out.alpha[k] = ordinal_link_quantile(link, p_k) - eta_sign * eta_location;
+    }
+    for (int k = 1; k < n_alpha; ++k) {
+        if (!(out.alpha[k] > out.alpha[k - 1])) {
+            out.alpha[k] = out.alpha[k - 1] + 1e-4;
+        }
+    }
+    return out;
+}
+
+inline OrdinalStart ordinal_start_from_ols_or_legacy(const Eigen::MatrixXd& X,
+                                                      const Eigen::VectorXd& y,
+                                                      edi_ordinal::Link link,
+                                                      const OrdinalStart& legacy_start,
+                                                      const FixedParamSpec& fixed_spec) {
+    const int n_alpha = legacy_start.alpha.size();
+    OrdinalStart smart = ordinal_start_from_ols(X, y, link);
+    Eigen::VectorXd params = ordinal_start_to_params(
+        ordinal_start_is_usable(smart, X.cols(), n_alpha) ? smart : legacy_start
+    );
+    params = apply_fixed_values(params, fixed_spec);
+    return ordinal_start_from_params(params, X.cols());
 }
 
 template <typename Functor>

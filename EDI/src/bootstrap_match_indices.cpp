@@ -58,10 +58,10 @@ IntegerMatrix bootstrap_m_indices_cpp(
 	return result;
 }
 
-List compute_zhang_match_data_cpp(const IntegerVector& w,
-								  const IntegerVector& m_vec,
+List compute_zhang_match_data_cpp(const NumericMatrix& X,
 								  const NumericVector& y,
-								  const NumericMatrix& X);
+								  const IntegerVector& w,
+								  const IntegerVector& m_vec);
 
 // [[Rcpp::export]]
 List draw_kk_bootstrap_sample_cpp(
@@ -106,9 +106,9 @@ List draw_kk_bootstrap_sample_cpp(
 
 // [[Rcpp::export]]
 List compute_bootstrap_kk_stats_cpp(
+	const NumericMatrix& X,
 	const NumericVector& y,
 	const IntegerVector& w,
-	const NumericMatrix& X,
 	const IntegerVector& i_b,
 	int n_reservoir
 ) {
@@ -254,10 +254,10 @@ List compute_bootstrap_kk_stats_cpp(
 
 // [[Rcpp::export]]
 List match_stats_from_indices_cpp(
+	const NumericMatrix& X,
 	const NumericVector& y,
 	const NumericVector& w,
-	const NumericMatrix& X,
-	const IntegerVector& original_m_vec, // Changed name
+	const IntegerVector& original_m_vec,
 	const IntegerVector& i_b,
 	int m
 ) {
@@ -279,10 +279,10 @@ List match_stats_from_indices_cpp(
 	}
 
 	List match_data = compute_zhang_match_data_cpp(
-		as<IntegerVector>(w_sample),
-		m_vec_sample,
+		X_sample,
 		y_sample,
-		X_sample
+		as<IntegerVector>(w_sample),
+		m_vec_sample
 	);
 
 	return match_data;

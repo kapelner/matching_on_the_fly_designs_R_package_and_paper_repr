@@ -240,7 +240,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_m = as.matrix(private$get_X()[i_matched[i_valid], drop = FALSE])
 				for (X_candidate in private$cox_design_candidates(w_v, X_m)){
 					res_try = tryCatch(
-						fast_stratified_coxph_regression_cpp(y_v, dead_v, X_candidate, strata_v, estimate_only = estimate_only),
+						fast_stratified_coxph_regression_cpp(X_candidate, y_v, dead_v, strata_v, estimate_only = estimate_only),
 						error = function(e) NULL
 					)
 					if (private$rcpp_cox_fit_is_usable(res_try, estimate_only = estimate_only)){
@@ -252,7 +252,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_mat = matrix(w_v, ncol = 1L)
 				colnames(X_mat) = "w"
 				res = tryCatch(
-					fast_stratified_coxph_regression_cpp(y_v, dead_v, X_mat, strata_v, estimate_only = estimate_only),
+					fast_stratified_coxph_regression_cpp(X_mat, y_v, dead_v, strata_v, estimate_only = estimate_only),
 					error = function(e) NULL
 				)
 			}
@@ -284,7 +284,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			if (ncol(as.matrix(private$X)) > 0){
 				for (X_candidate in private$cox_design_candidates(w_r, X_r)){
 					res_try = tryCatch(
-						fast_coxph_regression_cpp(y_r, dead_r, X_candidate, estimate_only = estimate_only),
+						fast_coxph_regression_cpp(X_candidate, y_r, dead_r, estimate_only = estimate_only),
 						error = function(e) NULL
 					)
 					if (private$rcpp_cox_fit_is_usable(res_try, estimate_only = estimate_only)){
@@ -297,7 +297,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				X_mat = matrix(w_r, ncol = 1L)
 				colnames(X_mat) = "w"
 				res = tryCatch(
-					fast_coxph_regression_cpp(y_r, dead_r, X_mat, estimate_only = estimate_only),
+					fast_coxph_regression_cpp(X_mat, y_r, dead_r, estimate_only = estimate_only),
 					error = function(e) NULL
 				)
 			}

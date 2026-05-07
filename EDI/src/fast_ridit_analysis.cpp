@@ -69,7 +69,7 @@ List fast_ridit_scores_cpp(const IntegerVector& y, const IntegerVector& ref_idx)
 }
 
 // [[Rcpp::export]]
-List fast_ridit_analysis_cpp(const IntegerVector& y, const IntegerVector& w, const std::string& reference = "control") {
+List fast_ridit_analysis_cpp(const IntegerVector& w, const IntegerVector& y, const std::string& reference = "control") {
     int n = y.size();
     std::vector<int> ref_idx;
     

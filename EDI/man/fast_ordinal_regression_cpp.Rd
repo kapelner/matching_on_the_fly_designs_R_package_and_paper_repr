@@ -7,6 +7,8 @@
 fast_ordinal_regression_cpp(
   X,
   y,
+  start_params = NULL,
+  smart_start = TRUE,
   maxit = 100L,
   tol = 1e-06,
   fixed_idx = NULL,

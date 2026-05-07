@@ -38,27 +38,27 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			if (length(Xmm_cols) == 0L){
-				Xmm = cbind(1, private$w)
+			if (length(X_cols) == 0L){
+				X = cbind(1, private$w)
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = tryCatch(fast_poisson_regression_cpp(X = Xmm, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -73,12 +73,12 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			private$create_design_matrix()
 		},
 
-		fit_count_model_with_var = function(Xmm, estimate_only = FALSE){
-			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(Xmm)
+		fit_count_model_with_var = function(X, estimate_only = FALSE){
+			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
-				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 			}
 
 			mod = tryCatch(
@@ -86,24 +86,24 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				error = function(e) NULL
 			)
 			if (is.null(mod)){
-				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 			}
 
 			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
-				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 			}
 
 			if (estimate_only){
-				b_full = rep(NA_real_, ncol(Xmm))
+				b_full = rep(NA_real_, ncol(X))
 				b_full[reduced$keep] = coef_hat
-				names(b_full) = colnames(Xmm)
+				names(b_full) = colnames(X)
 				return(list(b = b_full, ssq_b_2 = NA_real_))
 			}
 
 			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
-				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 			}
 
 			bread = NULL
@@ -122,7 +122,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				reduced_weighted = private$reduce_design_matrix_preserving_treatment(X_weighted)
 				keep_sub = as.integer(reduced_weighted$keep)
 				if (length(keep_sub) == 0L) {
-					return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 				}
 				X_var_candidate = as.matrix(X_fit[, keep_sub, drop = FALSE])
 				cross_mat = tryCatch(
@@ -138,7 +138,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				}
 			}
 			if (is.null(bread)){
-				return(list(b = rep(NA_real_, ncol(Xmm)), ssq_b_2 = NA_real_))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_))
 			}
 
 			resid = as.numeric(private$y) - mu_hat
@@ -161,9 +161,9 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				ssq_b_j = NA_real_
 			}
 
-			b_full = rep(NA_real_, ncol(Xmm))
+			b_full = rep(NA_real_, ncol(X))
 			b_full[reduced$keep] = coef_hat
-			names(b_full) = colnames(Xmm)
+			names(b_full) = colnames(X)
 			list(b = b_full, ssq_b_2 = ssq_b_j)
 		},
 

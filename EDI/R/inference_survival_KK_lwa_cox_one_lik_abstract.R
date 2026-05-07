@@ -70,7 +70,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",
 
 		assert_finite_se = function(){
@@ -89,18 +89,18 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			private$compute_basic_match_data()
 			
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared_combined_likelihood(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(NA_real_)
 			}
 
 			X_data = private$get_X()
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			X_covs_filtered = X_data[, intersect(private$best_Xmm_colnames, colnames(X_data)), drop = FALSE]
+			X_covs_filtered = X_data[, intersect(private$best_X_colnames, colnames(X_data)), drop = FALSE]
 			if (ncol(X_covs_filtered) > 0){
 				X_full = cbind(X_full, X_covs_filtered)
 			}
@@ -119,9 +119,9 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 
 			fit = tryCatch(
 				fast_coxph_regression_cpp(
+					X = as.matrix(X_full),
 					y = private$y,
 					dead = private$dead,
-					X = as.matrix(X_full),
 					cluster = as.integer(cluster_ids),
 					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
@@ -170,9 +170,9 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				required_cols = 1L, # treatment
 				fit_fun = function(X_fit){
 					fast_coxph_regression_cpp(
+						X = as.matrix(X_fit),
 						y = private$y,
 						dead = private$dead,
-						X = as.matrix(X_fit),
 						cluster = as.integer(cluster_ids),
 						estimate_only = estimate_only,
 						optimization_alg = private$optimization_alg
@@ -189,7 +189,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			)
 			res = attempt$fit
 			if (!is.null(res)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "w")
+				private$best_X_colnames = setdiff(colnames(attempt$X_fit), "w")
 				private$cached_values$beta_hat_T = as.numeric(res$coefficients[1])
 				if (!estimate_only) {
 					se = sqrt(res$vcov[1L, 1L])

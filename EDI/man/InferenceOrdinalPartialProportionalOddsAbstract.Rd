@@ -79,10 +79,11 @@ Initialize the internal PPO base object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsAbstract$new(
   des_obj,
+  verbose = FALSE,
+  harden = TRUE,
   model_formula = NULL,
   nonparallel = character(0),
-  verbose = FALSE,
-  harden = TRUE
+  smart_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -92,6 +93,10 @@ Initialize the internal PPO base object.
 \item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
 response.}
 
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
@@ -99,9 +104,7 @@ design's imputed covariates.}
 
 \item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
 
-\item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{harden}}{Whether to apply robustness measures.}
+\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
 }
 \if{html}{\out{</div>}}
 }

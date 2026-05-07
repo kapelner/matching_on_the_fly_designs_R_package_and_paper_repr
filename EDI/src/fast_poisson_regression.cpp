@@ -56,6 +56,8 @@ public:
 ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 const Eigen::VectorXd& y,
                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
+                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                             bool smart_start = true,
 							 int maxit = 100,
 							 double tol = 1e-8,
                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -66,10 +68,17 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     bool use_weights = (weights.size() == n);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", true);
+    VectorXd beta_start = VectorXd::Zero(p);
+    if (start_beta.isNotNull()) {
+        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(start_beta));
+        if (beta_start.size() != p) Rcpp::stop("start_beta must have length equal to ncol(X)");
+    } else if (smart_start) {
+        beta_start = ols_start_beta_on_log1p_or_legacy(X, y, VectorXd::Zero(p), fixed_spec);
+    }
+    beta_start = apply_fixed_values(beta_start, fixed_spec);
 
     if (alg != "irls") {
-        VectorXd beta = VectorXd::Zero(p);
-        beta = apply_fixed_values(beta, fixed_spec);
+        VectorXd beta = beta_start;
         PoissonNegLogLik fun(X, y, weights);
         LikelihoodFitResult fit = (alg == "lbfgs") ?
             optimize_fixed_likelihood_lbfgs(fun, beta, fixed_spec, maxit, tol) :
@@ -81,6 +90,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
         eta = eta.cwiseMin(700.0);
         res.mu = eta.array().exp().matrix();
         res.XtWX = fun.hessian(res.b);
+        res.iterations = fit.niter;
         res.converged = fit.converged;
         return res;
     }
@@ -88,7 +98,8 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     const int p_free = fixed_spec.free_idx.size();
     RowMajorMatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
-    VectorXd beta_free = VectorXd::Zero(p_free);
+    VectorXd beta_free(p_free);
+    for (int j = 0; j < p_free; ++j) beta_free[j] = beta_start[fixed_spec.free_idx[j]];
     VectorXd eta_fixed = VectorXd::Zero(n);
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
         eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
@@ -106,6 +117,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     MatrixXd XtWX_free(p_free, p_free);
 
 	for (int iter = 0; iter < maxit; ++iter) {
+        res.iterations = iter + 1;
         eta.noalias() = X_free * beta_free;
         eta += eta_fixed;
 		eta = eta.cwiseMin(700.0);
@@ -154,7 +166,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
         w = res.mu;
     }
     MatrixXd info_free = weighted_crossprod(X_free, w);
-	res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
+    res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
 
 	return res;
 }
@@ -164,12 +176,14 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              const Eigen::VectorXd& y,
                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
+                                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                             bool smart_start = true,
                                              int maxit = 100,
                                              double tol = 1e-8,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                              std::string optimization_alg = "lbfgs") {
-    return fast_poisson_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    return fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 }
 
 //' @title Compute Poisson Regression Score
@@ -248,17 +262,20 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 // [[Rcpp::export]]
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
+                                     Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                     bool smart_start = true,
 									 int maxit = 100,
 									 double tol = 1e-8,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                      std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
-    return List::create(
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
 		Named("XtWX") = res.XtWX,
-		Named("converged") = res.converged
+		Named("converged") = res.converged,
+		Named("iterations") = res.iterations
 	);
 }
 
@@ -278,23 +295,26 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y,
                                           const Eigen::VectorXd& weights,
+                                          Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                          bool smart_start = true,
                                           int maxit = 100,
                                           double tol = 1e-8,
                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                           std::string optimization_alg = "irls") {
-	ModelResult res = fast_poisson_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
-    return List::create(
+	ModelResult res = fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
 		Named("XtWX") = res.XtWX,
-		Named("converged") = res.converged
+		Named("converged") = res.converged,
+		Named("iterations") = res.iterations
 	);
 }
 
 //' @title Fast Poisson Regression with Variance (C++)
 //' @description Poisson regression with variance-covariance matrix and score calculation.
-//' @param Xmm A numeric matrix of predictors.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
@@ -305,24 +325,26 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
 // [[Rcpp::export]]
-List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
+List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 											  const Eigen::VectorXd& y,
 											  int j = 2,
+                                              Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                              bool smart_start = true,
 											  int maxit = 100,
 											  double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                               std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();
-    MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
-	res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-	res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
-	VectorXd score = get_poisson_regression_score_cpp(Xmm, y, res.b);
+    MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
+	res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
+	res.ssq_b_2 = (X.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+	VectorXd score = get_poisson_regression_score_cpp(X, y, res.b);
 	MatrixXd information = res.XtWX;
-	Eigen::ArrayXd eta = (Xmm * res.b).array().max(-30.0).min(30.0);
+	Eigen::ArrayXd eta = (X * res.b).array().max(-30.0).min(30.0);
 	double neg_loglik = (eta.exp() - y.array() * eta).sum();
 
 	return List::create(
@@ -332,6 +354,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		Named("ssq_b_2") = res.ssq_b_2,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
+		Named("iterations") = res.iterations,
         Named("vcov") = vcov,
 		Named("score") = score,
 		Named("observed_information") = information,
@@ -347,7 +370,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 
 //' @title Fast Quasi-Poisson Regression with Variance (C++)
 //' @description Quasi-Poisson regression with dispersion-adjusted variance-covariance matrix.
-//' @param Xmm A numeric matrix of predictors.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
@@ -358,28 +381,30 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 //' @return A list containing coefficients, vcov, and dispersion estimate.
 //' @export
 // [[Rcpp::export]]
-List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
+List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 												   const Eigen::VectorXd& y,
 												   int j = 2,
+                                                   Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                                   bool smart_start = true,
 												   int maxit = 100,
 												   double tol = 1e-8,
                                                    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                    std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(Xmm, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();
-    MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
+    MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
 
-	const int df_resid = Xmm.rows() - Xmm.cols();
+	const int df_resid = X.rows() - X.cols();
 	if (df_resid > 0) {
 		ArrayXd pearson_terms = ((y - res.mu).array().square()) / res.mu.array();
 		res.dispersion = pearson_terms.sum() / static_cast<double>(df_resid);
 		if (std::isfinite(res.dispersion) && res.dispersion > 0) {
             vcov *= res.dispersion;
-			res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-			if (Xmm.cols() >= 2) res.ssq_b_2 = vcov(1, 1);
+			res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
+			if (X.cols() >= 2) res.ssq_b_2 = vcov(1, 1);
 		}
 	}
 
@@ -390,14 +415,15 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		Named("dispersion") = res.dispersion,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
+		Named("iterations") = res.iterations,
         Named("vcov") = vcov
 	);
 }
 
 //' Parallel Poisson Randomization Distribution
 //'
+//' @param X Matrix of covariates (without intercept or treatment).
 //' @param y Numeric vector of response values (pre-null-shifted for treated).
-//' @param X_covars Matrix of covariates (without intercept or treatment).
 //' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
 //' @param delta Null treatment effect shift.
 //' @param log_transform If TRUE, apply multiplicative delta shift (exp scale); otherwise additive.
@@ -405,8 +431,8 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
 //' @return Numeric vector of length nsim with treatment coefficients.
 // [[Rcpp::export]]
 NumericVector compute_poisson_distr_parallel_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
-	const Eigen::MatrixXd& X_covars,
 	const Rcpp::IntegerMatrix& w_mat,
 	double delta,
 	bool log_transform,
@@ -414,7 +440,7 @@ NumericVector compute_poisson_distr_parallel_cpp(
 ) {
 	int nsim = w_mat.cols();
 	int n = y.size();
-	int p_covars = X_covars.cols();
+	int p_covars = X.cols();
 	int p_full = p_covars + 2; // intercept + treatment + covars
 
 	std::vector<double> results(nsim, NA_REAL);
@@ -438,7 +464,7 @@ NumericVector compute_poisson_distr_parallel_cpp(
 		ws[t].y_shifted.resize(n);
 		ws[t].X_full.col(0).setOnes();
 		for (int k = 0; k < p_covars; ++k) {
-			ws[t].X_full.col(2 + k) = X_covars.col(k);
+			ws[t].X_full.col(2 + k) = X.col(k);
 		}
 	}
 

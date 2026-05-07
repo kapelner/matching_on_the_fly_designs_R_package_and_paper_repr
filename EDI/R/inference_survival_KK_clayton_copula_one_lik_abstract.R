@@ -74,7 +74,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 	private = list(
 
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 		best_par = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -170,11 +170,11 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 				}
 			}
 
-			for (Xmm in candidates){
+			for (X in candidates){
 				fit = .fit_clayton_weibull_aft(
 					y = private$y,
 					dead = private$dead,
-					Xmm = Xmm,
+					X = X,
 					pair_id = m_vec,
 					include_singletons = TRUE,
 					estimate_only = estimate_only
@@ -184,7 +184,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 					private$cached_values$s_beta_hat_T = if (is.finite(fit$ssq) && fit$ssq > 0) sqrt(fit$ssq) else NA_real_
 					private$cached_values$theta = fit$theta
 					private$best_par = fit$best_par
-					private$best_Xmm_colnames = colnames(Xmm)
+					private$best_X_colnames = colnames(X)
 					return(invisible(NULL))
 				}
 			}

@@ -1,5 +1,5 @@
 test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected", {
-	skip_if_not_installed("GreedyExperimentalDesign")
+	if (!check_package_installed("GreedyExperimentalDesign")) skip("GreedyExperimentalDesign (or Java) unavailable")
 
 	set.seed(1)
 	X = data.frame(
@@ -44,7 +44,7 @@ test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected",
 })
 
 test_that("GreedyExperimentalDesign-backed fixed designs honor multicore randomization path", {
-	skip_if_not_installed("GreedyExperimentalDesign")
+	if (!check_package_installed("GreedyExperimentalDesign")) skip("GreedyExperimentalDesign (or Java) unavailable")
 
 	set.seed(1)
 	X = data.frame(

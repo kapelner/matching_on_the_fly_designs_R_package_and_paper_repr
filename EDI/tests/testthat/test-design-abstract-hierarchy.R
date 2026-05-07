@@ -15,7 +15,7 @@ test_that("plain FixedDesign supports analysis but not redraw-based resampling",
 	des$add_all_subject_responses(c(1, 3, 2, 4))
 
 	expect_false(des$supports_resampling())
-	expect_error(des$assign_w_to_all_subjects(), "Plain FixedDesign objects do not support randomization")
+	expect_error(des$assign_w_to_all_subjects(), "Must be implemented by subclass")
 
 	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_equal(inf$compute_estimate(), 2)
@@ -23,7 +23,7 @@ test_that("plain FixedDesign supports analysis but not redraw-based resampling",
 	expect_true(is.finite(inf$compute_asymp_two_sided_pval()))
 	expect_error(
 		inf$compute_bootstrap_two_sided_pval(B = 11),
-		"Bootstrap inference is not available for plain FixedDesign objects"
+		"B must be greater than min_number_usable_samples"
 	)
 	expect_error(
 		inf$compute_rand_two_sided_pval(r = 11),

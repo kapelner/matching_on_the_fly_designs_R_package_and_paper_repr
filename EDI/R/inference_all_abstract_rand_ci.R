@@ -360,7 +360,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 					private$m = private$des_obj_priv_int$m
 					m_vec = if (is.null(private$m)) rep(0, private$n) else private$m
 					m_vec[is.na(m_vec)] = 0
-					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$get_X())
+					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, m_vec)
 				}
 				KKstats = private$cached_values$KKstats
 				exact_stats = list(
@@ -457,34 +457,28 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			est = as.numeric(inf_obj$compute_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) est = NA_real_ else est = est[1]
-			asym_ci = normalize_ci(tryCatch(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2), error = function(e) c(NA_real_, NA_real_)))
-			boot_ci = c(NA_real_, NA_real_)
-			need_boot = ci_search_control$seed %in% c("boot_then_asymp", "boot_only") || !all(is.finite(asym_ci))
-			if (need_boot) {
-				boot_ci = normalize_ci(tryCatch(inf_obj$compute_bootstrap_confidence_interval(alpha = alpha * 2, B = ci_search_control$seed_boot_B, na.rm = TRUE, show_progress = FALSE), error = function(e) c(NA_real_, NA_real_)))
-			}
+			seed_cis = private$get_randomization_ci_seed_candidates(inf_obj, alpha)
+			wald_ci = normalize_ci(seed_cis$wald_ci)
+			asym_ci = normalize_ci(seed_cis$asym_ci)
+			if (!is.finite(est) && all(is.finite(wald_ci))) est = mean(wald_ci)
 			if (!is.finite(est) && all(is.finite(asym_ci))) est = mean(asym_ci)
-			if (!is.finite(est) && all(is.finite(boot_ci))) est = mean(boot_ci)
 			response_scale = stats::sd(obj_private$y, na.rm = TRUE)
 			if (!is.finite(response_scale) || response_scale <= 0) response_scale = stats::IQR(obj_private$y, na.rm = TRUE) / 1.349
 			if (!is.finite(response_scale) || response_scale <= 0) response_scale = 1
 			if (!is.finite(est)) est = stats::median(obj_private$y, na.rm = TRUE)
 			if (!is.finite(est)) est = 0
 			se_guess = NA_real_
-			if (all(is.finite(asym_ci))) se_guess = max(abs(asym_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
-			if (!is.finite(se_guess) && all(is.finite(boot_ci))) se_guess = max(abs(boot_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
+			if (all(is.finite(wald_ci))) se_guess = max(abs(wald_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
+			if (!is.finite(se_guess) && all(is.finite(asym_ci))) se_guess = max(abs(asym_ci - est)) / max(stats::qnorm(1 - alpha), .Machine$double.eps)
 			if (!is.finite(se_guess) || se_guess <= 0) se_guess = response_scale / sqrt(max(1, obj_private$n))
 			if (!is.finite(se_guess) || se_guess <= 0) se_guess = response_scale
 			default_seed_ci = sort(c(est - 2 * se_guess, est + 2 * se_guess))
-			if (!all(is.finite(asym_ci)) && !all(is.finite(boot_ci))) {
-				asym_ci = default_seed_ci
-			}
-			fallback_ci = if (all(is.finite(asym_ci))) asym_ci else if (all(is.finite(boot_ci))) boot_ci else c(NA_real_, NA_real_)
+			fallback_ci = if (all(is.finite(wald_ci))) wald_ci else if (all(is.finite(asym_ci))) asym_ci else c(NA_real_, NA_real_)
 			seed_ci = switch(ci_search_control$seed,
-				asymp_then_boot = if (all(is.finite(asym_ci))) asym_ci else if (all(is.finite(boot_ci))) boot_ci else default_seed_ci,
-				boot_then_asymp = if (all(is.finite(boot_ci))) boot_ci else if (all(is.finite(asym_ci))) asym_ci else default_seed_ci,
-				asymp_only = if (all(is.finite(asym_ci))) asym_ci else c(NA_real_, NA_real_),
-				boot_only = if (all(is.finite(boot_ci))) boot_ci else c(NA_real_, NA_real_),
+				asymp_then_boot = if (all(is.finite(wald_ci))) wald_ci else if (all(is.finite(asym_ci))) asym_ci else default_seed_ci,
+				boot_then_asymp = if (all(is.finite(wald_ci))) wald_ci else if (all(is.finite(asym_ci))) asym_ci else default_seed_ci,
+				asymp_only = if (all(is.finite(wald_ci))) wald_ci else if (all(is.finite(asym_ci))) asym_ci else c(NA_real_, NA_real_),
+				boot_only = if (all(is.finite(wald_ci))) wald_ci else if (all(is.finite(asym_ci))) asym_ci else c(NA_real_, NA_real_),
 				none = default_seed_ci
 			)
 			max_radius = max(ci_search_control$max_radius_se_mult * se_guess, ci_search_control$max_radius_scale_mult * response_scale, 1)
@@ -496,6 +490,31 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			l = private$expand_bound(inf_obj, l, est, r, transform_arg, permutations, alpha / 2, TRUE, max_radius, ci_search_control$max_expansions, ci_search_control, ci_pval_cache)
 			u = private$expand_bound(inf_obj, u, est, r, transform_arg, permutations, alpha / 2, FALSE, max_radius, ci_search_control$max_expansions, ci_search_control, ci_pval_cache)
 			list(est = est, l = l, u = u, fallback_ci = fallback_ci)
+		},
+
+		get_randomization_ci_seed_candidates = function(inf_obj, alpha){
+			normalize_ci = function(ci){
+				ci = as.numeric(ci)
+				if (length(ci) < 2L || !all(is.finite(ci[1:2]))) return(c(NA_real_, NA_real_))
+				sort(ci[1:2])
+			}
+			wald_ci = c(NA_real_, NA_real_)
+			asym_ci = c(NA_real_, NA_real_)
+			if (is(inf_obj, "InferenceAsymp")) {
+				asym_ci = normalize_ci(tryCatch(inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2), error = function(e) c(NA_real_, NA_real_)))
+				supported = tryCatch(inf_obj$get_supported_testing_types(), error = function(e) character())
+				if ("wald" %in% supported) {
+					old_testing_type = tryCatch(inf_obj$get_testing_type(), error = function(e) NULL)
+					if (!is.null(old_testing_type)) {
+						on.exit(tryCatch(inf_obj$set_testing_type(old_testing_type), error = function(e) NULL), add = TRUE)
+					}
+					wald_ci = normalize_ci(tryCatch({
+						inf_obj$set_testing_type("wald")
+						inf_obj$compute_asymp_confidence_interval(alpha = alpha * 2)
+					}, error = function(e) c(NA_real_, NA_real_)))
+				}
+			}
+			list(wald_ci = wald_ci, asym_ci = asym_ci)
 		},
 
 		expand_bound = function(inf_obj, bound, est, r, transform_arg, permutations, target_pval, lower, max_radius, max_expansions, ci_search_control, ci_pval_cache){

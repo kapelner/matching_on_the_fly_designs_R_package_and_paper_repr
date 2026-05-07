@@ -83,28 +83,28 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		use_rcpp = TRUE,
 		fit_warm_coefficients = NULL,
 		fit_warm_keep = NULL,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			if (length(Xmm_cols) == 0L){
+			if (length(X_cols) == 0L){
 				# Univariate case
 				X_fit = cbind(1, treatment = private$w)
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X_fit = cbind(1, treatment = private$w, X_cov)
 			}
 
@@ -195,7 +195,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 
 			fit_controls = private$get_ci_fit_controls()
 			
-			if (is.null(private$best_Xmm_colnames)) {
+			if (is.null(private$best_X_colnames)) {
 				X_full = private$build_design_matrix()
 				attempt = private$fit_with_hardened_qr_column_dropping(
 					X_full = X_full,
@@ -231,16 +231,16 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 				fit = attempt$fit
 				X_fit = attempt$X_fit
 				j_treat = fit$j_treat
-				private$best_Xmm_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
 				private$fit_warm_coefficients = as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit))
 			} else {
 				# Reuse structure
 				X_data = private$get_X()
-				Xmm_cols = private$best_Xmm_colnames
-				if (length(Xmm_cols) == 0L){
+				X_cols = private$best_X_colnames
+				if (length(X_cols) == 0L){
 					X_fit = cbind(1, treatment = private$w)
 				} else {
-					X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+					X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 					X_fit = cbind(1, treatment = private$w, X_cov)
 				}
 				j_treat = 2L

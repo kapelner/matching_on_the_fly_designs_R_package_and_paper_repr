@@ -254,7 +254,9 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
+        Named("alpha") = fit.params.head(K - 1),
         Named("ssq_b_1") = ssq_b_1,
+        Named("ssq_b_j") = ssq_b_1,
         Named("vcov") = cov,
         Named("converged") = fit.converged
     );
@@ -268,15 +270,15 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
 // [[Rcpp::export]]
 NumericVector compute_adj_cat_logit_distr_parallel_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
-    const Eigen::MatrixXd& X_covars,
     const Rcpp::IntegerMatrix& w_mat,
     double delta,
     int num_cores
 ) {
     int nsim = w_mat.cols();
     int n = y.size();
-    int p_covars = X_covars.cols();
+    int p_covars = X.cols();
     int p_full = p_covars + 1;
 
     std::vector<double> results(nsim, NA_REAL);
@@ -296,7 +298,7 @@ NumericVector compute_adj_cat_logit_distr_parallel_cpp(
         for (int i = 0; i < n; ++i) {
             X_full(i, 0) = (double)w_col[i];
             for (int k = 0; k < p_covars; ++k) {
-                X_full(i, 1 + k) = X_covars(i, k);
+                X_full(i, 1 + k) = X(i, k);
             }
             y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
         }

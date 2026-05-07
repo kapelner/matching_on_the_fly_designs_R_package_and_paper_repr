@@ -212,36 +212,36 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_zinb_score_cpp(const Eigen::VectorXd& y,
-                                   const Eigen::MatrixXd& Xcond,
+Eigen::VectorXd get_zinb_score_cpp(const Eigen::MatrixXd& X,
+                                   const Eigen::VectorXd& y,
                                    const Eigen::MatrixXd& Xzi,
                                    const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    ZeroInflatedNegBin fun(y, X, Xzi);
     return likelihood_score(fun, params);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_zinb_hessian_cpp(const Eigen::VectorXd& y,
-                                     const Eigen::MatrixXd& Xcond,
+Eigen::MatrixXd get_zinb_hessian_cpp(const Eigen::MatrixXd& X,
+                                     const Eigen::VectorXd& y,
                                      const Eigen::MatrixXd& Xzi,
                                      const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    ZeroInflatedNegBin fun(y, X, Xzi);
     return -fun.hessian(params);
 }
 
 // [[Rcpp::export]]
-double get_zinb_neg_loglik_cpp(const Eigen::VectorXd& y,
-                               const Eigen::MatrixXd& Xcond,
+double get_zinb_neg_loglik_cpp(const Eigen::MatrixXd& X,
+                               const Eigen::VectorXd& y,
                                const Eigen::MatrixXd& Xzi,
                                const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    ZeroInflatedNegBin fun(y, X, Xzi);
     return likelihood_value(fun, params);
 }
 
 // [[Rcpp::export]]
 List fast_zinb_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
-    const Eigen::MatrixXd& Xcond,
     const Eigen::MatrixXd& Xzi,
     Nullable<NumericVector> start_params = R_NilValue,
     bool estimate_only = false,
@@ -251,7 +251,7 @@ List fast_zinb_cpp(
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
 ) {
-    const int pc = Xcond.cols();
+    const int pc = X.cols();
     const int pz = Xzi.cols();
     const int total = pc + pz + 1;
 
@@ -271,7 +271,7 @@ List fast_zinb_cpp(
         // par[pc..pc+pz-1] = 0 (zi), par[pc+pz] = 0 (log_theta) already set
     }
 
-    ZeroInflatedNegBin fun(y, Xcond, Xzi);
+    ZeroInflatedNegBin fun(y, X, Xzi);
     FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
     LikelihoodFitResult fit;
     try {
@@ -280,7 +280,7 @@ List fast_zinb_cpp(
         return List::create(Named("converged") = false);
     }
     par = fit.params;
-    Eigen::VectorXd score = likelihood_score(fun, par);
+    Eigen::VectorXd score = get_zinb_score_cpp(X, y, Xzi, par);
     Eigen::MatrixXd information = fun.hessian(par);
 
     if (estimate_only) {

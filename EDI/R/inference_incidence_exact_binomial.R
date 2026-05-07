@@ -151,7 +151,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			}
 			m_vec = as.integer(m_vec)
 			m_vec[is.na(m_vec)] = 0L
-			KKstats = compute_zhang_match_data_cpp(private$w, m_vec, private$y, private$get_X())
+			KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, m_vec)
 			stats = list(
 				m = as.integer(KKstats$m),
 				d_plus = as.integer(KKstats$d_plus),

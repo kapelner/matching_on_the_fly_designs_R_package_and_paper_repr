@@ -5,10 +5,11 @@
 \title{Fast Weibull Regression (C++)}
 \usage{
 fast_weibull_regression_cpp(
+  X,
   y,
   dead,
-  X,
   start_params = NULL,
+  smart_start = FALSE,
   estimate_only = FALSE,
   maxit = 1000L,
   tol = 1e-06,
@@ -18,12 +19,12 @@ fast_weibull_regression_cpp(
 )
 }
 \arguments{
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
+
 \item{y}{Survival times.}
 
 \item{dead}{Event indicator (1 = event, 0 = censored).}
-
-\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{start_params}{Optional starting values for [beta, log_sigma].}
 

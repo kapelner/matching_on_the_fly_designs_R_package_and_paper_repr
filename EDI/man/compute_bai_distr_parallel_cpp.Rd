@@ -5,9 +5,9 @@
 \title{Fast Bai Adjusted T Statistic for Multiple Permutations}
 \usage{
 compute_bai_distr_parallel_cpp(
-  y,
   w_mat,
   m_mat,
+  y,
   delta,
   halves_idx,
   convex_flag,
@@ -15,11 +15,11 @@ compute_bai_distr_parallel_cpp(
 )
 }
 \arguments{
-\item{y}{Numeric response vector.}
-
 \item{w_mat}{Integer matrix of permuted treatment assignments (n x r).}
 
 \item{m_mat}{Integer matrix of match indicators (n x r).}
+
+\item{y}{Numeric response vector.}
 
 \item{delta}{Null treatment effect shift.}
 

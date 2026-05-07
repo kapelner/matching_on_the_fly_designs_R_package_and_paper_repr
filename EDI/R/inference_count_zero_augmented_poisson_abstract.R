@@ -93,50 +93,54 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 		use_rcpp = TRUE,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			if (length(Xmm_cols) == 0L){
+			if (length(X_cols) == 0L){
 				# Univariate case
 				X_fit = cbind(1, treatment = private$w)
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X_fit = cbind(1, treatment = private$w, X_cov)
 			}
 
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
+				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
 				fit = tryCatch(
-					fast_zinb_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zinb_cpp(X = X_fit, y = as.numeric(private$y), Xzi = X_fit, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
 				return(as.numeric(fit$coefficients$cond[2]))
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
-				# Xcond and Xzi are the same here
+				# X and Xzi are the same here
+				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit))
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zero_augmented_poisson_cpp(X = X_fit, y = as.numeric(private$y), Xzi = X_fit, is_hurdle = is_hurdle, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
+				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
 				return(as.numeric(fit$coefficients$cond[2]))
 			} else {
-				dat = if (length(Xmm_cols) == 0L) data.frame(y = private$y, w = private$w) else data.frame(y = private$y, w = private$w, X_cov)
+				dat = if (length(X_cols) == 0L) data.frame(y = private$y, w = private$w) else data.frame(y = private$y, w = private$w, X_cov)
 				mod = private$fit_zero_augmented_model(dat)
 				if (is.null(mod)) return(NA_real_)
 				
@@ -166,19 +170,24 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				y = y,
 				j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
+				fit_null = function(delta, start = NULL){
+					start_params = start %||% private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
 					fast_zinb_cpp(
+						X = X_fit,
 						y = y,
-						Xcond = X_fit,
 						Xzi = X_fit,
+						start_params = start_params,
 						estimate_only = FALSE,
 						optimization_alg = private$optimization_alg,
 						fixed_idx = j_treat,
 						fixed_values = delta
 					)
 				},
+				extract_start = function(fit){
+					as.numeric(fit$params)
+				},
 				score = function(fit){
-					as.numeric(fit$score %||% get_zinb_score_cpp(y, X_fit, X_fit, as.numeric(fit$params)))
+					as.numeric(fit$score %||% get_zinb_score_cpp(X = X_fit, y = y, Xzi = X_fit, as.numeric(fit$params)))
 				},
 				observed_information = function(fit){
 					as.matrix(fit$information)
@@ -187,7 +196,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					as.matrix(fit$information)
 				},
 				neg_loglik = function(fit){
-					as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(y, X_fit, X_fit, as.numeric(fit$params)))
+					as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(X = X_fit, y = y, Xzi = X_fit, as.numeric(fit$params)))
 				}
 			)
 		},
@@ -255,7 +264,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$cached_values$likelihood_test_context = NULL
 
-			if (is.null(private$best_Xmm_colnames)) {
+			if (is.null(private$best_X_colnames)) {
 				X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
 				colnames(X_full)[1:2] = c("(Intercept)", "w")
 				
@@ -272,51 +281,55 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				colnames(X_reduced) = original_colnames[res_reduced$keep]
 				
 				X_fit = X_reduced
-				private$best_Xmm_colnames = setdiff(colnames(X_reduced), c("(Intercept)", "w"))
+				private$best_X_colnames = setdiff(colnames(X_reduced), c("(Intercept)", "w"))
 			} else {
 				X_data = private$get_X()
-				Xmm_cols = private$best_Xmm_colnames
-				if (length(Xmm_cols) == 0L){
+				X_cols = private$best_X_colnames
+				if (length(X_cols) == 0L){
 					X_fit = cbind(1, w = private$w)
 				} else {
-					X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+					X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 					X_fit = cbind(1, w = private$w, X_cov)
 				}
 			}
 
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
+				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
 				fit = tryCatch(
-					fast_zinb_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zinb_cpp(X = X_fit, y = as.numeric(private$y), Xzi = X_fit, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zinb_fit_unavailable")
 					return(invisible(NULL))
-					}
-					private$cached_mod = fit
-					private$cached_values$likelihood_test_context = list(
-						X = X_fit,
-						j_treat = 2L
-					)
-					private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
-					if (!estimate_only) {
-						se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
+				}
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
+				private$cached_mod = fit
+				private$cached_values$likelihood_test_context = list(
+					X = X_fit,
+					j_treat = 2L
+				)
+				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				if (!estimate_only) {
+					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
+				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit))
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(y = as.numeric(private$y), Xcond = X_fit, Xzi = X_fit, is_hurdle = is_hurdle, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zero_augmented_poisson_cpp(X = X_fit, y = as.numeric(private$y), Xzi = X_fit, is_hurdle = is_hurdle, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
 					return(invisible(NULL))
 				}
-					private$cached_mod = fit
-					private$cached_values$likelihood_test_context = NULL
+				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
+				private$cached_mod = fit
+				private$cached_values$likelihood_test_context = NULL
 
-					private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_

@@ -28,13 +28,13 @@ inf1 = InferenceAllSimpleMeanDiff$new(des_obj)
 cat("  Created successfully\n")
 cat("  Treatment estimate:", inf1$compute_estimate(), "\n")
 
-cat("\nNow testing InferenceAllKKCompoundMeanDiff...\n")
+cat("\nNow testing InferenceAllKKMeanDiffIVWC...\n")
 cat("  About to call $new()...\n")
 flush.console()
 
 # Try with R-level error handling
 result = tryCatch({
-	inf2 = InferenceAllKKCompoundMeanDiff$new(des_obj)
+	inf2 = InferenceAllKKMeanDiffIVWC$new(des_obj)
 	cat("  Created successfully!\n")
 	inf2
 }, error = function(e) {

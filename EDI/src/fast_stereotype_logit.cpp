@@ -758,23 +758,23 @@ double fast_stereotype_profile_loglik_cpp(
 
 //' Parallel Stereotype Logit Randomization Distribution
 //'
+//' @param X Matrix of covariates (without intercept or treatment).
 //' @param y Numeric vector of response values (pre-null-shifted for treated).
-//' @param X_covars Matrix of covariates (without intercept or treatment).
 //' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
 //' @param delta Null treatment effect (additive shift).
 //' @param num_cores Number of OpenMP threads.
 //' @return Numeric vector of length nsim with treatment coefficients.
 // [[Rcpp::export]]
 NumericVector compute_stereotype_logit_distr_parallel_cpp(
+	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
-	const Eigen::MatrixXd& X_covars,
 	const Rcpp::IntegerMatrix& w_mat,
 	double delta,
 	int num_cores
 ) {
 	int nsim = w_mat.cols();
 	int n = y.size();
-	int p_covars = X_covars.cols();
+	int p_covars = X.cols();
 	int p_full = p_covars + 1; // treatment + covars (no intercept — thresholds handle location)
 
 	std::vector<double> results(nsim, NA_REAL);
@@ -794,10 +794,11 @@ NumericVector compute_stereotype_logit_distr_parallel_cpp(
 		for (int i = 0; i < n; ++i) {
 			X_full(i, 0) = (double)w_col[i];
 			for (int k = 0; k < p_covars; ++k) {
-				X_full(i, 1 + k) = X_covars(i, k);
+				X_full(i, 1 + k) = X(i, k);
 			}
 			y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
 		}
+
 
 		StereotypeLogitRegression model(X_full, y_shifted);
 		if (model.num_categories() < 2) continue;

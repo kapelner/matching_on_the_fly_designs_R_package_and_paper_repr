@@ -226,7 +226,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			fit = .fit_clayton_weibull_aft(
 				y = private$y[i_matched],
 				dead = private$dead[i_matched],
-				Xmm = cbind(w = private$w[i_matched], X_matched),
+				X = cbind(w = private$w[i_matched], X_matched),
 				pair_id = m_vec[i_matched],
 				estimate_only = estimate_only,
 				optimization_alg = private$optimization_alg
@@ -277,7 +277,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				fit = .fit_standard_weibull_aft_from_matrix(
 					y = y_r,
 					dead = dead_r,
-					Xmm = Xcand,
+					X = Xcand,
 					estimate_only = estimate_only
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && (estimate_only || (is.finite(fit$ssq) && fit$ssq > 0))){

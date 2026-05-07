@@ -181,10 +181,10 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			strata_sub = as.integer(strata_id[rows])
 			tryCatch(
 				fast_stratified_coxph_regression_cpp(
+					X             = inp$X,
 					y             = inp$y,
 					dead          = inp$dead,
-					X             = inp$X,
-					strata_r      = strata_sub,
+					strata        = strata_sub,
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
 				),
@@ -196,9 +196,9 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			inp = private$build_rcpp_inputs(rows, X_linear)
 			tryCatch(
 				fast_coxph_regression_cpp(
+					X             = inp$X,
 					y             = inp$y,
 					dead          = inp$dead,
-					X             = inp$X,
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
 				),

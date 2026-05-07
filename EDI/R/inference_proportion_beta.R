@@ -32,27 +32,27 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			if (length(Xmm_cols) == 0L){
-				Xmm = cbind(`(Intercept)` = 1, treatment = private$w)
+			if (length(X_cols) == 0L){
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 
-			res = fast_beta_regression_cpp(X = Xmm, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
+			res = fast_beta_regression_cpp(X = X, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
 			if (is.null(res) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
@@ -61,6 +61,46 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
+		},
+
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit, y = y, j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					res = fast_beta_regression_cpp(X_fit, y, fixed_idx = j_treat, fixed_values = delta,
+					                               optimization_alg = private$optimization_alg)
+					if (is.null(res)) return(NULL)
+					list(b = as.numeric(res$coefficients), phi = res$phi, neg_loglik = res$neg_loglik)
+				},
+				score = function(fit){
+					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+					get_beta_regression_score_cpp(X_fit, y, params)
+				},
+				observed_information = function(fit){
+					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+					-get_beta_regression_hessian_cpp(X_fit, y, params)
+				},
+				fisher_information = function(fit){
+					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+					-get_beta_regression_hessian_cpp(X_fit, y, params)
+				},
+				information = function(fit){
+					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+					-get_beta_regression_hessian_cpp(X_fit, y, params)
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
+			)
 		},
 
 		generate_mod = function(estimate_only = FALSE){
@@ -72,10 +112,14 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				fit_fun = function(X_fit){
 					if (estimate_only) {
 						res = fast_beta_regression_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
-						list(b = res$coefficients, ssq_b_2 = NA_real_)
+						if (is.null(res)) return(NULL)
+						list(b = res$coefficients, ssq_b_2 = NA_real_, phi = res$phi, neg_loglik = res$neg_loglik)
 					} else {
 						res = fast_beta_regression_with_var_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
-						list(b = res$coefficients, ssq_b_2 = if (nrow(res$vcov) >= 2L) res$vcov[2L, 2L] else NA_real_)
+						if (is.null(res)) return(NULL)
+						list(b = res$coefficients,
+						     ssq_b_2 = if (!is.null(res$vcov) && nrow(res$vcov) >= 2L) res$vcov[2L, 2L] else NA_real_,
+						     phi = res$phi, neg_loglik = res$neg_loglik)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -86,7 +130,13 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					j_treat = which(attempt$keep == 2L)
+				)
+			} else {
+				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
 		},

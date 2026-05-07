@@ -381,6 +381,7 @@ List fast_hurdle_poisson_glmm_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXi& group_id,
 	int j_T,
+	Nullable<NumericVector> start_params = R_NilValue,
 	bool estimate_only = false,
 	int n_gh = 7,
 	int maxit = 300,
@@ -424,14 +425,18 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
 
-	// Init: beta via OLS on log(y), log_sigma = -3
 	Eigen::VectorXd par(total);
-	{
+	if (start_params.isNotNull()) {
+		par = as<Eigen::VectorXd>(NumericVector(start_params));
+	} else {
+		par.setZero();
 		Eigen::VectorXd log_y = y_pos.array().log().matrix();
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_pos);
-		par.head(p) = cod.solve(log_y);
+		Eigen::VectorXd legacy_beta = Eigen::VectorXd::Zero(p);
+		if (try_safe_ols_solve(X_pos, log_y, legacy_beta)) {
+			par.head(p) = legacy_beta;
+		}
+		par[total - 1] = -3.0;
 	}
-	par[total - 1] = -3.0;
 
 	HurdlePoissonGLMMObjective obj(dat);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);

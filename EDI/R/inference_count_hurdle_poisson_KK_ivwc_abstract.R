@@ -104,10 +104,10 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		# Overridden to avoid the heavy summary() call during randomization iterations.
 		# Extracts the fixed-effect coefficient for "w" directly from the fit.
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			Xmm = private$build_model_matrix()
+			X = private$build_model_matrix()
 			m_vec = private$m
 			if (is.null(m_vec)){
-				m_vec = rep(NA_integer_, nrow(Xmm))
+				m_vec = rep(NA_integer_, nrow(X))
 			}
 			m_vec = as.integer(m_vec)
 			m_vec[is.na(m_vec)] = 0L
@@ -118,7 +118,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			beta_m = NA_real_
 			ssq_m = NA_real_
 			if (length(matched_idx) > 0L){
-				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = FALSE)
+				res_m = private$fit_hurdle_for_matched_pairs(X, matched_idx, m_vec, se = FALSE)
 				beta_m = res_m$beta_hat
 				ssq_m = res_m$se^2
 			}
@@ -127,7 +127,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			beta_r = NA_real_
 			ssq_r = NA_real_
 			if (length(reservoir_idx) > 1L && length(unique(private$w[reservoir_idx])) > 1L){
-				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx, estimate_only = estimate_only)
+				res_r = private$fit_poisson_for_reservoir(X, reservoir_idx, estimate_only = estimate_only)
 				beta_r = res_r$beta_hat
 				ssq_r = res_r$ssq_hat
 			}
@@ -162,14 +162,14 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 		build_model_matrix = function(){
 			if (ncol(as.matrix(private$X)) > 0){
-				Xmm = private$create_design_matrix()
-				full_names = c("(Intercept)", "w", if (ncol(Xmm) > 2L) paste0("x", seq_len(ncol(Xmm) - 2L)) else NULL)
-				colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
+				X = private$create_design_matrix()
+				full_names = c("(Intercept)", "w", if (ncol(X) > 2L) paste0("x", seq_len(ncol(X) - 2L)) else NULL)
+				colnames(X) = full_names[seq_len(ncol(X))]
 			} else {
-				Xmm = cbind(1, private$w)
-				colnames(Xmm) = c("(Intercept)", "w")
+				X = cbind(1, private$w)
+				colnames(X) = c("(Intercept)", "w")
 			}
-			Xmm
+			X
 		},
 
 		shared = function(estimate_only = FALSE){
@@ -178,10 +178,10 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
-			Xmm = private$build_model_matrix()
+			X = private$build_model_matrix()
 			m_vec = private$m
 			if (is.null(m_vec)){
-				m_vec = rep(NA_integer_, nrow(Xmm))
+				m_vec = rep(NA_integer_, nrow(X))
 			}
 			m_vec = as.integer(m_vec)
 			m_vec[is.na(m_vec)] = 0L
@@ -190,7 +190,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			reservoir_idx = which(m_vec <= 0L)
 
 			if (length(matched_idx) > 0L){
-				res_m = private$fit_hurdle_for_matched_pairs(Xmm, matched_idx, m_vec, se = !estimate_only)
+				res_m = private$fit_hurdle_for_matched_pairs(X, matched_idx, m_vec, se = !estimate_only)
 				private$cached_values$beta_T_matched = res_m$beta_hat
 				if (!estimate_only) private$cached_values$ssq_beta_T_matched = res_m$se^2 else private$cached_values$ssq_beta_T_matched = 1.0
 			}
@@ -201,7 +201,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 
 			if (length(reservoir_idx) > 1L &&
 				length(unique(private$w[reservoir_idx])) > 1L){
-				res_r = private$fit_poisson_for_reservoir(Xmm, reservoir_idx, estimate_only = estimate_only)
+				res_r = private$fit_poisson_for_reservoir(X, reservoir_idx, estimate_only = estimate_only)
 				private$cached_values$beta_T_reservoir = res_r$beta_hat
 				if (!estimate_only) private$cached_values$ssq_beta_T_reservoir = res_r$ssq_hat else private$cached_values$ssq_beta_T_reservoir = 1.0
 			}
@@ -235,8 +235,8 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			stats::as.formula(paste("y ~", rhs))
 		},
 
-		fit_hurdle_for_matched_pairs = function(Xmm, matched_idx, m_vec, se = TRUE){
-			X_matched = Xmm[matched_idx, , drop = FALSE]
+		fit_hurdle_for_matched_pairs = function(X, matched_idx, m_vec, se = TRUE){
+			X_matched = X[matched_idx, , drop = FALSE]
 			if (is.null(dim(X_matched)) || ncol(X_matched) < 2L) {
 				return(list(beta_hat = NA_real_, se = NA_real_))
 			}
@@ -360,8 +360,8 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 			list(beta_hat = beta_hat, se = se_val)
 		},
 
-		fit_poisson_for_reservoir = function(Xmm, reservoir_idx, estimate_only = FALSE){
-			X_res = Xmm[reservoir_idx, , drop = FALSE]
+		fit_poisson_for_reservoir = function(X, reservoir_idx, estimate_only = FALSE){
+			X_res = X[reservoir_idx, , drop = FALSE]
 			if (is.null(dim(X_res)) || ncol(X_res) < 2L) {
 				return(list(beta_hat = NA_real_, ssq_hat = NA_real_))
 			}

@@ -152,7 +152,7 @@ double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy) {
 }
 
 // [[Rcpp::export]]
-double wilcox_hl_point_estimate_cpp(const NumericVector& y, const IntegerVector& w) {
+double wilcox_hl_point_estimate_cpp(const IntegerVector& w, const NumericVector& y) {
     std::vector<double> y_t;
     std::vector<double> y_c;
     y_t.reserve(y.size());
@@ -173,8 +173,8 @@ double wilcox_hl_point_estimate_cpp(const NumericVector& y, const IntegerVector&
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
-    const NumericVector& y,
     const IntegerVector& w,
+    const NumericVector& y,
     const IntegerMatrix& indices_mat,
     int num_cores) {
 
@@ -223,8 +223,8 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
 
 //' Fast Wilcoxon HL Statistic for Multiple Permutations
 //'
-//' @param y Numeric response vector.
 //' @param w_mat Integer matrix of permuted treatment assignments (n x r).
+//' @param y Numeric response vector.
 //' @param delta Null treatment effect shift.
 //' @param transform_code Integer code for response transformation.
 //' @param zero_one_logit_clamp Clamp value for logit transformation.
@@ -232,8 +232,8 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
 //' @return Numeric vector of HL statistics.
 // [[Rcpp::export]]
 NumericVector compute_wilcox_hl_distr_parallel_cpp(
-    const NumericVector& y,
     const IntegerMatrix& w_mat,
+    const NumericVector& y,
     double delta,
     int transform_code,
     double zero_one_logit_clamp,
@@ -285,8 +285,8 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
-    const NumericVector& y,
     const IntegerVector& w,
+    const NumericVector& y,
     const IntegerVector& m_vec,
     const IntegerMatrix& indices_mat,
     const IntegerMatrix& m_mat,

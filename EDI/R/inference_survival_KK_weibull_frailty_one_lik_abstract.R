@@ -110,13 +110,13 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				list(
 					j = 1L,
 					full_fit = private$cached_mod,
-					fit_null = function(delta){
+					fit_null = function(delta, start = NULL){
 						fast_weibull_frailty_cpp(
 							y = y,
 							dead = dead,
 							X = X_fit,
 							group_id = group_id,
-							start = as.numeric(ctx$start),
+							start = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% as.numeric(ctx$start),
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							max_abs_log_sigma = max_abs_log_sigma,
@@ -125,18 +125,21 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 							optimization_alg = private$optimization_alg
 						)
 					},
+					extract_start = function(fit){
+						as.numeric(fit$params %||% c(as.numeric(fit$b), as.numeric(fit$log_sigma_eps), as.numeric(fit$log_sigma_u)))
+					},
 					score = function(fit){
-						as.numeric(fit$score %||% get_weibull_frailty_score_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-					},
-					observed_information = function(fit){
-						as.matrix(fit$observed_information %||% fit$information %||% -get_weibull_frailty_hessian_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-					},
-					information = function(fit){
-						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-					},
-					neg_loglik = function(fit){
-						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_weibull_frailty_neg_loglik_cpp(y, dead, X_fit, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-					}
+						as.numeric(fit$score %||% get_weibull_frailty_score_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+						},
+						observed_information = function(fit){
+						as.matrix(fit$observed_information %||% fit$information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+						},
+						fisher_information = function(fit){
+						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+						},
+						information = function(fit){
+						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
+						},
 				)
 			},
 
@@ -191,6 +194,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					dead            = as.numeric(private$dead),
 					X               = X_full,
 					group_id        = as.integer(cluster_id),
+					start           = private$get_fit_warm_start("params"),
 					estimate_only   = estimate_only,
 					n_gh            = 20L,
 					max_abs_log_sigma = 8.0,
@@ -208,9 +212,10 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			}
 
 				beta = as.numeric(res$b)[1L]
-				private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-				private$cached_mod = res
-				private$cached_values$likelihood_test_context = list(
+			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
+			private$cached_mod = res
+			private$set_fit_warm_start(as.numeric(res$params %||% c(as.numeric(res$b), as.numeric(res$log_sigma_eps), as.numeric(res$log_sigma_u))), "params")
+			private$cached_values$likelihood_test_context = list(
 					X = X_full,
 					y = as.numeric(private$y),
 					dead = as.numeric(private$dead),

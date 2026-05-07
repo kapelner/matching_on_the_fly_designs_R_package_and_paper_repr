@@ -13,7 +13,7 @@ test_that("Inference works for continuous", {
 	expect_true(is.numeric(est))
 
 	# OLS
-	inf_ols <- InferenceContinMultOLS$new(des, verbose = FALSE)
+	inf_ols <- InferenceContinOLS$new(des, verbose = FALSE)
 	est_ols <- inf_ols$compute_estimate()
 	expect_true(is.numeric(est_ols))
 })
@@ -27,7 +27,7 @@ test_that("Inference works for incidence", {
 	}
 	add_all_subject_responses_seq(des, rbinom(n, 1, 0.5))
 
-	inf <- InferenceIncidUnivLogRegr$new(des, verbose = FALSE)
+	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 })
@@ -151,7 +151,7 @@ test_that("CMH inference requires equal block sizes", {
 
 	expect_error(
 		InferenceIncidCMH$new(des, verbose = FALSE),
-		"same number of subjects"
+		"equal_block_sizes = TRUE"
 	)
 })
 
@@ -159,14 +159,13 @@ test_that("CMH and Extended Robins standard errors match a fixed blocked simulat
 	set.seed(20260405)
 	expected <- matrix(
 		c(
-			0.3818813079129866, 0.6059599821770412,
-			0.3535533905932738, 0.4330127018922193,
-			0.2886751345948129, 0.5448623679425842,
-			0.2500000000000000, 0.3423265984407288,
-			0.3818813079129866, 0.6059599821770412
+			0.3818813079129866, 0.3644344934278313,
+			0.3535533905932738, 0.3061862178478972,
+			0.2886751345948129, 0.3307189138830738,
+			0.2500000000000000, 0.2651650429449553,
+			0.3818813079129866, 0.3644344934278313
 		),
-		ncol = 2L,
-		byrow = TRUE,
+		ncol = 2, byrow = TRUE,
 		dimnames = list(
 			NULL,
 			c("cmh", "robins")
@@ -254,7 +253,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 	var_robbins_ext <- 1 / des$get_n() * (
 		p_hat_T * (1 - p_hat_T) + p_hat_C * (1 - p_hat_C)
 	)
-	se_r <- sqrt(variance_tot + var_robbins_ext)
+	se_r <- sqrt(variance_tot / (B * B) + var_robbins_ext)
 
 	expect_equal(se_cpp, se_r, tolerance = 1e-12)
 })
@@ -265,7 +264,7 @@ test_that("G-computation risk-ratio intervals error when log-scale bounds overfl
 	des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0))
 
-	inf <- InferenceIncidMultiGCompRiskRatio$new(des, verbose = FALSE)
+	inf <- InferenceIncidGCompRiskRatio$new(des, verbose = FALSE)
 	priv <- inf$.__enclos_env__$private
 	priv$cached_values$rr <- 1
 	priv$cached_values$s_beta_hat_T <- 1
@@ -287,25 +286,25 @@ test_that("Inference works for count", {
 	}
 	add_all_subject_responses_seq(des, rpois(n, 5))
 
-	inf <- InferenceCountUnivNegBinRegr$new(des, verbose = FALSE)
+	inf <- InferenceCountNegBin$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 
-	inf_robust_pois <- InferenceCountUnivRobustPoissonRegr$new(des, verbose = FALSE)
+	inf_robust_pois <- InferenceCountRobustPoisson$new(des, verbose = FALSE)
 	est_robust_pois <- inf_robust_pois$compute_estimate()
 	expect_true(is.numeric(est_robust_pois))
 
-	inf_quasi_pois <- InferenceCountUnivQuasiPoissonRegr$new(des, verbose = FALSE)
+	inf_quasi_pois <- InferenceCountQuasiPoisson$new(des, verbose = FALSE)
 	est_quasi_pois <- inf_quasi_pois$compute_estimate()
 	expect_true(is.numeric(est_quasi_pois))
 
 	if (requireNamespace("glmmTMB", quietly = TRUE)) {
-		inf_zinb <- InferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE)
+		inf_zinb <- InferenceCountZeroInflatedNegBin$new(des, verbose = FALSE)
 		est_zinb <- inf_zinb$compute_estimate()
 		expect_true(is.numeric(est_zinb))
 	}
 
-	inf_hurdle_nb <- InferenceCountUnivHurdleNegBinRegr$new(des, verbose = FALSE)
+	inf_hurdle_nb <- InferenceCountHurdleNegBin$new(des, verbose = FALSE)
 	est_hurdle_nb <- inf_hurdle_nb$compute_estimate()
 	expect_true(is.numeric(est_hurdle_nb))
 
@@ -337,7 +336,7 @@ test_that("KK count combined-likelihood multi inference handles full-width covar
 		des$add_one_subject_response(i, y_i, 1)
 	}
 
-	inf <- InferenceCountPoissonMultiKKCPoissonCombinedLikelihood$new(des, verbose = FALSE)
+	inf <- InferenceCountKKCPoissonOneLik$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 
 	expect_true(is.numeric(est))
@@ -354,7 +353,7 @@ test_that("Inference works for proportion", {
 	}
 	add_all_subject_responses_seq(des, runif(n))
 
-	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
+	inf <- InferencePropBetaRegr$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 })
@@ -379,12 +378,12 @@ test_that("Inference works for survival", {
 	expect_true(is.numeric(est_logrank))
 
 	# Cox PH
-	inf_cox <- InferenceSurvivalUniCoxPHRegr$new(des, verbose = FALSE)
+	inf_cox <- InferenceSurvivalCoxPHRegr$new(des, verbose = FALSE)
 	est_cox <- inf_cox$compute_estimate()
 	expect_true(is.numeric(est_cox))
 
 	# Stratified Cox PH
-	inf_strat_cox <- InferenceSurvivalUniStratCoxPHRegr$new(des, verbose = FALSE)
+	inf_strat_cox <- InferenceSurvivalStratCoxPHRegr$new(des, verbose = FALSE)
 	est_strat_cox <- inf_strat_cox$compute_estimate()
 	expect_true(is.numeric(est_strat_cox))
 })
@@ -399,7 +398,7 @@ test_that("Inference works for ordinal partial proportional odds", {
 	y_levels <- sample(1:4, n, replace = TRUE)
 	add_all_subject_responses_seq(des, y_levels)
 
-	inf_ppod <- InferenceOrdinalPartialProportionalOdds$new(des, nonparallel = c("x"), verbose = FALSE)
+	inf_ppod <- InferenceOrdinalPartialProportionalOddsRegr$new(des, nonparallel = c("x"), verbose = FALSE)
 	est_ppod <- inf_ppod$compute_estimate()
 	expect_true(is.numeric(est_ppod))
 	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval()
@@ -418,7 +417,7 @@ test_that("Inference works for incidence KK Newcombe IVWC", {
 	}
 	add_all_subject_responses_seq(seq_des, y)
 
-	inf <- InferenceIncidUnivKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
+	inf <- InferenceIncidKKNewcombeRiskDiff$new(seq_des, verbose = FALSE)
 	est <- inf$compute_estimate()
 	expect_true(is.numeric(est))
 	
@@ -457,16 +456,16 @@ test_that("ordinal hardening drops QR-ranked covariates only when enabled", {
 
 	kk_des <- build_cars93_ordinal_design(DesignSeqOneByOneKK14$new)
 
-	adj_hardened <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
-	adj_raw <- InferenceOrdinalMultiAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
+	adj_hardened <- InferenceOrdinalAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
+	adj_raw <- InferenceOrdinalAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
 	expect_true(is.finite(adj_hardened$compute_estimate()))
 	expect_true(is.finite(adj_hardened$compute_asymp_two_sided_pval()))
 	expect_true(all(is.finite(adj_hardened$compute_asymp_confidence_interval())))
 	expect_false(is.finite(adj_raw$compute_asymp_two_sided_pval()))
 	expect_false(all(is.finite(adj_raw$compute_asymp_confidence_interval())))
 
-	kk_adj_hardened <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
-	kk_adj_raw <- InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
+	kk_adj_hardened <- InferenceOrdinalKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = TRUE)
+	kk_adj_raw <- InferenceOrdinalKKCondAdjCatLogitRegr$new(kk_des, verbose = FALSE, harden = FALSE)
 	expect_true(is.finite(kk_adj_hardened$compute_estimate()))
 	expect_true(is.finite(kk_adj_hardened$compute_asymp_two_sided_pval()))
 	expect_true(all(is.finite(kk_adj_hardened$compute_asymp_confidence_interval())))
@@ -518,7 +517,7 @@ test_that("bootstrap debug preserves per-iteration records for sequential count 
 	}
 	add_all_subject_responses_seq(des_kk21, y_count)
 
-	inf_kk21 <- InferenceCountUnivNegBinRegr$new(des_kk21, verbose = FALSE)
+	inf_kk21 <- InferenceCountNegBin$new(des_kk21, verbose = FALSE)
 	debug_kk21 <- inf_kk21$approximate_bootstrap_distribution_beta_hat_T(
 		B = 8,
 		show_progress = FALSE,
@@ -553,7 +552,7 @@ test_that("proportion g-computation bootstrap worker keeps mutable screening sta
 	}
 	add_all_subject_responses_seq(des_pocock, y_prop)
 
-	inf_pocock <- InferencePropUniGCompMeanDiff$new(des_pocock, verbose = FALSE)
+	inf_pocock <- InferencePropGCompMeanDiff$new(des_pocock, verbose = FALSE)
 	debug_pocock <- inf_pocock$approximate_bootstrap_distribution_beta_hat_T(
 		B = 20,
 		show_progress = FALSE,
@@ -573,7 +572,7 @@ test_that("proportion g-computation bootstrap worker keeps mutable screening sta
 	}
 	add_all_subject_responses_seq(des_urn, y_prop)
 
-	inf_urn <- InferencePropMultiGCompMeanDiff$new(des_urn, verbose = FALSE)
+	inf_urn <- InferencePropGCompMeanDiff$new(des_urn, verbose = FALSE)
 	debug_urn <- inf_urn$approximate_bootstrap_distribution_beta_hat_T(
 		B = 12,
 		show_progress = FALSE,

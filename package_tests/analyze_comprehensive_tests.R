@@ -9,7 +9,7 @@ X = fread("package_tests/simple_tests_results_nc_2.csv")
 # Drop every row predating the current run for the zero/one-inflated beta multivariate class.
 # Current run cutoff is fixed as a magic number to avoid pulling historical repeats.
 # magic_cutoff_run_row_id = 6324L
-# X = X[!(inference_class == "InferencePropMultiZeroOneInflatedBetaRegr" & run_row_id < magic_cutoff_run_row_id)]
+# X = X[!(inference_class == "InferencePropZeroOneInflatedBetaRegr" & run_row_id < magic_cutoff_run_row_id)]
 # X = X[!(inference_class == "InferenceAllSimpleWilcox" & run_row_id < magic_cutoff_run_row_id)]
 table(X$rep)
 
@@ -82,15 +82,15 @@ X[beta_T == 1 & response_type == "continuous" &
 	inference_class %in% c(
 		"InferenceBaiAdjustedTKK14",
 		"InferenceBaiAdjustedTKK21",
-		"InferenceContinUnivRobustRegr",
-		"InferenceContinMultiRobustRegr",
-		"InferenceContinUnivQuantileRegr",
-		"InferenceContinMultiQuantileRegr",
-		"InferenceContinMultLin",
-		"InferenceContinMultOLS",
+		"InferenceContinRobustRegr",
+		"InferenceContinRobustRegr",
+		"InferenceContinQuantileRegr",
+		"InferenceContinQuantileRegr",
+		"InferenceContinLin",
+		"InferenceContinOLS",
 		"InferenceContinMultGLS",
-		"InferenceContinMultOLSKKCombinedLikelihood",
-		"InferenceContinMultOLSKKIVWC",
+		"InferenceContinOLSKKCombinedLikelihood",
+		"InferenceContinOLSKKIVWC",
 		"InferenceContinMultiKKLinIVWC",
 		"InferenceContinMultiKKLinCombinedLikelihood",
 		"InferenceContinUnivKKGLMM",
@@ -112,17 +112,17 @@ X[beta_T == 1 &
 		"InferenceAllKKCompoundMeanDiff",
 		"InferenceIncidExactZhang",
 		"InferenceIncidKKExactZhang",
-		"InferenceIncidUnivRiskDiff",
+		"InferenceIncidRiskDiff",
 		"InferenceIncidMultiRiskDiff",
-		"InferenceIncidUnivMiettinenNurminenRiskDiff",
-		"InferenceIncidUnivNewcombeRiskDiff",
-		"InferenceIncidUnivGCompRiskDiff",
-		"InferenceIncidMultiGCompRiskDiff",
-		"InferenceIncidUnivBinomialIdentityRiskDiff",
-		"InferenceIncidMultiBinomialIdentityRiskDiff",
-		"InferenceIncidUnivKKNewcombeRiskDiff",
-		"InferenceIncidUnivKKGCompRiskDiff",
-		"InferenceIncidMultiKKGCompRiskDiff"
+		"InferenceIncidMiettinenNurminenRiskDiff",
+		"InferenceIncidNewcombeRiskDiff",
+		"InferenceIncidGCompRiskDiff",
+		"InferenceIncidGCompRiskDiff",
+		"InferenceIncidBinomialIdentityRiskDiff",
+		"InferenceIncidBinomialIdentityRiskDiff",
+		"InferenceIncidKKNewcombeRiskDiff",
+		"InferenceIncidKKGCompRiskDiff",
+		"InferenceIncidKKGCompRiskDiff"
 	),
 	beta := {
 		p_c = incid_p_control(dataset)
@@ -131,7 +131,7 @@ X[beta_T == 1 &
 	}, by = dataset]
 
 # incidence — univariate logistic: marginal log-OR ≈ 0.767, not 1
-X[beta_T == 1 & inference_class %in% c("InferenceIncidUnivLogRegr", "InferenceIncidUnivKKGEE"),
+X[beta_T == 1 & inference_class %in% c("InferenceIncidLogRegr", "InferenceIncidUnivKKGEE"),
 	beta := {
 		p_c = mean(incid_p_control(dataset))
 		p_t = mean(incid_p_treated(dataset))
@@ -140,10 +140,10 @@ X[beta_T == 1 & inference_class %in% c("InferenceIncidUnivLogRegr", "InferenceIn
 
 # incidence — risk-ratio estimands
 X[beta_T == 1 & inference_class %in% c(
-	"InferenceIncidUnivGCompRiskRatio",
-	"InferenceIncidMultiGCompRiskRatio",
-	"InferenceIncidUnivKKGCompRiskRatio",
-	"InferenceIncidMultiKKGCompRiskRatio"
+	"InferenceIncidGCompRiskRatio",
+	"InferenceIncidGCompRiskRatio",
+	"InferenceIncidKKGCompRiskRatio",
+	"InferenceIncidKKGCompRiskRatio"
 ),
 beta := {
 	p_c = mean(incid_p_control(dataset))
@@ -155,8 +155,8 @@ beta := {
 X[beta_T == 1 & inference_class %in% c(
 	"InferenceIncidUnivModifiedPoisson",
 	"InferenceIncidMultiModifiedPoisson",
-	"InferenceIncidUnivLogBinomial",
-	"InferenceIncidMultiLogBinomial",
+	"InferenceIncidLogBinomial",
+	"InferenceIncidLogBinomial",
 	"InferenceIncidUnivKKModifiedPoisson",
 	"InferenceIncidMultiKKModifiedPoisson"
 ),
@@ -172,8 +172,8 @@ X[beta_T == 1 & response_type == "proportion" &
 	inference_class %in% c(
 		"InferenceAllSimpleMeanDiff",
 		"InferenceAllKKCompoundMeanDiff",
-		"InferencePropUniGCompMeanDiff",
-		"InferencePropMultiGCompMeanDiff"
+		"InferencePropGCompMeanDiff",
+		"InferencePropGCompMeanDiff"
 	),
 	beta := {
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
@@ -182,7 +182,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK univ GEE (logit link): marginal log-OR = logit(E[Y_T]) - logit(E[Y_C])
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("InferencePropUnivKKGEE", "InferencePropUniFractionalLogit"),
+	inference_class %in% c("InferencePropUnivKKGEE", "InferencePropFractionalLogit"),
 	beta := {
 		y_t = prop_y_treated(dataset)
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
@@ -208,18 +208,18 @@ X[beta_T == 1 & response_type == "count" &
 # count — log-link regression estimands target the log mean ratio under the DGP
 X[beta_T == 1 & response_type == "count" &
 	inference_class %in% c(
-		"InferenceCountUnivPoissonRegr",
-		"InferenceCountMultiPoissonRegr",
-		"InferenceCountUnivRobustPoissonRegr",
-		"InferenceCountMultiRobustPoissonRegr",
-		"InferenceCountUnivQuasiPoissonRegr",
-		"InferenceCountMultiQuasiPoissonRegr",
-		"InferenceCountUnivNegBinRegr",
-		"InferenceCountMultiNegBinRegr",
+		"InferenceCountPoisson",
+		"InferenceCountPoisson",
+		"InferenceCountRobustPoisson",
+		"InferenceCountRobustPoisson",
+		"InferenceCountQuasiPoisson",
+		"InferenceCountQuasiPoisson",
+		"InferenceCountNegBin",
+		"InferenceCountNegBin",
 		"InferenceCountPoissonUnivKKGEE",
 		"InferenceCountPoissonMultiKKGEE",
 		"InferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
-		"InferenceCountPoissonMultiKKCPoissonCombinedLikelihood",
+		"InferenceCountKKCPoissonOneLik",
 		"InferenceCountPoissonUnivKKCPoissonIVWC",
 		"InferenceCountPoissonMultiKKCPoissonIVWC",
 		"InferenceCountPoissonUnivKKGLMM",
@@ -262,8 +262,8 @@ X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
 		"InferenceAllSimpleMeanDiff",
 		"InferenceAllKKCompoundMeanDiff",
-		"InferenceOrdinalUniGCompMeanDiff",
-		"InferenceOrdinalMultiGCompMeanDiff"
+		"InferenceOrdinalGCompMeanDiff",
+		"InferenceOrdinalGCompMeanDiff"
 	),
 	beta := {
 		y_o = datasets_and_response_models[[dataset]]$y_original$ordinal
@@ -274,23 +274,23 @@ X[beta_T == 1 & response_type == "ordinal" &
 # additive/rounding DGP used in simple_tests.R
 X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
-	"InferenceOrdinalUniAdjCatLogitRegr",
-	"InferenceOrdinalMultiAdjCatLogitRegr",
+	"InferenceOrdinalAdjCatLogitRegr",
+	"InferenceOrdinalAdjCatLogitRegr",
 	"InferenceOrdinalUniCumulProbitRegr",
 	"InferenceOrdinalMultiCumulProbitRegr",
 	"InferenceOrdinalUniStereotypeLogitRegr",
 	"InferenceOrdinalMultiStereotypeLogitRegr",
 	"InferenceOrdinalUniStereotypeProbitRegr",
 	"InferenceOrdinalMultiStereotypeProbitRegr",
-	"InferenceOrdinalUniPropOddsRegr",
-	"InferenceOrdinalUniOrderedProbitRegr",
-	"InferenceOrdinalMultiOrderedProbitRegr",
-	"InferenceOrdinalUniCauchitRegr",
-	"InferenceOrdinalMultiCauchitRegr",
-	"InferenceOrdinalPartialProportionalOdds",
+	"InferenceOrdinalPropOddsRegr",
+	"InferenceOrdinalOrderedProbitRegr",
+	"InferenceOrdinalOrderedProbitRegr",
+	"InferenceOrdinalCauchitRegr",
+	"InferenceOrdinalCauchitRegr",
+	"InferenceOrdinalPartialProportionalOddsRegr",
 	"InferenceOrdinalContRatioRegr",
-	"InferenceOrdinalUniCLLRegr",
-	"InferenceOrdinalMultiCLLRegr",
+	"InferenceOrdinalCloglogRegr",
+	"InferenceOrdinalCloglogRegr",
 	"InferenceOrdinalUnivKKGEE",
 	"InferenceOrdinalMultiKKGEE",
 	"InferenceOrdinalUnivKKGLMM",
@@ -300,7 +300,7 @@ X[beta_T == 1 & response_type == "ordinal" &
 	"InferenceOrdinalUnivKKCondPropOddsRegr",
 	"InferenceOrdinalUnivKKCondPropOddsCombinedRegr",
 	"InferenceOrdinalUnivKKCondContRatioRegr",
-	"InferenceOrdinalUnivKKCondAdjCatLogitRegr",
+	"InferenceOrdinalKKCondAdjCatLogitRegr",
 	"InferenceOrdinalRidit"
 	),
 	beta := NA_real_]
@@ -324,7 +324,7 @@ X[beta_T == 1 & response_type == "ordinal" &
 #now some are impossible to calculate for real data due to the unknown f(x) model
 X[beta_T == 1 &
 	inference_class %in% c(
-	"InferenceIncidMultiLogRegr",
+	"InferenceIncidLogRegr",
 	"InferenceIncidUnivKKClogitCombinedLikelihood",
 	"InferenceIncidMultiKKClogitCombinedLikelihood",
 	"InferenceIncidUnivKKClogitIVWC",
@@ -332,36 +332,36 @@ X[beta_T == 1 &
 	"InferenceIncidMultiKKGEE",
 	"InferenceIncidUnivKKGLMM",
 	"InferenceIncidMultiKKGLMM",
-	"InferencePropUniBetaRegr",
-	"InferencePropMultiBetaRegr",
+	"InferencePropBetaRegr",
+	"InferencePropBetaRegr",
 	"InferencePropUnivKKGLMM",
 	"InferencePropMultiKKGEE",
 	"InferencePropMultiKKGLMM",
-	"InferencePropMultiFractionalLogit",
-	"InferencePropUniZeroOneInflatedBetaRegr",
-	"InferencePropMultiZeroOneInflatedBetaRegr",
+	"InferencePropFractionalLogit",
+	"InferencePropZeroOneInflatedBetaRegr",
+	"InferencePropZeroOneInflatedBetaRegr",
 	"InferencePropMultiKKQuantileRegrIVWC",
 	"InferencePropMultiKKQuantileRegrCombinedLikelihood",
-	"InferenceCountUnivHurdlePoissonRegr",
-	"InferenceCountMultiHurdlePoissonRegr",
+	"InferenceCountHurdlePoisson",
+	"InferenceCountHurdlePoisson",
 	"InferenceCountUnivKKHurdlePoissonCombinedLikelihood",
 	"InferenceCountMultiKKHurdlePoissonCombinedLikelihood",
 	"InferenceCountUnivKKHurdlePoissonIVWC",
 	"InferenceCountMultiKKHurdlePoissonIVWC",
-	"InferenceCountUnivHurdleNegBinRegr",
-	"InferenceCountMultiHurdleNegBinRegr",
-	"InferenceCountUnivZeroInflatedPoissonRegr",
-	"InferenceCountMultiZeroInflatedPoissonRegr",
-	"InferenceCountUnivZeroInflatedNegBinRegr",
-	"InferenceCountMultiZeroInflatedNegBinRegr",
+	"InferenceCountHurdleNegBin",
+	"InferenceCountHurdleNegBin",
+	"InferenceCountZeroInflatedPoisson",
+	"InferenceCountZeroInflatedPoisson",
+	"InferenceCountZeroInflatedNegBin",
+	"InferenceCountZeroInflatedNegBin",
 	"InferenceSurvivalLogRank",
-	"InferenceSurvivalUniCoxPHRegr",
-	"InferenceSurvivalMultiCoxPHRegr",
-	"InferenceSurvivalUniStratCoxPHRegr",
-	"InferenceSurvivalMultiStratCoxPHRegr",
+	"InferenceSurvivalCoxPHRegr",
+	"InferenceSurvivalCoxPHRegr",
+	"InferenceSurvivalStratCoxPHRegr",
+	"InferenceSurvivalStratCoxPHRegr",
 	"InferenceSurvivalUniDepCensTransformRegr",
 	"InferenceSurvivalMultiDepCensTransformRegr",
-	"InferenceSurvivalUniWeibullRegr",
+	"InferenceSurvivalWeibullRegr",
 	"InferenceSurvivalMultiWeibullRegr",
 	"InferenceSurvivalUnivKKGEE",
 	"InferenceSurvivalMultiKKGammaGEE",
@@ -371,9 +371,9 @@ X[beta_T == 1 &
 	"InferenceSurvivalMultiKKClaytonCopulaIVWC",
 	"InferenceSurvivalUnivKKLWACoxIVWC",
 	"InferenceSurvivalMultiKKLWACoxIVWC",
-	"InferenceSurvivalUnivKKStratCoxIVWC",
+	"InferenceSurvivalKKStratCoxIVWC",
 	"InferenceSurvivalUnivKKStratCoxCombinedLikelihood",
-	"InferenceSurvivalMultiKKStratCoxIVWC",
+	"InferenceSurvivalKKStratCoxIVWC",
 	"InferenceSurvivalMultiKKStratCoxCombinedLikelihood",
 	"InferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood",
 	"InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
@@ -384,8 +384,8 @@ X[beta_T == 1 &
 	"InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
 	"InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
 	"InferenceAllKKWilcoxRegrMultiIVWC",
-	"InferenceSurvivalUnivKKRankRegrIVWC",
-	"InferenceSurvivalMultiKKRankRegrIVWC",
+	"InferenceSurvivalKKRankRegrIVWC",
+	"InferenceSurvivalKKRankRegrIVWC",
 	"InferenceSurvivalGehanWilcox"
 	),
 	beta := NA_real_]

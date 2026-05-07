@@ -140,9 +140,9 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 
 			logrank_stats = tryCatch(
 				fast_logrank_stats_cpp(
-					time = as.numeric(private$y),
-					dead = as.integer(private$dead),
-					w = as.integer(private$w)
+					w = as.integer(private$w),
+					y = as.numeric(private$y),
+					dead = as.integer(private$dead)
 				),
 				error = function(e) NULL
 			)

@@ -40,6 +40,40 @@ test_that("SimulationFramework accepts merged design classes and params", {
 	expect_true("asymp_pval(delta=0)" %in% sm$inference_type_params)
 })
 
+test_that("SimulationFramework preserves FixedDesignBlocking NULL strata_cols semantics", {
+	set.seed(20260506)
+	sim <- SimulationFramework$new(
+		response_type = "incidence",
+		design_classes_and_params = list(
+			FixedDesignBlocking = list(B_target = 4L, exact_num_blocks = TRUE)
+		),
+		inference_classes_and_params = list(InferenceIncidCMH),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 8L,
+		p = 1L,
+		Nrep = 1L,
+		betaT = 0,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		turn_off_asserts_for_speed = FALSE
+	)
+
+	priv <- sim$.__enclos_env__$private
+	priv$current_n <- 8L
+	priv$current_p <- 1L
+	priv$current_betaT <- 0
+	priv$current_cond_exp_func_model <- "linear"
+	priv$current_response_type <- "incidence"
+	dat <- list(
+		X = data.frame(x = 1:8),
+		y_linear_model = as.numeric(scale(1:8))
+	)
+	combos <- priv$.build_valid_combos_for_current_cell(dat)
+	designs <- unique(vapply(combos, `[[`, "", "design"))
+	expect_true("FixedDesignBlocking (B_target=4L, exact_num_blocks=TRUE)" %in% designs)
+})
+
 test_that("SimulationFramework defaults to csv.bz2 results and rejects unsupported extensions", {
 	sim <- SimulationFramework$new(
 		response_type = "continuous",

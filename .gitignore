@@ -214,7 +214,12 @@ simulation_framework_results.csv
 verify_progress.R
 benchmark_ivwc_vs_onelik.csv
 benchmark_ivwc_vs_onelik_results.csv
-
+benchmark_lrt_ci_nr.R
+test_debug.csv
+test_debug_benchmark.R
+test_key_store.R
+tmp_benchmark_rand_ci_warm_start.R
+test_ols_ivwc_onelik.R
 
 
 

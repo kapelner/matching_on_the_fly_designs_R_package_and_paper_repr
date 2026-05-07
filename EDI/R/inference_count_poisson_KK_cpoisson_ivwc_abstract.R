@@ -160,24 +160,24 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			weights = y_total[valid_idx]
 
 			# If no covariates, use weighted intercept-only logistic
-			Xmm = matrix(1, nrow = length(valid_idx), ncol = 1)
-			colnames(Xmm) = "(Intercept)"
-			if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_Xmm_colnames_matched)){
-				Xmm = cbind(1, KKstats$X_matched_diffs[valid_idx, intersect(private$best_Xmm_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE])
+			X = matrix(1, nrow = length(valid_idx), ncol = 1)
+			colnames(X) = "(Intercept)"
+			if (ncol(as.matrix(private$X)) > 0 && !is.null(private$best_X_colnames_matched)){
+				X = cbind(1, KKstats$X_matched_diffs[valid_idx, intersect(private$best_X_colnames_matched, colnames(KKstats$X_matched_diffs)), drop = FALSE])
 			}
 
 			mod = tryCatch({
-				res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = weights)
+				res = fast_logistic_regression_weighted_cpp(X = X, y = y_prop, weights = weights)
 				ssq_b_1 = if (estimate_only) NA_real_ else {
 					vcov_mat = tryCatch(solve(res$XtWX), error = function(e) NULL)
 					if (!is.null(vcov_mat)) vcov_mat[1L, 1L] else NA_real_
 				}
-				list(b = res$b, ssq_b_1 = ssq_b_1, X_fit = Xmm)
+				list(b = res$b, ssq_b_1 = ssq_b_1, X_fit = X)
 			}, error = function(e) NULL)
 
 			if (!is.null(mod) && is.finite(mod$b[1])){
 				private$cached_values$beta_T_matched = as.numeric(mod$b[1])
-				private$best_Xmm_colnames_matched = setdiff(colnames(mod$X_fit), "(Intercept)")
+				private$best_X_colnames_matched = setdiff(colnames(mod$X_fit), "(Intercept)")
 				if (!estimate_only) private$cached_values$ssq_beta_T_matched = as.numeric(mod$ssq_b_1)
 			}
 		},
@@ -211,22 +211,22 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 					if (length(j_treat) == 0) j_treat = 2L
 				}
 			} else {
-				Xmm = cbind(1, w_r)
-				mod = tryCatch(fast_neg_bin_with_var_cpp(X = Xmm, y = as.integer(y_r)), error = function(e) NULL)
+				X = cbind(1, w_r)
+				mod = tryCatch(fast_neg_bin_with_var_cpp(X = X, y = as.integer(y_r)), error = function(e) NULL)
 			}
 
 			if (!is.null(mod) && is.finite(mod$b[j_treat])){
 				private$cached_values$beta_T_reservoir = as.numeric(mod$b[j_treat])
 				if (ncol(as.matrix(private$X)) > 0 && !is.null(attempt$fit)){
-					private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X), c("(Intercept)", "w_r"))
-					private$best_Xmm_j_treat_reservoir = j_treat
+					private$best_X_colnames_reservoir = setdiff(colnames(attempt$X), c("(Intercept)", "w_r"))
+					private$best_X_j_treat_reservoir = j_treat
 				}
 			}
 			if (!estimate_only && !is.null(mod)) private$cached_values$ssq_beta_T_reservoir = as.numeric(mod$vcov[j_treat, j_treat])
 		},
 
-		best_Xmm_colnames_matched = NULL,
-		best_Xmm_colnames_reservoir = NULL,
-		best_Xmm_j_treat_reservoir = 2L
+		best_X_colnames_matched = NULL,
+		best_X_colnames_reservoir = NULL,
+		best_X_j_treat_reservoir = 2L
 	)
 )

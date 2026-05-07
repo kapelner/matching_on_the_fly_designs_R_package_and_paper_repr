@@ -51,34 +51,34 @@ make_fixed_blocked_cluster_design <- function(X, y_fun, cluster_size = 2L){
 }
 
 test_that("incidence and ordinal g-computation reusable workers match generic bootstrap", {
-	SlowInferenceIncidUnivGCompRiskDiff = R6::R6Class(
-		"SlowInferenceIncidUnivGCompRiskDiff",
-		inherit = InferenceIncidUnivGCompRiskDiff,
+	SlowInferenceIncidGCompRiskDiff = R6::R6Class(
+		"SlowInferenceIncidGCompRiskDiff",
+		inherit = InferenceIncidGCompRiskDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidMultiGCompRiskDiff = R6::R6Class(
-		"SlowInferenceIncidMultiGCompRiskDiff",
-		inherit = InferenceIncidMultiGCompRiskDiff,
+	SlowInferenceIncidGCompRiskDiff = R6::R6Class(
+		"SlowInferenceIncidGCompRiskDiff",
+		inherit = InferenceIncidGCompRiskDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidUnivGCompRiskRatio = R6::R6Class(
-		"SlowInferenceIncidUnivGCompRiskRatio",
-		inherit = InferenceIncidUnivGCompRiskRatio,
+	SlowInferenceIncidGCompRiskRatio = R6::R6Class(
+		"SlowInferenceIncidGCompRiskRatio",
+		inherit = InferenceIncidGCompRiskRatio,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidMultiGCompRiskRatio = R6::R6Class(
-		"SlowInferenceIncidMultiGCompRiskRatio",
-		inherit = InferenceIncidMultiGCompRiskRatio,
+	SlowInferenceIncidGCompRiskRatio = R6::R6Class(
+		"SlowInferenceIncidGCompRiskRatio",
+		inherit = InferenceIncidGCompRiskRatio,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceOrdinalUniGCompMeanDiff = R6::R6Class(
-		"SlowInferenceOrdinalUniGCompMeanDiff",
-		inherit = InferenceOrdinalUniGCompMeanDiff,
+	SlowInferenceOrdinalGCompMeanDiff = R6::R6Class(
+		"SlowInferenceOrdinalGCompMeanDiff",
+		inherit = InferenceOrdinalGCompMeanDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceOrdinalMultiGCompMeanDiff = R6::R6Class(
-		"SlowInferenceOrdinalMultiGCompMeanDiff",
-		inherit = InferenceOrdinalMultiGCompMeanDiff,
+	SlowInferenceOrdinalGCompMeanDiff = R6::R6Class(
+		"SlowInferenceOrdinalGCompMeanDiff",
+		inherit = InferenceOrdinalGCompMeanDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
 
@@ -104,76 +104,76 @@ test_that("incidence and ordinal g-computation reusable workers match generic bo
 	)
 
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidUnivGCompRiskDiff$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidUnivGCompRiskDiff$new(incid_des, verbose = FALSE),
+		InferenceIncidGCompRiskDiff$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidGCompRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 201
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidMultiGCompRiskDiff$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidMultiGCompRiskDiff$new(incid_des, verbose = FALSE),
+		InferenceIncidGCompRiskDiff$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidGCompRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 202
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidUnivGCompRiskRatio$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidUnivGCompRiskRatio$new(incid_des, verbose = FALSE),
+		InferenceIncidGCompRiskRatio$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidGCompRiskRatio$new(incid_des, verbose = FALSE),
 		seed = 203
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidMultiGCompRiskRatio$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidMultiGCompRiskRatio$new(incid_des, verbose = FALSE),
+		InferenceIncidGCompRiskRatio$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidGCompRiskRatio$new(incid_des, verbose = FALSE),
 		seed = 204
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceOrdinalUniGCompMeanDiff$new(ordinal_des, verbose = FALSE),
-		SlowInferenceOrdinalUniGCompMeanDiff$new(ordinal_des, verbose = FALSE),
+		InferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
+		SlowInferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
 		seed = 205
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceOrdinalMultiGCompMeanDiff$new(ordinal_des, verbose = FALSE),
-		SlowInferenceOrdinalMultiGCompMeanDiff$new(ordinal_des, verbose = FALSE),
+		InferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
+		SlowInferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
 		seed = 206
 	)
 })
 
 test_that("continuous lin, count negbin, and classical incidence estimators match generic bootstrap", {
-	SlowInferenceContinMultLin = R6::R6Class(
-		"SlowInferenceContinMultLin",
-		inherit = InferenceContinMultLin,
+	SlowInferenceContinLin = R6::R6Class(
+		"SlowInferenceContinLin",
+		inherit = InferenceContinLin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountUnivNegBinRegr = R6::R6Class(
-		"SlowInferenceCountUnivNegBinRegr",
-		inherit = InferenceCountUnivNegBinRegr,
+	SlowInferenceCountNegBin = R6::R6Class(
+		"SlowInferenceCountNegBin",
+		inherit = InferenceCountNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountMultiNegBinRegr = R6::R6Class(
-		"SlowInferenceCountMultiNegBinRegr",
-		inherit = InferenceCountMultiNegBinRegr,
+	SlowInferenceCountNegBin = R6::R6Class(
+		"SlowInferenceCountNegBin",
+		inherit = InferenceCountNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountUnivHurdleNegBinRegr = R6::R6Class(
-		"SlowInferenceCountUnivHurdleNegBinRegr",
-		inherit = InferenceCountUnivHurdleNegBinRegr,
+	SlowInferenceCountHurdleNegBin = R6::R6Class(
+		"SlowInferenceCountHurdleNegBin",
+		inherit = InferenceCountHurdleNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountMultiHurdleNegBinRegr = R6::R6Class(
-		"SlowInferenceCountMultiHurdleNegBinRegr",
-		inherit = InferenceCountMultiHurdleNegBinRegr,
+	SlowInferenceCountHurdleNegBin = R6::R6Class(
+		"SlowInferenceCountHurdleNegBin",
+		inherit = InferenceCountHurdleNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidUnivRiskDiff = R6::R6Class(
-		"SlowInferenceIncidUnivRiskDiff",
-		inherit = InferenceIncidUnivRiskDiff,
+	SlowInferenceIncidRiskDiff = R6::R6Class(
+		"SlowInferenceIncidRiskDiff",
+		inherit = InferenceIncidRiskDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidUnivNewcombeRiskDiff = R6::R6Class(
-		"SlowInferenceIncidUnivNewcombeRiskDiff",
-		inherit = InferenceIncidUnivNewcombeRiskDiff,
+	SlowInferenceIncidNewcombeRiskDiff = R6::R6Class(
+		"SlowInferenceIncidNewcombeRiskDiff",
+		inherit = InferenceIncidNewcombeRiskDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceIncidUnivMiettinenNurminenRiskDiff = R6::R6Class(
-		"SlowInferenceIncidUnivMiettinenNurminenRiskDiff",
-		inherit = InferenceIncidUnivMiettinenNurminenRiskDiff,
+	SlowInferenceIncidMiettinenNurminenRiskDiff = R6::R6Class(
+		"SlowInferenceIncidMiettinenNurminenRiskDiff",
+		inherit = InferenceIncidMiettinenNurminenRiskDiff,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
 
@@ -213,43 +213,43 @@ test_that("continuous lin, count negbin, and classical incidence estimators matc
 	)
 
 	compare_bootstrap_fast_slow_asymp(
-		InferenceContinMultLin$new(continuous_des, verbose = FALSE),
-		SlowInferenceContinMultLin$new(continuous_des, verbose = FALSE),
+		InferenceContinLin$new(continuous_des, verbose = FALSE),
+		SlowInferenceContinLin$new(continuous_des, verbose = FALSE),
 		seed = 207
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountUnivNegBinRegr$new(count_des, verbose = FALSE),
-		SlowInferenceCountUnivNegBinRegr$new(count_des, verbose = FALSE),
+		InferenceCountNegBin$new(count_des, verbose = FALSE),
+		SlowInferenceCountNegBin$new(count_des, verbose = FALSE),
 		seed = 208
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountMultiNegBinRegr$new(count_des, verbose = FALSE),
-		SlowInferenceCountMultiNegBinRegr$new(count_des, verbose = FALSE),
+		InferenceCountNegBin$new(count_des, verbose = FALSE),
+		SlowInferenceCountNegBin$new(count_des, verbose = FALSE),
 		seed = 209
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountUnivHurdleNegBinRegr$new(hurdle_des, verbose = FALSE),
-		SlowInferenceCountUnivHurdleNegBinRegr$new(hurdle_des, verbose = FALSE),
+		InferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
+		SlowInferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
 		seed = 210
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountMultiHurdleNegBinRegr$new(hurdle_des, verbose = FALSE),
-		SlowInferenceCountMultiHurdleNegBinRegr$new(hurdle_des, verbose = FALSE),
+		InferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
+		SlowInferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
 		seed = 211
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidUnivRiskDiff$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidUnivRiskDiff$new(incid_des, verbose = FALSE),
+		InferenceIncidRiskDiff$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 212
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidUnivNewcombeRiskDiff$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidUnivNewcombeRiskDiff$new(incid_des, verbose = FALSE),
+		InferenceIncidNewcombeRiskDiff$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidNewcombeRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 213
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceIncidUnivMiettinenNurminenRiskDiff$new(incid_des, verbose = FALSE),
-		SlowInferenceIncidUnivMiettinenNurminenRiskDiff$new(incid_des, verbose = FALSE),
+		InferenceIncidMiettinenNurminenRiskDiff$new(incid_des, verbose = FALSE),
+		SlowInferenceIncidMiettinenNurminenRiskDiff$new(incid_des, verbose = FALSE),
 		seed = 214
 	)
 })
@@ -270,9 +270,9 @@ test_that("continuous blocked-cluster bootstrap keeps multivariate workers finit
 		}
 	)
 
-	inf_ols = InferenceContinMultOLS$new(des, verbose = FALSE)
-	inf_lin = InferenceContinMultLin$new(des, verbose = FALSE)
-	inf_robust = InferenceContinMultiRobustRegr$new(des, method = "M", verbose = FALSE)
+	inf_ols = InferenceContinOLS$new(des, verbose = FALSE)
+	inf_lin = InferenceContinLin$new(des, verbose = FALSE)
+	inf_robust = InferenceContinRobustRegr$new(des, method = "M", verbose = FALSE)
 
 	set.seed(215)
 	dbg_ols = inf_ols$approximate_bootstrap_distribution_beta_hat_T(B = 25L, show_progress = FALSE, debug = TRUE)
@@ -300,34 +300,34 @@ test_that("continuous blocked-cluster bootstrap keeps multivariate workers finit
 })
 
 test_that("MLE and proportion families picked up through InferenceAsymp match generic bootstrap", {
-	SlowInferenceOrdinalUniPropOddsRegr = R6::R6Class(
-		"SlowInferenceOrdinalUniPropOddsRegr",
-		inherit = InferenceOrdinalUniPropOddsRegr,
+	SlowInferenceOrdinalPropOddsRegr = R6::R6Class(
+		"SlowInferenceOrdinalPropOddsRegr",
+		inherit = InferenceOrdinalPropOddsRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferencePropUniBetaRegr = R6::R6Class(
-		"SlowInferencePropUniBetaRegr",
-		inherit = InferencePropUniBetaRegr,
+	SlowInferencePropBetaRegr = R6::R6Class(
+		"SlowInferencePropBetaRegr",
+		inherit = InferencePropBetaRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferencePropUniFractionalLogit = R6::R6Class(
-		"SlowInferencePropUniFractionalLogit",
-		inherit = InferencePropUniFractionalLogit,
+	SlowInferencePropFractionalLogit = R6::R6Class(
+		"SlowInferencePropFractionalLogit",
+		inherit = InferencePropFractionalLogit,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferencePropMultiFractionalLogit = R6::R6Class(
-		"SlowInferencePropMultiFractionalLogit",
-		inherit = InferencePropMultiFractionalLogit,
+	SlowInferencePropFractionalLogit = R6::R6Class(
+		"SlowInferencePropFractionalLogit",
+		inherit = InferencePropFractionalLogit,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferencePropUniZeroOneInflatedBetaRegr = R6::R6Class(
-		"SlowInferencePropUniZeroOneInflatedBetaRegr",
-		inherit = InferencePropUniZeroOneInflatedBetaRegr,
+	SlowInferencePropZeroOneInflatedBetaRegr = R6::R6Class(
+		"SlowInferencePropZeroOneInflatedBetaRegr",
+		inherit = InferencePropZeroOneInflatedBetaRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferencePropMultiZeroOneInflatedBetaRegr = R6::R6Class(
-		"SlowInferencePropMultiZeroOneInflatedBetaRegr",
-		inherit = InferencePropMultiZeroOneInflatedBetaRegr,
+	SlowInferencePropZeroOneInflatedBetaRegr = R6::R6Class(
+		"SlowInferencePropZeroOneInflatedBetaRegr",
+		inherit = InferencePropZeroOneInflatedBetaRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
 
@@ -364,56 +364,56 @@ test_that("MLE and proportion families picked up through InferenceAsymp match ge
 	)
 
 	compare_bootstrap_fast_slow_asymp(
-		InferenceOrdinalUniPropOddsRegr$new(ordinal_des, verbose = FALSE),
-		SlowInferenceOrdinalUniPropOddsRegr$new(ordinal_des, verbose = FALSE),
+		InferenceOrdinalPropOddsRegr$new(ordinal_des, verbose = FALSE),
+		SlowInferenceOrdinalPropOddsRegr$new(ordinal_des, verbose = FALSE),
 		seed = 215
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferencePropUniBetaRegr$new(prop_des, verbose = FALSE),
-		SlowInferencePropUniBetaRegr$new(prop_des, verbose = FALSE),
+		InferencePropBetaRegr$new(prop_des, verbose = FALSE),
+		SlowInferencePropBetaRegr$new(prop_des, verbose = FALSE),
 		seed = 216
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferencePropUniFractionalLogit$new(prop_des, verbose = FALSE),
-		SlowInferencePropUniFractionalLogit$new(prop_des, verbose = FALSE),
+		InferencePropFractionalLogit$new(prop_des, verbose = FALSE),
+		SlowInferencePropFractionalLogit$new(prop_des, verbose = FALSE),
 		seed = 217
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferencePropMultiFractionalLogit$new(prop_des, verbose = FALSE),
-		SlowInferencePropMultiFractionalLogit$new(prop_des, verbose = FALSE),
+		InferencePropFractionalLogit$new(prop_des, verbose = FALSE),
+		SlowInferencePropFractionalLogit$new(prop_des, verbose = FALSE),
 		seed = 218
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferencePropUniZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
-		SlowInferencePropUniZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
+		InferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
+		SlowInferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
 		seed = 219
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferencePropMultiZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
-		SlowInferencePropMultiZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
+		InferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
+		SlowInferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
 		seed = 220
 	)
 })
 
 test_that("survival reusable workers match generic bootstrap", {
-	SlowInferenceSurvivalUniCoxPHRegr = R6::R6Class(
-		"SlowInferenceSurvivalUniCoxPHRegr",
-		inherit = InferenceSurvivalUniCoxPHRegr,
+	SlowInferenceSurvivalCoxPHRegr = R6::R6Class(
+		"SlowInferenceSurvivalCoxPHRegr",
+		inherit = InferenceSurvivalCoxPHRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceSurvivalMultiCoxPHRegr = R6::R6Class(
-		"SlowInferenceSurvivalMultiCoxPHRegr",
-		inherit = InferenceSurvivalMultiCoxPHRegr,
+	SlowInferenceSurvivalCoxPHRegr = R6::R6Class(
+		"SlowInferenceSurvivalCoxPHRegr",
+		inherit = InferenceSurvivalCoxPHRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceSurvivalUniStratCoxPHRegr = R6::R6Class(
-		"SlowInferenceSurvivalUniStratCoxPHRegr",
-		inherit = InferenceSurvivalUniStratCoxPHRegr,
+	SlowInferenceSurvivalStratCoxPHRegr = R6::R6Class(
+		"SlowInferenceSurvivalStratCoxPHRegr",
+		inherit = InferenceSurvivalStratCoxPHRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceSurvivalMultiStratCoxPHRegr = R6::R6Class(
-		"SlowInferenceSurvivalMultiStratCoxPHRegr",
-		inherit = InferenceSurvivalMultiStratCoxPHRegr,
+	SlowInferenceSurvivalStratCoxPHRegr = R6::R6Class(
+		"SlowInferenceSurvivalStratCoxPHRegr",
+		inherit = InferenceSurvivalStratCoxPHRegr,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
 	SlowInferenceSurvivalKMDiff = R6::R6Class(
@@ -453,23 +453,23 @@ test_that("survival reusable workers match generic bootstrap", {
 	)
 
 	compare_bootstrap_fast_slow_asymp(
-		InferenceSurvivalUniCoxPHRegr$new(surv_des, verbose = FALSE),
-		SlowInferenceSurvivalUniCoxPHRegr$new(surv_des, verbose = FALSE),
+		InferenceSurvivalCoxPHRegr$new(surv_des, verbose = FALSE),
+		SlowInferenceSurvivalCoxPHRegr$new(surv_des, verbose = FALSE),
 		seed = 221
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceSurvivalMultiCoxPHRegr$new(surv_des, verbose = FALSE),
-		SlowInferenceSurvivalMultiCoxPHRegr$new(surv_des, verbose = FALSE),
+		InferenceSurvivalCoxPHRegr$new(surv_des, verbose = FALSE),
+		SlowInferenceSurvivalCoxPHRegr$new(surv_des, verbose = FALSE),
 		seed = 222
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceSurvivalUniStratCoxPHRegr$new(surv_des, verbose = FALSE),
-		SlowInferenceSurvivalUniStratCoxPHRegr$new(surv_des, verbose = FALSE),
+		InferenceSurvivalStratCoxPHRegr$new(surv_des, verbose = FALSE),
+		SlowInferenceSurvivalStratCoxPHRegr$new(surv_des, verbose = FALSE),
 		seed = 223
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceSurvivalMultiStratCoxPHRegr$new(surv_des, verbose = FALSE),
-		SlowInferenceSurvivalMultiStratCoxPHRegr$new(surv_des, verbose = FALSE),
+		InferenceSurvivalStratCoxPHRegr$new(surv_des, verbose = FALSE),
+		SlowInferenceSurvivalStratCoxPHRegr$new(surv_des, verbose = FALSE),
 		seed = 224
 	)
 	compare_bootstrap_fast_slow_asymp(
@@ -497,34 +497,34 @@ test_that("survival reusable workers match generic bootstrap", {
 test_that("zero-augmented count reusable workers match generic bootstrap", {
 	skip_if_not_installed("glmmTMB")
 
-	SlowInferenceCountUnivZeroInflatedPoissonRegr = R6::R6Class(
-		"SlowInferenceCountUnivZeroInflatedPoissonRegr",
-		inherit = InferenceCountUnivZeroInflatedPoissonRegr,
+	SlowInferenceCountZeroInflatedPoisson = R6::R6Class(
+		"SlowInferenceCountZeroInflatedPoisson",
+		inherit = InferenceCountZeroInflatedPoisson,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountMultiZeroInflatedPoissonRegr = R6::R6Class(
-		"SlowInferenceCountMultiZeroInflatedPoissonRegr",
-		inherit = InferenceCountMultiZeroInflatedPoissonRegr,
+	SlowInferenceCountZeroInflatedPoisson = R6::R6Class(
+		"SlowInferenceCountZeroInflatedPoisson",
+		inherit = InferenceCountZeroInflatedPoisson,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountUnivZeroInflatedNegBinRegr = R6::R6Class(
-		"SlowInferenceCountUnivZeroInflatedNegBinRegr",
-		inherit = InferenceCountUnivZeroInflatedNegBinRegr,
+	SlowInferenceCountZeroInflatedNegBin = R6::R6Class(
+		"SlowInferenceCountZeroInflatedNegBin",
+		inherit = InferenceCountZeroInflatedNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountMultiZeroInflatedNegBinRegr = R6::R6Class(
-		"SlowInferenceCountMultiZeroInflatedNegBinRegr",
-		inherit = InferenceCountMultiZeroInflatedNegBinRegr,
+	SlowInferenceCountZeroInflatedNegBin = R6::R6Class(
+		"SlowInferenceCountZeroInflatedNegBin",
+		inherit = InferenceCountZeroInflatedNegBin,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountUnivHurdlePoissonRegr = R6::R6Class(
-		"SlowInferenceCountUnivHurdlePoissonRegr",
-		inherit = InferenceCountUnivHurdlePoissonRegr,
+	SlowInferenceCountHurdlePoisson = R6::R6Class(
+		"SlowInferenceCountHurdlePoisson",
+		inherit = InferenceCountHurdlePoisson,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
-	SlowInferenceCountMultiHurdlePoissonRegr = R6::R6Class(
-		"SlowInferenceCountMultiHurdlePoissonRegr",
-		inherit = InferenceCountMultiHurdlePoissonRegr,
+	SlowInferenceCountHurdlePoisson = R6::R6Class(
+		"SlowInferenceCountHurdlePoisson",
+		inherit = InferenceCountHurdlePoisson,
 		private = list(supports_reusable_bootstrap_worker = function() FALSE)
 	)
 
@@ -542,38 +542,38 @@ test_that("zero-augmented count reusable workers match generic bootstrap", {
 	)
 
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountUnivZeroInflatedPoissonRegr$new(des, verbose = FALSE),
-		SlowInferenceCountUnivZeroInflatedPoissonRegr$new(des, verbose = FALSE),
+		InferenceCountZeroInflatedPoisson$new(des, verbose = FALSE),
+		SlowInferenceCountZeroInflatedPoisson$new(des, verbose = FALSE),
 		seed = 229,
 		tolerance = 1e-8
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountMultiZeroInflatedPoissonRegr$new(des, verbose = FALSE),
-		SlowInferenceCountMultiZeroInflatedPoissonRegr$new(des, verbose = FALSE),
+		InferenceCountZeroInflatedPoisson$new(des, verbose = FALSE),
+		SlowInferenceCountZeroInflatedPoisson$new(des, verbose = FALSE),
 		seed = 230,
 		tolerance = 1e-8
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE),
-		SlowInferenceCountUnivZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		InferenceCountZeroInflatedNegBin$new(des, verbose = FALSE),
+		SlowInferenceCountZeroInflatedNegBin$new(des, verbose = FALSE),
 		seed = 231,
 		tolerance = 1e-8
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountMultiZeroInflatedNegBinRegr$new(des, verbose = FALSE),
-		SlowInferenceCountMultiZeroInflatedNegBinRegr$new(des, verbose = FALSE),
+		InferenceCountZeroInflatedNegBin$new(des, verbose = FALSE),
+		SlowInferenceCountZeroInflatedNegBin$new(des, verbose = FALSE),
 		seed = 232,
 		tolerance = 1e-8
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountUnivHurdlePoissonRegr$new(des, verbose = FALSE),
-		SlowInferenceCountUnivHurdlePoissonRegr$new(des, verbose = FALSE),
+		InferenceCountHurdlePoisson$new(des, verbose = FALSE),
+		SlowInferenceCountHurdlePoisson$new(des, verbose = FALSE),
 		seed = 233,
 		tolerance = 1e-8
 	)
 	compare_bootstrap_fast_slow_asymp(
-		InferenceCountMultiHurdlePoissonRegr$new(des, verbose = FALSE),
-		SlowInferenceCountMultiHurdlePoissonRegr$new(des, verbose = FALSE),
+		InferenceCountHurdlePoisson$new(des, verbose = FALSE),
+		SlowInferenceCountHurdlePoisson$new(des, verbose = FALSE),
 		seed = 234,
 		tolerance = 1e-8
 	)

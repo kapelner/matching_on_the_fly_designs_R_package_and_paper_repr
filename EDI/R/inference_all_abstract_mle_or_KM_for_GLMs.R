@@ -63,6 +63,30 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			NULL
 		},
 
+		make_warm_fit_null_wrapper = function(spec, cache_key){
+			last_start = NULL
+			last_delta = NULL
+			fit_null_formals = tryCatch(names(formals(spec$fit_null)), error = function(e) character())
+			accepts_start = "start" %in% fit_null_formals
+			function(delta){
+				warm_enabled = isTRUE(private$null_fit_warm_start_enabled)
+				cache_state = if (warm_enabled) private$get_likelihood_null_warm_state(cache_key) else NULL
+				start = if (warm_enabled) last_start else NULL
+				if (warm_enabled && is.null(start) && !is.null(cache_state)) start = cache_state$start
+				fit = tryCatch(
+					if (accepts_start) spec$fit_null(delta, start = start) else spec$fit_null(delta),
+					error = function(e) NULL
+				)
+				extract_start = spec$extract_start %||% function(fit_obj) NULL
+				last_start <<- if (warm_enabled && accepts_start) tryCatch(extract_start(fit), error = function(e) NULL) else NULL
+				last_delta <<- delta
+				if (warm_enabled && accepts_start) {
+					private$set_likelihood_null_warm_state(cache_key, delta = delta, start = last_start)
+				}
+				fit
+			}
+		},
+
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
 			spec = private$get_likelihood_test_spec()
 			if (is.null(spec)) {
@@ -72,7 +96,8 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			j = as.integer(spec$j)
 			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
 
-			null_fit = tryCatch(spec$fit_null(delta), error = function(e) NULL)
+			fit_null = private$make_warm_fit_null_wrapper(spec, cache_key = paste0("likelihood_test:", testing_type))
+			null_fit = tryCatch(fit_null(delta), error = function(e) NULL)
 			null_params = null_fit$b %||% null_fit$params
 			if (is.null(null_fit) || is.null(null_params) || length(null_params) < j || !is.finite(null_params[j])) {
 				return(NA_real_)

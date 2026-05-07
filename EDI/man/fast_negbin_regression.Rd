@@ -4,11 +4,11 @@
 \alias{fast_negbin_regression}
 \title{Fast Negative Binomial Regression (R Wrapper)}
 \usage{
-fast_negbin_regression(Xmm, y, optimization_alg = "newton_raphson")
+fast_negbin_regression(X, y, optimization_alg = "newton_raphson")
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{Xmm} if desired.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable, representing count data.}
 
@@ -24,7 +24,7 @@ a C++ backend function. It is designed to efficiently estimate regression coeffi
 for count data, assuming all observations are "not censored" (i.e., `dead = 1`).
 }
 \examples{
-Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+X <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 y <- c(0, 1, 1, 2, 3, 4)
-fast_negbin_regression(Xmm, y)
+fast_negbin_regression(X, y)
 }

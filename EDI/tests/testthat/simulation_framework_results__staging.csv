@@ -1,0 +1,7 @@
+response_type,rep,cond_exp_func_model,n,p,betaT,design,inference,inference_type,estimate,ci_lo,ci_hi,pval,true_estimand
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,asymp_pval,0.550082130599197,,,0.376048755209647,0.5
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,asymp_ci,0.550082130599197,-0.667881183703067,1.76804544490146,,0.5
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,boot_pval,0.550082130599197,,,3.65499578031986e-10,0.5
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,boot_ci,0.550082130599197,0,1.38629436111989,,0.5
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,rand_pval,0.550082130599197,,,,0.5
+count,1,linear,10,5,0.5,"DesignSeqOneByOneKK14 (lambda=0.5, t_0_pct=0.2)",InferenceCountKKCPoissonIVWC,rand_ci,0.550082130599197,-0.472064904155652,1.57222916535405,,0.5

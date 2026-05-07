@@ -146,6 +146,25 @@ test_that("FixedDesignBlocking exact_num_blocks hard-fails when the greedy build
 	expect_error(des$get_block_ids(), "exact_num_blocks = TRUE")
 })
 
+test_that("FixedDesignBlocking exact_num_blocks overrides preferred_num_bins_for_continuous_covariate", {
+	des <- FixedDesignBlocking$new(
+		strata_cols = "x",
+		n = 8L,
+		response_type = "incidence",
+		B_target = 4L,
+		exact_num_blocks = TRUE,
+		preferred_num_bins_for_continuous_covariate = 2L,
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(x = 1:8))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$add_all_subject_responses(c(0, 1, 0, 1, 0, 1, 0, 1))
+
+	block_ids <- des$get_block_ids()
+	expect_equal(sort(unique(block_ids)), 1:4)
+	expect_equal(as.integer(table(block_ids)), rep(2L, 4L))
+})
+
 test_that("DesignSeqOneByOneRandomBlockSize works", {
 	des <- DesignSeqOneByOneRandomBlockSize$new(
 		response_type = "continuous",

@@ -86,8 +86,8 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 
 			fit = tryCatch(
 				fast_gaussian_lmm_cpp(
-					y             = as.numeric(private$y),
 					X             = X_fit,
+					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
 					estimate_only = estimate_only,
 					maxit         = 300L,

@@ -137,18 +137,23 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					group_id = group_id,
 					j = j_treat,
 					full_fit = private$cached_mod,
-					fit_null = function(delta){
+					fit_null = function(delta, start = NULL){
+						start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
 						fast_hurdle_poisson_glmm_cpp(
 							X = X_fit,
 							y = y,
 							group_id = group_id,
 							j_T = j_T,
+							start_params = start_params,
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
 							fixed_values = delta
 						)
+					},
+					extract_start = function(fit){
+						as.numeric(fit$params)
 					},
 					score = function(fit){
 						as.numeric(fit$score %||% get_hurdle_poisson_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
@@ -206,6 +211,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
 					j_T           = j_T,
+					start_params  = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
 					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
@@ -223,6 +229,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				}
 
 				private$cached_mod = fit
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					y = as.numeric(private$y),

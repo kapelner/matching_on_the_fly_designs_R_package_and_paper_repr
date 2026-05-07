@@ -7,6 +7,8 @@
 fast_ordinal_regression_with_var_cpp(
   X,
   y,
+  start_params = NULL,
+  smart_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "newton_raphson"

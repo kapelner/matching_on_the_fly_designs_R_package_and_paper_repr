@@ -156,24 +156,24 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			)
 		},
 
-		compute_weights_KK21stepwise = function(Xfull, response_obj, ws, abs_z_compute_fun){
-			weights = array(NA, ncol(Xfull))
+		compute_weights_KK21stepwise = function(X, response_obj, ws, abs_z_compute_fun){
+			weights = array(NA, ncol(X))
 			j_droppeds = c()
-			X_stepwise = matrix(NA, nrow = nrow(Xfull), ncol = 0)
+			X_stepwise = matrix(NA, nrow = nrow(X), ncol = 0)
 
 			repeat {
-				covs_to_try = setdiff(1 : ncol(Xfull), j_droppeds)
+				covs_to_try = setdiff(1 : ncol(X), j_droppeds)
 				if (length(covs_to_try) == 0){ #if there's none left, we jet
 					break
 				}
-				abs_approx_zs = array(NA, ncol(Xfull))
+				abs_approx_zs = array(NA, ncol(X))
 				for (j in covs_to_try){
-					abs_approx_zs[j] = abs_z_compute_fun(response_obj, cbind(Xfull[, j], X_stepwise, ws))
+					abs_approx_zs[j] = abs_z_compute_fun(response_obj, cbind(X[, j], X_stepwise, ws))
 				}
 				j_max = which.max(abs_approx_zs)
 				weights[j_max] = abs_approx_zs[j_max]
 				j_droppeds = c(j_droppeds, j_max)
-				X_stepwise = cbind(X_stepwise, Xfull[, j_max])
+				X_stepwise = cbind(X_stepwise, X[, j_max])
 			}
 #			if (any(is.na(weights))){
 #				stop("boom")
@@ -221,7 +221,7 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			if (!private$proportion_use_speedup){
 				tryCatch({
 					weight = 	private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
-									mod = fast_beta_regression_with_var(Xmm = cbind(1, covariate_data_matrix), y = response_obj)
+									mod = fast_beta_regression_with_var(X = cbind(1, covariate_data_matrix), y = response_obj)
 									abs(mod$b[2] / sqrt(mod$ssq_b_2))
 								})
 					if (!is.na(weight)){

@@ -5,10 +5,10 @@
 \title{Fast Stratified Cox Proportional Hazards Regression (C++)}
 \usage{
 fast_stratified_coxph_regression_cpp(
+  X,
   y,
   dead,
-  X,
-  strata_r,
+  strata,
   start_beta = NULL,
   estimate_only = FALSE,
   maxit = 20L,
@@ -19,13 +19,13 @@ fast_stratified_coxph_regression_cpp(
 )
 }
 \arguments{
+\item{X}{A numeric matrix of predictors.}
+
 \item{y}{A numeric vector of survival times.}
 
 \item{dead}{A numeric vector of event indicators.}
 
-\item{X}{A numeric matrix of predictors.}
-
-\item{strata_r}{An integer vector of strata IDs.}
+\item{strata}{An integer vector of strata IDs.}
 
 \item{start_beta}{Optional starting values for coefficients.}
 

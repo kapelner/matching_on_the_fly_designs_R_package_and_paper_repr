@@ -176,7 +176,7 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   );
 }
 
-List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
+List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
                                                 BinomialConstrainedLink link_type,
                                                 int j,
@@ -184,7 +184,7 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
                                                 double tol,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  List fit = fit_constrained_binomial_cpp_impl(Xmm, y, link_type, maxit, tol, fixed_idx, fixed_values);
+  List fit = fit_constrained_binomial_cpp_impl(X, y, link_type, maxit, tol, fixed_idx, fixed_values);
   const bool converged = as<bool>(fit["converged"]);
   Eigen::VectorXd beta = fit["b"];
   Eigen::VectorXd w = fit["working_weights"];
@@ -200,9 +200,9 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
     );
   }
 
-  FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
-  Eigen::MatrixXd X_free(Xmm.rows(), fixed_spec.free_idx.size());
-  for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = Xmm.col(fixed_spec.free_idx[col]);
+  FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
+  Eigen::MatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
+  for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = X.col(fixed_spec.free_idx[col]);
   Eigen::MatrixXd XtWX = weighted_crossprod(X_free, w);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
   if (ldlt.info() != Eigen::Success) {
@@ -228,10 +228,10 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& Xmm,
     );
   }
 
-  Eigen::MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, 0.5 * (vcov_free + vcov_free.transpose()), true);
-  Eigen::VectorXd std_err(Xmm.cols());
-  Eigen::VectorXd z_vals(Xmm.cols());
-  for (int k = 0; k < Xmm.cols(); ++k) {
+  Eigen::MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, 0.5 * (vcov_free + vcov_free.transpose()), true);
+  Eigen::VectorXd std_err(X.cols());
+  Eigen::VectorXd z_vals(X.cols());
+  for (int k = 0; k < X.cols(); ++k) {
     const double var_k = vcov(k, k);
     std_err[k] = (R_finite(var_k) && var_k >= 0.0) ? std::sqrt(var_k) : NA_REAL;
     z_vals[k] = (R_finite(std_err[k]) && std_err[k] > 0.0) ? beta[k] / std_err[k] : NA_REAL;
@@ -371,7 +371,7 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
 
 //' @title Fast Log-Binomial Regression with Variance (C++)
 //' @description Log-binomial regression with variance-covariance matrix and standard errors.
-//' @param Xmm A numeric matrix of predictors.
+//' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
@@ -381,14 +381,14 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
 // [[Rcpp::export]]
-List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
+List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                const Eigen::VectorXd& y,
                                                int j = 2,
                                                int maxit = 100,
                                                double tol = 1e-8,
                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values);
+  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values);
 }
 
 //' @title Fast Identity-Binomial Regression (C++)
@@ -413,7 +413,7 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
 
 //' @title Fast Identity-Binomial Regression with Variance (C++)
 //' @description Binomial regression with identity link, providing variance-covariance matrix and standard errors.
-//' @param Xmm A numeric matrix of predictors.
+//' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
@@ -423,12 +423,12 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
 // [[Rcpp::export]]
-List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& Xmm,
+List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                     const Eigen::VectorXd& y,
                                                     int j = 2,
                                                     int maxit = 100,
                                                     double tol = 1e-8,
                                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_with_var_cpp_impl(Xmm, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values);
+  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values);
 }

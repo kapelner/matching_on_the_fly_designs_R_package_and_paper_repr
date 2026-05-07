@@ -17,11 +17,12 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose			Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_default Whether to use smart optimizer start values by default.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -37,30 +38,38 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			if (length(Xmm_cols) == 0L){
-				Xmm = cbind(1, private$w)
+			if (length(X_cols) == 0L){
+				X = cbind(1, private$w)
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = tryCatch(fast_poisson_regression_cpp(X = Xmm, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(
+				fast_poisson_regression_cpp(
+					X = X, y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					smart_start = private$smart_default
+				),
+				error = function(e) NULL
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$b, "beta")
 			as.numeric(res$b[2])
 		},
 
@@ -88,14 +97,19 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				y = y,
 				j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
+				fit_null = function(delta, start = NULL){
 					fast_poisson_regression_with_var_cpp(
-						Xmm = X_fit,
+						X = X_fit,
 						y = y,
 						j = j_treat,
+						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						fixed_idx = j_treat,
-						fixed_values = delta
+						fixed_values = delta,
+						smart_start = private$smart_default
 					)
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
 				},
 				score = function(fit){
 					get_poisson_regression_score_cpp(X_fit, y, as.numeric(fit$b))
@@ -129,11 +143,20 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
 					if (estimate_only) {
-						res = fast_poisson_regression_cpp(X = X_fit, y = private$y)
+						res = fast_poisson_regression_cpp(
+							X = X_fit, y = private$y,
+							start_beta = start_beta,
+							smart_start = private$smart_default
+						)
 						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
-						res = fast_poisson_regression_with_var_cpp(Xmm = X_fit, y = private$y, j = j_treat)
+						res = fast_poisson_regression_with_var_cpp(
+							X = X_fit, y = private$y, j = j_treat,
+							start_beta = start_beta,
+							smart_start = private$smart_default
+						)
 						res$j_treat = j_treat
 						res
 					}
@@ -148,7 +171,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$set_fit_warm_start(attempt$fit$b, "beta")
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
 					j_treat = which(attempt$keep == 2L)
@@ -165,7 +189,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (is.null(w_mat)) return(NULL)
 			X_covars = private$X
 			log_transform = transform_responses == "log"
-			compute_poisson_distr_parallel_cpp(as.numeric(y), X_covars, w_mat, as.numeric(delta), log_transform, private$n_cpp_threads(ncol(w_mat)))
+			compute_poisson_distr_parallel_cpp(X_covars, as.numeric(y), w_mat, as.numeric(delta), log_transform, private$n_cpp_threads(ncol(w_mat)))
 		}
 	)
 )

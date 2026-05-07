@@ -156,10 +156,10 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \item{\code{inference_classes_and_params}}{\code{NULL} (default) or a list
 describing inference classes and optional constructor parameters.
 Unnamed R6 class generators use default parameters, for example
-\code{list(InferenceContinMultOLS, InferenceContinMultOLSKKIVWC)}.
+\code{list(InferenceContinOLS, InferenceContinKKOLSIVWC)}.
 Named entries use the entry name as the inference class and the value
 as the constructor parameter list, for example
-\code{list(InferenceContinMultOLS = list(max_resample_attempts = 25L))}.
+\code{list(InferenceContinOLS = list(max_resample_attempts = 25L))}.
 Duplicate named entries are allowed for repeated inference classes with
 different parameters. Supplied parameters must be accepted by the
 inference class constructor.
@@ -317,8 +317,8 @@ disabled during the simulation run to improve performance.}
   \code{power} is omitted.}
 
 \item{\code{results_filename}}{Character scalar. The filename for the results
-file. Supported extensions are \code{.csv} and \code{.csv.bz2}. Default
-\code{"simulation_framework_results.csv.bz2"}.}
+file. Supported extensions are \code{.csv} and \code{.csv.bz2}.
+Default \code{"simulation_framework_results.csv.bz2"}.}
 
 \item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
 the framework loads existing results from \code{results_filename} and
@@ -344,24 +344,16 @@ The \code{SimulationFramework} object itself (invisibly).
 \if{html}{\out{<a id="method-SimulationFramework-get_all_intermediate_data"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-get_all_intermediate_data}{}}}
 \subsection{Method \code{get_all_intermediate_data()}}{
-Return all intermediate data saved during \code{$run()}, or \code{NULL}
-if \code{keep_all_intermediate_data} was \code{FALSE} (the default).
-Throws an error if \code{$run()} has not been called yet.
+Retrieve the stored intermediate data (design and inference objects)
+for every replication. Only available if \code{keep_all_intermediate_data = TRUE}
+was passed to the constructor.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_all_intermediate_data()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-A list of length \code{Nrep}.  Each element is a named list with
-  three entries:
-  \describe{
-    \item{\code{y_linear_model}}{Numeric vector of base responses for that replication.}
-    \item{\code{designs}}{Named list of instantiated design objects, one per
-      configured design class.}
-    \item{\code{inferences}}{Named list of lists of instantiated inference
-      objects, indexed first by design class name then by inference class name.}
-  }
-  Returns \code{NULL} when \code{keep_all_intermediate_data = FALSE}.
+A nested list containing the intermediate data for each replication,
+  or \code{NULL} if not recorded.
 }
 }
 \if{html}{\out{<hr>}}

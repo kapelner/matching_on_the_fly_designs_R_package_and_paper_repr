@@ -4,16 +4,16 @@
 \alias{get_stratified_coxph_hessian_cpp}
 \title{Compute Stratified Cox PH Hessian (C++)}
 \usage{
-get_stratified_coxph_hessian_cpp(y, dead, X, strata_r, beta)
+get_stratified_coxph_hessian_cpp(X, y, dead, strata, beta)
 }
 \arguments{
+\item{X}{Predictor matrix.}
+
 \item{y}{Survival times.}
 
 \item{dead}{Event indicators.}
 
-\item{X}{Predictor matrix.}
-
-\item{strata_r}{Integer vector of strata IDs.}
+\item{strata}{Integer vector of strata IDs.}
 
 \item{beta}{Coefficient vector.}
 }

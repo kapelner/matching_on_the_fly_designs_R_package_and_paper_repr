@@ -5,8 +5,8 @@
 \title{Fast Wilcoxon HL Statistic for Multiple Permutations}
 \usage{
 compute_wilcox_hl_distr_parallel_cpp(
-  y,
   w_mat,
+  y,
   delta,
   transform_code,
   zero_one_logit_clamp,
@@ -14,9 +14,9 @@ compute_wilcox_hl_distr_parallel_cpp(
 )
 }
 \arguments{
-\item{y}{Numeric response vector.}
-
 \item{w_mat}{Integer matrix of permuted treatment assignments (n x r).}
+
+\item{y}{Numeric response vector.}
 
 \item{delta}{Null treatment effect shift.}
 

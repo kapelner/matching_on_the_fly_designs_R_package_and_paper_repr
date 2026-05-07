@@ -76,6 +76,7 @@ Initialize a logistic-regression inference object.
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
+  smart_default = TRUE,
   optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -91,6 +92,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
 
 \item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
 }

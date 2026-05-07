@@ -8,6 +8,8 @@ fast_poisson_regression_weighted_cpp(
   X,
   y,
   weights,
+  start_beta = NULL,
+  smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,

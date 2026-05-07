@@ -4,11 +4,11 @@
 \alias{fast_logistic_regression}
 \title{Fast Logistic Regression (R Wrapper)}
 \usage{
-fast_logistic_regression(Xmm, y, optimization_alg = "lbfgs")
+fast_logistic_regression(X, y, optimization_alg = "lbfgs")
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{Xmm} if desired.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
 
@@ -38,7 +38,7 @@ prob <- exp(lin_pred) / (1 + exp(lin_pred))
 y_log <- rbinom(n, 1, prob)
 
 # Fit logistic regression using fast_logistic_regression
-fit_logistic <- fast_logistic_regression(Xmm = X_log, y = y_log)
+fit_logistic <- fast_logistic_regression(X = X_log, y = y_log)
 print(fit_logistic$
   b)
 

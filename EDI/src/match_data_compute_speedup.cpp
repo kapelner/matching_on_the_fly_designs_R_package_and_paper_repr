@@ -3,22 +3,22 @@ using namespace Rcpp;
 
 // [[Rcpp::depends(RcppEigen)]]
 
-List compute_zhang_match_data_cpp(const IntegerVector& w,
-                                  const IntegerVector& m_vec,
+List compute_zhang_match_data_cpp(const NumericMatrix& X,
                                   const NumericVector& y,
-                                  const NumericMatrix& X);
+                                  const IntegerVector& w,
+                                  const IntegerVector& m_vec);
 
 // [[Rcpp::export]]
-List match_diffs_cpp(const Eigen::VectorXi& w,
+List match_diffs_cpp(const Eigen::MatrixXd& X,
+                        const Eigen::VectorXd& y,
+                        const Eigen::VectorXi& w,
 				 		const Eigen::VectorXi& m_vec,
-				 		const Eigen::VectorXd& y,
-				 		const Eigen::MatrixXd& X,
 				 		int m) {
 	List match_data = compute_zhang_match_data_cpp(
-		wrap(w),
-		wrap(m_vec),
+		wrap(X),
 		wrap(y),
-		wrap(X)
+		wrap(w),
+		wrap(m_vec)
 	);
 
 	return List::create(

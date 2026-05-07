@@ -358,6 +358,31 @@ Design = R6::R6Class("Design",
 			private$w
 		},
 
+		#' @description Set the strata (block identifiers) for this design.
+		#'
+		#' Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
+		#' have been derived or assigned).  The design must support blocking; call
+		#' \code{assert_blocking_design()} to verify this first.
+		#'
+		#' @param m A non-negative-integer vector of block IDs, one entry per subject already
+		#'   recorded.  Values must be coercible to integer, finite, and \eqn{\ge 0}.
+		#'   Zero is reserved as a reservoir flag used by sequential KK designs.
+		#'
+		#' @return Invisibly returns \code{self} for method chaining.
+		set_m = function(m){
+			if (should_run_asserts()) {
+				if (!private$design_is_supported_blocking(self)){
+					stop("set_m() can only be used with a blocking design (e.g. FixedDesignBlocking, DesignSeqOneByOneKK14, etc.).")
+				}
+				if (!is.null(private$m)){
+					stop("set_m() can only be called when the strata have not yet been set (private$m is not NULL).")
+				}
+				assertIntegerish(m, lower = 0, any.missing = FALSE, min.len = 1)
+			}
+			private$m = as.integer(m)
+			invisible(self)
+		},
+
 		#' @description If the design is a block design, get block identifiers (otherwise halts)
 		#'
 		#' @return 			An integer vector of block identifiers.

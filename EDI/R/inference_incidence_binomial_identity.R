@@ -30,27 +30,27 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			if (length(Xmm_cols) == 0L){
-				Xmm = cbind(1, private$w)
+			if (length(X_cols) == 0L){
+				X = cbind(1, private$w)
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = tryCatch(fast_identity_binomial_regression_cpp(X = Xmm, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(fast_identity_binomial_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -61,16 +61,66 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			TRUE
 		},
 
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit, y = y, j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					res = tryCatch(fast_identity_binomial_regression_cpp(X = X_fit, y = y,
+					               fixed_idx = j_treat, fixed_values = delta), error = function(e) NULL)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					res
+				},
+				score = function(fit){
+					get_identity_binomial_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				observed_information = function(fit){
+					-get_identity_binomial_regression_hessian_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				fisher_information = function(fit){
+					-get_identity_binomial_regression_hessian_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_identity_binomial_regression_hessian_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					mu = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y * log(pmax(mu, 1e-15)) + (1 - y) * log(pmax(1 - mu, 1e-15)))
+				}
+			)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
-			# Use the common GLM fitting pattern
+			X_data = private$get_X()
+			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
+				cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			}
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					if (estimate_only) {
-						res = fast_identity_binomial_regression_cpp(X = X_fit, y = private$y)
+						res = tryCatch(fast_identity_binomial_regression_cpp(X = X_fit, y = private$y),
+						               error = function(e) NULL)
+						if (is.null(res)) return(NULL)
 						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
-						res = fast_identity_binomial_regression_with_var_cpp(Xmm = X_fit, y = private$y, j = j_treat)
+						res = tryCatch(fast_identity_binomial_regression_with_var_cpp(X = X_fit, y = private$y, j = j_treat),						               error = function(e) NULL)
+						if (is.null(res)) return(NULL)
 						res$j_treat = j_treat
 						res
 					}
@@ -84,7 +134,13 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					j_treat = attempt$fit$j_treat
+				)
+			} else {
+				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
 		}

@@ -37,8 +37,6 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'   strata produce unequal block counts the design errors at that point. Set to
 		#'   `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
 		#'   `InferenceIncidExtendedRobins` still require equal block sizes regardless).
-		#' @param num_bins_for_continuous_covariate Deprecated alias for
-		#'   `preferred_num_bins_for_continuous_covariate`.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
@@ -54,13 +52,9 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 						B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
 						exact_num_blocks = FALSE,
 						equal_block_sizes = TRUE,
-						num_bins_for_continuous_covariate = NULL,
 						verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .) {
-			if (!is.null(num_bins_for_continuous_covariate)) {
-				preferred_num_bins_for_continuous_covariate = num_bins_for_continuous_covariate
-			}
 			if (should_run_asserts()) {
 				if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)

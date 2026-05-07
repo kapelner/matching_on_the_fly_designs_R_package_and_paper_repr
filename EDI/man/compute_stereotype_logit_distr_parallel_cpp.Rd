@@ -4,18 +4,12 @@
 \alias{compute_stereotype_logit_distr_parallel_cpp}
 \title{Parallel Stereotype Logit Randomization Distribution}
 \usage{
-compute_stereotype_logit_distr_parallel_cpp(
-  y,
-  X_covars,
-  w_mat,
-  delta,
-  num_cores
-)
+compute_stereotype_logit_distr_parallel_cpp(X, y, w_mat, delta, num_cores)
 }
 \arguments{
-\item{y}{Numeric vector of response values (pre-null-shifted for treated).}
+\item{X}{Matrix of covariates (without intercept or treatment).}
 
-\item{X_covars}{Matrix of covariates (without intercept or treatment).}
+\item{y}{Numeric vector of response values (pre-null-shifted for treated).}
 
 \item{w_mat}{Integer matrix of permuted treatment assignments (n x nsim).}
 

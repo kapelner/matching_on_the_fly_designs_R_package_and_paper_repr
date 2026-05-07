@@ -1131,15 +1131,14 @@ NumericVector kk21_stepwise_beta_weights_cpp(const NumericMatrix& X,
 			}
 
 			// Build design matrix: [1, x_j, selected_covs..., w]
-			Eigen::MatrixXd Xmm(n, k + 3);
-			Xmm.col(0).setConstant(1.0);
-			Xmm.col(1) = X_map.col(j);
+			Eigen::MatrixXd X(n, k + 3);
+			X.col(0).setConstant(1.0);
+			X.col(1) = X_map.col(j);
 			for (int idx = 0; idx < k; ++idx) {
-				Xmm.col(2 + idx) = X_map.col(selected[idx]);
+			        X.col(2 + idx) = X_map.col(selected[idx]);
 			}
-			Xmm.col(k + 2) = w_vec;
-
-			double stat = multivariate_beta_tstat(Xmm, y_vec, 1);
+			X.col(k + 2) = w_vec;
+			double stat = multivariate_beta_tstat(X, y_vec, 1);
 			if (!R_finite(stat) || stat < 0) {
 				stat = 0.0;
 			}
@@ -1192,15 +1191,14 @@ NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X,
 			}
 
 			// Build design matrix: [1, x_j, selected_covs..., w]
-			Eigen::MatrixXd Xmm(n, k + 3);
-			Xmm.col(0).setConstant(1.0);
-			Xmm.col(1) = X_map.col(j);
+			Eigen::MatrixXd X(n, k + 3);
+			X.col(0).setConstant(1.0);
+			X.col(1) = X_map.col(j);
 			for (int idx = 0; idx < k; ++idx) {
-				Xmm.col(2 + idx) = X_map.col(selected[idx]);
+			        X.col(2 + idx) = X_map.col(selected[idx]);
 			}
-			Xmm.col(k + 2) = w_vec;
-
-			double stat = multivariate_negbin_tstat(Xmm, y_vec, 1);
+			X.col(k + 2) = w_vec;
+			double stat = multivariate_negbin_tstat(X, y_vec, 1);
 			if (!R_finite(stat) || stat < 0) {
 				stat = 0.0;
 			}
@@ -1252,11 +1250,11 @@ NumericVector kk21_ordinal_weights_cpp(const NumericMatrix& X,
     Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 
     for (int j = 0; j < p; ++j) {
-        Eigen::MatrixXd Xmm(n, 1);
-        Xmm.col(0) = X_map.col(j);
+        Eigen::MatrixXd X(n, 1);
+        X.col(0) = X_map.col(j);
         
         try {
-            weights[j] = multivariate_ordinal_tstat(Xmm, y_vec, 1);
+            weights[j] = multivariate_ordinal_tstat(X, y_vec, 1);
         } catch (...) {
             weights[j] = eps;
         }
@@ -1296,15 +1294,15 @@ NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X,
             }
 
             // Build design matrix: [x_j, selected_covs..., w]
-            Eigen::MatrixXd Xmm(n, k + 2);
-            Xmm.col(0) = X_map.col(j);
+            Eigen::MatrixXd X(n, k + 2);
+            X.col(0) = X_map.col(j);
             for (int idx = 0; idx < k; ++idx) {
-                Xmm.col(1 + idx) = X_map.col(selected[idx]);
+                X.col(1 + idx) = X_map.col(selected[idx]);
             }
-            Xmm.col(k + 1) = w_vec;
+            X.col(k + 1) = w_vec;
 
             try {
-                double stat = multivariate_ordinal_tstat(Xmm, y_vec, 1);
+                double stat = multivariate_ordinal_tstat(X, y_vec, 1);
                 if (!R_finite(stat) || stat < 0) {
                     stat = 0.0;
                 }

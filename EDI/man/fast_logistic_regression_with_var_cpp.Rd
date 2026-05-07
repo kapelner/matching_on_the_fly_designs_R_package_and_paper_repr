@@ -5,16 +5,18 @@
 \title{Fast Logistic Regression with Variance (C++)}
 \usage{
 fast_logistic_regression_with_var_cpp(
-  Xmm,
+  X,
   y,
   j = 2L,
+  start_beta = NULL,
+  smart_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "irls"
 )
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictors.}
+\item{X}{A numeric matrix of predictors.}
 
 \item{y}{A binary numeric vector of responses.}
 

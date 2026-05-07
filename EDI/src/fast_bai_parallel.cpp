@@ -13,9 +13,9 @@ using namespace Rcpp;
 
 //' Fast Bai Adjusted T Statistic for Multiple Permutations
 //'
-//' @param y Numeric response vector.
 //' @param w_mat Integer matrix of permuted treatment assignments (n x r).
 //' @param m_mat Integer matrix of match indicators (n x r).
+//' @param y Numeric response vector.
 //' @param delta Null treatment effect shift.
 //' @param halves_idx Integer matrix of half-sample indices.
 //' @param convex_flag Logical flag for convex combination.
@@ -23,9 +23,9 @@ using namespace Rcpp;
 //' @return Numeric vector of Bai adjusted T statistics.
 // [[Rcpp::export]]
 NumericVector compute_bai_distr_parallel_cpp(
-    const NumericVector& y,
     const IntegerMatrix& w_mat,
     const IntegerMatrix& m_mat,
+    const NumericVector& y,
     double delta,
     const IntegerMatrix& halves_idx,
     bool convex_flag,

@@ -63,9 +63,9 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			}
 
 			res = compute_kk_wilcox_distr_parallel_cpp(
-				y_sim,
 				w_mat,
 				m_mat,
+				y_sim,
 				as.numeric(delta),
 				t_code,
 				as.numeric(zero_one_logit_clamp),

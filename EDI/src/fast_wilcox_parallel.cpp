@@ -59,8 +59,8 @@ double compute_single_wilcox_stat(int n, const double* y_ptr, const int* w_vec, 
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_distr_parallel_cpp(
-    const NumericVector& y,
     const IntegerMatrix& w_mat,
+    const NumericVector& y,
     double delta,
     int num_cores) {
 
@@ -130,8 +130,8 @@ NumericVector compute_wilcox_distr_parallel_cpp(
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_distr_from_list_parallel_cpp(
-    const NumericVector& y,
     const List& permutations,
+    const NumericVector& y,
     double delta,
     int num_cores) {
 

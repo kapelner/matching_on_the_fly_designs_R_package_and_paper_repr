@@ -7,10 +7,12 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
-                                              const Eigen::VectorXd& y_eigen,
+ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen, 
+                                              const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
-                                              int maxit = 100,
+                                              Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                              bool smart_start = true,
+                                              int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -18,6 +20,8 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
 ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              const Eigen::VectorXd& y,
                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
+                                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                             bool smart_start = true,
                                              int maxit = 100,
                                              double tol = 1e-8,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -97,8 +101,8 @@ inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const Vecto
 
 inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, GEEFamily family, int maxit = 100, double tol = 1e-8) {
     ModelResult fit = (family == GEEFamily::BINOMIAL) ?
-        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), maxit, tol, R_NilValue, R_NilValue, "irls") :
-        fast_poisson_regression_internal(X, y, Eigen::VectorXd(), maxit, tol, R_NilValue, R_NilValue, "irls");
+        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls") :
+        fast_poisson_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls");
     if (fit.b.size() == X.cols() && fit.b.allFinite()) {
         return fit.b;
     }

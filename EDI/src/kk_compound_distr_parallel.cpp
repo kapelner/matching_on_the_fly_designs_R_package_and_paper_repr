@@ -126,9 +126,9 @@ NumericVector compute_kk_compound_distr_parallel_cpp(
 
 // [[Rcpp::export]]
 NumericVector compute_kk_compound_bootstrap_parallel_cpp(
-	const Eigen::MatrixXd& y_mat,
 	const Eigen::MatrixXi& w_mat,
 	const Eigen::MatrixXi& m_mat,
+	const Eigen::MatrixXd& y_mat,
 	int num_cores) {
 
 	int nsim = w_mat.cols();

@@ -97,10 +97,10 @@ double zhang_exact_fisher_pval_cpp(int n11, int n10, int n01, int n00, double de
 }
 
 // [[Rcpp::export]]
-List compute_zhang_match_data_cpp(const IntegerVector& w,
-                                  const IntegerVector& m_vec,
+List compute_zhang_match_data_cpp(const NumericMatrix& X,
                                   const NumericVector& y,
-                                  const NumericMatrix& X) {
+                                  const IntegerVector& w,
+                                  const IntegerVector& m_vec) {
   const int n = w.size();
   const int p = X.ncol();
   int m = 0;
@@ -267,8 +267,8 @@ List compute_zhang_match_data_cpp(const IntegerVector& w,
 }
 
 // [[Rcpp::export]]
-List compute_kk_wy_stats_cpp(const NumericVector& y,
-                              const IntegerVector& w,
+List compute_kk_wy_stats_cpp(const IntegerVector& w,
+                              const NumericVector& y,
                               const IntegerVector& m_vec) {
   const int n = w.size();
   int m = 0;

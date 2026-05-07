@@ -297,8 +297,8 @@ Eigen::VectorXd make_start(const LMMData& dat)
 // ── R-exported: fit Gaussian LMM ─────────────────────────────────────────────
 // [[Rcpp::export]]
 List fast_gaussian_lmm_cpp(
-    const Eigen::VectorXd& y,
     const Eigen::MatrixXd& X,       // n × p, intercept in col 0, treatment in col 1
+    const Eigen::VectorXd& y,
     const Eigen::VectorXi& group_id, // 1-based group IDs (length n)
     Nullable<NumericVector> start_par = R_NilValue,
     bool  estimate_only = false,
@@ -399,8 +399,8 @@ List fast_gaussian_lmm_cpp(
 // ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────
 // [[Rcpp::export]]
 NumericVector get_gaussian_lmm_score_cpp(
-    const Eigen::VectorXd& y,
     const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
     const Eigen::VectorXi& group_id,
     const Eigen::VectorXd& par
 ) {
@@ -425,8 +425,8 @@ NumericVector get_gaussian_lmm_score_cpp(
 // ── R-exported: observed Fisher information (Hessian of neg_ll) at par ───────
 // [[Rcpp::export]]
 NumericMatrix get_gaussian_lmm_fisher_cpp(
-    const Eigen::VectorXd& y,
     const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
     const Eigen::VectorXi& group_id,
     const Eigen::VectorXd& par,
     double h_rel = 1e-4

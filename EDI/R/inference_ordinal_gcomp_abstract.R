@@ -80,28 +80,28 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			X_fit = if (length(Xmm_cols) == 0L){
+			X_fit = if (length(X_cols) == 0L){
 				# Univariate case
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				cbind(treatment = private$w, X_cov)
 			}
 
@@ -161,7 +161,7 @@ InferenceOrdinalGCompAbstract = R6::R6Class("InferenceOrdinalGCompAbstract",
 				return(invisible(NULL))
 			}
 
-			private$best_Xmm_colnames = setdiff(colnames(X_fit), "treatment")
+			private$best_X_colnames = setdiff(colnames(X_fit), "treatment")
 			coef_hat = as.numeric(fit$b)
 			alpha_hat = as.numeric(fit$alpha)
 

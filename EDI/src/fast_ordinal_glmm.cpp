@@ -76,7 +76,7 @@ struct OrdinalGLMMData {
 
 	OrdinalGLMMData(
 		const Eigen::MatrixXd& X,
-		const std::vector<int>& y_int_r, // 1-indexed
+		const std::vector<int>& y_r, // 1-indexed
 		const std::vector<int>& group_id_r, // 1-indexed
 		int K_,
 		int n_gh,
@@ -95,7 +95,7 @@ struct OrdinalGLMMData {
 		y_s.resize(n);
 		for (int i = 0; i < n; ++i) {
 			X_s.row(i) = X.row(ord[i]);
-			y_s[i] = y_int_r[ord[i]];
+			y_s[i] = y_r[ord[i]];
 		}
 
 		// Build group structure
@@ -390,15 +390,15 @@ public:
 // [[Rcpp::export]]
 Eigen::VectorXd get_ordinal_glmm_score_cpp(
 	const Eigen::MatrixXd& X,
-	const Eigen::VectorXi& y_int,
+	const Eigen::VectorXi& y,
 	const Eigen::VectorXi& group_id,
 	const Eigen::VectorXd& params,
 	int K,
 	int n_gh = 20,
 	double max_abs_log_sigma = 8.0
 ) {
-	std::vector<int> y_v(y_int.size()), gid_v(group_id.size());
-	for (int i = 0; i < y_int.size(); ++i) { y_v[i] = y_int[i]; gid_v[i] = group_id[i]; }
+	std::vector<int> y_v(y.size()), gid_v(group_id.size());
+	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
 
 	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
 	OrdinalGLMMObjective obj(dat);
@@ -411,15 +411,15 @@ Eigen::VectorXd get_ordinal_glmm_score_cpp(
 // [[Rcpp::export]]
 Eigen::MatrixXd get_ordinal_glmm_hessian_cpp(
 	const Eigen::MatrixXd& X,
-	const Eigen::VectorXi& y_int,
+	const Eigen::VectorXi& y,
 	const Eigen::VectorXi& group_id,
 	const Eigen::VectorXd& params,
 	int K,
 	int n_gh = 20,
 	double max_abs_log_sigma = 8.0
 ) {
-	std::vector<int> y_v(y_int.size()), gid_v(group_id.size());
-	for (int i = 0; i < y_int.size(); ++i) { y_v[i] = y_int[i]; gid_v[i] = group_id[i]; }
+	std::vector<int> y_v(y.size()), gid_v(group_id.size());
+	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
 
 	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
 	OrdinalGLMMObjective obj(dat);
@@ -430,7 +430,7 @@ Eigen::MatrixXd get_ordinal_glmm_hessian_cpp(
 // [[Rcpp::export]]
 List fast_ordinal_glmm_cpp(
 	const Eigen::MatrixXd& X,     // n x p, NO intercept column; treatment at column j_T (0-based)
-	const Eigen::VectorXi& y_int, // 1-indexed ordinal outcomes, length n
+	const Eigen::VectorXi& y,     // 1-indexed ordinal outcomes, length n
 	const Eigen::VectorXi& group_id, // group IDs, length n (sorted internally)
 	int K,                        // number of ordinal levels
 	int j_T,                      // 0-based treatment column index in X
@@ -449,7 +449,7 @@ List fast_ordinal_glmm_cpp(
 
 	// Convert Eigen/R vectors to std::vector for OrdinalGLMMData
 	std::vector<int> y_v(n), gid_v(n);
-	for (int i = 0; i < n; ++i) { y_v[i] = y_int[i]; gid_v[i] = group_id[i]; }
+	for (int i = 0; i < n; ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
 
 	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
 

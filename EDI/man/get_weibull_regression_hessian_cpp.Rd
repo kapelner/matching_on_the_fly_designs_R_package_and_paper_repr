@@ -4,14 +4,14 @@
 \alias{get_weibull_regression_hessian_cpp}
 \title{Compute Weibull Regression Hessian}
 \usage{
-get_weibull_regression_hessian_cpp(y, dead, X, params)
+get_weibull_regression_hessian_cpp(X, y, dead, params)
 }
 \arguments{
+\item{X}{A numeric matrix of predictors.}
+
 \item{y}{A numeric vector of survival times.}
 
 \item{dead}{A numeric vector of event indicators.}
-
-\item{X}{A numeric matrix of predictors.}
 
 \item{params}{A numeric vector of parameters [beta, log_sigma].}
 }

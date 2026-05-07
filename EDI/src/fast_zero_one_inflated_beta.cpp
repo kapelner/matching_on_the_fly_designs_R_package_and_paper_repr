@@ -32,11 +32,11 @@ inline void clamp_probs(Eigen::VectorXd& v, double lower = 1e-8, double upper = 
 
 class ZeroOneInflatedBeta {
 public:
-	ZeroOneInflatedBeta(const Eigen::VectorXd& y, const Eigen::MatrixXd& Xfull):
+	ZeroOneInflatedBeta(const Eigen::VectorXd& y, const Eigen::MatrixXd& X):
 		m_y(y),
-		m_Xfull(Xfull),
-		m_n(Xfull.rows()),
-		m_p(Xfull.cols())
+		m_X(X),
+		m_n(X.rows()),
+		m_p(X.cols())
 	{
 		m_n_zero = 0;
 		m_n_one = 0;
@@ -56,7 +56,7 @@ public:
 		m_y_beta.resize(m_n_beta);
 		for (int j = 0; j < m_n_beta; ++j){
 			int row = beta_idx[j];
-			m_X_beta.row(j) = m_Xfull.row(row);
+			m_X_beta.row(j) = m_X.row(row);
 			m_y_beta[j] = m_y[row];
 		}
 		m_log_y_beta = m_y_beta.array().log().matrix();
@@ -71,7 +71,7 @@ public:
 		double alpha0 = params[m_p + 1];
 		double alpha1 = params[m_p + 2];
 
-		Eigen::VectorXd eta = m_Xfull * beta;
+		Eigen::VectorXd eta = m_X * beta;
 		Eigen::VectorXd mu = logistic(eta);
 		clamp_probs(mu);
 
@@ -210,7 +210,7 @@ public:
 
 private:
 	const Eigen::VectorXd m_y;
-	const Eigen::MatrixXd m_Xfull;
+	const Eigen::MatrixXd m_X;
 	Eigen::MatrixXd m_X_beta;
 	Eigen::VectorXd m_y_beta;
 	Eigen::VectorXd m_log_y_beta;
@@ -223,29 +223,29 @@ private:
 };
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd Xfull,
+Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd X,
 													 NumericVector y,
 													 NumericVector params){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, Xfull);
+	ZeroOneInflatedBeta fun(y_eigen, X);
 	Eigen::VectorXd grad(par.size());
 	fun(par, grad);
 	return -grad;
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd Xfull,
+Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
 													   NumericVector y,
 													   NumericVector params){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, Xfull);
+	ZeroOneInflatedBeta fun(y_eigen, X);
 	return -fun.hessian(par);
 }
 
 // [[Rcpp::export]]
-List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull,
+List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 NumericVector y,
 									 NumericVector init,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -255,7 +255,7 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull,
 	Eigen::VectorXd params = Rcpp::as<Eigen::VectorXd>(init);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
 
-	ZeroOneInflatedBeta fun(y_eigen, Xfull);
+	ZeroOneInflatedBeta fun(y_eigen, X);
 	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs");
 	params = fit.params;
 
@@ -285,7 +285,7 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd Xfull,
 		}
 	}
 
-	int p = Xfull.cols();
+	int p = X.cols();
 	return List::create(
 		Named("b") = params.head(p),
 		Named("log_phi") = params[p],

@@ -64,6 +64,8 @@ Eigen::MatrixXd get_ordinal_cauchit_regression_hessian_cpp(const Eigen::MatrixXd
 // [[Rcpp::export]]
 List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, 
                                           const Eigen::VectorXd& y, 
+                                          Nullable<NumericVector> start_params = R_NilValue,
+                                          bool smart_start = true,
                                           int maxit = 100, 
                                           double tol = 1e-6, 
                                           std::string optimization_alg = "newton_raphson",
@@ -77,15 +79,25 @@ List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X,
     int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    // Initialize alpha using cauchit quantiles
-    for (int k = 0; k < n_alpha; ++k) {
-        double prob = static_cast<double>(k + 1) / static_cast<double>(K);
-        params[k] = std::tan(M_PI * (prob - 0.5));
-    }
-    // Initialize beta
-    params.tail(p).setZero();
-
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    if (start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(start_params));
+        if (params.size() != n_params) stop("start_params must have length equal to the number of model parameters");
+    } else {
+        OrdinalStart legacy_start;
+        legacy_start.alpha = VectorXd(n_alpha);
+        for (int k = 0; k < n_alpha; ++k) {
+            double prob = static_cast<double>(k + 1) / static_cast<double>(K);
+            legacy_start.alpha[k] = std::tan(M_PI * (prob - 0.5));
+        }
+        legacy_start.beta = VectorXd::Zero(p);
+        params = ordinal_start_to_params(
+            smart_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Cauchit, legacy_start, fixed_spec)
+                        : legacy_start
+        );
+    }
+
+    params = apply_fixed_values(params, fixed_spec);
     LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     params = fit.params;
 
@@ -94,17 +106,21 @@ List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X,
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
         Named("params") = params,
-        Named("converged") = fit.converged
+        Named("neg_loglik") = fit.value,
+        Named("converged") = fit.converged,
+        Named("iterations") = fit.niter
     );
 }
 
 // [[Rcpp::export]]
 List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, 
                                                    const Eigen::VectorXd& y, 
+                                                   Nullable<NumericVector> start_params = R_NilValue,
+                                                   bool smart_start = true,
                                                    std::string optimization_alg = "newton_raphson",
                                                    Nullable<IntegerVector> fixed_idx = R_NilValue,
                                                    Nullable<NumericVector> fixed_values = R_NilValue) {
-    List res = fast_ordinal_cauchit_regression_cpp(X, y, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
+    List res = fast_ordinal_cauchit_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
     if (res.size() == 0) return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
     
     VectorXd params = res["params"];
@@ -113,6 +129,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X,
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
+    MatrixXd cov_mat = MatrixXd::Constant(n_params, n_params, NA_REAL);
     double ssq_b_2 = NA_REAL;
     if (converged) {
         FixedParameterFunctor<OrdinalCauchitRegression> fixed_obj(model, fixed_spec, params);
@@ -122,7 +139,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X,
         FullPivLU<MatrixXd> lu(H_free);
         if (lu.isInvertible()) {
             MatrixXd inv_free = lu.inverse();
-            MatrixXd cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
+            cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
             int p = X.cols();
             int n_alpha = n_params - p;
             if (p >= 1) ssq_b_2 = cov_mat(n_alpha, n_alpha);
@@ -131,7 +148,12 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X,
 
     return List::create(
         Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_2,
-        Named("converged") = converged
+        Named("alpha") = res["alpha"],
+        Named("params") = params,
+        Named("neg_loglik") = res["neg_loglik"],
+        Named("vcov") = cov_mat,
+        Named("ssq_b_j") = ssq_b_2,
+        Named("converged") = converged,
+        Named("iterations") = res["iterations"]
     );
 }

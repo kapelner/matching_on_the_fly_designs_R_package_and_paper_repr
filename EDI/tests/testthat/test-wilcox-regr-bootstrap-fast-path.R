@@ -24,8 +24,8 @@ test_that("KK Wilcox rank-regression fast bootstrap matches the generic KK boots
 		des$add_one_subject_response(i, y[i] + 0.2 * w_i)
 	}
 
-	fast_inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, num_cores = 1, verbose = FALSE)
-	slow_inf = SlowInferenceAllKKWilcoxRegrMultiIVWC$new(des, num_cores = 1, verbose = FALSE)
+	fast_inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
+	slow_inf = SlowInferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
 
 	set.seed(44)
 	fast_boot = suppressWarnings(
@@ -77,7 +77,7 @@ test_that("KK Wilcox rank-regression low-level exact solver matches Rfit formula
 		w_i = des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 		des$add_one_subject_response(i, y[i] + 0.1 * w_i)
 	}
-	inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, num_cores = 1, verbose = FALSE)
+	inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
 	priv = inf$.__enclos_env__$private
 
 	set.seed(20260331)

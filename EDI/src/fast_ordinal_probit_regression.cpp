@@ -76,6 +76,8 @@ Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd&
 // [[Rcpp::export]]
 List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, 
                                          const Eigen::VectorXd& y, 
+                                         Nullable<NumericVector> start_params = R_NilValue,
+                                         bool smart_start = true,
                                          int maxit = 100, 
                                          double tol = 1e-6, 
                                          std::string optimization_alg = "newton_raphson",
@@ -88,13 +90,25 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
     const int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    for (int k = 0; k < n_alpha; ++k) {
-        double q = static_cast<double>(k + 1) / static_cast<double>(K);
-        params[k] = R::qnorm5(q, 0.0, 1.0, 1, 0);
-    }
-    params.tail(p).setZero();
-
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    if (start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(start_params));
+        if (params.size() != n_params) stop("start_params must have length equal to the number of model parameters");
+    } else {
+        OrdinalStart legacy_start;
+        legacy_start.alpha = VectorXd(n_alpha);
+        for (int k = 0; k < n_alpha; ++k) {
+            double q = static_cast<double>(k + 1) / static_cast<double>(K);
+            legacy_start.alpha[k] = R::qnorm5(q, 0.0, 1.0, 1, 0);
+        }
+        legacy_start.beta = VectorXd::Zero(p);
+        params = ordinal_start_to_params(
+            smart_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Probit, legacy_start, fixed_spec)
+                        : legacy_start
+        );
+    }
+
+    params = apply_fixed_values(params, fixed_spec);
     LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     params = fit.params;
 
@@ -103,23 +117,28 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
         Named("alpha") = params.head(n_alpha),
         Named("n_params") = n_params,
         Named("params") = params,
-        Named("converged") = fit.converged
+        Named("neg_loglik") = fit.value,
+        Named("converged") = fit.converged,
+        Named("iterations") = fit.niter
     );
 }
 
 // [[Rcpp::export]]
 List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, 
                                                   const Eigen::VectorXd& y, 
+                                                  Nullable<NumericVector> start_params = R_NilValue,
+                                                  bool smart_start = true,
                                                   std::string optimization_alg = "newton_raphson",
                                                   Nullable<IntegerVector> fixed_idx = R_NilValue,
                                                   Nullable<NumericVector> fixed_values = R_NilValue) {
-    List res = fast_ordinal_probit_regression_cpp(X, y, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
+    List res = fast_ordinal_probit_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalProbitRegression model(X, y);
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
+    MatrixXd cov_mat = MatrixXd::Constant(n_params, n_params, NA_REAL);
     double ssq_b_2 = NA_REAL;
     if (converged) {
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
@@ -134,7 +153,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
             inv_free = pseudo_inverse_symmetric_probit(H_free);
         }
 
-        MatrixXd cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
+        cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
         const int p = X.cols();
         const int n_alpha = n_params - p;
         ssq_b_2 = (p >= 1) ? cov_mat(n_alpha, n_alpha) : NA_REAL;
@@ -145,7 +164,12 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
 
     return List::create(
         Named("b") = res["b"],
-        Named("ssq_b_2") = ssq_b_2,
-        Named("converged") = converged
+        Named("alpha") = res["alpha"],
+        Named("params") = params,
+        Named("neg_loglik") = res["neg_loglik"],
+        Named("vcov") = cov_mat,
+        Named("ssq_b_j") = ssq_b_2,
+        Named("converged") = converged,
+        Named("iterations") = res["iterations"]
     );
 }

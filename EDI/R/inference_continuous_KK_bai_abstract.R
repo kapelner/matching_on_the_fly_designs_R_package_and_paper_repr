@@ -58,7 +58,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 	#'
-	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf = InferenceAllKKMeanDiffIVWC$new(seq_des)
 	#' seq_des_inf$compute_estimate()
 	#' }
 	#'
@@ -122,7 +122,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 	#'
-	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf = InferenceAllKKMeanDiffIVWC$new(seq_des)
 	#' seq_des_inf$compute_asymp_confidence_interval()
 	#' }
 	#'
@@ -158,7 +158,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 	#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 	#'
-	#' seq_des_inf = InferenceAllKKCompoundMeanDiff$new(seq_des)
+	#' seq_des_inf = InferenceAllKKMeanDiffIVWC$new(seq_des)
 	#' seq_des_inf$compute_asymp_two_sided_pval()
 	#' }
 	#'
@@ -203,9 +203,9 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		
 		# The Bai statistic is the treatment estimate itself (beta_hat_T)
 		res = compute_bai_distr_parallel_cpp(
-			as.numeric(y),
 			w_mat,
 			m_mat,
+			as.numeric(y),
 			as.numeric(delta),
 			halves_idx,
 			as.logical(private$convex_flag),

@@ -122,7 +122,7 @@ List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_on
 // [[Rcpp::export]]
 List fast_ordinal_clmm_cpp(
     const Eigen::MatrixXd& X,
-    const Eigen::VectorXi& y_int,
+    const Eigen::VectorXi& y,
     const Eigen::VectorXi& group_id,
     int K,
     int j_T,
@@ -145,7 +145,7 @@ List fast_ordinal_clmm_cpp(
     Eigen::VectorXd y_v(n);
     std::vector<int> gid_v(n);
     for (int i = 0; i < n; ++i) {
-        y_v[i] = static_cast<double>(y_int[i]);
+        y_v[i] = static_cast<double>(y[i]);
         gid_v[i] = group_id[i];
     }
 

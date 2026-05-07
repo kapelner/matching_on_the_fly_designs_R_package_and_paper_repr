@@ -10,11 +10,11 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector base_bootstrap_loop_cpp(
-	const IntegerMatrix& indices,
+	const NumericMatrix& X,
 	const NumericVector& y,
 	const NumericVector& dead,
-	const NumericMatrix& X,
 	const NumericVector& w,
+	const IntegerMatrix& indices,
 	Function duplicate_inference_fn,
 	Function compute_estimate_fn,
 	int num_cores = 1

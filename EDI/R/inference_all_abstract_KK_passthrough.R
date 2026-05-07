@@ -18,14 +18,15 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed
 		#'   to the user. Default is \code{TRUE}
+		#' @param smart_default Whether to use smart optimizer start values by default.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, harden = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
 			if (should_run_asserts()) {
 				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")) {
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
 					if (inherits(des_obj, "FixedDesignBinaryMatch")){
@@ -327,13 +328,17 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			worker_priv$X = worker_state$base_X[i_b, , drop = FALSE]
 			worker_priv$cached_values = list(
 				KKstats = compute_bootstrap_kk_stats_cpp(
+					X = worker_state$base_X,
 					y = worker_state$base_y,
 					w = worker_state$base_w,
-					X = worker_state$base_X,
 					i_b = i_b,
 					n_reservoir = worker_state$n_reservoir
 				)
 			)
+			worker_priv$best_X_colnames = NULL
+			worker_priv$best_Xmm_colnames = NULL
+			worker_priv$fit_warm_coefficients = NULL
+			worker_priv$cached_mod = NULL
 			worker_priv$m = sample_info$m_vec_b
 			if (isTRUE(worker_state$has_res_stat)) {
 				worker_priv$compute_reservoir_and_match_statistics()

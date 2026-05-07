@@ -115,8 +115,8 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 
 			res = fast_ridit_analysis_cpp(
-				y = as.integer(private$y),
 				w = as.integer(private$w),
+				y = as.integer(private$y),
 				reference = private$reference
 			)
 
@@ -137,8 +137,8 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			if (delta != 0 || transform_responses != "none") return(NULL)
 
 			compute_ridit_distr_parallel_cpp(
-				as.integer(y),
 				permutations$w_mat,
+				as.integer(y),
 				private$reference,
 				private$n_cpp_threads(ncol(permutations$w_mat))
 			)
@@ -174,8 +174,8 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			}
 
 			compute_ridit_bootstrap_parallel_cpp(
-				as.numeric(y),
 				as.integer(w),
+				as.integer(y),
 				indices_mat,
 				private$reference,
 				private$n_cpp_threads(B)

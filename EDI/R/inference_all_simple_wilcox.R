@@ -116,7 +116,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 	private = list(
 		max_resample_attempts = 50L,
 		hl_point_estimate = function(y_vals, w_vals){
-			wilcox_hl_point_estimate_cpp(as.numeric(y_vals), as.integer(w_vals))
+			wilcox_hl_point_estimate_cpp(as.integer(w_vals), as.numeric(y_vals))
 		},
 
 		compute_fast_bootstrap_distr = function(B, ...) {
@@ -149,8 +149,8 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			}
 
 			compute_wilcox_hl_bootstrap_parallel_cpp(
-				as.numeric(private$y),
 				as.integer(private$w),
+				as.numeric(private$y),
 				indices_mat,
 				private$n_cpp_threads(B)
 			)
@@ -175,7 +175,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				t_code = 3L
 			}
 
-			res = compute_wilcox_hl_distr_parallel_cpp(y_sim, w_mat, as.numeric(delta), t_code, as.numeric(zero_one_logit_clamp), private$n_cpp_threads(nsim))
+			res = compute_wilcox_hl_distr_parallel_cpp(w_mat, y_sim, as.numeric(delta), t_code, as.numeric(zero_one_logit_clamp), private$n_cpp_threads(nsim))
 			return(res)
 		},
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE, ...){

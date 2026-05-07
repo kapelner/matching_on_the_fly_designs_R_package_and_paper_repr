@@ -157,8 +157,8 @@ NULL
 #' when only the regression coefficients are needed, without variance-covariance matrices
 #' or other statistical inference components.
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"} or \code{"irls"}.
 #'
@@ -256,8 +256,8 @@ NULL
 
 #' Fast Poisson Regression with Variance Calculation (C++ Backend)
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, expected to be counts.
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
@@ -279,8 +279,8 @@ NULL
 
 #' Fast Quasi-Poisson Regression with Variance Calculation (C++ Backend)
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, expected to be counts.
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param	maxit Maximum number of iterations for the IRLS algorithm. Defaults to 100.
@@ -351,8 +351,8 @@ NULL
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for binary outcomes without computing variance components.
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.
 #'
@@ -374,7 +374,7 @@ NULL
 #' y_log <- rbinom(n, 1, prob)
 #'
 #' # Fit logistic regression using fast_logistic_regression
-#' fit_logistic <- fast_logistic_regression(Xmm = X_log, y = y_log)
+#' fit_logistic <- fast_logistic_regression(X = X_log, y = y_log)
 #' print(fit_logistic$
 #'   b)
 #'
@@ -384,19 +384,19 @@ NULL
 #' }
 #'
 #' @export
-fast_logistic_regression = function(Xmm, y, optimization_alg = "lbfgs"){
+fast_logistic_regression = function(X, y, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-	na_b = function() list(b = rep(NA_real_, ncol(Xmm)))
+	na_b = function() list(b = rep(NA_real_, ncol(X)))
 	fit_cpp = function(cpp_alg = optimization_alg){
 		tryCatch({
-			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(y), optimization_alg = cpp_alg)
+			res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = cpp_alg)
 			list(b = as.vector(res$b))
 		}, error = function(e) na_b())
 	}
 	if (!(optimization_alg %in% c("irls", "lbfgs"))) return(fit_cpp())
 	tryCatch({
 	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-		Xmm = Xmm,
+		X = X,
 		ybin = as.numeric(y)
 	))
 	b = as.vector(mod$coefficients)
@@ -413,8 +413,8 @@ fast_logistic_regression = function(Xmm, y, optimization_alg = "lbfgs"){
 #' It estimates regression coefficients for binary outcomes and specifically computes the
 #' variance of the second coefficient (assumed to be the treatment effect).
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.
@@ -439,7 +439,7 @@ fast_logistic_regression = function(Xmm, y, optimization_alg = "lbfgs"){
 #' y_log_var <- rbinom(n, 1, prob_var)
 #'
 #' # Fit logistic regression with variance using fast_logistic_regression_with_var
-#' fit_logistic_var <- fast_logistic_regression_with_var(Xmm = X_log_var, y = y_log_var)
+#' fit_logistic_var <- fast_logistic_regression_with_var(X = X_log_var, y = y_log_var)
 #' print(fit_logistic_var$
 #'   b)
 #' print(fit_logistic_var$
@@ -455,7 +455,7 @@ fast_logistic_regression = function(Xmm, y, optimization_alg = "lbfgs"){
 #' }
 #'
 #' @export
-fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "lbfgs"){
+fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
 	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
@@ -476,7 +476,7 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 	if (!(optimization_alg %in% c("irls", "lbfgs"))) return(fit_cpp())
 	tryCatch({
 		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-			Xmm = X,
+			X = X,
 			ybin = as.numeric(y),
 			do_inference_on_var = j
 		))
@@ -490,7 +490,7 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 
 	# Iteratively drop the covariate (column >= 3) with the largest absolute coefficient
 	# until the model converges or only the intercept + treatment remain.
-	X_curr = Xmm
+	X_curr = X
 	repeat {
 	fit = try_fit(X_curr)
 	if (fit$converged) return(list(b = fit$b, ssq_b_j = fit$ssq_b_j, ssq_b_2 = fit$ssq_b_2))
@@ -528,16 +528,16 @@ fast_logistic_regression_with_var = function(Xmm, y, j = 2, optimization_alg = "
 #' @export
 fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
-	Xmm = as.matrix(X)
+	X = as.matrix(X)
 	
 	if (use_rcpp) {
 		# Ensure intercept is present
-		if (NCOL(Xmm) == 0 || !all(Xmm[, 1] == 1)) {
-			Xmm = cbind("(Intercept)" = 1, Xmm)
+		if (NCOL(X) == 0 || !all(X[, 1] == 1)) {
+			X = cbind("(Intercept)" = 1, X)
 		}
 		
 		res = tryCatch(
-			fast_weibull_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only, optimization_alg = optimization_alg),
+			fast_weibull_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), smart_start = FALSE, estimate_only = estimate_only, optimization_alg = optimization_alg),
 			error = function(e) stop("Weibull regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -545,7 +545,7 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		}
 		
 		coefficients = as.numeric(res$coefficients)
-		names(coefficients) = colnames(Xmm)
+		names(coefficients) = colnames(X)
 		
 		return(list(
 			coefficients = coefficients,
@@ -555,28 +555,28 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		))
 	}
 
-	# Check if Xmm has an intercept column (a column of all ones)
+	# Check if X has an intercept column (a column of all ones)
 	# Assuming intercept is the first column if present
-	if (NCOL(Xmm) > 0 && all(Xmm[, 1] == 1)) {
+	if (NCOL(X) > 0 && all(X[, 1] == 1)) {
 	# If an intercept is present, remove it as survreg adds one automatically
-	Xmm_no_intercept = Xmm[, -1, drop = FALSE]
+	X_no_intercept = X[, -1, drop = FALSE]
 	} else {
-	Xmm_no_intercept = Xmm
+	X_no_intercept = X
 	}
 
 	# Drop linearly dependent columns before passing to survreg
-	Xmm_no_intercept = drop_linearly_dependent_cols(Xmm_no_intercept)$M
+	X_no_intercept = drop_linearly_dependent_cols(X_no_intercept)$M
 
 	# Use survreg (not survreg.fit) to handle parameter defaults properly
-	if (NCOL(Xmm_no_intercept) > 0) {
+	if (NCOL(X_no_intercept) > 0) {
 	# Preserve or create column names
-	original_colnames = colnames(Xmm_no_intercept)
+	original_colnames = colnames(X_no_intercept)
 	if (is.null(original_colnames)) {
-		original_colnames = paste0("X", 1:NCOL(Xmm_no_intercept))
+		original_colnames = paste0("X", 1:NCOL(X_no_intercept))
 	}
 
 	# Create a data frame for survreg
-	df = as.data.frame(Xmm_no_intercept)
+	df = as.data.frame(X_no_intercept)
 	colnames(df) = original_colnames
 	df$y = y
 	df$dead = dead
@@ -654,8 +654,8 @@ sanitize_beta_response = function(y){
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for response variables that are continuous and restricted to the (0, 1) interval.
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
@@ -673,24 +673,24 @@ sanitize_beta_response = function(y){
 #'
 #' @export
 #' @examples
-#' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+#' X <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
-#' fast_beta_regression(Xmm, y)
-fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newton_raphson"){
+#' fast_beta_regression(X, y)
+fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton_raphson"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	list(b = fast_beta_regression_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)$coefficients)
+	list(b = fast_beta_regression_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg)$coefficients)
 	}, error = function(e) {
 	warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
 	if (!check_package_installed("betareg")) {
 		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
-		return(list(b = fast_ols_cpp(Xmm, logit(y))$b))
+		return(list(b = fast_ols_cpp(X, logit(y))$b))
 	}
-	# create a data frame for betareg, removing the intercept from Xmm
-	data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
+	# create a data frame for betareg, removing the intercept from X
+	data_df <- as.data.frame(cbind(y, X[, -1, drop = FALSE]))
 	# rename columns for formula
-	colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
+	colnames(data_df) <- c("y", paste0("x", 1:(ncol(X)-1)))
 	# fit model with control to suppress precision parameter warning
 	tryCatch({
 		suppressWarnings({
@@ -700,7 +700,7 @@ fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newt
 		list(b = coef(fit))
 	}, error = function(e2) {
 		warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
-		list(b = fast_ols_cpp(Xmm, logit(y))$b)
+		list(b = fast_ols_cpp(X, logit(y))$b)
 	})
 	})
 }
@@ -712,8 +712,8 @@ fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newt
 #' restricted to the (0, 1) interval, and specifically computes the variance
 #' of the second coefficient (assumed to be the treatment effect).
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param	start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
@@ -736,26 +736,26 @@ fast_beta_regression = function(Xmm, y, start_phi = 10, optimization_alg = "newt
 #' @importFrom	stats vcov
 #' @export
 #' @examples
-#' Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+#' X <- cbind(1, c(-1, -0.5, 0.5, 1))
 #' y <- c(0.15, 0.25, 0.60, 0.75)
-#' fast_beta_regression_with_var(Xmm, y)
-fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson"){
+#' fast_beta_regression_with_var(X, y)
+fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	mod = fast_beta_regression_with_var_cpp(Xmm, y, start_phi = start_phi, optimization_alg = optimization_alg)
+	mod = fast_beta_regression_with_var_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg)
 	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
 	if (!check_package_installed("betareg")) {
 		warning("Package 'betareg' is not installed; skipping betareg fallback and using OLS on logit(y). Install it with install.packages(\"betareg\") for a better fallback.")
-		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-		return(list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_))
+		mod = fast_ols_with_var_cpp(X, logit(y), j = as.integer(j))
+		return(list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(X, logit(y), j = 2L)$ssq_b_j else NA_real_))
 	}
-	# create a data frame for betareg, removing the intercept from Xmm
-	data_df <- as.data.frame(cbind(y, Xmm[, -1, drop = FALSE]))
+	# create a data frame for betareg, removing the intercept from X
+	data_df <- as.data.frame(cbind(y, X[, -1, drop = FALSE]))
 	# rename columns for formula
-	colnames(data_df) <- c("y", paste0("x", 1:(ncol(Xmm)-1)))
+	colnames(data_df) <- c("y", paste0("x", 1:(ncol(X)-1)))
 	# fit model with control to suppress precision parameter warning
 	tryCatch({
 		suppressWarnings({
@@ -767,8 +767,8 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 		list(b = coef(fit), phi = as.numeric(coef(fit)["(phi)"]), ssq_b_j = vcov_matrix[j, j], ssq_b_2 = if (nrow(vcov_matrix) >= 2) vcov_matrix[2, 2] else NA_real_)
 	}, error = function(e2) {
 		warning("betareg fallback failed, using OLS on logit(y). Error: ", e2$message)
-		mod = fast_ols_with_var_cpp(Xmm, logit(y), j = as.integer(j))
-		list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(Xmm, logit(y), j = 2L)$ssq_b_j else NA_real_)
+		mod = fast_ols_with_var_cpp(X, logit(y), j = as.integer(j))
+		list(b = mod$b, phi = NA_real_, ssq_b_j = mod$ssq_b_j, ssq_b_2 = if (length(mod$b) >= 2) fast_ols_with_var_cpp(X, logit(y), j = 2L)$ssq_b_j else NA_real_)
 	})
 	})
 }
@@ -779,8 +779,8 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 #' \pkg{survival::coxph} or an optimized Rcpp implementation.
 #' It is designed to efficiently estimate regression coefficients for time-to-event data.
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept term
-#'   is handled implicitly by the Cox model and should not be included in \code{Xmm}.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept term
+#'   is handled implicitly by the Cox model and should not be included in \code{X}.
 #' @param	y A numeric vector representing the observed time (event time or censoring time).
 #' @param	dead A numeric vector (0 or 1) indicating event status (1 for event, 0 for censored).
 #' @param use_rcpp Logical. If \code{TRUE} (default), use the optimized Rcpp
@@ -802,7 +802,7 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 #' @export
 #' @examples
 #' if (check_package_installed("glmnet")) {
-#'   Xmm <- matrix(c(-1, 0,
+#'   X <- matrix(c(-1, 0,
 #'                   0, 1,
 #'                   1, 0,
 #'                   0, 1,
@@ -810,14 +810,14 @@ fast_beta_regression_with_var = function(Xmm, y, start_phi = 10, j = 2, optimiza
 #'                   2, 1), ncol = 2, byrow = TRUE)
 #'   y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
 #'   dead <- c(1, 1, 0, 1, 0, 1)
-#'   fast_coxph_regression(Xmm, y, dead)
+#'   fast_coxph_regression(X, y, dead)
 #' }
-fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson"){
+fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	if (use_rcpp) {
-		Xmm = as.matrix(Xmm)
+		X = as.matrix(X)
 		res = tryCatch(
-			fast_coxph_regression_cpp(y = as.numeric(y), dead = as.numeric(dead), X = Xmm, estimate_only = estimate_only, optimization_alg = optimization_alg),
+			fast_coxph_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), estimate_only = estimate_only, optimization_alg = optimization_alg),
 			error = function(e) stop("Cox PH regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -825,7 +825,7 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 		}
 		
 		b = as.numeric(res$coefficients)
-		names(b) = colnames(Xmm)
+		names(b) = colnames(X)
 		
 		return(list(
 			b = b,
@@ -838,7 +838,7 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 	if (!check_package_installed("glmnet")) {
 		stop("Package 'glmnet' is required for fast_coxph_regression when use_rcpp = FALSE. Please install it.")
 	}
-	mod = glmnet::glmnet(Xmm, survival::Surv(y, dead), family = "cox", lambda = 0)
+	mod = glmnet::glmnet(X, survival::Surv(y, dead), family = "cox", lambda = 0)
 	list(b = stats::coef(mod))
 }
 
@@ -848,8 +848,8 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 #' a C++ backend function. It is designed to efficiently estimate regression coefficients
 #' for count data, assuming all observations are "not censored" (i.e., `dead = 1`).
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, representing count data.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
@@ -859,28 +859,44 @@ fast_coxph_regression = function(Xmm, y, dead, use_rcpp = TRUE, estimate_only = 
 #' @importFrom	stats glm.fit
 #' @importFrom	MASS negative.binomial
 #' @examples
-#' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+#' X <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 #' y <- c(0, 1, 1, 2, 3, 4)
-#' fast_negbin_regression(Xmm, y)
+#' fast_negbin_regression(X, y)
 #' @export
-fast_negbin_regression <- function(Xmm, y, optimization_alg = "newton_raphson") {
+fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson") {
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
-	X_full = as.matrix(Xmm)
-	res = tryCatch(fast_neg_bin_cpp(X = X_full, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
+	X_full = as.matrix(X)
+	X_fit = X_full
+	if (ncol(X_full) > 2L) {
+		X_cov = X_full[, -(1:2), drop = FALSE]
+		if (ncol(X_cov) > 0L) {
+			qr_cov = qr(X_cov)
+			r_cov = qr_cov$rank
+			if (r_cov < ncol(X_cov)) {
+				keep_cov = sort(qr_cov$pivot[seq_len(r_cov)])
+				X_fit = if (length(keep_cov) > 0L) {
+					cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_cov, drop = FALSE])
+				} else {
+					X_full[, 1:2, drop = FALSE]
+				}
+			}
+		}
+	}
+	res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (!is.null(res)) return(list(b = as.numeric(res$b)))
 	# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 	# drop covariates one at a time in reverse QR-pivot order (most redundant first)
-	if (ncol(X_full) > 2L) {
-		X_cov = X_full[, -(1:2), drop = FALSE]
+	if (ncol(X_fit) > 2L) {
+		X_cov = X_fit[, -(1:2), drop = FALSE]
 		keep_js = qr(X_cov)$pivot
 		while (length(keep_js) > 0L) {
 			keep_js = keep_js[-length(keep_js)]
 			X_try = if (length(keep_js) > 0L) {
-				cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
+				cbind(X_fit[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
 			} else {
-				X_full[, 1:2, drop = FALSE]
+				X_fit[, 1:2, drop = FALSE]
 			}
-			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
+			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			if (!is.null(res)) return(list(b = as.numeric(res$b)))
 		}
 	}
@@ -895,8 +911,8 @@ fast_negbin_regression <- function(Xmm, y, optimization_alg = "newton_raphson") 
 #' effect),
 #' assuming all observations are "not censored" (i.e., `dead = 1`).
 #'
-#' @param	Xmm A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{Xmm} if desired.
+#' @param	X A numeric matrix of predictor variables. It is assumed that an intercept column
+#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param	y A numeric vector of the response variable, representing count data.
 #' @param	j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
@@ -912,28 +928,43 @@ fast_negbin_regression <- function(Xmm, y, optimization_alg = "newton_raphson") 
 #' @importFrom	stats coef
 #' @export
 #' @examples
-#' Xmm <- cbind(1, c(-1, 0, 1, 0, 1, 2))
+#' X <- cbind(1, c(-1, 0, 1, 0, 1, 2))
 #' y <- c(0, 1, 1, 2, 3, 4)
-#' fast_negbin_regression_with_var(Xmm, y)
-fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "newton_raphson") {
+#' fast_negbin_regression_with_var(X, y)
+fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "newton_raphson") {
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
-	X_full = as.matrix(Xmm)
+	X_full = as.matrix(X)
 	X_curr = X_full
-	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
+	if (ncol(X_full) > 2L) {
+		X_cov = X_full[, -(1:2), drop = FALSE]
+		if (ncol(X_cov) > 0L) {
+			qr_cov = qr(X_cov)
+			r_cov = qr_cov$rank
+			if (r_cov < ncol(X_cov)) {
+				keep_cov = sort(qr_cov$pivot[seq_len(r_cov)])
+				X_curr = if (length(keep_cov) > 0L) {
+					cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_cov, drop = FALSE])
+				} else {
+					X_full[, 1:2, drop = FALSE]
+				}
+			}
+		}
+	}
+	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (is.null(res)) {
 		# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 		# drop covariates one at a time in reverse QR-pivot order (most redundant first)
-		if (ncol(X_full) > 2L) {
-			X_cov = X_full[, -(1:2), drop = FALSE]
+		if (ncol(X_curr) > 2L) {
+			X_cov = X_curr[, -(1:2), drop = FALSE]
 			keep_js = qr(X_cov)$pivot
 			while (length(keep_js) > 0L && is.null(res)) {
 				keep_js = keep_js[-length(keep_js)]
 				X_curr = if (length(keep_js) > 0L) {
-					cbind(X_full[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
+					cbind(X_curr[, 1:2, drop = FALSE], X_cov[, keep_js, drop = FALSE])
 				} else {
-					X_full[, 1:2, drop = FALSE]
+					X_curr[, 1:2, drop = FALSE]
 				}
-				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), optimization_alg = optimization_alg), error = function(e) NULL)
+				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			}
 		}
 		if (is.null(res))
@@ -986,18 +1017,18 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "n
 
 
 
-# fast_beta_regression <- function(Xmm, y,
+# fast_beta_regression <- function(X, y,
 #                              start_phi = 10,
 #                              bounds_logphi = c(log(1e-3), log(1e4)),
 #                              control = stats::glm.control(epsilon=1e-8, maxit=100)) {
 
-#   weights <- rep(1, nrow(Xmm))
+#   weights <- rep(1, nrow(X))
 
 #   # Use C++ logistic regression to find beta (quasi-likelihood, independent of phi)
 #   # This replaces the repetitive glm.fit calls inside the optimization loop
-#   mod_log = fast_logistic_regression_cpp(as.matrix(Xmm), as.numeric(y), maxit = control$maxit, tol = control$epsilon)
+#   mod_log = fast_logistic_regression_cpp(as.matrix(X), as.numeric(y), maxit = control$maxit, tol = control$epsilon)
 #   b = mod_log$b
-#   mu = 1 / (1 + exp(-drop(Xmm %*% b)))
+#   mu = 1 / (1 + exp(-drop(X %*% b)))
 #   # guard against numerical drift to 0/1
 #   mu <- pmin(pmax(mu, 1e-12), 1 - 1e-12)
 
@@ -1027,12 +1058,12 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "n
 #   out
 # }
 
-# fast_beta_regression_with_var <- function(Xmm, y,
+# fast_beta_regression_with_var <- function(X, y,
 #                              start_phi = 10,
 #                              bounds_logphi = c(log(1e-3), log(1e4)),
 #                              control = stats::glm.control(epsilon=1e-8, maxit=100)) {
-#     fit_hat = fast_beta_regression(Xmm, y, start_phi = start_phi, bounds_logphi = bounds_logphi, control = control)
-#     XtWX <- crossprod(sqrt(fit_hat$w) * Xmm)
+#     fit_hat = fast_beta_regression(X, y, start_phi = start_phi, bounds_logphi = bounds_logphi, control = control)
+#     XtWX <- crossprod(sqrt(fit_hat$w) * X)
 #     fit_hat$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
 #     fit_hat
 # }
@@ -1092,12 +1123,12 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "n
 #  ))
 #}
 
-# fast_beta_regression_mle_r <- function(Xmm, y, start_phi = 10) {
+# fast_beta_regression_mle_r <- function(X, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
-#   start_beta <- fast_logistic_regression(Xmm, y)$b
+#   start_beta <- fast_logistic_regression(X, y)$b
 
 #   # Call the full MLE in C++ without computing standard errors
-#   mod_cpp = fast_beta_regression_mle(y, Xmm, start_beta = start_beta, start_phi = start_phi, compute_std_errs = FALSE)
+#   mod_cpp = fast_beta_regression_mle(y, X, start_beta = start_beta, start_phi = start_phi, compute_std_errs = FALSE)
 
 #   out <- list(
 #     b = mod_cpp$coefficients,
@@ -1106,12 +1137,12 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "n
 #   out
 # }
 
-# fast_beta_regression_mle_r_with_var <- function(Xmm, y, start_phi = 10) {
+# fast_beta_regression_mle_r_with_var <- function(X, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
-#   start_beta <- fast_logistic_regression(Xmm, y)$b
+#   start_beta <- fast_logistic_regression(X, y)$b
 
 #   # Call the full MLE in C++ and compute standard errors
-#   mod_cpp = fast_beta_regression_mle(y, Xmm, start_beta = start_beta, start_phi = start_phi, compute_std_errs = TRUE)
+#   mod_cpp = fast_beta_regression_mle(y, X, start_beta = start_beta, start_phi = start_phi, compute_std_errs = TRUE)
 
 #   out <- list(
 #     b = mod_cpp$coefficients,
@@ -1126,9 +1157,9 @@ fast_negbin_regression_with_var <- function(Xmm, y, j = 2, optimization_alg = "n
 # }
 
 
-#fast_glm_with_var = function(Xmm, y, glm_function){
-#	mod = glm_function(Xmm, y)
-#	XtWX = eigen_Xt_times_diag_w_times_X_cpp(Xmm, mod$w)
+#fast_glm_with_var = function(X, y, glm_function){
+#	mod = glm_function(X, y)
+#	XtWX = eigen_Xt_times_diag_w_times_X_cpp(X, mod$w)
 #	mod$ssq_b_2 = eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(XtWX, 2)
 #	mod
 #}

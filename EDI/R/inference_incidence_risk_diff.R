@@ -30,27 +30,37 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
+
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+			X
+		},
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			if (length(Xmm_cols) == 0L){
-				Xmm = cbind(1, private$w)
+			if (length(X_cols) == 0L){
+				X = cbind(1, private$w)
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = tryCatch(fast_ols_cpp(X = Xmm, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(fast_ols_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -64,6 +74,7 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
 			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = private$build_design_matrix(),
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					if (estimate_only) {
@@ -84,9 +95,9 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 			}
 			attempt$fit
 		}
 	)
-)
+	)

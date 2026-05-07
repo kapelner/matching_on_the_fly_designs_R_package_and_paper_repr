@@ -5,7 +5,7 @@
 \title{Fast Identity-Binomial Regression with Variance (C++)}
 \usage{
 fast_identity_binomial_regression_with_var_cpp(
-  Xmm,
+  X,
   y,
   j = 2L,
   maxit = 100L,
@@ -15,7 +15,7 @@ fast_identity_binomial_regression_with_var_cpp(
 )
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictors.}
+\item{X}{A numeric matrix of predictors.}
 
 \item{y}{A binary numeric vector of responses.}
 

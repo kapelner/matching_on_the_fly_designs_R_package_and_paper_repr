@@ -4,16 +4,11 @@
 \alias{fast_beta_regression}
 \title{Fast Beta Regression (R Wrapper)}
 \usage{
-fast_beta_regression(
-  Xmm,
-  y,
-  start_phi = 10,
-  optimization_alg = "newton_raphson"
-)
+fast_beta_regression(X, y, start_phi = 10, optimization_alg = "newton_raphson")
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{Xmm} if desired.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable, with values strictly between 0 and 1.}
 
@@ -39,7 +34,7 @@ with \pkg{EDI}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
 enable the intermediate fallback.
 }
 \examples{
-Xmm <- cbind(1, c(-1, -0.5, 0.5, 1))
+X <- cbind(1, c(-1, -0.5, 0.5, 1))
 y <- c(0.15, 0.25, 0.60, 0.75)
-fast_beta_regression(Xmm, y)
+fast_beta_regression(X, y)
 }

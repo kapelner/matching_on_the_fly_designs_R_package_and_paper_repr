@@ -21,16 +21,13 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param smart_default Whether to use smart optimizer start values by default.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, model_formula = NULL,
-				nonparallel = character(0),
-				
-				verbose = FALSE,
-				harden = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, nonparallel = character(0), smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 				assertCharacter(nonparallel, null.ok = TRUE)
@@ -155,26 +152,26 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 	),
 	private = list(
 		nonparallel = character(0),
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			X_cov = if (length(Xmm_cols) == 0L){
+			X_cov = if (length(X_cols) == 0L){
 				matrix(0, nrow = private$n, ncol = 0)
 			} else {
-				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 			}
 
 			fit = private$fit_partial_proportional_odds_from_covariates(X_cov)
@@ -228,7 +225,7 @@ InferenceOrdinalPartialProportionalOddsAbstract = R6::R6Class(
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), "treatment")
+				private$best_X_colnames = setdiff(colnames(attempt$X_fit), "treatment")
 			}
 			attempt$fit
 		},

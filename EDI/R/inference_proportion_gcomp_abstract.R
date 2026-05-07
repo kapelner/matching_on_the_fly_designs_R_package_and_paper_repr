@@ -159,7 +159,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L,
-			min_number_usable_samples = 50L){
+			min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 			}
@@ -188,7 +188,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL,
 			na.rm = TRUE, show_progress = TRUE, boundary_tol = 0.02, max_boundary_mass = 0.95,
-			sep_tol = 0.02, min_group_n = 5L, min_number_usable_samples = 50L){
+			sep_tol = 0.02, min_group_n = 5L, min_number_usable_samples = 5L){
 			old_bootstrap_screening = private$bootstrap_screening_control
 			private$bootstrap_screening_control = list(
 				boundary_tol = boundary_tol,

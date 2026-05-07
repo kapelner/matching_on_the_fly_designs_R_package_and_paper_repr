@@ -5,9 +5,9 @@
 \title{Fast Cox Proportional Hazards Regression (C++)}
 \usage{
 fast_coxph_regression_cpp(
+  X,
   y,
   dead,
-  X,
   start_beta = NULL,
   estimate_only = FALSE,
   maxit = 20L,
@@ -19,11 +19,11 @@ fast_coxph_regression_cpp(
 )
 }
 \arguments{
+\item{X}{A numeric matrix of predictor variables.}
+
 \item{y}{Survival times.}
 
 \item{dead}{Event indicator (1 = event, 0 = censored).}
-
-\item{X}{A numeric matrix of predictor variables.}
 
 \item{start_beta}{Optional starting values for the coefficients.}
 

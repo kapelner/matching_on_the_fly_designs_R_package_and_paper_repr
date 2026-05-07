@@ -90,12 +90,12 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
-			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				private$shared()
 			}
 
 			# If we still don't have enough (e.g., initial fit failed), fall back to standard
-			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
@@ -112,14 +112,14 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			# Matched pairs component (Clogit)
 			beta_m = NA_real_
 			ssq_m = NA_real_
-			if (m > 0 && !is.null(private$best_Xmm_colnames_matched)){
+			if (m > 0 && !is.null(private$best_X_colnames_matched)){
 				m_vec = private$m
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_matched = which(m_vec > 0L)
 
-				X_cov = X_data[i_matched, intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(w = private$w[i_matched], X_cov)
+				X_cov = X_data[i_matched, intersect(private$best_X_colnames_matched, colnames(X_data)), drop = FALSE]
+				X = cbind(w = private$w[i_matched], X_cov)
 
 				fit_m = clogit_helper(
 					y_m = private$y[i_matched],
@@ -138,17 +138,17 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			# Reservoir component (Logistic)
 			beta_r = NA_real_
 			ssq_r = NA_real_
-			if (nRT > 0 && nRC > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
+			if (nRT > 0 && nRC > 0 && !is.null(private$best_X_colnames_reservoir)){
 				m_vec = private$m
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_reservoir = which(m_vec == 0L)
 
-				X_cov = X_data[i_reservoir, intersect(private$best_Xmm_colnames_reservoir, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_cov)
+				X_cov = X_data[i_reservoir, intersect(private$best_X_colnames_reservoir, colnames(X_data)), drop = FALSE]
+				X = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_cov)
 
 				fit_r = fast_logistic_regression_with_var(
-					Xmm = Xmm,
+					X = X,
 					y = private$y[i_reservoir],
 					j = 2L,
 					optimization_alg = private$optimization_alg
@@ -185,8 +185,8 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			NA_real_
 		},
 
-		best_Xmm_colnames_matched = NULL,
-		best_Xmm_colnames_reservoir = NULL,
+		best_X_colnames_matched = NULL,
+		best_X_colnames_reservoir = NULL,
 
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -263,7 +263,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			if (!is.null(fit) && is.finite(fit$b[2L])){
 				private$cached_values$beta_T_matched = fit$b[2L]
 				private$cached_values$ssq_beta_T_matched = if (estimate_only) NA_real_ else fit$ssq_b_2
-				private$best_Xmm_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
+				private$best_X_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
 			}
 		},
 
@@ -284,7 +284,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit){
 					fast_logistic_regression_with_var(
-						Xmm = X_fit,
+						X = X_fit,
 						y = private$y[i_reservoir],
 						j = 2L,
 						optimization_alg = private$optimization_alg
@@ -300,7 +300,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			if (!is.null(attempt$fit)){
 				private$cached_values$beta_T_reservoir = attempt$fit$b[2L]
 				private$cached_values$ssq_beta_T_reservoir = if (estimate_only) NA_real_ else attempt$fit$ssq_b_2
-				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X_fit), c("(Intercept)", "w"))
+				private$best_X_colnames_reservoir = setdiff(colnames(attempt$X_fit), c("(Intercept)", "w"))
 				return(invisible(NULL))
 			}
 		}

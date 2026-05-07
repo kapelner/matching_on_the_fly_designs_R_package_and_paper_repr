@@ -531,9 +531,9 @@ Eigen::MatrixXd compute_robust_vcov(
 
 //' @title Fast Cox Proportional Hazards Regression (C++)
 //' @description High-performance Cox regression fitting using Breslow's method for ties.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators (1=event, 0=censored).
-//' @param X A numeric matrix of predictors.
 //' @param start_beta Optional starting values for coefficients.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
@@ -545,9 +545,9 @@ Eigen::MatrixXd compute_robust_vcov(
 //' @return A list containing coefficients, vcov (optional), and convergence status.
 //' @export
 // [[Rcpp::export]]
-List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
+List fast_coxph_regression_cpp(const Eigen::MatrixXd& X,
+                               const Eigen::VectorXd& y,
                                const Eigen::VectorXd& dead,
-                               const Eigen::MatrixXd& X,
                                Nullable<NumericVector> start_beta = R_NilValue,
                                bool estimate_only = false,
                                int maxit = 20,
@@ -597,10 +597,10 @@ List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
 
 //' @title Fast Stratified Cox Proportional Hazards Regression (C++)
 //' @description High-performance stratified Cox regression fitting.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param X A numeric matrix of predictors.
-//' @param strata_r An integer vector of strata IDs.
+//' @param strata An integer vector of strata IDs.
 //' @param start_beta Optional starting values for coefficients.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
@@ -612,10 +612,10 @@ List fast_coxph_regression_cpp(const Eigen::VectorXd& y,
 //' @export
 // [[Rcpp::export]]
 List fast_stratified_coxph_regression_cpp(
+    const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::MatrixXd& X,
-    const Rcpp::IntegerVector& strata_r,
+    const Rcpp::IntegerVector& strata,
     Nullable<NumericVector> start_beta = R_NilValue,
     bool estimate_only = false,
     int maxit = 20,
@@ -628,8 +628,8 @@ List fast_stratified_coxph_regression_cpp(
     const int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
-    std::vector<int> strata(strata_r.begin(), strata_r.end());
-    std::vector<int> unique_strata = strata;
+    std::vector<int> strata_v(strata.begin(), strata.end());
+    std::vector<int> unique_strata = strata_v;
     std::sort(unique_strata.begin(), unique_strata.end());
     unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
 
@@ -638,7 +638,7 @@ List fast_stratified_coxph_regression_cpp(
     strata_data.reserve(unique_strata.size());
     for (int s : unique_strata) {
         std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata[i] == s) idx.push_back(i);
+        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
 
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
@@ -676,16 +676,16 @@ List fast_stratified_coxph_regression_cpp(
 
 //' @title Compute Cox PH Score (C++)
 //' @description Calculates the score vector (gradient of log partial likelihood) for unstratified Cox regression.
+//' @param X Predictor matrix.
 //' @param y Survival times.
 //' @param dead Event indicators.
-//' @param X Predictor matrix.
 //' @param beta Coefficient vector.
 //' @return Score vector.
 //' @export
 // [[Rcpp::export]]
-Eigen::VectorXd get_coxph_score_cpp(const Eigen::VectorXd& y,
+Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X,
+                                     const Eigen::VectorXd& y,
                                      const Eigen::VectorXd& dead,
-                                     const Eigen::MatrixXd& X,
                                      const Eigen::VectorXd& beta) {
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
@@ -697,16 +697,16 @@ Eigen::VectorXd get_coxph_score_cpp(const Eigen::VectorXd& y,
 
 //' @title Compute Cox PH Hessian (C++)
 //' @description Calculates the Hessian of log partial likelihood for unstratified Cox regression.
+//' @param X Predictor matrix.
 //' @param y Survival times.
 //' @param dead Event indicators.
-//' @param X Predictor matrix.
 //' @param beta Coefficient vector.
 //' @return Hessian matrix.
 //' @export
 // [[Rcpp::export]]
-Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::VectorXd& y,
+Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X,
+                                       const Eigen::VectorXd& y,
                                        const Eigen::VectorXd& dead,
-                                       const Eigen::MatrixXd& X,
                                        const Eigen::VectorXd& beta) {
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
@@ -716,23 +716,23 @@ Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::VectorXd& y,
 
 //' @title Compute Stratified Cox PH Score (C++)
 //' @description Calculates the score vector (gradient of log partial likelihood) for stratified Cox regression.
+//' @param X Predictor matrix.
 //' @param y Survival times.
 //' @param dead Event indicators.
-//' @param X Predictor matrix.
-//' @param strata_r Integer vector of strata IDs.
+//' @param strata Integer vector of strata IDs.
 //' @param beta Coefficient vector.
 //' @return Score vector.
 //' @export
 // [[Rcpp::export]]
-Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::VectorXd& y,
+Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X,
+                                                const Eigen::VectorXd& y,
                                                 const Eigen::VectorXd& dead,
-                                                const Eigen::MatrixXd& X,
-                                                const Rcpp::IntegerVector& strata_r,
+                                                const Rcpp::IntegerVector& strata,
                                                 const Eigen::VectorXd& beta) {
     const int n = y.size();
     const int p = X.cols();
-    std::vector<int> strata(strata_r.begin(), strata_r.end());
-    std::vector<int> unique_strata = strata;
+    std::vector<int> strata_v(strata.begin(), strata.end());
+    std::vector<int> unique_strata = strata_v;
     std::sort(unique_strata.begin(), unique_strata.end());
     unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
 
@@ -740,7 +740,7 @@ Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::VectorXd& y,
     strata_data.reserve(unique_strata.size());
     for (int s : unique_strata) {
         std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata[i] == s) idx.push_back(i);
+        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
         Eigen::MatrixXd X_s(ns, p);
@@ -758,23 +758,23 @@ Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::VectorXd& y,
 
 //' @title Compute Stratified Cox PH Hessian (C++)
 //' @description Calculates the Hessian of log partial likelihood for stratified Cox regression.
+//' @param X Predictor matrix.
 //' @param y Survival times.
 //' @param dead Event indicators.
-//' @param X Predictor matrix.
-//' @param strata_r Integer vector of strata IDs.
+//' @param strata Integer vector of strata IDs.
 //' @param beta Coefficient vector.
 //' @return Hessian matrix.
 //' @export
 // [[Rcpp::export]]
-Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::VectorXd& y,
+Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X,
+                                                   const Eigen::VectorXd& y,
                                                    const Eigen::VectorXd& dead,
-                                                   const Eigen::MatrixXd& X,
-                                                   const Rcpp::IntegerVector& strata_r,
+                                                   const Rcpp::IntegerVector& strata,
                                                    const Eigen::VectorXd& beta) {
     const int n = y.size();
     const int p = X.cols();
-    std::vector<int> strata(strata_r.begin(), strata_r.end());
-    std::vector<int> unique_strata = strata;
+    std::vector<int> strata_v(strata.begin(), strata.end());
+    std::vector<int> unique_strata = strata_v;
     std::sort(unique_strata.begin(), unique_strata.end());
     unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
 
@@ -782,7 +782,7 @@ Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::VectorXd& y,
     strata_data.reserve(unique_strata.size());
     for (int s : unique_strata) {
         std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata[i] == s) idx.push_back(i);
+        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
         Eigen::MatrixXd X_s(ns, p);

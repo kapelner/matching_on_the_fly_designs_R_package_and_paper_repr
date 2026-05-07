@@ -7,6 +7,8 @@
 fast_poisson_regression_cpp(
   X,
   y,
+  start_beta = NULL,
+  smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,

@@ -352,7 +352,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			#sometimes the beta regression is unstable...
 			tryCatch({
-				mod = fast_beta_regression_with_var(Xmm = as.matrix(cbind(1, xs_to_date[, j])), y = as.numeric(ys_to_date))
+				mod = fast_beta_regression_with_var(X = as.matrix(cbind(1, xs_to_date[, j])), y = as.numeric(ys_to_date))
 				weight = abs(mod$b[2] / sqrt(mod$ssq_b_2))
 				if (!is.na(weight)){
 					return(weight)

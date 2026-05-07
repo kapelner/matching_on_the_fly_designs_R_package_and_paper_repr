@@ -28,15 +28,19 @@ Inference = R6::R6Class("Inference",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL){
+		#' @param smart_default Whether to use smart optimizer start values by default for
+		#'   likelihood-based models. Explicit starts always override this object-level policy.
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(verbose)
 				assertFlag(harden)
+				assertFlag(smart_default)
 				des_obj$assert_all_responses_recorded()
 			}
 			private$harden = harden
+			private$smart_default = smart_default
 
 			private$cached_values = list()
 			private$any_censoring = des_obj$any_censoring()
@@ -328,9 +332,16 @@ Inference = R6::R6Class("Inference",
 		y_temp = NULL,
 		X = NULL,
 		model_formula = NULL,
+		smart_default = TRUE,
 		optimization_alg = NULL,
 		optimization_alg_allow_irls = FALSE,
 		optimization_alg_default = "lbfgs",
+		fit_warm_start_enabled = TRUE,
+		null_fit_warm_start_enabled = TRUE,
+		reusable_bootstrap_worker_enabled = TRUE,
+		fit_warm_start = NULL,
+		fit_warm_start_type = NULL,
+		likelihood_null_warm_cache = NULL,
 		reduced_design_keep_cache = NULL,
 		fixed_covariate_keep_cache = NULL,
 			cached_values = list(),
@@ -366,6 +377,75 @@ Inference = R6::R6Class("Inference",
 			private$cached_values$nonestimable_reason = NULL
 			private$cached_values$nonestimable_stage = NULL
 			invisible(NULL)
+		},
+
+		clear_fit_warm_start = function(){
+			private$fit_warm_start = NULL
+			private$fit_warm_start_type = NULL
+			invisible(NULL)
+		},
+
+		set_fit_warm_start = function(start, type = c("beta", "params")){
+			if (!isTRUE(private$fit_warm_start_enabled)) {
+				private$clear_fit_warm_start()
+				return(invisible(NULL))
+			}
+			type = match.arg(type)
+			if (is.null(start)) {
+				private$clear_fit_warm_start()
+				return(invisible(NULL))
+			}
+			start = as.numeric(start)
+			if (!length(start) || any(!is.finite(start))) {
+				private$clear_fit_warm_start()
+				return(invisible(NULL))
+			}
+			private$fit_warm_start = start
+			private$fit_warm_start_type = type
+			invisible(NULL)
+		},
+
+		get_fit_warm_start = function(type = c("beta", "params")){
+			if (!isTRUE(private$fit_warm_start_enabled)) return(NULL)
+			type = match.arg(type)
+			if (!identical(private$fit_warm_start_type, type)) return(NULL)
+			start = private$fit_warm_start
+			if (is.null(start) || !length(start) || any(!is.finite(start))) return(NULL)
+			start
+		},
+
+		get_fit_warm_start_for_length = function(type = c("beta", "params"), expected_length = NULL){
+			start = private$get_fit_warm_start(match.arg(type))
+			if (is.null(start) || is.null(expected_length)) return(start)
+			expected_length = as.integer(expected_length)[1L]
+			if (!is.finite(expected_length) || expected_length < 1L) return(NULL)
+			if (length(start) != expected_length) return(NULL)
+			start
+		},
+
+		clear_likelihood_null_warm_cache = function(){
+			private$likelihood_null_warm_cache = list()
+			invisible(NULL)
+		},
+
+		get_likelihood_null_warm_state = function(key){
+			if (!isTRUE(private$null_fit_warm_start_enabled)) return(NULL)
+			cache = private$likelihood_null_warm_cache
+			if (is.null(cache) || is.null(cache[[key]])) return(NULL)
+			cache[[key]]
+		},
+
+		set_likelihood_null_warm_state = function(key, delta, start){
+			if (!isTRUE(private$null_fit_warm_start_enabled)) return(invisible(NULL))
+			if (is.null(private$likelihood_null_warm_cache)) private$likelihood_null_warm_cache = list()
+			private$likelihood_null_warm_cache[[key]] = list(delta = as.numeric(delta)[1L], start = start)
+			invisible(NULL)
+		},
+
+		use_reusable_bootstrap_worker = function(){
+			isTRUE(private$reusable_bootstrap_worker_enabled) &&
+				private$has_private_method("supports_reusable_bootstrap_worker") &&
+				isTRUE(tryCatch(private$supports_reusable_bootstrap_worker(), error = function(e) FALSE))
 		},
 
 		cache_nonestimable_estimate = function(reason = "not_estimable"){

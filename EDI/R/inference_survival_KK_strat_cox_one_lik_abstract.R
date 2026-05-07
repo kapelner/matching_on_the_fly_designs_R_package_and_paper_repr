@@ -74,7 +74,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
@@ -84,22 +84,22 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared_combined_likelihood(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			X_cov = if (length(Xmm_cols) == 0L){
+			X_cov = if (length(X_cols) == 0L){
 				matrix(0, nrow = private$n, ncol = 0)
 			} else {
-				X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 			}
 			X_fit = matrix(private$w, ncol = 1)
 			colnames(X_fit) = "w"
@@ -114,7 +114,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			strata_id[strata_id == 0L] = max(strata_id) + 1L
 
 			res = tryCatch(
-				fast_stratified_coxph_regression_cpp(private$y, private$dead, X_fit,
+				fast_stratified_coxph_regression_cpp(X_fit, private$y, private$dead,
 				                                     as.integer(strata_id), estimate_only = TRUE),
 				error = function(e) NULL
 			)
@@ -160,7 +160,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 				required_cols = 1L,
 				fit_fun = function(X_fit){
 					tryCatch(
-						fast_stratified_coxph_regression_cpp(private$y, private$dead, X_fit, strata_int),
+						fast_stratified_coxph_regression_cpp(X_fit, private$y, private$dead, strata_int),
 						error = function(e) NULL
 					)
 				},
@@ -174,7 +174,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			)
 			res = attempt$fit
 			if (!is.null(res)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "w")
+				private$best_X_colnames = setdiff(colnames(attempt$X), "w")
 			}
 			if (is.null(res)){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_fit_failed")

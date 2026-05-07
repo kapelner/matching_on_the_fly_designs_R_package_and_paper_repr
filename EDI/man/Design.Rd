@@ -39,6 +39,7 @@ This class takes care of data storage and response handling.
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
 \item \href{#method-Design-get_y_original}{\code{Design$get_y_original()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
+\item \href{#method-Design-set_m}{\code{Design$set_m()}}
 \item \href{#method-Design-get_block_ids}{\code{Design$get_block_ids()}}
 \item \href{#method-Design-summarize_blocks}{\code{Design$summarize_blocks()}}
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
@@ -364,6 +365,32 @@ Get w
 
 \subsection{Returns}{
 A binary vector of subject assignments.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-set_m"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-set_m}{}}}
+\subsection{Method \code{set_m()}}{
+Set the strata (block identifiers) for this design.
+
+Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
+have been derived or assigned).  The design must support blocking; call
+\code{assert_blocking_design()} to verify this first.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$set_m(m)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{m}}{A non-negative-integer vector of block IDs, one entry per subject already
+recorded.  Values must be coercible to integer, finite, and \eqn{\ge 0}.
+Zero is reserved as a reservoir flag used by sequential KK designs.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Invisibly returns \code{self} for method chaining.
 }
 }
 \if{html}{\out{<hr>}}

@@ -99,7 +99,7 @@ double compute_single_ridit_estimate_cpp(const int* y_b,
 } // namespace
 
 // [[Rcpp::export]]
-NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y, 
+NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y,
                                              const IntegerMatrix& w_mat, 
                                              std::string reference, 
                                              int num_cores) {
@@ -164,8 +164,8 @@ NumericVector compute_ridit_distr_parallel_cpp(const IntegerVector& y,
 }
 
 // [[Rcpp::export]]
-NumericVector compute_ridit_bootstrap_parallel_cpp(const IntegerVector& y, 
-                                                 const IntegerVector& w, 
+NumericVector compute_ridit_bootstrap_parallel_cpp(const IntegerVector& w,
+                                                 const IntegerVector& y, 
                                                  const IntegerMatrix& indices_mat, 
                                                  std::string reference, 
                                                  int num_cores) {

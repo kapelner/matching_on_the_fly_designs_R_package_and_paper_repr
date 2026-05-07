@@ -55,7 +55,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
 		#' @param na.rm Description for na.rm
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE, min_number_usable_samples = 50L){
+		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE, min_number_usable_samples = 5L){
 			if (is.null(delta)){
 				delta = private$default_null_value()
 			}
@@ -65,33 +65,33 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			if (length(Xmm_cols) == 0L){
+			if (length(X_cols) == 0L){
 				# Univariate case
-				Xmm = cbind("(Intercept)" = 1, treatment = private$w)
+				X = cbind("(Intercept)" = 1, treatment = private$w)
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
 			}
 
 			fit = tryCatch(
-				fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y)),
+				fast_logistic_regression_cpp(X = X, y = as.numeric(private$y)),
 				error = function(e) NULL
 			)
 			if (is.null(fit) || !private$coefficients_are_usable(as.numeric(fit$b))){
@@ -100,8 +100,8 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 			# Standardized effect
 			coef_hat = as.numeric(fit$b)
-			X1 = Xmm
-			X0 = Xmm
+			X1 = X
+			X0 = X
 			X1[, 2L] = 1
 			X0[, 2L] = 0
 			risk1 = mean(stats::plogis(as.numeric(X1 %*% coef_hat)))
@@ -383,10 +383,10 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 					return(c(NA_real_, NA_real_))
 				}
 				ci_log = log_rr + c(-1, 1) * z * se_log_rr
-				if (!all(is.finite(ci_log))){
-					return(c(NA_real_, NA_real_))
+				if (!all(is.finite(exp(ci_log)))){
+					stop("KK g-computation RR: could not compute a finite delta-method confidence interval.")
 				}
-				ci = exp(pmin(ci_log, log(.Machine$double.xmax)))
+				ci = exp(ci_log)
 			}
 
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
@@ -427,7 +427,8 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 		},
 
 		shared = function(estimate_only = FALSE){
-			if (!is.null(private$cached_values$rd) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
+			if (estimate_only && (!is.null(private$cached_values$rd) || !is.null(private$cached_values$rr))) return(invisible(NULL))
+			if (!estimate_only && (!is.null(private$cached_values$se_rd) || !is.null(private$cached_values$se_log_rr))) return(invisible(NULL))
 
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
@@ -439,7 +440,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 			fit = private$fit_logistic_with_sandwich(X_full, estimate_only = estimate_only)
 			if (!is.null(fit)) {
-				private$best_Xmm_colnames = setdiff(colnames(fit$X), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(fit$X), c("(Intercept)", "treatment"))
 			}
 			effects = if (!is.null(fit)) private$compute_standardized_effects(fit) else NULL
 			if (private$harden && (is.null(fit) || is.null(effects) || !private$effects_are_usable(effects, estimate_only)) && ncol(X_full) > 2L){

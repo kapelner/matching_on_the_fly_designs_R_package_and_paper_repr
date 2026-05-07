@@ -49,7 +49,7 @@ test_that("Multivariate inference works", {
 	add_all_subject_responses_seq(des, rnorm(n))
 
 	# Continuous MultOLS
-	inf_cont <- InferenceContinMultOLS$new(des, verbose = FALSE)
+	inf_cont <- InferenceContinOLS$new(des, verbose = FALSE)
 	expect_true(is.numeric(inf_cont$compute_estimate()))
 
 	# Incidence MultiLogRegr
@@ -58,7 +58,7 @@ test_that("Multivariate inference works", {
 	des_inc$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 	}
 	add_all_subject_responses_seq(des_inc, rbinom(n, 1, 0.5))
-	inf_inc <- InferenceIncidMultiLogRegr$new(des_inc, verbose = FALSE)
+	inf_inc <- InferenceIncidLogRegr$new(des_inc, verbose = FALSE)
 	expect_true(is.numeric(inf_inc$compute_estimate()))
 
 	# Count MultiNegBinRegr
@@ -67,7 +67,7 @@ test_that("Multivariate inference works", {
 	des_count$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 	}
 	add_all_subject_responses_seq(des_count, rpois(n, 5))
-	inf_count <- InferenceCountMultiNegBinRegr$new(des_count, verbose = FALSE)
+	inf_count <- InferenceCountNegBin$new(des_count, verbose = FALSE)
 	expect_true(is.numeric(inf_count$compute_estimate()))
 })
 
@@ -176,7 +176,7 @@ test_that("Fast randomization worker does not mutate shared proportion design st
 	y <- pmin(0.98, pmax(0.02, plogis(0.5 * X$x1 - 0.3 * X$x2 + rnorm(n, sd = 0.2))))
 	add_all_subject_responses_seq(des, y)
 
-	inf <- InferencePropMultiBetaRegr$new(des, verbose = FALSE)
+	inf <- InferencePropBetaRegr$new(des, verbose = FALSE)
 	perms <- inf$.__enclos_env__$private$generate_permutations(19)
 	y_before <- des$.__enclos_env__$private$y
 

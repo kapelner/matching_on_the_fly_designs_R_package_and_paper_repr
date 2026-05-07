@@ -150,11 +150,16 @@ FixedDesign = R6::R6Class("FixedDesign",
 			n = private$t
 			if (n == 0) return(character(0))
 			strata_cols = if (is.null(private$strata_cols)) names(private$Xraw) else private$strata_cols
+			target = if (!is.null(private$B_target)) {
+				if (is.na(private$B_target)) floor(sqrt(n)) else as.integer(private$B_target)
+			} else {
+				NULL
+			}
 
-			col_to_str = function(col) {
+			col_to_str = function(col, num_bins = private$preferred_num_bins_for_continuous_covariate) {
 				vec = private$Xraw[[col]]
 				if (is.numeric(vec)) {
-					probs = seq(0, 1, length.out = private$preferred_num_bins_for_continuous_covariate + 1)
+					probs = seq(0, 1, length.out = num_bins + 1)
 					breaks = unique(stats::quantile(vec, probs = probs, na.rm = TRUE))
 					s = if (length(breaks) > 1) as.character(cut(vec, breaks = breaks, include.lowest = TRUE)) else as.character(vec)
 				} else {
@@ -168,12 +173,45 @@ FixedDesign = R6::R6Class("FixedDesign",
 				if (all(nchar(keys) == 0L)) col_str else paste(keys, col_str, sep = "|")
 			}
 
+			has_equal_block_sizes = function(keys) {
+				block_counts = as.integer(table(keys))
+				length(block_counts) <= 1L || all(block_counts == block_counts[1L])
+			}
+
+			choose_column_keys = function(keys, col) {
+				vec = private$Xraw[[col]]
+				if (!isTRUE(private$exact_num_blocks) || is.null(target) || !is.numeric(vec)) {
+					return(append_key(keys, col_to_str(col)))
+				}
+
+				max_bins = max(1L, min(n, target))
+				candidate_bins = unique(c(
+					as.integer(private$preferred_num_bins_for_continuous_covariate),
+					seq_len(max_bins)
+				))
+				best_keys = keys
+				best_num_blocks = length(unique(keys))
+
+				for (num_bins in candidate_bins) {
+					candidate_keys = append_key(keys, col_to_str(col, num_bins = num_bins))
+					num_blocks = length(unique(candidate_keys))
+					if (num_blocks > target) next
+					if (isTRUE(private$equal_block_sizes) && !has_equal_block_sizes(candidate_keys)) next
+					if (num_blocks > best_num_blocks) {
+						best_keys = candidate_keys
+						best_num_blocks = num_blocks
+					}
+					if (num_blocks == target) break
+				}
+
+				best_keys
+			}
+
 			keys = rep("", n)
 
-			if (!is.null(private$B_target)) {
-				target = if (is.na(private$B_target)) floor(sqrt(n)) else as.integer(private$B_target)
+			if (!is.null(target)) {
 				for (col in strata_cols) {
-					new_keys = append_key(keys, col_to_str(col))
+					new_keys = choose_column_keys(keys, col)
 					if (length(unique(new_keys)) <= target) {
 						keys = new_keys
 					}

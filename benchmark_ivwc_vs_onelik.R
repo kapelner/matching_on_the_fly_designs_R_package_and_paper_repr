@@ -2,17 +2,19 @@ suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
 args = commandArgs(trailingOnly = TRUE)
-N_REP = 20
+N_REP = 100
 if (length(args) > 0) {
   N_REP = as.integer(args[1])
   if (is.na(N_REP)) stop("Nrep must be an integer")
 }
 cat("Using N_REP =", N_REP, "\n")
 
-set_num_cores(2L)
+set_num_cores(1L)
 on.exit(unset_num_cores(), add = TRUE)
 
-inference_path_labels = c(
+inference_path_labels = c(  
+  InferenceContinKKOLSIVWC = "OLS",
+  InferenceContinKKOLSOneLik = "OLS",
   InferenceContinKKQuantileRegrIVWC = "Quantile (Contin)",
   InferenceContinKKQuantileRegrOneLik = "Quantile (Contin)",
   InferenceContinKKRobustRegrIVWC = "Robust Regr",
@@ -41,6 +43,8 @@ sim = SimulationFramework$new(
     DesignSeqOneByOneKK21
   ),
   inference_classes_and_params = list(
+    InferenceContinKKOLSIVWC,
+    InferenceContinKKOLSOneLik,
     InferenceContinKKQuantileRegrIVWC,
     InferenceContinKKQuantileRegrOneLik,
     InferenceContinKKRobustRegrIVWC,
@@ -55,8 +59,8 @@ sim = SimulationFramework$new(
     InferenceIncidKKClogitPlusGLMMOneLik,
     InferencePropKKQuantileRegrIVWC,
     InferencePropKKQuantileRegrOneLik,
-    InferenceSurvivalKKClaytonCopulaIVWC,
-    InferenceSurvivalKKClaytonCopulaOneLik,
+    # InferenceSurvivalKKClaytonCopulaIVWC,
+    # InferenceSurvivalKKClaytonCopulaOneLik,
     InferenceSurvivalKKLWACoxIVWC,
     InferenceSurvivalKKLWACoxOneLik,
     InferenceSurvivalKKStratCoxIVWC,
@@ -66,7 +70,7 @@ sim = SimulationFramework$new(
   p = 5,
   cond_exp_func_model = "linear",
   Nrep = N_REP,
-  betaT = 0.5,
+  betaT = c(0, 0.25),
   num_cores = 1L,
   inference_types_and_params = list(
     asymp_pval = list()
@@ -88,7 +92,7 @@ benchmark_table = as.data.table(summary_res)[
   )
 ][
   order(response_type, Path, type),
-  .(Path, response_type, inference, type, power, MSE, n_est, n_pow)
+  .(Path, response_type, inference, type, power, size, MSE, n_est, n_pow, n_size)
 ]
 
 cat("\n\nFINAL BENCHMARK RESULTS (Power and MSE):\n")

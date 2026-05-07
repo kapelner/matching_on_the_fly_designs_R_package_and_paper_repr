@@ -5,7 +5,7 @@ Nrep = 3000L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
-        num_cores                     = 10,
+        num_cores                     = 20,
         results_filename              = sprintf("simulations/cmh_exact_sims_results_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",

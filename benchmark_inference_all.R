@@ -297,7 +297,7 @@ for (response_type in names(categorized_classes)) {
     des_obj_kk21 = prepare_des_obj(response_type, design_class = DesignSeqOneByOneKK21)
     
     for (inf_class_name in unique(categorized_classes[[response_type]])) {
-        if (inf_class_name == "InferenceAllKKCompoundMeanDiff") next
+        if (inf_class_name == "InferenceAllKKMeanDiffIVWC") next
         
         cat(sprintf("  %s:\n", inf_class_name))
         flush.console()

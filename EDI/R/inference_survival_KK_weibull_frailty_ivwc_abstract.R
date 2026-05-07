@@ -95,12 +95,12 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
-			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				private$shared()
 			}
 
 			# If we still don't have enough (e.g., initial fit failed), fall back to standard
-			if (is.null(private$best_Xmm_colnames_matched) && is.null(private$best_Xmm_colnames_reservoir)){
+			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
@@ -117,19 +117,19 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			# Matched pairs component
 			beta_m = NA_real_
 			ssq_m = NA_real_
-			if (m > 0 && !is.null(private$best_Xmm_colnames_matched)){
+			if (m > 0 && !is.null(private$best_X_colnames_matched)){
 				m_vec = private$m
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_matched = which(m_vec > 0L)
 
-				X_cov = X_data[i_matched, intersect(private$best_Xmm_colnames_matched, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(w = private$w[i_matched], X_cov)
+				X_cov = X_data[i_matched, intersect(private$best_X_colnames_matched, colnames(X_data)), drop = FALSE]
+				X = cbind(w = private$w[i_matched], X_cov)
 
 				fit_m = .fit_weibull_frailty(
 					y = private$y[i_matched],
 					dead = private$dead[i_matched],
-					Xmm = Xmm,
+					X = X,
 					pair_id = m_vec[i_matched],
 					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
@@ -145,19 +145,19 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			# Reservoir component
 			beta_r = NA_real_
 			ssq_r = NA_real_
-			if (nRT > 0 && nRC > 0 && !is.null(private$best_Xmm_colnames_reservoir)){
+			if (nRT > 0 && nRC > 0 && !is.null(private$best_X_colnames_reservoir)){
 				m_vec = private$m
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_reservoir = which(m_vec == 0L)
 
-				X_cov = X_data[i_reservoir, intersect(private$best_Xmm_colnames_reservoir, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(w = private$w[i_reservoir], X_cov)
+				X_cov = X_data[i_reservoir, intersect(private$best_X_colnames_reservoir, colnames(X_data)), drop = FALSE]
+				X = cbind(w = private$w[i_reservoir], X_cov)
 
 				fit_r = .fit_standard_weibull_aft_from_matrix(
 					y = private$y[i_reservoir],
 					dead = private$dead[i_reservoir],
-					Xmm = Xmm,
+					X = X,
 					estimate_only = estimate_only
 				)
 				if (!is.null(fit_r) && is.finite(fit_r$beta)){
@@ -192,8 +192,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			NA_real_
 		},
 
-		best_Xmm_colnames_matched = NULL,
-		best_Xmm_colnames_reservoir = NULL,
+		best_X_colnames_matched = NULL,
+		best_X_colnames_reservoir = NULL,
 
 		frailty_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
@@ -215,7 +215,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 					res = .fit_weibull_frailty(
 						y = private$y[i_matched],
 						dead = private$dead[i_matched],
-						Xmm = X_fit,
+						X = X_fit,
 						pair_id = m_vec[i_matched],
 						estimate_only = estimate_only,
 						optimization_alg = private$optimization_alg
@@ -232,7 +232,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (!is.null(attempt$fit)){
 				private$cached_values$beta_T_matched = attempt$fit$beta
 				private$cached_values$ssq_beta_T_matched = attempt$fit$ssq
-				private$best_Xmm_colnames_matched = setdiff(colnames(attempt$X_fit), "w")
+				private$best_X_colnames_matched = setdiff(colnames(attempt$X_fit), "w")
 			}
 		},
 
@@ -256,7 +256,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 					res = .fit_standard_weibull_aft_from_matrix(
 						y = private$y[i_reservoir],
 						dead = private$dead[i_reservoir],
-						Xmm = X_fit,
+						X = X_fit,
 						estimate_only = estimate_only
 					)
 					res
@@ -271,7 +271,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (!is.null(attempt$fit)){
 				private$cached_values$beta_T_reservoir = attempt$fit$beta
 				private$cached_values$ssq_beta_T_reservoir = attempt$fit$ssq
-				private$best_Xmm_colnames_reservoir = setdiff(colnames(attempt$X_fit), "w")
+				private$best_X_colnames_reservoir = setdiff(colnames(attempt$X_fit), "w")
 			}
 		},
 

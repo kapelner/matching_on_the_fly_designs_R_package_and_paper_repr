@@ -126,7 +126,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					full_fit = private$cached_mod,
 					fit_null = function(delta){
 						fast_logistic_regression_with_var_cpp(
-							Xmm = X_fit,
+							X = X_fit,
 							y = y,
 							j = j_treat,
 							fixed_idx = j_treat,

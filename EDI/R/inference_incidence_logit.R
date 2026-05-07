@@ -17,14 +17,15 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param smart_default Whether to use smart optimizer start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -32,35 +33,41 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 	),
 
 	private = list(
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			if (length(Xmm_cols) == 0L){
+			if (length(X_cols) == 0L){
 				# Univariate case
-				Xmm = cbind(1, private$w)
+				X = cbind(1, private$w)
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind(1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(1, treatment = private$w, X_cov)
 			}
 
-			res = fast_logistic_regression_cpp(X = Xmm, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
+			res = fast_logistic_regression_cpp(
+				X = X, y = as.numeric(private$y),
+				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+				smart_start = private$smart_default,
+				optimization_alg = private$optimization_alg
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$b, "beta")
 			as.numeric(res$b[2])
 		},
 
@@ -88,15 +95,20 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				y = y,
 				j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
+				fit_null = function(delta, start = NULL){
 					fast_logistic_regression_with_var_cpp(
-						Xmm = X_fit,
+						X = X_fit,
 						y = y,
 						j = j_treat,
+						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
+						smart_start = private$smart_default,
 						optimization_alg = private$optimization_alg
 					)
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
 				},
 				score = function(fit){
 					get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
@@ -125,11 +137,22 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				X_full = X_full,
 				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit){
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
 					if (estimate_only) {
-						res = fast_logistic_regression_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						res = fast_logistic_regression_cpp(
+							X_fit, private$y,
+							start_beta = start_beta,
+							smart_start = private$smart_default,
+							optimization_alg = private$optimization_alg
+						)
 						list(b = res$b, ssq_b_2 = NA_real_)
 					} else {
-						fast_logistic_regression_with_var_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						fast_logistic_regression_with_var_cpp(
+							X_fit, private$y,
+							start_beta = start_beta,
+							smart_start = private$smart_default,
+							optimization_alg = private$optimization_alg
+						)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -140,7 +163,8 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			)
 
 			if (!is.null(attempt$fit)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$set_fit_warm_start(attempt$fit$b, "beta")
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
 					j_treat = match(2L, attempt$keep)

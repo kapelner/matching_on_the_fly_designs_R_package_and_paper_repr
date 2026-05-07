@@ -68,16 +68,16 @@ public:
 
 //' @title Compute Weibull Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param X A numeric matrix of predictors.
 //' @param params A numeric vector of parameters [beta, log_sigma].
 //' @return A numeric vector representing the score.
 //' @export
 // [[Rcpp::export]]
-Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::VectorXd& y,
+Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::MatrixXd& X,
+                                                 const Eigen::VectorXd& y,
                                                  const Eigen::VectorXd& dead,
-                                                 const Eigen::MatrixXd& X,
                                                  const Eigen::VectorXd& params) {
     WeibullAFTLikelihood fun(y, dead, X);
     Eigen::VectorXd grad(params.size());
@@ -87,16 +87,16 @@ Eigen::VectorXd get_weibull_regression_score_cpp(const Eigen::VectorXd& y,
 
 //' @title Compute Weibull Regression Hessian
 //' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Weibull AFT regression model.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param X A numeric matrix of predictors.
 //' @param params A numeric vector of parameters [beta, log_sigma].
 //' @return A numeric matrix representing the Hessian.
 //' @export
 // [[Rcpp::export]]
-Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
+Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::MatrixXd& X,
+                                                   const Eigen::VectorXd& y,
                                                    const Eigen::VectorXd& dead,
-                                                   const Eigen::MatrixXd& X,
                                                    const Eigen::VectorXd& params) {
     WeibullAFTLikelihood fun(y, dead, X);
     return -fun.hessian(params);
@@ -104,9 +104,9 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
 
 //' @title Fast Weibull Regression (C++)
 //' @description High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
+//' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param X A numeric matrix of predictors.
 //' @param start_params Optional starting values for [beta, log_sigma].
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
@@ -117,10 +117,11 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::VectorXd& y,
 //' @return A list containing coefficients, log_sigma, vcov, and convergence status.
 //' @export
 // [[Rcpp::export]]
-List fast_weibull_regression_cpp(const Eigen::VectorXd& y, 
+List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, 
+                                 const Eigen::VectorXd& y, 
                                  const Eigen::VectorXd& dead, 
-                                 const Eigen::MatrixXd& X, 
                                  Nullable<NumericVector> start_params = R_NilValue,
+                                 bool smart_start = false,
                                  bool estimate_only = false,
                                  int maxit = 1000, 
                                  double tol = 1e-6,
@@ -129,19 +130,54 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
                                  std::string optimization_alg = "newton_raphson") {
     int p = X.cols();
     Eigen::VectorXd params(p + 1);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
     
     if (start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(start_params));
+        if (params.size() != p + 1) stop("start_params must have length equal to the number of model parameters");
     } else {
-        // Initial OLS on log(y) for beta, and rough estimate for log_sigma
         Eigen::VectorXd log_y = y.array().log().matrix();
-        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-        params.head(p) = cod.solve(log_y);
-        Eigen::VectorXd resid = log_y - X * params.head(p);
-        double std_resid = std::sqrt(resid.squaredNorm() / (y.size() - p));
-        params[p] = std::log(std_resid * 0.7797); // 0.7797 is ~sqrt(6)/pi
+        WeibullStart legacy_start;
+        legacy_start.beta = safe_ols_solve(X, log_y);
+        if (!legacy_start.beta.allFinite()) legacy_start.beta = Eigen::VectorXd::Zero(p);
+        Eigen::VectorXd resid = log_y - X * legacy_start.beta;
+        double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, static_cast<int>(y.size()) - p));
+        if (!std::isfinite(std_resid) || std_resid <= 0.0) std_resid = 1.0;
+        legacy_start.log_sigma = std::log(std_resid * 0.7797);
+        if (smart_start) {
+            Eigen::MatrixXd X_intercept = Eigen::MatrixXd::Ones(y.size(), 1);
+            List intercept_fit = fast_weibull_regression_cpp(
+                X_intercept,
+                y,
+                dead,
+                R_NilValue,
+                false,
+                true,
+                maxit,
+                tol,
+                R_NilValue,
+                R_NilValue,
+                optimization_alg
+            );
+            bool use_intercept_fit =
+                intercept_fit.containsElementNamed("converged") &&
+                as<bool>(intercept_fit["converged"]) &&
+                intercept_fit.containsElementNamed("coefficients") &&
+                intercept_fit.containsElementNamed("log_sigma");
+            if (use_intercept_fit) {
+                NumericVector intercept_coef = intercept_fit["coefficients"];
+                double log_sigma = as<double>(intercept_fit["log_sigma"]);
+                params = Eigen::VectorXd::Zero(p + 1);
+                if (intercept_coef.size() >= 1L) params[0] = intercept_coef[0];
+                params[p] = log_sigma;
+            } else {
+                params = weibull_start_to_params(legacy_start);
+            }
+        } else {
+            params = weibull_start_to_params(legacy_start);
+        }
     }
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    params = apply_fixed_values(params, fixed_spec);
 
     WeibullAFTLikelihood fun(y, dead, X);
     LikelihoodFitResult fit;
@@ -157,6 +193,7 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
             Named("coefficients") = params.head(p),
             Named("log_sigma") = params[p],
             Named("converged") = fit.converged,
+            Named("iterations") = fit.niter,
             Named("neg_ll") = fit.value
         );
     }
@@ -171,6 +208,7 @@ List fast_weibull_regression_cpp(const Eigen::VectorXd& y,
         Named("log_sigma") = params[p],
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
+        Named("iterations") = fit.niter,
         Named("neg_ll") = fit.value
     );
 }

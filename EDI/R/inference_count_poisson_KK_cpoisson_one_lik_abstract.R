@@ -187,7 +187,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			# with treatment and reservoir intercept.
 			n_p = nrow(as.matrix(X_diff))
 			n_r = length(w_r)
-			p   = ncol(as.matrix(private$X))
+			p   = if (is.null(private$X)) 0L else ncol(as.matrix(private$X))
 			
 			# Layout: [beta_0, beta_T, beta_xs]
 			# Pairs:     [0, 1, X_diff]
@@ -206,15 +206,12 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				matrix(0, nrow = 0, ncol = p + 2)
 			}
 			
-			# if (ncol(pairs_part) != ncol(reservoir_part)) {
-			# 	print(paste("DEBUG: ncol(pairs_part) =", ncol(pairs_part), "ncol(reservoir_part) =", ncol(reservoir_part), "p =", p, "n_p =", n_p, "n_r =", n_r))
-			# }
 			X_stack = rbind(pairs_part, reservoir_part)
 			
 			if (nrow(X_stack) == 0) return(integer(0))
 			
 			qr_res = qr(X_stack)
-			if (qr_res$rank < ncol(X_stack)){
+			if (is.finite(qr_res$rank) && qr_res$rank < ncol(X_stack)){
 				keep = qr_res$pivot[seq_len(qr_res$rank)]
 				# Always keep intercept(1) and treatment(2)
 				if (!(1L %in% keep)) keep = c(1L, keep)
@@ -240,7 +237,10 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				error = function(e) NULL
 			)
 				if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
-				if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
+				if (!estimate_only){
+				ssq = mod$ssq_b_j
+				if (is.null(ssq) || !is.finite(ssq) || ssq < 0) return(FALSE)
+			}
 
 				private$cached_mod = mod
 				private$cached_values$likelihood_test_context = list(
@@ -260,10 +260,10 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		try_pairs_only = function(estimate_only, yT_v, n_k_v, X_diff_v){
 			if (length(yT_v) == 0L) return(FALSE)
 			y_prop = yT_v / n_k_v
-			Xmm = if (ncol(X_diff_v) > 0L) cbind(1, X_diff_v) else matrix(1, nrow = length(yT_v), ncol = 1L)
+			X = if (ncol(X_diff_v) > 0L) cbind(1, X_diff_v) else matrix(1, nrow = length(yT_v), ncol = 1L)
 			mod = tryCatch({
-				res = fast_logistic_regression_weighted_cpp(X = Xmm, y = y_prop, weights = n_k_v)
-				list(b = res$b, ssq_b_1 = NA_real_, X_fit = Xmm) # weights version doesn't return var yet
+				res = fast_logistic_regression_weighted_cpp(X = X, y = y_prop, weights = n_k_v)
+				list(b = res$b, ssq_b_1 = NA_real_, X_fit = X) # weights version doesn't return var yet
 			}, error = function(e) NULL)
 			if (is.null(mod) || length(mod$b) < 1L || !is.finite(mod$b[1])) return(FALSE)
 			private$cached_values$beta_hat_T = as.numeric(mod$b[1])
@@ -273,26 +273,33 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		try_reservoir_only = function(estimate_only, y_r_v, w_r_v, X_r_v){
 			if (length(y_r_v) == 0L) return(FALSE)
 			X_full = if (ncol(X_r_v) > 0L) cbind(1, w_r_v, X_r_v) else cbind(1, w_r_v)
+			X_fit = X_full
 			j_treat = 2L
 			if (ncol(X_full) > 2L){
 				qr_full = qr(X_full)
 				r_full = qr_full$rank
-				if (r_full < ncol(X_full)){
+				if (is.finite(r_full) && r_full < ncol(X_full)){
 					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(2L %in% keep)) keep[r_full] = 2L
+					if (!(2L %in% keep)) {
+						# Try to force treatment column in
+						keep = c(2L, keep)
+					}
 					keep = sort(unique(keep))
-					X_full = X_full[, keep, drop = FALSE]
-					j_treat = which(colnames(X_full) == "w_r_v")
+					X_fit = X_full[, keep, drop = FALSE]
+					j_treat = which(colnames(X_fit) == "w_r_v")
 					if (length(j_treat) == 0) j_treat = 2L
 				}
 			}
 			mod = tryCatch(
-				fast_neg_bin_with_var_cpp(X = X_full, y = as.integer(y_r_v)),
+				fast_poisson_regression_with_var_cpp(X = X_fit, y = as.numeric(y_r_v), j = as.integer(j_treat[1])),
 				error = function(e) NULL
 			)
-			if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
-			if (!estimate_only && (!is.finite(mod$ssq_b_j) || mod$ssq_b_j < 0)) return(FALSE)
-			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat])
+			if (is.null(mod) || length(j_treat) == 0 || length(mod$b) < j_treat[1] || !is.finite(mod$b[j_treat[1]])) return(FALSE)
+			if (!estimate_only){
+				ssq = mod$ssq_b_j
+				if (is.null(ssq) || !is.finite(ssq) || ssq < 0) return(FALSE)
+			}
+			private$cached_values$beta_hat_T = as.numeric(mod$b[j_treat[1]])
 			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))
 			TRUE
 		},
@@ -314,7 +321,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 
-			p             = ncol(as.matrix(private$X))
+			p             = if (is.null(private$X)) 0L else ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
 
 			# ---- Pair data (conditional Poisson, zero-total pairs discarded) ----
@@ -333,7 +340,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					if (p > 0L) {
 						# Use the full-width pair-difference matrix here so any later
 						# covariate reduction stays aligned with the reservoir matrix.
-						X_diff_v = as.matrix(KKstats$X_matched_diffs_full[valid, drop = FALSE])
+						X_diff_v = as.matrix(KKstats$X_matched_diffs_full[valid, , drop = FALSE])
 					}
 				}
 			}

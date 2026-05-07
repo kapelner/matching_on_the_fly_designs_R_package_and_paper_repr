@@ -57,8 +57,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 
 			if (!isTRUE(debug) && !is.null(permutations) &&
-				private$has_private_method("supports_reusable_bootstrap_worker") &&
-				isTRUE(tryCatch(private$supports_reusable_bootstrap_worker(), error = function(e) FALSE)) &&
+				isTRUE(private$use_reusable_bootstrap_worker()) &&
 				is.null(private[["custom_randomization_statistic_function"]])) {
 				actual_rand_cores = private$effective_parallel_cores("rand_pval", self$num_cores)
 				return(private$compute_randomization_distr_via_reused_worker_states(
@@ -104,7 +103,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
 
 			if (isTRUE(debug)) {
-				debug_results = if (isTRUE(private$supports_reusable_bootstrap_worker()) && is.null(private$custom_randomization_statistic_function)){
+				debug_results = if (isTRUE(private$use_reusable_bootstrap_worker()) && is.null(private$custom_randomization_statistic_function)){
 					# Fast path: use reused workers
 					worker_state = private$create_bootstrap_worker_state()
 					cleanup_worker = private$cleanup_bootstrap_worker_state
@@ -732,6 +731,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			inf_priv$cached_values$KKstats = NULL # reset
 			inf_priv$cached_values$beta_hat_T = NULL
 			inf_priv$cached_values$s_beta_hat_T = NULL
+			inf_priv$likelihood_null_warm_cache = list()
 			
 			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
 			invisible(NULL)

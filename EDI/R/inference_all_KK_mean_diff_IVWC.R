@@ -1,6 +1,9 @@
-#' Inference based on Maximum Likelihood for KK designs
+#' Mean-Difference IVWC Inference for KK Designs
 #'
-#' Inference for mean difference
+#' Fits a compound mean-difference estimator for KK matching-on-the-fly designs.
+#' For matched pairs, it uses the average within-pair difference. For reservoir
+#' subjects, it uses the treated-minus-control difference in means. The two
+#' estimates are combined via inverse-variance weighting.
 #'
 #'
 #' @export
@@ -15,13 +18,13 @@
 #' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 #' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 #'
-#' seq_des_inf = InferenceAllKKCompoundMeanDiff$
+#' seq_des_inf = InferenceAllKKMeanDiffIVWC$
 #'   new(seq_des)
 #' seq_des_inf$compute_estimate()
 #' seq_des_inf$compute_asymp_confidence_interval()
 #' seq_des_inf$compute_asymp_two_sided_pval()
 #' }
-InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
+InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
@@ -29,7 +32,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 
 		#'
 		#' @description
-		#' Computes the appropriate estimate for compound mean difference across pairs and reservoir
+		#' Computes the IVWC mean-difference estimate across pairs and reservoir
 		#'
 		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -73,12 +76,9 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		#' @description
 		#' Computes a 1-alpha level frequentist confidence interval
 		#'
-		#' Here we use the theory that MLE's computed for GLM's are asymptotically normal (except in
-		#' the case
-		#' of estimat_type "median difference" where a nonparametric bootstrap confidence interval
-		#' (see the \code{controlTest::quantileControlTest} method)
-		#' is employed. Hence these confidence intervals are asymptotically valid and thus approximate
-		#' for any sample size.
+		#' The compound estimator is treated as asymptotically normal, so this
+		#' interval is based on the estimated standard error of the inverse-variance
+		#' weighted combination.
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -128,7 +128,7 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
-					stop("Randomization confidence intervals are not supported for InferenceAllKKCompoundMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
+					stop("Randomization confidence intervals are not supported for InferenceAllKKMeanDiffIVWC with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
 				}
 			}
 			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
@@ -174,9 +174,9 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			}
 
 			res = compute_kk_compound_bootstrap_parallel_cpp(
-				y_mat,
 				w_mat,
 				m_mat,
+				y_mat,
 				private$n_cpp_threads(ncol(y_mat))
 			)
 
@@ -196,9 +196,9 @@ InferenceAllKKCompoundMeanDiff = R6::R6Class("InferenceAllKKCompoundMeanDiff",
 			}
 
 			res = compute_kk_compound_distr_parallel_cpp(
-				as.numeric(y),
 				w_mat,
 				m_mat,
+				as.numeric(y),
 				private$n_cpp_threads(ncol(w_mat))
 			)
 			return(res)

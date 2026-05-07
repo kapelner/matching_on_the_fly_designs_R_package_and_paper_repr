@@ -10,6 +10,8 @@ ModelResult fast_logistic_regression_internal(
 	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& weights = Eigen::VectorXd(),
+	Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+	bool smart_start = true,
 	int maxit = 100,
 	double tol = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -143,29 +145,29 @@ public:
 
 }
 
-static List build_positive_hurdle_negbin_data(const Eigen::MatrixXd& Xmm,
+static List build_positive_hurdle_negbin_data(const Eigen::MatrixXd& X,
 											  const Eigen::VectorXd& y) {
 	std::vector<int> pos_rows;
-	for (int i = 0; i < Xmm.rows(); ++i) {
+	for (int i = 0; i < X.rows(); ++i) {
 		if (y[i] > 0.0) pos_rows.push_back(i);
 	}
 
-	const int p = Xmm.cols();
+	const int p = X.cols();
 	MatrixXd X_pos(pos_rows.size(), p);
 	VectorXi y_pos(pos_rows.size());
 	for (size_t k = 0; k < pos_rows.size(); ++k) {
 		const int i = pos_rows[k];
-		X_pos.row(k) = Xmm.row(i);
+		X_pos.row(k) = X.row(i);
 		y_pos[k] = static_cast<int>(y[i]);
 	}
 	return List::create(Named("X_pos") = X_pos, Named("y_pos") = y_pos);
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& Xmm,
+Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& X,
 												  const Eigen::VectorXd& y,
 												  const Eigen::VectorXd& params) {
-	List pos = build_positive_hurdle_negbin_data(Xmm, y);
+	List pos = build_positive_hurdle_negbin_data(X, y);
 	MatrixXd X_pos = pos["X_pos"];
 	VectorXi y_pos = pos["y_pos"];
 	TruncatedNegBinCount fun(X_pos, y_pos);
@@ -175,10 +177,10 @@ Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& Xmm,
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& Xmm,
+Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& X,
 													const Eigen::VectorXd& y,
 													const Eigen::VectorXd& params) {
-	List pos = build_positive_hurdle_negbin_data(Xmm, y);
+	List pos = build_positive_hurdle_negbin_data(X, y);
 	MatrixXd X_pos = pos["X_pos"];
 	VectorXi y_pos = pos["y_pos"];
 	TruncatedNegBinCount fun(X_pos, y_pos);
@@ -186,15 +188,15 @@ Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& Xmm,
 }
 
 // [[Rcpp::export]]
-List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
+List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   const Eigen::VectorXd& y,
 						   int maxit = 1000,
 						   double tol = 1e-8,
 						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 						   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 						   std::string optimization_alg = "lbfgs") {
-	const int n = Xmm.rows();
-	const int p = Xmm.cols();
+	const int n = X.rows();
+	const int p = X.cols();
 	std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
 	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 	IntegerVector hurdle_fixed_idx;
@@ -215,7 +217,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind, Eigen::VectorXd(), 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, alg);
+        ModelResult hurdle_res = fast_logistic_regression_internal(X, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, alg);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -239,7 +241,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 	VectorXi y_pos(pos_rows.size());
 	for (size_t k = 0; k < pos_rows.size(); ++k) {
 		const int i = pos_rows[k];
-		X_pos.row(k) = Xmm.row(i);
+		X_pos.row(k) = X.row(i);
 		y_pos[k] = static_cast<int>(y[i]);
 	}
 
@@ -271,7 +273,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& Xmm,
 }
 
 // [[Rcpp::export]]
-List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
+List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
 									 int j = 2,
 									 int maxit = 1000,
@@ -279,7 +281,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 									 std::string optimization_alg = "lbfgs") {
-	List fit = fast_hurdle_negbin_cpp(Xmm, y, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+	List fit = fast_hurdle_negbin_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);
 	const int p = b_nv.size();
@@ -301,7 +303,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 					}
 				}
 			}
-			ModelResult hurdle_res = fast_logistic_regression_internal(Xmm, y_pos_ind, Eigen::VectorXd(), 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, optimization_alg);
+			ModelResult hurdle_res = fast_logistic_regression_internal(X, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, optimization_alg);
 			FixedParamSpec hurdle_spec = make_fixed_param_spec(p, hurdle_fixed_idx, hurdle_fixed_values);
 			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
 			MatrixXd vcov = expand_free_covariance(p, hurdle_spec, info_free.inverse(), true);
@@ -317,7 +319,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 		double theta_hat = as<double>(theta_sexp);
 		if (R_finite(theta_hat) && p >= j) {
 			std::vector<int> pos_rows;
-			for (int i = 0; i < Xmm.rows(); ++i) {
+			for (int i = 0; i < X.rows(); ++i) {
 				if (y[i] > 0.0) pos_rows.push_back(i);
 			}
 			if (static_cast<int>(pos_rows.size()) > p) {
@@ -325,7 +327,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& Xmm,
 				VectorXi y_pos(pos_rows.size());
 				for (size_t k = 0; k < pos_rows.size(); ++k) {
 					const int i = pos_rows[k];
-					X_pos.row(k) = Xmm.row(i);
+					X_pos.row(k) = X.row(i);
 					y_pos[k] = static_cast<int>(y[i]);
 				}
 

@@ -87,19 +87,19 @@ test_that("KK g-computation reusable bootstrap worker matches a direct manual re
 	des$add_all_subject_responses(y)
 
 	compare_kk_bootstrap_fast_reference(
-		InferenceIncidUnivKKGCompRiskDiff$new(des, verbose = FALSE),
+		InferenceIncidKKGCompRiskDiff$new(des, verbose = FALSE),
 		seed = 301
 	)
 	compare_kk_bootstrap_fast_reference(
-		InferenceIncidMultiKKGCompRiskDiff$new(des, verbose = FALSE),
+		InferenceIncidKKGCompRiskDiff$new(des, verbose = FALSE),
 		seed = 302
 	)
 	compare_kk_bootstrap_fast_reference(
-		InferenceIncidUnivKKGCompRiskRatio$new(des, verbose = FALSE),
+		InferenceIncidKKGCompRiskRatio$new(des, verbose = FALSE),
 		seed = 303
 	)
 	compare_kk_bootstrap_fast_reference(
-		InferenceIncidMultiKKGCompRiskRatio$new(des, verbose = FALSE),
+		InferenceIncidKKGCompRiskRatio$new(des, verbose = FALSE),
 		seed = 304
 	)
 })

@@ -7,16 +7,14 @@
 fast_ols_cpp(X, y, fixed_idx = NULL, fixed_values = NULL)
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
+(e.g., a column of ones) is already included in \code{X} if desired.}
 
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
 
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
-
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept column
-(e.g., a column of ones) is already included in \code{Xmm} if desired.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"} or \code{"irls"}.}
 }

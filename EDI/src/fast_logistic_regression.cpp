@@ -56,6 +56,8 @@ bool solve_llt_raw(double* x, const double* A, const double* b, int p) {
 ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen, 
                                               const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
+                                              Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                              bool smart_start = true,
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -67,8 +69,14 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     int p_free = fixed_spec.free_idx.size();
+    Eigen::VectorXd beta_start = Eigen::VectorXd::Zero(p);
+    if (start_beta.isNotNull()) {
+        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(start_beta));
+        if (beta_start.size() != p) Rcpp::stop("start_beta must have length equal to ncol(X)");
+    }
+    beta_start = apply_fixed_values(beta_start, fixed_spec);
     std::vector<double> beta_full(p, 0.0);
-    for(size_t j=0; j<fixed_spec.fixed_idx.size(); j++) beta_full[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
+    for(int j = 0; j < p; ++j) beta_full[j] = beta_start[j];
     
     std::vector<double> beta_free(p_free, 0.0);
     for(int j=0; j<p_free; j++) beta_free[j] = beta_full[fixed_spec.free_idx[j]];
@@ -102,7 +110,9 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
     std::vector<double> XtWX_threads(n_threads * p_free * p_free, 0.0);
     std::vector<double> score_threads(n_threads * p_free, 0.0);
 
+    int iterations = 0;
     for (int iter = 0; iter < maxit; iter++) {
+        iterations = iter + 1;
         #pragma omp parallel for
         for(int i=0; i<n; i++) {
             double eta_i = eta_fixed[i];
@@ -177,6 +187,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         for(int c=0; c<p_free; c++) info_free_eigen(r, c) = final_XtWX[r * p_free + c];
     }
     res.XtWX = expand_free_covariance(p, fixed_spec, info_free_eigen, false);
+    res.iterations = iterations;
     res.converged = converged;
     return res;
 }
@@ -247,16 +258,20 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' @return A list containing coefficients and weights.
 //' @export
 // [[Rcpp::export]]
-List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
+                                  Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                  bool smart_start = true,
+                                  int maxit = 100, double tol = 1e-8,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
     Eigen::VectorXd weights_vec(X.rows());
     for(int i=0; i<X.rows(); i++) weights_vec[i] = res.mu[i] * (1.0 - res.mu[i]);
     return List::create(
         Named("b") = res.b,
-        Named("w") = weights_vec
+        Named("w") = weights_vec,
+        Named("iterations") = res.iterations
     );
 }
 
@@ -273,22 +288,26 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
 // [[Rcpp::export]]
-List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit = 100, double tol = 1e-8,
+List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
+                                           Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                           bool smart_start = true,
+                                           int maxit = 100, double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(X, y, weights, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+    ModelResult res = fast_logistic_regression_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
     return List::create(
         Named("b") = res.b,
         Named("mu") = res.mu,
         Named("XtWX") = res.XtWX,
-        Named("converged") = res.converged
+        Named("converged") = res.converged,
+        Named("iterations") = res.iterations
     );
 }
 
 //' @title Fast Logistic Regression with Variance (C++)
 //' @description Logistic regression with full variance-covariance matrix and score calculation.
-//' @param Xmm A numeric matrix of predictors.
+//' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param j The 1-based index of the parameter for which to return specific variance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -297,12 +316,14 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
 // [[Rcpp::export]]
-List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eigen::VectorXd& y, int j = 2,
+List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
+                                           Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                           bool smart_start = true,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(Xmm, y, Eigen::VectorXd(), 100, 1e-8, fixed_idx, fixed_values, optimization_alg);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(Xmm.cols(), fixed_idx, fixed_values);
+    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, 100, 1e-8, fixed_idx, fixed_values, optimization_alg);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     int p_free = fixed_spec.free_idx.size();
     Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -318,12 +339,12 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eig
         for(int r=0; r<p_free; r++) cov_free(r, col) = x_sol[r];
     }
     
-    Eigen::MatrixXd vcov = expand_free_covariance(Xmm.cols(), fixed_spec, cov_free, true);
-    res.ssq_b_j = (j > 0 && j <= Xmm.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-    res.ssq_b_2 = (Xmm.cols() >= 2) ? vcov(1, 1) : NA_REAL;
-    Eigen::VectorXd score = get_logistic_regression_score_cpp(Xmm, y, res.b);
+    Eigen::MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
+    res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
+    res.ssq_b_2 = (X.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+    Eigen::VectorXd score = get_logistic_regression_score_cpp(X, y, res.b);
     Eigen::MatrixXd information = res.XtWX;
-    Eigen::VectorXd eta = Xmm * res.b;
+    Eigen::VectorXd eta = X * res.b;
     double neg_loglik = 0.0;
     for (int i = 0; i < eta.size(); ++i) {
         double log_one_plus_exp_eta = (eta[i] > 0.0) ?
@@ -347,6 +368,7 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& Xmm, const Eig
         Named("neg_loglik") = neg_loglik,
         Named("neg_ll") = neg_loglik,
         Named("loglik") = R_finite(neg_loglik) ? -neg_loglik : NA_REAL,
-        Named("converged") = res.converged
+        Named("converged") = res.converged,
+        Named("iterations") = res.iterations
     );
 }

@@ -11,9 +11,39 @@ check_package_installed = function(package_name) {
 	if (!exists(package_name, envir = package_cache, inherits = FALSE)) {
 		# We use the real requireNamespace here once
 		res = requireNamespace(package_name, quietly = TRUE)
+		
+		# If it is GreedyExperimentalDesign, also check Java compatibility
+		if (res && package_name == "GreedyExperimentalDesign") {
+			res = check_java_compatibility()
+		}
+		
 		assign(package_name, res, envir = package_cache)
 	}
 	get(package_name, envir = package_cache)
+}
+
+check_java_compatibility = function() {
+	if (!requireNamespace("rJava", quietly = TRUE)) return(FALSE)
+	
+	# Attempt to initialize rJava and probe the GED class version
+	# We use a tryCatch to handle UnsupportedClassVersionError or other JVM initialization failures
+	res = tryCatch({
+		rJava::.jinit()
+		# Probe by attempting to instantiate a basic class or check its version
+		# UnsupportedClassVersionError is thrown during .jnew if incompatible
+		GreedyExperimentalDesign::computeBinaryMatchStructure(matrix(1:4, 2, 2))
+		TRUE
+	}, error = function(e) {
+		# If we hit a Java version error, it's incompatible.
+		msg = conditionMessage(e)
+		if (grepl("UnsupportedClassVersionError", msg, ignore.case = TRUE) ||
+		    grepl("ClassFormatError", msg, ignore.case = TRUE)) {
+			return(FALSE)
+		}
+		# For other errors (e.g. no JVM, etc), also treat as unavailable
+		FALSE
+	})
+	res
 }
 
 # Helper for parallel progress bars
@@ -442,7 +472,7 @@ NULL
 		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
-	compute_zhang_match_data_cpp(w, m_vec, y, X)
+	compute_zhang_match_data_cpp(X, y, w, m_vec)
 }
 
 # Cached variant: the X/m structural part (X_matched_diffs, X_matched_diffs_full,
@@ -464,20 +494,22 @@ NULL
 	# --- Fast path 1: design-level structural cache ---
 	if (!is.null(des_priv) &&
 	    !is.null(des_priv$kk_xm_structural) &&
-	    identical(m_vec, des_priv$kk_xm_m_vec)){
-		wy = compute_kk_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+	    identical(m_vec, des_priv$kk_xm_m_vec) &&
+	    ncol(X) == ncol(des_priv$kk_xm_structural$X_reservoir)){
+		wy = compute_kk_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
 		return(c(des_priv$kk_xm_structural, wy))
 	}
 
 	# --- Fast path 2: inference-level structural cache (bootstrap case) ---
 	if (!is.null(private_env$kk_xm_structural) &&
-	    identical(m_vec, private_env$kk_xm_m_vec)){
-		wy = compute_kk_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+	    identical(m_vec, private_env$kk_xm_m_vec) &&
+	    ncol(X) == ncol(private_env$kk_xm_structural$X_reservoir)){
+		wy = compute_kk_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
 		return(c(private_env$kk_xm_structural, wy))
 	}
 
 	# --- Full computation ---
-	full = compute_zhang_match_data_cpp(as.integer(w), as.integer(m_vec), as.numeric(y), as.matrix(X))
+	full = compute_zhang_match_data_cpp(as.matrix(X), as.numeric(y), as.integer(w), as.integer(m_vec))
 	structural = full[c("m", "X_matched_diffs", "X_matched_diffs_full", "X_reservoir")]
 
 	# Store in the design when the current m_vec is the design's own m_vec (so all
@@ -505,7 +537,7 @@ NULL
 		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
-	compute_kk_lin_match_data_cpp(w, m_vec, y, X)
+	compute_kk_lin_match_data_cpp(X, y, w, m_vec)
 }
 
 # Cached variant for the lin (means + diffs) C++ path. Same hierarchy as above.
@@ -515,18 +547,20 @@ NULL
 
 	if (!is.null(des_priv) &&
 	    !is.null(des_priv$kk_lin_xm_structural) &&
-	    identical(m_vec, des_priv$kk_lin_xm_m_vec)){
-		wy = compute_kk_lin_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+	    identical(m_vec, des_priv$kk_lin_xm_m_vec) &&
+	    ncol(X) == ncol(des_priv$kk_lin_xm_structural$X_reservoir)){
+		wy = compute_kk_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
 		return(c(des_priv$kk_lin_xm_structural, wy))
 	}
 
 	if (!is.null(private_env$kk_lin_xm_structural) &&
-	    identical(m_vec, private_env$kk_lin_xm_m_vec)){
-		wy = compute_kk_lin_wy_stats_cpp(as.numeric(y), as.integer(w), as.integer(m_vec))
+	    identical(m_vec, private_env$kk_lin_xm_m_vec) &&
+	    ncol(X) == ncol(private_env$kk_lin_xm_structural$X_reservoir)){
+		wy = compute_kk_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
 		return(c(private_env$kk_lin_xm_structural, wy))
 	}
 
-	full = compute_kk_lin_match_data_cpp(as.integer(w), as.integer(m_vec), as.numeric(y), as.matrix(X))
+	full = compute_kk_lin_match_data_cpp(as.matrix(X), as.numeric(y), as.integer(w), as.integer(m_vec))
 	structural = full[c("m", "X_matched_diffs_full", "X_matched_means_full", "X_reservoir")]
 
 	if (!is.null(des_priv)){
@@ -637,12 +671,12 @@ NULL
 	m + log(inner)
 }
 
-.extract_survreg_start = function(y, dead, Xmm){
-	full_names = c("(Intercept)", colnames(Xmm))
+.extract_survreg_start = function(y, dead, X){
+	full_names = c("(Intercept)", colnames(X))
 	start_beta = stats::setNames(rep(0, length(full_names)), full_names)
 	start_log_sigma = 0
 
-	mod_fast = tryCatch(fast_weibull_regression(y, dead, Xmm), error = function(e) NULL)
+	mod_fast = tryCatch(fast_weibull_regression(y, dead, X), error = function(e) NULL)
 	if (!is.null(mod_fast) && !is.null(mod_fast$coefficients)){
 		common = intersect(names(start_beta), names(mod_fast$coefficients))
 		start_beta[common] = mod_fast$coefficients[common]
@@ -652,7 +686,7 @@ NULL
 		return(list(beta = start_beta, log_sigma = start_log_sigma))
 	}
 
-	mod = robust_survreg_with_surv_object(survival::Surv(y, dead), Xmm)
+	mod = robust_survreg_with_surv_object(survival::Surv(y, dead), X)
 	if (is.null(mod)) return(list(beta = start_beta, log_sigma = start_log_sigma))
 
 	mod_coef = c(mod$coefficients, "log(scale)" = log(mod$scale))
@@ -664,9 +698,9 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_standard_weibull_aft_from_matrix = function(y, dead, Xmm, estimate_only = FALSE){
+.fit_standard_weibull_aft_from_matrix = function(y, dead, X, estimate_only = FALSE){
 	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
-	mod_fast = tryCatch(fast_weibull_regression(y, dead, Xmm), error = function(e) NULL)
+	mod_fast = tryCatch(fast_weibull_regression(y, dead, X), error = function(e) NULL)
 	if (!is.null(mod_fast) &&
 	    !is.null(mod_fast$coefficients) &&
 	    (isTRUE(estimate_only) || !is.null(mod_fast$vcov)) &&
@@ -679,7 +713,7 @@ NULL
 		}
 	}
 
-	mod = robust_survreg_with_surv_object(survival::Surv(y, dead), Xmm)
+	mod = robust_survreg_with_surv_object(survival::Surv(y, dead), X)
 	if (is.null(mod) || is.null(mod$coefficients) || is.null(mod$var)) return(NULL)
 
 	mod_coef = c(mod$coefficients, "log(scale)" = log(mod$scale))
@@ -694,14 +728,14 @@ NULL
 	list(beta = beta, ssq = ssq)
 }
 
-.extract_lognormal_start = function(y, dead, Xmm, event_indicator){
-	full_names = c("(Intercept)", colnames(Xmm))
+.extract_lognormal_start = function(y, dead, X, event_indicator){
+	full_names = c("(Intercept)", colnames(X))
 	start_beta = stats::setNames(rep(0, length(full_names)), full_names)
 	start_log_sigma = 0
 
 	mod = robust_survreg_with_surv_object(
 		survival::Surv(y, event_indicator),
-		Xmm,
+		X,
 		dist = "lognormal"
 	)
 	if (is.null(mod)) return(list(beta = start_beta, log_sigma = start_log_sigma))
@@ -715,27 +749,27 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_dep_cens_transform_model = function(y, dead, Xmm, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_dep_cens_transform_model = function(y, dead, X, estimate_only = FALSE, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = pmax(as.numeric(y), .Machine$double.xmin)
 	dead = as.integer(dead > 0)
-	Xmm = as.matrix(Xmm)
-	if (length(y) != nrow(Xmm) || length(dead) != nrow(Xmm)){
+	X = as.matrix(X)
+	if (length(y) != nrow(X) || length(dead) != nrow(X)){
 		stop("Dependent censoring transformation fit inputs must have matching row counts.")
 	}
 	if (sum(dead) == 0L || sum(1L - dead) == 0L) return(NULL)
 
-	if (is.null(colnames(Xmm))){
-		full_names = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
+	if (is.null(colnames(X))){
+		full_names = c("treatment", paste0("x", seq_len(max(ncol(X) - 1L, 0L))))
+		colnames(X) = full_names[seq_len(ncol(X))]
 	}
 
-	Xfull = cbind("(Intercept)" = 1, Xmm)
-	num_beta = ncol(Xfull)
+	X = cbind("(Intercept)" = 1, X)
+	num_beta = ncol(X)
 	log_y = log(y)
 
-	start_event = .extract_lognormal_start(y, dead, Xmm, dead)
-	start_cens = .extract_lognormal_start(y, dead, Xmm, 1L - dead)
+	start_event = .extract_lognormal_start(y, dead, X, dead)
+	start_cens = .extract_lognormal_start(y, dead, X, 1L - dead)
 	base_start = c(
 		unname(start_event$beta),
 		unname(start_cens$beta),
@@ -763,8 +797,8 @@ NULL
 		one_minus_rho_sq = pmax(1 - rho^2, .Machine$double.eps)
 		sd_cond = sqrt(one_minus_rho_sq)
 
-		mu_event = as.vector(Xfull %*% beta_event)
-		mu_cens = as.vector(Xfull %*% beta_cens)
+		mu_event = as.vector(X %*% beta_event)
+		mu_cens = as.vector(X %*% beta_cens)
 		z_event = (log_y - mu_event) / sigma_event
 		z_cens = (log_y - mu_cens) / sigma_cens
 
@@ -794,7 +828,7 @@ NULL
 	for (start_par in starts) {
 		fit = tryCatch(
 			fast_dep_cens_transform_optim_cpp(
-				y = y, dead = dead, X = Xfull, start_params = start_par,
+				y = y, dead = dead, X = X, start_params = start_par,
 				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9,
 				optimization_alg = optimization_alg
 			),
@@ -830,7 +864,7 @@ NULL
 
 	if (isTRUE(estimate_only)) {
 		coefficients = best$par
-		event_names = colnames(Xfull)
+		event_names = colnames(X)
 		cens_names = paste0("censoring_", event_names)
 		param_names = c(event_names, cens_names, "log_scale_event", "log_scale_censoring", "atanh_rho")
 		names(coefficients) = param_names
@@ -841,7 +875,7 @@ NULL
 	vcov_full = tryCatch(solve(hess), error = function(e) NULL)
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))) return(NULL)
 
-	event_names = colnames(Xfull)
+	event_names = colnames(X)
 	cens_names = paste0("censoring_", event_names)
 	param_names = c(event_names, cens_names, "log_scale_event", "log_scale_censoring", "atanh_rho")
 	rownames(vcov_full) = colnames(vcov_full) = param_names
@@ -872,16 +906,16 @@ NULL
 	c(pi0 = e0 / den, pi1 = e1 / den, pib = e2 / den)
 }
 
-.build_zoib_start = function(y, Xmm){
+.build_zoib_start = function(y, X){
 	y = as.numeric(y)
 	eps = .Machine$double.eps
 	y_clip = pmin(pmax(y, eps), 1 - eps)
-	beta_start = rep(0, ncol(Xmm) + 1L)
-	names(beta_start) = c("(Intercept)", colnames(Xmm))
+	beta_start = rep(0, ncol(X) + 1L)
+	names(beta_start) = c("(Intercept)", colnames(X))
 
 	glm_start = tryCatch(
 		fast_logistic_regression_cpp(
-			X = cbind(1, Xmm),
+			X = cbind(1, X),
 			y = y_clip
 		),
 		error = function(e) NULL
@@ -889,7 +923,7 @@ NULL
 	if (!is.null(glm_start) && length(glm_start$b) == length(beta_start)){
 		if (all(is.finite(glm_start$b))){
 			beta_start = as.numeric(glm_start$b)
-			names(beta_start) = c("(Intercept)", colnames(Xmm))
+			names(beta_start) = c("(Intercept)", colnames(X))
 		}
 	}
 
@@ -935,11 +969,11 @@ NULL
 	-ll
 }
 
-.fit_zero_one_inflated_beta = function(y, Xmm, estimate_only = FALSE, starts = NULL, optimization_alg = "lbfgs"){
+.fit_zero_one_inflated_beta = function(y, X, estimate_only = FALSE, starts = NULL, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
-	Xmm = as.matrix(Xmm)
-	if (length(y) != nrow(Xmm)){
+	X = as.matrix(X)
+	if (length(y) != nrow(X)){
 		stop("Zero/one-inflated beta fit inputs must have matching row counts.")
 	}
 	if (!all(is.finite(y)) || any(y < 0 | y > 1)){
@@ -947,21 +981,21 @@ NULL
 	}
 	if (sum(y > 0 & y < 1) == 0L) return(NULL)
 
-	if (is.null(colnames(Xmm))){
-		full_names = c("treatment", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
+	if (is.null(colnames(X))){
+		full_names = c("treatment", paste0("x", seq_len(max(ncol(X) - 1L, 0L))))
+		colnames(X) = full_names[seq_len(ncol(X))]
 	}
 
-	Xfull = cbind("(Intercept)" = 1, Xmm)
-	p = ncol(Xfull)
+	X = cbind("(Intercept)" = 1, X)
+	p = ncol(X)
 	is_zero = y == 0
 	is_one = y == 1
 	is_beta = !(is_zero | is_one)
 	y_beta = y[is_beta]
-	X_beta = Xfull[is_beta, , drop = FALSE]
+	X_beta = X[is_beta, , drop = FALSE]
 
 	if (is.null(starts)){
-		start0 = .build_zoib_start(y, Xmm)
+		start0 = .build_zoib_start(y, X)
 		starts = list(start0)
 	}
 
@@ -969,7 +1003,7 @@ NULL
 	best_val = Inf
 	for (start_par in starts){
 		fit = tryCatch(
-			fast_zero_one_inflated_beta_cpp(Xfull, y, start_par, optimization_alg = optimization_alg),
+			fast_zero_one_inflated_beta_cpp(X, y, start_par, optimization_alg = optimization_alg),
 			error = function(e) NULL
 		)
 		if (is.null(fit) || !is.finite(fit$neg_loglik)) next
@@ -981,7 +1015,7 @@ NULL
 	if (is.null(best)) return(NULL)
 
 	best_params = as.numeric(best$coefficients)
-	param_names = c(colnames(Xfull), "log_phi", "alpha0", "alpha1")
+	param_names = c(colnames(X), "log_phi", "alpha0", "alpha1")
 	coef_full = best_params
 	names(coef_full) = param_names
 
@@ -1018,16 +1052,16 @@ NULL
 	)
 }
 
-.fit_clayton_weibull_aft = function(y, dead, Xmm, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_clayton_weibull_aft = function(y, dead, X, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
 	dead = as.integer(dead > 0)
-	Xmm = as.matrix(Xmm)
-	if (is.null(colnames(Xmm))){
-		full_names = c("w", paste0("x", seq_len(max(ncol(Xmm) - 1L, 0L))))
-		colnames(Xmm) = full_names[seq_len(ncol(Xmm))]
+	X = as.matrix(X)
+	if (is.null(colnames(X))){
+		full_names = c("w", paste0("x", seq_len(max(ncol(X) - 1L, 0L))))
+		colnames(X) = full_names[seq_len(ncol(X))]
 	}
-	if (length(y) != nrow(Xmm) || length(dead) != nrow(Xmm) || length(pair_id) != nrow(Xmm)){
+	if (length(y) != nrow(X) || length(dead) != nrow(X) || length(pair_id) != nrow(X)){
 		stop("Clayton copula fit inputs must have matching row counts.")
 	}
 
@@ -1035,12 +1069,12 @@ NULL
 	if (nrow(pair_idx) == 0L && !include_singletons) return(NULL)
 
 	pair_rows = if (nrow(pair_idx) > 0L) sort(unique(as.vector(pair_idx))) else integer(0)
-	singleton_rows = if (include_singletons) setdiff(seq_len(nrow(Xmm)), pair_rows) else integer(0)
+	singleton_rows = if (include_singletons) setdiff(seq_len(nrow(X)), pair_rows) else integer(0)
 	rows_used = sort(unique(c(pair_rows, singleton_rows)))
 	if (length(rows_used) == 0L || sum(dead[rows_used]) == 0L) return(NULL)
 
-	Xfull = cbind("(Intercept)" = 1, Xmm)
-	num_beta = ncol(Xfull)
+	X = cbind("(Intercept)" = 1, X)
+	num_beta = ncol(X)
 
 	# Pre-extract constant indices and values for the likelihood function to avoid overhead
 	has_pairs = nrow(pair_idx) > 0L
@@ -1069,7 +1103,7 @@ NULL
 		}
 		sigma = exp(log_sigma)
 		theta = exp(log_theta)
-		eta = as.vector(Xfull %*% par[seq_len(num_beta)])
+		eta = as.vector(X %*% par[seq_len(num_beta)])
 		margin_terms = .weibull_aft_margin_terms(y, eta, sigma)
 		H = margin_terms$H
 		log_f = margin_terms$log_f
@@ -1104,7 +1138,7 @@ NULL
 	}
 
 	if (is.null(starts)){
-		start = .extract_survreg_start(y[rows_used], dead[rows_used], Xmm[rows_used, , drop = FALSE])
+		start = .extract_survreg_start(y[rows_used], dead[rows_used], X[rows_used, , drop = FALSE])
 		start_par_base = c(unname(start$beta), start$log_sigma)
 		starts = list(
 			c(start_par_base, log(0.10)),
@@ -1121,7 +1155,7 @@ NULL
 	for (start_par in starts) {
 		fit = tryCatch(
 			fast_clayton_weibull_aft_optim_cpp(
-				y = y, dead = dead, X = Xfull, 
+				y = y, dead = dead, X = X, 
 				pair_idx = if (has_pairs) pair_idx - 1L else matrix(0L, 0, 2), 
 				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
 				start_params = start_par,
@@ -1157,7 +1191,7 @@ NULL
 	if (is.null(best)) return(NULL)
 
 	beta_hat = best$par[seq_len(num_beta)]
-	names(beta_hat) = colnames(Xfull)
+	names(beta_hat) = colnames(X)
 	
 	if (isTRUE(estimate_only)){
 		return(list(
@@ -1181,7 +1215,7 @@ NULL
 		))
 	}
 
-	rownames(vcov_full) = colnames(vcov_full) = c(colnames(Xfull), "log_sigma", "log_theta")
+	rownames(vcov_full) = colnames(vcov_full) = c(colnames(X), "log_sigma", "log_theta")
 	ssq = as.numeric(vcov_full["w", "w"])
 	if (!is.finite(beta_hat["w"]) || !is.finite(ssq) || ssq <= 0) {
 		# If w is not finite or ssq is not valid, we still return the best_par for potential reuse
@@ -1203,27 +1237,27 @@ NULL
 	)
 }
 
-.fit_weibull_frailty = function(y, dead, Xmm, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_weibull_frailty = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
 	.fit_weibull_frailty_rcpp(
 		y = y,
 		dead = dead,
-		Xmm = Xmm,
+		X = X,
 		pair_id = pair_id,
 		estimate_only = estimate_only,
 		optimization_alg = optimization_alg
 	)
 }
 
-.fit_weibull_frailty_rcpp = function(y, dead, Xmm, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_weibull_frailty_rcpp = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
 
-	Xmm = as.matrix(Xmm)
-	if (!("w" %in% colnames(Xmm))){
-		stop("Xmm must include a treatment column named 'w'.")
+	X = as.matrix(X)
+	if (!("w" %in% colnames(X))){
+		stop("X must include a treatment column named 'w'.")
 	}
-	if (!identical(colnames(Xmm)[1L], "w")){
-		Xmm = Xmm[, c("w", setdiff(colnames(Xmm), "w")), drop = FALSE]
+	if (!identical(colnames(X)[1L], "w")){
+		X = X[, c("w", setdiff(colnames(X), "w")), drop = FALSE]
 	}
 
 	group_id = as.integer(factor(pair_id))
@@ -1233,7 +1267,7 @@ NULL
 		fast_weibull_frailty_cpp(
 			y = as.numeric(y),
 			dead = as.numeric(dead),
-			X = Xmm,
+			X = X,
 			group_id = group_id,
 			estimate_only = estimate_only,
 			optimization_alg = optimization_alg

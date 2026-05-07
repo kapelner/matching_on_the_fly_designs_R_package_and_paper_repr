@@ -105,7 +105,7 @@ test_that("compute_rand_confidence_interval works for proportion response", {
 	y <- rbeta(n, shape1 = mu * 10, shape2 = (1 - mu) * 10)
 	add_all_subject_responses_seq(des, y)
 
-	inf <- InferencePropUniBetaRegr$new(des, verbose = FALSE)
+	inf <- InferencePropBetaRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
 	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
@@ -132,7 +132,7 @@ test_that("compute_rand_confidence_interval works for survival response (uncenso
 	y <- exp(1.0 + treatment * 0.8 + rnorm(n, 0, 0.5))
 	add_all_subject_responses_seq(des, y, deads = rep(1, n)) # All events, no censoring
 
-	inf <- InferenceSurvivalUniWeibullRegr$new(des, verbose = FALSE)
+	inf <- InferenceSurvivalWeibullRegr$new(des, verbose = FALSE)
 
 	# Compute randomization CI
 	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
@@ -160,7 +160,7 @@ test_that("compute_rand_confidence_interval works for ordinal response (cumulati
 	y <- 1L + (score > 0) + (score > 1)
 	add_all_subject_responses_seq(des, y)
 
-	inf <- InferenceOrdinalUniPropOddsRegr$new(des, verbose = FALSE)
+	inf <- InferenceOrdinalPropOddsRegr$new(des, verbose = FALSE)
 
 	ci <- inf$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05, show_progress = FALSE)
 
@@ -178,13 +178,13 @@ test_that("compute_rand_confidence_interval throws error for unsupported types",
 	des_incid <- DesignSeqOneByOneEfron$new(n = n, response_type = "incidence", verbose = FALSE)
 	for (i in 1:n) des_incid$add_one_subject_to_experiment_and_assign(data.table(x=1))
 	add_all_subject_responses_seq(des_incid, rbinom(n, 1, 0.5))
-	inf_incid <- InferenceIncidUnivLogRegr$new(des_incid)
+	inf_incid <- InferenceIncidLogRegr$new(des_incid)
 	expect_error(inf_incid$compute_rand_confidence_interval(), "Zhang randomization inference requires Bernoulli or matching designs")
 
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	for (i in 1:n) des_count$add_one_subject_to_experiment_and_assign(data.table(x=1))
 	add_all_subject_responses_seq(des_count, rpois(n, 5))
-	inf_count <- InferenceCountUnivNegBinRegr$new(des_count)
+	inf_count <- InferenceCountNegBin$new(des_count)
 	ci_count <- inf_count$compute_rand_confidence_interval(alpha = 0.05, r = 100, pval_epsilon = 0.05)
 	expect_equal(length(ci_count), 2)
 	expect_true(ci_count[1] < ci_count[2])
@@ -202,10 +202,10 @@ test_that("Zhang incidence inference is available through randomization and exac
 	prob <- plogis(-0.2 + 0.8 * treatment)
 	add_all_subject_responses_seq(des, rbinom(n, 1, prob))
 
-	inf_rand_serial <- InferenceIncidUnivLogRegr$new(des, num_cores = 1, verbose = FALSE)
-	inf_rand_parallel <- InferenceIncidUnivLogRegr$new(des, num_cores = 4, verbose = FALSE)
-	inf_serial <- InferenceIncidExactZhang$new(des, num_cores = 1, verbose = FALSE)
-	inf_parallel <- InferenceIncidExactZhang$new(des, num_cores = 4, verbose = FALSE)
+	inf_rand_serial <- InferenceIncidLogRegr$new(des, verbose = FALSE)
+	inf_rand_parallel <- InferenceIncidLogRegr$new(des, verbose = FALSE)
+	inf_serial <- InferenceIncidExactZhang$new(des, verbose = FALSE)
+	inf_parallel <- InferenceIncidExactZhang$new(des, verbose = FALSE)
 
 	ci_rand_serial <- inf_rand_serial$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
 	ci_rand_parallel <- inf_rand_parallel$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)

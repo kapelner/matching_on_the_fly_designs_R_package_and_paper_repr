@@ -101,7 +101,7 @@ Computes a bootstrap-based two-sided p-value for the treatment effect.
   B = 501,
   type = NULL,
   na.rm = FALSE,
-  min_number_usable_samples = 50L
+  min_number_usable_samples = 5L
 )}\if{html}{\out{</div>}}
 }
 
@@ -150,7 +150,7 @@ Computes a bootstrap-based confidence interval.
   type = NULL,
   na.rm = TRUE,
   show_progress = TRUE,
-  min_number_usable_samples = 50L
+  min_number_usable_samples = 5L
 )}\if{html}{\out{</div>}}
 }
 

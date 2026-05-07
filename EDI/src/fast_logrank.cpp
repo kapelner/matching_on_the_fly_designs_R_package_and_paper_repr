@@ -115,14 +115,14 @@ ModelResult fast_logrank_internal(const Eigen::VectorXd& time,
 } // namespace
 
 // [[Rcpp::export]]
-List fast_logrank_stats_cpp(const Eigen::VectorXd& time,
-                            const IntegerVector& dead,
-                            const IntegerVector& w) {
-  int n = time.size();
+List fast_logrank_stats_cpp(const IntegerVector& w,
+                            const Eigen::VectorXd& y,
+                            const IntegerVector& dead) {
+  int n = y.size();
   std::vector<int> dead_std(n), w_std(n);
   for(int i=0; i<n; ++i) { dead_std[i] = dead[i]; w_std[i] = w[i]; }
 
-  ModelResult res = fast_logrank_internal(time, dead_std, w_std);
+  ModelResult res = fast_logrank_internal(y, dead_std, w_std);
   int n_treat = 0;
   for(int val : w_std) if (val == 1) n_treat++;
 

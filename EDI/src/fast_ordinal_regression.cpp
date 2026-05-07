@@ -89,7 +89,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
 //' @export
 // [[Rcpp::export]]
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-6,
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "newton_raphson") {
@@ -100,14 +100,23 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    // Initialize alpha
-    for (int k = 0; k < n_alpha; ++k) {
-        params[k] = -1.0 + 2.0 * (k + 1) / K;
-    }
-    // Initialize beta
-    params.tail(p).setZero();
-
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    if (start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(start_params));
+        if (params.size() != n_params) stop("start_params must have length equal to the number of model parameters");
+    } else {
+        OrdinalStart legacy_start;
+        legacy_start.alpha = VectorXd(n_alpha);
+        for (int k = 0; k < n_alpha; ++k) {
+            legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
+        }
+        legacy_start.beta = VectorXd::Zero(p);
+        params = ordinal_start_to_params(
+            smart_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Logit, legacy_start, fixed_spec)
+                        : legacy_start
+        );
+    }
+    params = apply_fixed_values(params, fixed_spec);
     LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
     params = fit.params;
 
@@ -117,7 +126,8 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         Named("n_params") = n_params,
         Named("params") = params,
         Named("neg_loglik") = fit.value,
-        Named("converged") = fit.converged
+        Named("converged") = fit.converged,
+        Named("iterations") = fit.niter
     );
 }
 
@@ -132,10 +142,12 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @export
 // [[Rcpp::export]]
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
+                                           Nullable<NumericVector> start_params = R_NilValue,
+                                           bool smart_start = true,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "newton_raphson") {
-    List res = fast_ordinal_regression_cpp(X, y, 100, 1e-6, fixed_idx, fixed_values, optimization_alg);
+    List res = fast_ordinal_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, fixed_idx, fixed_values, optimization_alg);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);
@@ -150,7 +162,9 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
         Named("b") = res["b"],
         Named("alpha") = res["alpha"],
         Named("params") = params,
-        Named("converged") = converged
+        Named("neg_loglik") = res["neg_loglik"],
+        Named("converged") = converged,
+        Named("iterations") = res["iterations"]
     );
     if (!lu.isInvertible()) {
         output["ssq_b_j"] = NA_REAL;

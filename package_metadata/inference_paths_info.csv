@@ -2,7 +2,7 @@ response_type,inference_path,has_multi,has_likelihood,has_loglik,has_score,uses_
 all,BaiAdjustedT,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
 all,BaiAdjustedTKK14,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
 all,BaiAdjustedTKK21,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
-all,KKCompoundMeanDiff,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
+all,KKMeanDiffIVWC,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N
 all,KKWilcoxIVWC,N,Y,Y,Y,Y,Y,none/rank statistic,NA,NA,N
 all,MLEorKMSummaryTable,N,Y,Y,Y,Y,Y,none/summary table,NA,NA,N
 all,SimpleMeanDiff,N,Y,Y,Y,Y,Y,none/closed-form statistic,NA,NA,N

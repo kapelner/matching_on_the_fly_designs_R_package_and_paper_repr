@@ -5,8 +5,8 @@
 \title{Parallel Poisson Randomization Distribution}
 \usage{
 compute_poisson_distr_parallel_cpp(
+  X,
   y,
-  X_covars,
   w_mat,
   delta,
   log_transform,
@@ -14,9 +14,9 @@ compute_poisson_distr_parallel_cpp(
 )
 }
 \arguments{
-\item{y}{Numeric vector of response values (pre-null-shifted for treated).}
+\item{X}{Matrix of covariates (without intercept or treatment).}
 
-\item{X_covars}{Matrix of covariates (without intercept or treatment).}
+\item{y}{Numeric vector of response values (pre-null-shifted for treated).}
 
 \item{w_mat}{Integer matrix of permuted treatment assignments (n x nsim).}
 

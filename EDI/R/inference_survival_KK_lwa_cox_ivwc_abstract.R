@@ -199,7 +199,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 
 			for (X_full in private$cox_design_candidates(w, X)){
 				res = tryCatch(
-					fast_coxph_regression_cpp(y, dead, X_full, cluster = cl_int),
+					fast_coxph_regression_cpp(X_full, y, dead, cluster = cl_int),
 					error = function(e) NULL
 				)
 				if (is.null(res)) next

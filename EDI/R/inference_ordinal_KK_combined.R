@@ -157,7 +157,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			# Convert y to 1-indexed integers
 			y_levels = sort(unique(private$y))
 			K = length(y_levels)
-			y_int = as.integer(match(private$y, y_levels))
+			y = as.integer(match(private$y, y_levels))
 			n_alpha = K - 1L
 
 			# Treatment is always the first column of X_fit (j_T = 0, 0-based)
@@ -165,7 +165,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 
 			# Warm start from fixed-effects ordinal MLE to avoid divergence
 			start = tryCatch({
-				nore = fast_ordinal_regression_cpp(X_fit, as.numeric(y_int) - 1L)
+				nore = fast_ordinal_regression_cpp(X_fit, as.numeric(y) - 1L)
 				alpha_direct = as.numeric(nore$alpha)  # K-1 direct cutpoints
 				beta_nore    = as.numeric(nore$b)      # p betas
 				# Convert direct alphas to log-diff parameterization
@@ -183,7 +183,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			fit = tryCatch(
 				fast_ordinal_glmm_cpp(
 					X          = X_fit,
-					y_int      = y_int,
+					y          = y,
 					group_id   = as.integer(group_id),
 					K          = K,
 					j_T        = j_T,

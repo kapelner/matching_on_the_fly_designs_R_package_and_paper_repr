@@ -51,9 +51,9 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 
 //' Fast KK Wilcoxon Statistic for Multiple Permutations
 //'
-//' @param y Numeric response vector.
 //' @param w_mat Integer matrix of permuted treatment assignments (n x r).
 //' @param m_mat Integer matrix of match indicators (n x r).
+//' @param y Numeric response vector.
 //' @param delta Null treatment effect shift.
 //' @param transform_code Integer code for response transformation.
 //' @param zero_one_logit_clamp Clamp value for logit transformation.
@@ -62,9 +62,9 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 //' @return Numeric vector of KK Wilcoxon statistics.
 // [[Rcpp::export]]
 NumericVector compute_kk_wilcox_distr_parallel_cpp(
-    const NumericVector& y,
     const IntegerMatrix& w_mat,
     const IntegerMatrix& m_mat,
+    const NumericVector& y,
     double delta,
     int transform_code,
     double zero_one_logit_clamp,

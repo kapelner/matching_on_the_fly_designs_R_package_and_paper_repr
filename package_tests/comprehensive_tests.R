@@ -350,7 +350,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceAbstractKKWeibullFrailtyOneLik",
 		"InferenceAllKKWilcoxIVWC",
 		"InferenceAbstractKKWilcoxRegrIVWC",
-		"InferenceSurvivalUnivKKRankRegrIVWC",
+		"InferenceSurvivalKKRankRegrIVWC",
 		"InferenceIncidExactZhangAbstract",
 		"InferenceAllSimpleWilcox",
 		"InferenceOrdinalUnivKKGEE",
@@ -361,30 +361,30 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceOrdinalPairedSignTest",
 		"InferenceOrdinalUnivKKCondPropOddsCombinedRegr",
 		"InferenceOrdinalUnivKKCondContRatioRegr",
-		"InferenceOrdinalUnivKKCondAdjCatLogitRegr",
-		"InferenceOrdinalUniGCompMeanDiff",
-		"InferenceOrdinalMultiGCompMeanDiff",
-		"InferenceOrdinalMultiCLLRegr",
-		"InferenceOrdinalUniOrderedProbitRegr",
-		"InferenceOrdinalMultiOrderedProbitRegr",
-		"InferenceOrdinalUniCauchitRegr",
-		"InferenceOrdinalMultiCauchitRegr",
+		"InferenceOrdinalKKCondAdjCatLogitRegr",
+		"InferenceOrdinalGCompMeanDiff",
+		"InferenceOrdinalGCompMeanDiff",
+		"InferenceOrdinalCloglogRegr",
+		"InferenceOrdinalOrderedProbitRegr",
+		"InferenceOrdinalOrderedProbitRegr",
+		"InferenceOrdinalCauchitRegr",
+		"InferenceOrdinalCauchitRegr",
 		"InferenceOrdinalMultiContRatioRegr",
 		"InferenceOrdinalMultiKKGEE",
 		"InferenceOrdinalMultiKKCondContRatioRegr",
-		"InferenceOrdinalMultiKKCondAdjCatLogitRegr",
+		"InferenceOrdinalKKCondAdjCatLogitRegr",
 		"InferenceOrdinalMultiCumulProbitRegr",
-		"InferenceOrdinalMultiPartialProportionalOddsRegr",
+		"InferenceOrdinalPartialProportionalOddsRegr",
 		"InferenceSurvivalMultiDepCensTransformRegr",
-		"InferencePropMultiZeroOneInflatedBetaRegr",
-		"InferencePropMultiFractionalLogit",
-		"InferenceCountMultiHurdleNegBinRegr",
-		"InferenceContinMultiRobustRegr"
+		"InferencePropZeroOneInflatedBetaRegr",
+		"InferencePropFractionalLogit",
+		"InferenceCountHurdleNegBin",
+		"InferenceContinRobustRegr"
 	))
-	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalUniGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalMultiCLLRegr") || is(seq_des_inf, "InferenceOrdinalUniOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalMultiOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalUniCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKCondAdjCatLogitRegr")
+	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalUnivKKGEE") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMM") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMM") || is(seq_des_inf, "InferenceOrdinalUnivKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalMultiKKGLMMProbit") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalUnivKKCondPropOddsCombinedRegr") || is(seq_des_inf, "InferenceOrdinalUnivKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalCloglogRegr") || is(seq_des_inf, "InferenceOrdinalOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalCauchitRegr") || is(seq_des_inf, "InferenceOrdinalCauchitRegr") || is(seq_des_inf, "InferenceOrdinalMultiContRatioRegr") || is(seq_des_inf, "InferenceOrdinalMultiKKGEE") || is(seq_des_inf, "InferenceOrdinalMultiKKCondContRatioRegr") || is(seq_des_inf, "InferenceOrdinalKKCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyOneLik")
-	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyOneLik") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropUniGCompMeanDiff") || is(seq_des_inf, "InferencePropMultiGCompMeanDiff") || is_any_inference_class(c(
-		"InferenceSurvivalMultiKKRankRegrIVWC",
+	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalUnivKKWeibullFrailtyOneLik") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is_any_inference_class(c(
+		"InferenceSurvivalKKRankRegrIVWC",
 		"InferenceSurvivalMultiKKClaytonCopulaIVWC",
 		"InferenceSurvivalMultiKKClaytonCopulaOneLik"
 	))
@@ -393,19 +393,19 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferencePropMultiKKQuantileRegrIVWC",
 		"InferenceContinMultKKQuantileRegrOneLik",
 		"InferencePropMultiKKQuantileRegrOneLik",
-		"InferencePropUniGCompMeanDiff",
-		"InferencePropMultiGCompMeanDiff",
-		"InferenceContinMultiRobustRegr",
-		"InferenceCountMultiHurdleNegBinRegr",
-		"InferenceCountMultiNegBinRegr",
-		"InferenceCountMultiZeroInflatedNegBinRegr",
-		"InferencePropMultiZeroOneInflatedBetaRegr",
-		"InferencePropMultiFractionalLogit",
-		"InferenceCountMultiHurdlePoissonRegr",
-		"InferenceCountMultiZeroInflatedPoissonRegr",
-		"InferenceCountUnivHurdlePoissonRegr",
-		"InferenceCountUnivZeroInflatedPoissonRegr",
-		"InferenceCountUnivZeroInflatedNegBinRegr",
+		"InferencePropGCompMeanDiff",
+		"InferencePropGCompMeanDiff",
+		"InferenceContinRobustRegr",
+		"InferenceCountHurdleNegBin",
+		"InferenceCountNegBin",
+		"InferenceCountZeroInflatedNegBin",
+		"InferencePropZeroOneInflatedBetaRegr",
+		"InferencePropFractionalLogit",
+		"InferenceCountHurdlePoisson",
+		"InferenceCountZeroInflatedPoisson",
+		"InferenceCountHurdlePoisson",
+		"InferenceCountZeroInflatedPoisson",
+		"InferenceCountZeroInflatedNegBin",
 		"InferenceCountMultiKKHurdlePoissonIVWC",
 		"InferenceCountMultiKKHurdlePoissonOneLik",
 		"InferenceCountUnivKKHurdlePoissonIVWC",
@@ -414,21 +414,21 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 	skip_ci_rand_custom = FALSE
 	
 	skip_ci = beta_T == 1 && (
-		is(seq_des_inf, "InferenceIncidMultiLogRegr") ||
-		is(seq_des_inf, "InferencePropUniBetaRegr") ||
-		is(seq_des_inf, "InferencePropMultiBetaRegr") ||
-		is(seq_des_inf, "InferenceSurvivalUniCoxPHRegr") ||
-		is(seq_des_inf, "InferenceSurvivalMultiCoxPHRegr") ||
+		is(seq_des_inf, "InferenceIncidLogRegr") ||
+		is(seq_des_inf, "InferencePropBetaRegr") ||
+		is(seq_des_inf, "InferencePropBetaRegr") ||
+		is(seq_des_inf, "InferenceSurvivalCoxPHRegr") ||
+		is(seq_des_inf, "InferenceSurvivalCoxPHRegr") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKLWACoxIVWC") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKStratCoxIVWC") ||
+		is(seq_des_inf, "InferenceSurvivalKKStratCoxIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKClaytonCopulaIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKLWACoxOneLik") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKStratCoxOneLik") ||
+		is(seq_des_inf, "InferenceSurvivalKKStratCoxOneLik") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKClaytonCopulaOneLik") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKWeibullFrailtyIVWC") ||
 		is(seq_des_inf, "InferenceSurvivalMultiKKWeibullFrailtyOneLik") ||
 		is(seq_des_inf, "InferenceAllKKWilcoxRegrMultiIVWC") ||
-		is(seq_des_inf, "InferenceSurvivalMultiKKRankRegrIVWC")
+		is(seq_des_inf, "InferenceSurvivalKKRankRegrIVWC")
 	)
 	snap_small_numeric_to_zero = function(x, tol = sqrt(.Machine$double.eps)){
 		if (is.null(x)) return(x)
@@ -602,23 +602,23 @@ safe_call = function(label, expr){
 						 													  is(seq_des_inf, "InferenceAbstractKKRobustRegrOneLik") ||
 						 													  is(seq_des_inf, "InferenceAbstractKKQuantileRegrIVWC") ||
 						 													  is(seq_des_inf, "InferenceAbstractKKQuantileRegrOneLik") ||
-						 													  													  is(seq_des_inf, "InferencePropUniFractionalLogit") ||
-						 													  													  is(seq_des_inf, "InferenceIncidUnivRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferencePropFractionalLogit") ||
+						 													  													  is(seq_des_inf, "InferenceIncidRiskDiff") ||
 						 													  													  is(seq_des_inf, "InferenceIncidMultiRiskDiff") ||
-						 													  													  is(seq_des_inf, "InferenceIncidUnivGCompRiskDiff") ||
-						 													  													  is(seq_des_inf, "InferenceIncidMultiGCompRiskDiff") ||
-						 													  													  is(seq_des_inf, "InferenceIncidUnivGCompRiskRatio") ||
-						 													  													  is(seq_des_inf, "InferenceIncidMultiGCompRiskRatio") ||
-						 													  													  is(seq_des_inf, "InferenceIncidUnivKKGCompRiskDiff") ||
-						 													  													  is(seq_des_inf, "InferenceIncidMultiKKGCompRiskDiff") ||
-						 													  													  is(seq_des_inf, "InferenceIncidUnivKKGCompRiskRatio") ||
-						 													  													  is(seq_des_inf, "InferenceIncidMultiKKGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidKKGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidKKGCompRiskDiff") ||
+						 													  													  is(seq_des_inf, "InferenceIncidKKGCompRiskRatio") ||
+						 													  													  is(seq_des_inf, "InferenceIncidKKGCompRiskRatio") ||
 						 													  is(seq_des_inf, "InferenceIncidUnivModifiedPoisson") ||
 						 													  is(seq_des_inf, "InferenceIncidMultiModifiedPoisson") ||
-						 													  is(seq_des_inf, "InferencePropUniGCompMeanDiff") ||
-						 													  is(seq_des_inf, "InferencePropMultiGCompMeanDiff") ||
-						 													  is(seq_des_inf, "InferencePropUniZeroOneInflatedBetaRegr") ||
-						 													  is(seq_des_inf, "InferencePropMultiZeroOneInflatedBetaRegr") ||
+						 													  is(seq_des_inf, "InferencePropGCompMeanDiff") ||
+						 													  is(seq_des_inf, "InferencePropGCompMeanDiff") ||
+						 													  is(seq_des_inf, "InferencePropZeroOneInflatedBetaRegr") ||
+						 													  is(seq_des_inf, "InferencePropZeroOneInflatedBetaRegr") ||
 						 													  is(seq_des_inf, "InferenceContinMultGLS")))
 						 													  										if (isTRUE(is_non_fatal)){
 				message("Skipping ", label, " (non-fatal): ", e$message)
@@ -940,8 +940,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 			run_inference_checks_both_paths(InferenceIncidKKClogitOneLik, "InferenceIncidKKClogitOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKClogitIVWC, "InferenceIncidKKClogitIVWC", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKGEE, "InferenceIncidKKGEE", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
-			inference_banner("InferenceIncidUnivKKNewcombeRiskDiff")
-			run_inference_checks(InferenceIncidUnivKKNewcombeRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceIncidKKNewcombeRiskDiff")
+			run_inference_checks(InferenceIncidKKNewcombeRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceIncidKKGCompRiskDiff, "InferenceIncidKKGCompRiskDiff", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKGCompRiskRatio, "InferenceIncidKKGCompRiskRatio", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKModifiedPoisson, "InferenceIncidKKModifiedPoisson", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -949,10 +949,10 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		}
 		run_inference_checks_both_paths(InferenceIncidLogRegr, "InferenceIncidLogRegr", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 		if (!is_kk_design){
-			inference_banner("InferenceIncidUnivMiettinenNurminenRiskDiff")
-			run_inference_checks(InferenceIncidUnivMiettinenNurminenRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-			inference_banner("InferenceIncidUnivNewcombeRiskDiff")
-			run_inference_checks(InferenceIncidUnivNewcombeRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceIncidMiettinenNurminenRiskDiff")
+			run_inference_checks(InferenceIncidMiettinenNurminenRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceIncidNewcombeRiskDiff")
+			run_inference_checks(InferenceIncidNewcombeRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceIncidRiskDiff, "InferenceIncidRiskDiff", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidGCompRiskDiff, "InferenceIncidGCompRiskDiff", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidGCompRiskRatio, "InferenceIncidGCompRiskRatio", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -1040,18 +1040,18 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 				InferenceSurvivalMultiKKClaytonCopulaIVWC,
 				InferenceSurvivalUnivKKLWACoxIVWC,
 				InferenceSurvivalMultiKKLWACoxIVWC,
-				InferenceSurvivalUnivKKStratCoxIVWC,
-				InferenceSurvivalMultiKKStratCoxIVWC,
-				InferenceSurvivalUnivKKRankRegrIVWC,
-				InferenceSurvivalMultiKKRankRegrIVWC,
+				InferenceSurvivalKKStratCoxIVWC,
+				InferenceSurvivalKKStratCoxIVWC,
+				InferenceSurvivalKKRankRegrIVWC,
+				InferenceSurvivalKKRankRegrIVWC,
 				InferenceSurvivalUnivKKWeibullFrailtyIVWC,
 				InferenceSurvivalMultiKKWeibullFrailtyIVWC,
 				InferenceSurvivalUnivKKClaytonCopulaOneLik,
 				InferenceSurvivalMultiKKClaytonCopulaOneLik,
 				InferenceSurvivalUnivKKLWACoxOneLik,
 				InferenceSurvivalMultiKKLWACoxOneLik,
-				InferenceSurvivalUnivKKStratCoxOneLik,
-				InferenceSurvivalMultiKKStratCoxOneLik,
+				InferenceSurvivalKKStratCoxOneLik,
+				InferenceSurvivalKKStratCoxOneLik,
 				InferenceSurvivalUnivKKWeibullFrailtyOneLik,
 				InferenceSurvivalMultiKKWeibullFrailtyOneLik
 			)){
@@ -1122,25 +1122,25 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 			run_inference_checks(InferenceOrdinalUnivKKCondContRatioRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceOrdinalMultiKKCondContRatioRegr")
 			run_inference_checks(InferenceOrdinalMultiKKCondContRatioRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-			inference_banner("InferenceOrdinalUnivKKCondAdjCatLogitRegr")
-			run_inference_checks(InferenceOrdinalUnivKKCondAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-			inference_banner("InferenceOrdinalMultiKKCondAdjCatLogitRegr")
-			run_inference_checks(InferenceOrdinalMultiKKCondAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceOrdinalKKCondAdjCatLogitRegr")
+			run_inference_checks(InferenceOrdinalKKCondAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceOrdinalKKCondAdjCatLogitRegr")
+			run_inference_checks(InferenceOrdinalKKCondAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceOrdinalPairedSignTest")
 			run_inference_checks(InferenceOrdinalPairedSignTest$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		}
-		inference_banner("InferenceOrdinalUniAdjCatLogitRegr")
-		run_inference_checks(InferenceOrdinalUniAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiAdjCatLogitRegr")
-		run_inference_checks(InferenceOrdinalMultiAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalAdjCatLogitRegr")
+		run_inference_checks(InferenceOrdinalAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalAdjCatLogitRegr")
+		run_inference_checks(InferenceOrdinalAdjCatLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalUniCumulProbitRegr")
 		run_inference_checks(InferenceOrdinalUniCumulProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalMultiCumulProbitRegr")
 		run_inference_checks(InferenceOrdinalMultiCumulProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniOrderedProbitRegr")
-		run_inference_checks(InferenceOrdinalUniOrderedProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiOrderedProbitRegr")
-		run_inference_checks(InferenceOrdinalMultiOrderedProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalOrderedProbitRegr")
+		run_inference_checks(InferenceOrdinalOrderedProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalOrderedProbitRegr")
+		run_inference_checks(InferenceOrdinalOrderedProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalUniStereotypeLogitRegr")
 		run_inference_checks(InferenceOrdinalUniStereotypeLogitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalMultiStereotypeLogitRegr")
@@ -1149,26 +1149,26 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		run_inference_checks(InferenceOrdinalUniStereotypeProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalMultiStereotypeProbitRegr")
 		run_inference_checks(InferenceOrdinalMultiStereotypeProbitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniPropOddsRegr")
-		run_inference_checks(InferenceOrdinalUniPropOddsRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniPartialProportionalOddsRegr")
-		run_inference_checks(InferenceOrdinalUniPartialProportionalOddsRegr$new(des_obj, verbose = FALSE, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiPartialProportionalOddsRegr")
-		run_inference_checks(InferenceOrdinalMultiPartialProportionalOddsRegr$new(des_obj, verbose = FALSE, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniCLLRegr")
-		run_inference_checks(InferenceOrdinalUniCLLRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiCLLRegr")
-		run_inference_checks(InferenceOrdinalMultiCLLRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniGCompMeanDiff")
-		run_inference_checks(InferenceOrdinalUniGCompMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiGCompMeanDiff")
-		run_inference_checks(InferenceOrdinalMultiGCompMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalPropOddsRegr")
+		run_inference_checks(InferenceOrdinalPropOddsRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalPartialProportionalOddsRegr")
+		run_inference_checks(InferenceOrdinalPartialProportionalOddsRegr$new(des_obj, verbose = FALSE, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalPartialProportionalOddsRegr")
+		run_inference_checks(InferenceOrdinalPartialProportionalOddsRegr$new(des_obj, verbose = FALSE, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalCloglogRegr")
+		run_inference_checks(InferenceOrdinalCloglogRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalCloglogRegr")
+		run_inference_checks(InferenceOrdinalCloglogRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalGCompMeanDiff")
+		run_inference_checks(InferenceOrdinalGCompMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalGCompMeanDiff")
+		run_inference_checks(InferenceOrdinalGCompMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalJonckheereTerpstraTest")
 		run_inference_checks(InferenceOrdinalJonckheereTerpstraTest$new(des_obj), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalUniCauchitRegr")
-		run_inference_checks(InferenceOrdinalUniCauchitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
-		inference_banner("InferenceOrdinalMultiCauchitRegr")
-		run_inference_checks(InferenceOrdinalMultiCauchitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalCauchitRegr")
+		run_inference_checks(InferenceOrdinalCauchitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		inference_banner("InferenceOrdinalCauchitRegr")
+		run_inference_checks(InferenceOrdinalCauchitRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalContRatioRegr")
 		run_inference_checks(InferenceOrdinalContRatioRegr$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceOrdinalMultiContRatioRegr")

@@ -83,29 +83,29 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	private = list(
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (private$use_rcpp) {
 				return(private$compute_ri_estimate_rcpp())
 			}
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 
-			X_fit = if (length(Xmm_cols) == 0L){
+			X_fit = if (length(X_cols) == 0L){
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			} else {
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				cbind(treatment = private$w, X_cov)
 			}
 			# Add intercept column for clmm internal expectations
@@ -123,11 +123,11 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			group_id = private$clmm_group_id()
 			y_levels = sort(unique(private$y))
 			K = length(y_levels)
-			y_int = as.integer(match(private$y, y_levels))
+			y = as.integer(match(private$y, y_levels))
 			fit = tryCatch(
 				fast_ordinal_clmm_cpp(
 					X          = X_fit,
-					y_int      = y_int,
+					y          = y,
 					group_id   = as.integer(group_id),
 					K          = K,
 					j_T        = 0L,
@@ -172,7 +172,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		},
 
 		# Warm start: fixed-effects ordinal MLE with appropriate link
-		clmm_warm_start = function(X_fit, y_int, n_alpha){
+		clmm_warm_start = function(X_fit, y, n_alpha){
 			tryCatch({
 				warm_fn = switch(private$clmm_link(),
 					logit   = fast_ordinal_regression_cpp,
@@ -181,7 +181,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 					cloglog = fast_ordinal_cloglog_regression_cpp,
 					stop("Unknown link: ", private$clmm_link())
 				)
-				nore = warm_fn(X_fit, as.numeric(y_int) - 1L)
+				nore = warm_fn(X_fit, as.numeric(y) - 1L)
 				alpha_direct = as.numeric(nore$alpha)
 				beta_nore    = as.numeric(nore$b)
 				alpha_par = numeric(n_alpha)
@@ -214,16 +214,16 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 			y_levels = sort(unique(private$y))
 			K        = length(y_levels)
-			y_int    = as.integer(match(private$y, y_levels))
+			y    = as.integer(match(private$y, y_levels))
 			n_alpha  = K - 1L
 			j_T      = 0L  # treatment is always first column of X_fit
 
-			start = private$clmm_warm_start(X_fit, y_int, n_alpha)
+			start = private$clmm_warm_start(X_fit, y, n_alpha)
 
 			fit = tryCatch(
 				fast_ordinal_clmm_cpp(
 					X             = X_fit,
-					y_int         = y_int,
+					y         = y,
 					group_id      = as.integer(group_id),
 					K             = K,
 					j_T           = j_T,
@@ -288,7 +288,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			summ = attempt$fit$summ
 			se = attempt$fit$se
 			if (!is.null(mod)){
-				private$best_Xmm_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(attempt$X_fit), c("(Intercept)", "treatment"))
 			}
 			if (is.null(mod) || is.null(summ)){
 				private$cached_values$beta_hat_T   = NA_real_

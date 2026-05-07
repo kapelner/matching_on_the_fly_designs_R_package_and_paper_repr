@@ -225,36 +225,38 @@ get_bootstrap_dispatch_policy = function() {
   list(
     default_type = "bca",
     inference_class_overrides = c(
-      "^InferenceContinMultLin$" = "percentile",
-      "^InferenceIncid(Univ|Multi)GCompRisk(Diff|Ratio)$" = "percentile",
-      "^InferenceIncid(Univ|Multi)KKGCompRisk(Diff|Ratio)$" = "percentile",
-      "^InferenceProp(Uni|Multi)GCompMeanDiff$" = "percentile",
-      "^InferenceSurvival(Uni|Multi)DepCensTransformRegr$" = "percentile",
-      "^InferenceSurvival(Univ|Multi)KKRankRegrIVWC$" = "percentile",
+      "^InferenceContinLin$" = "percentile",
+      "^InferenceIncidGCompRisk(Diff|Ratio)$" = "percentile",
+      "^InferenceIncidKKGCompRisk(Diff|Ratio)$" = "percentile",
+      "^InferencePropGCompMeanDiff$" = "percentile",
+      "^InferenceSurvivalDepCensTransformRegr$" = "percentile",
+      "^InferenceSurvivalKKRankRegrIVWC$" = "percentile",
       "^InferenceIncidMultiKKClogitIVWC$" = "percentile",
       "^InferenceIncidMultiKKClogitPlusGLMMIVWC$" = "percentile",
       "^InferenceIncidMultiKKClogitOneLik$" = "percentile",
       "^InferenceIncidMultiKKClogitPlusGLMMOneLik$" = "percentile",
       "^InferenceOrdinalUnivKKCondPropOddsRegr$" = "percentile",
-      "^InferenceOrdinalMultiAdjCatLogitRegr$" = "percentile",
-      "^InferenceSurvival(Univ|Multi)KKStratCoxOneLik$" = "percentile",
-      "^InferenceCountMultiPoissonRegr$" = "percentile",
-      "^InferenceCountMultiQuasiPoissonRegr$" = "percentile",
+      "^InferenceOrdinalAdjCatLogitRegr$" = "percentile",
+      "^InferenceSurvivalKKStratCoxOneLik$" = "percentile",
+      "^InferenceCountPoisson$" = "percentile",
+      "^InferenceCountQuasiPoisson$" = "percentile",
       "^InferencePropMultiKKQuantileRegrOneLik$" = "percentile",
       "^InferenceSurvivalMultiDepCensTransformRegr$" = "percentile",
       "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile",
       "^InferenceOrdinalMultiCumulProbitRegr$" = "percentile",
       "^InferenceOrdinalMultiPartialProportionalOddsRegr$" = "percentile",
-      "^InferencePropMultiZeroOneInflatedBetaRegr$" = "percentile",
-      "^InferencePropMultiFractionalLogit$" = "percentile",
-      "^InferenceCountMultiHurdleNegBinRegr$" = "percentile",
-      "^InferenceContinMultiRobustRegr$" = "percentile"
+      "^InferencePropZeroOneInflatedBetaRegr$" = "percentile",
+      "^InferencePropFractionalLogit$" = "percentile",
+      "^InferenceCountHurdleNegBin$" = "percentile",
+      "^InferenceContinRobustRegr$" = "percentile"
     ),
     design_class_overrides = list(
       FixedDesignBlockedCluster = c(
-        "^InferenceContinMultiRobustRegr$" = "percentile",
-        "^InferenceContinMultLin$" = "percentile",
-        "^InferenceContinMultOLS$" = "percentile"
+        "^InferenceContinRobustRegr$" = "percentile",
+        "^InferenceContinLin$" = "percentile",
+        "^InferenceContinOLS$" = "percentile",
+        "^InferenceContinKKOLSIVWC$" = "percentile",
+        "^InferenceContinKKOLSOneLik$" = "percentile"
       )
     )
   )

@@ -41,9 +41,48 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	private = list(
 		use_rcpp = TRUE,
 
+		supports_likelihood_tests = function(){
+			isTRUE(private$use_rcpp)
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X = ctx$X
+			y = as.numeric(private$y)
+			dead = as.numeric(private$dead)
+			full_b_cox = as.numeric(private$cached_mod$b[-1])  # strip 0-prefix
+			full_fit = list(b = full_b_cox, neg_loglik = ctx$full_neg_loglik)
+			list(
+				X = X, y = y, j = 1L,
+				full_fit = full_fit,
+				fit_null = function(delta){
+					res = tryCatch(fast_coxph_regression_cpp(X, y, dead, fixed_idx = 1L, fixed_values = delta,
+					               estimate_only = TRUE), error = function(e) NULL)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
+				},
+				score = function(fit){
+					get_coxph_score_cpp(X, y, dead, as.numeric(fit$b))
+				},
+				observed_information = function(fit){
+					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
+				},
+				fisher_information = function(fit){
+					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
+			)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
-			X_fit = if (ncol(as.matrix(private$X)) > 0){
-				cbind(treatment = private$w, private$get_X())
+			X_cov = private$get_X()
+			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0){
+				cbind(treatment = private$w, X_cov)
 			} else {
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			}
@@ -54,8 +93,13 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					error = function(e) NULL
 				)
 				if (is.null(fit)) {
+					private$cached_values$likelihood_test_context = NULL
 					return(list(b = rep(NA_real_, ncol(X_fit)), vcov = matrix(NA_real_, ncol(X_fit), ncol(X_fit))))
 				}
+				private$cached_values$likelihood_test_context = list(
+					X = X_fit,
+					full_neg_loglik = fit$neg_log_lik
+				)
 				# fast_coxph_regression returns coefficients with intercept=FALSE for Cox.
 				# InferenceMLEorKMforGLMs expects intercept in first position if it exists.
 				# But Cox has no intercept. So we prefix 0.

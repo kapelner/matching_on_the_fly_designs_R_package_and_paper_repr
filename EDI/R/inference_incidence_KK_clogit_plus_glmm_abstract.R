@@ -417,10 +417,10 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			}
 			m_vec[is.na(m_vec)] = 0L
 			private$cached_values$KKstats = compute_zhang_match_data_cpp(
-				as.integer(private$w),
-				as.integer(m_vec),
+				as.matrix(private$get_X()),
 				as.numeric(private$y),
-				as.matrix(private$get_X())
+				as.integer(private$w),
+				as.integer(m_vec)
 			)
 		},
 

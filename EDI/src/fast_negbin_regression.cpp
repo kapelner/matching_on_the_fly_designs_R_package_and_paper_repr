@@ -6,6 +6,33 @@ using namespace Rcpp;
 
 namespace {
 
+double smart_negbin_theta_start_from_beta(const Eigen::MatrixXd& X,
+                                          const Eigen::VectorXi& y,
+                                          const Eigen::VectorXd& beta,
+                                          double legacy_theta_start) {
+    const int n = X.rows();
+    const int p = X.cols();
+    const int df = std::max(1, n - p);
+    if (beta.size() != p || !beta.allFinite()) return legacy_theta_start;
+
+    Eigen::VectorXd eta = (X * beta).array().min(700.0).matrix();
+    Eigen::VectorXd mu = eta.array().exp().max(1e-8).matrix();
+    double alpha_sum = 0.0;
+
+    for (int i = 0; i < n; ++i) {
+        const double yi = static_cast<double>(y[i]);
+        const double mui = mu[i];
+        alpha_sum += ((yi - mui) * (yi - mui) - mui) / (mui * mui);
+    }
+
+    const double alpha_hat = alpha_sum / static_cast<double>(df);
+    if (!std::isfinite(alpha_hat) || alpha_hat <= 0.0) return legacy_theta_start;
+
+    const double theta_hat = 1.0 / alpha_hat;
+    if (!std::isfinite(theta_hat) || theta_hat <= 0.0) return legacy_theta_start;
+    return std::max(0.1, theta_hat);
+}
+
 class NBLogLik {
 private:
     const Eigen::MatrixXd m_X;
@@ -75,6 +102,8 @@ public:
 
 ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
                                   const Eigen::VectorXi& y,
+                                  Rcpp::Nullable<Rcpp::NumericVector> start_params = R_NilValue,
+                                  bool smart_start = true,
                                   int maxit = 1000,
                                   double eps_g = 1e-5,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -83,18 +112,30 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
-    if (optimization_alg == "newton_raphson" || optimization_alg == "newton" || optimization_alg == "nr") {
-        double mean_y = y.cast<double>().mean();
-        if (p > 0 && X.col(0).array().isApprox(Eigen::ArrayXd::Ones(X.rows()), 1e-12)) {
-            params[0] = std::log(std::max(mean_y, 1e-8));
-        }
-        double var_y = (y.cast<double>().array() - mean_y).square().sum() /
-            static_cast<double>(std::max(1, static_cast<int>(y.size()) - 1));
-        double theta_start = (var_y > mean_y && mean_y > 0.0) ?
-            std::max(0.1, mean_y * mean_y / (var_y - mean_y)) : 10.0;
-        params[p] = std::log(theta_start);
+    const Eigen::VectorXd y_double = y.cast<double>();
+    const double mean_y = y_double.mean();
+    const double var_y = (y_double.array() - mean_y).square().sum() /
+        static_cast<double>(std::max(1, static_cast<int>(y.size()) - 1));
+    const double theta_start = (var_y > mean_y && mean_y > 0.0) ?
+        std::max(0.1, mean_y * mean_y / (var_y - mean_y)) : 10.0;
+    Eigen::VectorXd legacy_params = Eigen::VectorXd::Zero(p + 1);
+    if (p > 0 && X.col(0).array().isApprox(Eigen::ArrayXd::Ones(X.rows()), 1e-12)) {
+        legacy_params[0] = std::log(std::max(mean_y, 1e-8));
     }
+    legacy_params[p] = std::log(theta_start);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    if (start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(start_params));
+        if (params.size() != p + 1) stop("start_params must have length equal to the number of model parameters");
+    } else if (smart_start) {
+        Eigen::VectorXd beta_smart = ols_start_beta_on_log1p(X, y_double);
+        Eigen::VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_params.head(p);
+        params.head(p) = beta_start;
+        params[p] = std::log(smart_negbin_theta_start_from_beta(X, y, beta_start, theta_start));
+    } else {
+        params = legacy_params;
+    }
+    params = apply_fixed_values(params, fixed_spec);
 
     NBLogLik fun(X, y);
     LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "newton_raphson");
@@ -103,6 +144,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // theta
     res.XtWX = fun.hessian(params); // Hessian
+    res.iterations = fit.niter;
     res.converged = fit.converged;
     res.sigma2_hat = -fit.value; // using sigma2_hat to store logLik temporarily
     return res;
@@ -157,13 +199,15 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 // [[Rcpp::export]]
 List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 Eigen::VectorXi y,
+                                Nullable<NumericVector> start_params = R_NilValue,
+                                bool smart_start = false,
                                 int maxit = 1000,
                                 double eps_f = 1e-8,
                                 double eps_g = 1e-5,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                 std::string optimization_alg = "newton_raphson") {
-    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
+    ModelResult res = fast_neg_bin_internal(X, y, start_params, smart_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
@@ -173,6 +217,7 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
         Named("theta_hat") = res.dispersion,
         Named("logLik") = res.sigma2_hat,
         Named("converged") = res.converged,
+        Named("iterations") = res.iterations,
         Named("hess_fisher_info_matrix") = res.XtWX,
         Named("vcov") = vcov
     );
@@ -193,17 +238,20 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 // [[Rcpp::export]]
 List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Eigen::VectorXi y,
+                        Nullable<NumericVector> start_params = R_NilValue,
+                        bool smart_start = false,
                         int maxit = 1000,
                         double eps_f = 1e-8,
                         double eps_g = 1e-5,
                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                         std::string optimization_alg = "newton_raphson") {
-    ModelResult res = fast_neg_bin_internal(X, y, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
+    ModelResult res = fast_neg_bin_internal(X, y, start_params, smart_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg);
     return List::create(
         Named("b") = res.b,
         Named("theta_hat") = res.dispersion,
         Named("logLik") = res.sigma2_hat,
-        Named("converged") = res.converged
+        Named("converged") = res.converged,
+        Named("iterations") = res.iterations
     );
 }

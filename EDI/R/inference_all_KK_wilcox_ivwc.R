@@ -241,10 +241,10 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			}
 
 			compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
-				as.numeric(y),
 				as.integer(w),
+				as.numeric(y),
 				as.integer(m_vec),
-				indices_mat, # Back to 1-based, let C++ handle it if needed or check impl
+				indices_mat,
 				m_mat,
 				private$n_cpp_threads(B)
 			)

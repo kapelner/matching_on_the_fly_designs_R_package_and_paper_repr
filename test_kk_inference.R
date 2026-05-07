@@ -16,9 +16,9 @@ for (t in 1:n) {
 	des_obj$add_one_subject_response(t, y[t], 1)
 }
 
-cat("Creating InferenceAllKKCompoundMeanDiff...\n")
+cat("Creating InferenceAllKKMeanDiffIVWC...\n")
 tryCatch({
-	seq_des_inf <- InferenceAllKKCompoundMeanDiff$new(des_obj)
+	seq_des_inf <- InferenceAllKKMeanDiffIVWC$new(des_obj)
 	cat("SUCCESS: Created inference object\n")
 
 	cat("Computing treatment estimate...\n")

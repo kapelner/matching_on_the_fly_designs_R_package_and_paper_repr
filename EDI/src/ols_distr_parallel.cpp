@@ -13,19 +13,19 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector compute_ols_distr_parallel_cpp(
+	const Eigen::MatrixXd& X,
 	const NumericVector& y,
-	const Eigen::MatrixXd& X_covars,
 	const IntegerMatrix& w_mat,
 	double delta,
 	int num_cores) {
 
 	int nsim = w_mat.cols();
 	int n = y.size();
-	int p_covars = X_covars.cols();
+	int p_covars = X.cols();
 	int p_full = p_covars + 2; // Intercept + w + covars
 
-	if (X_covars.rows() != n) {
-		stop("compute_ols_distr_parallel_cpp: X_covars rows must match length(y).");
+	if (X.rows() != n) {
+		stop("compute_ols_distr_parallel_cpp: X rows must match length(y).");
 	}
 	if (w_mat.rows() != n) {
 		stop("compute_ols_distr_parallel_cpp: w_mat rows must match length(y).");
@@ -50,8 +50,8 @@ NumericVector compute_ols_distr_parallel_cpp(
 
 	// MEMOIZATION
 	double sum_1 = (double)n;
-	Eigen::VectorXd Xt_1 = X_covars.colwise().sum();
-	Eigen::MatrixXd XtX_c = X_covars.transpose() * X_covars;
+	Eigen::VectorXd Xt_1 = X.colwise().sum();
+	Eigen::MatrixXd XtX_c = X.transpose() * X;
 	
 #pragma omp parallel for schedule(static) if(use_parallel)
 	for (int b = 0; b < nsim; ++b) {
@@ -71,7 +71,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 			sum_y += y_val;
 		}
 
-		Eigen::VectorXd Xt_w = X_covars.transpose() * w_d;
+		Eigen::VectorXd Xt_w = X.transpose() * w_d;
 
 			Eigen::MatrixXd XtX(p_full, p_full);
 			XtX.setZero();
@@ -90,7 +90,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 		Eigen::VectorXd Xty(p_full);
 		Xty[0] = sum_y;
 		Xty[1] = w_d.dot(y_sim);
-		Xty.tail(p_covars) = X_covars.transpose() * y_sim;
+		Xty.tail(p_covars) = X.transpose() * y_sim;
 
 		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
 		Eigen::VectorXd beta = qr.solve(Xty);
@@ -101,22 +101,22 @@ NumericVector compute_ols_distr_parallel_cpp(
 }
 
 // Bootstrap OLS: for each column of indices_mat (0-based row indices, -1 = NA bootstrap),
-// resample y/w/X_covars and return the OLS treatment coefficient.
+// resample y/w/X and return the OLS treatment coefficient.
 // [[Rcpp::export]]
 NumericVector compute_ols_bootstrap_parallel_cpp(
+	const Eigen::MatrixXd& X,
 	const NumericVector& y,
-	const Eigen::MatrixXd& X_covars,
 	const IntegerVector& w,
 	const IntegerMatrix& indices_mat,
 	int num_cores) {
 
 	int B = indices_mat.cols();
 	int n_boot = indices_mat.rows(); // bootstrap sample size (= n for simple bootstrap)
-	int p_covars = X_covars.cols();
+	int p_covars = X.cols();
 	int p_full = p_covars + 2; // intercept + w + covars
 
-	if (X_covars.rows() != y.size()) {
-		stop("compute_ols_bootstrap_parallel_cpp: X_covars rows must match length(y).");
+	if (X.rows() != y.size()) {
+		stop("compute_ols_bootstrap_parallel_cpp: X rows must match length(y).");
 	}
 	if (w.size() != y.size()) {
 		stop("compute_ols_bootstrap_parallel_cpp: w length must match length(y).");
@@ -158,7 +158,7 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 			w_b[i] = wv;
 			sum_w += wv;
 			sum_y += y_b[i];
-			X_b.row(i) = X_covars.row(idx);
+			X_b.row(i) = X.row(idx);
 		}
 
 		Eigen::VectorXd Xt_1 = X_b.colwise().sum();

@@ -96,9 +96,10 @@ Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceKKPassThrough$new(
   des_obj,
-  model_formula = NULL,
   verbose = FALSE,
-  harden = TRUE
+  harden = TRUE,
+  model_formula = NULL,
+  smart_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -108,15 +109,17 @@ Initialize
 \item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
 and response y is recorded within.}
 
+\item{\code{verbose}}{A flag indicating whether messages should be displayed
+to the user. Default is \code{TRUE}}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed
-to the user. Default is \code{TRUE}}
-
-\item{\code{harden}}{Whether to apply robustness measures.}
+\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
 }
 \if{html}{\out{</div>}}
 }

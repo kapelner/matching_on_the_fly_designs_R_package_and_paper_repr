@@ -4,14 +4,14 @@
 \alias{get_coxph_score_cpp}
 \title{Compute Cox PH Score (C++)}
 \usage{
-get_coxph_score_cpp(y, dead, X, beta)
+get_coxph_score_cpp(X, y, dead, beta)
 }
 \arguments{
+\item{X}{Predictor matrix.}
+
 \item{y}{Survival times.}
 
 \item{dead}{Event indicators.}
-
-\item{X}{Predictor matrix.}
 
 \item{beta}{Coefficient vector.}
 }

@@ -5,7 +5,7 @@
 \title{Fast Cox Proportional Hazards Regression (R Wrapper)}
 \usage{
 fast_coxph_regression(
-  Xmm,
+  X,
   y,
   dead,
   use_rcpp = TRUE,
@@ -14,8 +14,8 @@ fast_coxph_regression(
 )
 }
 \arguments{
-\item{Xmm}{A numeric matrix of predictor variables. It is assumed that an intercept term
-is handled implicitly by the Cox model and should not be included in \code{Xmm}.}
+\item{X}{A numeric matrix of predictor variables. It is assumed that an intercept term
+is handled implicitly by the Cox model and should not be included in \code{X}.}
 
 \item{y}{A numeric vector representing the observed time (event time or censoring time).}
 
@@ -47,7 +47,7 @@ which is listed in Suggests and is not installed automatically with \pkg{EDI}.
 }
 \examples{
 if (check_package_installed("glmnet")) {
-  Xmm <- matrix(c(-1, 0,
+  X <- matrix(c(-1, 0,
                   0, 1,
                   1, 0,
                   0, 1,
@@ -55,6 +55,6 @@ if (check_package_installed("glmnet")) {
                   2, 1), ncol = 2, byrow = TRUE)
   y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
   dead <- c(1, 1, 0, 1, 0, 1)
-  fast_coxph_regression(Xmm, y, dead)
+  fast_coxph_regression(X, y, dead)
 }
 }

@@ -95,10 +95,10 @@ test_that("proportion bootstrap diagnostics explain any comprehensive-style fail
 	set.seed(1)
 
 	class_names = c(
-		"InferencePropUniGCompMeanDiff",
-		"InferencePropMultiGCompMeanDiff",
-		"InferencePropUniZeroOneInflatedBetaRegr",
-		"InferencePropMultiZeroOneInflatedBetaRegr"
+		"InferencePropGCompMeanDiff",
+		"InferencePropGCompMeanDiff",
+		"InferencePropZeroOneInflatedBetaRegr",
+		"InferencePropZeroOneInflatedBetaRegr"
 	)
 	design_names = c("Bernoulli", "iBCRD", "Efron")
 	B = 51L

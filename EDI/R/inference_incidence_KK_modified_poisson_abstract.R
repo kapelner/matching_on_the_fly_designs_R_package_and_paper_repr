@@ -45,32 +45,32 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-		best_Xmm_colnames = NULL,
+		best_X_colnames = NULL,
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_Xmm_colnames)){
+			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
 
 			# Use the same design matrix structure as the original fit
-			Xmm_cols = private$best_Xmm_colnames
+			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
-			if (length(Xmm_cols) == 0L){
+			if (length(X_cols) == 0L){
 				# Univariate case
-				Xmm = cbind("(Intercept)" = 1, treatment = private$w)
+				X = cbind("(Intercept)" = 1, treatment = private$w)
 			} else {
 				# Multivariate case
-				X_cov = X_data[, intersect(Xmm_cols, colnames(X_data)), drop = FALSE]
-				Xmm = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
 			}
 
-			fit = tryCatch(private$fit_modified_poisson(Xmm, j_treat = 2L, estimate_only = estimate_only), error = function(e) NULL)
+			fit = tryCatch(private$fit_modified_poisson(X, j_treat = 2L, estimate_only = estimate_only), error = function(e) NULL)
 			if (is.null(fit) || !is.finite(fit$beta_hat)){
 				return(NA_real_)
 			}
@@ -188,7 +188,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 
 			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
 			if (!is.null(fit)) {
-				private$best_Xmm_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
+				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
 			}
 			if (private$harden && is.null(fit) && ncol(X_full) > 2L){
 				reduced = private$reduce_design_matrix_preserving_treatment(X_full[, 1:2, drop = FALSE])
