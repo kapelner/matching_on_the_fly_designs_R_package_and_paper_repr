@@ -157,7 +157,7 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed
-to the user. Default is \code{TRUE}}
+to the user. Default is \code{FALSE}}
 
 \item{\code{convex_flag}}{A flag indicating whether the estimator should use a convex
   combination of the Bai et al

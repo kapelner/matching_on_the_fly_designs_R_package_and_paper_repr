@@ -11,8 +11,7 @@ A named list describing the built-in dispatch policy.
 }
 \description{
 Returns EDI's built-in blocklist-first dispatch policy. This is the policy
-used when the user has not installed a custom dispatch override.
 }
-\details{
-Do not expect a universal "more cores is faster" rule.
+\examples{
+get_bootstrap_dispatch_policy()
 }

@@ -21,3 +21,4 @@ Hessian matrix.
 \description{
 Calculates the Hessian of log partial likelihood for unstratified Cox regression.
 }
+\keyword{internal}

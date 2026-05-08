@@ -110,7 +110,7 @@ Initialize
 and response y is recorded within.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed
-to the user. Default is \code{TRUE}}
+to the user. Default is \code{FALSE}}
 
 \item{\code{harden}}{Whether to apply robustness measures.}
 
@@ -143,7 +143,7 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \describe{
 \item{\code{B}}{Number of bootstrap samples. The default is 501.}
 
-\item{\code{show_progress}}{Description for show_progress}
+\item{\code{show_progress}}{Whether to show a progress bar.}
 
 \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics. Default \code{FALSE}.}

@@ -4,6 +4,10 @@
 #' binary matches and then improves the matched design with greedy pair switching
 #' using the \pkg{GreedyExperimentalDesign} package.
 #'
+#' @examples
+#' \dontrun{
+#' des = FixedDesignMatchingGreedyPairSwitching$new(n = 10, response_type = 'continuous')
+#' }
 #' @export
 FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyPairSwitching",
 	inherit = FixedDesign,

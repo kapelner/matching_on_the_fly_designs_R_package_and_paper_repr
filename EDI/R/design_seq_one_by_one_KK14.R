@@ -4,6 +4,9 @@
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneKK14$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 	inherit = DesignSeqOneByOne,
@@ -13,9 +16,9 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param lambda The penalty parameter for covariate imbalance.
 		#' @param t_0_pct The percentage of subjects to allocate before matching begins.
@@ -24,7 +27,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return	A new `DesignSeqOneByOneKK14` object
+		#' @return  A new `DesignSeqOneByOneKK14` object
 		initialize = function(
 						response_type,
 						prob_T = 0.5,

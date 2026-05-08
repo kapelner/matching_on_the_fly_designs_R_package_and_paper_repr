@@ -3,6 +3,9 @@
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneiBCRD$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 	inherit = DesignSeqOneByOne,
@@ -12,14 +15,14 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return	A new `DesignSeqOneByOneiBCRD` object
+		#' @return  A new `DesignSeqOneByOneiBCRD` object
 		initialize = function(
 						response_type,
 						prob_T = 0.5,

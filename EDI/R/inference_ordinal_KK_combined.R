@@ -4,6 +4,16 @@
 #' for ordinal responses under a KK matching-on-the-fly design using the
 #' treatment indicator and, optionally, all recorded covariates as predictors.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'ordinal')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
+#' inf = InferenceOrdinalKKGEE$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 	lock_objects = FALSE,
@@ -97,6 +107,16 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 #' Rcpp/L-BFGS routine that requires no external packages. Set \code{use_rcpp = FALSE}
 #' to fall back to \pkg{glmmTMB}.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'ordinal')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
+#' inf = InferenceOrdinalKKGLMM$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 	lock_objects = FALSE,

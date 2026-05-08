@@ -43,6 +43,15 @@ and is not installed automatically with \pkg{EDI}.
 Install \pkg{quantreg} before using this class.
 }
 \examples{
+\donttest{
+seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rnorm(10))
+inf = InferenceContinKKQuantileRegrIVWC$new(seq_des)
+inf$compute_estimate()
+}
 
 ## ------------------------------------------------
 ## Method `InferenceContinKKQuantileRegrIVWC$new`

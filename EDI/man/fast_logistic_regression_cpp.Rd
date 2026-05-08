@@ -44,3 +44,12 @@ A list containing the following components:
 \description{
 High-performance logistic regression fitting using IRLS.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = rbinom(10, 1, 0.5)
+fast_logistic_regression_cpp(X, y)
+X = matrix(rnorm(100), 10, 10)
+y = rbinom(10, 1, 0.5)
+fast_logistic_regression_cpp(X, y)
+}
+\keyword{internal}

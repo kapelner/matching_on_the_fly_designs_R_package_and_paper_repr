@@ -9,7 +9,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 	public = list(
 		#' @description
 		#' Set Custom Randomization Statistic Computation
-		#' @param custom_randomization_statistic_function	A function that returns a scalar value.
+		#' @param custom_randomization_statistic_function  A function that returns a scalar value.
 		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
 			if (should_run_asserts()) {
 				assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
@@ -26,12 +26,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#' @description
 		#' Computes the randomization distribution of the treatment effect estimate under the sharp null.
 		#'
-		#' @param r						Number of randomization vectors. Default 501.
-		#' @param delta					The null difference. Default 0.
-		#' @param transform_responses	Type of transformation. Default "none".
-		#' @param show_progress			Show progress bar. Default TRUE.
-		#' @param permutations			Pre-computed permutations. Default NULL.
-		#' @param debug					If \code{TRUE}, return a list with the distribution values and
+		#' @param r  					Number of randomization vectors. Default 501.
+		#' @param delta  				The null difference. Default 0.
+		#' @param transform_responses  Type of transformation. Default "none".
+		#' @param show_progress  		Show progress bar. Default TRUE.
+		#' @param permutations  		Pre-computed permutations. Default NULL.
+		#' @param debug  				If \code{TRUE}, return a list with the distribution values and
 		#'   per-iteration diagnostics including error messages, warning messages, counts of each,
 		#'   and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 		#'   values. Runs serially. Default \code{FALSE}.
@@ -248,12 +248,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 
 		#' @description
 		#' Computes a randomization-based p-value.
-		#' @param r		Number of randomization vectors.
-		#' @param delta					Null difference.
-		#' @param transform_responses	Transformation.
+		#' @param r  	Number of randomization vectors.
+		#' @param delta  				Null difference.
+		#' @param transform_responses  Transformation.
 		#' @param na.rm 				Remove NAs.
-		#' @param show_progress		Show progress.
-		#' @param permutations		Pre-computed permutations.
+		#' @param show_progress  	Show progress.
+		#' @param permutations  	Pre-computed permutations.
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		#' @return 	Randomization p-value.
 		compute_rand_two_sided_pval = function(r = 501, delta = 0, transform_responses = "none", na.rm = TRUE, show_progress = TRUE, permutations = NULL, zero_one_logit_clamp = .Machine$double.eps){

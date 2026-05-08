@@ -193,6 +193,7 @@ ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;
@@ -206,6 +207,7 @@ Eigen::VectorXd get_poisson_regression_score_cpp(const Eigen::MatrixXd& X, const
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     Eigen::VectorXd eta = X * beta;
@@ -221,6 +223,7 @@ Eigen::MatrixXd get_poisson_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the weighted score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
                                                           const Eigen::VectorXd& y,
@@ -238,6 +241,7 @@ Eigen::VectorXd get_poisson_regression_weighted_score_cpp(const Eigen::MatrixXd&
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the weighted Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
                                                             const Eigen::VectorXd& weights,
@@ -259,9 +263,13 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rpois(10, 2)
+//' fast_poisson_regression_cpp(X, y)
 // [[Rcpp::export]]
-List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
-									 const Eigen::VectorXd& y,
+List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                      Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
                                      bool smart_start = true,
 									 int maxit = 100,
@@ -291,6 +299,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y,
@@ -324,10 +333,13 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rpois(10, 2)
+//' fast_poisson_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
-List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
-											  const Eigen::VectorXd& y,
-											  int j = 2,
+List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
                                               Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
                                               bool smart_start = true,
 											  int maxit = 100,
@@ -380,6 +392,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, vcov, and dispersion estimate.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 												   const Eigen::VectorXd& y,

@@ -13,6 +13,12 @@ An R6 Class encapsulating the data and functionality for a fixed blocked and
 cluster randomized experimental design.
 This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 }
+\examples{
+des = FixedDesignBlockedCluster$new(n = 20, response_type = 'continuous', strata_cols = 'x2', cluster_col = 'cl')
+X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, each = 10)), cl = factor(rep(1:10, each = 2)))
+des$add_all_subjects_to_experiment(X)
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlockedCluster}
 }

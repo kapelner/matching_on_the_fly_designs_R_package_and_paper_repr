@@ -14,13 +14,16 @@ This class takes care of data initialization and sequential assignments. The cla
 should be saved securely after each assignment e.g. on an encrypted cloud server.
 }
 \examples{
+seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 
 ## ------------------------------------------------
 ## Method `DesignSeqOneByOneKK21$new`
 ## ------------------------------------------------
 
-\dontrun{
+\donttest{
 seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
 
 }
@@ -135,7 +138,7 @@ imputing its value? If the feature is type factor, instead of creating
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be
-displayed to the user. Default is \code{TRUE}.}
+displayed to the user. Default is \code{FALSE}.}
 
 \item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining
 matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
@@ -194,8 +197,9 @@ A new `DesignSeqOneByOneKK21` object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{\donttest{
 seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
 
 }

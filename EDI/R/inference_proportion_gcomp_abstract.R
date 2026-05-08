@@ -205,8 +205,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 
 		#' @description
 		#' Abbreviated bootstrap sampler that reuses a bootstrap worker.
-		#' @param B Description for B
-		#' @param show_progress Description for show_progress
+		#' @param B The number of bootstrap samples (default 501).
+		#' @param show_progress Whether to show a progress bar.
 		#' @param max_resample_attempts Maximum redraw attempts per bootstrap replicate before
 		#'   the replicate is recorded as \code{NA}. \code{NULL} (default) uses the value set
 		#'   at construction time.

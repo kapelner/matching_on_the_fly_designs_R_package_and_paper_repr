@@ -3,6 +3,16 @@
 #' Fits a Cox proportional hazards regression for survival responses using the
 #' treatment indicator and, optionally, all recorded covariates as predictors.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalCoxPHRegr$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	lock_objects = FALSE,

@@ -23,3 +23,4 @@ Hessian matrix.
 \description{
 Calculates the Hessian of log partial likelihood for stratified Cox regression.
 }
+\keyword{internal}

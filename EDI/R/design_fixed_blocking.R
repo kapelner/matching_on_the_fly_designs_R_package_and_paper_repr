@@ -3,6 +3,11 @@
 #' An R6 Class encapsulating the data and functionality for a fixed stratified
 #' blocking experimental design.
 #'
+#' @examples
+#' des = FixedDesignBlocking$new(n = 20, response_type = 'continuous', strata_cols = 'x2', equal_block_sizes = FALSE)
+#' X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, 10)))
+#' des$add_all_subjects_to_experiment(X)
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 	inherit = FixedDesign,
@@ -14,9 +19,9 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#'   If `NULL` (the default), all available covariate columns are used.
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param preferred_num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
 		#' @param B_target The target number of blocks. Columns from `strata_cols`
 		#'   are added greedily in order, each column being included only if it does not push
@@ -41,7 +46,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return	A new `FixedDesignBlocking` object
+		#' @return  A new `FixedDesignBlocking` object
 			initialize = function(
 						strata_cols = NULL,
 						response_type,

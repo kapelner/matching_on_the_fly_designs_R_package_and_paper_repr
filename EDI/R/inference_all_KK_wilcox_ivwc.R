@@ -7,6 +7,16 @@
 #' This method is robust to outliers and does not assume a specific parametric
 #' distribution for the response.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceAllKKWilcoxIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 	lock_objects = FALSE,
@@ -15,24 +25,8 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param	des_obj		A DesignSeqOneByOne object (must be a KK design).
-		#' @param	num_cores			Number of CPU cores for parallel processing.
-		#' @param	verbose			Whether to print progress messages.
-		#' @examples
-		#' set.seed(1)
-		#' x_dat <- data.frame(
-		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-		#' )
-		#' seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
-		#' FALSE)
-		#' for (i in seq_len(nrow(x_dat))) {
-		#'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-		#' }
-		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-		#' infer <- InferenceAllKKWilcoxIVWC$new(seq_des, verbose = FALSE)
-		#' infer
-		#'
+		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
+		#' @param verbose Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the

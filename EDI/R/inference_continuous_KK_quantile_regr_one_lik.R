@@ -5,6 +5,16 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceContinKKQuantileRegrOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegrOneLik",
 	lock_objects = FALSE,
@@ -13,8 +23,8 @@ InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegr
 		#' @description	Initialize the inference object.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.
-		#' @param	tau				The quantile level for regression, strictly between 0 and 1. Default is 0.5.
-		#' @param	verbose			Whether to print progress messages.
+		#' @param  tau  			The quantile level for regression, strictly between 0 and 1. Default is 0.5.
+		#' @param  verbose  		Whether to print progress messages.
 		#' @examples
 		#' set.seed(1)
 		#' x_dat <- data.frame(

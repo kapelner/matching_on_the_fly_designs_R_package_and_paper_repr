@@ -7,6 +7,16 @@
 #' Minimises the joint check-function loss over both data sources simultaneously.
 #' Inference is based on the stacked combined-likelihood quantile-regression fit.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'proportion')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferencePropKKQuantileRegrOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneLik",
 	lock_objects = FALSE,
@@ -17,8 +27,7 @@ InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneL
 		#'   are assigned and response y is recorded within.
 		#' @param tau                             The quantile level on the logit scale, strictly
 		#'   between 0 and 1. Default is 0.5.
-		#' @param	num_cores			Number of CPU cores for parallel processing.
-		#' @param	verbose			Whether to print progress messages.
+		#' @param  verbose  		Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the

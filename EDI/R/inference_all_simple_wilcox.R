@@ -15,6 +15,16 @@
 #' so the randomization confidence interval inversion is exact (not approximate)
 #' on the original response scale for continuous responses.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceAllSimpleWilcox$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 	lock_objects = FALSE,

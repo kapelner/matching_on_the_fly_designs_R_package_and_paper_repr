@@ -300,6 +300,7 @@ Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::MatrixXd& X,
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 													  const Eigen::VectorXd& y,
@@ -314,6 +315,7 @@ Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
 														const Eigen::VectorXd& y,
@@ -328,6 +330,7 @@ Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 														   const Eigen::VectorXd& y,
@@ -342,6 +345,7 @@ Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
 															 const Eigen::VectorXd& y,
@@ -359,6 +363,7 @@ Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::Matrix
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients and fitted values.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                       const Eigen::VectorXd& y,
@@ -380,6 +385,7 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                const Eigen::VectorXd& y,
@@ -401,6 +407,7 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients and fitted values.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                            const Eigen::VectorXd& y,
@@ -422,6 +429,7 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                     const Eigen::VectorXd& y,

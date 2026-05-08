@@ -13,6 +13,11 @@ An R6 class encapsulating a fixed experimental design that first computes
 binary matches and then improves the matched design with greedy pair switching
 using the \pkg{GreedyExperimentalDesign} package.
 }
+\examples{
+\dontrun{
+des = FixedDesignMatchingGreedyPairSwitching$new(n = 10, response_type = 'continuous')
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignMatchingGreedyPairSwitching}
 }

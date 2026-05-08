@@ -48,3 +48,9 @@ A list containing the following components:
 \description{
 Beta regression with full variance-covariance matrix and standard error estimation.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
+fast_beta_regression_with_var_cpp(X, y)
+}
+\keyword{internal}

@@ -11,11 +11,10 @@ A named list describing the default optimization algorithm configuration.
 }
 \description{
 Returns EDI's built-in policy for choosing a default optimization algorithm.
-Each inference class can override the standard \code{"newton_raphson"} default
-via a regular expression pattern.
 }
 \details{
 The built-in overrides are empirical. Regression models generally default to
-\code{"newton_raphson"}, while GLMM and frailty models (which integrate out
-random effects) default to \code{"lbfgs"}.
+}
+\examples{
+get_optimization_dispatch_policy()
 }

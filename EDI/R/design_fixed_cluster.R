@@ -5,6 +5,11 @@
 #' This design randomizes entire groups (clusters) of subjects together using the
 #' \pkg{randomizr} package.
 #'
+#' @examples
+#' des = FixedDesignCluster$new(n = 20, response_type = 'continuous', cluster_col = 'cl')
+#' X = data.frame(x = rnorm(20), cl = factor(rep(1:5, each = 4)))
+#' des$add_all_subjects_to_experiment(X)
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 	inherit = FixedDesign,
@@ -14,10 +19,10 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 		#'
 		#' @param cluster_col 	The column name in the data that identifies the cluster for each subject.
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment for each cluster.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param prob_T  The probability of the treatment assignment for each cluster.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

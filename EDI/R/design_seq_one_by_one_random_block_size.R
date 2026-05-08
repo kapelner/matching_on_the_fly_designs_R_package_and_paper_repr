@@ -5,6 +5,9 @@
 #' where block sizes are randomly chosen from a specified set for each stratum. This design
 #' is commonly used in clinical trials to prevent predictability of treatment assignments.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneRandomBlockSize$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize",
 	inherit = DesignSeqOneByOne,
@@ -19,22 +22,21 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		#'   to choose from.
 		#' Each must be a multiple of the inverse of \code{prob_T} to ensure integer
 		#' treatment/control counts.
-		#' @param	response_type 	The data type of response values which must be one of the following:
+		#' @param  response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous",
 		#' 								"incidence",
 		#' 								"proportion",
 		#' 								"count",
 		#' 								"survival",
 		#' 								"ordinal".
-		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
+		#' @param  prob_T  The probability of the treatment assignment. This defaults to \code{0.5}.
 		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
 		#'   should we include another dummy variable for its missingness? Default is \code{TRUE}.
-		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
-		#' @param verbose A flag indicating whether messages should be displayed. Default is
+		#' @param  n  		The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param verbose A flag indicating whether messages should be displayed. Default is \code{FALSE}.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
-		#'   \code{FALSE}.
-		#' @return	A new `DesignSeqOneByOneRandomBlockSize` object
+		#' @return  A new `DesignSeqOneByOneRandomBlockSize` object
 		#'
 		initialize = function(
 						strata_cols = NULL,

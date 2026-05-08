@@ -14,10 +14,10 @@ InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 		#' @description
 		#' Computes a randomization-based confidence interval via Zhang's combined test.
 		#'
-		#' @param alpha					The confidence level is 1 - \code{alpha}.
-		#' @param r		Number of random sign-flips / permutations.
-		#' @param pval_epsilon			Bisection convergence tolerance.
-		#' @param show_progress			Ignored.
+		#' @param alpha  				The confidence level is 1 - \code{alpha}.
+		#' @param r  	Number of random sign-flips / permutations.
+		#' @param pval_epsilon  		Bisection convergence tolerance.
+		#' @param show_progress  		Ignored.
 		#' @param ci_search_control Ignored for this Zhang-based CI implementation.
 		#' @return 	A length-2 numeric vector giving the lower and upper CI boundary.
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){

@@ -14,6 +14,12 @@ randomized experimental design.
 This design randomizes entire groups (clusters) of subjects together using the
 \pkg{randomizr} package.
 }
+\examples{
+des = FixedDesignCluster$new(n = 20, response_type = 'continuous', cluster_col = 'cl')
+X = data.frame(x = rnorm(20), cl = factor(rep(1:5, each = 4)))
+des$add_all_subjects_to_experiment(X)
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignCluster}
 }

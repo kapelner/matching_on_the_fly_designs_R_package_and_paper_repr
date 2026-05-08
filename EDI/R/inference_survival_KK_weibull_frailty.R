@@ -5,6 +5,16 @@
 #' pairs and a standard Weibull AFT model for the reservoir. The estimates are
 #' combined via IVWC.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKWeibullFrailtyIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalKKWeibullFrailtyIVWC",
 	inherit = InferenceAbstractKKWeibullFrailtyIVWC,
@@ -28,6 +38,16 @@ InferenceSurvivalKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalKKWeibullF
 #' This class fits a single joint Weibull frailty model over all KK design data
 #' (matched pairs + reservoir) for survival responses.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKWeibullFrailtyOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKWeibullFrailtyOneLik = R6::R6Class("InferenceSurvivalKKWeibullFrailtyOneLik",
 	inherit = InferenceAbstractKKWeibullFrailtyOneLik,

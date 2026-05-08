@@ -34,7 +34,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		#' @description
 		#' Computes the IVWC mean-difference estimate across pairs and reservoir
 		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
@@ -83,7 +83,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#'
-		#' @return	A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+		#' @return  A (1 - alpha)-sized frequentist confidence interval for the treatment effect
 		#'
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -102,7 +102,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		#' @param delta   The null difference to test against. For any treatment effect at all this is
 		#'   set to zero (the default).
 		#'
-		#' @return	The approximate frequentist p-value
+		#' @return  The approximate frequentist p-value
 		#'
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -119,12 +119,12 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param	r		The number of randomization vectors. The default is 501.
-		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
-		#' @param	show_progress			Show a text progress indicator.
+		#' @param  r  	The number of randomization vectors. The default is 501.
+		#' @param  pval_epsilon  		The bisection algorithm tolerance. The default is 0.005.
+		#' @param  show_progress  		Show a text progress indicator.
 		#' @param ci_search_control Optional randomization-CI search control list passed through 
 		#'   to the base method.
-		#' @return	A 1 - alpha sized frequentist confidence interval
+		#' @return  A 1 - alpha sized frequentist confidence interval
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {

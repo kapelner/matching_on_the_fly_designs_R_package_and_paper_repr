@@ -585,6 +585,7 @@ struct StereotypeObjective {
 //' @param params A numeric vector of parameters.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 											   const Eigen::VectorXd& y,
@@ -602,6 +603,7 @@ Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 //' @param params A numeric vector of parameters.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 												 const Eigen::VectorXd& y,
@@ -621,6 +623,7 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, thresholds, scores, and convergence status.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -662,6 +665,7 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -729,6 +733,7 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
 //' @param tol Convergence tolerance.
 //' @return The profile log-likelihood value.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 double fast_stereotype_profile_loglik_cpp(
     const Eigen::MatrixXd& X,

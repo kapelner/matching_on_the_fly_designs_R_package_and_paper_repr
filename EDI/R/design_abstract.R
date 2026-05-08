@@ -6,6 +6,9 @@
 #' This class takes care of data storage and response handling.
 #'
 #' @keywords internal
+#' @examples
+#' seq_des = Design$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 Design = R6::R6Class("Design",
 	lock_objects = FALSE,
@@ -15,10 +18,10 @@ Design = R6::R6Class("Design",
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param prob_T	Probability of treatment assignment.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size (if fixed).
-		#' @param verbose	Flag for verbosity.
+		#' @param prob_T    Probability of treatment assignment.
+		#' @param include_is_missing_as_a_new_feature    Flag for missingness indicators.
+		#' @param n            The sample size (if fixed).
+		#' @param verbose    Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates when building the
 		#'   model matrix for inference. One of:
 		#'   \describe{
@@ -244,7 +247,7 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Checks if the experiment is completed.
 		#'
-		#' @return	\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
+		#' @return  \code{TRUE} if experiment is complete, \code{FALSE} otherwise.
 		check_experiment_completed = function(){
 			if (private$fixed_sample & private$t < private$n){
 				FALSE
@@ -304,7 +307,7 @@ Design = R6::R6Class("Design",
 		#' @description
 		#' Checks if the experiment has any censored responses
 		#'
-		#' @return	\code{TRUE} if any censored.
+		#' @return  \code{TRUE} if any censored.
 		any_censoring = function(){
 			sum(private$dead) < length(private$dead)
 		},

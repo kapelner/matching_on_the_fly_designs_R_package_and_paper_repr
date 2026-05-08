@@ -274,6 +274,7 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 	priv <- sim$.__enclos_env__$private
 	priv$has_run <- TRUE
 	priv$valid_combos <- list(list(
+		response_type = "continuous",
 		cond_exp_func_model = "linear",
 		n = 4L,
 		p = 1L,
@@ -284,6 +285,7 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 	))
 	priv$raw_results <- list(
 		list(
+			response_type = "continuous",
 			rep = 1L,
 			cond_exp_func_model = "linear",
 			n = 4L,
@@ -293,12 +295,13 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 			inference = "InferenceAllSimpleMeanDiff",
 			inference_type = "asymp_pval",
 			estimate = 1.234567,
-			ci_lo = 0.0,
-			ci_hi = 2.0,
-			pval = 0.123456,
+			ci_lo = -0.5,
+			ci_hi = 1.5,
+			pval = 0.5,
 			true_estimand = 0.5
 		),
 		list(
+			response_type = "continuous",
 			rep = 2L,
 			cond_exp_func_model = "linear",
 			n = 4L,
@@ -314,6 +317,7 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 			true_estimand = 0.5
 		),
 		list(
+			response_type = "continuous",
 			rep = 3L,
 			cond_exp_func_model = "linear",
 			n = 4L,
@@ -328,6 +332,7 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 			pval = 0.012345,
 			true_estimand = 0.5
 		)
+
 	)
 	priv$results_idx <- 3L
 

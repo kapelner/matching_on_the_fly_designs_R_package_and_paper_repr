@@ -12,6 +12,16 @@
 #' function. Approximate confidence intervals and p-values use the reported
 #' robust standard error with residual degrees of freedom \eqn{n - p}.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceContinRobustRegr$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 	lock_objects = FALSE,
@@ -26,9 +36,9 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param method Description for method. Default "MM".
-		#' @param use_rcpp Description for use_rcpp. Default TRUE.
-		#' @param verbose Description for verbose. Default FALSE.
+		#' @param method The estimation method.. Default "MM".
+		#' @param use_rcpp Whether to use C++ speedup.. Default TRUE.
+		#' @param verbose Whether to print progress messages.. Default FALSE.
 		initialize = function(des_obj, model_formula = NULL, method = "MM", use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")

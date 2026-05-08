@@ -14,6 +14,17 @@ responses using a hurdle-Poisson mixed model for matched pairs and an ordinary
 Poisson regression for reservoir subjects. Estimates are combined via
 inverse-variance weighting.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rpois(10, 2))
+inf = InferenceCountKKHurdlePoissonIVWC$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceAbstractKKHurdlePoissonIVWC} -> \code{InferenceCountKKHurdlePoissonIVWC}
 }

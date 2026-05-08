@@ -12,9 +12,3 @@ The variance of the vector.
 \description{
 Calculates the variance of a numeric vector using Rcpp for speed.
 }
-\examples{
-\dontrun{
-x <- rnorm(100)
-var_cpp(x)
-}
-}

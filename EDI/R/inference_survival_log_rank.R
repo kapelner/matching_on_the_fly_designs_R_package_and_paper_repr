@@ -85,7 +85,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 		#'
 		#' @param delta The null difference to test against. Default is 0.
 		#'
-		#' @return	The approximate frequentist p-value
+		#' @return  The approximate frequentist p-value
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)

@@ -14,6 +14,11 @@ experimental design.
 This design pairs subjects based on covariate distances and randomizes within pairs.
 Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 }
+\examples{
+des = FixedDesignBinaryMatch$new(n = 10, response_type = 'continuous')
+des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBinaryMatch}
 }

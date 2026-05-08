@@ -1,5 +1,9 @@
 #' Exact Fisher Incidence Inference
 #'
+#' @examples
+#' \dontrun{
+#' # Example for InferenceIncidExactFisher
+#' }
 #' @export
 InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 	lock_objects = FALSE,

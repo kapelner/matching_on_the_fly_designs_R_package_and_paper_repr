@@ -3488,6 +3488,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// set_omp_num_threads_cpp
+void set_omp_num_threads_cpp(int n_threads);
+RcppExport SEXP _EDI_set_omp_num_threads_cpp(SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    set_omp_num_threads_cpp(n_threads);
+    return R_NilValue;
+END_RCPP
+}
+// get_omp_max_threads_cpp
+int get_omp_max_threads_cpp();
+RcppExport SEXP _EDI_get_omp_max_threads_cpp() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(get_omp_max_threads_cpp());
+    return rcpp_result_gen;
+END_RCPP
+}
 // distance_matrix_euclidean_sq_cpp
 NumericMatrix distance_matrix_euclidean_sq_cpp(const NumericMatrix& X);
 RcppExport SEXP _EDI_distance_matrix_euclidean_sq_cpp(SEXP XSEXP) {
@@ -4340,6 +4360,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_newcombe_paired_ci_cpp", (DL_FUNC) &_EDI_newcombe_paired_ci_cpp, 5},
     {"_EDI_compute_ols_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_distr_parallel_cpp, 5},
     {"_EDI_compute_ols_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_ols_bootstrap_parallel_cpp, 5},
+    {"_EDI_set_omp_num_threads_cpp", (DL_FUNC) &_EDI_set_omp_num_threads_cpp, 1},
+    {"_EDI_get_omp_max_threads_cpp", (DL_FUNC) &_EDI_get_omp_max_threads_cpp, 0},
     {"_EDI_distance_matrix_euclidean_sq_cpp", (DL_FUNC) &_EDI_distance_matrix_euclidean_sq_cpp, 1},
     {"_EDI_distance_matrix_custom_cpp", (DL_FUNC) &_EDI_distance_matrix_custom_cpp, 2},
     {"_EDI_distance_matrix_sum_abs_diff_cpp", (DL_FUNC) &_EDI_distance_matrix_sum_abs_diff_cpp, 1},

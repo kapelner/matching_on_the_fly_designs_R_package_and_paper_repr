@@ -52,3 +52,6 @@ identical to the logic used within \code{SimulationFramework}.  Covariates may b
 supplied directly via \code{X_mat} or drawn randomly via \code{cov_draw_method};
 exactly one of the two must be non-\code{NULL}.
 }
+\examples{
+generate_covariate_dataset(n = 10, p = 5)
+}

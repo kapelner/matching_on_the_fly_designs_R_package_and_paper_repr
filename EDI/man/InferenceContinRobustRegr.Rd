@@ -21,6 +21,17 @@ The \code{method} argument is passed to \code{MASS::rlm} and may be either
 function. Approximate confidence intervals and p-values use the reported
 robust standard error with residual degrees of freedom \eqn{n - p}.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'continuous')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rnorm(10))
+inf = InferenceContinRobustRegr$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinRobustRegr}
 }
@@ -101,11 +112,11 @@ the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
-\item{\code{method}}{Description for method. Default "MM".}
+\item{\code{method}}{The estimation method.. Default "MM".}
 
-\item{\code{use_rcpp}}{Description for use_rcpp. Default TRUE.}
+\item{\code{use_rcpp}}{Whether to use C++ speedup.. Default TRUE.}
 
-\item{\code{verbose}}{Description for verbose. Default FALSE.}
+\item{\code{verbose}}{Whether to print progress messages.. Default FALSE.}
 }
 \if{html}{\out{</div>}}
 }

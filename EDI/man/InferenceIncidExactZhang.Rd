@@ -8,6 +8,11 @@ Exact Zhang Incidence Inference
 
 Exact Zhang Incidence Inference
 }
+\examples{
+\dontrun{
+# Example for InferenceIncidExactZhang
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{InferenceIncidExactZhang}
 }

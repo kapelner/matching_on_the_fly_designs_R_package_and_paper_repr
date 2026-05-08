@@ -220,6 +220,8 @@ test_debug_benchmark.R
 test_key_store.R
 tmp_benchmark_rand_ci_warm_start.R
 test_ols_ivwc_onelik.R
+package_metadata/gradient_test_feasibility_report.md
+simulations/*.tex
 
 
 

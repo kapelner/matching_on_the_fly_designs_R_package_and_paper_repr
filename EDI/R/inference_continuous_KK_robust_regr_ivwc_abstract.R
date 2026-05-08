@@ -11,20 +11,20 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 	public = list(
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param method			Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
-		#' @param maxit			Maximum number of robust-regression iterations. If `NULL`, a
+		#' @param method  		Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
+		#' @param maxit  		Maximum number of robust-regression iterations. If `NULL`, a
 		#'   data-adaptive default is chosen at fit time.
-		#' @param acc				Convergence tolerance for `MASS::rlm`. If `NULL`, a
+		#' @param acc  			Convergence tolerance for `MASS::rlm`. If `NULL`, a
 		#'   data-adaptive default is chosen at fit time.
-		#' @param start_with_ols	Whether to compute an OLS warm start and pass it to `MASS::rlm`
+		#' @param start_with_ols  Whether to compute an OLS warm start and pass it to `MASS::rlm`
 		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
 		#'   uses its own LQS-based start. Default `TRUE`.
-		#' @param verbose			Whether to print progress messages.
+		#' @param verbose  		Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
@@ -146,6 +146,12 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			list(maxit = as.integer(maxit), acc = as.numeric(acc))
 		},
 
+		is_rlm_nonconvergence_warning = function(w){
+			msg = conditionMessage(w)
+			grepl("'rlm' failed to converge", msg, fixed = TRUE) ||
+				grepl("alternation limit reached", msg, fixed = TRUE)
+		},
+
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -201,27 +207,36 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			ctrl = private$resolve_rlm_control(X)
 
 			run_rlm = function(method, init = NULL){
+				nonconverged = FALSE
 				tryCatch({
-					if (identical(method, "M")) {
-						args = list(
-							x = X,
-							y = y,
-							method = "M",
-							psi = MASS::psi.huber,
-							maxit = ctrl$maxit,
-							acc = ctrl$acc
-						)
-						if (!is.null(init)) args$init = init
-						do.call(MASS::rlm, args)
-					} else {
-						do.call(MASS::rlm, list(
-							x = X,
-							y = y,
-							method = method,
-							maxit = ctrl$maxit,
-							acc = ctrl$acc
-						))
-					}
+					mod = withCallingHandlers({
+						if (identical(method, "M")) {
+							args = list(
+								x = X,
+								y = y,
+								method = "M",
+								psi = MASS::psi.huber,
+								maxit = ctrl$maxit,
+								acc = ctrl$acc
+							)
+							if (!is.null(init)) args$init = init
+							do.call(MASS::rlm, args)
+						} else {
+							do.call(MASS::rlm, list(
+								x = X,
+								y = y,
+								method = method,
+								maxit = ctrl$maxit,
+								acc = ctrl$acc
+							))
+						}
+					}, warning = function(w){
+						if (private$is_rlm_nonconvergence_warning(w)) {
+							nonconverged <<- TRUE
+							invokeRestart("muffleWarning")
+						}
+					})
+					list(mod = mod, nonconverged = nonconverged)
 				}, error = function(e) e)
 			}
 
@@ -238,22 +253,26 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			if (identical(method_to_try, "M") && is.null(start_coef)) {
 				start_coef = rep(0, ncol(X))
 			}
-			mod = run_rlm(method_to_try, init = start_coef)
-			if (!estimate_only && inherits(mod, "error") && identical(method_to_try, "MM")){
-				msg = if (length(mod$message) == 0L) "" else mod$message
-				if (grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
+			rlm_attempt = run_rlm(method_to_try, init = start_coef)
+			if (!estimate_only && identical(method_to_try, "MM") &&
+					(inherits(rlm_attempt, "error") || isTRUE(rlm_attempt$nonconverged))){
+				msg = if (inherits(rlm_attempt, "error") && length(rlm_attempt$message) > 0L) rlm_attempt$message else ""
+				if (isTRUE(rlm_attempt$nonconverged) || grepl("'lqs' failed", msg, fixed = TRUE) || grepl("singular", msg, ignore.case = TRUE)) {
 					private$rlm_force_M = TRUE
-					mod = run_rlm("M", init = start_coef)
+					rlm_attempt = run_rlm("M", init = start_coef)
 				}
 			}
-			if (inherits(mod, "error")) return(NULL)
+			if (inherits(rlm_attempt, "error") || isTRUE(rlm_attempt$nonconverged)) return(NULL)
+			mod = rlm_attempt$mod
 			if (is.null(mod)) return(NULL)
 
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if (!estimate_only && (is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
-				mod = run_rlm("M", init = start_coef)
-				if (inherits(mod, "error") || is.null(mod)) return(NULL)
+				rlm_attempt = run_rlm("M", init = start_coef)
+				if (inherits(rlm_attempt, "error") || isTRUE(rlm_attempt$nonconverged)) return(NULL)
+				mod = rlm_attempt$mod
+				if (is.null(mod)) return(NULL)
 				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			}
 			if (is.null(coef_table) || nrow(coef_table) < j_treat) return(NULL)
@@ -262,8 +281,10 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			se   = as.numeric(coef_table[j_treat, "Std. Error"])
 			if (!estimate_only && (!is.finite(beta) || !is.finite(se) || se <= 0) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
-				mod = run_rlm("M", init = start_coef)
-				if (inherits(mod, "error") || is.null(mod)) return(NULL)
+				rlm_attempt = run_rlm("M", init = start_coef)
+				if (inherits(rlm_attempt, "error") || isTRUE(rlm_attempt$nonconverged)) return(NULL)
+				mod = rlm_attempt$mod
+				if (is.null(mod)) return(NULL)
 				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 				if (is.null(coef_table) || nrow(coef_table) < j_treat) return(NULL)
 				beta = as.numeric(coef_table[j_treat, "Value"])

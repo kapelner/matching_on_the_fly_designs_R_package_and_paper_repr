@@ -70,6 +70,9 @@ should_run_asserts = .assert_manager$should_run
 #' 
 #' @return Invisible \code{NULL}.
 #' 
+#' @examples
+#' set_num_cores(2)
+#' unset_num_cores()
 #' @export
 set_num_cores = function(num_cores, force_mirai = FALSE) {
   checkmate::assertCount(num_cores, positive = TRUE)
@@ -103,9 +106,11 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
           OMP_NUM_THREADS        = 1L,
           MKL_NUM_THREADS        = 1L,
           OPENBLAS_NUM_THREADS   = 1L,
+          GOTO_NUM_THREADS       = 1L,
           VECLIB_MAXIMUM_THREADS = 1L,
           NUMEXPR_NUM_THREADS    = 1L
         )
+        options(mc.cores = 1L)
         if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
         if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
       }),
@@ -129,9 +134,11 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
           OMP_NUM_THREADS        = 1L,
           MKL_NUM_THREADS        = 1L,
           OPENBLAS_NUM_THREADS   = 1L,
+          GOTO_NUM_THREADS       = 1L,
           VECLIB_MAXIMUM_THREADS = 1L,
           NUMEXPR_NUM_THREADS    = 1L
         )
+        options(mc.cores = 1L)
         if (check_package_installed("data.table")) data.table::setDTthreads(1L)
         if (check_package_installed("fixest")) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
         invisible(NULL)
@@ -149,9 +156,11 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
 #' 
 #' This function stops any global fork or mirai clusters stored in the package
 #' environment and resets the core count to serial execution.
-#' 
 #' @return Invisible \code{NULL}.
 #' 
+#' @examples
+#' set_num_cores(2)
+#' unset_num_cores()
 #' @export
 unset_num_cores = function() {
   # Handle fork cluster
@@ -179,10 +188,8 @@ unset_num_cores = function() {
 #' Get the default parallel dispatch policy
 #'
 #' Returns EDI's built-in blocklist-first dispatch policy. This is the policy
-#' used when the user has not installed a custom dispatch override.
-#'
-#' Do not expect a universal "more cores is faster" rule.
-#'
+#' @examples
+#' get_bootstrap_dispatch_policy()
 #' @return A named list describing the built-in dispatch policy.
 #'
 #' @export
@@ -213,13 +220,9 @@ edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
 #'
 #' @details
 #' The built-in overrides are empirical. Inference classes with repeated
-#' bootstrap failures in the comprehensive test suite, especially classes whose
-#' bootstrap-standard-error or related higher-order bootstrap paths are
-#' numerically fragile, are dispatched to \code{"percentile"} by default. This
-#' keeps the default bootstrap path estimate-only, faster, and less prone to
-#' NA/NaN/Inf failures.
-#'
 #' @return A named list describing the default bootstrap type configuration.
+#' @examples
+#' get_bootstrap_dispatch_policy()
 #' @export
 get_bootstrap_dispatch_policy = function() {
   list(
@@ -267,14 +270,10 @@ edi_env$bootstrap_dispatch_policy_config = get_bootstrap_dispatch_policy()
 #' Get the default optimization dispatch policy
 #'
 #' Returns EDI's built-in policy for choosing a default optimization algorithm.
-#' Each inference class can override the standard \code{"newton_raphson"} default
-#' via a regular expression pattern.
-#'
 #' @details
 #' The built-in overrides are empirical. Regression models generally default to
-#' \code{"newton_raphson"}, while GLMM and frailty models (which integrate out
-#' random effects) default to \code{"lbfgs"}.
-#'
+#' @examples
+#' get_optimization_dispatch_policy()
 #' @return A named list describing the default optimization algorithm configuration.
 #' @export
 get_optimization_dispatch_policy = function() {
@@ -323,7 +322,8 @@ edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
 #'
 #' @param policy Either \code{NULL}, a named list of policy overrides, or a
 #'   custom function. If \code{NULL} and \code{reset = FALSE}, the current
-#'   effective policy configuration is returned invisibly.
+#' @examples
+#' set_parallel_dispatch_policy(reset = TRUE)
 #' @param reset If \code{TRUE}, restore the built-in default policy and remove
 #'   any custom function override.
 #'
@@ -366,10 +366,8 @@ set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
 
 #' Update the optimization dispatch policy
 #'
-#' EDI uses an empirical policy to decide the default optimization algorithm
-#' for likelihood-based inference. This function lets the user update that
-#' default policy without editing package internals.
-#'
+#' @examples
+#' set_optimization_dispatch_policy(reset = TRUE)
 #' @param policy Either \code{NULL} or a named list of policy overrides.
 #' @param reset If \code{TRUE}, restore the built-in default policy.
 #'
@@ -512,11 +510,6 @@ set_package_threads = function(num_cores) {
   # Ensure it's an integer
   num_cores = as.integer(num_cores)
 
-  # Check if we are already at the target to avoid slow Sys.setenv and other calls
-  if (!is.null(options(".edi_last_set_threads")[[1]]) && options(".edi_last_set_threads")[[1]] == num_cores) {
-    return(invisible(NULL))
-  }
-
   # R packages with global thread setters
 	  if (check_package_installed("data.table")) {
 	    data.table::setDTthreads(num_cores)
@@ -529,11 +522,34 @@ set_package_threads = function(num_cores) {
   # This helps prevent thread explosion in child processes
   # that call multi-threaded native libraries.
   # Sys.setenv is relatively slow, so we only do it if needed.
-  Sys.setenv(OMP_NUM_THREADS =    num_cores)
-  Sys.setenv(MKL_NUM_THREADS =    num_cores)
-  Sys.setenv(OPENBLAS_NUM_THREADS =   num_cores)
-  Sys.setenv(VECLIB_MAXIMUM_THREADS = num_cores)
-  Sys.setenv(NUMEXPR_NUM_THREADS =    num_cores)
+  # We include as many as possible to catch various libraries.
+  Sys.setenv(
+    OMP_NUM_THREADS        = num_cores,
+    MKL_NUM_THREADS        = num_cores,
+    OPENBLAS_NUM_THREADS   = num_cores,
+    GOTO_NUM_THREADS       = num_cores,
+    BLAS_NUM_THREADS       = num_cores,
+    LAPACK_NUM_THREADS     = num_cores,
+    TAO_NUM_THREADS        = num_cores,
+    VECLIB_MAXIMUM_THREADS = num_cores,
+    NUMEXPR_NUM_THREADS    = num_cores,
+    OMP_THREAD_LIMIT       = num_cores,
+    OMP_DYNAMIC            = "FALSE",
+    OMP_NESTED             = "FALSE"
+  )
+  
+  # Direct C++ control for OpenMP and Eigen (more robust than env vars after startup)
+  try(set_omp_num_threads_cpp(num_cores), silent = TRUE)
+
+  # BLAS and OpenMP control via RhpcBLASctl (now a required dependency)
+  try({
+    RhpcBLASctl::blas_set_num_threads(num_cores)
+    RhpcBLASctl::omp_set_num_threads(num_cores)
+  }, silent = TRUE)
+  
+  # Also set R options for parallel/pbmcapply
+  options(mc.cores = num_cores)
+  
   options(".edi_last_set_threads" =   num_cores)
   invisible(NULL)
 }

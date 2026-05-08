@@ -15,36 +15,15 @@ sequential experimental design estimation and test object
 after the sequential design is completed.
 }
 \examples{
-\dontrun{
-# Setup design and add responses
-seq_des = DesignSeqOneByOneBernoulli$
-  new(n = 6, response_type = "survival")
-X = data.table::data.table(MASS::biopsy[1:6, 2:10])
-for (i in 1:6) seq_des$
-  add_one_subject_to_experiment_and_assign(X[i, ])
-seq_des$
-  add_all_subject_responses(
-  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-)
-
-# Initialize inference object
-seq_des_inf = InferenceSurvivalRestrictedMeanDiff$
-  new(seq_des)
-
-# compute_estimate
-seq_des_inf$
-  compute_estimate()
-
-# compute_asymp_confidence_interval
-seq_des_inf$
-  compute_asymp_confidence_interval()
-
-# compute_asymp_two_sided_pval
-seq_des_inf$
-  compute_asymp_two_sided_pval()
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 }
-
+seq_des$add_all_subject_responses(runif(10))
+inf = InferenceSurvivalRestrictedMeanDiff$new(seq_des)
+inf$compute_estimate()
+}
 }
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceSurvivalRestrictedMeanDiff}

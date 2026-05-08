@@ -22,6 +22,17 @@ This class requires the \pkg{quantreg} package, which is listed under
 \code{Suggests} and is not installed automatically with \pkg{EDI}.
 Install \pkg{quantreg} manually before use.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'continuous')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rnorm(10))
+inf = InferenceContinQuantileRegr$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceContinQuantileRegr}
 }
@@ -101,9 +112,9 @@ the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
-\item{\code{tau}}{Description for tau. Default 0.5.}
+\item{\code{tau}}{The quantile to estimate (default 0.5).. Default 0.5.}
 
-\item{\code{verbose}}{Description for verbose. Default FALSE.}
+\item{\code{verbose}}{Whether to print progress messages.. Default FALSE.}
 }
 \if{html}{\out{</div>}}
 }

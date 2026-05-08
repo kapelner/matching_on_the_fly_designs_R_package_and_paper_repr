@@ -5,6 +5,16 @@
 #' responses, using the treatment indicator and, optionally, all recorded
 #' covariates as predictors.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceContinKKOLSOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 	lock_objects = FALSE,
@@ -12,12 +22,12 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 	public = list(
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose			Whether to print progress messages.
+		#' @param verbose  		Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
@@ -220,21 +230,32 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 
 			beta_vec = as.numeric(stats::coef(fit))
 			beta = beta_vec[j_treat]
-			if (estimate_only) return(list(b = beta_vec, beta = beta, se = NA_real_, mod = NULL))
+			df = nrow(X) - ncol(X)
+			if (estimate_only) return(list(b = beta_vec, beta = beta, se = NA_real_, mod = NULL, df = df))
+
+			if (df <= 0) return(NULL)
+			post_fit = tryCatch(
+				ols_hc2_post_fit_cpp(X, as.numeric(y), beta_vec, j_treat),
+				error = function(e) NULL
+			)
+			if (is.null(post_fit)) return(NULL)
+
+			se = as.numeric(post_fit$std_err[j_treat])
+			if (!is.finite(se) || se <= 0) return(NULL)
 
 			res = stats::residuals(fit)
 			rss = sum(res^2)
-			df  = nrow(X) - ncol(X)
-			if (df <= 0) return(NULL)
 			sig2 = rss / df
 
-			v_cov = tryCatch(sig2 * chol2inv(fit$qr$qr[seq_len(fit$rank), seq_len(fit$rank), drop = FALSE]), error = function(e) NULL)
-			if (is.null(v_cov) || nrow(v_cov) < j_treat) return(NULL)
-
-			se = sqrt(v_cov[j_treat, j_treat])
-			if (!is.finite(se) || se <= 0) return(NULL)
-
-			list(b = beta_vec, beta = beta, se = se, mod = fit, sigma2_hat = sig2)
+			list(
+				b = beta_vec,
+				beta = beta,
+				se = se,
+				mod = fit,
+				sigma2_hat = sig2,
+				df = df,
+				vcov = post_fit$vcov
+			)
 		},
 
 
@@ -302,6 +323,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			private$cached_values$beta_hat_T   = fit$beta
 			if (!estimate_only) {
 				private$cached_values$s_beta_hat_T = fit$se
+				private$cached_values$df = fit$df
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_comb,
@@ -310,6 +332,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				)
 				if (!is.null(fit$mod)) {
 					private$cached_values$full_coefficients = stats::coef(fit$mod)
+					private$cached_values$full_vcov = fit$vcov
 				}
 			}
 			invisible(NULL)

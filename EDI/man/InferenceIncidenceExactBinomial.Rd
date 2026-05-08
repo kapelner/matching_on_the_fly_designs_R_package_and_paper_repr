@@ -14,6 +14,17 @@ discordant matched pairs. This class is available for
 \code{FixedDesignBinaryMatch} and KK matching-on-the-fly designs. For KK
 designs, only the matched-pair data are used and the reservoir is ignored.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+inf = InferenceIncidenceExactBinomial$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidenceExactBinomial}
 }

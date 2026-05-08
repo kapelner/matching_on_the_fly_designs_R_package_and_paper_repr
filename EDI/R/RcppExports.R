@@ -206,6 +206,7 @@ compute_bai_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, halves_idx, c
 #' @param params A numeric vector of parameters [beta, log_phi].
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_beta_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_beta_regression_score_cpp`, X, y, params)
 }
@@ -217,6 +218,7 @@ get_beta_regression_score_cpp <- function(X, y, params) {
 #' @param params A numeric vector of parameters [beta, log_phi].
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_beta_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_beta_regression_hessian_cpp`, X, y, params)
 }
@@ -232,7 +234,16 @@ get_beta_regression_hessian_cpp <- function(X, y, params) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, phi, and convergence status.
+#' @examples
+#' X = matrix(rnorm(500), 100, 5)
+#' y = runif(100)
+#' fast_beta_regression_cpp(X, y)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = runif(10)
+#' fast_beta_regression_cpp(X, y)
 fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_beta_regression_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg)
 }
@@ -249,6 +260,11 @@ fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, 
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, phi, vcov, standard errors, and convergence status.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = runif(10)
+#' fast_beta_regression_with_var_cpp(X, y)
 fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg)
 }
@@ -296,6 +312,12 @@ fast_continuation_ratio_regression_with_var_cpp <- function(X, y, maxit = 100L, 
 #' @param optimization_alg Optimization algorithm ("newton_raphson" or "lbfgs").
 #' @return A list containing coefficients, vcov (optional), and convergence status.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = runif(10)
+#' dead = rbinom(10, 1, 0.5)
+#' fast_coxph_regression_cpp(X, y, dead)
 fast_coxph_regression_cpp <- function(X, y, dead, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_coxph_regression_cpp`, X, y, dead, start_beta, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg)
 }
@@ -315,6 +337,13 @@ fast_coxph_regression_cpp <- function(X, y, dead, start_beta = NULL, estimate_on
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = runif(10)
+#' dead = rbinom(10, 1, 0.5)
+#' strata = rep(1:2, each = 5)
+#' fast_stratified_coxph_regression_cpp(X, y, dead, strata)
 fast_stratified_coxph_regression_cpp <- function(X, y, dead, strata, start_beta = NULL, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stratified_coxph_regression_cpp`, X, y, dead, strata, start_beta, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -327,6 +356,7 @@ fast_stratified_coxph_regression_cpp <- function(X, y, dead, strata, start_beta 
 #' @param beta Coefficient vector.
 #' @return Score vector.
 #' @export
+#' @keywords internal
 get_coxph_score_cpp <- function(X, y, dead, beta) {
     .Call(`_EDI_get_coxph_score_cpp`, X, y, dead, beta)
 }
@@ -339,6 +369,7 @@ get_coxph_score_cpp <- function(X, y, dead, beta) {
 #' @param beta Coefficient vector.
 #' @return Hessian matrix.
 #' @export
+#' @keywords internal
 get_coxph_hessian_cpp <- function(X, y, dead, beta) {
     .Call(`_EDI_get_coxph_hessian_cpp`, X, y, dead, beta)
 }
@@ -352,6 +383,7 @@ get_coxph_hessian_cpp <- function(X, y, dead, beta) {
 #' @param beta Coefficient vector.
 #' @return Score vector.
 #' @export
+#' @keywords internal
 get_stratified_coxph_score_cpp <- function(X, y, dead, strata, beta) {
     .Call(`_EDI_get_stratified_coxph_score_cpp`, X, y, dead, strata, beta)
 }
@@ -365,6 +397,7 @@ get_stratified_coxph_score_cpp <- function(X, y, dead, strata, beta) {
 #' @param beta Coefficient vector.
 #' @return Hessian matrix.
 #' @export
+#' @keywords internal
 get_stratified_coxph_hessian_cpp <- function(X, y, dead, strata, beta) {
     .Call(`_EDI_get_stratified_coxph_hessian_cpp`, X, y, dead, strata, beta)
 }
@@ -380,6 +413,7 @@ get_stratified_coxph_hessian_cpp <- function(X, y, dead, strata, beta) {
 #' @param params Current parameter estimates.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
     .Call(`_EDI_get_cpoisson_combined_score_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
 }
@@ -395,6 +429,7 @@ get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r
 #' @param params Current parameter estimates.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_cpoisson_combined_hessian_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
     .Call(`_EDI_get_cpoisson_combined_hessian_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
 }
@@ -413,6 +448,7 @@ get_cpoisson_combined_hessian_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients, variance estimates, and likelihood statistics.
 #' @export
+#' @keywords internal
 fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol, fixed_idx, fixed_values)
 }
@@ -491,6 +527,7 @@ compute_kk_wilcox_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, transfo
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_log_binomial_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_log_binomial_regression_score_cpp`, X, y, beta)
 }
@@ -502,6 +539,7 @@ get_log_binomial_regression_score_cpp <- function(X, y, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_log_binomial_regression_hessian_cpp`, X, y, beta)
 }
@@ -513,6 +551,7 @@ get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_identity_binomial_regression_score_cpp`, X, y, beta)
 }
@@ -524,6 +563,7 @@ get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_identity_binomial_regression_hessian_cpp`, X, y, beta)
 }
@@ -538,6 +578,7 @@ get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients and fitted values.
 #' @export
+#' @keywords internal
 fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_log_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values)
 }
@@ -553,6 +594,7 @@ fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fix
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
+#' @keywords internal
 fast_log_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values)
 }
@@ -567,6 +609,7 @@ fast_log_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients and fitted values.
 #' @export
+#' @keywords internal
 fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values)
 }
@@ -582,6 +625,7 @@ fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
+#' @keywords internal
 fast_identity_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values)
 }
@@ -609,6 +653,7 @@ fast_logistic_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_logistic_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_logistic_regression_score_cpp`, X, y, beta)
 }
@@ -619,6 +664,7 @@ get_logistic_regression_score_cpp <- function(X, y, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_logistic_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_logistic_regression_hessian_cpp`, X, beta)
 }
@@ -631,6 +677,7 @@ get_logistic_regression_hessian_cpp <- function(X, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the weighted score.
 #' @export
+#' @keywords internal
 get_logistic_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_score_cpp`, X, y, weights, beta)
 }
@@ -642,6 +689,7 @@ get_logistic_regression_weighted_score_cpp <- function(X, y, weights, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
+#' @keywords internal
 get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_hessian_cpp`, X, weights, beta)
 }
@@ -656,7 +704,16 @@ get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm (e.g., "irls").
 #' @return A list containing coefficients and weights.
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rbinom(10, 1, 0.5)
+#' fast_logistic_regression_cpp(X, y)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rbinom(10, 1, 0.5)
+#' fast_logistic_regression_cpp(X, y)
 fast_logistic_regression_cpp <- function(X, y, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_cpp`, X, y, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -673,6 +730,7 @@ fast_logistic_regression_cpp <- function(X, y, start_beta = NULL, smart_start = 
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, fitted values, and information matrix.
 #' @export
+#' @keywords internal
 fast_logistic_regression_weighted_cpp <- function(X, y, weights, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_weighted_cpp`, X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -686,7 +744,16 @@ fast_logistic_regression_weighted_cpp <- function(X, y, weights, start_beta = NU
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, score, and likelihood statistics.
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rbinom(10, 1, 0.5)
+#' fast_logistic_regression_with_var_cpp(X, y)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rbinom(10, 1, 0.5)
+#' fast_logistic_regression_with_var_cpp(X, y)
 fast_logistic_regression_with_var_cpp <- function(X, y, j = 2L, start_beta = NULL, smart_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_logistic_regression_with_var_cpp`, X, y, j, start_beta, smart_start, fixed_idx, fixed_values, optimization_alg)
 }
@@ -706,6 +773,7 @@ matrix_rank_cpp <- function(A, tol = 1e-7) {
 #' @param params A numeric vector of parameters [beta, log_theta].
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_negbin_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_negbin_regression_score_cpp`, X, y, params)
 }
@@ -717,6 +785,7 @@ get_negbin_regression_score_cpp <- function(X, y, params) {
 #' @param params A numeric vector of parameters [beta, log_theta].
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_negbin_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_negbin_regression_hessian_cpp`, X, y, params)
 }
@@ -733,6 +802,11 @@ get_negbin_regression_hessian_cpp <- function(X, y, params) {
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, theta, vcov, and convergence status.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_neg_bin_with_var_cpp(X, y)
 fast_neg_bin_with_var_cpp <- function(X, y, start_params = NULL, smart_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_neg_bin_with_var_cpp`, X, y, start_params, smart_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
@@ -749,6 +823,11 @@ fast_neg_bin_with_var_cpp <- function(X, y, start_params = NULL, smart_start = F
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, theta, and convergence status.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_neg_bin_cpp(X, y)
 fast_neg_bin_cpp <- function(X, y, start_params = NULL, smart_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_neg_bin_cpp`, X, y, start_params, smart_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg)
 }
@@ -761,6 +840,11 @@ fast_neg_bin_cpp <- function(X, y, start_params = NULL, smart_start = FALSE, max
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients and the XtX matrix.
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rnorm(10)
+#' fast_ols_cpp(X, y)
 fast_ols_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_cpp`, X, y, fixed_idx, fixed_values)
 }
@@ -774,6 +858,7 @@ fast_ols_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
 #' @export
+#' @keywords internal
 fast_ols_with_var_cpp <- function(X, y, j = 2L, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_with_var_cpp`, X, y, j, fixed_idx, fixed_values)
 }
@@ -849,6 +934,7 @@ fast_ordinal_probit_regression_with_var_cpp <- function(X, y, start_params = NUL
 #' @param params A numeric vector of parameters [alpha, beta].
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_ordinal_regression_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_ordinal_regression_score_cpp`, X, y, params)
 }
@@ -860,6 +946,7 @@ get_ordinal_regression_score_cpp <- function(X, y, params) {
 #' @param params A numeric vector of parameters [alpha, beta].
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_ordinal_regression_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_ordinal_regression_hessian_cpp`, X, y, params)
 }
@@ -875,6 +962,7 @@ get_ordinal_regression_hessian_cpp <- function(X, y, params) {
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
 #' @export
+#' @keywords internal
 fast_ordinal_regression_cpp <- function(X, y, start_params = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_ordinal_regression_cpp`, X, y, start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -888,6 +976,7 @@ fast_ordinal_regression_cpp <- function(X, y, start_params = NULL, smart_start =
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, thresholds, vcov, and convergence status.
 #' @export
+#' @keywords internal
 fast_ordinal_regression_with_var_cpp <- function(X, y, start_params = NULL, smart_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_ordinal_regression_with_var_cpp`, X, y, start_params, smart_start, fixed_idx, fixed_values, optimization_alg)
 }
@@ -901,6 +990,7 @@ fast_ordinal_regression_with_var_cpp <- function(X, y, start_params = NULL, smar
 #' @param j_treat 1-based index of treatment column.
 #' @return A list containing G-computation results (means, difference, SE).
 #' @export
+#' @keywords internal
 ordinal_gcomp_post_fit_cpp <- function(X_fit, y, coef_hat, alpha_hat, j_treat) {
     .Call(`_EDI_ordinal_gcomp_post_fit_cpp`, X_fit, y, coef_hat, alpha_hat, j_treat)
 }
@@ -913,6 +1003,7 @@ ordinal_gcomp_post_fit_cpp <- function(X_fit, y, coef_hat, alpha_hat, j_treat) {
 #' @param K Number of categories.
 #' @return A list with expanded y, w, and strata.
 #' @export
+#' @keywords internal
 expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_continuation_ratio_data_cpp`, y, w, strata, K)
 }
@@ -925,6 +1016,7 @@ expand_continuation_ratio_data_cpp <- function(y, w, strata, K) {
 #' @param K Number of categories.
 #' @return A list with expanded y, w, and strata.
 #' @export
+#' @keywords internal
 expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
 }
@@ -940,6 +1032,7 @@ fast_poisson_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n_
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_poisson_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_poisson_regression_score_cpp`, X, y, beta)
 }
@@ -950,6 +1043,7 @@ get_poisson_regression_score_cpp <- function(X, y, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_poisson_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_poisson_regression_hessian_cpp`, X, beta)
 }
@@ -962,6 +1056,7 @@ get_poisson_regression_hessian_cpp <- function(X, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric vector representing the weighted score.
 #' @export
+#' @keywords internal
 get_poisson_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_score_cpp`, X, y, weights, beta)
 }
@@ -973,6 +1068,7 @@ get_poisson_regression_weighted_score_cpp <- function(X, y, weights, beta) {
 #' @param beta A numeric vector of coefficients.
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
+#' @keywords internal
 get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X, weights, beta)
 }
@@ -987,7 +1083,16 @@ get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
 #' @return A list containing coefficients, fitted values, and information matrix.
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_poisson_regression_cpp(X, y)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_poisson_regression_cpp(X, y)
 fast_poisson_regression_cpp <- function(X, y, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_cpp`, X, y, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1004,6 +1109,7 @@ fast_poisson_regression_cpp <- function(X, y, start_beta = NULL, smart_start = T
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, fitted values, and information matrix.
 #' @export
+#' @keywords internal
 fast_poisson_regression_weighted_cpp <- function(X, y, weights, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls") {
     .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1019,7 +1125,16 @@ fast_poisson_regression_weighted_cpp <- function(X, y, weights, start_beta = NUL
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, score, and likelihood statistics.
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_poisson_regression_with_var_cpp(X, y)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_poisson_regression_with_var_cpp(X, y)
 fast_poisson_regression_with_var_cpp <- function(X, y, j = 2L, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_poisson_regression_with_var_cpp`, X, y, j, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1036,6 +1151,7 @@ fast_poisson_regression_with_var_cpp <- function(X, y, j = 2L, start_beta = NULL
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, and dispersion estimate.
 #' @export
+#' @keywords internal
 fast_quasipoisson_regression_with_var_cpp <- function(X, y, j = 2L, start_beta = NULL, smart_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
     .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, X, y, j, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1084,6 +1200,7 @@ shuffle_cpp <- function(w) {
 #' @param params A numeric vector of parameters.
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_stereotype_logit_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_stereotype_logit_score_cpp`, X, y, params)
 }
@@ -1095,6 +1212,7 @@ get_stereotype_logit_score_cpp <- function(X, y, params) {
 #' @param params A numeric vector of parameters.
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_stereotype_logit_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_stereotype_logit_hessian_cpp`, X, y, params)
 }
@@ -1110,6 +1228,7 @@ get_stereotype_logit_hessian_cpp <- function(X, y, params) {
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, thresholds, scores, and convergence status.
 #' @export
+#' @keywords internal
 fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stereotype_logit_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1125,6 +1244,7 @@ fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx 
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 #' @export
+#' @keywords internal
 fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_stereotype_logit_with_var_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1138,6 +1258,7 @@ fast_stereotype_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8, f
 #' @param tol Convergence tolerance.
 #' @return The profile log-likelihood value.
 #' @export
+#' @keywords internal
 fast_stereotype_profile_loglik_cpp <- function(X, y, beta_fixed, maxit = 100L, tol = 1e-8) {
     .Call(`_EDI_fast_stereotype_profile_loglik_cpp`, X, y, beta_fixed, maxit, tol)
 }
@@ -1254,6 +1375,7 @@ fast_weibull_frailty_cpp <- function(X, y, dead, group_id, start = NULL, estimat
 #' @param params A numeric vector of parameters [beta, log_sigma].
 #' @return A numeric vector representing the score.
 #' @export
+#' @keywords internal
 get_weibull_regression_score_cpp <- function(X, y, dead, params) {
     .Call(`_EDI_get_weibull_regression_score_cpp`, X, y, dead, params)
 }
@@ -1266,6 +1388,7 @@ get_weibull_regression_score_cpp <- function(X, y, dead, params) {
 #' @param params A numeric vector of parameters [beta, log_sigma].
 #' @return A numeric matrix representing the Hessian.
 #' @export
+#' @keywords internal
 get_weibull_regression_hessian_cpp <- function(X, y, dead, params) {
     .Call(`_EDI_get_weibull_regression_hessian_cpp`, X, y, dead, params)
 }
@@ -1283,7 +1406,18 @@ get_weibull_regression_hessian_cpp <- function(X, y, dead, params) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, log_sigma, vcov, and convergence status.
+#' @examples
+#' X = matrix(rnorm(500), 100, 5)
+#' y = runif(100)
+#' dead = rbinom(100, 1, 0.5)
+#' fast_weibull_regression_cpp(y, dead, X)
 #' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = runif(10)
+#' dead = rbinom(10, 1, 0.5)
+#' fast_weibull_regression_cpp(X, y, dead)
 fast_weibull_regression_cpp <- function(X, y, dead, start_params = NULL, smart_start = FALSE, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
     .Call(`_EDI_fast_weibull_regression_cpp`, X, y, dead, start_params, smart_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
@@ -1656,6 +1790,22 @@ compute_ols_bootstrap_parallel_cpp <- function(X, y, w, indices_mat, num_cores) 
     .Call(`_EDI_compute_ols_bootstrap_parallel_cpp`, X, y, w, indices_mat, num_cores)
 }
 
+#' Set the number of threads for OpenMP, Eigen, and MKL
+#'
+#' @param n_threads Integer.
+#' @keywords internal
+set_omp_num_threads_cpp <- function(n_threads) {
+    invisible(.Call(`_EDI_set_omp_num_threads_cpp`, n_threads))
+}
+
+#' Get the maximum number of threads for OpenMP
+#'
+#' @return Integer.
+#' @keywords internal
+get_omp_max_threads_cpp <- function() {
+    .Call(`_EDI_get_omp_max_threads_cpp`)
+}
+
 distance_matrix_euclidean_sq_cpp <- function(X) {
     .Call(`_EDI_distance_matrix_euclidean_sq_cpp`, X)
 }
@@ -1708,6 +1858,7 @@ compute_lambda_squ_cpp <- function(d_i, halves) {
 #'
 #' @return The assigned treatment (0 or 1).
 #' @export
+#' @keywords internal
 pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
     .Call(`_EDI_pocock_simon_assign_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
 }
@@ -1724,6 +1875,7 @@ pocock_simon_assign_cpp <- function(counts, subject_levels_idx, weights, p_best,
 #'
 #' @return The assigned treatment (0 or 1).
 #' @export
+#' @keywords internal
 pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weights, p_best, prob_T) {
     .Call(`_EDI_pocock_simon_assign_and_update_cpp`, counts, subject_levels_idx, weights, p_best, prob_T)
 }
@@ -1739,6 +1891,7 @@ pocock_simon_assign_and_update_cpp <- function(counts, subject_levels_idx, weigh
 #'
 #' @return An integer vector of treatment assignments.
 #' @export
+#' @keywords internal
 pocock_simon_redraw_w_cpp <- function(x_levels_matrix, num_levels_total, weights, p_best, prob_T) {
     .Call(`_EDI_pocock_simon_redraw_w_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T)
 }

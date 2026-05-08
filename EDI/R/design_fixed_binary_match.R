@@ -5,6 +5,10 @@
 #' This design pairs subjects based on covariate distances and randomizes within pairs.
 #' Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 #'
+#' @examples
+#' des = FixedDesignBinaryMatch$new(n = 10, response_type = 'continuous')
+#' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 	inherit = FixedDesign,
@@ -13,11 +17,11 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#' Initialize a binary match fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment. Must be 0.5.
+		#' @param prob_T  The probability of the treatment assignment. Must be 0.5.
 		#' @param mahal_match 	Match using Mahalanobis distance. Default is \code{FALSE} (Euclidean).
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

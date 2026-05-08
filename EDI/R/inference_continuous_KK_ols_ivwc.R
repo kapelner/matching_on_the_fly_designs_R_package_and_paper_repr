@@ -5,6 +5,16 @@
 #' and reservoir outcomes, with the treatment indicator and, optionally, all
 #' recorded covariates as predictors.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rnorm(10))
+#' inf = InferenceContinKKOLSIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	lock_objects = FALSE,
@@ -12,12 +22,12 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	public = list(
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose			Whether to print progress messages.
+		#' @param verbose  		Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
@@ -115,6 +125,7 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			}
 			beta_m = private$cached_values$beta_T_matched
 			ssq_m  = private$cached_values$ssq_beta_T_matched
+			df_m   = private$cached_values$df_beta_T_matched
 			m_ok   = !is.null(beta_m) && is.finite(beta_m) && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0
 
 			if (nRT > 0 && nRC > 0){
@@ -122,21 +133,37 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			}
 			beta_r = private$cached_values$beta_T_reservoir
 			ssq_r  = private$cached_values$ssq_beta_T_reservoir
+			df_r   = private$cached_values$df_beta_T_reservoir
 			r_ok   = !is.null(beta_r) && is.finite(beta_r) && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0
 
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
+				if (!estimate_only) {
+					private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
+					private$cached_values$df = private$satterthwaite_df(
+						var_terms = c(w_star^2 * ssq_m, (1 - w_star)^2 * ssq_r),
+						dfs = c(df_m, df_r)
+					)
+				}
 			} else if (m_ok){
 				private$cached_values$beta_hat_T   = beta_m
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+				if (!estimate_only) {
+					private$cached_values$s_beta_hat_T = sqrt(ssq_m)
+					private$cached_values$df = df_m
+				}
 			} else if (r_ok){
 				private$cached_values$beta_hat_T   = beta_r
-				if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+				if (!estimate_only) {
+					private$cached_values$s_beta_hat_T = sqrt(ssq_r)
+					private$cached_values$df = df_r
+				}
 			} else {
 				private$cached_values$beta_hat_T   = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
+				if (!estimate_only) {
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = NA_real_
+				}
 			}
 		},
 
@@ -144,6 +171,16 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
+		},
+
+		satterthwaite_df = function(var_terms, dfs){
+			ok = is.finite(var_terms) & var_terms > 0 & is.finite(dfs) & dfs > 0
+			if (!any(ok)) return(NA_real_)
+			var_terms = var_terms[ok]
+			dfs = dfs[ok]
+			total_var = sum(var_terms)
+			if (!is.finite(total_var) || total_var <= 0) return(NA_real_)
+			total_var^2 / sum((var_terms^2) / dfs)
 		},
 
 		fit_ols_with_treatment = function(X, y, j_treat, estimate_only = FALSE){
@@ -155,21 +192,20 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			}
 
 			beta = as.numeric(stats::coef(fit)[j_treat])
-			if (estimate_only) return(list(beta = beta, ssq = NA_real_))
+			df = nrow(X) - ncol(X)
+			if (estimate_only) return(list(beta = beta, ssq = NA_real_, df = df))
 
-			res = stats::residuals(fit)
-			rss = sum(res^2)
-			df  = nrow(X) - ncol(X)
 			if (df <= 0) return(NULL)
-			sig2 = rss / df
-			
-			v_cov = tryCatch(sig2 * chol2inv(fit$qr$qr[seq_len(fit$rank), seq_len(fit$rank), drop = FALSE]), error = function(e) NULL)
-			if (is.null(v_cov) || nrow(v_cov) < j_treat) return(NULL)
-			
-			se = sqrt(v_cov[j_treat, j_treat])
+			post_fit = tryCatch(
+				ols_hc2_post_fit_cpp(X, as.numeric(y), as.numeric(stats::coef(fit)), j_treat),
+				error = function(e) NULL
+			)
+			if (is.null(post_fit)) return(NULL)
+
+			se = as.numeric(post_fit$std_err[j_treat])
 			if (!is.finite(se) || se <= 0) return(NULL)
 
-			list(beta = beta, ssq = se^2)
+			list(beta = beta, ssq = se^2, df = df)
 		},
 
 		ols_for_matched_pairs = function(estimate_only = FALSE){
@@ -192,9 +228,11 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			if (is.null(fit)) {
 				private$cached_values$beta_T_matched     = if (m >= 1) mean(yd) else NA_real_
 				private$cached_values$ssq_beta_T_matched = if (m >= 2) var(yd) / m else NA_real_
+				private$cached_values$df_beta_T_matched  = if (m >= 2) m - 1 else NA_real_
 			} else {
 				private$cached_values$beta_T_matched     = fit$beta
 				private$cached_values$ssq_beta_T_matched = fit$ssq
+				private$cached_values$df_beta_T_matched  = fit$df
 			}
 		},
 
@@ -221,9 +259,11 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			if (is.null(fit)) {
 				private$cached_values$beta_T_reservoir     = NA_real_
 				private$cached_values$ssq_beta_T_reservoir = NA_real_
+				private$cached_values$df_beta_T_reservoir  = NA_real_
 			} else {
 				private$cached_values$beta_T_reservoir     = fit$beta
 				private$cached_values$ssq_beta_T_reservoir = fit$ssq
+				private$cached_values$df_beta_T_reservoir  = fit$df
 			}
 		}
 	)

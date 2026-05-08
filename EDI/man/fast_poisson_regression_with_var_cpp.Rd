@@ -50,3 +50,12 @@ A list containing the following components:
 \description{
 Poisson regression with variance-covariance matrix and score calculation.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
+fast_poisson_regression_with_var_cpp(X, y)
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
+fast_poisson_regression_with_var_cpp(X, y)
+}
+\keyword{internal}

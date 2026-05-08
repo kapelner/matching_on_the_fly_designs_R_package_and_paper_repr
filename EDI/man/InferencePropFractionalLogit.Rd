@@ -13,6 +13,17 @@ Fits a fractional logistic regression (quasi-binomial) for proportion responses
 (constrained to [0, 1]) using the treatment indicator and, optionally, all
 recorded covariates as predictors.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'proportion')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(runif(10))
+inf = InferencePropFractionalLogit$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferencePropFractionalLogit}
 }

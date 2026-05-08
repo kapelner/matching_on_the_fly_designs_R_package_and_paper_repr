@@ -81,9 +81,9 @@ assert_anticlust_installed = function(caller) {
 #'
 #' Calculates the logit i.e., log(p / (1 - p))
 #'
-#' @param	p		The value between 0 and 1 non inclusive
-#' @param	zero_one_logit_clamp	The clamping amount for exact 0 and 1 values
-#' @return	Its corresponding logit value as a real number
+#' @param p The value between 0 and 1 non inclusive
+#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values
+#' @return Its corresponding logit value as a real number
 #' @examples
 #' logit(0.25)
 #' @export
@@ -96,12 +96,12 @@ logit = function(p, zero_one_logit_clamp = .Machine$double.eps){
 #'
 #' Computes the inverse logit of a real number or vector.
 #'
-#' @param    x               Any real number
-#' @param	 zero_one_logit_clamp	The clamping amount
-#' @return   Its corresponding inverse logit value between 0 and 1 non inclusive
-#' @export
+#' @param x Any real number
+#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values
+#' @return Its corresponding inverse logit value between 0 and 1 non inclusive
 #' @examples
-#' inv_logit(c(-1, 0, 1))
+#' inv_logit(0)
+#' @export
 inv_logit = function(x, zero_one_logit_clamp = .Machine$double.eps){
 	p = 1 / (1 + exp(-x))
 	pmax(zero_one_logit_clamp, pmin(1 - zero_one_logit_clamp, p))
@@ -200,18 +200,18 @@ assertNoCensoring = function(any_censoring){
 #' that if it fails, keeps trying with a different initialization point until a maximum number
 #' of iterations
 #'
-#' @param	y						The response vector
-#' @param	dead					The censoring vector (1 if dead/uncensored and 0 if censored)
-#' @param	cov_matrix_or_vector  The model matrix
-#' @param	dist  				The parametric distribution form (default is Weibull)
-#' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
-#' @return	The Survival regression model object
-#' @export
+#' @param  y  					The response vector
+#' @param  dead  				The censoring vector (1 if dead/uncensored and 0 if censored)
+#' @param  cov_matrix_or_vector  The model matrix
+#' @param  dist  				The parametric distribution form (default is Weibull)
+#' @param  num_max_iter  		Maximum # of iterations to repeat (default is 50)
+#' @return  The Survival regression model object
 #' @examples
-#' y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
-#' dead <- c(1, 1, 0, 1, 0, 1)
-#' x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
-#' robust_survreg(y, dead, x)
+#' X = matrix(rnorm(500), 100, 5)
+#' y = runif(100)
+#' dead = rbinom(100, 1, 0.5)
+#' robust_survreg(y, dead, X)
+#' @export
 robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	robust_survreg_with_surv_object(survival::Surv(y, dead), cov_matrix_or_vector, dist = dist, num_max_iter = num_max_iter)
 }
@@ -224,14 +224,16 @@ robust_survreg = function(y, dead, cov_matrix_or_vector, dist = "weibull", num_m
 #'
 #' @param surv_object                     The survival object (built from the response vector
 #'   and censoring vector)
-#' @param	cov_matrix_or_vector  The model matrix
-#' @param	dist  				The parametric distribution form (default is Weibull)
-#' @param	num_max_iter			Maximum # of iterations to repeat (default is 50)
-#' @return	The Survival regression model object
+#' @param  cov_matrix_or_vector  The model matrix
+#' @param  dist  				The parametric distribution form (default is Weibull)
+#' @param  num_max_iter  		Maximum # of iterations to repeat (default is 50)
+#' @return  The Survival regression model object
 #' @examples
-#' surv_obj <- survival::Surv(c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0), c(1, 1, 0, 1, 0, 1))
-#' x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
-#' robust_survreg_with_surv_object(surv_obj, x)
+#' X = matrix(rnorm(500), 100, 5)
+#' y = runif(100)
+#' dead = rbinom(100, 1, 0.5)
+#' surv = survival::Surv(y, dead)
+#' robust_survreg_with_surv_object(surv, X)
 #' @export
 robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, dist = "weibull", num_max_iter = 50){
 	surv_reg_formula = surv_object ~ .
@@ -307,13 +309,13 @@ robust_survreg_with_surv_object = function(surv_object, cov_matrix_or_vector, di
 #' Performs Negative Binomial regression that if it fails, keeps dropping one column from the
 #' model matrix until it works
 #'
-#' @param	form_obj	The formula
-#' @param	data_obj  The data frame to run Negative Binomial regression on
-#' @return	The Negative Binomial regression model object
-#' @export
+#' @param  form_obj  The formula
+#' @param  data_obj  The data frame to run Negative Binomial regression on
+#' @return  The Negative Binomial regression model object
 #' @examples
-#' dat <- data.frame(y = c(0, 1, 1, 2, 3, 4), x1 = c(-1, 0, 1, 0, 1, 2))
-#' robust_negbinreg(y ~ x1, dat)
+#' dat = data.frame(y = rpois(10, 2), x1 = rnorm(10), x2 = rnorm(10))
+#' robust_negbinreg(y ~ ., dat)
+#' @export
 robust_negbinreg = function(form_obj, data_obj){
 	repeat {
 		tryCatch({
@@ -332,10 +334,10 @@ robust_negbinreg = function(form_obj, data_obj){
 #'
 #' Compute sample mode from an array of numbers
 #'
-#' @param	data	The array of numbers
-#' @return	The sample mode
+#' @param  data  The array of numbers
+#' @return  The sample mode
 #' @examples
-#' sample_mode(c(1, 2, 2, 3, 3, 3))
+#' sample_mode(c(1, 2, 2, 3))
 #' @export
 sample_mode = function(data){
 	sample_mode_cpp(data)
@@ -345,16 +347,15 @@ sample_mode = function(data){
 #'
 #' Same as summary.glm except it doesn't calculate the residuals as this takes a long time
 #'
-#' @param	object		The GLM object
-#' @param	dispersion	See GLM documentation
-#' @param	correlation	See GLM documentation
-#' @param	symbolic.cor	See GLM documentation
-#' @param	...			Other parameters (currently unused)
-#' @return	The summary of the GLM
+#' @param  object  	The GLM object
+#' @param  dispersion  See GLM documentation
+#' @param  correlation  See GLM documentation
+#' @param  symbolic.cor  See GLM documentation
+#' @param  ...  		Other parameters (currently unused)
+#' @return  The summary of the GLM
 #' @examples
-#' mod <- glm(c(0, 1, 0, 1, 1, 0) ~ c(-1, 0, 1, 0, 1, 2), family = binomial())
-#' summary_glm_lean(mod)$
-#'   coefficients
+#' fit = glm(rbinom(10, 1, 0.5) ~ rnorm(10), family = binomial)
+#' summary_glm_lean(fit)
 #' @export
 summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, symbolic.cor = FALSE, ...){
 	est.disp <- FALSE
@@ -441,30 +442,20 @@ summary_glm_lean = function (object, dispersion = NULL, correlation = FALSE, sym
 #'
 #' Calculates the mean of a numeric vector using Rcpp for speed.
 #'
-#' @param	x A numeric vector.
-#' @return	The mean of the vector.
+#' @param  x A numeric vector.
+#' @return  The mean of the vector.
 #' @name mean_cpp
 #' @rdname mean_cpp
-#' @examples
-#' \dontrun{
-#' x <- rnorm(100)
-#' mean_cpp(x)
-#' }
 NULL
 
 #' Fast Variance Calculation
 #'
 #' Calculates the variance of a numeric vector using Rcpp for speed.
 #'
-#' @param	x A numeric vector.
-#' @return	The variance of the vector.
+#' @param  x A numeric vector.
+#' @return  The variance of the vector.
 #' @name var_cpp
 #' @rdname var_cpp
-#' @examples
-#' \dontrun{
-#' x <- rnorm(100)
-#' var_cpp(x)
-#' }
 NULL
 
 .compute_kk_basic_match_data = function(X, n, y, w, m_vec){

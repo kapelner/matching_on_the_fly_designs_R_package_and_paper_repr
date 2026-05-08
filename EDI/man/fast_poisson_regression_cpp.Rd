@@ -49,3 +49,12 @@ High-performance Poisson regression fitting using IRLS or L-BFGS.
 This function provides a fast implementation of Poisson regression using a C++ backend.
 It is designed to efficiently estimate regression coefficients for count outcomes.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
+fast_poisson_regression_cpp(X, y)
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
+fast_poisson_regression_cpp(X, y)
+}
+\keyword{internal}

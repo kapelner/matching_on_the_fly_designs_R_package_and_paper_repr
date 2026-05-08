@@ -44,3 +44,4 @@ A list containing coefficients, variance estimates, and likelihood statistics.
 \description{
 High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
 }
+\keyword{internal}

@@ -11,6 +11,17 @@ assignments over the empirical covariate distribution. Matched pairs are
 treated as clusters and reservoir subjects are treated as singletons when
 computing the sandwich covariance.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+inf = InferenceIncidKKGCompRiskRatio$new(seq_des)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceKKPassThrough]{EDI::InferenceKKPassThrough}} -> \code{\link[EDI:InferenceAbstractKKMarginalIncid]{EDI::InferenceAbstractKKMarginalIncid}} -> \code{EDI::InferenceIncidKKGCompAbstract} -> \code{InferenceIncidKKGCompRiskRatio}
 }

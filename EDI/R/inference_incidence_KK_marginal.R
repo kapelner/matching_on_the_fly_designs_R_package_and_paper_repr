@@ -7,6 +7,16 @@
 #' pairs are treated as clusters and reservoir subjects are treated as singletons
 #' when computing the sandwich covariance.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+#' inf = InferenceIncidKKGCompRiskDiff$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceIncidKKGCompRiskDiff = R6::R6Class("InferenceIncidKKGCompRiskDiff",
 	lock_objects = FALSE,
@@ -32,6 +42,16 @@ InferenceIncidKKGCompRiskDiff = R6::R6Class("InferenceIncidKKGCompRiskDiff",
 #' treated as clusters and reservoir subjects are treated as singletons when
 #' computing the sandwich covariance.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+#' inf = InferenceIncidKKGCompRiskRatio$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceIncidKKGCompRiskRatio = R6::R6Class("InferenceIncidKKGCompRiskRatio",
 	lock_objects = FALSE,
@@ -56,6 +76,16 @@ InferenceIncidKKGCompRiskRatio = R6::R6Class("InferenceIncidKKGCompRiskRatio",
 #' subjects are treated as singleton clusters when computing the sandwich
 #' covariance.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+#' inf = InferenceIncidKKModifiedPoisson$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceIncidKKModifiedPoisson = R6::R6Class("InferenceIncidKKModifiedPoisson",
 	lock_objects = FALSE,

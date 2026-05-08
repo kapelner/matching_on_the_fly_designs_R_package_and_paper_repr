@@ -5,6 +5,16 @@
 #' Poisson regression for reservoir subjects. Estimates are combined via
 #' inverse-variance weighting.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rpois(10, 2))
+#' inf = InferenceCountKKHurdlePoissonIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIVWC",
 	lock_objects = FALSE,
@@ -33,6 +43,16 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 #' Fits a conditional-Poisson regression for count responses under a KK design
 #' using the Independent-Variables-as-Working-Covariates (IVWC) approach.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rpois(10, 2))
+#' inf = InferenceCountKKCPoissonIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceCountKKCPoissonIVWC = R6::R6Class("InferenceCountKKCPoissonIVWC",
 	lock_objects = FALSE,
@@ -57,6 +77,16 @@ InferenceCountKKCPoissonIVWC = R6::R6Class("InferenceCountKKCPoissonIVWC",
 #' Fits a conditional-Poisson regression for count responses under a KK design
 #' using the combined-likelihood approach.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rpois(10, 2))
+#' inf = InferenceCountKKCPoissonOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceCountKKCPoissonOneLik = R6::R6Class("InferenceCountKKCPoissonOneLik",
 	lock_objects = FALSE,

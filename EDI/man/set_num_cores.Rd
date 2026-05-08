@@ -37,3 +37,7 @@ expect a universal "more cores is faster" rule.
 If you want to change the default policy, use
 \code{set_parallel_dispatch_policy()}.
 }
+\examples{
+set_num_cores(2)
+unset_num_cores()
+}

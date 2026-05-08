@@ -57,3 +57,14 @@ including the intercept.}
 \description{
 High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
 }
+\examples{
+X = matrix(rnorm(500), 100, 5)
+y = runif(100)
+dead = rbinom(100, 1, 0.5)
+fast_weibull_regression_cpp(y, dead, X)
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
+dead = rbinom(10, 1, 0.5)
+fast_weibull_regression_cpp(X, y, dead)
+}
+\keyword{internal}

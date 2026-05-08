@@ -11,6 +11,16 @@
 #' independent samples. The two estimates are combined using the standard IVWC
 #' framework of the package.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+#' inf = InferenceIncidKKNewcombeRiskDiff$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff",
 	lock_objects = FALSE,

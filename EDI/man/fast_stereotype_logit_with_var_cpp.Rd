@@ -35,3 +35,4 @@ A list containing coefficients, variance estimates, vcov, and convergence status
 \description{
 Stereotype logit regression fitting with full variance-covariance matrix.
 }
+\keyword{internal}

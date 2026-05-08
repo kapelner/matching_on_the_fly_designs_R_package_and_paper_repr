@@ -51,3 +51,4 @@ A list containing the following components:
 \description{
 Quasi-Poisson regression with dispersion-adjusted variance-covariance matrix.
 }
+\keyword{internal}

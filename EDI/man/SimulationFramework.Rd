@@ -48,6 +48,25 @@ Reported summary metrics include:
     empirical type-I error rate when \code{betaT = 0}.
 }
 }
+\examples{
+\donttest{
+# Simple simulation with two designs and two inference methods
+sim = SimulationFramework$new(
+  response_type = "continuous",
+  design_classes_and_params = list(
+    DesignSeqOneByOneKK21 = list(lambda = 0.5),
+    DesignSeqOneByOneBernoulli = list()
+  ),
+  inference_classes_and_params = list(
+    InferenceContinOLS = list(),
+    InferenceContinKKOLSIVWC = list()
+  ),
+  n = 100, p = 5, Nrep = 10, betaT = 1
+)
+sim$run()
+sim$summarize()
+}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -112,7 +131,7 @@ Create a new \code{SimulationFramework}.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{response_type}}{\strong{(required)} Character scalar.  The type of
+\item{\code{response_type}}{\strong{(required)} Character scalar or vector.  The type of
 outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \code{"proportion"}, \code{"count"}, \code{"survival"},
 \code{"ordinal"}.}
@@ -168,10 +187,10 @@ inference class constructor.
 design, plus representative KK-specific classes (silently skipped for
 non-KK designs at runtime).}
 
-\item{\code{n}}{Integer.  Sample size per simulation replication.  Default
+\item{\code{n}}{Integer scalar or vector.  Sample size per simulation replication.  Default
 \code{100}.}
 
-\item{\code{p}}{Integer.  Number of covariates.  Must be \eqn{\ge 5} when
+\item{\code{p}}{Integer scalar or vector.  Number of covariates.  Must be \eqn{\ge 5} when
 \code{cond_exp_func_model = "nonlinear"}.  Default \code{5}.}
 
 \item{\code{cond_exp_func_model}}{Character scalar or vector.  How the latent continuous signal is
@@ -188,7 +207,7 @@ Default \code{"linear"}.}
 \item{\code{Nrep}}{Positive integer.  Number of Monte Carlo replications.
 Default \code{100}.}
 
-\item{\code{betaT}}{Numeric scalar.  True treatment effect added to treated
+\item{\code{betaT}}{Numeric scalar or vector.  True treatment effect added to treated
 subjects' outcomes.  The scale is response-type specific: additive for
 \code{continuous}, \code{proportion}, and \code{ordinal}; on the logit
 scale for \code{incidence}; log-multiplicative for \code{count} and
@@ -281,11 +300,11 @@ replications.}
 
 \item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
 censoring probability; applied only when
-\code{response_type = "survival"}.  Default \code{0.2}.}
+\code{response_type = "survival"}.  Default \code{0.25}.}
 
 \item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
 replication and for every \code{(design, inference)} pair that is
-skipped due to an error.  Default \code{FALSE}.}
+skipped due to an error.  Default \code{TRUE}.}
 
 \item{\code{keep_all_intermediate_data}}{Logical. If \code{TRUE}, the framework
 saves the instantiated design and inference objects for every replication.

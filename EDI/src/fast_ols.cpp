@@ -40,6 +40,11 @@ ModelResult fast_ols_internal(const Eigen::MatrixXd& X,
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients and the XtX matrix.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rnorm(10)
+//' fast_ols_cpp(X, y)
 // [[Rcpp::export]]
 List fast_ols_cpp(const Eigen::MatrixXd& X,
                   const Eigen::VectorXd& y,
@@ -61,6 +66,7 @@ List fast_ols_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ols_with_var_cpp(const Eigen::MatrixXd& X,
                            const Eigen::VectorXd& y,

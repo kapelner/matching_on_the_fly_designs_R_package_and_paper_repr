@@ -10,7 +10,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#' @description
 		#' Computes an asymptotic confidence interval using the configured test.
 		#'
-		#' @param alpha					Significance level 1 - \code{alpha}. Default 0.05.
+		#' @param alpha  				Significance level 1 - \code{alpha}. Default 0.05.
 		#'
 		#' @return 	A Wald-type confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -29,7 +29,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#' @description
 		#' Computes an asymptotic two-sided p-value for the treatment effect.
 		#'
-		#' @param delta					Null treatment effect to test against. Default 0.
+		#' @param delta  				Null treatment effect to test against. Default 0.
 		#'
 		#' @return 	The asymptotic p-value.
 		compute_asymp_two_sided_pval = function(delta = 0){

@@ -6,6 +6,10 @@
 #' covariate balance criterion.
 #' For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 #'
+#' @examples
+#' \dontrun{
+#' des = FixedDesignRerandomization$new(n = 10, response_type = 'continuous')
+#' }
 #' @export
 FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 	inherit = FixedDesign,
@@ -14,12 +18,12 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#' Initialize a rerandomization fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment.
+		#' @param prob_T  The probability of the treatment assignment.
 		#' @param obj_val_cutoff 	The maximum allowable objective value.
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

@@ -32,3 +32,4 @@ A list containing coefficients and fitted values.
 \description{
 High-performance log-binomial regression fitting using Fisher scoring.
 }
+\keyword{internal}

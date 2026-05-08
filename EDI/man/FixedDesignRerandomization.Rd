@@ -15,6 +15,11 @@ This design generates random allocations and only accepts those that meet a
 covariate balance criterion.
 For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
 }
+\examples{
+\dontrun{
+des = FixedDesignRerandomization$new(n = 10, response_type = 'continuous')
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignRerandomization}
 }

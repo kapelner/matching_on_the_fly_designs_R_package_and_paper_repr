@@ -31,3 +31,4 @@ A list containing coefficients, thresholds, vcov, and convergence status.
 \description{
 Ordinal regression fitting with full variance-covariance matrix.
 }
+\keyword{internal}

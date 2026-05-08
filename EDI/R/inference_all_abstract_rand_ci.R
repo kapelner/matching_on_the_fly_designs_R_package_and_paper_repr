@@ -59,10 +59,10 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 		#' @description
 		#' Computes a randomization-based confidence interval.
-		#' @param alpha					Significance level.
-		#' @param r		Number of randomization vectors.
-		#' @param pval_epsilon			Bisection tolerance.
-		#' @param show_progress		Show progress.
+		#' @param alpha  				Significance level.
+		#' @param r  	Number of randomization vectors.
+		#' @param pval_epsilon  		Bisection tolerance.
+		#' @param show_progress  	Show progress.
 		#' @param type Optional incidence-specific exact randomization type.
 		#' @param args_for_type Optional arguments keyed by \code{type}.
 		#' @param ci_search_control Optional control list for randomization-CI search. Supported
@@ -573,6 +573,10 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 
 #' Exact Zhang Incidence Inference
 #'
+#' @examples
+#' \dontrun{
+#' # Example for InferenceIncidExactZhang
+#' }
 #' @export
 InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 	lock_objects = FALSE,

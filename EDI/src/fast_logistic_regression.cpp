@@ -199,6 +199,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
     Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
@@ -211,6 +212,7 @@ Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, cons
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
     Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
@@ -226,6 +228,7 @@ Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, co
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric vector representing the weighted score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
     Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
@@ -239,6 +242,7 @@ Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd
 //' @param beta A numeric vector of coefficients.
 //' @return A numeric matrix representing the weighted Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
     Eigen::VectorXd mu = plogis_array_manual((X * beta).array()).matrix();
@@ -257,6 +261,11 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' @param optimization_alg Optimization algorithm (e.g., "irls").
 //' @return A list containing coefficients and weights.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rbinom(10, 1, 0.5)
+//' fast_logistic_regression_cpp(X, y)
 // [[Rcpp::export]]
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                   Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
@@ -287,6 +296,7 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
                                            Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
@@ -315,6 +325,11 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rbinom(10, 1, 0.5)
+//' fast_logistic_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
                                            Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,

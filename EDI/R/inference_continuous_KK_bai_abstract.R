@@ -23,7 +23,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed
-		#'   to the user. Default is \code{TRUE}
+		#'   to the user. Default is \code{FALSE}
 	#' @param convex_flag       A flag indicating whether the estimator should use a convex
 	#'   combination of the Bai et al
 	#' matched pairs estimate with the reservoir estimate, or just the Bai et al estimate by its self.

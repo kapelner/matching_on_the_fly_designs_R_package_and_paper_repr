@@ -29,8 +29,8 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param	des_obj		A completed KK matching-on-the-fly design object.
-		#' @param	verbose			Whether to print progress messages.
+		#' @param  des_obj  	A completed KK matching-on-the-fly design object.
+		#' @param  verbose  		Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
@@ -57,7 +57,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 
 		#' @description
 		#' Computes the confidence interval for the probability P(T > C).
-		#' @param	alpha					The significance level.
+		#' @param  alpha  				The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
@@ -65,7 +65,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 
 		#' @description
 		#' Computes the p-value for the sign test.
-		#' @param	delta					The null difference (must be 0 for sign test).
+		#' @param  delta  				The null difference (must be 0 for sign test).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)

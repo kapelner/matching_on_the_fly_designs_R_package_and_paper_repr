@@ -35,21 +35,4 @@ This function provides a highly optimized implementation of Ordinary Least Squar
 regression using the Eigen C++ library, including the calculation of the
 variance-covariance matrix of the coefficients.
 }
-\examples{
-\dontrun{
-# Generate some sample data
-set.seed(123)
-n <- 100
-p <- 3
-X_mat <- cbind(1, matrix(rnorm(n * (p - 1)), ncol = p - 1)) # X with intercept
-y_vec <- X_mat \%*\% c(1, 0.5, -0.2) + rnorm(n, sd = 0.5)
-
-# Fit OLS with variance using fast_ols_with_var_cpp
-fit_ols_var <- fast_ols_with_var_cpp(X = X_mat, y = y_vec)
-print(fit_ols_var$
-  b)
-print(fit_ols_var$
-  ssq_b_j)
-}
-
-}
+\keyword{internal}

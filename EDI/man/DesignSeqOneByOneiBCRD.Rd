@@ -12,6 +12,10 @@ An incomplete / balanced completely randomized Sequential Design
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments.
 }
+\examples{
+seq_des = DesignSeqOneByOneiBCRD$new(n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneiBCRD}
 }

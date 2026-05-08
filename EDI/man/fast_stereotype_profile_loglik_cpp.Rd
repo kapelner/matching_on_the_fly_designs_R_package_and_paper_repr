@@ -23,3 +23,4 @@ The profile log-likelihood value.
 \description{
 Calculates the profile log-likelihood for a fixed beta in a stereotype logit model.
 }
+\keyword{internal}

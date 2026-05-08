@@ -21,3 +21,4 @@ A numeric matrix representing the Hessian.
 \description{
 Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Weibull AFT regression model.
 }
+\keyword{internal}

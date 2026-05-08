@@ -31,31 +31,7 @@ It estimates regression coefficients for binary outcomes and specifically comput
 variance of the second coefficient (assumed to be the treatment effect).
 }
 \examples{
-\dontrun{
-# Generate some sample data
-set.seed(123)
-n <- 100
-p <- 2
-X_log_var <- cbind(1, rnorm(n)) # X with intercept and one predictor
-beta_log_var <- c(0.5, 1) # First is intercept, second is treatment effect
-lin_pred_var <- X_log_var \%*\% beta_log_var
-prob_var <- exp(lin_pred_var) / (1 + exp(lin_pred_var))
-y_log_var <- rbinom(n, 1, prob_var)
-
-# Fit logistic regression with variance using fast_logistic_regression_with_var
-fit_logistic_var <- fast_logistic_regression_with_var(X = X_log_var, y = y_log_var)
-print(fit_logistic_var$
-  b)
-print(fit_logistic_var$
-  ssq_b_j)
-
-# Compare with standard R glm()
-glm_fit_var <- glm(y_log_var ~ X_log_var - 1, family = binomial)
-# Extract squared standard error of the second coefficient (treatment effect)
-glm_ssq_b_2 <- summary(glm_fit_var)$
-  coefficients[2, 2]^2
-print(coef(glm_fit_var))
-print(glm_ssq_b_2)
-}
-
+X = matrix(rnorm(100), 10, 10)
+y = rbinom(10, 1, 0.5)
+fast_logistic_regression_with_var(X, y)
 }

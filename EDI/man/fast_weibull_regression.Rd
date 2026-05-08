@@ -42,3 +42,9 @@ including the intercept.}
 This function performs Weibull regression using either \pkg{survival} or an
 optimized Rcpp implementation.
 }
+\examples{
+X = matrix(rnorm(500), 100, 5)
+y = runif(100)
+dead = rbinom(100, 1, 0.5)
+fast_weibull_regression(y, dead, X)
+}

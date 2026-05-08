@@ -8,6 +8,10 @@ Internal method.
 An abstract R6 Class encapsulating the data and functionality for an experimental design.
 This class takes care of data storage and response handling.
 }
+\examples{
+seq_des = Design$new(n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
 \keyword{internal}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}

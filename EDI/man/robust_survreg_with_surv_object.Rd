@@ -30,7 +30,9 @@ that if it fails, keeps trying with a different initialization point until a max
 of iterations
 }
 \examples{
-surv_obj <- survival::Surv(c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0), c(1, 1, 0, 1, 0, 1))
-x <- data.frame(x1 = c(-1, 0, 1, 0, 1, 2))
-robust_survreg_with_surv_object(surv_obj, x)
+X = matrix(rnorm(500), 100, 5)
+y = runif(100)
+dead = rbinom(100, 1, 0.5)
+surv = survival::Surv(y, dead)
+robust_survreg_with_surv_object(surv, X)
 }

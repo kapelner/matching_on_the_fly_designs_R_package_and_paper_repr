@@ -4,6 +4,10 @@
 #' This class takes care of whole-experiment randomization.
 #'
 #' @keywords internal
+#' @examples
+#' des = FixedDesign$new(n = 10, response_type = 'continuous')
+#' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesign = R6::R6Class("FixedDesign",
 	lock_objects = FALSE,
@@ -14,15 +18,15 @@ FixedDesign = R6::R6Class("FixedDesign",
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#' @param ... Extra arguments passed to the \code{Design} superclass.
 		#'
-		#' @return	A new `FixedDesign` object
+		#' @return  A new `FixedDesign` object
 		initialize = function(
 				response_type,
 				prob_T = 0.5,

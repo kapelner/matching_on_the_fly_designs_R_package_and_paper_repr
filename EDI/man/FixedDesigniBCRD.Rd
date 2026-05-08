@@ -12,6 +12,11 @@ A balanced completely randomized Fixed Design
 An R6 Class encapsulating the data and functionality for a fixed balanced
 completely randomized experimental design.
 }
+\examples{
+des = FixedDesigniBCRD$new(n = 10, response_type = 'continuous')
+des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesigniBCRD}
 }

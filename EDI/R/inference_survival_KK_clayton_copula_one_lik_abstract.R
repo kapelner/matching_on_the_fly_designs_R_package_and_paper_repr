@@ -13,12 +13,12 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 
 		#' @description
 		#' Initialize the inference object.
-		#' @param des_obj		A DesignSeqOneByOne object (must be a KK design).
+		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose			Whether to print progress messages.
+		#' @param verbose  		Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
@@ -102,7 +102,8 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			if (ncol(X) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
 			
 			# Ensure no linearly dependent columns first
-			X_reduced = drop_linearly_dependent_cols(X)
+			res = drop_linearly_dependent_cols(X)
+			X_reduced = res$M
 			if (ncol(X_reduced) == 0L) return(list(matrix(nrow = private$n, ncol = 0L)))
 			
 			# Generate candidates by dropping highly correlated columns at various thresholds

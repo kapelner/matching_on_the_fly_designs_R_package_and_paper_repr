@@ -19,3 +19,4 @@ A numeric vector representing the score.
 \description{
 Calculates the score vector for a binomial regression model with an identity link.
 }
+\keyword{internal}

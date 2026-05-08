@@ -49,3 +49,4 @@ A list containing the following components:
 \description{
 High-performance weighted logistic regression fitting using IRLS.
 }
+\keyword{internal}

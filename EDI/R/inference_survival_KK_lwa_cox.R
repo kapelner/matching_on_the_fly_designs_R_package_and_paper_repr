@@ -4,6 +4,16 @@
 #' using a marginal Cox model with Lee-Wei-Amato style cluster-robust variance for
 #' matched pairs and standard Cox regression for reservoir subjects.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKLWACoxIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKLWACoxIVWC = R6::R6Class("InferenceSurvivalKKLWACoxIVWC",
 	lock_objects = FALSE,
@@ -31,6 +41,16 @@ InferenceSurvivalKKLWACoxIVWC = R6::R6Class("InferenceSurvivalKKLWACoxIVWC",
 #' Fits a combined-likelihood Cox model for KK matching-on-the-fly designs with
 #' survival responses using a marginal approach over all subjects.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKLWACoxOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKLWACoxOneLik = R6::R6Class("InferenceSurvivalKKLWACoxOneLik",
 	lock_objects = FALSE,

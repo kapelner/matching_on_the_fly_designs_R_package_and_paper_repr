@@ -3,6 +3,18 @@
 #' Cumulative cloglog model inference for ordinal responses using the treatment
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
+#' @examples
+#' \dontrun{
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'ordinal')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
+#' inf = InferenceOrdinalCloglogRegr$new(seq_des)
+#' inf$compute_estimate()
+#' }
+#' }
 #' @export
 InferenceOrdinalCloglogRegr = R6::R6Class("InferenceOrdinalCloglogRegr",
 	lock_objects = FALSE,
@@ -15,7 +27,7 @@ InferenceOrdinalCloglogRegr = R6::R6Class("InferenceOrdinalCloglogRegr",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose			Whether to print progress messages.
+		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_default Whether to use smart optimizer start values by default.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {

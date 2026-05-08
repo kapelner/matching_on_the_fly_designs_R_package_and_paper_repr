@@ -159,6 +159,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
 //' @param params A numeric vector of parameters [beta, log_theta].
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXi& y,
@@ -176,6 +177,7 @@ Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @param params A numeric vector of parameters [beta, log_theta].
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
                                                   const Eigen::VectorXi& y,
@@ -196,6 +198,11 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, theta, vcov, and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rpois(10, 2)
+//' fast_neg_bin_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 Eigen::VectorXi y,
@@ -235,6 +242,11 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, theta, and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rpois(10, 2)
+//' fast_neg_bin_cpp(X, y)
 // [[Rcpp::export]]
 List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Eigen::VectorXi y,

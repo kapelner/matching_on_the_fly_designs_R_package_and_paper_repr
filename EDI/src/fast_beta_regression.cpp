@@ -165,6 +165,7 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
 //' @param params A numeric vector of parameters [beta, log_phi].
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
                                               const Eigen::VectorXd& y,
@@ -182,6 +183,7 @@ Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @param params A numeric vector of parameters [beta, log_phi].
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
@@ -202,6 +204,11 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, phi, and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = runif(10)
+//' fast_beta_regression_cpp(X, y)
 // [[Rcpp::export]]
 List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 								const NumericVector& y,
@@ -249,6 +256,11 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, phi, vcov, standard errors, and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = runif(10)
+//' fast_beta_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 									 const NumericVector& y,

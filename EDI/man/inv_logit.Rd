@@ -9,7 +9,7 @@ inv_logit(x, zero_one_logit_clamp = .Machine$double.eps)
 \arguments{
 \item{x}{Any real number}
 
-\item{zero_one_logit_clamp}{The clamping amount}
+\item{zero_one_logit_clamp}{The clamping amount for exact 0 and 1 values}
 }
 \value{
 Its corresponding inverse logit value between 0 and 1 non inclusive
@@ -18,5 +18,5 @@ Its corresponding inverse logit value between 0 and 1 non inclusive
 Computes the inverse logit of a real number or vector.
 }
 \examples{
-inv_logit(c(-1, 0, 1))
+inv_logit(0)
 }

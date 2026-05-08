@@ -12,6 +12,17 @@ Zero-Inflated Negative Binomial Regression Inference for Count Responses
 Fits a zero-inflated negative binomial regression for count responses using
 the treatment indicator and, optionally, all recorded covariates as predictors.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'count')
+for (i in 1:10) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rpois(10, 2))
+inf = InferenceCountZeroInflatedNegBin$new(seq_des, model_formula = ~ x1)
+inf$compute_estimate()
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceCountZeroAugmentedPoissonAbstract} -> \code{InferenceCountZeroInflatedNegBin}
 }
@@ -63,8 +74,6 @@ the treatment indicator and, optionally, all recorded covariates as predictors.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_two_sided_pval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_estimate"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_estimate'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="get_degrees_of_freedom"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-get_degrees_of_freedom'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$get_degrees_of_freedom()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="get_standard_error"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-get_standard_error'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$get_standard_error()</code></a></span></li>
 </ul>
 </details>
 }}

@@ -56,3 +56,10 @@ A list containing the following components:
 \description{
 High-performance Cox regression fitting using Breslow's method for ties.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
+dead = rbinom(10, 1, 0.5)
+fast_coxph_regression_cpp(X, y, dead)
+}
+\keyword{internal}

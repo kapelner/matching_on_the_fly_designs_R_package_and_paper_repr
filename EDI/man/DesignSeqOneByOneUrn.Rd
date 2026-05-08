@@ -14,6 +14,10 @@ experimental design.
 This design uses an adaptive urn model where the probability of assignment to a group
 decreases as the number of subjects in that group increases.
 }
+\examples{
+seq_des = DesignSeqOneByOneUrn$new(n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneUrn}
 }

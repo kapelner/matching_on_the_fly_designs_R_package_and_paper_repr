@@ -10,6 +10,16 @@
 #' ignores any matched-pair structure if present. For matched data, use
 #' \code{InferenceIncidKKNewcombeRiskDiff}.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'incidence')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
+#' inf = InferenceIncidNewcombeRiskDiff$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 	lock_objects = FALSE,

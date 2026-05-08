@@ -6,6 +6,16 @@
 #' When \code{use_rcpp = TRUE} (default) the likelihood is maximised by an internal
 #' Rcpp routine. Set \code{use_rcpp = FALSE} to fall back to \pkg{glmmTMB}.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rpois(10, 2))
+#' inf = InferenceCountKKGLMM$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	lock_objects = FALSE,
@@ -102,6 +112,16 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 #' Fits a compound estimator for KK matching-on-the-fly designs with count
 #' responses using a joint likelihood over all subjects.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(rpois(10, 2))
+#' inf = InferenceCountKKHurdlePoissonOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoissonOneLik",
 	lock_objects = FALSE,

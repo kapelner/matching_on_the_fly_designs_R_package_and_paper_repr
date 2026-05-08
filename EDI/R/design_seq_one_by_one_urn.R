@@ -5,6 +5,9 @@
 #' This design uses an adaptive urn model where the probability of assignment to a group
 #' decreases as the number of subjects in that group increases.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneUrn$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 	inherit = DesignSeqOneByOne,
@@ -15,13 +18,13 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 		#'
 		#' @param alpha The initial number of balls of each type (Treatment/Control) in the urn.
 		#' @param beta The number of balls of the opposite type to add to the urn after an assignment.
-		#' @param	response_type 	The data type of response values.
+		#' @param  response_type 	The data type of response values.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
-		#' @return	A new `DesignSeqOneByOneUrn` object
+		#' @return  A new `DesignSeqOneByOneUrn` object
 		#'
 		initialize = function(
 						alpha = 1,

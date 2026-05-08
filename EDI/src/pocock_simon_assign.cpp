@@ -16,6 +16,7 @@ using namespace Rcpp;
 //'
 //' @return The assigned treatment (0 or 1).
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 int pocock_simon_assign_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T) {
   int num_trts = counts.cols(); // Should be 2 (Control=0, Treatment=1)
@@ -79,6 +80,7 @@ int pocock_simon_assign_cpp(NumericMatrix counts, IntegerVector subject_levels_i
 //'
 //' @return The assigned treatment (0 or 1).
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subject_levels_idx, NumericVector weights, double p_best, double prob_T) {
   int w = pocock_simon_assign_cpp(counts, subject_levels_idx, weights, p_best, prob_T);
@@ -103,6 +105,7 @@ int pocock_simon_assign_and_update_cpp(NumericMatrix counts, IntegerVector subje
 //'
 //' @return An integer vector of treatment assignments.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 IntegerVector pocock_simon_redraw_w_cpp(IntegerMatrix x_levels_matrix, int num_levels_total, NumericVector weights, double p_best, double prob_T) {
   int n = x_levels_matrix.nrow();

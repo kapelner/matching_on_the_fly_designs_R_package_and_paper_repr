@@ -22,6 +22,18 @@ design-type mismatch error; any other outcome (successful construction
 \emph{or} an unrelated error such as a missing optional package) is treated
 as applicable.
 }
+\examples{
+\donttest{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "continuous")
+for (i in 1:20) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+}
+seq_des$add_all_subject_responses(rnorm(20))
+
+suite = InferenceSuite$new(seq_des)
+suite$applicable_design_classes
+}
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{

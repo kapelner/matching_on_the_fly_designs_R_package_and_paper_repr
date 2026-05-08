@@ -35,3 +35,4 @@ A list containing coefficients, vcov, and standard errors.
 \description{
 Log-binomial regression with variance-covariance matrix and standard errors.
 }
+\keyword{internal}

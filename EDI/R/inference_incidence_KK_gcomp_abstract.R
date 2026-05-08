@@ -31,7 +31,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 		#' @description
 		#' Compute asymp confidence interval
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -42,7 +42,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
-		#' @param delta Description for delta
+		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = NULL){
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
@@ -50,10 +50,10 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 
 		#' @description
 		#' Compute bootstrap two sided pval
-		#' @param delta Description for delta
-		#' @param B Description for B
+		#' @param delta The null treatment effect (default 0).
+		#' @param B The number of bootstrap samples (default 501).
 		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
-		#' @param na.rm Description for na.rm
+		#' @param na.rm Whether to remove NA values. (default \code{FALSE}).
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE, min_number_usable_samples = 5L){
 			if (is.null(delta)){

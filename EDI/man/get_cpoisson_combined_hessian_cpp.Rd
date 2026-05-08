@@ -27,3 +27,4 @@ A numeric matrix representing the Hessian.
 \description{
 Calculates the Hessian matrix for the combined conditional-Poisson and Poisson model.
 }
+\keyword{internal}

@@ -47,3 +47,12 @@ A list containing the following components:
 \description{
 High-performance beta regression fitting using Newton-Raphson or L-BFGS.
 }
+\examples{
+X = matrix(rnorm(500), 100, 5)
+y = runif(100)
+fast_beta_regression_cpp(X, y)
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
+fast_beta_regression_cpp(X, y)
+}
+\keyword{internal}

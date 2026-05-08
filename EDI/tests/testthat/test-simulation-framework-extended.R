@@ -2,15 +2,13 @@ library(testthat)
 library(EDI)
 
 test_that("SimulationFramework supports parallel execution", {
-	# Skip on systems with limited resources if necessary, but 2 cores should be fine.
-	# Note: devtools::test() might already be using some parallelization.
-	
 	results_file <- tempfile(fileext = ".csv")
 	set.seed(123)
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
 		design_classes_and_params = list(FixedDesignBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
 		n = 20L,
 		Nrep = 4L,
 		num_cores = 2L,
@@ -21,12 +19,11 @@ test_that("SimulationFramework supports parallel execution", {
 	
 	sim$run()
 	results <- sim$get_results()
-	expect_equal(nrow(results), 4) # 4 reps * 1 design * 1 inference * 1 default type (asymp_pval)
+	expect_equal(nrow(results), 4) 
 	expect_true(all(results$rep %in% 1:4))
 })
 
 test_that("SimulationFramework supports sequential KK designs and specific inference", {
-	# KK designs are complex; let's ensure the framework can handle them.
 	set.seed(456)
 	sim <- SimulationFramework$new(
 		response_type = "count",
@@ -36,6 +33,7 @@ test_that("SimulationFramework supports sequential KK designs and specific infer
 		inference_classes_and_params = list(
 			InferenceCountKKCPoissonIVWC
 		),
+		inference_types_and_params = list(asymp_pval = list()),
 		n = 10L,
 		Nrep = 2L,
 		betaT = 0.5,
@@ -72,7 +70,6 @@ test_that("SimulationFramework supports randomization and bootstrap inference", 
 	expect_true("boot_ci" %in% results$inference_type)
 	expect_true("rand_pval" %in% results$inference_type)
 	
-	# Check that bootstrap CI is populated
 	boot_res <- results[results$inference_type == "boot_ci", ]
 	expect_true(all(is.finite(boot_res$ci_lo)))
 	expect_true(all(is.finite(boot_res$ci_hi)))
@@ -82,16 +79,18 @@ test_that("SimulationFramework supports custom X_mat", {
 	set.seed(101)
 	n <- 15L
 	p <- 2L
-	X_custom <- matrix(runif(n * p), n, p)
+	X_custom <- matrix(rnorm(n * p), n, p)
 	colnames(X_custom) <- c("feat1", "feat2")
 	
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
 		design_classes_and_params = list(FixedDesignBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
 		n = n,
 		p = p,
 		X_mat = X_custom,
+		cov_draw_method = NULL,
 		Nrep = 2L,
 		verbose = FALSE,
 		continue_from_last_result_row = FALSE
@@ -108,6 +107,7 @@ test_that("SimulationFramework can keep and retrieve intermediate data", {
 		response_type = "continuous",
 		design_classes_and_params = list(FixedDesignBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
 		n = 10L,
 		Nrep = 3L,
 		keep_all_intermediate_data = TRUE,
@@ -129,11 +129,11 @@ test_that("SimulationFramework can keep and retrieve intermediate data", {
 })
 
 test_that("SimulationFramework handles Friedman nonlinear model", {
-	# Friedman requires p >= 5
 	set.seed(303)
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
 		cond_exp_func_model = "nonlinear",
+		inference_types_and_params = list(asymp_pval = list()),
 		p = 6L,
 		n = 20L,
 		Nrep = 1L,
@@ -151,7 +151,10 @@ test_that("SimulationFramework survival responses respect censoring", {
 	# High censoring
 	sim_high <- SimulationFramework$new(
 		response_type = "survival",
-		prob_censoring = 0.9,
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
+		inference_types_and_params = list(asymp_pval = list()),
+		prob_censoring = 0.99, # Force heavy censoring
 		n = 50L,
 		Nrep = 1L,
 		verbose = FALSE,
@@ -162,6 +165,9 @@ test_that("SimulationFramework survival responses respect censoring", {
 	# Low censoring
 	sim_low <- SimulationFramework$new(
 		response_type = "survival",
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
+		inference_types_and_params = list(asymp_pval = list()),
 		prob_censoring = 0.0,
 		n = 50L,
 		Nrep = 1L,
@@ -170,10 +176,13 @@ test_that("SimulationFramework survival responses respect censoring", {
 	)
 	sim_low$run()
 	
-	# We can't easily check internal dead counts without intermediate data
+	# Deep check with intermediate data
 	sim_high_data <- SimulationFramework$new(
 		response_type = "survival",
-		prob_censoring = 1.0, # All censored (statistically likely)
+		design_classes_and_params = list(FixedDesignBernoulli),
+		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
+		inference_types_and_params = list(asymp_pval = list()),
+		prob_censoring = 1.0, 
 		n = 20L,
 		Nrep = 1L,
 		keep_all_intermediate_data = TRUE,
@@ -184,6 +193,6 @@ test_that("SimulationFramework survival responses respect censoring", {
 	inter <- sim_high_data$get_all_intermediate_data()
 	des <- inter[[1]]$designs[[1]]
 	
-	# status in survival is usually stored in 'dead' field in EDI designs
+	# With prob_censoring=1.0, we expect some censored observations (dead=0)
 	expect_true(any(des$.__enclos_env__$private$dead == 0))
 })

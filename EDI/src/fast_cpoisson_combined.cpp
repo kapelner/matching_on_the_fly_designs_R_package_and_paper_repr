@@ -152,6 +152,7 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 //' @param params Current parameter estimates.
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_cpoisson_combined_score_cpp(
 	const Eigen::VectorXd& yT_v,
@@ -177,6 +178,7 @@ Eigen::VectorXd get_cpoisson_combined_score_cpp(
 //' @param params Current parameter estimates.
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
 	const Eigen::VectorXd& yT_v,
@@ -206,6 +208,7 @@ Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
 //' @param fixed_values Optional values for fixed parameters.
 //' @return A list containing coefficients, variance estimates, and likelihood statistics.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_cpoisson_combined_with_var_cpp(
 	const Eigen::VectorXd& yT_v,       // treated count per valid pair (nd)

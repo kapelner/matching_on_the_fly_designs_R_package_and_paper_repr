@@ -10,9 +10,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @description
 		#' Creates the bootstrap distribution of the estimate for the treatment effect
 		#'
-		#' @param B						Number of bootstrap samples. The default is 501.
-		#' @param show_progress			A flag indicating whether a progress bar should be displayed.
-		#' @param debug					If \code{TRUE}, return a list with the distribution values and
+		#' @param B  					Number of bootstrap samples. The default is 501.
+		#' @param show_progress  		A flag indicating whether a progress bar should be displayed.
+		#' @param debug  				If \code{TRUE}, return a list with the distribution values and
 		#'   per-iteration diagnostics including error messages, warning messages, counts of each,
 		#'   and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 		#'   values. Runs serially. Default \code{FALSE}.
@@ -232,11 +232,11 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @description
 		#' Computes a bootstrap-based two-sided p-value for the treatment effect.
 		#'
-		#' @param delta					Null hypothesis value. Default 0.
-		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param delta  				Null hypothesis value. Default 0.
+		#' @param B  					Number of bootstrap samples. Default 501.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
 		#'   required after filtering. Default 50. Must be smaller than \code{B}.
-		#' @param type					Bootstrap p-value type. Supported values are
+		#' @param type  				Bootstrap p-value type. Supported values are
 		#'   \code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, and \code{"bca"}.
 		#'   \code{"percentile"}: shifts the bootstrap distribution to be centred at
@@ -250,7 +250,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   \code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
 		#'   inversion using the jackknife acceleration and bias-correction constants;
 		#'   second-order accurate (Efron 1987; Efron & Tibshirani 1993).
-		#' @param na.rm					Remove non-finite bootstrap replicates. Default FALSE.
+		#' @param na.rm  				Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 5L){
@@ -365,18 +365,18 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#' @description
 		#' Computes a bootstrap-based confidence interval.
 		#'
-		#' @param alpha					The confidence level 1 - \code{alpha}. Default 0.05.
-		#' @param B						Number of bootstrap samples. Default 501.
+		#' @param alpha  				The confidence level 1 - \code{alpha}. Default 0.05.
+		#' @param B  					Number of bootstrap samples. Default 501.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
 		#'   required after filtering. Default 50. Must be smaller than \code{B}.
-		#' @param type					Bootstrap CI type. Supported values are
+		#' @param type  				Bootstrap CI type. Supported values are
 		#'   \code{"percentile"}, \code{"basic"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
 		#'   \code{"bca"}, \code{"prepivoted"}, \code{"double-bootstrap"},
 		#'   \code{"calibrated"}, and \code{"smoothed"}.
 		#' @param na.rm                                   Remove non-finite bootstrap replicates.
 		#'   Default TRUE. Non-finite replicates are always removed internally.
-		#' @param show_progress			Show progress bar.
+		#' @param show_progress  		Show progress bar.
 		#'
 		#' @return 	A bootstrap confidence interval.
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L){

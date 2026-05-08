@@ -19,3 +19,4 @@ A numeric matrix representing the Hessian.
 \description{
 Calculates the Hessian matrix for a binomial regression model with an identity link.
 }
+\keyword{internal}

@@ -71,13 +71,13 @@ sim = SimulationFramework$new(
   cond_exp_func_model = "linear",
   Nrep = N_REP,
   betaT = c(0, 0.25),
-  num_cores = 1L,
+  num_cores = 5L,
   inference_types_and_params = list(
     asymp_pval = list()
   ),
   verbose = TRUE,
   turn_off_asserts_for_speed = FALSE,
-  results_filename = "benchmark_ivwc_vs_onelik.csv",
+  results_filename = "benchmark_ivwc_vs_onelik.csv.bz2",
   continue_from_last_result_row = TRUE
 )
 

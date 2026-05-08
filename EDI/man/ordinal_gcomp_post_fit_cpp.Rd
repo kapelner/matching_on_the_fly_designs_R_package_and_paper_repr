@@ -23,3 +23,4 @@ A list containing G-computation results (means, difference, SE).
 \description{
 Performs G-computation for ordinal outcomes using a fitted model's parameters.
 }
+\keyword{internal}

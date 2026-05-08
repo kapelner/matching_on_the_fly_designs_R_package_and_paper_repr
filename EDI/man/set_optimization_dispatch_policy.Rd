@@ -15,7 +15,8 @@ set_optimization_dispatch_policy(policy = NULL, reset = FALSE)
 Invisible \code{NULL} or the current policy configuration.
 }
 \description{
-EDI uses an empirical policy to decide the default optimization algorithm
-for likelihood-based inference. This function lets the user update that
-default policy without editing package internals.
+Update the optimization dispatch policy
+}
+\examples{
+set_optimization_dispatch_policy(reset = TRUE)
 }

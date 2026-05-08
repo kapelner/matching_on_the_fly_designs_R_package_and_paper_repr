@@ -5,6 +5,10 @@
 #' information matrix
 #' (equivalent to minimizing the average variance of the parameter estimates).
 #'
+#' @examples
+#' des = FixedDesignAOptimal$new(n = 10, response_type = 'continuous')
+#' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignAOptimal = R6::R6Class("FixedDesignAOptimal",
 	inherit = FixedDesign,

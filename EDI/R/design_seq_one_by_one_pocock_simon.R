@@ -4,6 +4,9 @@
 #' sequential experimental design.
 #' This design minimizes the imbalance across treatments for multiple covariates.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOnePocockSimon$new(strata_cols = 'x1', n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
 #' @export
 DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 	inherit = DesignSeqOneByOne,
@@ -17,10 +20,10 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 		#' @param p_best          The probability of assigning the treatment that minimizes the
 		#'   imbalance. Defaults to 0.8.
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param prob_T  The probability of the treatment assignment.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

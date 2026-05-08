@@ -35,3 +35,4 @@ A list containing coefficients, vcov, and standard errors.
 \description{
 Binomial regression with identity link, providing variance-covariance matrix and standard errors.
 }
+\keyword{internal}

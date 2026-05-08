@@ -8,8 +8,7 @@ set_parallel_dispatch_policy(policy = NULL, reset = FALSE)
 }
 \arguments{
 \item{policy}{Either \code{NULL}, a named list of policy overrides, or a
-custom function. If \code{NULL} and \code{reset = FALSE}, the current
-effective policy configuration is returned invisibly.}
+custom function. If \code{NULL} and \code{reset = FALSE}, the current}
 
 \item{reset}{If \code{TRUE}, restore the built-in default policy and remove
 any custom function override.}
@@ -38,4 +37,7 @@ The policy can be updated in two ways:
 
 Use \code{reset = TRUE} to restore the built-in default policy. Do not expect
 a universal "more cores is faster" rule.
+}
+\examples{
+set_parallel_dispatch_policy(reset = TRUE)
 }

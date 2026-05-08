@@ -13,3 +13,7 @@ Invisible \code{NULL}.
 This function stops any global fork or mirai clusters stored in the package
 environment and resets the core count to serial execution.
 }
+\examples{
+set_num_cores(2)
+unset_num_cores()
+}

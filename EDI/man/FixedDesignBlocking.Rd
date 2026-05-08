@@ -12,6 +12,12 @@ A stratified blocking Fixed Design
 An R6 Class encapsulating the data and functionality for a fixed stratified
 blocking experimental design.
 }
+\examples{
+des = FixedDesignBlocking$new(n = 20, response_type = 'continuous', strata_cols = 'x2', equal_block_sizes = FALSE)
+X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, 10)))
+des$add_all_subjects_to_experiment(X)
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignBlocking}
 }

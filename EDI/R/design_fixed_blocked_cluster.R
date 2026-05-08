@@ -4,6 +4,11 @@
 #' cluster randomized experimental design.
 #' This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 #'
+#' @examples
+#' des = FixedDesignBlockedCluster$new(n = 20, response_type = 'continuous', strata_cols = 'x2', cluster_col = 'cl')
+#' X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, each = 10)), cl = factor(rep(1:10, each = 2)))
+#' des$add_all_subjects_to_experiment(X)
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 	inherit = FixedDesign,
@@ -14,13 +19,13 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#' @param strata_cols 	A character vector of column names to use for stratification (blocks).
 		#' @param cluster_col 	The column name in the data that identifies the cluster for each subject.
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment for each cluster.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
+		#' @param prob_T  The probability of the treatment assignment for each cluster.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
 		#' @param preferred_num_bins_for_continuous_covariate The number of quantile bins to use for continuous strata. Default is 2.
 		#' @param num_bins_for_continuous_covariate Deprecated alias for
 		#'   `preferred_num_bins_for_continuous_covariate`.
-		#' @param verbose	Flag for verbosity.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

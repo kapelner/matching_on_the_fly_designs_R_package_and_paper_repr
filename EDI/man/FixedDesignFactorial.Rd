@@ -13,6 +13,11 @@ An R6 Class encapsulating the data and functionality for a fixed factorial exper
 This design handles multiple treatment factors and balances assignments across
 all factor combinations.
 }
+\examples{
+des = FixedDesignFactorial$new(n = 12, response_type = 'continuous', factors = list(f1 = 2, f2 = 2))
+des$add_all_subjects_to_experiment(data.frame(x=1:12))
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignFactorial}
 }

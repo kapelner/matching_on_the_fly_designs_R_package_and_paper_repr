@@ -21,3 +21,4 @@ A list with expanded y, w, and strata.
 \description{
 Utility to expand ordinal data for continuation ratio regression.
 }
+\keyword{internal}

@@ -46,15 +46,8 @@ When \code{use_rcpp = FALSE}, this function requires the \pkg{glmnet} package,
 which is listed in Suggests and is not installed automatically with \pkg{EDI}.
 }
 \examples{
-if (check_package_installed("glmnet")) {
-  X <- matrix(c(-1, 0,
-                  0, 1,
-                  1, 0,
-                  0, 1,
-                  1, 0,
-                  2, 1), ncol = 2, byrow = TRUE)
-  y <- c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0)
-  dead <- c(1, 1, 0, 1, 0, 1)
-  fast_coxph_regression(X, y, dead)
-}
+X = matrix(rnorm(500), 100, 5)
+y = runif(100)
+dead = rbinom(100, 1, 0.5)
+fast_coxph_regression(y, dead, X)
 }

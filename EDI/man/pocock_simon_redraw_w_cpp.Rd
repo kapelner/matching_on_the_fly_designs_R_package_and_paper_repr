@@ -30,3 +30,4 @@ An integer vector of treatment assignments.
 \description{
 Pocock-Simon Minimization Redraw Assignments
 }
+\keyword{internal}

@@ -4,6 +4,10 @@
 #' This design searches for an allocation that maximizes the determinant of the information matrix
 #' (equivalent to minimizing the variance of the parameter estimates).
 #'
+#' @examples
+#' des = FixedDesignDOptimal$new(n = 10, response_type = 'continuous')
+#' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignDOptimal = R6::R6Class("FixedDesignDOptimal",
 	inherit = FixedDesign,
@@ -12,10 +16,10 @@ FixedDesignDOptimal = R6::R6Class("FixedDesignDOptimal",
 		#' Initialize a D-optimal search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment. Must be 0.5 for exchange search.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param prob_T  The probability of the treatment assignment. Must be 0.5 for exchange search.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

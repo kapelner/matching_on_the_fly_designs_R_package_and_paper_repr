@@ -66,7 +66,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 
 		#' @description
 		#' Compute asymp confidence interval
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -76,15 +76,14 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
+				return(private$fallback_bootstrap_ci(alpha = alpha))
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
-		#' @param delta Description for delta
+		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -94,8 +93,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			}
 			private$shared_combined_hurdle()
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
-				warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
-				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
+				return(private$fallback_bootstrap_pval(delta = delta))
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
@@ -104,6 +102,23 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 	private = list(
 		use_rcpp = TRUE,
 			max_abs_reasonable_coef = 1e4,
+
+			warn_bootstrap_fallback_once = function(){
+				if (!isTRUE(private$cached_values$warned_bootstrap_se_unavailable)) {
+					private$cached_values$warned_bootstrap_se_unavailable = TRUE
+					warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
+				}
+			},
+
+			fallback_bootstrap_ci = function(alpha){
+				private$warn_bootstrap_fallback_once()
+				self$compute_bootstrap_confidence_interval(alpha = alpha)
+			},
+
+			fallback_bootstrap_pval = function(delta){
+				private$warn_bootstrap_fallback_once()
+				self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE)
+			},
 
 			get_standard_error = function(){
 				private$shared_combined_hurdle(estimate_only = FALSE)

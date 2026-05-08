@@ -21,3 +21,4 @@ A numeric vector representing the score.
 \description{
 Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
 }
+\keyword{internal}

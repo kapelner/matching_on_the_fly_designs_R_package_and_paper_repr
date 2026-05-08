@@ -19,3 +19,4 @@ A numeric matrix representing the Hessian.
 \description{
 Calculates the Hessian matrix (second derivatives of the log-likelihood) for an ordinal regression model.
 }
+\keyword{internal}

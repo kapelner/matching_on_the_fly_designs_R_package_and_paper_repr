@@ -8,6 +8,11 @@ Exact Fisher Incidence Inference
 
 Exact Fisher Incidence Inference
 }
+\examples{
+\dontrun{
+# Example for InferenceIncidExactFisher
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidExactFisher}
 }

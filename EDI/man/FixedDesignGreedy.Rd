@@ -12,6 +12,11 @@ A Greedy Search Fixed Design
 An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
 Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
 }
+\examples{
+\dontrun{
+des = FixedDesignGreedy$new(n = 10, response_type = 'continuous')
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignGreedy}
 }

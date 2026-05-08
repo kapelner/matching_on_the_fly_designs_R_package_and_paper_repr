@@ -544,10 +544,14 @@ Eigen::MatrixXd compute_robust_vcov(
 //' @param optimization_alg Optimization algorithm ("newton_raphson" or "lbfgs").
 //' @return A list containing coefficients, vcov (optional), and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = runif(10)
+//' dead = rbinom(10, 1, 0.5)
+//' fast_coxph_regression_cpp(X, y, dead)
 // [[Rcpp::export]]
-List fast_coxph_regression_cpp(const Eigen::MatrixXd& X,
-                               const Eigen::VectorXd& y,
-                               const Eigen::VectorXd& dead,
+List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead,
                                Nullable<NumericVector> start_beta = R_NilValue,
                                bool estimate_only = false,
                                int maxit = 20,
@@ -610,6 +614,13 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X,
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, vcov, and convergence status.
 //' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = runif(10)
+//' dead = rbinom(10, 1, 0.5)
+//' strata = rep(1:2, each = 5)
+//' fast_stratified_coxph_regression_cpp(X, y, dead, strata)
 // [[Rcpp::export]]
 List fast_stratified_coxph_regression_cpp(
     const Eigen::MatrixXd& X,
@@ -682,6 +693,7 @@ List fast_stratified_coxph_regression_cpp(
 //' @param beta Coefficient vector.
 //' @return Score vector.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X,
                                      const Eigen::VectorXd& y,
@@ -703,6 +715,7 @@ Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X,
 //' @param beta Coefficient vector.
 //' @return Hessian matrix.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X,
                                        const Eigen::VectorXd& y,
@@ -723,6 +736,7 @@ Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param beta Coefficient vector.
 //' @return Score vector.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
@@ -765,6 +779,7 @@ Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X,
 //' @param beta Coefficient vector.
 //' @return Hessian matrix.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X,
                                                    const Eigen::VectorXd& y,

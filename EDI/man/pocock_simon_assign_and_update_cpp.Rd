@@ -31,3 +31,4 @@ The assigned treatment (0 or 1).
 \description{
 Pocock-Simon Minimization Assignment and Update
 }
+\keyword{internal}

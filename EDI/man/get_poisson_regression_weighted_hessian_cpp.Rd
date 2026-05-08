@@ -19,3 +19,4 @@ A numeric matrix representing the weighted Hessian.
 \description{
 Calculates the Hessian matrix for a weighted Poisson regression model.
 }
+\keyword{internal}

@@ -14,6 +14,11 @@ This design searches for an allocation that minimizes the trace of the inverse
 information matrix
 (equivalent to minimizing the average variance of the parameter estimates).
 }
+\examples{
+des = FixedDesignAOptimal$new(n = 10, response_type = 'continuous')
+des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignAOptimal}
 }

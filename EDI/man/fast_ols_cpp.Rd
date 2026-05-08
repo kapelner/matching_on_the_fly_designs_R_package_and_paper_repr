@@ -35,21 +35,8 @@ when only the regression coefficients are needed, without variance-covariance ma
 or other statistical inference components.
 }
 \examples{
-\dontrun{
-# Generate some sample data
-set.seed(123)
-n <- 100
-p <- 3
-X_mat <- cbind(1, matrix(rnorm(n * (p - 1)), ncol = p - 1)) # X with intercept
-y_vec <- X_mat \%*\% c(1, 0.5, -0.2) + rnorm(n, sd = 0.5)
-
-# Fit OLS using fast_ols_cpp
-fit_ols <- fast_ols_cpp(X = X_mat, y = y_vec)
-print(fit_ols$
-  b)
-
-# Compare with standard R lm()
-lm_fit <- lm(y_vec ~ X_mat - 1) # -1 because X_mat already has intercept
-print(coef(lm_fit))
+X = matrix(rnorm(100), 10, 10)
+y = rnorm(10)
+fast_ols_cpp(X, y)
 }
-}
+\keyword{internal}

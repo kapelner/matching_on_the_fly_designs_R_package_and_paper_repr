@@ -21,3 +21,4 @@ A numeric vector representing the weighted score.
 \description{
 Calculates the score vector for a weighted Poisson regression model.
 }
+\keyword{internal}

@@ -55,6 +55,7 @@ public:
 //' @param params A numeric vector of parameters [alpha, beta].
 //' @return A numeric vector representing the score.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
     OrdinalRegression model(X, y);
@@ -70,6 +71,7 @@ Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const
 //' @param params A numeric vector of parameters [alpha, beta].
 //' @return A numeric matrix representing the Hessian.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
     OrdinalRegression model(X, y);
@@ -88,6 +90,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -140,6 +143,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param optimization_alg Optimization algorithm.
 //' @return A list containing coefficients, thresholds, vcov, and convergence status.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                            Nullable<NumericVector> start_params = R_NilValue,
@@ -196,6 +200,7 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @param j_treat 1-based index of treatment column.
 //' @return A list containing G-computation results (means, difference, SE).
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
                                 const Eigen::VectorXd& y,
@@ -340,6 +345,7 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
 //' @param K Number of categories.
 //' @return A list with expanded y, w, and strata.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
     int n = y.size();
@@ -377,6 +383,7 @@ List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::V
 //' @param K Number of categories.
 //' @return A list with expanded y, w, and strata.
 //' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List expand_adjacent_category_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
     int n = y.size();

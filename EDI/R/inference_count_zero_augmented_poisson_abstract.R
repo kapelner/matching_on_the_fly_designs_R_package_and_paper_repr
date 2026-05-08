@@ -19,6 +19,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
+		#' @param use_rcpp Whether to use Rcpp speedup.
+		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			if (should_run_asserts()) {
@@ -51,7 +53,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 		#' @description
 		#' Compute asymp confidence interval
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -66,7 +68,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
-		#' @param delta Description for delta
+		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -77,8 +79,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
+		}
+	),
 
+	private = list(
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			se = private$compute_standard_error_from_information_matrix()
@@ -89,10 +93,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		get_degrees_of_freedom = function(){
 			private$shared(estimate_only = FALSE)
 			private$cached_values$df
-		}
-	),
+		},
 
-	private = list(
 		best_X_colnames = NULL,
 		use_rcpp = TRUE,
 

@@ -12,9 +12,3 @@ The mean of the vector.
 \description{
 Calculates the mean of a numeric vector using Rcpp for speed.
 }
-\examples{
-\dontrun{
-x <- rnorm(100)
-mean_cpp(x)
-}
-}

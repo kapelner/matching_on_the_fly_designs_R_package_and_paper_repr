@@ -19,3 +19,4 @@ A numeric vector representing the score.
 \description{
 Calculates the score vector (gradient of the log-likelihood) for an ordinal regression model.
 }
+\keyword{internal}

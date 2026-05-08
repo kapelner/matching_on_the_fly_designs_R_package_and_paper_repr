@@ -3,6 +3,10 @@
 #' An R6 Class encapsulating the data and functionality for a fixed balanced
 #' completely randomized experimental design.
 #'
+#' @examples
+#' des = FixedDesigniBCRD$new(n = 10, response_type = 'continuous')
+#' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 	inherit = FixedDesign,
@@ -12,14 +16,14 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return	A new `FixedDesigniBCRD` object
+		#' @return  A new `FixedDesigniBCRD` object
 		initialize = function(
 						response_type,
 						prob_T = 0.5,

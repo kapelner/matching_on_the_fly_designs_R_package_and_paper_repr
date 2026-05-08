@@ -156,7 +156,7 @@ Not applicable: JT test is exact, not asymptotic. Returns NA.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Description for alpha}
+\item{\code{alpha}}{The significance level (default 0.05).}
 }
 \if{html}{\out{</div>}}
 }
@@ -173,7 +173,7 @@ Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{Description for delta}
+\item{\code{delta}}{The null treatment effect (default 0).}
 }
 \if{html}{\out{</div>}}
 }

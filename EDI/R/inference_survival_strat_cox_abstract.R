@@ -9,16 +9,19 @@
 #' @noRd
 InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
 	public = list(
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH
-		#'   optimiser. If \code{FALSE}, use \pkg{survival::coxph}.
-		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE) {
+		#' @description
+		#' Initialize
+	#' @param des_obj A completed \code{Design} object.
+	#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
+	#'   the formula from the design object is used and its pre-computed design matrix is
+	#'   reused. If a formula is provided, a new design matrix is constructed from the
+	#'   design's imputed covariates.
+	#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH
+	#'   optimiser. If \code{FALSE}, use \pkg{survival::coxph}.
+	#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
+	#' @param verbose Whether to print progress messages.
+	initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFlag(use_rcpp)
@@ -39,7 +42,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 
 		#' @description
 		#' Compute asymp confidence interval
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -50,7 +53,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 
 		#' @description
 		#' Compute asymp two sided pval for treatment effect
-		#' @param delta Description for delta
+		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -61,10 +64,10 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 
 		#' @description
 		#' Compute confidence interval rand
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		#' @param r Number of vectors to draw.
-		#' @param pval_epsilon Description for pval_epsilon
-		#' @param show_progress Description for show_progress
+		#' @param pval_epsilon The bisection convergence tolerance.
+		#' @param show_progress Whether to show a progress bar.
 		#' @param ci_search_control Unused.
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for stratified Cox PH models because the estimator units (Log-Hazard Ratio) are inconsistent with the randomization test's required transformed scale (Log-Time Ratio / AFT effect).")
@@ -294,6 +297,18 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 #'
 #' Fits an auto-stratified Cox PH regression.
 #'
+#' @examples
+#' \dontrun{
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalStratCoxPHRegr$new(seq_des)
+#' inf$compute_estimate()
+#' }
+#' }
 #' @export
 InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 	lock_objects = FALSE,

@@ -27,6 +27,7 @@ Imports:
     numDeriv,
     methods,
     MASS,
+    RhpcBLASctl,
     pbmcapply,
     randomizr
 Suggests:

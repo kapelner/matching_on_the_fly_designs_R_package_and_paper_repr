@@ -13,6 +13,10 @@ An R6 Class encapsulating the data and functionality for a stratified permuted
 block sequential experimental design.
 This design ensures balance within specified strata using blocks of a fixed size.
 }
+\examples{
+seq_des = DesignSeqOneByOneSPBR$new(strata_cols = 'x1', n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneSPBR}
 }

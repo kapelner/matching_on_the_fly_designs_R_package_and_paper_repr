@@ -6,6 +6,16 @@
 #' after the sequential design is completed.
 #'
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKMDiff$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 	lock_objects = FALSE,
@@ -31,7 +41,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' @description
 		#' Computes the appropriate estimate for mean difference
 		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @examples
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
@@ -79,7 +89,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' @param alpha           The significance level; the confidence level is 1 - \code{alpha}.
 		#'   Default is 0.05.
 		#'
-		#' @return	A numeric vector of length 2 giving the (lower, upper) confidence bounds
+		#' @return  A numeric vector of length 2 giving the (lower, upper) confidence bounds
 		#' 			for the difference in median survival times, on the original time scale.
 		#'
 		#' @examples
@@ -136,7 +146,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'
 		#' @param delta The null difference to test against. Default is 0.
 		#'
-		#' @return	The approximate frequentist p-value
+		#' @return  The approximate frequentist p-value
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -150,7 +160,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
 		#'
-		#' @return	The approximate frequentist p-value
+		#' @return  The approximate frequentist p-value
 		#'
 		#' @examples
 		#' \dontrun{
@@ -187,11 +197,11 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param	r		The number of randomization vectors. The default is 501.
-		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
-		#' @param	show_progress		Show a text progress indicator.
+		#' @param  r  	The number of randomization vectors. The default is 501.
+		#' @param  pval_epsilon  		The bisection algorithm tolerance. The default is 0.005.
+		#' @param  show_progress  	Show a text progress indicator.
 		#' @param ci_search_control Unused.
-		#' @return	A 1 - alpha sized frequentist confidence interval
+		#' @return  A 1 - alpha sized frequentist confidence interval
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalKMDiff due to inconsistent estimator units on the transformed scale.")
 		}

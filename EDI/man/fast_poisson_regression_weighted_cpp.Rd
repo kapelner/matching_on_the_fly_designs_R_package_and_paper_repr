@@ -49,3 +49,4 @@ A list containing the following components:
 \description{
 High-performance weighted Poisson regression fitting.
 }
+\keyword{internal}

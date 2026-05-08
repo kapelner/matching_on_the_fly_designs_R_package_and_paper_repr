@@ -12,6 +12,19 @@ CMH Blocked Incidence Inference
 Unadjusted blocked-design incidence inference using the simple mean-difference
 point estimate with a block-stratified standard error.
 }
+\examples{
+\dontrun{
+\donttest{
+seq_des = DesignSeqOneByOneRandomBlockSize$new(n = 20, response_type = 'incidence', strata_cols = 'x1')
+for (i in 1:20) {
+  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(rep(1:2, 10)[i], levels=1:2)))
+}
+seq_des$add_all_subject_responses(rbinom(20, 1, 0.5))
+inf = InferenceIncidCMH$new(seq_des)
+inf$compute_estimate()
+}
+}
+}
 \section{Super classes}{
 \code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{InferenceIncidCMH}
 }

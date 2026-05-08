@@ -95,7 +95,7 @@ Compute asymp confidence interval
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Description for alpha}
+\item{\code{alpha}}{The significance level (default 0.05).}
 }
 \if{html}{\out{</div>}}
 }
@@ -112,7 +112,7 @@ Compute asymp two sided pval for treatment effect
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{Description for delta}
+\item{\code{delta}}{The null treatment effect (default 0).}
 }
 \if{html}{\out{</div>}}
 }

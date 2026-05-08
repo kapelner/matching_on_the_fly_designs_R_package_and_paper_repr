@@ -3,6 +3,10 @@
 #' An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
 #' Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
 #'
+#' @examples
+#' \dontrun{
+#' des = FixedDesignGreedy$new(n = 10, response_type = 'continuous')
+#' }
 #' @export
 FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 	inherit = FixedDesign,
@@ -11,11 +15,11 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		#' Initialize a greedy search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
-		#' @param prob_T	The probability of the treatment assignment. Must be 0.5.
+		#' @param prob_T  The probability of the treatment assignment. Must be 0.5.
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

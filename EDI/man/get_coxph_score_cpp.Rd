@@ -21,3 +21,4 @@ Score vector.
 \description{
 Calculates the score vector (gradient of log partial likelihood) for unstratified Cox regression.
 }
+\keyword{internal}

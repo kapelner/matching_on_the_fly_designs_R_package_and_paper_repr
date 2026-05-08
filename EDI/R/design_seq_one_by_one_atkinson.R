@@ -3,6 +3,9 @@
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data initialization and sequential assignments.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneAtkinson$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 	inherit = DesignSeqOneByOne,
@@ -10,10 +13,10 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 		#' @description
 		#' Initialize an Atkinson sequential experimental design
 		#'
-		#' @param	response_type 	The data type of response values.
-		#' @param	prob_T	The probability of the treatment assignment.
+		#' @param  response_type 	The data type of response values.
+		#' @param  prob_T  The probability of the treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.

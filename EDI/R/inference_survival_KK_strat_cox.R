@@ -4,6 +4,16 @@
 #' For matched pairs, it uses stratified Cox proportional hazards regression.
 #' For reservoir subjects, it uses standard Cox regression.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKStratCoxIVWC$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKStratCoxIVWC = R6::R6Class("InferenceSurvivalKKStratCoxIVWC",
 	lock_objects = FALSE,
@@ -27,6 +37,16 @@ InferenceSurvivalKKStratCoxIVWC = R6::R6Class("InferenceSurvivalKKStratCoxIVWC",
 #'
 #' Fits the combined stratified Cox partial likelihood (matched pairs + reservoir).
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalKKStratCoxOneLik$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalKKStratCoxOneLik = R6::R6Class("InferenceSurvivalKKStratCoxOneLik",
 	lock_objects = FALSE,

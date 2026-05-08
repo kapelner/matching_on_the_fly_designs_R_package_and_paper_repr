@@ -25,3 +25,4 @@ The assigned treatment (0 or 1).
 \description{
 Pocock-Simon Minimization Allocation Logic
 }
+\keyword{internal}

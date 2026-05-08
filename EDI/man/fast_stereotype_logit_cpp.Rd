@@ -35,3 +35,4 @@ A list containing coefficients, thresholds, scores, and convergence status.
 \description{
 High-performance stereotype logit regression fitting using Newton-Raphson.
 }
+\keyword{internal}

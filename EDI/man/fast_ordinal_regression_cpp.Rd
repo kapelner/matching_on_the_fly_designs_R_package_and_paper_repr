@@ -37,3 +37,4 @@ A list containing coefficients (beta), thresholds (alpha), and convergence statu
 \description{
 High-performance ordinal regression fitting using Newton-Raphson.
 }
+\keyword{internal}

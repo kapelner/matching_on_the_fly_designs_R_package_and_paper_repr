@@ -15,6 +15,11 @@ by solving a balanced clustering problem with \pkg{ompr} and glpk, then randomiz
 treatment within those blocks. When \code{B} is omitted and \code{n} is known
 at initialization, the default is \code{floor(sqrt(n))}, truncated below at 1.
 }
+\examples{
+des = FixedDesignOptimalBlocks$new(n = 9, response_type = 'continuous')
+des$add_all_subjects_to_experiment(data.frame(x = rnorm(9)))
+des$assign_w_to_all_subjects()
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:FixedDesign]{EDI::FixedDesign}} -> \code{FixedDesignOptimalBlocks}
 }

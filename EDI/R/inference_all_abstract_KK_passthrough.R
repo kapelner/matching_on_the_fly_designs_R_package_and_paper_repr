@@ -17,7 +17,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed
-		#'   to the user. Default is \code{TRUE}
+		#'   to the user. Default is \code{FALSE}
 		#' @param smart_default Whether to use smart optimizer start values by default.
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
@@ -41,7 +41,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @description
 		#' Creates the boostrap distribution of the estimate for the treatment effect
 		#'
-		#' @param B						Number of bootstrap samples. The default is 501.
+		#' @param B  					Number of bootstrap samples. The default is 501.
 		#'
 		#' @return A vector of length \code{B} with the bootstrap values of the estimates of the
 		#'   treatment effect
@@ -62,7 +62,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' beta_hat_T_bs
 		#' }
 		#'
-		#' @param show_progress Description for show_progress
+		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         If \code{TRUE}, return a list with the distribution values and
 		#'   per-iteration diagnostics. Default \code{FALSE}.
 		#' @param bootstrap_type      The type of bootstrap resampling to perform.

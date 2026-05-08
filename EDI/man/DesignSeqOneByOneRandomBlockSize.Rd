@@ -14,6 +14,10 @@ experimental design
 where block sizes are randomly chosen from a specified set for each stratum. This design
 is commonly used in clinical trials to prevent predictability of treatment assignments.
 }
+\examples{
+seq_des = DesignSeqOneByOneRandomBlockSize$new(n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneRandomBlockSize}
 }
@@ -115,12 +119,11 @@ should we include another dummy variable for its missingness? Default is \code{T
 
 \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
 
-\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is}
+\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is \code{FALSE}.}
 
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
-\item{\code{model_formula}}{A formula object.
-\code{FALSE}.}
+\item{\code{model_formula}}{A formula object.}
 }
 \if{html}{\out{</div>}}
 }

@@ -4,6 +4,9 @@
 #' This class takes care of data initialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 #' @export
 DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 	inherit = DesignSeqOneByOneKK14,
@@ -14,7 +17,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' Kapelner and Krieger (2021) with
 		#' option to use matching parameters of Morrison and Owen (2025)
 		#'
-		#' @param	response_type 	The data type of response values which must be one of the following:
+		#' @param  response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous",
 		#' 								"incidence",
 		#' 								"proportion",
@@ -23,15 +26,15 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#'                                                                 This package will enforce
 		#' that all added responses via the \code{add_one_subject_response} method will be
 		#' 								of the appropriate type.
-		#' @param	prob_T	The probability of the treatment assignment. This defaults to \code{0.5}.
+		#' @param  prob_T  The probability of the treatment assignment. This defaults to \code{0.5}.
 		#' @param include_is_missing_as_a_new_feature     If missing data is present in a variable,
 		#'   should we include another dummy variable for its
 		#'                                                                 missingness in addition to
 		#' imputing its value? If the feature is type factor, instead of creating
 		#' 								a new column, we allow missingness to be its own level. The default is \code{TRUE}.
-		#' @param	n			The sample size (if fixed). Default is \code{NULL} for not fixed.
+		#' @param  n  		The sample size (if fixed). Default is \code{NULL} for not fixed.
 		#' @param verbose A flag indicating whether messages should be
-		#'   displayed to the user. Default is \code{TRUE}.
+		#'   displayed to the user. Default is \code{FALSE}.
 		#' @param lambda   The quantile cutoff of the subject distance distribution for determining
 		#'   matches. If unspecified and \code{morrison = FALSE}, default is 10\%.
 		#' @param t_0_pct  The percentage of total sample size n where matching begins. If unspecified
@@ -71,11 +74,12 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' @param model_formula A formula object.
 		#' @param ... Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.
 		#'
-		#' @return	A new `DesignSeqOneByOneKK21` object
+		#' @return  A new `DesignSeqOneByOneKK21` object
 		#'
 		#' @examples
-		#' \dontrun{
+		#' \donttest{
 		#' seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+		#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 		#' }
 		#'
 		initialize = function(
@@ -124,7 +128,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' @description
 		#' Returns the weights calculated at each iteration.
 		#'
-		#' @return	A list of weights.
+		#' @return  A list of weights.
 		get_iteration_weights = function(){
 			private$iteration_weights
 		},
@@ -133,7 +137,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' @description
 		#' Get the covariate weights calculated at the current iteration.
 		#'
-		#' @return	A numeric vector of weights.
+		#' @return  A numeric vector of weights.
 		get_covariate_weights = function(){
 			private$covariate_weights
 		},

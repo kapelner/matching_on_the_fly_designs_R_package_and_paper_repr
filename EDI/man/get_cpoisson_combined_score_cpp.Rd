@@ -27,3 +27,4 @@ A numeric vector representing the score.
 \description{
 Calculates the score vector for the combined conditional-Poisson and Poisson log-likelihood.
 }
+\keyword{internal}

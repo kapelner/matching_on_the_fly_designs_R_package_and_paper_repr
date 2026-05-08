@@ -13,6 +13,10 @@ An R6 Class encapsulating the data and functionality for a Pocock & Simon
 sequential experimental design.
 This design minimizes the imbalance across treatments for multiple covariates.
 }
+\examples{
+seq_des = DesignSeqOneByOnePocockSimon$new(strata_cols = 'x1', n = 6, response_type = 'continuous')
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
+}
 \section{Super classes}{
 \code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOnePocockSimon}
 }

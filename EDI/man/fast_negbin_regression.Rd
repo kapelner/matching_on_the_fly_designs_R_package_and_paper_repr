@@ -24,7 +24,7 @@ a C++ backend function. It is designed to efficiently estimate regression coeffi
 for count data, assuming all observations are "not censored" (i.e., `dead = 1`).
 }
 \examples{
-X <- cbind(1, c(-1, 0, 1, 0, 1, 2))
-y <- c(0, 1, 1, 2, 3, 4)
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
 fast_negbin_regression(X, y)
 }

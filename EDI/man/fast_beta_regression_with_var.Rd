@@ -46,7 +46,7 @@ with \pkg{EDI}. If \pkg{betareg} is also unavailable, a final fallback of OLS on
 enable the intermediate fallback.
 }
 \examples{
-X <- cbind(1, c(-1, -0.5, 0.5, 1))
-y <- c(0.15, 0.25, 0.60, 0.75)
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
 fast_beta_regression_with_var(X, y)
 }

@@ -47,3 +47,11 @@ A list containing coefficients, vcov, and convergence status.
 \description{
 High-performance stratified Cox regression fitting.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = runif(10)
+dead = rbinom(10, 1, 0.5)
+strata = rep(1:2, each = 5)
+fast_stratified_coxph_regression_cpp(X, y, dead, strata)
+}
+\keyword{internal}

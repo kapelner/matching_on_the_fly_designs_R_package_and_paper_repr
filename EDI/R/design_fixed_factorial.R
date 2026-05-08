@@ -4,6 +4,10 @@
 #' This design handles multiple treatment factors and balances assignments across
 #' all factor combinations.
 #'
+#' @examples
+#' des = FixedDesignFactorial$new(n = 12, response_type = 'continuous', factors = list(f1 = 2, f2 = 2))
+#' des$add_all_subjects_to_experiment(data.frame(x=1:12))
+#' des$assign_w_to_all_subjects()
 #' @export
 FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 	inherit = FixedDesign,
@@ -14,9 +18,9 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#' @param factors         A list where names are factor names and values are number of
 		#'   levels (e.g. list(A=2, B=2)).
 		#' @param response_type 	The data type of response values.
-		#' @param include_is_missing_as_a_new_feature	Flag for missingness indicators.
-		#' @param n			The sample size.
-		#' @param verbose	Flag for verbosity.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'

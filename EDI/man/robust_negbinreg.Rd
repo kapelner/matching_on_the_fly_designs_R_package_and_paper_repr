@@ -19,6 +19,6 @@ Performs Negative Binomial regression that if it fails, keeps dropping one colum
 model matrix until it works
 }
 \examples{
-dat <- data.frame(y = c(0, 1, 1, 2, 3, 4), x1 = c(-1, 0, 1, 0, 1, 2))
-robust_negbinreg(y ~ x1, dat)
+dat = data.frame(y = rpois(10, 2), x1 = rnorm(10), x2 = rnorm(10))
+robust_negbinreg(y ~ ., dat)
 }

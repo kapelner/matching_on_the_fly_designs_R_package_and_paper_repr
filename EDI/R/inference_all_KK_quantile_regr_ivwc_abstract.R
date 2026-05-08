@@ -82,7 +82,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @description
 		#' Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
 		#'
-		#' @param delta					The null difference to test against. Default is zero.
+		#' @param delta  				The null difference to test against. Default is zero.
 		#'
 		#' @return 	The approximate frequentist p-value
 		compute_asymp_two_sided_pval = function(delta = 0){

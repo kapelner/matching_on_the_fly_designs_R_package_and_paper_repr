@@ -26,25 +26,7 @@ a C++ backend function. It is designed to efficiently estimate regression coeffi
 for binary outcomes without computing variance components.
 }
 \examples{
-\dontrun{
-# Generate some sample data
-set.seed(123)
-n <- 100
-p <- 2
-X_log <- cbind(1, matrix(rnorm(n * (p - 1)), ncol = p - 1)) # X with intercept
-beta_log <- c(0.5, 1)
-lin_pred <- X_log \%*\% beta_log
-prob <- exp(lin_pred) / (1 + exp(lin_pred))
-y_log <- rbinom(n, 1, prob)
-
-# Fit logistic regression using fast_logistic_regression
-fit_logistic <- fast_logistic_regression(X = X_log, y = y_log)
-print(fit_logistic$
-  b)
-
-# Compare with standard R glm()
-glm_fit <- glm(y_log ~ X_log - 1, family = binomial) # -1 because X_log already has intercept
-print(coef(glm_fit))
-}
-
+X = matrix(rnorm(500), 100, 5)
+y = rbinom(100, 1, 0.5)
+fast_logistic_regression(X, y)
 }

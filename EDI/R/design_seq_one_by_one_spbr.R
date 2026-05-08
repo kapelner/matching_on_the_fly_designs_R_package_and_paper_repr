@@ -4,6 +4,9 @@
 #' block sequential experimental design.
 #' This design ensures balance within specified strata using blocks of a fixed size.
 #'
+#' @examples
+#' seq_des = DesignSeqOneByOneSPBR$new(strata_cols = 'x1', n = 6, response_type = 'continuous')
+#' seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
 #' @export
 DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 	inherit = DesignSeqOneByOne,
@@ -15,14 +18,14 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 		#' @param block_size The size of the permuted blocks.
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
-		#' @param	prob_T	Probability of treatment assignment.
+		#' @param  prob_T  Probability of treatment assignment.
 		#' @param include_is_missing_as_a_new_feature     Flag for missingness indicators.
-		#' @param	n			The sample size.
+		#' @param  n  		The sample size.
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return	A new `DesignSeqOneByOneSPBR` object
+		#' @return  A new `DesignSeqOneByOneSPBR` object
 		initialize = function(
 						strata_cols,
 						block_size = 4,

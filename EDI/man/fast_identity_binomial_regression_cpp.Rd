@@ -32,3 +32,4 @@ A list containing coefficients and fitted values.
 \description{
 High-performance binomial regression with identity link using Fisher scoring.
 }
+\keyword{internal}

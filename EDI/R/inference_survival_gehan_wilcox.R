@@ -15,6 +15,16 @@
 #' p=1, q=0), which is distinct from the log-rank test (\code{rho = 0}) used in
 #' \code{InferenceSurvivalKMDiff}.
 #'
+#' @examples
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalGehanWilcox$new(seq_des)
+#' inf$compute_estimate()
+#' }
 #' @export
 InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 	lock_objects = FALSE,
@@ -42,7 +52,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' between the treatment and control groups. Positive values indicate that treatment
 		#' subjects experienced fewer early events than expected.
 		#'
-		#' @return	A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
+		#' @return  A numeric scalar (the Peto-Prentice weighted score treatment effect estimate).
 		#'
 		#' @examples
 		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
@@ -70,9 +80,9 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' of the Peto-Prentice weighted martingale residual mean difference. Falls back to
 		#' bootstrap if the SE is unavailable.
 		#'
-		#' @param	alpha	Significance level. Default is 0.05.
+		#' @param  alpha  Significance level. Default is 0.05.
 		#'
-		#' @return	A numeric vector of length 2: (lower, upper) confidence bounds.
+		#' @return  A numeric vector of length 2: (lower, upper) confidence bounds.
 		#'
 		#' @examples
 		#' \dontrun{
@@ -108,9 +118,9 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' relative to the standard log-rank test (\code{rho = 0}).
 		#' For delta != 0, not yet implemented.
 		#'
-		#' @param	delta	Null treatment effect to test against. Default is 0.
+		#' @param  delta  Null treatment effect to test against. Default is 0.
 		#'
-		#' @return	A p-value in [0, 1].
+		#' @return  A p-value in [0, 1].
 		#'
 		#' @examples
 		#' \dontrun{
@@ -146,10 +156,10 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		#' the Peto-Prentice weighted score scale is not commensurate with the time-ratio
 		#' null used by the randomization CI bisection algorithm.
 		#'
-		#' @param	alpha			Unused.
-		#' @param	r	Unused.
-		#' @param	pval_epsilon	Unused.
-		#' @param	show_progress	Unused.
+		#' @param  alpha  		Unused.
+		#' @param  r  Unused.
+		#' @param  pval_epsilon  Unused.
+		#' @param  show_progress  Unused.
 		#' @param ci_search_control Unused.
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalGehanWilcox due to inconsistent estimator units on the Peto-Prentice score scale.")

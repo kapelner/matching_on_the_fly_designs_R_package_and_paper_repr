@@ -19,3 +19,4 @@ A numeric vector representing the score.
 \description{
 Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.
 }
+\keyword{internal}

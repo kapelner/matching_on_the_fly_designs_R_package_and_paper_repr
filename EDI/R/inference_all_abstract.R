@@ -59,9 +59,12 @@ Inference = R6::R6Class("Inference",
 			# Handle model_formula and X matrix construction
 			if (is.null(model_formula)) {
 				private$model_formula = des_obj$get_model_formula()
-				# Time-saving trick: copy pre-computed X if using the same formula
-				private$X = private$des_obj_priv_int$X
+				# Ensure the design matrix is built
+				private$X = private$get_X()
 			} else {
+				# Ensure design is ready
+				private$des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
+				
 				if (should_run_asserts()) {
 					all_features = names(des_obj$get_X_imp())
 					required_vars = all.vars(model_formula)
@@ -486,10 +489,10 @@ Inference = R6::R6Class("Inference",
 					if (is.null(prev_threads) || length(prev_threads) != 1L || !is.finite(prev_threads)) {
 						prev_threads = 1L
 					}
-					edi_env$num_cores_override = budget
+					assign("num_cores_override", budget, envir = edi_env)
 					ns$set_package_threads(budget)
 					on.exit({
-						edi_env$num_cores_override = prev_override
+						assign("num_cores_override", prev_override, envir = edi_env)
 						ns$set_package_threads(prev_threads)
 					}, add = TRUE)
 					lapply(chunk, FUN)

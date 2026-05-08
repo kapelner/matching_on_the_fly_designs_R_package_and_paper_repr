@@ -57,6 +57,8 @@
 #' @return A list with two elements: \code{X} (a data frame of covariates) and
 #'   \code{y_cont} (a numeric vector of the latent continuous response).
 #'
+#' @examples
+#' generate_covariate_dataset(n = 10, p = 5)
 #' @export
 generate_covariate_dataset = function(n, p,
                                       cond_exp_func_model  = c("linear", "nonlinear"),
@@ -123,6 +125,8 @@ generate_covariate_dataset = function(n, p,
 #' @param count_min_rate Integer scalar. Minimum baseline rate for count response. Default \code{0L}.
 #' @param count_shift Numeric scalar. Constant added to counts after zero-centering. Default \code{0}.
 #'
+#' @examples
+#' transform_cont_y_based_on_response_type(rnorm(10), 'incidence')
 #' @return A numeric vector of transformed responses on the appropriate scale.
 #'
 #' @export
@@ -216,6 +220,24 @@ get_r6_init_fn = function(r6gen) {
 #'     empirical type-I error rate when \code{betaT = 0}.
 #' }
 #'
+#' @examples
+#' \donttest{
+#' # Simple simulation with two designs and two inference methods
+#' sim = SimulationFramework$new(
+#'   response_type = "continuous",
+#'   design_classes_and_params = list(
+#'     DesignSeqOneByOneKK21 = list(lambda = 0.5),
+#'     DesignSeqOneByOneBernoulli = list()
+#'   ),
+#'   inference_classes_and_params = list(
+#'     InferenceContinOLS = list(),
+#'     InferenceContinKKOLSIVWC = list()
+#'   ),
+#'   n = 100, p = 5, Nrep = 10, betaT = 1
+#' )
+#' sim$run()
+#' sim$summarize()
+#' }
 #' @export
 SimulationFramework = R6::R6Class("SimulationFramework",
   lock_objects = FALSE,
@@ -226,7 +248,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @description
     #' Create a new \code{SimulationFramework}.
     #'
-    #' @param response_type \strong{(required)} Character scalar.  The type of
+    #' @param response_type \strong{(required)} Character scalar or vector.  The type of
     #'   outcome variable.  One of \code{"continuous"}, \code{"incidence"},
     #'   \code{"proportion"}, \code{"count"}, \code{"survival"},
     #'   \code{"ordinal"}.
@@ -265,7 +287,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'     \item{\code{preferred_num_bins_for_continuous_covariate}}{Bin count for
     #'       \code{FixedDesignBlocking} and \code{FixedDesignBlockedCluster}.}
     #'     \item{\code{B_target}}{Target number of blocks for \code{FixedDesignBlocking}.}
-   #'   }
+    #'   }
     #'
     #' @param inference_classes_and_params \code{NULL} (default) or a list
     #'   describing inference classes and optional constructor parameters.
@@ -282,10 +304,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   design, plus representative KK-specific classes (silently skipped for
     #'   non-KK designs at runtime).
     #'
-    #' @param n Integer.  Sample size per simulation replication.  Default
+    #' @param n Integer scalar or vector.  Sample size per simulation replication.  Default
     #'   \code{100}.
     #'
-    #' @param p Integer.  Number of covariates.  Must be \eqn{\ge 5} when
+    #' @param p Integer scalar or vector.  Number of covariates.  Must be \eqn{\ge 5} when
     #'   \code{cond_exp_func_model = "nonlinear"}.  Default \code{5}.
     #'
     #' @param cond_exp_func_model Character scalar or vector.  How the latent continuous signal is
@@ -302,7 +324,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param Nrep Positive integer.  Number of Monte Carlo replications.
     #'   Default \code{100}.
     #'
-    #' @param betaT Numeric scalar.  True treatment effect added to treated
+    #' @param betaT Numeric scalar or vector.  True treatment effect added to treated
     #'   subjects' outcomes.  The scale is response-type specific: additive for
     #'   \code{continuous}, \code{proportion}, and \code{ordinal}; on the logit
     #'   scale for \code{incidence}; log-multiplicative for \code{count} and
@@ -329,30 +351,30 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param n_ordinal_levels Positive integer. Number of ordinal categories when
     #'   \code{response_type = "ordinal"}. Default \code{4L}.
     #'
-	    #' @param proportion_epsilon Numeric scalar. Small value added to proportion
-	    #'   base responses to avoid 0 and 1. Default \code{1e-6}.
-	    #'
-	    #' @param phi_proportion Positive numeric scalar. Precision parameter for
-	    #'   beta-distributed observed proportion outcomes. The beta mean is
-	    #'   \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.
-	    #'
-	    #' @param k_survival Positive numeric scalar. Scale parameter passed to
-	    #'   the Weibull draw for observed survival outcomes. Default \code{2}.
-	    #'
-	    #' @param incidence_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
-	    #'   to the Bernoulli probability for observed incidence outcomes.
-	    #'   Default \code{1e-9}.
-	    #'
-	    #' @param proportion_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
-	    #'   to the beta mean for observed proportion outcomes. Default \code{1e-9}.
-	    #'
-	    #' @param count_clamp Positive numeric scalar. Minimum Poisson mean for
-	    #'   observed count outcomes. Default \code{1e-9}.
-	    #'
-	    #' @param survival_clamp Positive numeric scalar. Minimum Weibull shape for
-	    #'   observed survival outcomes. Default \code{1e-9}.
-	    #'
-	    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
+    #' @param proportion_epsilon Numeric scalar. Small value added to proportion
+    #'   base responses to avoid 0 and 1. Default \code{1e-6}.
+    #'
+    #' @param phi_proportion Positive numeric scalar. Precision parameter for
+    #'   beta-distributed observed proportion outcomes. The beta mean is
+    #'   \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.
+    #'
+    #' @param k_survival Positive numeric scalar. Scale parameter passed to
+    #'   the Weibull draw for observed survival outcomes. Default \code{2}.
+    #'
+    #' @param incidence_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+    #'   to the Bernoulli probability for observed incidence outcomes.
+    #'   Default \code{1e-9}.
+    #'
+    #' @param proportion_clamp Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+    #'   to the beta mean for observed proportion outcomes. Default \code{1e-9}.
+    #'
+    #' @param count_clamp Positive numeric scalar. Minimum Poisson mean for
+    #'   observed count outcomes. Default \code{1e-9}.
+    #'
+    #' @param survival_clamp Positive numeric scalar. Minimum Weibull shape for
+    #'   observed survival outcomes. Default \code{1e-9}.
+    #'
+    #' @param survival_min_time Numeric scalar. Minimum survival time and shift
     #'   for base responses. Default \code{0.1}.
     #'
     #' @param count_min_rate Integer scalar. Minimum baseline rate for count
@@ -389,11 +411,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'
     #' @param prob_censoring Numeric in \eqn{[0,1]}.  Per-subject independent
     #'   censoring probability; applied only when
-    #'   \code{response_type = "survival"}.  Default \code{0.2}.
+    #'   \code{response_type = "survival"}.  Default \code{0.25}.
     #'
     #' @param verbose Logical.  If \code{TRUE}, prints a message for every
     #'   replication and for every \code{(design, inference)} pair that is
-    #'   skipped due to an error.  Default \code{FALSE}.
+    #'   skipped due to an error.  Default \code{TRUE}.
     #'
     #' @param keep_all_intermediate_data Logical. If \code{TRUE}, the framework
     #'   saves the instantiated design and inference objects for every replication.
@@ -555,7 +577,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$X_mat                = X_mat
       private$num_cores            = as.integer(num_cores)
       private$seed                 = if (is.null(seed)) NULL else as.integer(seed)
-      private$cov_draw_method      = cov_draw_method
+      private$cov_draw_method      = if (is.null(X_mat)) cov_draw_method else NULL
       private$cov_draw_method_args = cov_draw_method_args
       private$random_X_draws       = random_X_draws
       private$prob_censoring       = prob_censoring
@@ -631,23 +653,38 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         on.exit(toggle_asserts(TRUE), add = TRUE)        
       }
       
+      # ── Parallelism management ─────────────────────────────────────────────
+      # Save state to restore on exit
+      ns = asNamespace("EDI")
+      prev_threads = getOption(".edi_last_set_threads")
+      if (is.null(prev_threads)) prev_threads = 1L
+      prev_global_cores = get_num_cores()
+      prev_override = ns$edi_env$num_cores_override
+      
       num_cores = private$num_cores
       set_package_threads(num_cores)
+      
+      # If the simulation is running its own parallel loop, we force 
+      # nested core budget to 1 to prevent N*M explosion.
+      if (num_cores > 1L && prev_global_cores > 1L) {
+        set_num_cores(1L)
+      }
+      
+      on.exit({
+        set_package_threads(prev_threads)
+        if (get_num_cores() != prev_global_cores) {
+           set_num_cores(prev_global_cores)
+        }
+        assign("num_cores_override", prev_override, envir = ns$edi_env)
+      }, add = TRUE)
 
       # Handle cleanup/setup
       if (!isTRUE(private$continue_from_last_result_row)) {
         if (file.exists(private$results_filename)) unlink(private$results_filename)
         private$.cleanup_results_staging_file()
       }
-
-      num_cores = private$num_cores
-      if (num_cores > 1L) {
-        prev_global_cores = get_num_cores()
-        if (prev_global_cores > 1L) {
-          set_num_cores(1L)
-          on.exit(set_num_cores(prev_global_cores), add = TRUE)
-        }
-      }
+      
+      private$simulation_start_time = as.numeric(Sys.time())
 
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
@@ -663,7 +700,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n_existing = nrow(existing_results)
       
       if (isTRUE(private$verbose) && n_existing > 0L) {
-        message(sprintf("%d existing results loaded", n_existing))
+        private$.message_stderr(sprintf("%d existing results loaded\n", n_existing))
       }
 
       # Pre-allocate results list for data.table batches (one per chunk or serial replication)
@@ -843,10 +880,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$progress_total = length(planned_combos) * private$Nrep
       
       private$progress_count = total_existing_planned_tasks
+      private$initial_progress_count = total_existing_planned_tasks
       private$progress_log_interval = max(1L, private$progress_total %/% 20L)
       private$progress_bar = NULL; private$use_progress_bar = FALSE
       private$total_cells = n_cells; private$last_progress_draw_time = 0
       private$current_task_label = "Des/Inf"
+      
+      # For ETA calculation, we need to know where we started in the cell hierarchy
+      private$initial_cell_in_progress_prop = if (private$progress_total > 0) private$progress_count / private$progress_total else 0
       
       if (isTRUE(private$verbose)) {
         private$.print_plan_summary(planned_combos_list)
@@ -899,11 +940,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         run_required_v = rep(FALSE, private$Nrep)
         run_required_v[reps_to_run] = TRUE
 
-        if (isTRUE(private$verbose) && !private$use_progress_bar)
-          message(sprintf("  Cell %d / %d: cond_exp_func_model=%s  n=%d  p=%d  betaT=%g",
-            cell_idx, n_cells, private$current_cond_exp_func_model, private$current_n, private$current_p, private$current_betaT))
-
-
         # Pre-format key prefix for this cell to avoid redundant formatting in workers
         cell_key_prefix = paste(private$current_response_type, private$current_cond_exp_func_model,
                                 private$current_n, private$current_p,
@@ -928,13 +964,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         )
 
         num_cores_to_use = 1L
+        private$current_task_label = "Des/Inf"
         if (num_cores > 1L) {
           has_java_designs = any(vapply(private$design_classes, function(cls) cls$classname %in% c("FixedDesignBinaryMatch", "FixedDesignGreedy", "FixedDesignMatchingGreedyPairSwitching", "FixedDesignRerandomization"), logical(1L)))
           if (has_java_designs) {
-            if (isTRUE(private$verbose)) warning("Multithreading disabled for Java-based designs; forking is unstable. Serial execution used for this cell.")
+            if (isTRUE(private$verbose)) private$.message_stderr("Warning: Multithreading disabled for Java-based designs; forking is unstable. Serial execution used for this cell.\n")
           } else {
             num_cores_to_use = num_cores
-            private$current_task_label = "Des/Inf Chunk"
             chunk_size = num_cores_to_use
             rep_chunks = split(seq_len(private$Nrep), (seq_len(private$Nrep) - 1) %/% chunk_size)
             for (chunk in rep_chunks) {
@@ -955,7 +991,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                private$last_progress_draw_time = 0
                private$.draw_progress()
                RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
-               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state)
+               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, is_forked = TRUE)
                jobs = lapply(active_reps, function(rep_i) {
                  parallel::mcparallel(
                    RUN_REP(rep_i),
@@ -992,8 +1028,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                }
                failed_indices = which(vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L)))
                if (length(failed_indices) > 0L) {
-                 # For failures, we still advance progress to not get stuck
-                 private$progress_count = private$progress_count + length(failed_indices) * cell_tasks_count[cell_idx]; private$.draw_progress()
+                 # For failures, we only advance progress by the number of tasks
+                 # that were actually pending for these replications (to avoid double-counting existing ones).
+                 tasks_per_rep = cell_tasks_count[cell_idx]
+                 tasks_to_add = sum(cell_req[failed_indices, , drop = FALSE])
+                 private$progress_count = private$progress_count + tasks_to_add
+                 private$.draw_progress()
                }
             }
           }
@@ -1013,7 +1053,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             private$current_rep_idx = rep; private$current_task_in_rep_idx = 0L
             private$last_progress_draw_time = 0
             private$.draw_progress()
-            worker_out = private$.run_single_replication_in_worker(rep, cell_state, progress_cb = private$.advance_progress)
+            worker_out = private$.run_single_replication_in_worker(rep, cell_state, progress_cb = private$.advance_progress, is_forked = FALSE)
             if (private$keep_all_intermediate_data) {
                rep_data = if (isTRUE(private$random_X_draws)) private$.generate_data() else private$.generate_data_from_X(shared_X_draws[[paste(private$current_n, private$current_p, sep = "|")]])
                X = rep_data$X; y_linear_model = rep_data$y_linear_model; true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model); rep_slot = (cell_idx - 1L) * private$Nrep + rep
@@ -1033,7 +1073,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                private$current_task_in_rep_idx = worker_out$skipped_count + n_res
                private$.record_batch(worker_out$results_dt, worker_out$skipped_count)
             } else {
-               private$current_task_in_rep_idx = private$tasks_per_rep; private$progress_count = private$progress_count + private$tasks_per_rep; private$.draw_progress()
+               # For failures, we only advance progress by the number of tasks
+               # that were actually pending for this replication.
+               tasks_to_add = sum(cell_req[rep, ])
+               private$current_task_in_rep_idx = private$tasks_per_rep; private$progress_count = private$progress_count + tasks_to_add; private$.draw_progress()
             }
           }
         }
@@ -1082,7 +1125,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           rep = integer(), cond_exp_func_model = character(), n = integer(),
           p = integer(), betaT = numeric(), design = character(), inference = character(),
           inference_type = character(), estimate = numeric(),
-          ci_lo = numeric(), ci_hi = numeric(), pval = numeric()
+          ci_lo = numeric(), ci_hi = numeric(), pval = numeric(),
+          true_estimand = numeric()
         ))
       # Prune pre-allocated list to only include what was actually recorded
       data.table::rbindlist(private$raw_results[seq_len(private$results_idx)], use.names = TRUE, fill = TRUE)
@@ -1102,7 +1146,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         message("No results."); return(invisible(NULL))
       }
       ref_grid = data.table::rbindlist(lapply(private$valid_combos, as.list), use.names = TRUE, fill = TRUE)
-      ref_grid[, betaT := NULL]
+      
+      # Collapse over betaT: remove it from the unique keys
+      if ("betaT" %in% names(ref_grid)) ref_grid[, betaT := NULL]
       ref_grid = unique(ref_grid)
 
       # ── Per-class params strings ───────────────────────────────────────────────
@@ -1125,7 +1171,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       alpha      = private$alpha
       report_cov = any(grepl("_ci$",   private$inf_types))
       report_pow = any(grepl("_pval$", private$inf_types))
-      by_cols    = c("response_type", "cond_exp_func_model", "n", "p", "design", "inference", "inference_type")
+      
+      # Grouping columns - EXCLUDE betaT to allow averaging across effect sizes
+      by_cols = c("response_type", "cond_exp_func_model", "n", "p", "design", "inference", "inference_type")
 
       if (nrow(dt) > 0L) {
         # Optimization: Avoid .SD subsetting within groups. Use vectorized logic.
@@ -1143,12 +1191,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }
           if (report_pow) {
             pv_fin = is.finite(pval)
-            is_zero = (betaT == 0)
+            is_zero = (abs(betaT) < 1e-12) # Use tolerance for safety
             pv_fin_zero = pv_fin & is_zero
             pv_fin_nonzero = pv_fin & !is_zero
 
             m_row$power = if (any(pv_fin_nonzero)) mean(pval[pv_fin_nonzero] < alpha) else NA_real_
             m_row$n_pow = sum(pv_fin_nonzero)
+            
             if (any(is_zero)) {
               m_row$size = if (any(pv_fin_zero)) mean(pval[pv_fin_zero] < alpha) else NA_real_
               m_row$n_size = sum(pv_fin_zero)
@@ -1198,7 +1247,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (any(vapply(private$inference_type_params, length, integer(1L)) > 0L))
         cat("  inference_types_and_params: (", length(private$inference_type_params), " inference types)\n", sep = "")
       design_names = vapply(private$design_classes,  function(g) g$classname, "")
-      inf_names    = private$inference_labels
+      design_names = gsub("Design", "", design_names)
+      inf_names    = gsub("Inference", "", private$inference_labels)
+      inf_names    = gsub("^(Contin|Count|Incid|Prop|Survival|Ordinal|All)", "", inf_names)
       cat("  Designs (", length(design_names), "):",
           paste(design_names, collapse = ", "), "\n")
       cat("  Inference (", length(inf_names), "):",
@@ -1269,6 +1320,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     prob_censoring       = NULL,
     verbose          = NULL,
     results_filename = NULL,
+    simulation_start_time = NULL,
+    initial_progress_count = NULL,
+    initial_cell_in_progress_prop = NULL,
     continue_from_last_result_row = NULL,
     design_params    = NULL,
     inference_constructor_params = NULL,
@@ -1835,10 +1889,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       combos
     },
 
-    .run_single_replication_in_worker = function(rep_i, state, progress_cb = NULL) {
+    .run_single_replication_in_worker = function(rep_i, state, progress_cb = NULL, is_forked = FALSE) {
       # This runs in a worker process. It must be self-contained.
-      # Cap threads to 1 to avoid oversubscription when multiple reps run in parallel.
+      # 1. Cap threads and nested parallelism to avoid N*M oversubscription.
+      # We call these directly as the environment is set to the EDI namespace.
       set_package_threads(1L)
+      if (is_forked) {
+        unset_num_cores() # Clear any inherited clusters
+      }
       
       # Pre-format key prefix for this replication
       rep_key_prefix = paste(state$cell_key_prefix, rep_i, sep = "|")
@@ -1961,7 +2019,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                          is(inf_obj, "InferenceIncidenceWald") ||
                          is(inf_obj, "InferenceIncidCMH") ||
                          is(inf_obj, "InferenceIncidExtendedRobins") ||
-                         is(inf_obj, "InferenceIncidRiskDiff")
+                         is(inf_obj, "InferenceIncidRiskDiff") ||
+                         is(inf_obj, "InferenceIncidMiettinenNurminenRiskDiff") ||
+                         is(inf_obj, "InferenceIncidNewcombeRiskDiff") ||
+                         is(inf_obj, "InferenceIncidKKNewcombeRiskDiff") ||
+                         is(inf_obj, "InferenceIncidKKGCompRiskDiff") ||
+                         is(inf_obj, "InferencePropGCompMeanDiff")
           te = if (is_mean_diff) true_mean_diff_ate else state$betaT
 
           # .valid_inference_types logic (extracted)
@@ -2126,7 +2189,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         rt = private$param_grid$response_type[[cell_idx]]
         combos = planned_combos_list[[cell_idx]]
         design_names = unique(vapply(combos, `[[`, "", "design"))
+        design_names = gsub("Design", "", design_names)
         inference_names = unique(vapply(combos, `[[`, "", "inference"))
+        inference_names = gsub("Inference", "", inference_names)
+        inference_names = gsub("^(Contin|Count|Incid|Prop|Survival|Ordinal|All)", "", inference_names)
 
         if (is.null(rt_summaries[[rt]])) {
           rt_summaries[[rt]] = list(
@@ -2192,6 +2258,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (exists("flush.console")) utils::flush.console()
     },
 
+    .message_stderr = function(msg) {
+      if (isTRUE(private$progress_bar_drawn)) {
+        # Move up 4 lines and clear them to end of screen
+        cat("\033[4A\r\033[J", file = stderr())
+        private$progress_bar_drawn = NULL
+      }
+      cat(msg, file = stderr())
+      if (exists("flush.console")) utils::flush.console()
+    },
+
     .draw_simulation_progress_bars = function() {
       now = as.numeric(Sys.time())
       # Throttle: only redraw if 100ms have passed OR we are at 100%
@@ -2202,9 +2278,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!is_done && (now - private$last_progress_draw_time) < 0.1) return(invisible(NULL))
       private$last_progress_draw_time = now
 
-      # Get console width and ensure a reasonable minimum
-      width = getOption("width", 80L)
-      if (is.null(width) || width < 40L) width = 40L
+      # Force a narrow width to prevent wrapping which breaks ANSI sequences.
+      width = 60L
 
       task_total_display = max(private$tasks_per_rep, private$current_task_in_rep_idx)
 
@@ -2212,26 +2287,48 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       task_in_progress_prop = max(0, min(1, if (task_total_display > 0) private$current_task_in_rep_idx / task_total_display else 0))
       rep_in_progress_prop  = max(0, min(1, if (private$Nrep > 0) (max(0, private$current_rep_idx - 1) + task_in_progress_prop) / private$Nrep else 0))
       cell_in_progress_prop = max(0, min(1, if (private$total_cells > 0) (max(0, private$current_cell_idx - 1) + rep_in_progress_prop) / private$total_cells else 0))
-      overall_prop          = max(0, min(1, if (private$progress_total > 0) private$progress_count / private$progress_total else 0))
-
-      make_bar_line = function(label, prop, b_width, digits = 0) {
-        # Pad label to fixed width (16 chars) to align brackets
-        padded_label = sprintf("%-16s", label)
-        label_len = nchar(padded_label)
+      
+      eta_str = ""
+      prop_done_this_run = (cell_in_progress_prop - private$initial_cell_in_progress_prop) / max(1e-6, 1 - private$initial_cell_in_progress_prop)
+      prop_remaining     = 1 - cell_in_progress_prop
+      
+      if (prop_done_this_run > 0 && cell_in_progress_prop < 0.9999) {
+        elapsed = now - private$simulation_start_time
+        remaining = (elapsed / prop_done_this_run) * (prop_remaining / max(1e-6, 1 - private$initial_cell_in_progress_prop))
         
-        # 2 for brackets. Resulting line is exactly b_width long.
+        d = floor(remaining / 86400)
+        remaining = remaining %% 86400
+        h = floor(remaining / 3600)
+        remaining = remaining %% 3600
+        m = floor(remaining / 60)
+        s = round(remaining %% 60)
+        
+        parts = character()
+        if (d > 0) parts = c(parts, paste0(d, "d"))
+        if (h > 0) parts = c(parts, paste0(h, "h"))
+        if (m > 0) parts = c(parts, paste0(m, "m"))
+        parts = c(parts, paste0(s, "s"))
+        
+        eta_str = paste0("Time Left: ", paste(parts, collapse = " "))
+      } else if (cell_in_progress_prop >= 0.9999) {
+        eta_str = "Status: Completed."
+      } else {
+        eta_str = "Status: Estimating..."
+      }
+
+      make_bar_line = function(label, prop, b_width, digits = 0, label_width = 25) {
+        padded_label = sprintf("%-*s", label_width, substr(label, 1, label_width))
+        label_len = nchar(padded_label)
         bar_available = b_width - label_len - 2L
         if (bar_available < 10L) return(padded_label)
 
         fill = floor(prop * bar_available)
-        if (fill < 0) fill = 0
-        if (fill > bar_available) fill = bar_available
+        fill = max(0, min(bar_available, fill))
 
-        # Overlay percentage text in the middle
         if (digits == 0) {
-          pct_str = sprintf(" %3d%% ", floor(prop * 100))
+          pct_str = sprintf(" %d%% ", floor(prop * 100))
         } else {
-          pct_str = sprintf(" %5.1f%% ", prop * 100)
+          pct_str = sprintf(" %.1f%% ", prop * 100)
         }
         n_pct = nchar(pct_str)
 
@@ -2243,17 +2340,24 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         sprintf("%s[%s]", padded_label, full_bar)
       }
 
-      line1 = make_bar_line("Overall:", overall_prop, width, digits = 1)
-      line2 = make_bar_line(sprintf("DGP: %d/%d", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width)
-      line3 = make_bar_line(sprintf("Rep: %d/%d", private$current_rep_idx, private$Nrep), rep_in_progress_prop, width)
-      line4 = make_bar_line(sprintf("%s: %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
+      line1 = make_bar_line(sprintf("DGP %d/%d Overall", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width, digits = 1)
+      line2 = make_bar_line(sprintf("Rep %d/%d", private$current_rep_idx, private$Nrep), rep_in_progress_prop, width)
+      line3 = make_bar_line(sprintf("%s %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
+
+      # Use \r and \033[2K on EACH line for maximum robustness.
+      output_block = paste0(
+        "\r\033[2K", eta_str, "\n",
+        "\r\033[2K", line1, "\n",
+        "\r\033[2K", line2, "\n",
+        "\r\033[2K", line3, "\n"
+      )
 
       if (is.null(private$progress_bar_drawn)) {
-         cat(line1, "\n", line2, "\n", line3, "\n", line4, sep = "", file = stderr())
+         cat(output_block, sep = "", file = stderr())
          private$progress_bar_drawn = TRUE
       } else {
-         # \033[3F moves up 3 lines to start of Line 1, \r to col 1, \033[J clears down.
-         cat("\033[3F\r\033[J", line1, "\n", line2, "\n", line3, "\n", line4, sep = "", file = stderr())
+         # Move up 4 lines, and print the block which clears each line as it goes.
+         cat("\033[4A", output_block, sep = "", file = stderr())
       }
 
       if (exists("flush.console")) utils::flush.console()
@@ -2679,8 +2783,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferencePropBetaRegr,
           InferencePropFractionalLogit,
           InferencePropFractionalLogit,
-          InferencePropUnivKKGEE,
-          InferencePropMultiKKQuantileRegrIVWC
+          InferencePropKKGEE,
+          InferencePropKKQuantileRegrIVWC
         ),
         count = list(
           InferenceAllSimpleWilcox,
@@ -2688,8 +2792,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceCountPoisson,
           InferenceCountRobustPoisson,
           InferenceCountRobustPoisson,
-          InferenceCountPoissonUnivKKGEE,
-          InferenceCountPoissonUnivKKCPoissonIVWC
+          InferenceCountKKGEE,
+          InferenceCountKKCPoissonIVWC
         ),
         survival = list(
           InferenceSurvivalCoxPHRegr,
@@ -2697,13 +2801,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceSurvivalLogRank,
           InferenceSurvivalRestrictedMeanDiff,
           InferenceSurvivalKKStratCoxIVWC,
-          InferenceSurvivalUnivKKLWACoxIVWC
+          InferenceSurvivalKKLWACoxIVWC
         ),
         ordinal = list(
           InferenceOrdinalPropOddsRegr,
-          InferenceOrdinalUniCumulProbitRegr,
-          InferenceOrdinalUniCLLRegr,
-          InferenceOrdinalUnivKKGEE
+          InferenceOrdinalOrderedProbitRegr,
+          InferenceOrdinalCloglogRegr,
+          InferenceOrdinalKKGEE
         ),
         stop("Unknown response_type: ", rt)
       )

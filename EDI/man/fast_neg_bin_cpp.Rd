@@ -48,3 +48,9 @@ A list containing the following components:
 \description{
 High-performance negative binomial regression fitting.
 }
+\examples{
+X = matrix(rnorm(100), 10, 10)
+y = rpois(10, 2)
+fast_neg_bin_cpp(X, y)
+}
+\keyword{internal}

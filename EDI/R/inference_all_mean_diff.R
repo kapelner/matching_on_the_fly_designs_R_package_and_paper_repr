@@ -55,7 +55,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#' @description
 		#' Computes the appropriate estimate for mean difference
 		#'
-		#' @return	The setting-appropriate (see description) numeric estimate of the treatment effect
+		#' @return    The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
@@ -81,12 +81,12 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param	r		The number of randomization vectors. The default is 501.
-		#' @param	pval_epsilon			The bisection algorithm tolerance. The default is 0.005.
-		#' @param	show_progress		Show a text progress indicator.
+		#' @param r    The number of randomization vectors. The default is 501.
+		#' @param pval_epsilon    The bisection algorithm tolerance. The default is 0.005.
+		#' @param show_progress    Show a text progress indicator.
 		#' @param ci_search_control Optional randomization-CI search control list passed through 
 		#'   to the base method.
-		#' @return	A 1 - alpha sized frequentist confidence interval
+		#' @return    A 1 - alpha sized frequentist confidence interval
 		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {

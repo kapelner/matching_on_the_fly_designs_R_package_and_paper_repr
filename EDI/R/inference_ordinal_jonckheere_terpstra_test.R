@@ -63,14 +63,14 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 
 		#' @description
 		#' Not applicable: JT test is exact, not asymptotic. Returns NA.
-		#' @param alpha Description for alpha
+		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			c(NA_real_, NA_real_)
 		},
 
 		#' @description
 		#' Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
-		#' @param delta Description for delta
+		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			NA_real_
 		}

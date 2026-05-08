@@ -1,7 +1,7 @@
 suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
-Nrep = 3000L   # Monte Carlo replications per cell
+Nrep = 10000L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
